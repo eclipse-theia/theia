@@ -53,8 +53,9 @@ export interface QaapCreateAgentTaskRequest {
      */
     readonly prompt?: string;
     /**
-     * Id of an agent returned by the list endpoint, e.g. `'claude'` or `'codex'`. Use the
-     * special value `'shell'` to bypass any agent and run the prompt verbatim as a command.
+     * Id of an agent returned by the list endpoint, e.g. `'claude'`, `'codex'`, `'aider'`,
+     * or a custom id configured through `QAAP_AGENT_COMMANDS`. Use the special value `'shell'`
+     * to bypass any agent and run the prompt verbatim as a command.
      */
     readonly agent?: string;
     readonly cwd: string;
@@ -106,10 +107,9 @@ export interface QaapAgentTaskAllResponse {
 }
 
 /** Payload pushed over SSE when a task changes state. */
-export interface QaapAgentTaskEvent {
-    readonly type: 'created' | 'completed' | 'cancelled';
-    readonly task: QaapAgentTask;
-}
+export type QaapAgentTaskEvent =
+    | { readonly type: 'created' | 'completed' | 'cancelled'; readonly task: QaapAgentTask }
+    | { readonly type: 'output'; readonly task: QaapAgentTask; readonly chunk: string };
 
 /** True once the task has stopped and will not change state again. */
 export function isQaapAgentTaskFinished(state: QaapAgentTaskState): boolean {

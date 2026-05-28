@@ -8,6 +8,7 @@
     "@lumino/widgets": "2.7.5",
     "@theia/ai-chat": "1.71.0",
     "@theia/ai-chat-ui": "1.71.0",
+    "@theia/ai-claude-code": "1.71.0",
     "@theia/ai-core": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/filesystem": "1.71.0",

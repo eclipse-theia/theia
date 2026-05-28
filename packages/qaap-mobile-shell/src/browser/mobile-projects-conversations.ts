@@ -347,7 +347,9 @@ export class MobileProjectsConversations {
             const updated: QaapAgentConversationSummaryDTO = {
                 ...existing,
                 updatedAt: payload.message.createdAt,
-                messageCount: existing.messageCount + 1,
+                messageCount: payload.message.role === existing.lastMessageRole
+                    ? existing.messageCount
+                    : existing.messageCount + 1,
                 lastMessagePreview: excerpt(payload.message.content),
                 lastMessageRole: payload.message.role,
             };

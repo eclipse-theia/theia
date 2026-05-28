@@ -77,3 +77,16 @@
     min-height: 48px;
   }
 }
+
+@media (max-width: 767px) {
+  /* Premium chat toolbar: extra gutter for send; readable mode selector on phones. */
+  .chat-view-widget .theia-ChatInputOptions {
+    padding-right: 14px;
+  }
+
+  .chat-view-widget .theia-ChatInput-ModeSelector.theia-select-component,
+  .chat-view-widget .theia-ChatInput-ReasoningSelector.theia-select-component {
+    min-height: 36px;
+    max-width: min(11rem, 52vw);
+  }
+}

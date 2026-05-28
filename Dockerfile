@@ -40,13 +40,32 @@ RUN npm run build:production && node scripts/copy-frontend-static.mjs
 # --- Runtime -----------------------------------------------------------------
 FROM node:22-bookworm-slim AS runtime
 
+# QAIQ ref pinned at build time; override: docker build --build-arg QAIQ_REF=v0.15.0-qaap.1
+ARG QAIQ_REPO=https://github.com/juancristobalgd1/qaiq.git
+ARG QAIQ_REF=main
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
+    curl \
+    python3 \
+    pipx \
+    build-essential \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
     && corepack prepare pnpm@10 --activate \
-    && corepack prepare yarn@stable --activate
+    && corepack prepare yarn@stable --activate \
+    && npm install -g bun \
+    && git clone --depth 1 --branch "${QAIQ_REF}" "${QAIQ_REPO}" /opt/qaiq \
+    && cd /opt/qaiq && bun install && bun run build \
+    && ln -sf /opt/qaiq/bin/qaiq /usr/local/bin/qaiq \
+    && qaiq --version \
+    && pipx install aider-chat \
+    && aider --version
+
+ENV PATH="/root/.local/bin:${PATH}" \
+    QAAP_DEFAULT_AGENT=qaiq
 
 WORKDIR /app/examples/browser
 

@@ -29,9 +29,10 @@ import { ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell
 import { StatusBarImpl } from '@theia/core/lib/browser/status-bar/status-bar';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ChatService } from '@theia/ai-chat';
+import { AIVariableService } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { ContextVariablePicker } from '@theia/ai-chat-ui/lib/browser/context-variable-picker';
 import {
     matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
@@ -53,6 +54,7 @@ import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contr
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
+import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
 import {
     clearMobileProjectsHomeVisible,
     clearMobileWorkHubBootGuard,
@@ -161,6 +163,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(ContextVariablePicker)
+    protected readonly contextVariablePicker: ContextVariablePicker;
+
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
+
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
 
@@ -189,6 +197,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected shellHooked = false;
     protected projectsPanel: MobileProjectsPanel | undefined;
     protected pullRequestPanel: MobilePullRequestPanel | undefined;
+    protected agentTaskComposer: MobileAgentTaskComposer | undefined;
     protected projectsCount = 0;
     protected authOpenFirstRepoListenerInstalled = false;
     /**
@@ -774,7 +783,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     void this.commands.executeCommand('qaap.hub.resumePreview', project);
                 },
                 onOpenAgentOnTask: (project) => {
-                    void this.commands.executeCommand('qaap.hub.openAgentOnTask', project);
+                    void this.commands.executeCommand('qaap.mobile.openAgentOnTask', project);
                 },
             },
             {
@@ -795,11 +804,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     { source: 'mobile-projects', id },
                 ),
                 createChatViewWidget: id => Promise.resolve(
-                    this.mobileProjectChatViewWidgetFactory(id) as ChatViewWidget
+                    this.mobileProjectChatViewWidgetFactory(id)
                 ),
                 chatService: this.chatService,
                 chatAgentService: this.chatAgentService,
                 messageService: this.messageService,
+                pickContextVariable: () => this.contextVariablePicker.pickContextVariable(),
+                getComposerVariables: () => this.variableService.getVariables(),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -927,6 +938,36 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             isEnabled: () => this.mobileActive && this.workspaceService.opened,
             isVisible: () => matchesMobileNarrowViewport() && this.workspaceService.opened,
         });
+        // Project card "Open agent" button. Submits to the backend agent-task runner so the work
+        // is a detached child process, not a tab-bound chat; the agent keeps going after the
+        // user closes the tab.
+        registry.registerCommand({ id: 'qaap.mobile.openAgentOnTask' }, {
+            execute: (project: MobileProjectEntry) => this.openAgentTaskComposer(project),
+        });
+    }
+
+    protected async openAgentTaskComposer(project: MobileProjectEntry): Promise<void> {
+        if (!project) {
+            return;
+        }
+        const cwd = this.projectsService.getProjectCwd(project);
+        if (!this.agentTaskComposer) {
+            this.agentTaskComposer = new MobileAgentTaskComposer(this.activeTasks, {
+                onSubmitted: () => {
+                    MobileSnackbar.show(
+                        nls.localize('qaap/mobileProjects/agentTaskQueued', 'Agent task started'),
+                        { kind: 'success' }
+                    );
+                },
+            });
+            document.body.appendChild(this.agentTaskComposer.node);
+            this.toDispose.push(Disposable.create(() => {
+                this.agentTaskComposer?.dispose();
+                this.agentTaskComposer?.node.parentElement?.removeChild(this.agentTaskComposer.node);
+                this.agentTaskComposer = undefined;
+            }));
+        }
+        await this.agentTaskComposer.show(project, cwd);
     }
 
     protected async toggleProjectsPanel(): Promise<void> {
@@ -1783,12 +1824,33 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.scheduleSnapAndUiRefresh();
             return;
         }
+        // Mobile "Agent" should open Theia AI Chat (right sheet). Background tasks stay on "Jobs".
         await this.openMobileSideSheet('right', WORKBENCH_CHAT_VIEW_WIDGET_ID);
         this.scheduleSnapAndUiRefresh();
     }
 
     protected isMobileAgentSheetVisible(): boolean {
         return this.shell.isExpanded('right') && !this.isSidePanelSheetCollapsedInDom('right');
+    }
+
+    protected async resolveCurrentProjectForAgent(): Promise<MobileProjectEntry | undefined> {
+        try {
+            const projects = await this.projectsService.loadProjects();
+            const currentName = this.projectsService.getCurrentWorkspaceName()?.toLowerCase();
+            const currentCwd = this.projectsService.getCurrentWorkspaceCwd()?.toLowerCase();
+            return projects.find(project => project.isCurrent)
+                ?? projects.find(project => this.projectsService.projectMatchesCurrentWorkspace(project))
+                ?? projects.find(project => !!currentName && project.name.toLowerCase() === currentName)
+                ?? projects.find(project => {
+                    if (!currentCwd) {
+                        return false;
+                    }
+                    const projectCwd = this.projectsService.getProjectCwd(project)?.toLowerCase();
+                    return !!projectCwd && projectCwd === currentCwd;
+                });
+        } catch {
+            return undefined;
+        }
     }
 
     protected async toggleMobileExploreSheet(): Promise<void> {

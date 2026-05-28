@@ -16,6 +16,9 @@
       "path": "../ai-chat-ui"
     },
     {
+      "path": "../ai-claude-code"
+    },
+    {
       "path": "../ai-core"
     },
     {

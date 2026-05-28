@@ -32,13 +32,28 @@ services:
       QAAP_VAPID_SUBJECT: ${QAAP_VAPID_SUBJECT:-mailto:qaap@localhost}
       # Background-agent CLI template for Jobs tasks ({prompt} = task description).
       QAAP_AGENT_COMMAND: ${QAAP_AGENT_COMMAND:-}
+      QAAP_AGENT_COMMANDS: ${QAAP_AGENT_COMMANDS:-}
+      QAAP_DEFAULT_AGENT: ${QAAP_DEFAULT_AGENT:-qaiq}
       QAAP_CLOUD_MODE: ${QAAP_CLOUD_MODE:-local}
+      # BYOK / free-tier keys for @qaiq background jobs (also set in Settings → AI).
+      # Explicit env vars here override empty preferences; see doc/qaap-vps-deployment.md.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY:-}
       # Optional: mount a host folder as the default workspace
       # THEIA_PLUGINS_DIR: /app/plugins
     volumes:
       - theia-workspace:/workspace
-      # Persist GitHub OAuth sessions across container rebuilds (default: /root/.qaap/auth).
+      # Persist GitHub OAuth, agent-task index, qaap-task helper token.
       - qaap-auth-data:/root/.qaap
+      # Persist Settings → AI keys and user preferences across rebuilds.
+      - qaap-theia-user:/root/.theia
     restart: unless-stopped
     deploy:
       resources:
@@ -48,3 +63,4 @@ services:
 volumes:
   theia-workspace:
   qaap-auth-data:
+  qaap-theia-user:

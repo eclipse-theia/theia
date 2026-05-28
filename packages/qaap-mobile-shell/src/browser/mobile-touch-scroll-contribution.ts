@@ -88,7 +88,9 @@ export class MobileTouchScrollContribution implements FrontendApplicationContrib
     }
 
     protected patchExisting(root: ParentNode): void {
-        if (root instanceof HTMLElement) {
+        // Only patch known scroll hosts. Do not call patchElement on every inserted node — otherwise
+        // controls such as the inline mic toggle get touch-scroll handlers and break taps on iOS.
+        if (root instanceof HTMLElement && root.matches(MOBILE_VERTICAL_SCROLL_SELECTOR)) {
             this.patchElement(root);
         }
         root.querySelectorAll<HTMLElement>(MOBILE_VERTICAL_SCROLL_SELECTOR).forEach(el => this.patchElement(el));

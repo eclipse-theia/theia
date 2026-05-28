@@ -9,6 +9,10 @@ import '../../src/browser/style/qaap-mobile-touch-scroll.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
 import '../../src/browser/style/qaap-chat-mic.css';
+import '../../src/browser/style/qaap-chat-select-dropdown.css';
+import '@theia/ai-claude-code/src/browser/style/claude-code-tool-renderers.css';
+
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 
 import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
@@ -43,6 +47,7 @@ import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import {
     MobileProjectAIChatInputWidget,
+    MobileProjectChatViewWidget,
     MobileProjectChatViewWidgetFactory,
 } from './mobile-project-ai-chat-input-widget';
 import { MobileProjectsService } from './mobile-projects-service';
@@ -57,6 +62,9 @@ import { QaapSelectComponentOverlayContribution } from './qaap-select-component-
 import { QaapChatMicTranscribeContribution } from './qaap-chat-mic-transcribe-contribution';
 import { MobileConnectionStatusContribution } from './mobile-connection-status-contribution';
 import { MobileChatSessionRestoreContribution } from './mobile-chat-session-restore-contribution';
+import { QaapQaiqChatAgentContribution } from './qaap-qaiq-chat-agent-contribution';
+import { QaapQaiqBashToolRenderer } from './qaap-qaiq-bash-tool-renderer';
+import { QaapQaiqGenericToolRenderer } from './qaap-qaiq-generic-tool-renderer';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
@@ -76,8 +84,9 @@ export default new ContainerModule(bind => {
         child.bind(ChatViewTreeWidget).toDynamicValue(treeCtx =>
             createChatViewTreeWidget(treeCtx.container)
         );
-        child.bind(ChatViewWidget).toSelf();
-        const widget = child.get(ChatViewWidget);
+        child.bind(ChatViewWidget).to(MobileProjectChatViewWidget);
+        child.bind(MobileProjectChatViewWidget).toSelf();
+        const widget = child.get(MobileProjectChatViewWidget);
         widget.id = `mobile-projects-chat-view-${id}`;
         widget.node.classList.add('theia-mobile-projects-real-agent-view');
         return widget;
@@ -124,6 +133,13 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(MobileConnectionStatusContribution);
     bind(MobileChatSessionRestoreContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileChatSessionRestoreContribution);
+    bind(QaapQaiqChatAgentContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapQaiqChatAgentContribution);
+
+    bind(QaapQaiqBashToolRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(QaapQaiqBashToolRenderer);
+    bind(QaapQaiqGenericToolRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(QaapQaiqGenericToolRenderer);
 
     bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);

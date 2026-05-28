@@ -70,6 +70,26 @@ export function buildQaapAccountMenuEntries(signedIn: boolean = true): QaapAccou
     ];
 }
 
+/** Minimal account menu for Work Hub / mobile projects (auth only). */
+export function buildQaapAccountMenuSignOutOnly(signedIn: boolean): QaapAccountMenuEntry[] {
+    if (!signedIn) {
+        return [
+            {
+                kind: 'action',
+                label: nls.localize('qaap/accountMenu/signInGithub', 'Sign in with GitHub'),
+                commandId: QAAP_AUTH_SIGN_IN_GITHUB_COMMAND,
+            },
+        ];
+    }
+    return [
+        {
+            kind: 'action',
+            label: nls.localize('qaap/accountMenu/signOut', 'Sign Out'),
+            commandId: QAAP_AUTH_SIGN_OUT_COMMAND,
+        },
+    ];
+}
+
 export function dismissQaapAccountMenu(): void {
     activeDismiss?.();
 }

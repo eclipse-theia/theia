@@ -8,12 +8,9 @@ import { CommandRegistry, DisposableCollection, nls } from '@theia/core/lib/comm
 import { ApplicationShell, CommonCommands, Widget } from '@theia/core/lib/browser';
 import { Message } from '@theia/core/lib/browser/widgets/widget';
 import { collapseLeftPanelIfMobileOneColumn, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
-import {
-    qaapAuthUserInitials,
-    readQaapAuthUser,
-    readQaapSignedIn,
-} from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { renderQaapAccountAvatarVisual } from './qaap-account-avatar-visual';
 import { buildQaapAccountMenuEntries, dismissQaapAccountMenu, toggleQaapAccountMenu } from './qaap-workbench-account-menu';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { MobileProjectsService } from './mobile-projects-service';
@@ -319,40 +316,7 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
     protected updateAccountVisual(): void {
         this.accountBtn.hidden = false;
         this.accountBtn.style.display = '';
-        const signedIn = readQaapSignedIn();
-        if (!signedIn) {
-            this.accountAvatar.replaceChildren();
-            const icon = document.createElement('span');
-            icon.className = 'codicon codicon-account theia-workbench-account-fallback-icon';
-            icon.setAttribute('aria-hidden', 'true');
-            this.accountAvatar.appendChild(icon);
-            this.accountBtn.title = nls.localize('qaap/accountMenu/signInGithub', 'Sign in with GitHub');
-            return;
-        }
-        const user = readQaapAuthUser();
-        this.accountAvatar.replaceChildren();
-        if (!user) {
-            const icon = document.createElement('span');
-            icon.className = 'codicon codicon-account theia-workbench-account-fallback-icon';
-            icon.setAttribute('aria-hidden', 'true');
-            this.accountAvatar.appendChild(icon);
-            this.accountBtn.title = nls.localize('qaap/accountMenu/title', 'Account');
-            return;
-        }
-        this.accountBtn.title = user.name || user.login;
-        if (user.avatarUrl) {
-            const img = document.createElement('img');
-            img.src = user.avatarUrl;
-            img.alt = '';
-            img.draggable = false;
-            img.referrerPolicy = 'no-referrer';
-            this.accountAvatar.appendChild(img);
-            return;
-        }
-        const initials = document.createElement('span');
-        initials.className = 'theia-workbench-account-initials';
-        initials.textContent = qaapAuthUserInitials(user);
-        this.accountAvatar.appendChild(initials);
+        renderQaapAccountAvatarVisual(this.accountAvatar, { titleTarget: this.accountBtn });
     }
 
     protected updateTerminalSwitchVisual(): void {

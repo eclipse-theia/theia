@@ -4,7 +4,8 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChildProcess, spawn, spawnSync } from 'child_process';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
@@ -21,6 +22,15 @@ import {
     type QaapAgentTaskState,
     type QaapCreateAgentTaskRequest,
 } from '../common/qaap-agent-task';
+import { resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
+import {
+    applyQaapQaiqCredentialEnv,
+    applyQaapQaiqModelEnv,
+    formatQaiqProviderFlags,
+    resolveQaapQaiqModelBinding,
+    type QaapQaiqModelBinding,
+} from '../common/qaap-qaiq-model-binding';
 import { QaapWebPushService } from './qaap-web-push-service';
 
 /** Built-in coding agents the runner can auto-detect on the server's PATH. */
@@ -28,15 +38,46 @@ interface AgentCandidate {
     readonly id: string;
     readonly label: string;
     /** Executable name to look up on PATH (`which <bin>`). */
-    readonly bin: string;
+    readonly bin?: string;
     /** Template applied to the user prompt; `{prompt}` is replaced with a shell-quoted value. */
     readonly template: string;
 }
 
+/** Built-in QAAP coding agent (fork of OpenClaude): https://github.com/juancristobalgd1/qaiq */
+export const QAIQ_AGENT_ID = 'qaiq';
+
 const AGENT_CANDIDATES: readonly AgentCandidate[] = [
-    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude -p {prompt}' },
     { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {prompt}' },
+    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude -p {prompt}' },
     { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always --message {prompt}' },
+];
+
+/**
+ * Optional JSON env var for server-side agent backends beyond the built-ins. Example:
+ *
+ * QAAP_AGENT_COMMANDS='[
+ *   {"id":"aider-gemini","label":"Aider Gemini","bin":"aider","template":"aider --yes-always --model gemini/gemini-2.5-flash --message {prompt}"},
+ *   {"id":"qaiq-gemini","label":"QAIQ Gemini","bin":"qaiq","template":"qaiq --print --dangerously-skip-permissions --provider gemini --model gemini-2.5-flash {prompt}"}
+ * ]'
+ *
+ * API keys stay in the regular provider env vars consumed by the underlying CLI
+ * (for example GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, OPENAI_BASE_URL).
+ */
+const CUSTOM_AGENTS_ENV = 'QAAP_AGENT_COMMANDS';
+
+/** When several CLIs are on PATH, prefer BYOK/free-tier runners over subscription CLIs. */
+const DEFAULT_AGENT_PREFERENCE: readonly string[] = [QAIQ_AGENT_ID, 'aider', 'codex', 'claude'];
+
+const AGENT_ENV_PREFS: readonly { readonly env: string; readonly pref: string }[] = [
+    { env: 'OPENAI_API_KEY', pref: 'ai-features.openAiOfficial.openAiApiKey' },
+    { env: 'ANTHROPIC_API_KEY', pref: 'ai-features.anthropic.AnthropicApiKey' },
+    { env: 'GOOGLE_API_KEY', pref: 'ai-features.google.apiKey' },
+    { env: 'GEMINI_API_KEY', pref: 'ai-features.google.apiKey' },
+    { env: 'OPENROUTER_API_KEY', pref: 'ai-features.openrouter.openrouterApiKey' },
+    { env: 'OPENROUTER_BASE_URL', pref: 'ai-features.openrouter.openrouterBaseUrl' },
+    { env: 'NVIDIA_API_KEY', pref: 'ai-features.nvidia.nvidiaApiKey' },
+    { env: 'OLLAMA_HOST', pref: 'ai-features.ollama.ollamaHost' },
+    { env: 'HUGGINGFACE_API_KEY', pref: 'ai-features.huggingFace.apiKey' },
 ];
 
 /** Pseudo-agent that runs the prompt verbatim as a shell command. */
@@ -48,6 +89,8 @@ const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-tasks');
 const INDEX_PATH = path.join(STORE_DIR, 'index.json');
 /** Cap returned log size so a runaway task cannot blow up the response. */
 const MAX_LOG_BYTES = 512 * 1024;
+/** Kill agent CLIs that sit silent for too long, usually waiting for auth/quota/input. */
+const IDLE_TASK_TIMEOUT_MS = 20 * 60 * 1000;
 
 /** Auth token file shared between the backend and the `qaap-task` helper. */
 const TOKEN_PATH = path.join(os.homedir(), '.qaap', 'task-token');
@@ -148,6 +191,9 @@ export class QaapAgentTaskRunner {
     @inject(QaapWebPushService)
     protected readonly webPush: QaapWebPushService;
 
+    @inject(PreferenceService) @optional()
+    protected readonly preferenceService: PreferenceService | undefined;
+
     protected readonly tasks = new Map<string, QaapAgentTask>();
     protected readonly processes = new Map<string, ChildProcess>();
     /** Agents whose CLI was found on PATH at startup, keyed by id. */
@@ -228,10 +274,118 @@ export class QaapAgentTaskRunner {
     /** Probe each known agent's binary on PATH once at startup. */
     protected detectAgents(): void {
         for (const candidate of AGENT_CANDIDATES) {
-            if (this.isOnPath(candidate.bin)) {
+            if (this.isCandidateAvailable(candidate)) {
                 this.detectedAgents.set(candidate.id, candidate);
             }
         }
+        this.detectQaiqAgent();
+        for (const candidate of this.readCustomAgents()) {
+            if (this.isCandidateAvailable(candidate)) {
+                this.detectedAgents.set(candidate.id, candidate);
+            }
+        }
+        this.logDetectedAgents();
+    }
+
+    /** Startup diagnostics for VPS/Docker: confirms QAIQ is on PATH before users hit @qaiq. */
+    protected logDetectedAgents(): void {
+        const ids = [...this.detectedAgents.keys()];
+        console.log(`[qaap-agent-tasks] detected agents: ${ids.length ? ids.join(', ') : '(none — install qaiq or set QAAP_AGENT_COMMAND)'}`);
+        if (!this.detectedAgents.has(QAIQ_AGENT_ID)) {
+            return;
+        }
+        try {
+            const probe = spawnSync('qaiq', ['--version'], { encoding: 'utf8' });
+            const line = (probe.stdout || probe.stderr || '').trim().split('\n')[0];
+            if (line) {
+                console.log(`[qaap-agent-tasks] qaiq: ${line}`);
+            }
+        } catch {
+            /* ignore */
+        }
+    }
+
+    protected isCandidateAvailable(candidate: AgentCandidate): boolean {
+        return !candidate.bin || this.isOnPath(candidate.bin);
+    }
+
+    /** Prefer `qaiq` on PATH; accept legacy `openclaude` binary until installs catch up. */
+    protected resolveQaiqBin(): string | undefined {
+        if (this.isOnPath('qaiq')) {
+            return 'qaiq';
+        }
+        if (this.isOnPath('openclaude')) {
+            return 'openclaude';
+        }
+        return undefined;
+    }
+
+    protected detectQaiqAgent(): void {
+        const bin = this.resolveQaiqBin();
+        if (!bin) {
+            return;
+        }
+        this.detectedAgents.set(QAIQ_AGENT_ID, {
+            id: QAIQ_AGENT_ID,
+            label: 'QAIQ',
+            bin,
+            template: `${bin} --bare --print --output-format stream-json --verbose --include-partial-messages --dangerously-skip-permissions {qaiq_flags} {prompt}`,
+        });
+    }
+
+    protected isQaiqRunner(agentId: string | undefined, command: string): boolean {
+        if (agentId === QAIQ_AGENT_ID) {
+            return true;
+        }
+        return /\b(qaiq|openclaude)\b/.test(command);
+    }
+
+    protected readCustomAgents(): AgentCandidate[] {
+        const raw = process.env[CUSTOM_AGENTS_ENV]?.trim();
+        if (!raw) {
+            return [];
+        }
+        try {
+            const parsed = JSON.parse(raw) as unknown;
+            if (!Array.isArray(parsed)) {
+                throw new Error(`${CUSTOM_AGENTS_ENV} must be a JSON array.`);
+            }
+            return parsed.flatMap((entry, index) => this.parseCustomAgent(entry, index));
+        } catch (error) {
+            console.warn(`[qaap-agent-tasks] ignored ${CUSTOM_AGENTS_ENV}:`, error instanceof Error ? error.message : error);
+            return [];
+        }
+    }
+
+    protected parseCustomAgent(entry: unknown, index: number): AgentCandidate[] {
+        if (!entry || typeof entry !== 'object') {
+            console.warn(`[qaap-agent-tasks] ignored ${CUSTOM_AGENTS_ENV}[${index}]: entry must be an object.`);
+            return [];
+        }
+        const record = entry as { id?: unknown; label?: unknown; bin?: unknown; template?: unknown; command?: unknown };
+        const id = typeof record.id === 'string' ? record.id.trim().toLowerCase() : '';
+        const label = typeof record.label === 'string' ? record.label.trim() : '';
+        const bin = typeof record.bin === 'string' ? record.bin.trim() : undefined;
+        const template = typeof record.template === 'string'
+            ? record.template.trim()
+            : typeof record.command === 'string'
+                ? record.command.trim()
+                : '';
+        if (
+            !/^[a-z][a-z0-9-]{1,63}$/.test(id)
+            || id === SHELL_AGENT_ID
+            || id === ENV_AGENT_ID
+            || id === QAIQ_AGENT_ID
+            || AGENT_CANDIDATES.some(candidate => candidate.id === id)
+        ) {
+            console.warn(`[qaap-agent-tasks] ignored ${CUSTOM_AGENTS_ENV}[${index}]: invalid or reserved id "${id}".`);
+            return [];
+        }
+        if (!template) {
+            console.warn(`[qaap-agent-tasks] ignored ${CUSTOM_AGENTS_ENV}[${index}]: template is required.`);
+            return [];
+        }
+        return [{ id, label: label || id, bin, template }];
     }
 
     protected isOnPath(bin: string): boolean {
@@ -335,6 +489,9 @@ export class QaapAgentTaskRunner {
                 result.push({ id: candidate.id, label: candidate.label, available: true });
             }
         }
+        for (const candidate of [...this.detectedAgents.values()].filter(candidate => !AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id))) {
+            result.push({ id: candidate.id, label: candidate.label, available: true });
+        }
         if (process.env.QAAP_AGENT_COMMAND?.trim()) {
             result.push({ id: ENV_AGENT_ID, label: 'Custom (QAAP_AGENT_COMMAND)', available: true });
         }
@@ -344,8 +501,17 @@ export class QaapAgentTaskRunner {
 
     /** Id picked when a create request omits one — first detected agent, env template, or shell. */
     defaultAgent(): string {
-        for (const candidate of AGENT_CANDIDATES) {
-            if (this.detectedAgents.has(candidate.id)) {
+        const configured = this.normalizeAgentId(process.env.QAAP_DEFAULT_AGENT);
+        if (configured && this.detectedAgents.has(configured)) {
+            return configured;
+        }
+        for (const id of DEFAULT_AGENT_PREFERENCE) {
+            if (this.detectedAgents.has(id)) {
+                return id;
+            }
+        }
+        for (const candidate of [...this.detectedAgents.values()]) {
+            if (!AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id)) {
                 return candidate.id;
             }
         }
@@ -353,6 +519,28 @@ export class QaapAgentTaskRunner {
             return ENV_AGENT_ID;
         }
         return SHELL_AGENT_ID;
+    }
+
+    /** Public resolver used by conversation/mobile bridges to accept dynamic custom agent ids. */
+    normalizeAgentId(token: string | undefined): string | undefined {
+        const normalized = token?.trim().toLowerCase();
+        if (!normalized) {
+            return undefined;
+        }
+        const canonical = resolveQaapAgentMentionToken(normalized);
+        if (canonical === 'openclaude' && this.detectedAgents.has(QAIQ_AGENT_ID)) {
+            return QAIQ_AGENT_ID;
+        }
+        if (canonical === SHELL_AGENT_ID) {
+            return SHELL_AGENT_ID;
+        }
+        if (canonical === ENV_AGENT_ID && process.env.QAAP_AGENT_COMMAND?.trim()) {
+            return ENV_AGENT_ID;
+        }
+        if (this.detectedAgents.has(canonical)) {
+            return canonical;
+        }
+        return undefined;
     }
 
     async detail(id: string): Promise<QaapAgentTaskDetail | undefined> {
@@ -366,10 +554,8 @@ export class QaapAgentTaskRunner {
     /** Validate the request, spawn the process and start tracking the task. */
     create(request: QaapCreateAgentTaskRequest): QaapAgentTask {
         const prompt = (request.prompt ?? '').trim();
-        const command = prompt
-            ? this.buildAgentCommand(prompt, request.agent)
-            : (request.command ?? '').trim();
-        if (!command) {
+        const rawCommand = (request.command ?? '').trim();
+        if (!prompt && !rawCommand) {
             throw new Error('A non-empty "command" or "prompt" is required.');
         }
         const cwd = path.resolve(request.cwd ?? '');
@@ -380,15 +566,15 @@ export class QaapAgentTaskRunner {
         const parentId = request.parentId && this.tasks.has(request.parentId) ? request.parentId : undefined;
         const task: QaapAgentTask = {
             id,
-            title: (request.title ?? '').trim() || prompt || command,
-            command,
+            title: (request.title ?? '').trim() || prompt || rawCommand,
+            command: rawCommand || prompt,
             cwd,
             state: 'running',
             createdAt: Date.now(),
             parentId,
         };
         this.tasks.set(id, task);
-        this.spawnProcess(task);
+        void this.spawnProcessWhenReady(task, request);
         void this.persist();
         this.onDidChangeTaskEmitter.fire({ type: 'created', task });
         return task;
@@ -398,7 +584,7 @@ export class QaapAgentTaskRunner {
      * Turn a natural-language prompt into the command that runs the coding agent.
      *
      * Resolution order, given the requested {@link agentId}:
-     *   1. A detected built-in agent (`claude`, `codex`, `aider`) → use its template.
+     *   1. A detected built-in agent (`claude`, `codex`, `qaiq`, `aider`) → use its template.
      *   2. `'env'` or any unknown id, when `QAAP_AGENT_COMMAND` is set → use that template.
      *   3. `'shell'`, or no agent available → run the prompt verbatim as a shell command.
      *
@@ -406,26 +592,165 @@ export class QaapAgentTaskRunner {
      * without a placeholder the prompt is appended.
      */
     protected buildAgentCommand(prompt: string, agentId: string | undefined): string {
-        const id = agentId?.trim() || this.defaultAgent();
+        const id = this.resolveAgentId(prompt, agentId);
+        const runnerPrompt = this.stripLeadingAgentMention(prompt);
         if (id === SHELL_AGENT_ID) {
-            return prompt;
+            return runnerPrompt;
         }
+        this.assertQaiqConfigured(id);
         const detected = this.detectedAgents.get(id);
         if (detected) {
-            return this.applyTemplate(detected.template, prompt);
+            return this.applyTemplate(detected.template, runnerPrompt, this.buildTemplateVars(id));
         }
         const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
         if (envTemplate) {
-            return this.applyTemplate(envTemplate, prompt);
+            return this.applyTemplate(envTemplate, runnerPrompt, this.buildTemplateVars(id));
         }
-        return prompt;
+        return runnerPrompt;
     }
 
-    protected applyTemplate(template: string, prompt: string): string {
+    protected resolveAgentId(prompt: string, agentId: string | undefined): string {
+        const explicit = this.normalizeAgentId(agentId);
+        if (explicit) {
+            return explicit;
+        }
+        if (agentId?.trim()) {
+            throw new Error(`Agent "${agentId.trim()}" is not available on this server.`);
+        }
+        const mentioned = this.extractLastAgentMention(prompt);
+        if (mentioned) {
+            return mentioned;
+        }
+        const unavailableMention = this.extractLastAgentMentionToken(prompt);
+        if (unavailableMention) {
+            throw new Error(`Agent "@${unavailableMention}" is not available on this server.`);
+        }
+        return this.defaultAgent();
+    }
+
+    /** Last recognized `@agent` token wins — avoids stale mentions earlier in a long transcript. */
+    protected extractLastAgentMention(prompt: string): string | undefined {
+        const regex = /@([a-z][\w-]*)/gi;
+        let last: string | undefined;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(prompt)) !== null) {
+            const normalized = this.normalizeMentionToken(match[1]);
+            if (normalized) {
+                last = normalized;
+            }
+        }
+        return last;
+    }
+
+    protected extractLastAgentMentionToken(prompt: string): string | undefined {
+        const regex = /@([a-z][\w-]*)/gi;
+        let last: string | undefined;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(prompt)) !== null) {
+            const token = resolveQaapAgentMentionToken(match[1]);
+            if (token === 'codex' || token === 'claude' || token === QAIQ_AGENT_ID || token === 'aider' || token === 'shell' || this.detectedAgents.has(token)) {
+                last = token;
+            }
+        }
+        return last;
+    }
+
+    protected normalizeMentionToken(token: string): string | undefined {
+        const normalized = token.toLowerCase();
+        return this.normalizeAgentId(normalized);
+    }
+
+    protected stripLeadingAgentMention(prompt: string): string {
+        const match = /^@([a-z][\w-]*)\b\s*/i.exec(prompt);
+        if (match && this.normalizeMentionToken(match[1])) {
+            return prompt.slice(match[0].length).trim() || prompt.trim();
+        }
+        return prompt.trim();
+    }
+
+    protected buildTemplateVars(agentId: string): Record<string, string> {
+        if (agentId !== QAIQ_AGENT_ID) {
+            return {};
+        }
+        return { qaiq_flags: this.resolveQaiqProviderFlags() };
+    }
+
+    /**
+     * Pick QAIQ --provider/--model flags from languageModelAliases and provider model lists so
+     * background jobs follow the same model the user configured in Settings.
+     */
+    protected resolveQaiqProviderFlags(): string {
+        const binding = this.resolveQaapQaiqBinding();
+        if (binding) {
+            return formatQaiqProviderFlags(binding);
+        }
+        return this.resolveQaiqProviderFlagsFromEnv(this.previewProviderEnv());
+    }
+
+    protected resolveQaapQaiqBinding(): QaapQaiqModelBinding | undefined {
+        if (!this.preferenceService) {
+            return undefined;
+        }
+        return resolveQaapQaiqModelBinding(key => this.preferenceService!.get(key));
+    }
+
+    protected previewProviderEnv(): NodeJS.ProcessEnv {
+        const env: NodeJS.ProcessEnv = { ...process.env };
+        this.applyProviderPreferenceEnv(env);
+        return env;
+    }
+
+    /** Env-only fallback when no model alias or provider list is configured yet. */
+    protected resolveQaiqProviderFlagsFromEnv(env: NodeJS.ProcessEnv): string {
+        if (env.GEMINI_API_KEY?.trim() || env.GOOGLE_API_KEY?.trim()) {
+            return '--provider gemini --model gemini-2.5-flash';
+        }
+        if (env.OPENROUTER_API_KEY?.trim()) {
+            return '--provider openai --model nvidia/nemotron-3-super-120b-a12b:free';
+        }
+        if (env.NVIDIA_API_KEY?.trim()) {
+            return '--provider openai --model meta/llama-3.3-70b-instruct';
+        }
+        if (env.OLLAMA_HOST?.trim()) {
+            return '--provider ollama --model qwen2.5-coder:7b';
+        }
+        if (env.OPENAI_API_KEY?.trim()) {
+            return '--provider openai';
+        }
+        if (env.ANTHROPIC_API_KEY?.trim()) {
+            return '';
+        }
+        return '';
+    }
+
+    /** Fail fast when QAIQ would fall back to Anthropic OAuth / empty auth and hang. */
+    protected assertQaiqConfigured(agentId: string): void {
+        if (agentId !== QAIQ_AGENT_ID) {
+            return;
+        }
+        const env = this.previewProviderEnv();
+        if (this.resolveQaiqProviderFlags()) {
+            return;
+        }
+        if (env.ANTHROPIC_API_KEY?.trim() || env.OPENAI_API_KEY?.trim()) {
+            return;
+        }
+        throw new Error(
+            'QAIQ needs an API key from QAAP Settings (Gemini, OpenRouter, NVIDIA, Ollama, OpenAI, or Anthropic) '
+            + 'or from server env (e.g. OPENROUTER_API_KEY / GEMINI_API_KEY in .env on Docker). '
+            + 'Add one, restart the server, then retry.'
+        );
+    }
+
+    protected applyTemplate(template: string, prompt: string, vars: Record<string, string> = {}): string {
         const quoted = this.shellQuote(prompt);
-        return template.includes('{prompt}')
+        let resolved = template.includes('{prompt}')
             ? template.split('{prompt}').join(quoted)
             : `${template} ${quoted}`;
+        for (const [key, value] of Object.entries(vars)) {
+            resolved = resolved.split(`{${key}}`).join(value.trim());
+        }
+        return resolved.replace(/\s+/g, ' ').trim();
     }
 
     /** POSIX single-quote escaping so the prompt is passed as one safe argument. */
@@ -445,24 +770,81 @@ export class QaapAgentTaskRunner {
         return task;
     }
 
+    protected async spawnProcessWhenReady(task: QaapAgentTask, request: QaapCreateAgentTaskRequest): Promise<void> {
+        if (this.preferenceService) {
+            await this.preferenceService.ready;
+        }
+        const prompt = (request.prompt ?? '').trim();
+        if (prompt) {
+            try {
+                const command = this.buildAgentCommand(prompt, request.agent);
+                const next = { ...task, command };
+                this.tasks.set(task.id, next);
+                void this.persist();
+                this.spawnProcess(next);
+                return;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                fs.mkdirSync(STORE_DIR, { recursive: true });
+                fs.writeFileSync(this.logPath(task.id), `${message}\n`, 'utf8');
+                this.finishTask(task.id, 'failed', 1);
+                return;
+            }
+        }
+        this.spawnProcess(task);
+    }
+
     protected spawnProcess(task: QaapAgentTask): void {
         fs.mkdirSync(STORE_DIR, { recursive: true });
         const logStream = fs.createWriteStream(this.logPath(task.id), { flags: 'w' });
         let child: ChildProcess;
         try {
-            child = spawn(task.command, { cwd: task.cwd, shell: true, env: this.buildChildEnv(task) });
+            child = spawn(task.command, {
+                cwd: task.cwd,
+                shell: true,
+                env: this.buildChildEnv(task),
+                stdio: ['ignore', 'pipe', 'pipe'],
+            });
         } catch (error) {
             logStream.end(`Failed to start: ${error instanceof Error ? error.message : String(error)}\n`);
             this.finishTask(task.id, 'failed', undefined);
             return;
         }
         this.processes.set(task.id, child);
-        child.stdout?.on('data', chunk => logStream.write(chunk));
-        child.stderr?.on('data', chunk => logStream.write(chunk));
+        let idleTimer: NodeJS.Timeout | undefined;
+        const clearIdleTimer = (): void => {
+            if (idleTimer) {
+                clearTimeout(idleTimer);
+                idleTimer = undefined;
+            }
+        };
+        const bumpIdleTimer = (): void => {
+            clearIdleTimer();
+            idleTimer = setTimeout(() => {
+                if (this.tasks.get(task.id)?.state !== 'running') {
+                    return;
+                }
+                logStream.write(`\n[qaap] task timed out after ${Math.round(IDLE_TASK_TIMEOUT_MS / 1000)}s without output.\n`);
+                child.kill('SIGTERM');
+                this.finishTask(task.id, 'failed', undefined);
+            }, IDLE_TASK_TIMEOUT_MS);
+        };
+        bumpIdleTimer();
+        child.stdout?.on('data', chunk => {
+            bumpIdleTimer();
+            logStream.write(chunk);
+            this.fireOutput(task.id, chunk);
+        });
+        child.stderr?.on('data', chunk => {
+            bumpIdleTimer();
+            logStream.write(chunk);
+            this.fireOutput(task.id, chunk);
+        });
         child.on('error', error => {
             logStream.write(`\n[qaap] process error: ${error.message}\n`);
         });
         child.on('close', code => {
+            clearIdleTimer();
             logStream.end();
             this.processes.delete(task.id);
             // A SIGTERM-killed task is already marked 'cancelled' by cancel().
@@ -473,14 +855,97 @@ export class QaapAgentTaskRunner {
         });
     }
 
+    protected fireOutput(taskId: string, chunk: unknown): void {
+        const task = this.tasks.get(taskId);
+        const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
+        const filtered = filterAgentProcessLogChunk(text);
+        if (!task || !filtered) {
+            return;
+        }
+        this.onDidChangeTaskEmitter.fire({ type: 'output', task, chunk: filtered });
+    }
+
     /**
      * Env handed to the spawned agent process. Prepends the helper-CLI dir to PATH and exposes
      * the token + API URL + this task's id, so the agent can fan out sub-tasks via `qaap-task`.
      */
     protected buildChildEnv(task: QaapAgentTask): NodeJS.ProcessEnv {
         const env: NodeJS.ProcessEnv = { ...process.env };
+        this.applyProviderPreferenceEnv(env);
+        const binding = this.isQaiqRunner(undefined, task.command) ? this.resolveQaapQaiqBinding() : undefined;
+        if (binding) {
+            applyQaapQaiqModelEnv(env, binding);
+            applyQaapQaiqCredentialEnv(env, binding, key => this.preferenceService?.get(key));
+        }
+        this.applyQaiqProviderEnv(env, task.command, binding);
+        if (this.isQaiqRunner(undefined, task.command)) {
+            env.QAAP_HOSTED_AGENT = '1';
+        }
         this.applyHelperEnv(env, task.id);
         return env;
+    }
+
+    /**
+     * When QAIQ runs with OpenRouter/Gemini/Ollama/NVIDIA flags, drop Anthropic credentials so the
+     * CLI does not fall back to subscription OAuth and return 429 instead of using BYOK keys.
+     */
+    protected applyQaiqProviderEnv(env: NodeJS.ProcessEnv, command: string, binding?: QaapQaiqModelBinding): void {
+        if (!this.isQaiqRunner(undefined, command)) {
+            return;
+        }
+        const usesThirdPartyProvider = binding !== undefined && binding.provider !== 'anthropic'
+            || command.includes('--provider openai')
+            || command.includes('--provider gemini')
+            || command.includes('--provider ollama')
+            || command.includes('--provider mistral');
+        if (usesThirdPartyProvider) {
+            delete env.ANTHROPIC_API_KEY;
+        }
+        if (binding?.vendor === 'openrouter' || (command.includes('--provider openai') && env.OPENROUTER_API_KEY?.trim())) {
+            this.applyOpenRouterOpenAiCompatEnv(env);
+        }
+        if (binding?.vendor === 'nvidia' || (command.includes('--provider openai') && env.NVIDIA_API_KEY?.trim() && !env.OPENROUTER_API_KEY?.trim())) {
+            this.applyNvidiaOpenAiCompatEnv(env);
+        }
+    }
+
+    protected applyProviderPreferenceEnv(env: NodeJS.ProcessEnv): void {
+        if (!this.preferenceService) {
+            return;
+        }
+        for (const mapping of AGENT_ENV_PREFS) {
+            if (env[mapping.env]?.trim()) {
+                continue;
+            }
+            const value = this.preferenceService.get<string>(mapping.pref);
+            if (typeof value === 'string' && value.trim()) {
+                env[mapping.env] = value.trim();
+            }
+        }
+        this.applyOpenRouterOpenAiCompatEnv(env);
+    }
+
+    /** QAIQ's OpenAI provider reads OPENAI_*; map OpenRouter prefs when needed. */
+    protected applyOpenRouterOpenAiCompatEnv(env: NodeJS.ProcessEnv): void {
+        if (!env.OPENROUTER_API_KEY?.trim() || env.OPENAI_API_KEY?.trim()) {
+            return;
+        }
+        env.OPENAI_API_KEY = env.OPENROUTER_API_KEY.trim();
+        if (!env.OPENAI_BASE_URL?.trim()) {
+            env.OPENAI_BASE_URL = env.OPENROUTER_BASE_URL?.trim() || 'https://openrouter.ai/api/v1';
+        }
+    }
+
+    /** QAIQ's OpenAI provider reads OPENAI_*; map NVIDIA NIM prefs when needed. */
+    protected applyNvidiaOpenAiCompatEnv(env: NodeJS.ProcessEnv): void {
+        if (!env.NVIDIA_API_KEY?.trim() || env.OPENAI_API_KEY?.trim()) {
+            return;
+        }
+        env.OPENAI_API_KEY = env.NVIDIA_API_KEY.trim();
+        if (!env.OPENAI_BASE_URL?.trim()) {
+            env.OPENAI_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+        }
+        env.NVIDIA_NIM = '1';
     }
 
     /**
@@ -548,7 +1013,8 @@ export class QaapAgentTaskRunner {
                     position: start,
                 });
                 const text = buffer.subarray(0, bytesRead).toString('utf8');
-                return start > 0 ? `…(truncated)\n${text}` : text;
+                const raw = start > 0 ? `…(truncated)\n${text}` : text;
+                return filterAgentProcessLogChunk(raw);
             } finally {
                 await handle.close();
             }

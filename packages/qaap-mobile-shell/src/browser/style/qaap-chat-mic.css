@@ -6,6 +6,13 @@
     justify-content: center;
     cursor: pointer;
     user-select: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .qaap-chat-mic-btn.qaap-chat-mic-btn-recording {
@@ -30,6 +37,7 @@
     transform: translateY(-50%);
     width: 26px;
     height: 26px;
+    z-index: 1;
     color: var(--theia-descriptionForeground);
     opacity: 0.85;
 }
@@ -49,4 +57,24 @@
 .theia-mobile-projects-inline-input-wrap.qaap-has-mic
 .theia-mobile-projects-inline-input {
     padding-right: 64px;
+}
+
+/* Mic in the Work Hub sticky composer (between text field and send). */
+.qaap-chat-mic-btn-sticky {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--theia-descriptionForeground);
+    opacity: 0.85;
+}
+
+.qaap-chat-mic-btn-sticky:hover,
+.qaap-chat-mic-btn-sticky:focus-visible {
+    color: var(--theia-foreground);
+    opacity: 1;
+    outline: none;
+}
+
+.qaap-chat-mic-btn-sticky.qaap-chat-mic-btn-recording {
+    opacity: 1;
 }

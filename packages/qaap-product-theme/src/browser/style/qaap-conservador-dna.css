@@ -230,8 +230,7 @@ body.qaap-theme-dark .q-badge {
   text-transform: uppercase;
 }
 
-body.qaap-theme-dark .theia-mobile-projects-status-dot,
-body.qaap-theme-dark .theia-mobile-open-repo-status-icon {
+body.qaap-theme-dark .theia-mobile-projects-status-dot {
   width: 6px;
   height: 6px;
   min-width: 6px;
@@ -239,7 +238,6 @@ body.qaap-theme-dark .theia-mobile-open-repo-status-icon {
 }
 
 body.qaap-theme-dark .theia-mobile-projects-status-pill,
-body.qaap-theme-dark .theia-mobile-open-repo-status-text,
 body.qaap-theme-dark .theia-mobile-pr-stat-chip {
   border: 1px solid currentColor;
   border-radius: var(--q-radius-pill);
@@ -282,11 +280,18 @@ body.qaap-theme-dark .theia-mobile-open-repo-close {
 body.qaap-theme-dark .q-button-primary,
 body.qaap-theme-dark .theia-button.main,
 body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary,
-body.qaap-theme-dark .theia-mobile-projects-new-btn,
 body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
   min-height: 48px;
   border-color: var(--q-accent);
   border-radius: var(--q-radius-card);
+  background: var(--q-accent);
+  color: var(--q-bg);
+  font-family: var(--q-font-sans);
+}
+
+body.qaap-theme-dark .theia-mobile-projects-fab {
+  border-color: var(--q-accent);
+  border-radius: 50%;
   background: var(--q-accent);
   color: var(--q-bg);
   font-family: var(--q-font-sans);

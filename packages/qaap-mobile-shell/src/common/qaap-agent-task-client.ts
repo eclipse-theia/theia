@@ -10,6 +10,24 @@
 export const QAAP_AGENT_TASK_API_PATH = '/qaap/api/agent-tasks';
 
 export const SHELL_AGENT_ID = 'shell';
+export const THEIA_CODER_AGENT_ID = 'Coder';
+export const QAIQ_AGENT_ID = 'qaiq';
+
+/** UI/storage id before the QAIQ rename; still accepted when resolving selection. */
+export const LEGACY_OPENCLAUDE_AGENT_ID = 'openclaude';
+
+const BUILTIN_BACKEND_AGENT_IDS = new Set([
+    'codex',
+    'claude',
+    QAIQ_AGENT_ID,
+    'aider',
+    SHELL_AGENT_ID,
+]);
+
+/** Normalize a mention token (lowercase); does not validate availability. */
+export function resolveQaapAgentMentionToken(token: string): string {
+    return token.trim().toLowerCase();
+}
 
 /** Legacy global fallback for users that picked an agent before selections became cwd-scoped. */
 export const SELECTED_AGENT_STORAGE_KEY = 'qaap.agentTasks.selectedAgent';
@@ -43,11 +61,19 @@ export function scopedAgentStorageKey(cwd: string): string {
     return `${SELECTED_AGENT_STORAGE_KEY}.${hashString(cwd)}`;
 }
 
+export function migrateLegacyBackendAgentId(agentId: string | undefined): string | undefined {
+    if (!agentId) {
+        return undefined;
+    }
+    return agentId === LEGACY_OPENCLAUDE_AGENT_ID ? QAIQ_AGENT_ID : agentId;
+}
+
 export function readStoredAgent(cwd: string | undefined): string | undefined {
     try {
-        return cwd
+        const raw = cwd
             ? window.localStorage.getItem(scopedAgentStorageKey(cwd)) ?? window.localStorage.getItem(SELECTED_AGENT_STORAGE_KEY) ?? undefined
             : window.localStorage.getItem(SELECTED_AGENT_STORAGE_KEY) ?? undefined;
+        return migrateLegacyBackendAgentId(raw ?? undefined);
     } catch {
         return undefined;
     }
@@ -74,8 +100,9 @@ export function reconcileSelectedAgent(
     cwd: string | undefined,
 ): string {
     const ids = new Set(agents.map(agent => agent.id));
-    if (current && ids.has(current)) {
-        return current;
+    const normalizedCurrent = migrateLegacyBackendAgentId(current);
+    if (normalizedCurrent && ids.has(normalizedCurrent)) {
+        return normalizedCurrent;
     }
     const stored = readStoredAgent(cwd);
     if (stored && ids.has(stored)) {
@@ -87,6 +114,50 @@ export function reconcileSelectedAgent(
     return agents[0]?.id ?? SHELL_AGENT_ID;
 }
 
+/**
+ * Sticky/transcript composer agent picker: same as {@link reconcileSelectedAgent} but preserves
+ * {@link THEIA_CODER_AGENT_ID}, which is offered in the UI but is not part of the VPS task list.
+ */
+export function reconcileStickyComposerAgent(
+    current: string | undefined,
+    agents: readonly QaapAgentTaskAgentOption[],
+    defaultAgent: string | undefined,
+    cwd: string | undefined,
+    coderAgentAvailable: boolean,
+): string {
+    const normalizedCurrent = migrateLegacyBackendAgentId(current);
+    if (isTheiaCoderAgent(normalizedCurrent)) {
+        return coderAgentAvailable
+            ? THEIA_CODER_AGENT_ID
+            : reconcileSelectedAgent(undefined, agents, defaultAgent, cwd);
+    }
+    const ids = new Set(agents.map(agent => agent.id));
+    if (normalizedCurrent && ids.has(normalizedCurrent)) {
+        return normalizedCurrent;
+    }
+    const stored = migrateLegacyBackendAgentId(readStoredAgent(cwd));
+    if (isTheiaCoderAgent(stored) && coderAgentAvailable) {
+        return THEIA_CODER_AGENT_ID;
+    }
+    return reconcileSelectedAgent(current, agents, defaultAgent, cwd);
+}
+
+export function isStickyComposerAgentSelected(
+    agentId: string,
+    selectedAgentId: string | undefined,
+    cwd: string | undefined,
+): boolean {
+    const effective = migrateLegacyBackendAgentId(selectedAgentId)
+        ?? migrateLegacyBackendAgentId(readStoredAgent(cwd));
+    if (!effective) {
+        return false;
+    }
+    if (isTheiaCoderAgent(agentId)) {
+        return isTheiaCoderAgent(effective);
+    }
+    return effective === agentId;
+}
+
 export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: string): QaapCreateAgentTaskBody {
     if (agent === SHELL_AGENT_ID) {
         return { command: draft, cwd };
@@ -96,6 +167,111 @@ export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: stri
 
 export function shellAgentFallback(): QaapAgentTaskAgentOption {
     return { id: SHELL_AGENT_ID, label: 'Shell', available: true };
+}
+
+/** Map UI / mention tokens to a built-in backend runner agent id, when recognized. */
+export function normalizeBackendAgentId(agentId: string | undefined): string | undefined {
+    const normalized = agentId?.trim().toLowerCase();
+    if (!normalized) {
+        return undefined;
+    }
+    const id = resolveQaapAgentMentionToken(normalized);
+    return BUILTIN_BACKEND_AGENT_IDS.has(id) ? id : undefined;
+}
+
+export function isTheiaCoderAgent(agentId: string | undefined): boolean {
+    return agentId?.trim().toLowerCase() === THEIA_CODER_AGENT_ID.toLowerCase();
+}
+
+export function isTheiaCoderMention(content: string): boolean {
+    return /^@coder\b/i.test(content.trim());
+}
+
+export function isQaiqAgent(agentId: string | undefined): boolean {
+    const normalized = agentId?.trim().toLowerCase();
+    return normalized === QAIQ_AGENT_ID || normalized === LEGACY_OPENCLAUDE_AGENT_ID;
+}
+
+/**
+ * Agent for a mobile/background submit: `@mention` in the draft wins, then the pinned chat agent.
+ */
+export function resolveExplicitAgentForSubmit(
+    draft: string,
+    options: { readonly pinnedChatAgentId?: string },
+): string | undefined {
+    const mentioned = extractBackendAgentMention(draft);
+    if (mentioned) {
+        return mentioned;
+    }
+    const pinned = options.pinnedChatAgentId?.trim();
+    if (!pinned) {
+        return undefined;
+    }
+    return migrateLegacyBackendAgentId(pinned) ?? pinned;
+}
+
+/**
+ * Last recognized `@agent` mention in `text` (e.g. `@Codex` near the end of a message wins over
+ * an older `@Claude` in the same string).
+ */
+export function extractBackendAgentMention(text: string): string | undefined {
+    const regex = /@([a-z][\w-]*)/gi;
+    let last: string | undefined;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+        const resolved = normalizeBackendAgentId(match[1]);
+        if (resolved) {
+            last = resolved;
+        }
+    }
+    return last;
+}
+
+/**
+ * Pick the agent for a new turn: `@mention` in this message beats the picker, then stored/default.
+ */
+export function resolveBackendAgentForTurn(
+    userContent: string,
+    agents: readonly QaapAgentTaskAgentOption[],
+    options: {
+        readonly explicitAgentId?: string;
+        readonly storedAgentId?: string;
+        readonly defaultAgentId?: string;
+        readonly conversationAgentId?: string;
+    },
+): string {
+    const ids = new Set(agents.map(agent => agent.id));
+    const mentioned = extractBackendAgentMention(userContent);
+    if (mentioned) {
+        return mentioned;
+    }
+    const explicit = resolveAgentOptionId(options.explicitAgentId, agents);
+    if (explicit && (ids.has(explicit) || normalizeBackendAgentId(explicit))) {
+        return explicit;
+    }
+    const fromConversation = resolveAgentOptionId(options.conversationAgentId, agents);
+    if (fromConversation && (ids.has(fromConversation) || normalizeBackendAgentId(fromConversation))) {
+        return fromConversation;
+    }
+    return reconcileSelectedAgent(
+        options.storedAgentId,
+        agents,
+        options.defaultAgentId,
+        undefined,
+    );
+}
+
+/** Accept built-ins by alias and custom server agents by exact id. */
+export function resolveAgentOptionId(agentId: string | undefined, agents: readonly QaapAgentTaskAgentOption[]): string | undefined {
+    const trimmed = agentId?.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+    const exact = agents.find(agent => agent.id.toLowerCase() === trimmed.toLowerCase());
+    if (exact) {
+        return exact.id;
+    }
+    return normalizeBackendAgentId(trimmed) ?? migrateLegacyBackendAgentId(trimmed);
 }
 
 export async function fetchAgentTaskList(cwd?: string): Promise<QaapAgentTaskListSnapshot> {

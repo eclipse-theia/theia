@@ -141,7 +141,7 @@ export class QaapAgentTasksWidget extends ReactWidget {
                             )
                             : nls.localize(
                                 'qaap/agentTasks/noAgent',
-                                'No coding agent detected on the server. Install one of: claude, codex, aider — or set QAAP_AGENT_COMMAND.',
+                                'No server-side coding agent detected. Install claude, codex, or aider; or configure QAAP_AGENT_COMMANDS / QAAP_AGENT_COMMAND.',
                             )}
                     </div>
                 )}

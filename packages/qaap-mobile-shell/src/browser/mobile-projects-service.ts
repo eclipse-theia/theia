@@ -29,6 +29,7 @@ import type { QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/commo
 import {
     MobileProjectEntry,
     MobileProjectFilter,
+    MobileProjectsHubView,
     mobileProjectColorForName,
     mobileProjectInitials,
     StoredMobileProject,
@@ -72,6 +73,7 @@ export class MobileProjectsService {
     protected readonly activeTasks: MobileProjectsActiveTasks;
 
     protected filter: MobileProjectFilter = 'all';
+    protected hubView: MobileProjectsHubView = 'repos';
 
     protected readHiddenProjectIds(): Set<string> {
         if (typeof localStorage === 'undefined') {
@@ -602,6 +604,14 @@ export class MobileProjectsService {
 
     setFilter(filter: MobileProjectFilter): void {
         this.filter = filter;
+    }
+
+    getHubView(): MobileProjectsHubView {
+        return this.hubView;
+    }
+
+    setHubView(view: MobileProjectsHubView): void {
+        this.hubView = view;
     }
 
     async loadProjects(): Promise<MobileProjectEntry[]> {

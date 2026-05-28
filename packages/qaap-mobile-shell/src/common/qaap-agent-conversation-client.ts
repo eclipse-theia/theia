@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { buildConversationListMetrics } from './qaap-agent-conversation-list-metrics';
+
 /**
  * HTTP helpers for the persistent VPS agent-conversation API.
  * Keep {@link QAAP_AGENT_CONVERSATION_API_PATH} in sync with `@theia/qaap-cloud-workspace`.
@@ -29,12 +31,30 @@ export interface QaapAgentConversationSummaryDTO {
     readonly paused?: boolean;
     /** Id of the parent conversation when this one was created via fork. */
     readonly forkedFromId?: string;
+    readonly activityLabel?: string;
+    readonly linesAdded?: number;
+    readonly linesRemoved?: number;
+    readonly turnStartedAt?: number;
+    readonly lastTurnDurationMs?: number;
 }
+
+export type QaapAgentMessageSegmentDTO =
+    | { readonly type: 'text'; readonly content: string }
+    | { readonly type: 'thinking'; readonly content: string }
+    | {
+        readonly type: 'tool';
+        readonly toolUseId: string;
+        readonly name: string;
+        readonly args: string;
+        readonly finished: boolean;
+        readonly result?: string;
+    };
 
 export interface QaapAgentMessageDTO {
     readonly id: string;
     readonly role: 'user' | 'agent';
     readonly content: string;
+    readonly segments?: QaapAgentMessageSegmentDTO[];
     readonly createdAt: number;
     readonly taskId?: string;
     readonly error?: string;
@@ -79,6 +99,7 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         priority: conv.priority,
         paused: conv.paused,
         forkedFromId: conv.forkedFromId,
+        ...buildConversationListMetrics({ status: conv.status, messages: conv.messages }),
     };
 }
 
@@ -136,12 +157,16 @@ export async function createConversation(body: QaapCreateConversationBody): Prom
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
-export async function postConversationMessage(id: string, content: string): Promise<QaapAgentConversationDTO> {
+export async function postConversationMessage(
+    id: string,
+    content: string,
+    agent?: string,
+): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, agent }),
     });
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);

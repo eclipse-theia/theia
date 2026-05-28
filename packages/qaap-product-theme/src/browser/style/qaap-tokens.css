@@ -473,8 +473,6 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
      foreground/background swap (which can look too stark). */
   body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary,
   body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary,
-  body.qaap-theme-light .theia-mobile-projects-new-btn,
-  body.qaap-theme-dark .theia-mobile-projects-new-btn,
   body.qaap-theme-light .theia-mobile-open-repo-public-submit,
   body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
     border-color: var(--qaap-accent);
@@ -484,12 +482,25 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
     border-radius: var(--qaap-radius-md);
   }
 
+  body.qaap-theme-light .theia-mobile-projects-fab,
+  body.qaap-theme-dark .theia-mobile-projects-fab {
+    border-color: var(--qaap-accent);
+    background: var(--qaap-accent);
+    color: var(--qaap-bg);
+    border-radius: 50%;
+  }
+
   body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
   body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
-  body.qaap-theme-light .theia-mobile-projects-new-btn:hover,
-  body.qaap-theme-dark .theia-mobile-projects-new-btn:hover,
   body.qaap-theme-light .theia-mobile-open-repo-public-submit:hover:not(:disabled),
   body.qaap-theme-dark .theia-mobile-open-repo-public-submit:hover:not(:disabled) {
+    background: var(--qaap-accent-ink);
+    border-color: var(--qaap-accent-ink);
+    color: var(--qaap-bg);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-fab:hover,
+  body.qaap-theme-dark .theia-mobile-projects-fab:hover {
     background: var(--qaap-accent-ink);
     border-color: var(--qaap-accent-ink);
     color: var(--qaap-bg);

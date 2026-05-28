@@ -103,8 +103,9 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             res.status(400).json({ error: '"content" must be a non-empty string.' });
             return;
         }
+        const agent = typeof body.agent === 'string' ? body.agent.trim() : undefined;
         try {
-            const conv = this.store.postUserMessage(req.params.id, content);
+            const conv = this.store.postUserMessage(req.params.id, content, agent || undefined);
             res.status(202).json(conv);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

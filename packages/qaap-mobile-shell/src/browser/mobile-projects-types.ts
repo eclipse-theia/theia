@@ -41,6 +41,9 @@ export interface MobileProjectEntry {
 
 export type MobileProjectFilter = 'all' | 'active' | 'pinned';
 
+/** Work Hub primary list: repositories (expandable cards) or flat chat inbox. */
+export type MobileProjectsHubView = 'repos' | 'chats';
+
 /** Persisted clone of a project card (URI optional). */
 export interface StoredMobileProject {
     id: string;

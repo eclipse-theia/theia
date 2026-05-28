@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { buildConversationListMetrics } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-conversation-list-metrics';
+
 /** HTTP base path for the persistent agent-conversation endpoints. */
 export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
 
@@ -16,10 +18,25 @@ export type QaapAgentConversationStatus =
 
 export type QaapAgentMessageRole = 'user' | 'agent';
 
+/** Structured blocks parsed from QAIQ {@code stream-json} output (thinking, tools, text). */
+export type QaapAgentMessageSegment =
+    | { readonly type: 'text'; readonly content: string }
+    | { readonly type: 'thinking'; readonly content: string }
+    | {
+        readonly type: 'tool';
+        readonly toolUseId: string;
+        readonly name: string;
+        readonly args: string;
+        readonly finished: boolean;
+        readonly result?: string;
+    };
+
 export interface QaapAgentMessage {
     readonly id: string;
     readonly role: QaapAgentMessageRole;
     readonly content: string;
+    /** Present for agent turns driven by QAIQ stream-json. */
+    readonly segments?: QaapAgentMessageSegment[];
     /** Epoch milliseconds. */
     readonly createdAt: number;
     /** When set on a user message, points at the agent-task spawned for that turn. */
@@ -66,6 +83,14 @@ export interface QaapAgentConversationSummary {
     readonly priority?: boolean;
     readonly paused?: boolean;
     readonly forkedFromId?: string;
+    /** In-flight tool/status label while {@link status} is `'streaming'`. */
+    readonly activityLabel?: string;
+    readonly linesAdded?: number;
+    readonly linesRemoved?: number;
+    /** Epoch ms when the current turn started (last user message). */
+    readonly turnStartedAt?: number;
+    /** Duration of the last completed agent turn. */
+    readonly lastTurnDurationMs?: number;
 }
 
 /** Conversations bucketed by project working directory. */
@@ -94,6 +119,8 @@ export interface QaapCreateAgentConversationRequest {
 
 export interface QaapPostAgentMessageRequest {
     readonly content: string;
+    /** When set, overrides the conversation's stored agent for this turn (and updates it). */
+    readonly agent?: string;
 }
 
 export interface QaapRenameAgentConversationRequest {
@@ -116,7 +143,7 @@ export type QaapAgentConversationEvent =
 
 export function toConversationSummary(conv: QaapAgentConversation): QaapAgentConversationSummary {
     const last = conv.messages[conv.messages.length - 1];
-    return {
+    const base: QaapAgentConversationSummary = {
         id: conv.id,
         cwd: conv.cwd,
         agentId: conv.agentId,
@@ -131,6 +158,7 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         paused: conv.paused || undefined,
         forkedFromId: conv.forkedFromId,
     };
+    return { ...base, ...buildConversationListMetrics({ status: conv.status, messages: conv.messages }) };
 }
 
 function excerpt(text: string): string {

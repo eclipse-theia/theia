@@ -22,6 +22,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
     protected static readonly BUTTON_CLASS = 'qaap-chat-mic-btn';
     protected static readonly TOOLBAR_SELECTOR = '.theia-ChatInputOptions-right';
     protected static readonly INLINE_WRAP_SELECTOR = '.theia-mobile-projects-inline-input-wrap';
+    protected static readonly STICKY_WRAP_SELECTOR = '.theia-mobile-projects-sticky-composer-input-wrap';
 
     protected readonly toDispose = new DisposableCollection();
     protected observer: MutationObserver | undefined;
@@ -35,6 +36,8 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                 .forEach(toolbar => this.injectButton(toolbar));
             root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.INLINE_WRAP_SELECTOR)
                 .forEach(wrap => this.injectInlineButton(wrap));
+            root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR)
+                .forEach(wrap => this.injectStickyButton(wrap));
         };
         sweep(document);
 
@@ -49,6 +52,9 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                     }
                     if (node.matches?.(QaapChatMicTranscribeContribution.INLINE_WRAP_SELECTOR)) {
                         this.injectInlineButton(node);
+                    }
+                    if (node.matches?.(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR)) {
+                        this.injectStickyButton(node);
                     }
                     sweep(node);
                 });
@@ -80,38 +86,68 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
     }
 
     protected injectInlineButton(wrap: HTMLElement): void {
+        this.injectPlainInputMicButton(
+            wrap,
+            'input.theia-mobile-projects-inline-input',
+            'qaap-chat-mic-btn-inline',
+            true,
+        );
+    }
+
+    protected injectStickyButton(wrap: HTMLElement): void {
+        this.injectPlainInputMicButton(
+            wrap,
+            'input.theia-mobile-projects-sticky-composer-input',
+            'qaap-chat-mic-btn-sticky',
+            false,
+        );
+    }
+
+    protected injectPlainInputMicButton(
+        wrap: HTMLElement,
+        inputSelector: string,
+        layoutClass: string,
+        useInlinePadding: boolean,
+    ): void {
         if (wrap.querySelector(`.${QaapChatMicTranscribeContribution.BUTTON_CLASS}`)) {
             return;
         }
-        const input = wrap.querySelector<HTMLInputElement>('input.theia-mobile-projects-inline-input');
+        const input = wrap.querySelector<HTMLInputElement>(inputSelector);
         if (!input) {
             return;
         }
         const button = this.buildButton();
-        // Sits absolutely-positioned to the left of the send affordance — the wrap is `position: relative`
-        // already and the input gets extra right padding via the `qaap-has-mic` class.
-        button.classList.add('qaap-chat-mic-btn-inline');
-        wrap.classList.add('qaap-has-mic');
+        button.classList.add(layoutClass);
+        if (useInlinePadding) {
+            wrap.classList.add('qaap-has-mic');
+        }
         this.wireInlineRecognition(button, input);
-        wrap.appendChild(button);
+        const send = wrap.querySelector<HTMLElement>(
+            '.theia-mobile-projects-sticky-composer-send, .theia-mobile-projects-inline-start',
+        );
+        if (send) {
+            wrap.insertBefore(button, send);
+        } else {
+            wrap.appendChild(button);
+        }
     }
 
-    protected buildButton(): HTMLSpanElement {
-        const span = document.createElement('span');
-        span.classList.add('option', QaapChatMicTranscribeContribution.BUTTON_CLASS);
-        span.setAttribute('role', 'button');
-        span.tabIndex = 0;
+    protected buildButton(): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.classList.add('option', QaapChatMicTranscribeContribution.BUTTON_CLASS);
         const startLabel = nls.localize('qaap/chat/micStart', 'Dictate with microphone');
-        span.setAttribute('aria-label', startLabel);
-        span.title = startLabel;
-        span.setAttribute('aria-pressed', 'false');
+        button.setAttribute('aria-label', startLabel);
+        button.title = startLabel;
+        button.setAttribute('aria-pressed', 'false');
         const icon = document.createElement('span');
         icon.className = 'codicon codicon-mic';
-        span.appendChild(icon);
-        return span;
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+        return button;
     }
 
-    protected wireRecognition(button: HTMLSpanElement, chatInput: HTMLElement): void {
+    protected wireRecognition(button: HTMLButtonElement, chatInput: HTMLElement): void {
         const Ctor = this.getSpeechRecognitionCtor();
         if (!Ctor) {
             return;
@@ -171,17 +207,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             }
         };
 
-        button.addEventListener('click', evt => {
-            evt.preventDefault();
-            evt.stopPropagation();
-            toggle();
-        });
-        button.addEventListener('keydown', evt => {
-            if (evt.key === 'Enter' || evt.key === ' ') {
-                evt.preventDefault();
-                toggle();
-            }
-        });
+        this.wireToggleHandlers(button, toggle);
 
         // Stop recognition if the button is detached (widget hidden, chat view closed).
         if (typeof MutationObserver !== 'undefined') {
@@ -199,7 +225,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         }
     }
 
-    protected wireInlineRecognition(button: HTMLSpanElement, input: HTMLInputElement): void {
+    protected wireInlineRecognition(button: HTMLButtonElement, input: HTMLInputElement): void {
         const Ctor = this.getSpeechRecognitionCtor();
         if (!Ctor) {
             return;
@@ -254,17 +280,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             }
         };
 
-        button.addEventListener('click', evt => {
-            evt.preventDefault();
-            evt.stopPropagation();
-            toggle();
-        });
-        button.addEventListener('keydown', evt => {
-            if (evt.key === 'Enter' || evt.key === ' ') {
-                evt.preventDefault();
-                toggle();
-            }
-        });
+        this.wireToggleHandlers(button, toggle);
 
         // Stop recognition if the inline input is removed (composer collapsed, project card replaced).
         const parent = button.parentElement;
@@ -278,6 +294,25 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             detachObserver.observe(parent, { childList: true });
             this.toDispose.push(Disposable.create(() => detachObserver.disconnect()));
         }
+    }
+
+    /**
+     * Native {@link HTMLButtonElement} plus {@link stopPropagation} on pointerdown so parent scroll /
+     * card handlers do not swallow the tap on mobile (inline composer and chat toolbar).
+     */
+    protected wireToggleHandlers(button: HTMLButtonElement, toggle: () => void): void {
+        const activate = (evt: Event): void => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            toggle();
+        };
+        button.addEventListener('pointerdown', evt => evt.stopPropagation());
+        button.addEventListener('click', activate);
+        button.addEventListener('keydown', evt => {
+            if (evt.key === 'Enter' || evt.key === ' ') {
+                activate(evt);
+            }
+        });
     }
 
     protected replaceInputText(editor: monaco.editor.ICodeEditor, text: string): void {
@@ -301,7 +336,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         });
     }
 
-    protected markButtonActive(button: HTMLSpanElement): void {
+    protected markButtonActive(button: HTMLButtonElement): void {
         button.classList.add('qaap-chat-mic-btn-recording');
         button.setAttribute('aria-pressed', 'true');
         const stopLabel = nls.localize('qaap/chat/micStop', 'Stop dictation');
@@ -314,7 +349,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         }
     }
 
-    protected markButtonIdle(button: HTMLSpanElement): void {
+    protected markButtonIdle(button: HTMLButtonElement): void {
         button.classList.remove('qaap-chat-mic-btn-recording');
         button.setAttribute('aria-pressed', 'false');
         const startLabel = nls.localize('qaap/chat/micStart', 'Dictate with microphone');

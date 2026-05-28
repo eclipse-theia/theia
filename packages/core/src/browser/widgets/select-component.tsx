@@ -19,6 +19,7 @@ import * as ReactDOM from 'react-dom';
 import * as DOMPurify from 'dompurify';
 import { codicon } from './widget';
 import { measureTextHeight, measureTextWidth } from '../browser';
+import { matchesMobileNarrowViewport } from '../shell/mobile-layout-state';
 
 import '../../../src/browser/style/select-component.css';
 
@@ -159,10 +160,32 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 this.hide();
             }
         };
-        const hideOnResize = () => this.hide();
+        const hideOnPointerDown = (event: Event) => {
+            const target = event.target;
+            if (!(target instanceof Node)) {
+                this.hide();
+                return;
+            }
+            if (this.fieldRef.current?.contains(target) || this.dropdownRef.current?.contains(target)) {
+                return;
+            }
+            this.hide();
+        };
+        const hideOnResize = () => {
+            if (!this.state.dimensions) {
+                return;
+            }
+            // Soft-keyboard viewport shrink fires `resize` on phones and would close the menu
+            // immediately after open; outside `pointerdown` still dismisses it.
+            if (matchesMobileNarrowViewport()) {
+                return;
+            }
+            this.hide();
+        };
         this.mountedListeners.set('scroll', hide);
         this.mountedListeners.set('wheel', hide);
         this.mountedListeners.set('resize', hideOnResize);
+        this.mountedListeners.set('pointerdown', hideOnPointerDown);
 
         let parent = this.fieldRef.current?.parentElement;
         while (parent) {
@@ -175,7 +198,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         }
 
         for (const [key, listener] of this.mountedListeners.entries()) {
-            window.addEventListener(key, listener);
+            if (key === 'pointerdown') {
+                window.addEventListener(key, listener, true);
+            } else {
+                window.addEventListener(key, listener);
+            }
         }
 
         // Catch Lumino sash drags globally - observe the closest lm-Widget panel
@@ -199,8 +226,15 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                         continue;
                     }
 
-                    // Only hide if the panel dimensions actually changed by more than 2 pixels
-                    if (this.state.dimensions && (Math.abs(width - lastWidth) > 2 || Math.abs(height - lastHeight) > 2)) {
+                    // Width changes (panel drag) dismiss the menu. Height-only changes are common when
+                    // the mobile keyboard opens and must not close a menu the user just opened.
+                    if (this.state.dimensions && Math.abs(width - lastWidth) > 2) {
+                        this.hide();
+                    } else if (
+                        this.state.dimensions
+                        && Math.abs(height - lastHeight) > 2
+                        && !matchesMobileNarrowViewport()
+                    ) {
                         this.hide();
                     }
 
@@ -222,7 +256,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 parent = parent.parentElement;
             }
             for (const [key, listener] of this.mountedListeners.entries()) {
-                window.removeEventListener(key, listener);
+                if (key === 'pointerdown') {
+                    window.removeEventListener(key, listener, true);
+                } else {
+                    window.removeEventListener(key, listener);
+                }
             }
         }
     }
@@ -244,8 +282,12 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 onClick={e => this.handleClickEvent(e)}
                 onBlur={
                     () => {
-                        this.hide();
-                        this.props.onBlur?.();
+                        // Dropdown is portaled to `document.body`; blur fires before option
+                        // `pointerdown` on touch devices. Outside-close uses capture `pointerdown`.
+                        if (!this.state.dimensions) {
+                            this.hide();
+                            this.props.onBlur?.();
+                        }
                     }
                 }
                 onFocus={() => this.props.onFocus?.()}
@@ -389,17 +431,25 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             }
         }
 
-        const maxHeight = invert
-            ? this.state.dimensions.top - shellArea.top
+        const viewport = window.visualViewport;
+        const viewportHeight = viewport?.height ?? window.innerHeight;
+        const viewportWidth = viewport?.width ?? window.innerWidth;
+        const rawMaxHeight = invert
+            ? this.state.dimensions.top
             : effectiveShellBottom - this.state.dimensions.bottom;
+        const maxHeight = Math.max(120, Math.min(rawMaxHeight, viewportHeight * 0.55));
+        const dropdownWidth = Math.min(
+            Math.max(this.state.dimensions.width, this.optimalWidth),
+            this.alignLeft ? maxWidth : this.state.dimensions.right
+        );
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
-            top: invert ? 'none' : this.state.dimensions.bottom,
-            bottom: invert ? shellArea.top - this.state.dimensions.top : 'none',
-            left: this.alignLeft ? this.state.dimensions.left : 'none',
-            right: this.alignLeft ? 'none' : shellArea.width - this.state.dimensions.right,
-            width: Math.min(Math.max(this.state.dimensions.width, this.optimalWidth), maxWidth),
+            top: invert ? undefined : this.state.dimensions.bottom,
+            bottom: invert ? viewportHeight - this.state.dimensions.top : undefined,
+            left: this.alignLeft ? this.state.dimensions.left : undefined,
+            right: this.alignLeft ? undefined : viewportWidth - this.state.dimensions.right,
+            width: dropdownWidth,
             maxHeight,
-            position: 'absolute'
+            position: 'fixed'
         }} ref={this.dropdownRef}>
             {items}
         </div>;
