@@ -62,7 +62,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /opt/qaiq/bin/qaiq /usr/local/bin/qaiq \
     && qaiq --version \
     && pipx install aider-chat \
-    && aider --version
+    && /root/.local/bin/aider --version
 
 ENV PATH="/root/.local/bin:${PATH}" \
     QAAP_DEFAULT_AGENT=qaiq
