@@ -24,7 +24,7 @@ import {
 } from '../../common/lm-tool-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common';
-import { ToolRequest, ToolRequestParameters, createToolCallError } from '@theia/ai-core/lib/common/language-model';
+import { ToolRequest, ToolRequestParameters, ToolInvocationContext, createToolCallError } from '@theia/ai-core/lib/common/language-model';
 
 export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
     private readonly proxy: LanguageModelToolsExt;
@@ -43,12 +43,14 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
         }
     }
 
-    $registerTool(handle: number, name: string, metadata: LanguageModelToolDto): void {
+    $registerTool(handle: number, name: string, metadata: LanguageModelToolDto, pluginId: string): void {
         if (!this.toolInvocationRegistry) {
             console.warn('ToolInvocationRegistry not available - tool will not be registered');
             return;
         }
-        const self = this;
+        if (this.toolInvocationRegistry.getFunction(name)) {
+            throw new Error(`Tool '${name}' is already registered.`);
+        }
         const parameters: ToolRequestParameters = ToolRequest.isToolRequestParameters(metadata.inputSchema) ? {
             type: (metadata.inputSchema as ToolRequestParameters).type,
             properties: (metadata.inputSchema as ToolRequestParameters).properties,
@@ -60,11 +62,11 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
         const toolRequest: ToolRequest = {
             id: name,
             name: name,
-            providerName: 'plugin_lm_tools',
+            providerName: `plugin_lm_tools_${pluginId}`,
             description: metadata.description,
             parameters,
-            handler: async (argString: string) => {
-                const result = await self.proxy.$invokeTool(handle, argString);
+            handler: async (argString: string, ctx?: ToolInvocationContext) => {
+                const result = await this.proxy.$invokeTool(handle, argString, ctx?.cancellationToken);
                 if (isToolInvocationError(result)) {
                     return createToolCallError(result.error);
                 }

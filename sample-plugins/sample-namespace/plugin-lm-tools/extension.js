@@ -16,6 +16,10 @@
 
 const vscode = require('vscode');
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function activate(context) {
     console.log('[plugin-lm-tools] Activating...');
 
@@ -34,15 +38,24 @@ async function activate(context) {
     });
     context.subscriptions.push(timeTool);
 
-    // Tool 2: Calculate Sum (takes an array of numbers)
+    // Tool 2: Calculate Sum (takes an array of numbers, demonstrates cancellation)
     const sumTool = vscode.lm.registerTool('sample-calculateSum', {
-        invoke(options, _token) {
+        async invoke(options, token) {
             const input = options.input;
             const numbers = input.numbers;
             if (!Array.isArray(numbers)) {
                 throw new Error('Expected "numbers" to be an array.');
             }
-            const sum = numbers.reduce((acc, n) => acc + n, 0);
+            // Simulate a long-running operation that respects cancellation
+            let sum = 0;
+            for (const n of numbers) {
+                if (token.isCancellationRequested) {
+                    throw new Error('Tool invocation was cancelled.');
+                }
+                sum += n;
+                // Delay for 10 seconds to test long-running tool calls
+                await delay(10000);
+            }
             const result = `The sum of [${numbers.join(', ')}] is ${sum}.`;
             console.log('[plugin-lm-tools] sample-calculateSum invoked:', result);
             return { content: [new vscode.LanguageModelTextPart(result)] };

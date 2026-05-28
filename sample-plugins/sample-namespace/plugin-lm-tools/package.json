@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-lm-tools",
-  "version": "1.70.0",
+  "version": "1.71.0",
   "main": "extension.js",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-namespace",
@@ -25,7 +25,6 @@
     "languageModelTools": [
       {
         "name": "sample-getCurrentTime",
-        "displayName": "Get Current Time",
         "description": "Returns the current date and time in ISO format.",
         "tags": [
           "sample",
@@ -38,7 +37,6 @@
       },
       {
         "name": "sample-calculateSum",
-        "displayName": "Calculate Sum",
         "description": "Calculates the sum of an array of numbers.",
         "tags": [
           "sample",

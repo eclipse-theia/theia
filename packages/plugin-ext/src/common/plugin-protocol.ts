@@ -144,7 +144,6 @@ export interface PluginPackageMcpServerDefinitionProviderContribution {
 
 export interface PluginPackageLanguageModelToolContribution {
     name: string;
-    displayName?: string;
     description?: string;
     inputSchema?: object;
     tags?: string[];
