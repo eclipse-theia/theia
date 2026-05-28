@@ -1596,14 +1596,21 @@ export class MobileProjectsPanel {
         );
     }
 
+    protected filterSelectableComposerAgents(
+        agents: readonly QaapAgentTaskAgentOption[],
+    ): QaapAgentTaskAgentOption[] {
+        return agents.filter(agent => agent.id !== SHELL_AGENT_ID);
+    }
+
     protected async refreshStickyComposerAgents(project: MobileProjectEntry): Promise<void> {
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
         try {
             const snapshot = await this.loadBackendAgentSnapshot();
-            this.stickyComposerBackendAgents = snapshot.agents;
+            const filteredAgents = this.filterSelectableComposerAgents(snapshot.agents);
+            this.stickyComposerBackendAgents = filteredAgents;
             const resolved = this.reconcileStickyComposerPinnedAgent(
                 this.stickyComposerPinnedAgentId ?? readStoredAgent(cwd),
-                snapshot.agents,
+                filteredAgents,
                 snapshot.defaultAgent,
                 cwd,
             );
@@ -1612,7 +1619,7 @@ export class MobileProjectsPanel {
                 this.renderStickyComposer();
             }
         } catch {
-            this.stickyComposerBackendAgents = this.activeTasks?.getAgents() ?? [];
+            this.stickyComposerBackendAgents = this.filterSelectableComposerAgents(this.activeTasks?.getAgents() ?? []);
         }
     }
 
@@ -1655,7 +1662,7 @@ export class MobileProjectsPanel {
                 () => this.closeStickyComposerSheets(),
             ));
         }
-        for (const agent of this.stickyComposerBackendAgents) {
+        for (const agent of this.filterSelectableComposerAgents(this.stickyComposerBackendAgents)) {
             list.append(this.createStickyAgentSheetOption(
                 agent.label,
                 agent.id,
@@ -4321,10 +4328,11 @@ export class MobileProjectsPanel {
             ?? this.preparedCwdByProjectId.get(project.id);
         try {
             const snapshot = await this.loadBackendAgentSnapshot();
-            this.transcriptComposerBackendAgents = snapshot.agents;
+            const filteredAgents = this.filterSelectableComposerAgents(snapshot.agents);
+            this.transcriptComposerBackendAgents = filteredAgents;
             const resolved = this.reconcileStickyComposerPinnedAgent(
                 this.transcriptComposerPinnedAgentId ?? readStoredAgent(cwd),
-                snapshot.agents,
+                filteredAgents,
                 snapshot.defaultAgent,
                 cwd,
             );
@@ -4333,7 +4341,7 @@ export class MobileProjectsPanel {
                 this.remountTranscriptStickyComposer();
             }
         } catch {
-            this.transcriptComposerBackendAgents = this.activeTasks?.getAgents() ?? [];
+            this.transcriptComposerBackendAgents = this.filterSelectableComposerAgents(this.activeTasks?.getAgents() ?? []);
         }
     }
 
@@ -4406,7 +4414,7 @@ export class MobileProjectsPanel {
                 },
             ));
         }
-        for (const agent of this.transcriptComposerBackendAgents) {
+        for (const agent of this.filterSelectableComposerAgents(this.transcriptComposerBackendAgents)) {
             list.append(this.createAgentSheetOption(
                 agent.label,
                 agent.id,
