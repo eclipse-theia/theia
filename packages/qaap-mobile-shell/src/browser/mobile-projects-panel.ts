@@ -1300,7 +1300,7 @@ export class MobileProjectsPanel {
                     this.stickyComposerToolsWidget.clearPendingImageAttachments();
                 }
                 void this.submitBackgroundAgentTask(project, draft, {
-                    openConversation: true,
+                    openConversation: false,
                     selectedAgentId,
                     modeId,
                     capabilityOverrides,
