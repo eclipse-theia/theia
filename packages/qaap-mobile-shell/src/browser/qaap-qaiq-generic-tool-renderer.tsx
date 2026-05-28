@@ -10,9 +10,12 @@ import { CollapsibleToolRenderer } from '@theia/ai-claude-code/lib/browser/rende
 import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { injectable } from '@theia/core/shared/inversify';
-import { ToolCallResult } from '@theia/ai-core';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
+import { formatToolResult } from './qaap-qaiq-tool-renderer-utils';
+
+/** Tool names handled by a dedicated renderer — the generic one defers to them. */
+const DEDICATED_TOOL_RENDERERS = new Set(['bash', 'read', 'edit', 'write', 'grep', 'glob', 'ls', 'multiedit', 'webfetch', 'todowrite']);
 
 /** QAIQ tools without a dedicated Claude Code renderer — collapsible args + output. */
 @injectable()
@@ -22,8 +25,7 @@ export class QaapQaiqGenericToolRenderer implements ChatResponsePartRenderer<Too
         if (!ClaudeCodeToolCallChatResponseContent.is(response) || !response.name) {
             return -1;
         }
-        const dedicated = new Set(['bash', 'read', 'edit', 'write', 'grep', 'glob', 'ls', 'multiedit', 'webfetch', 'todowrite']);
-        if (dedicated.has(response.name.toLowerCase())) {
+        if (DEDICATED_TOOL_RENDERERS.has(response.name.toLowerCase())) {
             return -1;
         }
         return 13;
@@ -79,16 +81,3 @@ export class QaapQaiqGenericToolRenderer implements ChatResponsePartRenderer<Too
     }
 }
 
-function formatToolResult(result: ToolCallResult | undefined): string | undefined {
-    if (result === undefined || result === '') {
-        return undefined;
-    }
-    if (typeof result === 'string') {
-        return result.trim() || undefined;
-    }
-    try {
-        return JSON.stringify(result, undefined, 2);
-    } catch {
-        return String(result);
-    }
-}

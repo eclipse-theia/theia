@@ -10,9 +10,9 @@ import { CollapsibleToolRenderer } from '@theia/ai-claude-code/lib/browser/rende
 import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { injectable } from '@theia/core/shared/inversify';
-import { ToolCallResult } from '@theia/ai-core';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
+import { formatToolResult } from './qaap-qaiq-tool-renderer-utils';
 
 interface BashToolInput {
     readonly command: string;
@@ -99,16 +99,3 @@ const QaapBashToolComponent: React.FC<{
     );
 };
 
-function formatToolResult(result: ToolCallResult | undefined): string | undefined {
-    if (result === undefined || result === '') {
-        return undefined;
-    }
-    if (typeof result === 'string') {
-        return result.trim() || undefined;
-    }
-    try {
-        return JSON.stringify(result, undefined, 2);
-    } catch {
-        return String(result);
-    }
-}

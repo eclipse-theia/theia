@@ -297,11 +297,12 @@ export class MobileProjectsActiveTasks {
     }
 }
 
-function toTaskView(task: TaskEventPayload): MobileProjectTaskView {
+/** @internal Exported for testing. */
+export function toTaskView(task: TaskEventPayload): MobileProjectTaskView {
     const command = task.command ?? task.title ?? '';
     return {
         id: task.id,
-        title: task.title ?? command.slice(0, 80) ?? 'Background task',
+        title: task.title || command.slice(0, 80) || 'Background task',
         command,
         cwd: normalizeCwd(task.cwd),
         state: task.state,
@@ -310,7 +311,8 @@ function toTaskView(task: TaskEventPayload): MobileProjectTaskView {
     };
 }
 
-function normalizeCwd(cwd: string): string {
+/** @internal Exported for testing. */
+export function normalizeCwd(cwd: string): string {
     let normalized = cwd.replace(/\\/g, '/');
     while (normalized.length > 1 && normalized.endsWith('/')) {
         normalized = normalized.slice(0, -1);
@@ -332,7 +334,8 @@ function lookupByCwd<T>(map: Map<string, T>, cwd: string): T | undefined {
     return undefined;
 }
 
-function cwdMatchesProject(
+/** @internal Exported for testing. */
+export function cwdMatchesProject(
     cwd: string,
     project: { readonly name: string; readonly github?: { readonly owner: string; readonly name: string } },
 ): boolean {
@@ -350,7 +353,8 @@ function cwdMatchesProject(
     return false;
 }
 
-function sortTasks(tasks: MobileProjectTaskView[]): MobileProjectTaskView[] {
+/** @internal Exported for testing. */
+export function sortTasks(tasks: MobileProjectTaskView[]): MobileProjectTaskView[] {
     return [...tasks].sort((a, b) => {
         const aRunning = a.state === 'running' ? 1 : 0;
         const bRunning = b.state === 'running' ? 1 : 0;
