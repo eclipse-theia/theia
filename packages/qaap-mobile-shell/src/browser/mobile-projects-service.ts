@@ -450,6 +450,12 @@ export class MobileProjectsService {
             custom.push(entry);
         }
         this.writeCustomProjects(custom);
+        // If the repo was previously hidden (same workspace URI/id), unhide it so create/import
+        // actions always surface it immediately in Work Hub.
+        const hiddenIds = this.readHiddenProjectIds();
+        if (hiddenIds.delete(id)) {
+            this.writeHiddenProjectIds(hiddenIds);
+        }
     }
 
     protected resolveDisplayName(id: string, defaultName: string): string {
