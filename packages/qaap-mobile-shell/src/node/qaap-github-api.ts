@@ -158,13 +158,9 @@ export async function fetchGithubRepositories(accessToken: string): Promise<Qaap
     return repos;
 }
 
-export async function fetchGithubRepository(accessToken: string, owner: string, name: string): Promise<QaapGithubRepositorySummary> {
+export async function fetchGithubRepository(accessToken: string | undefined, owner: string, name: string): Promise<QaapGithubRepositorySummary> {
     const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, {
-        headers: {
-            Accept: 'application/vnd.github+json',
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Qaap-Theia',
-        },
+        headers: githubHeaders(accessToken),
     });
     if (!response.ok) {
         throw new Error(`GitHub repository API failed (${response.status})`);
@@ -336,12 +332,15 @@ function fileExtension(filename: string): string {
     return dot > 0 ? basename.slice(dot + 1, dot + 5).toLowerCase() : 'file';
 }
 
-function githubHeaders(accessToken: string): Record<string, string> {
-    return {
+function githubHeaders(accessToken?: string): Record<string, string> {
+    const headers: Record<string, string> = {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${accessToken}`,
         'User-Agent': 'Qaap-Theia',
     };
+    if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return headers;
 }
 
 function githubRepoToSummary(repo: GithubRepoResponse): QaapGithubRepositorySummary {

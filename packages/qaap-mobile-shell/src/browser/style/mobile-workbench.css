@@ -3172,12 +3172,15 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 .theia-mobile-projects-card.theia-mod-current { background: transparent !important; border-color: transparent; }
 
 .theia-mobile-projects-row-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 4px;
-  background: transparent;
+  background: var(--q-bg, var(--qaap-bg, var(--theia-editor-background)));
   border: none;
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.16));
   cursor: pointer;

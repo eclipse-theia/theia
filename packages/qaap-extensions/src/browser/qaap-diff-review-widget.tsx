@@ -60,6 +60,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected selectedPath: string | undefined;
     protected diff: QaapGitFileDiffResponse | undefined;
     protected loadingDiff = false;
+    protected runningBulkAction = false;
     protected error: string | undefined;
 
     @postConstruct()
@@ -281,12 +282,23 @@ export class QaapDiffReviewWidget extends ReactWidget {
     }
 
     protected renderFooter(): React.ReactNode {
+        const disabled = this.runningBulkAction || this.files.length === 0;
         return (
             <div className='qaap-diff-review-footer'>
-                <button type='button' className='qaap-diff-review-btn qaap-diff-review-btn--reject' onClick={this.onDiscardAll}>
+                <button
+                    type='button'
+                    className='qaap-diff-review-btn qaap-diff-review-btn--reject'
+                    onClick={this.onDiscardAll}
+                    disabled={disabled}
+                >
                     {nls.localize('qaap/diff/reject', 'Reject')}
                 </button>
-                <button type='button' className='qaap-diff-review-btn qaap-diff-review-btn--accept' onClick={this.onAcceptAll}>
+                <button
+                    type='button'
+                    className='qaap-diff-review-btn qaap-diff-review-btn--accept'
+                    onClick={this.onAcceptAll}
+                    disabled={disabled}
+                >
                     {nls.localize('qaap/diff/acceptAll', 'Accept all hunks')}
                 </button>
             </div>
@@ -316,13 +328,31 @@ export class QaapDiffReviewWidget extends ReactWidget {
     };
 
     protected readonly onAcceptAll = (): void => {
-        void this.commands.executeCommand(GIT_STAGE_ALL);
+        void this.runBulkAction(GIT_STAGE_ALL);
     };
 
     protected readonly onDiscardAll = (): void => {
         // git.cleanAll shows its own confirmation dialog before discarding.
-        void this.commands.executeCommand(GIT_CLEAN_ALL);
+        void this.runBulkAction(GIT_CLEAN_ALL);
     };
+
+    protected async runBulkAction(commandId: string): Promise<void> {
+        if (this.runningBulkAction) {
+            return;
+        }
+        this.runningBulkAction = true;
+        this.error = undefined;
+        this.update();
+        try {
+            await this.commands.executeCommand(commandId);
+            await this.refresh();
+        } catch (error) {
+            this.error = error instanceof Error ? error.message : String(error);
+        } finally {
+            this.runningBulkAction = false;
+            this.update();
+        }
+    }
 }
 
 /** A changed-file row. Extracted so click handlers are not re-bound on every parent render. */

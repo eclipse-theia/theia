@@ -48,6 +48,7 @@ export class MobileOpenRepositoryDialog {
 
     protected visible = false;
     protected loading = false;
+    protected busy = false;
     protected repositories: MobileProjectEntry[] = [];
     protected loadError: string | undefined;
     protected query = '';
@@ -329,7 +330,7 @@ export class MobileOpenRepositoryDialog {
         this.publicSubmit = document.createElement('button');
         this.publicSubmit.type = 'button';
         this.publicSubmit.className = 'theia-mobile-open-repo-public-submit';
-        this.publicSubmit.textContent = nls.localize('qaap/mobileOpenRepo/open', 'Open');
+        this.publicSubmit.textContent = nls.localize('qaap/mobileOpenRepo/cloneAction', 'Clone');
         this.publicSubmit.addEventListener('click', () => { void this.onSubmitPublic(); });
 
         this.publicError = document.createElement('p');
@@ -524,10 +525,20 @@ export class MobileOpenRepositoryDialog {
     }
 
     protected setBusy(busy: boolean): void {
+        this.busy = busy;
         this.root.classList.toggle('theia-mod-busy', busy);
         this.publicSubmit.disabled = busy;
         this.publicInput.disabled = busy;
         this.filterInput.disabled = busy;
+        this.updatePublicSubmitLabel();
+    }
+
+    protected updatePublicSubmitLabel(): void {
+        if (this.busy) {
+            this.publicSubmit.textContent = nls.localize('qaap/mobileOpenRepo/cloningAction', 'Cloning…');
+            return;
+        }
+        this.publicSubmit.textContent = nls.localize('qaap/mobileOpenRepo/cloneAction', 'Clone');
     }
 
     protected showPublicError(message: string): void {

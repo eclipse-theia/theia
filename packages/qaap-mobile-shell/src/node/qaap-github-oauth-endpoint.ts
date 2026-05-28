@@ -320,10 +320,6 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
 
     protected async handleCloneGithubRepository(req: Request, res: Response): Promise<void> {
         const stored = this.sessions.getSession(this.readSessionId(req));
-        if (!stored) {
-            res.status(401).json({ error: 'Not signed in' });
-            return;
-        }
         const body = (req.body ?? {}) as Partial<QaapGithubOpenRepositoryRequest>;
         const parsed = this.parseGithubRepositoryInput(typeof body.repository === 'string' ? body.repository : '');
         if (!parsed) {
@@ -331,12 +327,21 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             return;
         }
         try {
-            const repositories = await fetchGithubRepositories(stored.accessToken);
-            const repository = repositories.find(repo =>
-                repo.owner.toLowerCase() === parsed.owner.toLowerCase()
-                && repo.name.toLowerCase() === parsed.name.toLowerCase()
-            ) ?? await fetchGithubRepository(stored.accessToken, parsed.owner, parsed.name);
-            const workspacePath = await this.ensureRepositoryWorkspace(repository, stored.accessToken);
+            let repository: QaapGithubRepositorySummary;
+            if (stored) {
+                const repositories = await fetchGithubRepositories(stored.accessToken);
+                repository = repositories.find(repo =>
+                    repo.owner.toLowerCase() === parsed.owner.toLowerCase()
+                    && repo.name.toLowerCase() === parsed.name.toLowerCase()
+                ) ?? await fetchGithubRepository(stored.accessToken, parsed.owner, parsed.name);
+            } else {
+                repository = await fetchGithubRepository(undefined, parsed.owner, parsed.name);
+                if (repository.private) {
+                    res.status(401).json({ error: 'Sign in with GitHub to clone private repositories' });
+                    return;
+                }
+            }
+            const workspacePath = await this.ensureRepositoryWorkspace(repository, stored?.accessToken);
             res.json({
                 repository,
                 workspaceUri: FileUri.create(workspacePath).toString(),
@@ -422,7 +427,10 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         return output?.trim() || undefined;
     }
 
-    protected async ensureRepositoryWorkspace(repository: Pick<QaapGithubRepositorySummary, 'owner' | 'name' | 'cloneUrl'>, accessToken: string): Promise<string> {
+    protected async ensureRepositoryWorkspace(
+        repository: Pick<QaapGithubRepositorySummary, 'owner' | 'name' | 'cloneUrl'>,
+        accessToken: string | undefined,
+    ): Promise<string> {
         const ownerDir = this.safePathSegment(repository.owner);
         const repoDir = this.safePathSegment(repository.name);
         const target = path.join(QAAP_REPOS_ROOT, ownerDir, repoDir);
@@ -464,10 +472,16 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         }
     }
 
-    protected runGit(args: string[], accessToken: string): Promise<void> {
-        const encoded = Buffer.from(`x-access-token:${accessToken}`).toString('base64');
-        const header = `AUTHORIZATION: basic ${encoded}`;
-        const gitArgs = ['-c', `http.https://github.com/.extraheader=${header}`, ...args];
+    protected runGit(args: string[], accessToken: string | undefined): Promise<void> {
+        const gitArgs = accessToken
+            ? [
+                '-c',
+                `http.https://github.com/.extraheader=AUTHORIZATION: basic ${
+                    Buffer.from(`x-access-token:${accessToken}`).toString('base64')
+                }`,
+                ...args,
+            ]
+            : args;
         return new Promise((resolve, reject) => {
             const child = spawn('git', gitArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
             let stderr = '';
