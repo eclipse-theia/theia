@@ -263,16 +263,15 @@ export class MobileProjectsConversations {
     removeSnapshot(conversationId: string, cwd: string, source?: QaapAgentConversationSummaryDTO['source']): void {
         const map = source === 'theia-chat' ? this.theiaByCwd : this.byCwd;
         const normalized = normalizeCwd(cwd);
-        const entry = [...map.entries()].find(([key]) => normalizeCwd(key) === normalized);
-        if (!entry) {
+        const list = map.get(normalized);
+        if (!list) {
             return;
         }
-        const [key, list] = entry;
         const next = list.filter(c => c.id !== conversationId && c.sessionId !== conversationId);
         if (next.length === 0) {
-            map.delete(key);
+            map.delete(normalized);
         } else {
-            map.set(key, next);
+            map.set(normalized, next);
         }
         this.onDidChangeEmitter.fire();
     }
