@@ -5,16 +5,22 @@
 
 import { expect } from 'chai';
 import {
+    buildCreateAgentTaskBody,
     extractBackendAgentMention,
+    hashString,
+    isQaiqAgent,
     isStickyComposerAgentSelected,
+    isTheiaCoderMention,
     normalizeBackendAgentId,
     migrateLegacyBackendAgentId,
     QAIQ_AGENT_ID,
     reconcileSelectedAgent,
     reconcileStickyComposerAgent,
+    resolveAgentOptionId,
     resolveBackendAgentForTurn,
     resolveExplicitAgentForSubmit,
     resolveQaapAgentMentionToken,
+    SHELL_AGENT_ID,
     shellAgentFallback,
     THEIA_CODER_AGENT_ID,
 } from './qaap-agent-task-client';
@@ -78,5 +84,59 @@ describe('qaap-agent-task-client', () => {
     it('isStickyComposerAgentSelected matches Coder case-insensitively', () => {
         expect(isStickyComposerAgentSelected(THEIA_CODER_AGENT_ID, 'coder', undefined)).to.equal(true);
         expect(isStickyComposerAgentSelected('qaiq', 'codex', undefined)).to.equal(false);
+    });
+
+    it('buildCreateAgentTaskBody uses command for shell agent and prompt for others', () => {
+        expect(buildCreateAgentTaskBody('ls -la', SHELL_AGENT_ID, '/home'))
+            .to.deep.equal({ command: 'ls -la', cwd: '/home' });
+        expect(buildCreateAgentTaskBody('fix tests', QAIQ_AGENT_ID, '/home'))
+            .to.deep.equal({ prompt: 'fix tests', agent: QAIQ_AGENT_ID, cwd: '/home' });
+    });
+
+    it('isQaiqAgent recognizes qaiq and legacy openclaude alias', () => {
+        expect(isQaiqAgent('qaiq')).to.be.true;
+        expect(isQaiqAgent('openclaude')).to.be.true;
+        expect(isQaiqAgent('QAIQ')).to.be.true;
+        expect(isQaiqAgent('codex')).to.be.false;
+        expect(isQaiqAgent(undefined)).to.be.false;
+    });
+
+    it('isTheiaCoderMention detects @coder prefix in message text', () => {
+        expect(isTheiaCoderMention('@Coder fix this')).to.be.true;
+        expect(isTheiaCoderMention('@coder')).to.be.true;
+        expect(isTheiaCoderMention('please fix this @coder')).to.be.false;
+        expect(isTheiaCoderMention('@qaiq do something')).to.be.false;
+    });
+
+    it('hashString produces stable non-negative base-36 output', () => {
+        const a = hashString('hello');
+        const b = hashString('hello');
+        expect(a).to.equal(b);
+        expect(a).to.match(/^[0-9a-z]+$/);
+        expect(hashString('hello')).not.to.equal(hashString('world'));
+    });
+
+    it('resolveAgentOptionId matches by exact id and built-in alias', () => {
+        const agents = [
+            { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'my-custom', label: 'Custom', available: true },
+        ];
+        expect(resolveAgentOptionId('QAIQ', agents)).to.equal('qaiq');
+        expect(resolveAgentOptionId('my-custom', agents)).to.equal('my-custom');
+        expect(resolveAgentOptionId('codex', agents)).to.equal('codex');
+        expect(resolveAgentOptionId(undefined, agents)).to.be.undefined;
+    });
+
+    it('resolveBackendAgentForTurn: @mention beats explicit, explicit beats stored', () => {
+        const agents = [
+            { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'codex', label: 'Codex', available: true },
+        ];
+        expect(resolveBackendAgentForTurn('@codex fix it', agents, { explicitAgentId: 'qaiq' }))
+            .to.equal('codex');
+        expect(resolveBackendAgentForTurn('fix it', agents, { explicitAgentId: 'codex' }))
+            .to.equal('codex');
+        expect(resolveBackendAgentForTurn('fix it', agents, { storedAgentId: 'qaiq' }))
+            .to.equal('qaiq');
     });
 });

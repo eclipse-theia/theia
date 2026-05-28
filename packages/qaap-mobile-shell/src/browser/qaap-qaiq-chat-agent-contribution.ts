@@ -269,6 +269,10 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                     request.response.response.addContent(new ErrorChatResponseContentImpl(
                         new Error('QAIQ task failed.')
                     ));
+                } else if (state === 'interrupted') {
+                    request.response.response.addContent(new ErrorChatResponseContentImpl(
+                        new Error('QAIQ task was interrupted (server restarted).')
+                    ));
                 } else if (accumulator.getSegments().length === 0) {
                     request.response.response.addContent(new MarkdownChatResponseContentImpl(
                         'Still running in background. Track it in **Jobs / Background tasks**.'
