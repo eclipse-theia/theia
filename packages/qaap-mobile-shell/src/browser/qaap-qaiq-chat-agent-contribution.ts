@@ -152,17 +152,6 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
      *   The `error` handler schedules a delayed state check after each disconnect so the
      *   response resolves correctly instead of hanging until the 90s timeout.
      */
-    /**
-     * Subscribes to the `/stream` SSE feed and drives the chat response in real time.
-     * Resolves once the task reaches a terminal state, is cancelled by the user, or times out.
-     *
-     * Two correctness hazards are handled here:
-     * - Race condition: the task may finish between `startTask()` and the SSE connection
-     *   being established. The `open` handler fires a one-time state check.
-     * - Disconnect: if the SSE connection drops, the `completed` event may be missed.
-     *   The `error` handler schedules a delayed state check after each disconnect so the
-     *   response resolves correctly instead of hanging until the 90s timeout.
-     */
     protected streamTask(
         taskId: string,
         accumulator: QaapQaiqStreamAccumulator,
