@@ -32,9 +32,9 @@ import {
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
-    UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
+    normalizeUserInteractionLink,
     parseUserInteractionArgs,
     resolveContentRef
 } from '../common/user-interaction-tool';
@@ -42,8 +42,13 @@ import {
 interface PendingInteraction {
     deferred: Deferred<string>;
     steps: UserInteractionStep[];
-    stepResults: UserInteractionStepResult[];
     resolved: boolean;
+    /**
+     * Latest partial result pushed by the renderer via {@link UserInteractionTool.recordPartial}.
+     * Used to resolve the handler with what the user has collected so far when the interaction
+     * is canceled. If absent (no renderer mounted) the tool resolves with all steps skipped.
+     */
+    latestPartial?: UserInteractionResult;
 }
 
 // Schemas are module-level constants so they are built once at load time
@@ -111,18 +116,21 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                     },
                     rightRef: {
                         ...CONTENT_REF_SCHEMA,
-                        description: 'Optional right-side content reference for diff views. '
+                        description: 'Right-side content reference for a diff view. '
+                            + 'Only provide this when the step should show a diff; omit it entirely for a single file link. '
                             + 'Provide "path" for a real file, or "empty": true for files that no longer exist.'
                     },
                     label: { type: 'string', description: 'Optional label for the link or diff tab.' },
                     autoOpen: {
                         type: 'boolean',
-                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to true.'
+                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to false; '
+                            + 'set to true only when the link is essential context the user must see immediately.'
                     }
                 },
                 required: ['ref']
             },
-            description: 'Optional links to files or diffs to show alongside this step.'
+            description: 'Optional links to files or diffs to show alongside this step. '
+                + 'Use "ref" alone for a single file link. Add "rightRef" only when the step should show a diff.'
         }
     },
     required: ['title', 'message']
@@ -134,18 +142,19 @@ const TOOL_PARAMETERS: ToolRequestParameters = {
         interactions: {
             type: 'array',
             items: STEP_SCHEMA,
-            description: 'Ordered list of wizard steps. The user walks through them sequentially without a back button.'
+            description: 'Ordered list of interaction steps. The user walks through them sequentially and can revisit previous steps.'
         }
     },
     required: ['interactions']
 };
 
-const TOOL_DESCRIPTION = 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
-    + 'and optional file/diff links that auto-open when the step is reached. '
-    + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
-    + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
-    + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
-    + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can navigate freely between steps, '
+const TOOL_DESCRIPTION = 'Present an interactive user interaction. Each step has a title, a markdown message, optional option buttons, '
+    + 'and optional file/diff links that the user can click. '
+    + 'For links, use "ref" alone to show one file; add "rightRef" only when the step should show a diff. '
+    + 'Single-step behavior: if the step has options, the tool waits for the user to pick one option and then completes the interaction; '
+    + 'if the step has no options, it is purely informational and is auto-completed by the tool '
+    + '(do not promise the user a "Finish" or "Next" button; there is none, and no comments can be entered). '
+    + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can revisit previous steps, '
     + 'and may add free-form comments on every step. '
     + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
     + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
@@ -184,69 +193,56 @@ export class UserInteractionTool implements ToolProvider {
         };
     }
 
-    setStepResult(toolCallId: string, stepIndex: number, partial: Partial<UserInteractionStepResult>): void {
-        const pending = this.pendingInteractions.get(toolCallId);
-        if (!pending || pending.resolved) {
-            return;
-        }
-        if (stepIndex < 0 || stepIndex >= pending.steps.length) {
-            return;
-        }
-        const existing = pending.stepResults[stepIndex] ?? { title: pending.steps[stepIndex].title };
-        pending.stepResults[stepIndex] = {
-            ...existing,
-            ...partial,
-            title: pending.steps[stepIndex].title
-        };
-    }
-
-    completeInteraction(toolCallId: string): void {
-        const pending = this.pendingInteractions.get(toolCallId);
-        if (!pending || pending.resolved) {
-            return;
-        }
-        pending.resolved = true;
-        const result: UserInteractionResult = {
-            completed: true,
-            steps: this.normalizeStepResults(pending)
-        };
-        pending.deferred.resolve(JSON.stringify(result));
+    /**
+     * Resolve the pending interaction with the given final result. The renderer is the single
+     * source of truth for the collected user input and passes the full result here on Finish
+     * (or on a per-option click for single-step interactions).
+     */
+    completeInteraction(toolCallId: string, result: UserInteractionResult): void {
+        this.resolveInteraction(toolCallId, result);
     }
 
     /**
-     * Set the result for a step and immediately complete the interaction.
-     * Use this to atomically pass the user's input value into the result, avoiding
-     * any reliance on synchronous state updates between `setStepResult` and `completeInteraction`.
+     * Push the latest partial result so the tool can resolve with it on cancellation.
+     * The renderer should call this whenever the user changes step state. Calls for
+     * an already-resolved interaction are silently ignored.
      */
-    completeInteractionWith(toolCallId: string, stepIndex: number, partial: Partial<UserInteractionStepResult>): void {
-        this.setStepResult(toolCallId, stepIndex, partial);
-        this.completeInteraction(toolCallId);
+    recordPartial(toolCallId: string, partial: UserInteractionResult): void {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return;
+        }
+        pending.latestPartial = partial;
     }
 
-    cancelInteraction(toolCallId: string): void {
+    protected resolveInteraction(toolCallId: string, result: UserInteractionResult): void {
         const pending = this.pendingInteractions.get(toolCallId);
         if (!pending || pending.resolved) {
             return;
         }
         pending.resolved = true;
-        const steps = this.normalizeStepResults(pending);
-        // Mark steps without any user input as skipped.
-        for (let i = 0; i < steps.length; i++) {
-            const step = steps[i];
-            const hasInput = step.value !== undefined || (step.comments && step.comments.length > 0);
-            if (!hasInput) {
-                steps[i] = { ...step, skipped: true };
-            }
-        }
-        const result: UserInteractionResult = { completed: false, steps };
         pending.deferred.resolve(JSON.stringify(result));
     }
 
-    protected normalizeStepResults(pending: PendingInteraction): UserInteractionStepResult[] {
-        return pending.steps.map((step, i) => pending.stepResults[i] ?? { title: step.title });
+    protected cancelPending(toolCallId: string): void {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return;
+        }
+        const result = pending.latestPartial ?? {
+            completed: false,
+            steps: pending.steps.map(step => ({ title: step.title, skipped: true }))
+        };
+        this.resolveInteraction(toolCallId, result);
     }
 
     async openLink(link: UserInteractionLink): Promise<void> {
+        const normalizedLink = normalizeUserInteractionLink(link);
+        if (!normalizedLink) {
+            return;
+        }
+        link = normalizedLink;
+
         if (link.rightRef !== undefined) {
             const resolvedLeftUri = await this.resolveDiffSideUri(link.ref);
             const resolvedRightUri = await this.resolveDiffSideUri(link.rightRef);
@@ -300,8 +296,7 @@ export class UserInteractionTool implements ToolProvider {
         if (ref.gitRef) {
             const repo = this.scmService.findRepository(fileUri);
             if (repo) {
-                const query = { path: fileUri['codeUri'].fsPath, ref: ref.gitRef };
-                return fileUri.withScheme(repo.provider.id).withQuery(JSON.stringify(query));
+                return repo.toUriAtRef(fileUri, ref.gitRef);
             }
             console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
             return undefined;
@@ -344,13 +339,12 @@ export class UserInteractionTool implements ToolProvider {
         const pending: PendingInteraction = {
             deferred: new Deferred<string>(),
             steps,
-            stepResults: new Array(steps.length),
             resolved: false
         };
         this.pendingInteractions.set(toolCallId, pending);
 
         const cancellationToken = ToolInvocationContext.getCancellationToken(ctx);
-        const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelInteraction(toolCallId));
+        const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelPending(toolCallId));
 
         try {
             return await pending.deferred.promise;

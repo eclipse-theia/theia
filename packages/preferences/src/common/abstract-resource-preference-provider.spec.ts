@@ -41,7 +41,10 @@ class MockPreferenceStorage implements PreferenceStorage {
     writeValue(key: string, path: string[], value: JSONValue): Promise<boolean> {
         throw new Error('Method not implemented.');
     }
-    dispose(): void { }
+    disposed = false;
+    dispose(): void {
+        this.disposed = true;
+    }
     releaseContent = new Deferred();
     async read(): Promise<string> {
         await this.releaseContent.promise;
@@ -90,5 +93,11 @@ describe('AbstractResourcePreferenceProvider', () => {
         preferenceStorage.releaseContent.resolve();
         await provider.ready;
         expect(provider.get('editor.fontSize')).to.equal(20); // The value provided by the mock FileService implementation.
+    });
+
+    it('disposes its preference storage when the provider is disposed', () => {
+        expect(preferenceStorage.disposed).to.be.false;
+        provider.dispose();
+        expect(preferenceStorage.disposed).to.be.true;
     });
 });

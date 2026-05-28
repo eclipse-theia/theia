@@ -144,7 +144,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         const currentGroupNum = this.getNextGroupCounterForPage(pageId);
         return {
             id: groupId,
-            label: `${nls.localize('theia/terminal-manager/group', 'Group')} (${currentGroupNum})`,
+            label: `${nls.localizeByDefault('Group')} (${currentGroupNum})`,
             parent: undefined,
             selected: false,
             children: [],

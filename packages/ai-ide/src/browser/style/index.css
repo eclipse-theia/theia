@@ -1122,20 +1122,44 @@
   text-decoration: underline;
 }
 
-.theia-chat-session-badge-unread-tooltip {
+.theia-chat-session-badge-unread-tooltip,
+.theia-chat-session-badge-running-tooltip,
+.theia-chat-session-badge-error-tooltip {
   font-size: var(--theia-ui-font-size0);
   font-weight: 600;
-  color: var(--theia-activityBarBadge-foreground);
-  background-color: var(--theia-activityBarBadge-background);
   border-radius: calc(var(--theia-ui-padding) * 0.75);
   padding: 1px calc(var(--theia-ui-padding) * 0.75);
   display: inline-block;
   margin-bottom: var(--theia-ui-padding);
 }
 
+.theia-chat-session-badge-unread-tooltip {
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-activityBarBadge-background);
+}
+
+.theia-chat-session-badge-running-tooltip {
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-progressBar-background);
+}
+
+.theia-chat-session-badge-error-tooltip {
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-errorForeground);
+}
+
 .theia-chat-session-tooltip-label {
   font-weight: 600;
   margin-bottom: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.theia-chat-session-tooltip-error {
+  color: var(--theia-errorForeground);
+  word-break: break-word;
+}
+
+.theia-chat-session-tooltip-error-prefix {
+  font-weight: 600;
 }
 
 .theia-chat-session-tooltip-snippet h1,
@@ -1184,6 +1208,18 @@
   color: var(--theia-focusBorder);
 }
 
+.theia-chat-session-card-error .theia-Card-icon {
+  color: var(--theia-errorForeground);
+}
+
+.theia-chat-session-card-error .theia-Card-interactive:hover {
+  border-color: var(--theia-errorForeground);
+}
+
+.theia-chat-session-card-error .theia-Card-interactive:focus {
+  outline-color: var(--theia-errorForeground);
+}
+
 .theia-chat-session-badge-unread {
   position: absolute;
   top: calc(var(--theia-ui-padding) * 1.5);
@@ -1194,6 +1230,10 @@
   background-color: var(--theia-activityBarBadge-background);
   pointer-events: none;
   z-index: 1;
+}
+
+.theia-chat-session-card-error .theia-chat-session-badge-unread {
+  background-color: var(--theia-errorForeground);
 }
 
 /*

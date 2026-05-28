@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "请求失败时的最大重试次数。默认值为3。"
           },
-          "mdDescription": "集成兼容Anthropic API的自定义模型。必填属性为`model`和`url`。            \n            可选操作:            \n            - 指定唯一`id`以在UI中标识自定义模型。 若未提供,则以`model`作为`id`。            \n            - 提供`apiKey`以访问指定网址的API。使用`true`表示使用全局Anthropic API密钥。            \n            - 设置`enableStreaming: false`表示禁用流式传输。            \n            - 设置 `useCaching: false` 表示禁用提示缓存功能。            \n            - 设置 `maxRetries: <number>` 指定请求失败时的最大重试次数。默认值为3。",
+          "mdDescription": "集成与 Anthropic API 兼容的自定义模型。必需的属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id`,用于在 UI 中识别该自定义模型。 若未指定,则 `model` 将作为 `id` 使用。            \n            - 提供 `apiKey` 以访问指定 URL 提供的 API。使用 `true` 表示使用全局 Anthropic API 密钥。            \n            - 指定 `enableStreaming: false` 以表示不使用流式传输。            \n            - 指定 `useCaching: false` 以表示不使用提示词缓存。            \n            - 指定 `maxRetries: <number>` 以表示请求失败时的最大重试次数。默认值为 3。            \n            推理能力及最大输出令牌限制由端点的 `/v1/models` 响应决定。",
           "modelId": {
             "title": "模型ID"
-          },
-          "reasoningApi": {
-            "title": "应使用哪种 Anthropic 推理 API 模式:`effort` 用于自适应推理(Claude 4.6+),`budget` 用于传统扩展推理(Claude 4.0–4.5),或 `null` 用于禁用。默认根据模型名称推断。"
-          },
-          "supportsXHighEffort": {
-            "title": "指示模型是否接受 Anthropic 的 `xhigh` 工作量值。默认情况下由模型名称推断得出。"
           },
           "url": {
             "title": "托管该模型的Anthropic API兼容端点"
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "未能为代理{0}找到现成的语言模型。请检查您的设置！",
         "defaultAgent": {
           "description": "可选:当用户查询中未通过@<代理名称>显式指定代理时,将调用的聊天代理<代理名称>。若未配置默认代理,则应用Theia的默认设置。"
+        },
+        "defaultToolConfirmation": {
+          "description": "此为“ai-features.chat.toolConfirmation”下未包含特定工具条目的工具所采用的默认确认行为。明确要求在自动批准前进行确认的工具,无论此设置如何,始终默认采用“确认”操作。"
         },
         "fromClipboard": "$(clippy) 从剪贴板",
         "fromClipboardDescription": "粘贴剪贴板中的图片",
@@ -196,15 +193,15 @@
           "description": "用于持久化存储和检索任务上下文描述的工作区相对路径。若设置为空值,生成的任务上下文将存储在内存中而非磁盘上。"
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "无需确认即可自动执行工具"
+          },
           "confirm": {
             "description": "执行工具前请确认"
           },
-          "description": "配置不同工具的确认行为。键值为工具ID,值为确认模式。使用\"*\"作为键值可为所有工具设置全局默认值。",
+          "description": "配置各个工具的确认行为。键为工具 ID,值为确认模式。若要更改所有工具的默认设置,请使用 \"ai-features.chat.defaultToolConfirmation\"。",
           "disabled": {
             "description": "禁用工具执行"
-          },
-          "yolo": {
-            "description": "自动执行工具无需确认"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "切换功能配置"
         },
         "chatInputAriaLabel": "在此处输入您的消息",
+        "chatRequestFailedWithDetail": "聊天请求失败:{0}",
         "chatResponses": "聊天回复",
         "clearAllSelections": "清除搜索字符串和功能选项",
         "code-part-renderer": {
-          "copied": "已复制",
           "generatedCode": "生成的代码"
         },
         "collapseAll": "折叠全部",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "该命令的ID为\"{0}\",但无法通过聊天窗口执行。"
         },
-        "confirmDeleteChatMsg": "您确定要删除此聊天记录吗?",
         "copyCodeBlock": "复制代码块",
         "couldNotSendRequestToSession": "无法向会话{1}发送请求\"{0}\"",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "聚焦聊天输入",
         "focusResponse": "焦点聊天响应",
         "functions": "功能",
-        "functionsDescription": "Theia 扩展提供的内置函数",
+        "functionsDescription": "{0}扩展提供的内置函数",
         "genericCapabilities": "通用功能",
         "mcpFunctionsDescription": "来自连接服务器的模型上下文协议(MCP)功能",
         "noChatAgentsAvailable": "没有可用的聊天机器人。",
@@ -305,9 +301,6 @@
         "persistedSession": "持久化会话(点击恢复)",
         "promptFragmentsDescription": "用于对话的自定义提示片段",
         "reasoning": {
-          "high": "高",
-          "low": "低",
-          "medium": "中等",
           "minimal": "简约"
         },
         "removeChat": "移除聊天功能",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "之前的聊天请求由其他客服处理。Claude Code 无法看到那些其他消息。",
         "directory": "目录",
         "domain": "领域",
+        "edit": "编辑 {0}",
         "editAutomatically": "自动编辑",
         "editing": "编辑",
         "editsCount": "{0} 编辑",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "该代理为Theia IDE的代码编辑器提供内联代码补全功能。",
+          "description": "该代理在{0}的代码编辑器中提供内联代码补全功能。",
           "vars": {
             "file": {
               "description": "正在编辑的文件的URI"
@@ -587,7 +581,7 @@
           "expired": "授权已过期或被拒绝。请重试。",
           "hint": "输入代码并授权后,请点击下方的\"我已授权\"按钮。",
           "initiating": "正在启动身份验证...",
-          "instructions": "要授权Theia使用GitHub Copilot,请访问以下网址并输入代码:",
+          "instructions": "要授权{0}使用GitHub Copilot,请访问以下网址并输入代码:",
           "openGitHub": "打开 GitHub",
           "privacy": "Theia是一个开源项目。我们仅请求访问您的GitHub用户名以连接GitHub Copilot服务——不会访问或存储任何其他数据。",
           "success": "已成功登录 GitHub Copilot！",
@@ -650,8 +644,8 @@
           "label": "AI配置"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - 代理完成",
-          "namedAgentCompleted": "Theia - 代理程序 \"{0}\" 已完成"
+          "agentCompleted": "{0} - 代理已完成",
+          "namedAgentCompleted": "{0} - 代理“{1}”已完成"
         },
         "capabilityVariable": {
           "argDescription": "提示符片段ID,可选后缀\"默认开启\"或\"默认关闭\"(默认关闭)",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "最适用于代码自动完成场景。"
+          },
+          "fast": {
+            "description": "针对探索或调用基础工具等无需深度推理的简单任务,提供更快且更经济的模型。"
           },
           "summarize": {
             "description": "优先用于内容摘要与浓缩的模型。"
@@ -744,7 +741,7 @@
           "description": "当前所有打开文件的简短引用(相对路径,以逗号分隔)"
         },
         "openEditorsVariable": {
-          "description": "当前所有打开文件的逗号分隔列表,相对于工作区根目录。"
+          "description": "当前所有打开文件的逗号分隔列表,以工作区相对路径表示(例如:my-project/src/index.ts)。"
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "无法显示变量值。",
         "unableToResolveVariable": "无法解析变量。",
         "variable-contribution": {
-          "builtInVariable": "Theia 内置变量",
-          "currentAbsoluteFilePath": "当前打开文件的绝对路径。请注意,大多数代理程序期望使用相对文件路径(相对于当前工作区)。",
-          "currentFileContent": "当前打开文件的纯文本内容。此处不包含内容来源信息。请注意,大多数代理程序使用相对文件路径(相对于当前工作区)效果更佳。",
-          "currentRelativeDirPath": "包含当前打开文件的目录的相对路径。",
-          "currentRelativeFilePath": "当前打开文件的相对路径。",
-          "currentSelectedText": "当前在打开文件中选中的纯文本内容。此处不包含内容来源信息。请注意,大多数代理程序使用相对文件路径(相对于当前工作区)效果更佳。",
-          "dotRelativePath": "当前打开文件的相对路径简写('currentRelativeFilePath')。"
+          "builtInVariable": "{0} 内置变量",
+          "currentAbsoluteFilePath": "当前打开文件的绝对路径。",
+          "currentFileContent": "当前打开文件的纯文本内容。此内容不包含有关内容来源的信息。",
+          "currentRelativeDirPath": "包含当前打开文件的目录的工作区相对路径(例如:my-project/src)。",
+          "currentRelativeFilePath": "当前打开文件的相对工作区路径(例如:my-project/src/index.ts)。",
+          "currentSelectedText": "当前在已打开文件中选中的纯文本内容。此处不包含内容来源的相关信息。",
+          "dotRelativePath": "当前打开文件的相对于工作区的路径('currentRelativeFilePath')的简写。"
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "打开AI历史记录...",
         "request-card": {
           "promptVariant": "提示变体",
-          "request": "请求",
           "response": "响应",
-          "timestamp": "时间戳",
-          "title": "请求"
+          "timestamp": "时间戳"
         },
         "sortChronologically": {
           "tooltip": "按时间排序"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "平面模式",
             "planNext": "规划模式(下一步)",
             "simple": "简易模式"
           },
@@ -1041,7 +1035,7 @@
             "label": "AI命令",
             "message": "执行回调函数时传入参数{0}。第一个参数是动态注册命令对应的命令ID,其余参数为处理程序的实际参数。"
           },
-          "description": "该代理程序能识别用户在Theia IDE(用户当前使用的开发工具)中可执行的所有命令。根据用户请求,它能定位对应命令并引导用户执行。",
+          "description": "该代理程序了解用户可以执行的所有命令。根据用户请求,它可以查找出正确的命令,然后让用户执行该命令。",
           "response": {
             "customHandler": "请尝试执行以下操作:",
             "noCommand": "抱歉,找不到这样的命令",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Theia 中的可用命令列表。"
+              "description": "可用命令列表。"
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "允许代理与 GitHub 进行交互。为此,该代理可委托 GitHub 代理执行操作,后者能够读写问题、拉取请求、评论及仓库内容。"
         },
         "githubRepoName": {
-          "description": "当前GitHub仓库名称(例如\"eclipse-theia/theia\")"
+          "description": "与工作区根目录关联的 GitHub 仓库(例如,“eclipse-theia/theia”)"
         },
         "howToGetStarted": "如何开始使用",
         "model-selection-description": "在[AI配置视图]({0})中选择每个AI代理使用的超大规模语言模型(LLMs)。",
@@ -1112,6 +1106,30 @@
           "progressMessage": "确定最合适的代理",
           "response": {
             "delegatingToAgent": "委托给 `@{0}`"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "将架构、用法、规范和测试的探索任务委托给 Explore 代理。当该功能被禁用时,PR 审阅者将使用自己的工具进行探索。",
+              "name": "委托探索"
+            },
+            "githubInfo": {
+              "description": "委托 GitHub 代理检索拉取请求的元数据、差异、评论、检查以及关联的问题。",
+              "name": "GH PR 信息"
+            },
+            "localCheckout": {
+              "description": "在本地检出拉取请求,并保护现有工作树中的更改。",
+              "name": "检出"
+            },
+            "localValidation": {
+              "description": "为拉取请求执行本地安装、构建、代码检查、测试或类似的验证任务。",
+              "name": "构建"
+            },
+            "pendingGitHubReview": {
+              "description": "委托 GitHub 代理在用户明确确认后,使用预先准备的内联评论创建或更新待处理的拉取请求审查。",
+              "name": "待 GitHub 审核"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "错误消息",
           "lastActivity": "最近活动",
           "lastMessage": "最后一条消息",
           "messages": "消息",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "用于在用户界面中标识自定义模型的唯一标识符"
           },
-          "mdDescription": "集成兼容 OpenAI API 的自定义模型,例如通过 `vllm` 实现。必填属性为 `model` 和 `url`。            \n            可选操作:            \n            - 指定唯一 `id` 以在 UI 中标识自定义模型。 若未提供,则使用`model`作为`id`。            \n            - 提供`apiKey`以访问指定网址的API。使用`true`表示使用全局OpenAI API密钥。            \n            - 提供`apiVersion`以访问Azure中指定网址的API。 使用 `true` 表示使用全局 OpenAI API 版本。            \n            - 为 Azure 部署提供 `deployment` 名称。            \n            - 将 `developerMessageSettings` 设为 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制开发者消息的包含方式 (其中`user`、`system`和`developer`将作为角色使用;`mergeWithFollowingUserMessage`会将系统消息前置于后续用户消息,或在后续消息非用户消息时将系统消息转换为用户消息;`skip`则直接移除系统消息)。默认值为`developer`。            \n            - 设置 `supportsStructuredOutput: false` 表示不使用结构化输出。            \n            - 设置 `enableStreaming: false` 表示不使用流式传输。            \n            - 设置 `useResponseApi: true` 表示使用新版 OpenAI Response API 替代 Chat Completion API(需兼容接口)。            \n            更多信息请参阅[我们的文档](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "mdDescription": "集成与 OpenAI API 兼容的自定义模型,例如通过 `vllm`。必需的属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id`,用于在 UI 中识别该自定义模型。 如果未提供,则 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 以访问指定 URL 提供的 API。使用 `true` 表示使用全局 OpenAI API 密钥。            \n            - 提供一个 `apiVersion` 以访问 Azure 中指定 URL 提供的 API。 使用 `true` 表示使用全局 OpenAI API 版本。            \n            - 为您的 Azure 部署提供一个 `deployment` 名称。            \n            - 将 `developerMessageSettings` 设置为 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制开发者消息的包含方式 (其中 `user`、`system` 和 `developer` 将作为角色使用;`mergeWithFollowingUserMessage` 会在后续用户消息前添加系统消息,或当下一条消息不是用户消息时将系统消息转换为用户消息;`skip` 则仅移除系统消息)。            默认值为 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表明不应使用结构化输出。            \n            - 指定 `enableStreaming: false` 以表明不应使用流式处理。            \n            - 指定 `useResponseApi: true` 以使用较新的 OpenAI Response API 代替 Chat Completion API(需要兼容的端点)。            \n            - 指定 `reasoningSupport` 以启用聊天推理选择器。提供一个包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)和可选 `defaultLevel` 的对象。            \n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
           "modelId": {
             "title": "模型ID"
           },
           "reasoningSupport": {
-            "title": "声明模型的推理能力。设置后,聊天界面将显示该模型的推理选择器。设置为 `null` 即可禁用。默认根据模型名称推断。"
+            "title": "声明该模型的推理能力。启用后,聊天界面将显示该模型的推理选择器。"
           },
           "supportsStructuredOutput": {
             "title": "指示模型是否支持结构化输出。默认值为`true`。"
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "询问有关终端命令的问题...",
         "hitEnterConfirm": "按下回车键确认",
         "howCanIHelp": "我能为您做些什么?",
+        "terminalCommandBlockAIVariable": {
+          "description": "存储已执行的终端命令及其对应的输出结果。",
+          "index": {
+            "description": "终端历史记录中命令块的索引。若未指定,则默认为最后一条命令。"
+          },
+          "quickPick": {
+            "placeholder": "输入内容以筛选命令",
+            "title": "从终端历史记录中选择一条命令及其输出"
+          }
+        },
         "tryAgain": "请重试...",
         "useArrowsAlternatives": " 或使用 ⇅ 显示替代方案..."
       },
@@ -1485,6 +1514,7 @@
             "title": "模型ID"
           },
           "model": {
+            "provider": "提供者",
             "title": "模型名称"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "AI 工具可能读取的工作区外部的绝对路径或文件 URI(目录或文件)列表。 支持使用 `~` 表示用户主目录。默认值为空;仅限主动启用。由 getFileContent、findFilesByPattern、getWorkspaceFileList 和 getWorkspaceDirectoryStructure 方法支持。当工作区未被信任时,工作区范围内的值将被忽略。白名单目录内的符号链接将被追踪,且可能指向白名单外的文件;请仅添加您信任其内容的目录。",
+          "title": "允许的外部路径"
+        },
         "coderAgent": {
           "description": "Theia IDE内置的AI助手,专为协助软件开发者设计。该智能体可访问用户工作区,获取所有可用文件及文件夹列表并检索其内容。此外,它能向用户建议文件修改方案,从而协助完成编码任务或其他涉及文件变更的操作。"
         },
         "considerGitignore": {
-          "description": "若启用此选项,将排除全局 .gitignore 文件(预期位置为工作区根目录)中指定的文件/文件夹。",
+          "description": "如果启用此功能,将排除每个工作区根目录中 .gitignore 规则匹配到的文件/文件夹。",
           "title": "请考虑 .gitignore"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE 的 AI 支持功能现已推出！",
+        "header": "{0} 现已支持 AI 功能！",
         "openAIChatView": "立即打开AI聊天视图,了解如何开始！"
       },
       "apiComparator": "{0} API兼容性",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "AI功能",
       "hostedPlugin": "托管插件",
+      "input": {
+        "browse": "浏览"
+      },
       "toolbar": "工具栏"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "连接到正在运行的容器",
+        "attachError": "无法连接到容器:{0}",
+        "attachWarning": "连接到容器将执行其中的代码。请仅连接您信任来源的容器。",
+        "attachWarningTitle": "附加到容器",
+        "attaching": "连接到容器",
+        "cliAttachError": "无法连接到容器:{0}",
+        "cliContainerNotFound": "找不到容器“{0}”或该容器未运行。",
         "connect": "在容器中重新打开",
+        "enterCustomPath": "输入自定义路径...",
+        "enterWorkspacePath": "在容器内输入工作区路径",
+        "foundConfigMsg": "在 {0} 路径下发现了一个 devcontainer.json 文件。是否应用其中的连接后设置(扩展、端口转发等)?",
+        "foundConfigTitle": "已找到开发容器配置",
         "noDevcontainerFiles": "工作区中未找到 devcontainer.json 文件。请确保您拥有包含 devcontainer.json 文件的 .devcontainer 目录。",
         "noRunningContainers": "未找到正在运行的容器。",
         "rebuild": "重建容器",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "在容器中重新打开",
         "selectContainer": "选择一个正在运行的容器进行挂载",
         "selectDevcontainer": "选择一个 devcontainer.json 文件",
+        "selectWorkspacePath": "在容器内选择一个工作区路径",
         "suggestion": "此工作区具有开发容器配置。您是否要在容器中重新打开它?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "删除组",
       "deletePage": "删除页面",
       "deleteTerminal": "删除终端",
-      "group": "组",
       "label": "终端",
       "maximizeBottomPanel": "最大化底部面板",
       "minimizeBottomPanel": "最小化底部面板",
@@ -2298,6 +2345,7 @@
       "iconSet": "图标集",
       "insertGroupLeft": "插入分组分隔符(左侧)",
       "insertGroupRight": "插入分组分隔符(右侧)",
+      "jsonError": "读取您的 toolbar.json 文件时发生错误。请右键单击工具栏并选择“自定义工具栏”,检查该文件是否损坏。您也可以通过选择“恢复工具栏默认设置”将其重置为默认状态。",
       "leftColumn": "左侧栏",
       "openJSON": "自定义工具栏(打开 JSON)",
       "removeCommand": "从工具栏移除命令",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "这两个资源都是目录。",
-      "clickToManageTrust": "点击管理信任设置。",
       "compareWithEachOther": "相互比较",
       "confirmDeletePermanently.description": "使用回收站删除\"{0}\"失败。是否要永久删除?",
       "confirmDeletePermanently.solution": "您可在首选项中禁用回收站功能。",
@@ -2368,7 +2415,7 @@
       "removeFolder": "您确定要从工作区中删除以下文件夹吗?",
       "removeFolders": "您确定要从工作区中删除以下文件夹吗?",
       "restrictedModeDescription": "由于此工作区未被信任,部分功能已被禁用。",
-      "restrictedModeNote": "*请注意:Theia 中的工作区信任功能目前仍在开发中;并非所有功能都已与工作区信任集成*",
+      "restrictedModeFeatures": "为防范潜在的恶意代码,任务执行、调试、扩展和 AI 等功能已被禁用。",
       "schema": {
         "folders": {
           "description": "工作区中的根文件夹"
@@ -2376,9 +2423,11 @@
         "title": "工作区文件"
       },
       "trashTitle": "将{0}移至废纸篓",
-      "trustDialogMessage": "若信任作者,此文件夹中的代码可能被执行。\n\n若不信任,部分功能将被禁用。\n\n工作区信任功能目前在Theia中处于开发阶段;并非所有功能都已集成工作区信任机制。\n请查看状态栏中的\"受限模式\"指示器以获取详细信息。",
+      "trustDialogMessage": "如果您信任作者,此文件夹中的代码可能会被执行,包括任务、调试配置、扩展和 AI 功能。",
+      "trustDialogRestricted": "如果您不信任作者,工作区将以受限模式打开,该模式会禁用这些功能,以防范潜在的有害代码。",
       "trustEmptyWindow": "控制默认情况下是否信任空工作区。",
       "trustEnabled": "控制是否启用工作区信任机制。若禁用,则默认信任所有工作区。",
+      "trustLearnMore": "了解有关 Theia 工作区信任的更多信息",
       "trustTrustedFolders": "无需提示即可信任的文件夹URI列表。",
       "untitled-cleanup": "似乎存在大量未命名的作品集文件。请检查 {0} 并删除所有未使用的文件。",
       "variables": {
