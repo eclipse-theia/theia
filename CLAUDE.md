@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ AI Agent Quick Reference
+
+**Never run `.ts` source files directly** with `npx tsx`, `ts-node`, or `node` in this repo. Packages import each other's compiled `lib/` output — running source will fail with module-not-found errors. Always compile first.
+
+| Goal | Command |
+|---|---|
+| Compile TypeScript | `npm run compile` |
+| Build + bundle UI (required for UI testing) | `npm run build:browser` |
+| Start app | `npm run start:browser` |
+| Run all tests | `npm run test` |
+| Test one package | `npx lerna run test --scope @theia/package-name` |
+| Compile one package | `npx lerna run compile --scope @theia/package-name` |
+| Run a single compiled test file | `npx mocha ./packages/core/lib/browser/some-file.spec.js` |
+| Check upstream drift | `node scripts/qaap-drift-check.js` |
+
+**Verify sequence after any code change:**
+1. `npm run compile` — TypeScript errors
+2. `node scripts/qaap-drift-check.js` — drift policy
+3. `npm run build:browser` — only if UI changes need testing in browser
+
 ## Development Commands
 
 **Essential commands:**
