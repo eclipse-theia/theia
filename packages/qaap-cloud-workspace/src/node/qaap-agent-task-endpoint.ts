@@ -128,7 +128,8 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
         res.write(': qaap-agent-tasks stream\n\n');
 
         const subscription = this.runner.onDidChangeTask(event => {
-            res.write(`event: ${event.type}\ndata: ${JSON.stringify(event.task)}\n\n`);
+            const data = event.type === 'output' ? { ...event.task, chunk: event.chunk } : event.task;
+            res.write(`event: ${event.type}\ndata: ${JSON.stringify(data)}\n\n`);
         });
         const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), SSE_HEARTBEAT_MS);
 

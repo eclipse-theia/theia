@@ -241,25 +241,16 @@ export class QaapQaiqStreamAccumulator {
 }
 
 /** Claude Code renderers expect canonical tool ids (e.g. `Bash`, `Read`). */
+const QAIQ_TOOL_NAME_MAP = new Map<string, string>([
+    ['bash', 'Bash'],
+    ['read', 'Read'],
+    ['edit', 'Edit'],
+    ['write', 'Write'],
+    ['grep', 'Grep'],
+    ['glob', 'Glob'],
+]);
+
+/** Claude Code renderers expect canonical tool ids (e.g. `Bash`, `Read`). */
 export function normalizeQaiqToolName(name: string): string {
-    const lower = name.toLowerCase();
-    if (lower === 'bash') {
-        return 'Bash';
-    }
-    if (lower === 'read') {
-        return 'Read';
-    }
-    if (lower === 'edit') {
-        return 'Edit';
-    }
-    if (lower === 'write') {
-        return 'Write';
-    }
-    if (lower === 'grep') {
-        return 'Grep';
-    }
-    if (lower === 'glob') {
-        return 'Glob';
-    }
-    return name;
+    return QAIQ_TOOL_NAME_MAP.get(name.toLowerCase()) ?? name;
 }

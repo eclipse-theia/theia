@@ -16,13 +16,14 @@ import { QaapQaiqStreamAccumulator } from '../common/qaap-qaiq-stream';
 import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 
 const QAIQ_CHAT_AGENT_ID = 'qaiq';
-const POLL_INTERVAL_MS = 400;
-const WAIT_TIMEOUT_MS = 90_000;
+/** Max time to wait for the task to complete before resolving with a "still running" message. */
+const STREAM_TIMEOUT_MS = 90_000;
 
-interface QaapAgentTaskDetail {
+interface QaapTaskSsePayload {
     readonly id: string;
     readonly state?: string;
-    readonly log?: string;
+    /** Present only on `output` events. */
+    readonly chunk?: string;
 }
 
 @injectable()
@@ -112,48 +113,98 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             const task = await this.startTask(prompt, cwd);
             const accumulator = new QaapQaiqStreamAccumulator();
             const sync = new QaapQaiqChatStreamSync(request);
-            let logOffset = 0;
-            const started = Date.now();
-            while (Date.now() - started < WAIT_TIMEOUT_MS) {
-                if (request.response.cancellationToken.isCancellationRequested) {
-                    await this.cancelTask(task.id);
-                    break;
-                }
-                const detail = await this.fetchTaskDetail(task.id);
-                if (!detail) {
-                    break;
-                }
-                const log = detail.log ?? '';
-                if (log.length > logOffset) {
-                    accumulator.push(log.slice(logOffset));
-                    logOffset = log.length;
-                    sync.apply(accumulator);
-                }
-                const state = detail.state ?? 'running';
-                if (state !== 'running') {
-                    if (accumulator.getSegments().length === 0 && log.trim()) {
-                        request.response.response.addContent(new MarkdownChatResponseContentImpl(this.logTail(log, 4000)));
-                    }
-                    if (state === 'failed') {
-                        request.response.response.addContent(new ErrorChatResponseContentImpl(
-                            new Error(`QAIQ task ${state}.`)
-                        ));
-                    }
-                    request.response.complete();
-                    return;
-                }
-                await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-            }
-            if (accumulator.getSegments().length === 0) {
-                request.response.response.addContent(new MarkdownChatResponseContentImpl(
-                    'Still running in background. Track it in **Jobs / Background tasks**.'
-                ));
-            }
-            request.response.complete();
+            await this.streamTask(task.id, accumulator, sync, request);
         } catch (error) {
             request.response.response.addContent(new ErrorChatResponseContentImpl(error));
             request.response.error(error);
         }
+    }
+
+    /**
+     * Subscribes to the `/stream` SSE feed and drives the chat response in real time.
+     * Resolves once the task reaches a terminal state, is cancelled by the user, or times out.
+     */
+    protected streamTask(
+        taskId: string,
+        accumulator: QaapQaiqStreamAccumulator,
+        sync: QaapQaiqChatStreamSync,
+        request: MutableChatRequestModel,
+    ): Promise<void> {
+        return new Promise<void>(resolve => {
+            let source: EventSource | undefined;
+            let done = false;
+
+            const finish = (state: string): void => {
+                if (done) {
+                    return;
+                }
+                done = true;
+                clearTimeout(timeoutHandle);
+                cancelListener.dispose();
+                source?.close();
+                if (state === 'failed') {
+                    request.response.response.addContent(new ErrorChatResponseContentImpl(
+                        new Error('QAIQ task failed.')
+                    ));
+                } else if (accumulator.getSegments().length === 0) {
+                    request.response.response.addContent(new MarkdownChatResponseContentImpl(
+                        'Still running in background. Track it in **Jobs / Background tasks**.'
+                    ));
+                }
+                request.response.complete();
+                resolve();
+            };
+
+            const timeoutHandle = setTimeout(() => finish('timeout'), STREAM_TIMEOUT_MS);
+
+            const cancelListener = request.response.cancellationToken.onCancellationRequested(() => {
+                void this.cancelTask(taskId).finally(() => finish('cancelled'));
+            });
+
+            if (typeof EventSource === 'undefined') {
+                finish('error');
+                return;
+            }
+
+            try {
+                source = new EventSource(`${QAAP_AGENT_TASK_API_PATH}/stream`);
+            } catch {
+                finish('error');
+                return;
+            }
+
+            source.addEventListener('output', ev => {
+                if (done) {
+                    return;
+                }
+                try {
+                    const data = JSON.parse((ev as MessageEvent).data) as QaapTaskSsePayload;
+                    if (data.id !== taskId || !data.chunk) {
+                        return;
+                    }
+                    accumulator.push(data.chunk);
+                    sync.apply(accumulator);
+                } catch {
+                    /* malformed payload */
+                }
+            });
+
+            const onStateEvent = (ev: Event): void => {
+                try {
+                    const data = JSON.parse((ev as MessageEvent).data) as QaapTaskSsePayload;
+                    if (data.id !== taskId) {
+                        return;
+                    }
+                    finish(data.state ?? 'completed');
+                } catch {
+                    /* malformed payload */
+                }
+            };
+            source.addEventListener('completed', onStateEvent);
+            source.addEventListener('cancelled', onStateEvent);
+            // SSE errors are handled by the browser's built-in auto-reconnect; terminal
+            // state arrives via 'completed'/'cancelled' once the task finishes.
+        });
     }
 
     protected stripMention(text: string): string {
@@ -174,29 +225,10 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         return response.json() as Promise<{ id: string }>;
     }
 
-    protected async fetchTaskDetail(taskId: string): Promise<QaapAgentTaskDetail | undefined> {
-        const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/${encodeURIComponent(taskId)}`, { credentials: 'include' });
-        if (!response.ok) {
-            return undefined;
-        }
-        return response.json() as Promise<QaapAgentTaskDetail>;
-    }
-
     protected async cancelTask(taskId: string): Promise<void> {
         await fetch(`${QAAP_AGENT_TASK_API_PATH}/${encodeURIComponent(taskId)}/cancel`, {
             method: 'POST',
             credentials: 'include',
         });
-    }
-
-    protected logTail(log: string, maxChars: number): string {
-        const text = log.trim();
-        if (!text) {
-            return '';
-        }
-        if (text.length <= maxChars) {
-            return text;
-        }
-        return `...(truncated)\n${text.slice(-maxChars)}`;
     }
 }

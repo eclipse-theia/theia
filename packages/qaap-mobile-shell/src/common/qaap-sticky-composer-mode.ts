@@ -102,24 +102,26 @@ function hashString(value: string): string {
     return Math.abs(hash).toString(36);
 }
 
+const PLAN_MODE_PREFIX = nls.localize(
+    'qaap/mobileProjects/planModePrefix',
+    '[Plan mode — respond with a concise markdown plan only. Do not edit files or run commands until the user approves.]',
+);
+
+const ASK_MODE_PREFIX = nls.localize(
+    'qaap/mobileProjects/askModePrefix',
+    '[Ask mode — read-only: answer questions about the codebase. Do not modify files or run shell commands.]',
+);
+
 export function applyBackendInteractionModeToPrompt(prompt: string, modeId: string | undefined): string {
     const trimmed = prompt.trim();
     if (!trimmed || !modeId || modeId === 'agent') {
         return prompt;
     }
     if (modeId === 'plan') {
-        return [
-            '[Plan mode — respond with a concise markdown plan only. Do not edit files or run commands until the user approves.]',
-            '',
-            trimmed,
-        ].join('\n');
+        return [PLAN_MODE_PREFIX, '', trimmed].join('\n');
     }
     if (modeId === 'ask') {
-        return [
-            '[Ask mode — read-only: answer questions about the codebase. Do not modify files or run shell commands.]',
-            '',
-            trimmed,
-        ].join('\n');
+        return [ASK_MODE_PREFIX, '', trimmed].join('\n');
     }
     return prompt;
 }

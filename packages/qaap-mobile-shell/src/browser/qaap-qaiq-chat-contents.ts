@@ -4,9 +4,9 @@
 // *****************************************************************************
 
 import {
-    ChatResponse,
     ChatResponseContent,
     MarkdownChatResponseContentImpl,
+    MutableChatResponseModel,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContent,
 } from '@theia/ai-chat/lib/common/chat-model';
@@ -44,26 +44,23 @@ export function qaiqSegmentsToChatContents(
     return text ? [new MarkdownChatResponseContentImpl(text)] : [];
 }
 
-/** Runtime {@link ChatResponse} on in-flight agent turns (not exported from ai-chat). */
-interface QaapMutableChatResponse extends ChatResponse {
-    addContent(nextContent: ChatResponseContent): void;
-    addContents(contents: ChatResponseContent[]): void;
-    clearContent(): void;
-    responseContentChanged(): void;
-}
-
-/** Update chat response parts in place so collapsible tool UI keeps expand state while streaming. */
+/**
+ * Update chat response parts in place so collapsible tool UI keeps expand state while streaming.
+ *
+ * Accepts {@link MutableChatResponseModel}'s `response` property directly so the type is derived
+ * from the exported class rather than cast from the narrower {@link ChatResponse} interface.
+ * A rename or removal of the mutation methods on the upstream class will surface as a compile error.
+ */
 export function syncAgentResponseContents(
-    response: ChatResponse,
+    response: MutableChatResponseModel['response'],
     nextContents: ChatResponseContent[],
 ): boolean {
-    const mutable = response as QaapMutableChatResponse;
-    const existing = mutable.content;
+    const existing = response.content;
     let changed = false;
     for (let i = 0; i < nextContents.length; i++) {
         const next = nextContents[i];
         if (i >= existing.length) {
-            mutable.addContent(next);
+            response.addContent(next);
             changed = true;
             continue;
         }
@@ -94,13 +91,13 @@ export function syncAgentResponseContents(
                     changed = true;
                 }
             } else {
-                mutable.clearContent();
-                mutable.addContents(nextContents);
+                response.clearContent();
+                response.addContents(nextContents);
                 return true;
             }
         } else {
-            mutable.clearContent();
-            mutable.addContents(nextContents);
+            response.clearContent();
+            response.addContents(nextContents);
             return true;
         }
     }
