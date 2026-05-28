@@ -21,10 +21,10 @@ import {
     QaapUpdateAgentConversationRequest,
     toConversationSummary,
 } from '../common/qaap-agent-conversation';
-import { resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { isQaiqAgent, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
-import { QaapAgentTaskRunner, QAIQ_AGENT_ID } from './qaap-agent-task-runner';
+import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
 
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-conversations');
@@ -353,8 +353,7 @@ export class QaapAgentConversationStore {
     }
 
     protected isQaiqConversation(conv: QaapAgentConversation): boolean {
-        const agent = conv.agentId?.trim().toLowerCase();
-        return agent === QAIQ_AGENT_ID || agent === 'openclaude';
+        return isQaiqAgent(conv.agentId);
     }
 
     protected appendQaiqStreamChunk(
@@ -469,15 +468,7 @@ export class QaapAgentConversationStore {
         return { ...conv, status: 'failed', updatedAt: Date.now(), messages };
     }
 
-    /**
-     * Build the agent prompt for the upcoming turn. The chosen format is a plain transcript with
-     * role-tagged blocks: every coding-agent CLI we support (`claude -p`, `codex exec`, `aider`)
-     * accepts free-form text as a single shell-quoted argument, so an explicit transcript is the
-     * most robust way to carry multi-turn context without depending on agent-specific resume APIs.
-     */
-    /**
-     * Agent for the current user turn: `@mention` in this message beats the picker, then stored agent.
-     */
+    /** Agent for the current user turn: `@mention` in this message beats the picker, then stored agent. */
     protected resolveTurnAgent(conv: QaapAgentConversation, userContent: string, explicit?: string): string {
         const fromMention = this.extractAgentMentionFromUserMessage(userContent);
         if (fromMention) {
@@ -538,6 +529,12 @@ export class QaapAgentConversationStore {
         return content.trim();
     }
 
+    /**
+     * Build the agent prompt for the upcoming turn. The chosen format is a plain transcript with
+     * role-tagged blocks: every coding-agent CLI we support (`claude -p`, `codex exec`, `aider`)
+     * accepts free-form text as a single shell-quoted argument, so an explicit transcript is the
+     * most robust way to carry multi-turn context without depending on agent-specific resume APIs.
+     */
     protected buildPrompt(conv: QaapAgentConversation): string {
         const lastUser = conv.messages[conv.messages.length - 1];
         const history = conv.messages.slice(0, -1);
