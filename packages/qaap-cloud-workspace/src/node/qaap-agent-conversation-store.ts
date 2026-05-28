@@ -177,6 +177,32 @@ export class QaapAgentConversationStore {
         return next;
     }
 
+    retry(id: string): QaapAgentConversation {
+        const conv = this.conversations.get(id);
+        if (!conv) {
+            throw new Error('Conversation not found.');
+        }
+        if (conv.status === 'streaming') {
+            throw new Error('A turn is already in progress for this conversation.');
+        }
+        // Find the last user message that failed (has an error annotation)
+        const failedIndex = conv.messages.reduce<number>((last, m, i) => m.role === 'user' && m.error ? i : last, -1);
+        if (failedIndex < 0) {
+            throw new Error('No failed message to retry.');
+        }
+        const failedMessage = conv.messages[failedIndex];
+        // Trim back to just before the failed turn (also removes any partial agent reply that followed)
+        const trimmed: QaapAgentConversation = {
+            ...conv,
+            status: 'idle',
+            messages: conv.messages.slice(0, failedIndex),
+            updatedAt: Date.now(),
+        };
+        this.conversations.set(id, trimmed);
+        this.fire({ type: 'updated', conversation: toConversationSummary(trimmed) });
+        return this.postUserMessage(id, failedMessage.content);
+    }
+
     cancel(id: string): QaapAgentConversation | undefined {
         const conv = this.conversations.get(id);
         if (!conv) {

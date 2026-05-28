@@ -39,6 +39,7 @@ import {
     getConversation,
     postConversationMessage,
     renameConversation,
+    retryConversation,
     updateConversation,
 } from '../common/qaap-agent-conversation-client';
 import { markMobileProjectReadmeForOpen, markMobileProjectsPanelDismiss } from './mobile-projects-open';
@@ -2743,6 +2744,24 @@ export class MobileProjectsPanel {
                 pause.title = pause.getAttribute('aria-label')!;
                 taskTitleRow.insertBefore(pause, taskTitleRow.firstChild);
             }
+            if (isFailed && summary.source !== 'theia-chat') {
+                const retryBtn = document.createElement('button');
+                retryBtn.type = 'button';
+                retryBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-retry-btn';
+                const retryLabel = nls.localize('qaap/mobileProjects/retryChat', 'Retry last message');
+                retryBtn.setAttribute('aria-label', retryLabel);
+                retryBtn.title = retryLabel;
+                const retryIcon = document.createElement('span');
+                retryIcon.className = 'codicon codicon-debug-restart';
+                retryIcon.setAttribute('aria-hidden', 'true');
+                retryBtn.append(retryIcon);
+                retryBtn.addEventListener('click', ev => {
+                    ev.stopPropagation();
+                    void this.onRetryConversation(project, summary);
+                });
+                row.append(retryBtn);
+            }
+
             const menuBtn = document.createElement('button');
             menuBtn.type = 'button';
             menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-menu-btn';
@@ -3152,6 +3171,18 @@ export class MobileProjectsPanel {
         menu.className = 'theia-mobile-projects-card-menu theia-mobile-projects-conversation-menu';
         menu.setAttribute('role', 'menu');
         menu.hidden = true;
+
+        if (summary.status === 'failed' && summary.source !== 'theia-chat') {
+            this.appendCardMenuItem(menu, {
+                label: nls.localize('qaap/mobileProjects/retryChat', 'Retry last message'),
+                iconClass: 'codicon-debug-restart',
+                onSelect: () => { void this.onRetryConversation(project, summary); },
+            });
+            const retrySep = document.createElement('div');
+            retrySep.className = 'theia-mobile-projects-card-menu-separator';
+            retrySep.setAttribute('role', 'separator');
+            menu.append(retrySep);
+        }
 
         this.appendCardMenuItem(menu, {
             label: nls.localize('qaap/mobileProjects/openChat', 'Open chat'),
@@ -3625,6 +3656,22 @@ export class MobileProjectsPanel {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/cancelChatFailed',
                 'Could not cancel run: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onRetryConversation(
+        _project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        this.closeCardMenu();
+        try {
+            await retryConversation(summary.id);
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/retryChatFailed',
+                'Could not retry: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }

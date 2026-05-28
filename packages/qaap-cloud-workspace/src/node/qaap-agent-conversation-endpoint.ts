@@ -71,6 +71,16 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             }
             res.json(conv);
         });
+        app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/retry`, (req, res) => {
+            try {
+                const conv = this.store.retry(req.params.id);
+                res.json(conv);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                const status = message.includes('not found') ? 404 : 400;
+                res.status(status).json({ error: message });
+            }
+        });
         app.delete(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
             const ok = this.store.delete(req.params.id);
             res.status(ok ? 204 : 404).end();

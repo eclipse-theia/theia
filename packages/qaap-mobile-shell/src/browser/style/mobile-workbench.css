@@ -3795,6 +3795,16 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   opacity: 0.9;
 }
 
+.theia-mobile-projects-conversation-retry-btn {
+  color: var(--theia-errorForeground, #f14c4c);
+  opacity: 0.8;
+}
+
+.theia-mobile-projects-conversation-retry-btn:hover,
+.theia-mobile-projects-conversation-retry-btn:focus-visible {
+  opacity: 1;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .theia-mobile-projects-task-row:hover,
   .theia-mobile-projects-task-row:focus-within,
