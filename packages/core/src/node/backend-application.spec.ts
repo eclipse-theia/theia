@@ -249,7 +249,7 @@ describe('BackendApplication', () => {
             });
 
             // Get the mock logger instance from the container
-            const mockLogger = container.get(ILogger);
+            const mockLogger = container.get(ILogger) as ILogger;
             // Stub the 'error' method on our mock logger
             const errorStub = sandbox.stub(mockLogger, 'error');
 
