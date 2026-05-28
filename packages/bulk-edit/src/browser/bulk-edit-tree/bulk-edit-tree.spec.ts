@@ -18,6 +18,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
 import { ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 let disableJSDOM = enableJSDOM();
 
@@ -39,6 +40,14 @@ before(() => {
     disableJSDOM = enableJSDOM();
 
     testContainer = new Container();
+    testContainer.bind(ILogger).toConstantValue({
+        error: () => { },
+        warn: () => { },
+        info: () => { },
+        debug: () => { },
+        trace: () => { },
+        fatal: () => { }
+    } as unknown as ILogger);
     testContainer.bind(BulkEditTree).toSelf();
     bulkEditTree = testContainer.get(BulkEditTree);
 
