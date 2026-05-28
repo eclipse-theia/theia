@@ -32,6 +32,7 @@ import { PROBLEM_OPTIONS } from './problem-container';
 import { ProblemManager } from './problem-manager';
 import { ProblemTree } from './problem-tree-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 disableJSDOM();
 
@@ -41,6 +42,14 @@ before(() => {
     disableJSDOM = enableJSDOM();
     const testContainer = new Container();
 
+    testContainer.bind(ILogger).toConstantValue({
+        error: () => { },
+        warn: () => { },
+        info: () => { },
+        debug: () => { },
+        trace: () => { },
+        fatal: () => { }
+    } as unknown as ILogger);
     testContainer.bind(MarkerManager).toSelf().inSingletonScope();
     testContainer.bind(ProblemManager).toSelf();
     testContainer.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
