@@ -504,7 +504,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         if (confirm) {
             const confirmed = await new ConfirmDialog({
                 title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
-                msg: nls.localize('theia/ai/chat-ui/confirmDeleteChatMsg', 'Are you sure you want to delete this chat?')
+                msg: nls.localizeByDefault('Are you sure you want to delete this chat?')
             }).open();
             if (!confirmed) {
                 return;
