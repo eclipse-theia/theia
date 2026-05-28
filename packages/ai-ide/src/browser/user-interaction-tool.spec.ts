@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
@@ -28,6 +32,8 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 
+disableJSDOM();
+
 const singleStepArgs = (overrides: Record<string, unknown> = {}) => JSON.stringify({
     interactions: [{
         title: 'Choose',
@@ -39,6 +45,12 @@ const singleStepArgs = (overrides: Record<string, unknown> = {}) => JSON.stringi
 
 const parseResult = (raw: unknown): UserInteractionResult => JSON.parse(raw as string);
 
+const makeMockRepo = () => ({
+    provider: { id: 'git', rootUri: 'file:///workspace' },
+    toUriAtRef: (fileUri: URI, ref: string) =>
+        fileUri.withScheme('git').withQuery(JSON.stringify({ path: fileUri.path.fsPath(), ref }))
+});
+
 describe('UserInteractionTool', () => {
     let container: Container;
     let tool: UserInteractionTool;
@@ -48,6 +60,14 @@ describe('UserInteractionTool', () => {
     let mockScmService: Partial<ScmService>;
     let mockResourceProvider: sinon.SinonStub;
     const workspaceRoot = new URI('file:///workspace');
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
 
     beforeEach(() => {
         container = new Container();
@@ -111,12 +131,14 @@ describe('UserInteractionTool', () => {
         expect(JSON.parse(result as string).error).to.equal('No tool call ID available');
     });
 
-    it('should return single-step result on completion', async () => {
+    it('should resolve the handler with the result passed to completeInteraction', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-1' });
 
-        tool.setStepResult('call-1', 0, { value: 'b' });
-        tool.completeInteraction('call-1');
+        tool.completeInteraction('call-1', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'b' }]
+        });
 
         const result = parseResult(await handlerPromise);
         expect(result.completed).to.be.true;
@@ -124,18 +146,7 @@ describe('UserInteractionTool', () => {
         expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'b' });
     });
 
-    it('should atomically set and complete via completeInteractionWith', async () => {
-        const handler = tool.getTool().handler;
-        const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-with' });
-
-        tool.completeInteractionWith('call-with', 0, { value: 'a' });
-
-        const result = parseResult(await handlerPromise);
-        expect(result.completed).to.be.true;
-        expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'a' });
-    });
-
-    it('should accumulate per-step state across multiple steps', async () => {
+    it('should forward multi-step results verbatim', async () => {
         const handler = tool.getTool().handler;
         const args = JSON.stringify({
             interactions: [
@@ -146,10 +157,14 @@ describe('UserInteractionTool', () => {
         });
         const handlerPromise = handler(args, { toolCallId: 'call-multi' });
 
-        tool.setStepResult('call-multi', 0, { comments: ['nice summary'] });
-        tool.setStepResult('call-multi', 1, { value: 'approve', comments: ['fix on line 42'] });
-        tool.setStepResult('call-multi', 2, {});
-        tool.completeInteraction('call-multi');
+        tool.completeInteraction('call-multi', {
+            completed: true,
+            steps: [
+                { title: 'Overview', comments: ['nice summary'] },
+                { title: 'Area 1', value: 'approve', comments: ['fix on line 42'] },
+                { title: 'Area 2' }
+            ]
+        });
 
         const result = parseResult(await handlerPromise);
         expect(result.completed).to.be.true;
@@ -159,29 +174,24 @@ describe('UserInteractionTool', () => {
         expect(result.steps[2]).to.deep.equal({ title: 'Area 2' });
     });
 
-    it('should ignore setStepResult after completion', async () => {
+    it('should ignore completeInteraction calls after the interaction resolved', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-late' });
-        tool.setStepResult('call-late', 0, { value: 'a' });
-        tool.completeInteraction('call-late');
+        tool.completeInteraction('call-late', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'a' }]
+        });
         const result = parseResult(await handlerPromise);
         expect(result.steps[0].value).to.equal('a');
         // Late call must not throw or change anything
-        tool.setStepResult('call-late', 0, { value: 'b' });
+        tool.completeInteraction('call-late', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'b' }]
+        });
         // No assertion needed beyond ensuring no exception
     });
 
-    it('should ignore setStepResult for out-of-range step index', async () => {
-        const handler = tool.getTool().handler;
-        const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-range' });
-        tool.setStepResult('call-range', 5, { value: 'x' });
-        tool.setStepResult('call-range', -1, { value: 'y' });
-        tool.completeInteraction('call-range');
-        const result = parseResult(await handlerPromise);
-        expect(result.steps[0]).to.deep.equal({ title: 'Choose' });
-    });
-
-    it('should return partial results with completed=false on cancellation', async () => {
+    it('should resolve with the renderer-supplied partial on cancellation', async () => {
         const handler = tool.getTool().handler;
         const cts = new CancellationTokenSource();
         const args = JSON.stringify({
@@ -193,8 +203,17 @@ describe('UserInteractionTool', () => {
         });
         const handlerPromise = handler(args, { toolCallId: 'call-cancel', cancellationToken: cts.token });
 
-        tool.setStepResult('call-cancel', 0, { comments: ['first done'] });
-        tool.setStepResult('call-cancel', 1, { value: 'whatever' });
+        // Wait a microtask so the handler has registered the pending interaction.
+        await Promise.resolve();
+        // Simulate the renderer pushing the latest partial state.
+        tool.recordPartial('call-cancel', {
+            completed: false,
+            steps: [
+                { title: 'Step A', comments: ['first done'] },
+                { title: 'Step B', value: 'whatever' },
+                { title: 'Step C', skipped: true }
+            ]
+        });
         cts.cancel();
 
         const result = parseResult(await handlerPromise);
@@ -204,7 +223,7 @@ describe('UserInteractionTool', () => {
         expect(result.steps[2].skipped).to.be.true;
     });
 
-    it('should mark all steps as skipped if user did nothing before cancellation', async () => {
+    it('should fall back to all-skipped when no renderer claims the cancellation', async () => {
         const handler = tool.getTool().handler;
         const cts = new CancellationTokenSource();
         const args = JSON.stringify({
@@ -231,11 +250,8 @@ describe('UserInteractionTool', () => {
             interactions: [{ title: 'Q2', message: 'second', options: [{ text: 'B', value: 'b' }] }]
         }), { toolCallId: 'call-p2' });
 
-        tool.setStepResult('call-p2', 0, { value: 'b' });
-        tool.completeInteraction('call-p2');
-
-        tool.setStepResult('call-p1', 0, { value: 'a' });
-        tool.completeInteraction('call-p1');
+        tool.completeInteraction('call-p2', { completed: true, steps: [{ title: 'Q2', value: 'b' }] });
+        tool.completeInteraction('call-p1', { completed: true, steps: [{ title: 'Q1', value: 'a' }] });
 
         expect(parseResult(await promise1).steps[0].value).to.equal('a');
         expect(parseResult(await promise2).steps[0].value).to.equal('b');
@@ -255,6 +271,19 @@ describe('UserInteractionTool', () => {
         expect((mockEditorManager.open as sinon.SinonStub).calledOnce).to.be.true;
         const openCall = (mockEditorManager.open as sinon.SinonStub).getCall(0);
         expect(openCall.args[1]).to.deep.equal({ selection: undefined });
+    });
+
+    it('should open a file link when rightRef is an invalid placeholder', async () => {
+        await tool.openLink({
+            ref: { path: 'README.md', line: 1 },
+            rightRef: { path: '' }
+        });
+
+        expect((mockEditorManager.open as sinon.SinonStub).calledOnce).to.be.true;
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.false;
+        const openCall = (mockEditorManager.open as sinon.SinonStub).getCall(0);
+        expect(openCall.args[0].toString()).to.equal('file:///workspace/README.md');
+        expect(openCall.args[1]).to.deep.equal({ selection: { start: { line: 0, character: 0 } } });
     });
 
     it('should open a diff link with custom label', async () => {
@@ -290,8 +319,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/new-file.ts', gitRef: 'abc123' },
@@ -322,8 +350,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/deleted-file.ts', gitRef: 'abc123' },

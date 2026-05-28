@@ -55,4 +55,52 @@ describe('ProcessUtils', () => {
         const pids = coreProcessManager['unixGetChildrenRecursive'](2);
         expect(Array.from(pids)).members([40, 5, 6, 7]);
     });
+
+    describe('#unixTerminateProcessTree', () => {
+        let originalKill: typeof process.kill;
+        let originalConsoleError: typeof console.error;
+        let loggedErrors: unknown[];
+
+        function throwingKill(code: string): typeof process.kill {
+            return (() => {
+                const error = new Error(`kill ${code}`) as NodeJS.ErrnoException;
+                error.code = code;
+                throw error;
+            }) as typeof process.kill;
+        }
+
+        beforeEach(() => {
+            originalKill = process.kill;
+            originalConsoleError = console.error;
+            loggedErrors = [];
+            console.error = (...args: unknown[]) => { loggedErrors.push(args); };
+            // One child plus the parent; report the parent as its own group leader so the `kill(-ppid)` branch runs too.
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set([424242]);
+            coreProcessManager['unixGetPGID'] = (pid: number) => pid;
+        });
+
+        afterEach(() => {
+            process.kill = originalKill;
+            console.error = originalConsoleError;
+        });
+
+        it('does not throw or log when processes in the tree are already gone (ESRCH)', () => {
+            process.kill = throwingKill('ESRCH');
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(loggedErrors).to.be.empty;
+        });
+
+        it('logs unexpected kill errors (e.g. EPERM) without throwing', () => {
+            process.kill = throwingKill('EPERM');
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(loggedErrors).to.not.be.empty;
+        });
+
+        it('does not throw when a kill rejects with a value that has no code (e.g. undefined)', () => {
+            const thrown: unknown = undefined;
+            process.kill = (() => { throw thrown; }) as typeof process.kill;
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(loggedErrors).to.not.be.empty;
+        });
+    });
 });

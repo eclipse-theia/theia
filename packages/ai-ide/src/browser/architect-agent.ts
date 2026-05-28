@@ -52,7 +52,7 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {
             id: ARCHITECT_PLANNING_PROMPT_ID,
-            name: nls.localize('theia/ai/ide/architectAgent/mode/plan', 'Plan Mode')
+            name: nls.localizeByDefault('Plan Mode')
         },
         {
             id: ARCHITECT_SIMPLE_PROMPT_ID,

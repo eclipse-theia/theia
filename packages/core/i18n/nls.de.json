@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "Maximale Anzahl von Wiederholungsversuchen, wenn eine Anfrage fehlschlägt. Standardmäßig 3."
           },
-          "mdDescription": "Integrieren Sie benutzerdefinierte Modelle, die mit der Anthropic-API kompatibel sind. Die erforderlichen Attribute sind „model“ und „url“.            \n            Optional können Sie            \n            - eine eindeutige „id“ angeben, um das benutzerdefinierte Modell in der Benutzeroberfläche zu identifizieren. Wenn keine angegeben wird, wird „model“ als „id“ verwendet.            \n            - Geben Sie einen „apiKey“ an, um auf die API zuzugreifen, die unter der angegebenen URL bereitgestellt wird. Verwenden Sie „true“, um die Verwendung des globalen Anthropic-API-Schlüssels anzugeben.            \n            - Geben Sie „enableStreaming: false“ an, um anzugeben, dass Streaming nicht verwendet werden soll.            \n            - Geben Sie „useCaching: false“ an, um anzugeben, dass das Prompt-Caching nicht verwendet werden soll. \n- Geben Sie „maxRetries: <Zahl>“ an, um die maximale Anzahl von Wiederholungsversuchen anzugeben, wenn eine Anfrage fehlschlägt. Der Standardwert ist 3.",
+          "mdDescription": "Integrieren Sie benutzerdefinierte Modelle, die mit der Anthropic-API kompatibel sind. Die erforderlichen Attribute sind `model` und `url`.            \n            Optional können Sie            \n            - eine eindeutige `id` angeben, um das benutzerdefinierte Modell in der Benutzeroberfläche zu identifizieren. Wenn keine angegeben wird, wird `model` als `id` verwendet.            \n            - Geben Sie einen `apiKey` an, um auf die unter der angegebenen URL bereitgestellte API zuzugreifen. Verwenden Sie `true`, um die Verwendung des globalen Anthropic-API-Schlüssels anzugeben.            \n            - Geben Sie `enableStreaming: false` an, um anzugeben, dass Streaming nicht verwendet werden soll.            \n            - Geben Sie `useCaching: false` an, um anzugeben, dass das Prompt-Caching nicht verwendet werden soll.            \n            - Geben Sie `maxRetries: <Zahl>` an, um die maximale Anzahl von Wiederholungsversuchen anzugeben, wenn eine Anfrage fehlschlägt. Standardmäßig 3.            \n            Die Schlussfolgerungsfähigkeiten und das maximale Limit für Ausgabetoken werden aus der Antwort des Endpunkts `/v1/models` abgeleitet.",
           "modelId": {
             "title": "Modell-ID"
-          },
-          "reasoningApi": {
-            "title": "Welche Form der Anthropic-Reasoning-API soll verwendet werden: `effort` für adaptives Denken (Claude 4.6+), `budget` für erweitertes Denken (Claude 4.0–4.5) oder `null` zum Deaktivieren. Wird standardmäßig aus dem Modellnamen abgeleitet."
-          },
-          "supportsXHighEffort": {
-            "title": "Gibt an, ob das Modell den anthropischen Aufwandswert `xhigh` akzeptiert. Wird standardmäßig aus dem Modellnamen abgeleitet."
           },
           "url": {
             "title": "Der Anthropic-API-kompatible Endpunkt, auf dem das Modell gehostet wird."
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "Es konnte kein fertiges Sprachmodell für die Agenten {0} gefunden werden. Bitte überprüfen Sie Ihre Einstellungen!",
         "defaultAgent": {
           "description": "Optional: <Agentenname> des Chat-Agenten, der aufgerufen werden soll, wenn in der Benutzeranfrage kein Agent explizit mit @<Agentenname> angegeben ist. Wenn kein Standardagent konfiguriert ist, werden die Standardeinstellungen von Theia angewendet."
+        },
+        "defaultToolConfirmation": {
+          "description": "Standardmäßiges Bestätigungsverhalten für Tools, die keinen toolspezifischen Eintrag unter „ai-features.chat.toolConfirmation“ haben. Tools, die vor der automatischen Genehmigung ausdrücklich eine Bestätigung erfordern, verwenden unabhängig von dieser Einstellung immer standardmäßig „bestätigen“."
         },
         "fromClipboard": "$(clippy) Aus der Zwischenablage",
         "fromClipboardDescription": "Bild aus der Zwischenablage einfügen",
@@ -196,15 +193,15 @@
           "description": "Ein relativer Pfad im Arbeitsbereich, in dem Beschreibungen des Aufgabenkontexts gespeichert und abgerufen werden können. Wenn dieser Wert leer ist, werden generierte Aufgabenkontexte im Speicher statt auf der Festplatte gespeichert."
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "Tools automatisch ohne Bestätigung ausführen"
+          },
           "confirm": {
             "description": "Vor der Ausführung von Tools um Bestätigung bitten"
           },
-          "description": "Konfigurieren Sie das Bestätigungsverhalten für verschiedene Tools. Der Schlüssel ist die Tool-ID, der Wert ist der Bestätigungsmodus. Verwenden Sie „*” als Schlüssel, um eine globale Standardeinstellung für alle Tools festzulegen.",
+          "description": "Konfigurieren Sie das Bestätigungsverhalten für einzelne Tools. Der Schlüssel ist die Tool-ID, der Wert ist der Bestätigungsmodus. Um die Standardeinstellung für alle Tools zu ändern, verwenden Sie „ai-features.chat.defaultToolConfirmation“.",
           "disabled": {
             "description": "Ausführung des Tools deaktivieren"
-          },
-          "yolo": {
-            "description": "Tools automatisch ohne Bestätigung ausführen"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "Konfiguration der Umschaltfunktionen"
         },
         "chatInputAriaLabel": "Geben Sie hier Ihre Nachricht ein",
+        "chatRequestFailedWithDetail": "Chat-Anfrage fehlgeschlagen: {0}",
         "chatResponses": "Chat-Antworten",
         "clearAllSelections": "Suchzeichenfolge und Funktionsauswahl löschen",
         "code-part-renderer": {
-          "copied": "Kopiert",
           "generatedCode": "Generierter Code"
         },
         "collapseAll": "Alle ausblenden",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "Der Befehl hat die ID „{0}”, kann jedoch nicht über das Chat-Fenster ausgeführt werden."
         },
-        "confirmDeleteChatMsg": "Möchten Sie diesen Chat wirklich löschen?",
         "copyCodeBlock": "Code-Block kopieren",
         "couldNotSendRequestToSession": "Die Anfrage „{0}“ konnte nicht an die Sitzung {1} gesendet werden.",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "Fokus-Chat-Eingabe",
         "focusResponse": "Fokus-Chat-Antwort",
         "functions": "Funktionen",
-        "functionsDescription": "Von Theia-Erweiterungen bereitgestellte integrierte Funktionen",
+        "functionsDescription": "Integrierte Funktionen, die von „{0}“-Erweiterungen bereitgestellt werden",
         "genericCapabilities": "Allgemeine Funktionen",
         "mcpFunctionsDescription": "Model Context Protocol (MCP)-Funktionen von verbundenen Servern",
         "noChatAgentsAvailable": "Keine Chat-Agenten verfügbar.",
@@ -305,9 +301,6 @@
         "persistedSession": "Persistente Sitzung (zum Wiederherstellen anklicken)",
         "promptFragmentsDescription": "Benutzerdefinierte Eingabeaufforderungsfragmente, die in die Konversation aufgenommen werden sollen",
         "reasoning": {
-          "high": "Hoch",
-          "low": "Niedrig",
-          "medium": "Mittel",
           "minimal": "Minimal"
         },
         "removeChat": "Chat entfernen",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "Die vorherige Chat-Anfrage wurde von einem anderen Agenten bearbeitet. Claude Code sieht diese anderen Nachrichten nicht.",
         "directory": "Verzeichnis",
         "domain": "Domäne",
+        "edit": "Bearbeiten {0}",
         "editAutomatically": "Automatisch bearbeiten",
         "editing": "Bearbeiten",
         "editsCount": "{0} Bearbeitungen",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "Dieser Agent bietet Inline-Code-Vervollständigung im Code-Editor der Theia IDE.",
+          "description": "Dieser Agent bietet Inline-Code-Vervollständigung im Code-Editor von {0}.",
           "vars": {
             "file": {
               "description": "Die URI der zu bearbeitenden Datei"
@@ -587,7 +581,7 @@
           "expired": "Die Autorisierung ist abgelaufen oder wurde abgelehnt. Bitte versuchen Sie es erneut.",
           "hint": "Nachdem Sie den Code eingegeben und autorisiert haben, klicken Sie unten auf „Ich habe autorisiert”.",
           "initiating": "Authentifizierung wird initiiert...",
-          "instructions": "Um Theia für die Verwendung von GitHub Copilot zu autorisieren, rufen Sie die folgende URL auf und geben Sie den Code ein:",
+          "instructions": "Um „{0}“ für die Nutzung von GitHub Copilot zu autorisieren, rufe die unten stehende URL auf und gib den Code ein:",
           "openGitHub": "GitHub öffnen",
           "privacy": "Theia ist ein Open-Source-Projekt. Wir bitten nur um Zugriff auf Ihren GitHub-Benutzernamen, um eine Verbindung zu den GitHub Copilot-Diensten herzustellen – es werden keine anderen Daten abgerufen oder gespeichert.",
           "success": "Erfolgreich bei GitHub Copilot angemeldet!",
@@ -650,8 +644,8 @@
           "label": "KI-Konfiguration"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia – Agent abgeschlossen",
-          "namedAgentCompleted": "Theia – Agent „{0}“ abgeschlossen"
+          "agentCompleted": "{0} - Agent abgeschlossen",
+          "namedAgentCompleted": "{0} - Agent „{1}“ abgeschlossen"
         },
         "capabilityVariable": {
           "argDescription": "Die Prompt-Fragment-ID, optional gefolgt von „default on“ oder „default off“ (Standardwert ist „off“).",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "Am besten geeignet für Szenarien der Code-Autokomplettierung."
+          },
+          "fast": {
+            "description": "Schnellere und kostengünstigere Modelle für einfachere Aufgaben wie die Erkundung oder den Aufruf grundlegender Tools, bei denen kein tiefgreifendes logisches Denken erforderlich ist."
           },
           "summarize": {
             "description": "Modelle, die für die Zusammenfassung und Verdichtung von Inhalten priorisiert wurden."
@@ -744,7 +741,7 @@
           "description": "Kurze Referenz zu allen derzeit geöffneten Dateien (relative Pfade, durch Kommas getrennt)"
         },
         "openEditorsVariable": {
-          "description": "Eine durch Kommas getrennte Liste aller derzeit geöffneten Dateien, relativ zum Stammverzeichnis des Arbeitsbereichs."
+          "description": "Eine durch Kommas getrennte Liste aller derzeit geöffneten Dateien als arbeitsbereichsbezogene Pfade (z. B. my-project/src/index.ts)."
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "Variablenwert kann nicht angezeigt werden.",
         "unableToResolveVariable": "Variable kann nicht aufgelöst werden.",
         "variable-contribution": {
-          "builtInVariable": "Theia-integrierte Variable",
-          "currentAbsoluteFilePath": "Der absolute Pfad der aktuell geöffneten Datei. Bitte beachten Sie, dass die meisten Agenten einen relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) erwarten.",
-          "currentFileContent": "Der reine Inhalt der derzeit geöffneten Datei. Dies schließt Informationen darüber aus, woher der Inhalt stammt. Bitte beachten Sie, dass die meisten Agenten besser mit einem relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) funktionieren.",
-          "currentRelativeDirPath": "Der relative Pfad des Verzeichnisses, das die aktuell geöffnete Datei enthält.",
-          "currentRelativeFilePath": "Der relative Pfad der aktuell geöffneten Datei.",
-          "currentSelectedText": "Der derzeit in der geöffneten Datei ausgewählte Klartext. Dies schließt die Informationen darüber aus, woher der Inhalt stammt. Bitte beachten Sie, dass die meisten Agenten besser mit einem relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) funktionieren.",
-          "dotRelativePath": "Kurze Referenz zum relativen Pfad der aktuell geöffneten Datei („currentRelativeFilePath“)."
+          "builtInVariable": "{0} Integrierte Variable",
+          "currentAbsoluteFilePath": "Der absolute Pfad der derzeit geöffneten Datei.",
+          "currentFileContent": "Der reine Inhalt der derzeit geöffneten Datei. Dies schließt Informationen darüber aus, woher der Inhalt stammt.",
+          "currentRelativeDirPath": "Der arbeitsbereichsrelative Pfad des Verzeichnisses, das die aktuell geöffnete Datei enthält (z. B. my-project/src).",
+          "currentRelativeFilePath": "Der arbeitsbereichsrelative Pfad der aktuell geöffneten Datei (z. B. my-project/src/index.ts).",
+          "currentSelectedText": "Der derzeit in der geöffneten Datei ausgewählte Klartext. Dies schließt Informationen darüber aus, woher der Inhalt stammt.",
+          "dotRelativePath": "Kurzer Verweis auf den arbeitsbereichsrelativen Pfad der aktuell geöffneten Datei („currentRelativeFilePath“)."
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "AI-Verlauf öffnen...",
         "request-card": {
           "promptVariant": "Eingabeaufforderungsvariante",
-          "request": "Anfrage",
           "response": "Antwort",
-          "timestamp": "Zeitstempel",
-          "title": "Anfrage"
+          "timestamp": "Zeitstempel"
         },
         "sortChronologically": {
           "tooltip": "Chronologisch sortieren"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "Plan-Modus",
             "planNext": "Planungsmodus (Weiter)",
             "simple": "Einfacher Modus"
           },
@@ -1041,7 +1035,7 @@
             "label": "KI-Befehl",
             "message": "Ausführen eines Callbacks mit Argumenten {0}. Das erste Argument ist die Befehls-ID, die für den dynamisch registrierten Befehl registriert wurde. Die anderen Argumente sind die tatsächlichen Argumente für den Handler."
           },
-          "description": "Dieser Agent kennt alle Befehle, die der Benutzer innerhalb der Theia IDE, dem Tool, mit dem der Benutzer gerade arbeitet, ausführen kann. Basierend auf der Benutzeranforderung kann er den richtigen Befehl finden und den Benutzer diesen dann ausführen lassen.",
+          "description": "Dieser Agent kennt alle Befehle, die der Benutzer ausführen kann. Basierend auf der Benutzeranfrage kann er den richtigen Befehl finden und den Benutzer diesen dann ausführen lassen.",
           "response": {
             "customHandler": "Versuchen Sie Folgendes auszuführen:",
             "noCommand": "Leider kann ich einen solchen Befehl nicht finden.",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Die Liste der in Theia verfügbaren Befehle."
+              "description": "Die Liste der verfügbaren Befehle."
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "Ermöglicht dem Agenten die Interaktion mit GitHub. Dazu kann der Agent Aufgaben an den GitHub-Agenten delegieren, der Issues, Pull-Anfragen, Kommentare und Repository-Inhalte lesen und schreiben kann."
         },
         "githubRepoName": {
-          "description": "Der Name des aktuellen GitHub-Repositorys (z. B. „eclipse-theia/theia”)"
+          "description": "Die mit den Arbeitsbereichsstammverzeichnissen verbundenen GitHub-Repositorys (z. B. „eclipse-theia/theia“)"
         },
         "howToGetStarted": "Erste Schritte",
         "model-selection-description": "Wählen Sie in der [AI-Konfigurationsansicht]({0}) aus, welche großen Sprachmodelle (LLMs) von den einzelnen KI-Agenten verwendet werden sollen.",
@@ -1112,6 +1106,30 @@
           "progressMessage": "Ermittlung des am besten geeigneten Agenten",
           "response": {
             "delegatingToAgent": "Delegieren an „@{0}“"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "Delegiert die Untersuchung von Architektur, Verwendung, Konventionen und Tests an den Explore-Agenten. Wenn deaktiviert, führt der PR-Prüfer die Untersuchung mit seinen eigenen Tools durch.",
+              "name": "Delegierte Erkundung"
+            },
+            "githubInfo": {
+              "description": "Delegiert an den GitHub-Agenten, um Metadaten zu Pull-Anfragen, Diffs, Kommentare, Überprüfungen und verknüpfte Issues abzurufen.",
+              "name": "GH PR-Info"
+            },
+            "localCheckout": {
+              "description": "Zieht den Pull-Request lokal ab und sichert bestehende Änderungen im Arbeitsverzeichnis.",
+              "name": "Auschecken"
+            },
+            "localValidation": {
+              "description": "Führt lokale Installations-, Build-, Lint-, Test- oder vergleichbare Validierungsaufgaben für den Pull-Request aus.",
+              "name": "Build"
+            },
+            "pendingGitHubReview": {
+              "description": "Weist den GitHub-Agenten an, nach ausdrücklicher Bestätigung durch den Benutzer eine ausstehende Pull-Request-Überprüfung mit vorbereiteten Inline-Kommentaren zu erstellen oder zu aktualisieren.",
+              "name": "Ausstehende GH-Prüfung"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "Fehlermeldung",
           "lastActivity": "Letzte Aktivität",
           "lastMessage": "Letzte Meldung",
           "messages": "Meldungen",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "Eine eindeutige Kennung, die in der Benutzeroberfläche zur Identifizierung des benutzerdefinierten Modells verwendet wird."
           },
-          "mdDescription": "Integrieren Sie benutzerdefinierte Modelle, die mit der OpenAI-API kompatibel sind, beispielsweise über „vllm“. Die erforderlichen Attribute sind „model“ und „url“.            \n            Optional können Sie            \n            - eine eindeutige „id“ angeben, um das benutzerdefinierte Modell in der Benutzeroberfläche zu identifizieren. Wenn keine angegeben wird, wird „model“ als „id“ verwendet.            \n            - Geben Sie einen „apiKey“ an, um auf die API zuzugreifen, die unter der angegebenen URL bereitgestellt wird. Verwenden Sie „true“, um die Verwendung des globalen OpenAI-API-Schlüssels anzugeben.            \n            - Geben Sie eine „apiVersion“ an, um auf die API zuzugreifen, die unter der angegebenen URL in Azure bereitgestellt wird. Verwenden Sie „true“, um die Verwendung der globalen OpenAI-API-Version anzugeben. \n- Geben Sie einen „deployment“-Namen für Ihre Azure-Bereitstellung an. \n- Setzen Sie „developerMessageSettings“ auf einen der Werte „user“, „system“, „developer“, „mergeWithFollowingUserMessage“ oder „skip“, um zu steuern, wie die Entwicklermeldung eingefügt wird (wobei „user“, „system“ und „developer“ als Rolle verwendet werden, „mergeWithFollowingUserMessage“ die folgende Benutzernachricht mit der Systemnachricht voranstellt oder die Systemnachricht in eine Benutzernachricht umwandelt, wenn die nächste Nachricht keine Benutzernachricht ist. „skip“ entfernt lediglich die Systemnachricht).            Standardmäßig ist „developer“ eingestellt.            \n            - Geben Sie „supportsStructuredOutput: false“ an, um anzugeben, dass keine strukturierte Ausgabe verwendet werden soll.\n- Geben Sie „enableStreaming: false“ an, um anzugeben, dass kein Streaming verwendet werden soll.\n- Geben Sie „useResponseApi: true“ an, um die neuere OpenAI Response API anstelle der Chat Completion API zu verwenden (erfordert kompatiblen Endpunkt).            \n            Weitere Informationen finden Sie in [unserer Dokumentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integrieren Sie benutzerdefinierte Modelle, die mit der OpenAI-API kompatibel sind, beispielsweise über `vllm`. Die erforderlichen Attribute sind `model` und `url`.            \n            Optional können Sie            \n            - eine eindeutige `id` angeben, um das benutzerdefinierte Modell in der Benutzeroberfläche zu identifizieren. Wenn keine angegeben wird, wird `model` als `id` verwendet.            \n            - Geben Sie einen `apiKey` an, um auf die unter der angegebenen URL bereitgestellte API zuzugreifen. Verwenden Sie `true`, um die Verwendung des globalen OpenAI-API-Schlüssels anzugeben.            \n            - Geben Sie eine `apiVersion` an, um auf die unter der angegebenen URL in Azure bereitgestellte API zuzugreifen. Verwenden Sie `true`, um die Verwendung der globalen OpenAI-API-Version anzugeben.            \n            - Geben Sie einen `deployment`-Namen für Ihre Azure-Bereitstellung an.            \n            - Setzen Sie `developerMessageSettings` auf einen der Werte `user`, `system`, `developer`, `mergeWithFollowingUserMessage` oder `skip`, um zu steuern, wie die Entwicklermeldung            eingefügt wird (wobei `user`, `system` und `developer` als Rolle verwendet werden, `mergeWithFollowingUserMessage` der folgenden Benutzernachricht die Systemnachricht voranstellt oder die Systemnachricht in eine Benutzernachricht umwandelt, wenn die nächste Nachricht keine Benutzernachricht ist. `skip` entfernt lediglich die Systemnachricht). Die Standardeinstellung ist `developer`.            \n            - Geben Sie `supportsStructuredOutput: false` an, um festzulegen, dass keine strukturierte Ausgabe verwendet werden soll.            \n            - Geben Sie `enableStreaming: false` an, um festzulegen, dass kein Streaming verwendet werden soll.            \n            - Geben Sie `useResponseApi: true` an, um die neuere OpenAI Response API anstelle der Chat Completion API zu verwenden (erfordert einen kompatiblen Endpunkt).            \n            - Geben Sie `reasoningSupport` an, um den Chat-Reasoning-Selektor zu aktivieren. Geben Sie ein Objekt mit `supportedLevels` (z. B. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) und einem optionalen `defaultLevel` an.            \n            Weitere Informationen finden Sie in [unserer Dokumentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "Modell-ID"
           },
           "reasoningSupport": {
-            "title": "Legt die Schlussfolgerungsfähigkeiten des Modells fest. Wenn diese Option aktiviert ist, zeigt der Chat einen Auswahlschalter für die Schlussfolgerungsfunktion dieses Modells an. Setzen Sie den Wert auf `null`, um die Funktion zu deaktivieren. Wird standardmäßig aus dem Modellnamen abgeleitet."
+            "title": "Definiert die Schlussfolgerungsfähigkeiten des Modells. Wenn diese Option aktiviert ist, zeigt der Chat einen Auswahlschalter für die Schlussfolgerungsfunktion dieses Modells an."
           },
           "supportsStructuredOutput": {
             "title": "Gibt an, ob das Modell strukturierte Ausgaben unterstützt. Standardmäßig „true“."
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "Fragen Sie nach einem Terminalbefehl...",
         "hitEnterConfirm": "Zur Bestätigung die Eingabetaste drücken.",
         "howCanIHelp": "Wie kann ich Ihnen helfen?",
+        "terminalCommandBlockAIVariable": {
+          "description": "Speichert einen ausgeführten Terminalbefehl und die dazugehörige Ausgabe.",
+          "index": {
+            "description": "Index des Befehlsblocks im Terminalverlauf. Standardmäßig der letzte Befehl, sofern nicht anders angegeben."
+          },
+          "quickPick": {
+            "placeholder": "Eingabe zum Filtern von Befehlen",
+            "title": "Wählen Sie einen Befehl und dessen Ausgabe aus dem Terminalverlauf aus"
+          }
+        },
         "tryAgain": "Versuchen Sie es erneut...",
         "useArrowsAlternatives": " oder verwenden Sie ⇅, um Alternativen anzuzeigen..."
       },
@@ -1485,6 +1514,7 @@
             "title": "Modell-ID"
           },
           "model": {
+            "provider": "Anbieter",
             "title": "Modellname"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "Liste absoluter Pfade oder Datei-URIs (Verzeichnisse oder Dateien) außerhalb des Arbeitsbereichs, die von KI-Tools gelesen werden können. Unterstützt `~` als Verweis auf das Home-Verzeichnis des Benutzers. Standardmäßig leer; nur bei Aktivierung. Wird von getFileContent, findFilesByPattern, getWorkspaceFileList und getWorkspaceDirectoryStructure berücksichtigt. Werte im Arbeitsbereichsbereich werden ignoriert, wenn der Arbeitsbereich nicht vertrauenswürdig ist. Symbolische Links in Verzeichnissen der Zulassungsliste werden verfolgt und können auf Dateien außerhalb der Zulassungsliste verweisen; fügen Sie nur Verzeichnisse hinzu, deren Inhalt Sie vertrauen.",
+          "title": "Zulässige externe Pfade"
+        },
         "coderAgent": {
           "description": "Ein in Theia IDE integrierter KI-Assistent, der Softwareentwickler unterstützen soll. Dieser Agent kann auf den Arbeitsbereich des Benutzers zugreifen, eine Liste aller verfügbaren Dateien und Ordner abrufen und deren Inhalt anzeigen. Darüber hinaus kann er dem Benutzer Änderungen an Dateien vorschlagen. Er kann den Benutzer somit bei Codierungsaufgaben oder anderen Aufgaben unterstützen, die Dateiänderungen erfordern."
         },
         "considerGitignore": {
-          "description": "Wenn aktiviert, werden Dateien/Ordner ausgeschlossen, die in einer globalen .gitignore-Datei angegeben sind (erwarteter Speicherort ist das Stammverzeichnis des Arbeitsbereichs).",
+          "description": "Wenn aktiviert, werden Dateien/Ordner ausgeschlossen, die den .gitignore-Regeln entsprechen, die sich im Stammverzeichnis jedes Arbeitsbereichs befinden.",
           "title": "Beachten Sie .gitignore"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "AI-Unterstützung in der Theia IDE ist verfügbar!",
+        "header": "KI-Unterstützung in „{0}“ ist verfügbar!",
         "openAIChatView": "Öffnen Sie jetzt die KI-Chat-Ansicht, um zu erfahren, wie Sie beginnen können!"
       },
       "apiComparator": "{0} API-Kompatibilität",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "KI-Funktionen",
       "hostedPlugin": "Gehostetes Plugin",
+      "input": {
+        "browse": "Durchsuchen"
+      },
       "toolbar": "Symbolleiste"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "An laufenden Container anhängen",
+        "attachError": "Verbindung zum Container konnte nicht hergestellt werden: {0}",
+        "attachWarning": "Das Anbinden an einen Container führt den darin enthaltenen Code aus. Binden Sie sich nur an Container an, deren Herkunft Sie vertrauen.",
+        "attachWarningTitle": "An Container anhängen",
+        "attaching": "An einen Container anhängen",
+        "cliAttachError": "Verbindung zum Container konnte nicht hergestellt werden: {0}",
+        "cliContainerNotFound": "Der Container „{0}“ wurde nicht gefunden oder läuft nicht.",
         "connect": "In Container erneut öffnen",
+        "enterCustomPath": "Geben Sie einen benutzerdefinierten Pfad ein...",
+        "enterWorkspacePath": "Geben Sie den Pfad zum Arbeitsbereich innerhalb des Containers ein",
+        "foundConfigMsg": "Unter {0} wurde eine devcontainer.json gefunden. Möchten Sie deren Post-Attach-Einstellungen (Erweiterungen, Portweiterleitung usw.) übernehmen?",
+        "foundConfigTitle": "Dev-Container-Konfiguration gefunden",
         "noDevcontainerFiles": "Es wurden keine devcontainer.json-Dateien im Arbeitsbereich gefunden. Bitte stellen Sie sicher, dass Sie über ein .devcontainer-Verzeichnis mit einer devcontainer.json-Datei verfügen.",
         "noRunningContainers": "Es wurden keine laufenden Container gefunden.",
         "rebuild": "Container neu erstellen",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "In Container erneut öffnen",
         "selectContainer": "Wählen Sie einen laufenden Container aus, an den Sie sich anschließen möchten",
         "selectDevcontainer": "Wählen Sie eine devcontainer.json-Datei aus.",
+        "selectWorkspacePath": "Wählen Sie einen Arbeitsbereichspfad innerhalb des Containers aus",
         "suggestion": "Dieser Arbeitsbereich verfügt über eine Dev-Container-Konfiguration. Möchten Sie ihn in einem Container erneut öffnen?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "Gruppe löschen",
       "deletePage": "Seite löschen",
       "deleteTerminal": "Terminal löschen",
-      "group": "Gruppe",
       "label": "Terminals",
       "maximizeBottomPanel": "Unteres Bedienfeld maximieren",
       "minimizeBottomPanel": "Unteres Bedienfeld minimieren",
@@ -2298,6 +2345,7 @@
       "iconSet": "Symbolsatz",
       "insertGroupLeft": "Gruppentrennzeichen einfügen (links)",
       "insertGroupRight": "Gruppentrennzeichen einfügen (rechts)",
+      "jsonError": "Beim Lesen Ihrer toolbar.json-Datei ist ein Fehler aufgetreten. Bitte überprüfen Sie, ob die Datei beschädigt ist, indem Sie mit der rechten Maustaste auf die Symbolleiste klicken und „Symbolleiste anpassen“ auswählen. Sie können die Symbolleiste auch auf die Standardeinstellungen zurücksetzen, indem Sie „Symbolleisten-Standardeinstellungen wiederherstellen“ auswählen.",
       "leftColumn": "Linke Spalte",
       "openJSON": "Symbolleiste anpassen (JSON öffnen)",
       "removeCommand": "Befehl aus der Symbolleiste entfernen",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "Beide Ressourcen sind Verzeichnisse.",
-      "clickToManageTrust": "Klicken Sie hier, um die Vertrauenseinstellungen zu verwalten.",
       "compareWithEachOther": "Miteinander vergleichen",
       "confirmDeletePermanently.description": "Das Löschen von „{0}“ über den Papierkorb ist fehlgeschlagen. Möchten Sie stattdessen dauerhaft löschen?",
       "confirmDeletePermanently.solution": "Sie können die Verwendung des Papierkorbs in den Einstellungen deaktivieren.",
@@ -2368,7 +2415,7 @@
       "removeFolder": "Möchten Sie den folgenden Ordner wirklich aus dem Arbeitsbereich entfernen?",
       "removeFolders": "Möchten Sie die folgenden Ordner wirklich aus dem Arbeitsbereich entfernen?",
       "restrictedModeDescription": "Einige Funktionen sind deaktiviert, da dieser Arbeitsbereich nicht vertrauenswürdig ist.",
-      "restrictedModeNote": "*Bitte beachten Sie: Die Workspace-Trust-Funktion befindet sich derzeit in Theia in der Entwicklung; noch sind nicht alle Funktionen in Workspace Trust integriert.",
+      "restrictedModeFeatures": "Funktionen wie Aufgabenausführung, Debugging, Erweiterungen und KI sind deaktiviert, um vor potenziell schädlichem Code zu schützen.",
       "schema": {
         "folders": {
           "description": "Stammordner im Arbeitsbereich"
@@ -2376,9 +2423,11 @@
         "title": "Arbeitsbereichsdatei"
       },
       "trashTitle": "{0}n in den Papierkorb verschieben",
-      "trustDialogMessage": "Wenn Sie den Autoren vertrauen, kann der Code in diesem Ordner ausgeführt werden.\n\nAndernfalls werden einige Funktionen deaktiviert.\n\nDie Funktion „Workspace Trust” befindet sich derzeit in Theia in der Entwicklung; noch sind nicht alle Funktionen in „Workspace Trust” integriert.\nWeitere Informationen finden Sie unter der Anzeige „Restricted Mode” in der Statusleiste.",
+      "trustDialogMessage": "Wenn Sie den Autoren vertrauen, kann der Code in diesem Ordner ausgeführt werden, einschließlich Aufgaben, Debug-Konfigurationen, Erweiterungen und KI-Funktionen.",
+      "trustDialogRestricted": "Wenn Sie den Autoren nicht vertrauen, wird der Arbeitsbereich im eingeschränkten Modus geöffnet, der diese Funktionen deaktiviert, um vor potenziell schädlichem Code zu schützen.",
       "trustEmptyWindow": "Steuert, ob der leere Arbeitsbereich standardmäßig als vertrauenswürdig eingestuft wird.",
       "trustEnabled": "Steuert, ob die Vertrauenswürdigkeit des Arbeitsbereichs aktiviert ist. Wenn diese Option deaktiviert ist, werden alle Arbeitsbereiche als vertrauenswürdig eingestuft.",
+      "trustLearnMore": "Erfahren Sie mehr über Theias Workspace Trust",
       "trustTrustedFolders": "Liste der Ordner-URIs, die ohne Aufforderung als vertrauenswürdig eingestuft werden.",
       "untitled-cleanup": "Es scheint viele unbenannte Arbeitsbereichsdateien zu geben. Bitte überprüfen Sie „{0}“ und entfernen Sie alle nicht verwendeten Dateien.",
       "variables": {

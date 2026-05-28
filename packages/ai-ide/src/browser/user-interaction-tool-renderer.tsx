@@ -33,6 +33,7 @@ import {
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
+    UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
     parseUserInteractionArgs,
@@ -41,46 +42,57 @@ import {
     resolveContentRef,
 } from '../common/user-interaction-tool';
 
+interface StepState {
+    value?: string;
+    comments: string[];
+}
+
 interface UserInteractionComponentProps {
     args: UserInteractionArgs;
     toolCallId: string;
     tool: UserInteractionTool;
     finished: boolean;
     canceled: boolean;
-    /**
-     * Whether the parent response has completed (including restoration). When the
-     * response is complete but no `result` was persisted, the interaction is treated
-     * as canceled because there is no longer a live agent waiting for input.
-     */
-    responseComplete: boolean;
     result: UserInteractionResult | undefined;
+    /**
+     * Called whenever the user changes any step state. The parent persists this partial
+     * result on the response (so it survives chat-session reloads) and pushes it to the
+     * tool (so a synchronous cancellation can return it instead of all-skipped).
+     */
+    onPartialResult: (result: UserInteractionResult) => void;
     openerService: OpenerService;
 }
 
-interface StepState {
-    value?: string;
-    comments: string[];
-}
-
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, responseComplete, result, openerService
+    args, toolCallId, tool, finished, canceled, result, onPartialResult, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
     const [currentStep, setCurrentStep] = React.useState(0);
-    const [stepStates, setStepStates] = React.useState<StepState[]>(() => steps.map(() => ({ comments: [] })));
+    // The tool's result (partial or final) is the single source of truth for step states.
+    const [stepStates, setStepStates] = React.useState<StepState[]>(() => {
+        if (result) {
+            return steps.map((_, i) => ({
+                value: result.steps[i]?.value,
+                comments: result.steps[i]?.comments ? [...result.steps[i].comments!] : []
+            }));
+        }
+        return steps.map(() => ({ comments: [] }));
+    });
+    // Mirror stepStates into a ref so synchronous readers (cancellation fallback,
+    // terminal handlers) always see the latest value. The ref is updated synchronously
+    // by every code path that writes to stepStates, which also keeps these handlers
+    // free of `stepStates` deps and avoids state-updater side effects.
+    const stepStatesRef = React.useRef(stepStates);
     const [pendingComment, setPendingComment] = React.useState('');
 
     const activeStep: UserInteractionStep | undefined = steps[currentStep];
     const isLastStep = currentStep === stepCount - 1;
     const messageRef = useMarkdownRendering(activeStep?.message ?? '', openerService);
 
-    // A parent response that completed without delivering a tool result means the
-    // interaction was restored from a serialized "waiting for input" state. The
-    // agent that was waiting is no longer running, so it must be treated as
-    // canceled and all inputs locked.
-    const restoredWithoutResult = responseComplete && !result;
-    const isFinal = finished || !!result || canceled || restoredWithoutResult;
+    // A finished tool call has no live handler anymore (completion, cancellation, or
+    // restoration of a previously-pending interaction). Lock all inputs in that case.
+    const isFinal = finished || canceled;
 
     // Auto-open the active step's links the first time the user reaches it.
     // Going Back and then Forward must not re-open them.
@@ -92,28 +104,40 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         visitedStepsRef.current.add(currentStep);
         const links = activeStep.links ?? [];
         for (const link of links) {
-            if (link.autoOpen !== false) {
+            if (link.autoOpen) {
                 tool.openLink(link).catch(err => console.warn('Failed to auto-open user-interaction link:', err));
             }
         }
     }, [currentStep, activeStep, isFinal, tool]);
 
-    const persistStepState = React.useCallback((stepIndex: number, state: StepState) => {
-        tool.setStepResult(toolCallId, stepIndex, {
-            value: state.value,
-            comments: state.comments.length > 0 ? state.comments : undefined
-        });
-    }, [tool, toolCallId]);
+    const buildResult = React.useCallback((completed: boolean, states: StepState[]): UserInteractionResult => ({
+        completed,
+        steps: steps.map((step, i) => {
+            const state = states[i];
+            const stepResult: UserInteractionStepResult = { title: step.title };
+            if (state?.value !== undefined) {
+                stepResult.value = state.value;
+            }
+            if (state?.comments && state.comments.length > 0) {
+                stepResult.comments = [...state.comments];
+            }
+            // For partial/cancel results, mark untouched steps as skipped so the LLM
+            // can distinguish "answered" from "not answered" if the interaction never
+            // completes.
+            if (!completed && stepResult.value === undefined && stepResult.comments === undefined) {
+                stepResult.skipped = true;
+            }
+            return stepResult;
+        })
+    }), [steps]);
 
     const updateStepState = React.useCallback((stepIndex: number, updater: (prev: StepState) => StepState) => {
-        setStepStates(prev => {
-            const next = prev.slice();
-            const updated = updater(prev[stepIndex]);
-            next[stepIndex] = updated;
-            persistStepState(stepIndex, updated);
-            return next;
-        });
-    }, [persistStepState]);
+        const next = stepStatesRef.current.slice();
+        next[stepIndex] = updater(next[stepIndex]);
+        stepStatesRef.current = next;
+        setStepStates(next);
+        onPartialResult(buildResult(false, next));
+    }, [buildResult, onPartialResult]);
 
     const isSingleStep = stepCount === 1;
     const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
@@ -123,19 +147,17 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             return;
         }
         if (isSingleStep) {
-            setStepStates(prev => {
-                const next = prev.slice();
-                next[0] = { ...prev[0], value };
-                return next;
-            });
-            tool.completeInteractionWith(toolCallId, 0, { value });
+            const next: StepState[] = [{ ...stepStatesRef.current[0], value }];
+            stepStatesRef.current = next;
+            setStepStates(next);
+            tool.completeInteraction(toolCallId, buildResult(true, next));
             return;
         }
         updateStepState(currentStep, prev => ({
             ...prev,
             value: prev.value === value ? undefined : value
         }));
-    }, [currentStep, isFinal, isSingleStep, tool, toolCallId, updateStepState]);
+    }, [buildResult, currentStep, isFinal, isSingleStep, tool, toolCallId, updateStepState]);
 
     const handleAddComment = React.useCallback(() => {
         const trimmed = pendingComment.trim();
@@ -177,13 +199,13 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     const handleAdvance = React.useCallback(() => {
         if (isLastStep) {
             if (!isFinal) {
-                tool.completeInteraction(toolCallId);
+                tool.completeInteraction(toolCallId, buildResult(true, stepStatesRef.current));
             }
             return;
         }
         setCurrentStep(idx => idx + 1);
         setPendingComment('');
-    }, [isFinal, isLastStep, tool, toolCallId]);
+    }, [buildResult, isFinal, isLastStep, tool, toolCallId]);
 
     const handleBack = React.useCallback(() => {
         if (currentStep === 0) {
@@ -211,14 +233,14 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                 <span className={codicon('comment-discussion')} />
                 <span className='user-interaction-tool title'>{activeStep.title}</span>
                 {(() => {
-                    // The tool's own result is authoritative: a completed
-                    // interaction must stay "Completed" even if the chat
-                    // session is canceled later. A response that completed
-                    // without a result indicates the interaction was restored
-                    // from a "waiting" state and is treated as canceled.
+                    // A completed result is authoritative and persists even if the
+                    // chat is later canceled. While the tool is live we may already
+                    // have a partial result (`completed: false`) so distinguish
+                    // "still waiting" from "canceled" using `finished`/`canceled`:
+                    // both are only true once no live handler is around.
                     const status: 'completed' | 'canceled' | 'waiting' =
                         result?.completed === true ? 'completed' :
-                            result?.completed === false || canceled || restoredWithoutResult ? 'canceled' :
+                            finished || canceled ? 'canceled' :
                                 'waiting';
                     if (status === 'completed') {
                         return (
@@ -515,8 +537,11 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 tool={this.userInteractionTool}
                 finished={response.finished}
                 canceled={parentNode.response.isCanceled}
-                responseComplete={parentNode.response.isComplete}
                 result={parseUserInteractionResult(response.result)}
+                onPartialResult={partial => {
+                    this.userInteractionTool.recordPartial(response.id!, partial);
+                    response.updateResult(JSON.stringify(partial));
+                }}
                 openerService={this.openerService}
                 toolConfirmation={{
                     response,

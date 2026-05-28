@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "Número máximo de reintentos cuando falla una solicitud. 3 por defecto."
           },
-          "mdDescription": "Integra modelos personalizados compatibles con la API de Anthropic. Los atributos necesarios son «model» y «url».            \n            Opcionalmente, puedes            \n            - especificar un «id» único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará «model» como «id».            \n- Proporcione una «apiKey» para acceder a la API que se ofrece en la URL proporcionada. Utilice «true» para indicar el uso de la clave API global de Anthropic.            \n- Especifique «enableStreaming: false» para indicar que no se utilizará la transmisión.            \n            - Especificar `useCaching: false` para indicar que no se utilizará el almacenamiento en caché de indicaciones. \n- Especificar `maxRetries: <número>` para indicar el número máximo de reintentos cuando falla una solicitud. El valor predeterminado es 3.",
+          "mdDescription": "Integra modelos personalizados compatibles con la API de Anthropic. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - proporcionar una `apiKey` para acceder a la API servida en la URL indicada. Utilice `true` para indicar el uso de la clave global de la API de Anthropic.            \n            - especificar `enableStreaming: false` para indicar que no se utilizará el streaming.            \n            - especificar `useCaching: false` para indicar que no se utilizará el almacenamiento en caché de las solicitudes.            \n            - especificar `maxRetries: <número>` para indicar el número máximo de reintentos cuando falla una solicitud. El valor predeterminado es 3.            \n            Las capacidades de razonamiento y el límite máximo de tokens de salida se derivan de la respuesta del punto final `/v1/models`.",
           "modelId": {
             "title": "ID del modelo"
-          },
-          "reasoningApi": {
-            "title": "Qué forma de la API de razonamiento de Anthropic utilizar: `effort` para el pensamiento adaptativo (Claude 4.6+), `budget` para el pensamiento extendido heredado (Claude 4.0–4.5) o `null` para desactivarlo. Se deduce del nombre del modelo de forma predeterminada."
-          },
-          "supportsXHighEffort": {
-            "title": "Indica si el modelo acepta el valor de esfuerzo «xhigh» de Anthropic. Se deduce del nombre del modelo de forma predeterminada."
           },
           "url": {
             "title": "El punto final compatible con la API de Anthropic donde se aloja el modelo."
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "No se ha encontrado un modelo de idioma listo para el agente {0}. ¡Comprueba tu configuración!",
         "defaultAgent": {
           "description": "Opcional: <nombre-del-agente> del agente de chat que se invocará, si no se menciona explícitamente ningún agente con @<nombre-del-agente> en la consulta del usuario. Si no se ha configurado ningún agente predeterminado, se aplicarán los valores predeterminados de Theia."
+        },
+        "defaultToolConfirmation": {
+          "description": "Comportamiento de confirmación predeterminado utilizado para herramientas que no tienen una entrada específica en «ai-features.chat.toolConfirmation». Las herramientas que requieren explícitamente una confirmación antes de ser aprobadas automáticamente siempre se establecen de forma predeterminada en «confirmar», independientemente de esta configuración."
         },
         "fromClipboard": "$(clippy) Desde el portapapeles",
         "fromClipboardDescription": "Pegar imagen del portapapeles",
@@ -196,15 +193,15 @@
           "description": "Una ruta relativa del espacio de trabajo en la que persistir y desde la que recuperar las descripciones del contexto de la tarea. Si se establece en un valor vacío, los contextos de tarea generados se almacenarán en la memoria en lugar de en el disco."
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "Ejecutar herramientas automáticamente sin confirmación"
+          },
           "confirm": {
             "description": "Solicitar confirmación antes de ejecutar herramientas."
           },
-          "description": "Configure el comportamiento de confirmación para diferentes herramientas. La clave es el ID de la herramienta y el valor es el modo de confirmación. Utilice «*» como clave para establecer un valor predeterminado global para todas las herramientas.",
+          "description": "Configura el comportamiento de confirmación para herramientas individuales. La clave es el ID de la herramienta, el valor es el modo de confirmación. Para cambiar el valor predeterminado para todas las herramientas, utiliza «ai-features.chat.defaultToolConfirmation».",
           "disabled": {
             "description": "Desactivar la ejecución de la herramienta"
-          },
-          "yolo": {
-            "description": "Ejecutar herramientas automáticamente sin confirmación."
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "Configurar capacidades de alternancia"
         },
         "chatInputAriaLabel": "Escriba su mensaje aquí.",
+        "chatRequestFailedWithDetail": "Error en la solicitud de chat: {0}",
         "chatResponses": "Respuestas de chat",
         "clearAllSelections": "Borrar cadena de búsqueda y selecciones de capacidades",
         "code-part-renderer": {
-          "copied": "Copiado",
           "generatedCode": "Código generado"
         },
         "collapseAll": "Contraer todo",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "El comando tiene el identificador «{0}», pero no se puede ejecutar desde la ventana de chat."
         },
-        "confirmDeleteChatMsg": "¿Está seguro de que desea eliminar este chat?",
         "copyCodeBlock": "Copiar bloque de código",
         "couldNotSendRequestToSession": "No se pudo enviar la solicitud «{0}» a la sesión {1}",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "Entrada de chat enfocada",
         "focusResponse": "Respuesta de chat enfocada",
         "functions": "Funciones",
-        "functionsDescription": "Funciones integradas proporcionadas por las extensiones de Theia.",
+        "functionsDescription": "Funciones integradas proporcionadas por las extensiones de{0}",
         "genericCapabilities": "Capacidades genéricas",
         "mcpFunctionsDescription": "Funciones del Protocolo de Contexto de Modelo (MCP) de servidores conectados.",
         "noChatAgentsAvailable": "No hay agentes de chat disponibles.",
@@ -305,9 +301,6 @@
         "persistedSession": "Sesión persistente (haga clic para restaurar)",
         "promptFragmentsDescription": "Fragmentos de mensajes personalizados para incluir en la conversación.",
         "reasoning": {
-          "high": "Alto",
-          "low": "Bajo",
-          "medium": "Medio",
           "minimal": "Mínimo"
         },
         "removeChat": "Eliminar chat",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "La solicitud de chat anterior fue gestionada por otro agente. Claude Code no ve esos otros mensajes.",
         "directory": "Directorio",
         "domain": "Dominio",
+        "edit": "Editar {0}",
         "editAutomatically": "Editar automáticamente",
         "editing": "Edición",
         "editsCount": "{0} ediciones",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "Este agente proporciona autocompletado de código en línea en el editor de código del IDE Theia.",
+          "description": "Este agente proporciona autocompletado de código en el editor de código de {0}.",
           "vars": {
             "file": {
               "description": "El URI del archivo que se está editando."
@@ -587,7 +581,7 @@
           "expired": "La autorización ha caducado o ha sido denegada. Vuelva a intentarlo.",
           "hint": "Después de introducir el código y autorizar, haga clic en «He autorizado» a continuación.",
           "initiating": "Iniciando autenticación...",
-          "instructions": "Para autorizar a Theia a utilizar GitHub Copilot, visite la siguiente URL e introduzca el código:",
+          "instructions": "Para autorizar a {0} a utilizar GitHub Copilot, visita la URL que aparece a continuación e introduce el código:",
           "openGitHub": "Abrir GitHub",
           "privacy": "Theia es un proyecto de código abierto. Solo solicitamos acceso a tu nombre de usuario de GitHub para conectarnos a los servicios de GitHub Copilot; no se accede ni se almacena ningún otro dato.",
           "success": "¡Iniciada sesión correctamente en GitHub Copilot!",
@@ -650,8 +644,8 @@
           "label": "Configuración de IA"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - Agente completado",
-          "namedAgentCompleted": "Theia - Agente «{0}» Completado"
+          "agentCompleted": "{0} - Agente completado",
+          "namedAgentCompleted": "{0} - Agente «{1}» Completado"
         },
         "capabilityVariable": {
           "argDescription": "El fragmento de solicitud id, seguido opcionalmente de «predeterminado activado» o «predeterminado desactivado» (predeterminado desactivado).",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "Ideal para escenarios de autocompletado de código."
+          },
+          "fast": {
+            "description": "Modelos más rápidos y económicos para tareas más sencillas, como la exploración o la ejecución de herramientas básicas, en las que no se requiere un razonamiento profundo."
           },
           "summarize": {
             "description": "Modelos priorizados para la síntesis y condensación de contenidos."
@@ -744,7 +741,7 @@
           "description": "Referencia breve a todos los archivos abiertos actualmente (rutas relativas, separadas por comas)."
         },
         "openEditorsVariable": {
-          "description": "Una lista separada por comas de todos los archivos abiertos actualmente, relativos a la raíz del espacio de trabajo."
+          "description": "Una lista separada por comas de todos los archivos abiertos actualmente como rutas relativas al espacio de trabajo (p. ej., my-project/src/index.ts)."
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "No se puede mostrar el valor de la variable.",
         "unableToResolveVariable": "No se puede resolver la variable.",
         "variable-contribution": {
-          "builtInVariable": "Variable integrada de Theia",
-          "currentAbsoluteFilePath": "La ruta absoluta del archivo actualmente abierto. Tenga en cuenta que la mayoría de los agentes esperarán una ruta de archivo relativa (relativa al espacio de trabajo actual).",
-          "currentFileContent": "El contenido sin formato del archivo actualmente abierto. Esto excluye la información sobre el origen del contenido. Tenga en cuenta que la mayoría de los agentes funcionarán mejor con una ruta de archivo relativa (relativa al espacio de trabajo actual).",
-          "currentRelativeDirPath": "La ruta relativa del directorio que contiene el archivo actualmente abierto.",
-          "currentRelativeFilePath": "La ruta relativa del archivo actualmente abierto.",
-          "currentSelectedText": "El texto sin formato que está seleccionado actualmente en el archivo abierto. Esto excluye la información sobre el origen del contenido. Tenga en cuenta que la mayoría de los agentes funcionarán mejor con una ruta de archivo relativa (relativa al espacio de trabajo actual).",
-          "dotRelativePath": "Breve referencia a la ruta relativa del archivo actualmente abierto («currentRelativeFilePath»)."
+          "builtInVariable": "{0} Variable incorporada",
+          "currentAbsoluteFilePath": "La ruta absoluta del archivo actualmente abierto.",
+          "currentFileContent": "El contenido sin formato del archivo actualmente abierto. Esto excluye la información sobre el origen del contenido.",
+          "currentRelativeDirPath": "La ruta relativa al espacio de trabajo del directorio que contiene el archivo abierto actualmente (por ejemplo, mi-proyecto/src).",
+          "currentRelativeFilePath": "La ruta relativa al espacio de trabajo del archivo actualmente abierto (por ejemplo, my-project/src/index.ts).",
+          "currentSelectedText": "El texto sin formato que está seleccionado actualmente en el archivo abierto. Esto excluye la información sobre el origen del contenido.",
+          "dotRelativePath": "Referencia breve a la ruta relativa al espacio de trabajo del archivo actualmente abierto («currentRelativeFilePath»)."
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "Abrir historial de IA...",
         "request-card": {
           "promptVariant": "Variante de solicitud",
-          "request": "Solicitud",
           "response": "Respuesta",
-          "timestamp": "Marca de tiempo",
-          "title": "Solicitud"
+          "timestamp": "Marca de tiempo"
         },
         "sortChronologically": {
           "tooltip": "Ordenar cronológicamente"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "Modo plano",
             "planNext": "Modo Plan (Siguiente)",
             "simple": "Modo simple"
           },
@@ -1041,7 +1035,7 @@
             "label": "Comando de IA",
             "message": "Ejecución de la devolución de llamada con argumentos {0}. El primer argumento es el identificador del comando registrado para el comando registrado dinámicamente. Los demás argumentos son los argumentos reales para el controlador."
           },
-          "description": "Este agente conoce todos los comandos que el usuario puede ejecutar dentro del IDE Theia, la herramienta con la que el usuario está trabajando actualmente. Basándose en la solicitud del usuario, puede encontrar el comando adecuado y luego permitir que el usuario lo ejecute.",
+          "description": "Este agente conoce todos los comandos que el usuario puede ejecutar. En función de la solicitud del usuario, puede encontrar el comando adecuado y permitir que el usuario lo ejecute.",
           "response": {
             "customHandler": "Prueba a ejecutar esto:",
             "noCommand": "Lo siento, no encuentro ese comando.",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Lista de comandos disponibles en Theia."
+              "description": "La lista de comandos disponibles."
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "Permite al agente interactuar con GitHub. Para ello, el agente puede delegar en el agente de GitHub, que puede leer y escribir incidencias, solicitudes de extracción, comentarios y contenidos del repositorio."
         },
         "githubRepoName": {
-          "description": "El nombre del repositorio GitHub actual (por ejemplo, «eclipse-theia/theia»)."
+          "description": "Los repositorios de GitHub asociados a las raíces del espacio de trabajo (por ejemplo, «eclipse-theia/theia»)"
         },
         "howToGetStarted": "Cómo empezar",
         "model-selection-description": "Elija qué modelos de lenguaje grandes (LLM) utiliza cada agente de IA en la [Vista de configuración de IA]({0}).",
@@ -1112,6 +1106,30 @@
           "progressMessage": "Determinación del agente más adecuado",
           "response": {
             "delegatingToAgent": "Delegar a «@{0}»"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "Delega la exploración de la arquitectura, el uso, las convenciones y las pruebas al agente Explore. Cuando está desactivado, el revisor de PR realiza la exploración con sus propias herramientas.",
+              "name": "Exploración delegada"
+            },
+            "githubInfo": {
+              "description": "Delega en el agente de GitHub la recuperación de metadatos de solicitudes de incorporación de cambios, diferencias, comentarios, comprobaciones y incidencias vinculadas.",
+              "name": "Información de GH PR"
+            },
+            "localCheckout": {
+              "description": "Extrae la solicitud de incorporación de cambios localmente y protege los cambios existentes en el árbol de trabajo.",
+              "name": "Finalizar compra"
+            },
+            "localValidation": {
+              "description": "Ejecuta tareas locales de instalación, compilación, lint, prueba o validación similar para la solicitud de incorporación de cambios.",
+              "name": "Compilar"
+            },
+            "pendingGitHubReview": {
+              "description": "Delega en el agente de GitHub la creación o actualización de una revisión de solicitud de incorporación de cambios pendiente con comentarios en línea preparados tras la confirmación explícita del usuario.",
+              "name": "Pendiente de revisión de GH"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "Mensaje de error",
           "lastActivity": "Última actividad",
           "lastMessage": "Último mensaje",
           "messages": "Mensajes",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "Identificador único que se utiliza en la interfaz de usuario para identificar el modelo personalizado."
           },
-          "mdDescription": "Integra modelos personalizados compatibles con la API de OpenAI, por ejemplo, a través de «vllm». Los atributos necesarios son «model» y «url».            \n            Opcionalmente, puedes            \n            - especificar un «id» único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará «model» como «id».            \n- Proporcione una «apiKey» para acceder a la API que se sirve en la URL dada. Utilice «true» para indicar el uso de la clave API global de OpenAI.            \n- Proporcione una «apiVersion» para acceder a la API que se sirve en la URL dada en Azure. Utilice «true» para indicar el uso de la versión global de la API de OpenAI.            \n- Proporcione un nombre de «deployment» para su implementación de Azure.            \n- Establezca «developerMessageSettings» en uno de los siguientes valores: «user», «system», «developer», «mergeWithFollowingUserMessage» o «skip» para controlar cómo se incluye el mensaje del desarrollador (donde «user», «system» y «developer» se utilizarán como función, «mergeWithFollowingUserMessage» antepondrá el siguiente mensaje de usuario al mensaje del sistema o convertirá el mensaje del sistema en mensaje de usuario si el siguiente mensaje no es un mensaje de usuario. «skip» simplemente eliminará el mensaje del sistema). El valor predeterminado es «developer».            \n            - Especifique `supportsStructuredOutput: false` para indicar que no se utilizará la salida estructurada.\n- Especifique `enableStreaming: false` para indicar que no se utilizará la transmisión.\n- Especifique `useResponseApi: true` para utilizar la nueva API de respuesta de OpenAI en lugar de la API de finalización de chat (requiere un punto final compatible).            \n            Consulte [nuestra documentación](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) para obtener más información.",
+          "mdDescription": "Integra modelos personalizados compatibles con la API de OpenAI, por ejemplo, a través de `vllm`. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - proporcionar una `apiKey` para acceder a la API servida en la URL indicada. Utilice `true` para indicar el uso de la clave global de la API de OpenAI.            \n            - proporcionar una `apiVersion` para acceder a la API servida en la URL indicada en Azure. Utilice `true` para indicar el uso de la versión global de la API de OpenAI.            \n            - proporcione un nombre de `deployment` para su implementación de Azure.            \n            - establezca `developerMessageSettings` en uno de los siguientes valores: `user`, `system`, `developer`, `mergeWithFollowingUserMessage` o `skip` para controlar cómo se incluye el mensaje del desarrollador (donde «user», «system» y «developer» se utilizarán como un rol; «mergeWithFollowingUserMessage» antepondrá el mensaje del sistema al siguiente mensaje de usuario o convertirá el mensaje del sistema en un mensaje de usuario si el siguiente mensaje no es un mensaje de usuario; «skip» simplemente eliminará el mensaje del sistema). El valor predeterminado es «developer».            \n            - Especifique `supportsStructuredOutput: false` para indicar que no se utilizará la salida estructurada.            \n            - Especifique `enableStreaming: false` para indicar que no se utilizará la transmisión.            \n            - Especifique `useResponseApi: true` para utilizar la API de respuesta de OpenAI más reciente en lugar de la API de finalización de chat (requiere un punto final compatible).            \n            - Especifique `reasoningSupport` para activar el selector de razonamiento del chat. Proporcione un objeto con `supportedLevels` (por ejemplo, `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) y un `defaultLevel` opcional.            \n            Consulte [nuestra documentación](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) para obtener más información.",
           "modelId": {
             "title": "ID del modelo"
           },
           "reasoningSupport": {
-            "title": "Declara las capacidades de razonamiento del modelo. Cuando se activa, el chat muestra un selector de razonamiento para este modelo. Establecer en `null` para desactivarlo. Se deduce del nombre del modelo de forma predeterminada."
+            "title": "Declara las capacidades de razonamiento del modelo. Cuando se activa, el chat muestra un selector de razonamiento para este modelo."
           },
           "supportsStructuredOutput": {
             "title": "Indica si el modelo admite salida estructurada. Por defecto es «true»."
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "Pregunta sobre un comando de terminal...",
         "hitEnterConfirm": "Pulse Intro para confirmar.",
         "howCanIHelp": "¿En qué puedo ayudarle?",
+        "terminalCommandBlockAIVariable": {
+          "description": "Almacena un comando de terminal ejecutado y su salida correspondiente.",
+          "index": {
+            "description": "Índice del bloque de comandos en el historial del terminal. Si no se especifica, el valor predeterminado es el último comando."
+          },
+          "quickPick": {
+            "placeholder": "Escriba para filtrar comandos",
+            "title": "Selecciona un comando y su resultado del historial del terminal"
+          }
+        },
         "tryAgain": "Inténtalo de nuevo...",
         "useArrowsAlternatives": " o utilice ⇅ para mostrar alternativas..."
       },
@@ -1485,6 +1514,7 @@
             "title": "ID del modelo"
           },
           "model": {
+            "provider": "Proveedor",
             "title": "Nombre del modelo"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "Lista de rutas absolutas o URI de archivos (directorios o archivos) fuera del espacio de trabajo que las herramientas de IA pueden leer. Admite `~` para referirse al directorio de inicio del usuario. Vacío por defecto; solo se activa de forma opcional. Se respeta en getFileContent, findFilesByPattern, getWorkspaceFileList y getWorkspaceDirectoryStructure. Los valores del ámbito del espacio de trabajo se ignoran cuando el espacio de trabajo no es de confianza. Se siguen los enlaces simbólicos dentro de los directorios de la lista de permitidos y pueden apuntar a archivos fuera de la lista de permitidos; solo añade directorios cuyo contenido te inspire confianza.",
+          "title": "Rutas externas permitidas"
+        },
         "coderAgent": {
           "description": "Un asistente de IA integrado en Theia IDE, diseñado para ayudar a los desarrolladores de software. Este agente puede acceder al espacio de trabajo de los usuarios, obtener una lista de todos los archivos y carpetas disponibles y recuperar su contenido. Además, puede sugerir modificaciones de los archivos al usuario. Por lo tanto, puede ayudar al usuario con tareas de codificación u otras tareas que impliquen cambios en los archivos."
         },
         "considerGitignore": {
-          "description": "Si está habilitado, excluye los archivos/carpetas especificados en un archivo .gitignore global (la ubicación prevista es la raíz del espacio de trabajo).",
+          "description": "Si está habilitado, excluye los archivos y carpetas que coincidan con las reglas de .gitignore que se encuentren en el directorio raíz de cada espacio de trabajo.",
           "title": "Considere .gitignore"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "¡Ya está disponible la compatibilidad con IA en el IDE Theia!",
+        "header": "¡Ya está disponible la compatibilidad con IA en {0}!",
         "openAIChatView": "¡Abre ahora la vista de chat con IA para aprender cómo empezar!"
       },
       "apiComparator": "{0} Compatibilidad con API",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "Funciones de IA",
       "hostedPlugin": "Complemento alojado",
+      "input": {
+        "browse": "Explorar"
+      },
       "toolbar": "Barra de herramientas"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "Conectar al contenedor en ejecución",
+        "attachError": "No se ha podido conectar al contenedor: {0}",
+        "attachWarning": "Al conectarse a un contenedor, se ejecutará el código que hay en su interior. Conéctese únicamente a contenedores cuyo origen le inspire confianza.",
+        "attachWarningTitle": "Adjuntar al contenedor",
+        "attaching": "Conectarse al contenedor",
+        "cliAttachError": "No se ha podido conectar al contenedor: {0}",
+        "cliContainerNotFound": "No se ha encontrado el contenedor «{0}» o no se está ejecutando.",
         "connect": "Reabrir en contenedor",
+        "enterCustomPath": "Introduce una ruta personalizada...",
+        "enterWorkspacePath": "Introduce la ruta del espacio de trabajo dentro del contenedor",
+        "foundConfigMsg": "Se ha encontrado un archivo devcontainer.json en {0}. ¿Deseas aplicar su configuración posterior a la conexión (extensiones, reenvío de puertos, etc.)?",
+        "foundConfigTitle": "Configuración del contenedor de desarrollo encontrada",
         "noDevcontainerFiles": "No se han encontrado archivos devcontainer.json en el espacio de trabajo. Asegúrese de que tiene un directorio .devcontainer con un archivo devcontainer.json.",
         "noRunningContainers": "No se han encontrado contenedores en ejecución.",
         "rebuild": "Reconstruir contenedor",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "Reabrir en contenedor",
         "selectContainer": "Selecciona un contenedor en ejecución al que conectarte",
         "selectDevcontainer": "Seleccione un archivo devcontainer.json.",
+        "selectWorkspacePath": "Selecciona una ruta de espacio de trabajo dentro del contenedor",
         "suggestion": "Este espacio de trabajo tiene una configuración de contenedor de desarrollo. ¿Deseas volver a abrirlo en un contenedor?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "Eliminar grupo",
       "deletePage": "Eliminar página",
       "deleteTerminal": "Eliminar terminal",
-      "group": "Grupo",
       "label": "Terminales",
       "maximizeBottomPanel": "Maximizar el panel inferior",
       "minimizeBottomPanel": "Minimizar el panel inferior",
@@ -2298,6 +2345,7 @@
       "iconSet": "Conjunto de iconos",
       "insertGroupLeft": "Insertar separador de grupo (izquierda)",
       "insertGroupRight": "Insertar separador de grupo (derecha)",
+      "jsonError": "Se ha producido un error al leer tu archivo toolbar.json. Comprueba si está dañado haciendo clic con el botón derecho del ratón en la barra de herramientas y seleccionando «Personalizar barra de herramientas». También puedes restablecer los valores predeterminados seleccionando «Restaurar valores predeterminados de la barra de herramientas».",
       "leftColumn": "Columna izquierda",
       "openJSON": "Personalizar barra de herramientas (Abrir JSON)",
       "removeCommand": "Eliminar comando de la barra de herramientas",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "Ambos recursos son directorios.",
-      "clickToManageTrust": "Haga clic para administrar la configuración de confianza.",
       "compareWithEachOther": "Comparar entre sí",
       "confirmDeletePermanently.description": "No se ha podido eliminar «{0}» mediante la Papelera. ¿Desea eliminarlo de forma permanente?",
       "confirmDeletePermanently.solution": "Puede desactivar el uso de la Papelera en las preferencias.",
@@ -2368,7 +2415,7 @@
       "removeFolder": "¿Está seguro de que desea eliminar la siguiente carpeta del espacio de trabajo?",
       "removeFolders": "¿Está seguro de que desea eliminar las siguientes carpetas del espacio de trabajo?",
       "restrictedModeDescription": "Algunas funciones están deshabilitadas porque este espacio de trabajo no es de confianza.",
-      "restrictedModeNote": "*Nota: la función de confianza del espacio de trabajo se encuentra actualmente en desarrollo en Theia; aún no todas las funciones están integradas con la confianza del espacio de trabajo*.",
+      "restrictedModeFeatures": "Funciones como la ejecución de tareas, la depuración, las extensiones y la IA están desactivadas para proteger contra código potencialmente dañino.",
       "schema": {
         "folders": {
           "description": "Carpetas raíz en el espacio de trabajo"
@@ -2376,9 +2423,11 @@
         "title": "Archivo del espacio de trabajo"
       },
       "trashTitle": "Mover «{0}» a la papelera",
-      "trustDialogMessage": "Si confía en los autores, el código de esta carpeta puede ejecutarse.\n\nSi no es así, algunas funciones se desactivarán.\n\nLa función de confianza del espacio de trabajo se encuentra actualmente en desarrollo en Theia; aún no todas las funciones están integradas con la confianza del espacio de trabajo.\nConsulte el indicador «Modo restringido» en la barra de estado para obtener más detalles.",
+      "trustDialogMessage": "Si confías en los autores, el código de esta carpeta puede ejecutarse, incluyendo tareas, configuraciones de depuración, extensiones y funciones de IA.",
+      "trustDialogRestricted": "Si no confías en los autores, el espacio de trabajo se abrirá en modo restringido, lo que desactiva estas funciones para protegerte contra código potencialmente dañino.",
       "trustEmptyWindow": "Controla si el espacio de trabajo vacío es confiable de forma predeterminada.",
       "trustEnabled": "Controla si la confianza del espacio de trabajo está habilitada o no. Si está deshabilitada, todos los espacios de trabajo son confiables.",
+      "trustLearnMore": "Más información sobre Workspace Trust de Theia",
       "trustTrustedFolders": "Lista de URI de carpetas que son de confianza sin necesidad de preguntar.",
       "untitled-cleanup": "Parece que hay muchos archivos de espacio de trabajo sin título. Comprueba {0} y elimina los archivos que no se utilicen.",
       "variables": {

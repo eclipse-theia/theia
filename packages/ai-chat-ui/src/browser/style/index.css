@@ -1243,10 +1243,40 @@ details.theia-tool-confirmation-args>summary::marker {
 }
 
 .theia-ChatPart-Error {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5em;
+  margin-block: 1em;
+}
+
+.theia-ChatPart-Error-headline {
   color: var(--theia-errorForeground);
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--theia-ui-padding);
+}
+
+.theia-ChatPart-Error-prefix {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-ChatPart-Error details {
+  margin-top: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-ChatPart-Error details summary::marker {
+  color: var(--theia-button-background);
+}
+
+.theia-ChatPart-Error details pre {
+  cursor: text;
+  line-height: 1rem;
+  margin: 0;
+  padding: 6px;
+  background-color: var(--theia-editor-background);
+  overflow: auto;
+  text-wrap: auto;
 }
 
 .section-header {

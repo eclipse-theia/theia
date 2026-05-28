@@ -95,9 +95,14 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             }
             this.logger.debug('Starting to store sessions', { totalSessions: sessions.length, storageRoot: root.toString() });
 
-            // Normalize to SessionWithTitle and filter empty sessions
+            // Normalize to SessionWithTitle and filter empty sessions.
+            // Use the lastInteraction timestamp when available so that the
+            // displayed "time ago" reflects the last user activity, not the
+            // last auto-save.
             const nonEmptySessions = sessions
-                .map(s => this.isChatModelWithMetadata(s) ? { ...s, saveDate: Date.now() } : { model: s, saveDate: Date.now() })
+                .map(s => this.isChatModelWithMetadata(s)
+                    ? { ...s, saveDate: s.lastInteraction ?? Date.now() }
+                    : { model: s, saveDate: Date.now() })
                 .filter(s => !s.model.isEmpty());
             this.logger.debug('Filtered empty sessions', { nonEmptySessions: nonEmptySessions.length });
 
