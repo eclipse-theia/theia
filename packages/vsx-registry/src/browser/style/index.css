@@ -375,7 +375,8 @@
   margin-left: calc(var(--theia-ui-padding) * 5 / 3);
 }
 
-.theia-vsx-extension-editor .header .details .title .restricted {
+.theia-vsx-extension-editor .header .details .title .restricted,
+.theia-vsx-extension-editor .header .details .title .disabled {
   font-size: var(--theia-ui-font-size0);
   color: var(--theia-statusBarItem-prominentForeground);
   background-color: var(--theia-statusBarItem-prominentBackground);

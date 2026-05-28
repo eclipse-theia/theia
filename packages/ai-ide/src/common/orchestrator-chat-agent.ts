@@ -33,7 +33,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     name = OrchestratorChatAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'agent-selection',
-        identifier: 'default/universal',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'agent-selection';
 

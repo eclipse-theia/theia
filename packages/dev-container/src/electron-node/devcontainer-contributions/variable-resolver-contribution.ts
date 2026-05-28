@@ -14,13 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, interfaces, LazyServiceIdentifier } from '@theia/core/shared/inversify';
-import { DockerContainerService } from '../docker-container-service';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
+
+export interface VariableContext {
+    containerId?: string;
+}
 
 export const VariableResolverContribution = Symbol('VariableResolverContribution');
 export interface VariableResolverContribution {
-    canResolve(variable: string): boolean;
-    resolve(variable: string): string;
+    canResolve(variable: string, context?: VariableContext): boolean;
+    resolve(variable: string, context?: VariableContext): string;
 }
 
 export function registerVariableResolverContributions(bind: interfaces.Bind): void {
@@ -41,13 +44,10 @@ export class LocalEnvVariableResolver implements VariableResolverContribution {
 
 @injectable()
 export class ContainerIdResolver implements VariableResolverContribution {
-    @inject(new LazyServiceIdentifier(() => DockerContainerService))
-        protected readonly dockerContainerService: DockerContainerService;
-
-    canResolve(type: string): boolean {
-        return type === 'devcontainerId' && !!this.dockerContainerService.container;
+    canResolve(type: string, context?: VariableContext): boolean {
+        return type === 'devcontainerId' && !!context?.containerId;
     }
-    resolve(variable: string): string {
-        return this.dockerContainerService.container?.id || variable;
+    resolve(_variable: string, context?: VariableContext): string {
+        return context?.containerId ?? _variable;
     }
 }

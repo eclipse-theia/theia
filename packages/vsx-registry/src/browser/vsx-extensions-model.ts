@@ -506,7 +506,7 @@ export class VSXExtensionsModel {
 
     protected onDidFailRefresh(id: string, error: unknown): VSXExtension | undefined {
         const cached = this.getExtension(id);
-        if (cached && cached.deployed) {
+        if (cached && (cached.deployed || cached.installed)) {
             return cached;
         }
         this.logger.error(`[${id}]: failed to refresh, reason:`, error);
