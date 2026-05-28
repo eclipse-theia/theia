@@ -20,11 +20,21 @@ import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { PluginMetricsImpl } from './plugin-metrics-impl';
 import { PluginMetrics } from '../common/metrics-protocol';
 import * as assert from 'assert';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 describe('Metrics contributor:', () => {
     let testContainer: Container;
     before(() => {
         testContainer = new Container();
+
+        testContainer.bind(ILogger).toConstantValue({
+            error: () => { },
+            warn: () => { },
+            info: () => { },
+            debug: () => { },
+            trace: () => { },
+            fatal: () => { }
+        } as unknown as ILogger);
 
         const module = new ContainerModule(bind => {
             bind(PluginMetrics).to(PluginMetricsImpl).inTransientScope();

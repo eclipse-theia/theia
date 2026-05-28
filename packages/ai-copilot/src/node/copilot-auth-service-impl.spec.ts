@@ -20,6 +20,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 describe('CopilotAuthServiceImpl', () => {
 
@@ -29,6 +30,10 @@ describe('CopilotAuthServiceImpl', () => {
 
     beforeEach(() => {
         const container = new Container();
+
+        container.bind(ILogger).toConstantValue({
+            error: () => { }, warn: () => { }, info: () => { }, debug: () => { }, trace: () => { }, fatal: () => { }
+        } as unknown as ILogger);
 
         getPasswordStub = sinon.stub();
         keyStoreService = {
@@ -201,6 +206,15 @@ describe('CopilotAuthServiceImpl with custom CopilotOAuthConfig', () => {
 
     beforeEach(() => {
         const container = new Container();
+
+        container.bind(ILogger).toConstantValue({
+            error: () => { },
+            warn: () => { },
+            info: () => { },
+            debug: () => { },
+            trace: () => { },
+            fatal: () => { }
+        } as unknown as ILogger);
 
         getPasswordStub = sinon.stub().resolves(undefined);
         deletePasswordStub = sinon.stub().resolves(true);
