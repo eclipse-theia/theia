@@ -64,6 +64,12 @@ export interface QaapAgentConversation {
     readonly paused?: boolean;
     /** Set on conversations created via {@link fork} — points at the parent's id. */
     readonly forkedFromId?: string;
+    /**
+     * Ground-truth git diff stats computed via `git diff --numstat` at turn completion.
+     * These take priority over the text-parsed estimates in {@link buildConversationListMetrics}.
+     */
+    readonly gitDiffAdded?: number;
+    readonly gitDiffRemoved?: number;
 }
 
 /** Summary row used by list endpoints — omits messages to keep payloads small. */
@@ -158,7 +164,13 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         paused: conv.paused || undefined,
         forkedFromId: conv.forkedFromId,
     };
-    return { ...base, ...buildConversationListMetrics({ status: conv.status, messages: conv.messages }) };
+    const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });
+    return {
+        ...base,
+        ...metrics,
+        ...(conv.gitDiffAdded !== undefined ? { linesAdded: conv.gitDiffAdded } : {}),
+        ...(conv.gitDiffRemoved !== undefined ? { linesRemoved: conv.gitDiffRemoved } : {}),
+    };
 }
 
 function excerpt(text: string): string {

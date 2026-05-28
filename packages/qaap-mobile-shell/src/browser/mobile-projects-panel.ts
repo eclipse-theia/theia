@@ -368,7 +368,8 @@ export class MobileProjectsPanel {
             // Typing in search means the user wants to scan repos again, so leave the
             // solo-project focus mode and show the full filtered list.
             if (this.query) {
-                this.soloExpanded = false;
+                // Keep expanded repo + its conversations; only stop hiding other rows while searching.
+                this.soloExpanded = this.expandedId !== undefined;
             }
             this.renderList();
         });
@@ -1158,7 +1159,7 @@ export class MobileProjectsPanel {
             btn.addEventListener('click', () => {
                 this.filter = tab.id;
                 this.projectsService.setFilter(tab.id);
-                this.soloExpanded = false;
+                this.soloExpanded = this.expandedId !== undefined;
                 this.renderFilters();
                 this.renderList();
             });
@@ -1210,12 +1211,13 @@ export class MobileProjectsPanel {
         }
     }
 
-    /** FAB opens "new repository"; keep it off while a repo card is expanded or on the chats inbox tab. */
+    /** FAB opens "new repository"; hide while a repo row is expanded (conversations + composer). */
     protected updateNewFabVisibility(): void {
-        const filtered = this.applySearch(this.applyFilter(this.projects, this.filter));
-        const hasExpandedVisible = this.expandedId !== undefined && filtered.some(project => project.id === this.expandedId);
-        const show = this.hubView === 'repos' && !hasExpandedVisible;
-        this.newFabBtn.hidden = !show;
+        const repoExpanded = this.hubView === 'repos' && this.expandedId !== undefined;
+        this.root.classList.toggle('theia-mod-repo-expanded', repoExpanded);
+        const showFab = this.hubView === 'repos' && !repoExpanded;
+        this.newFabBtn.hidden = !showFab;
+        this.newFabBtn.setAttribute('aria-hidden', showFab ? 'false' : 'true');
     }
 
     protected resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined {
@@ -1321,6 +1323,7 @@ export class MobileProjectsPanel {
                 : undefined,
         });
         this.stickyComposerHost.append(column);
+        this.updateNewFabVisibility();
         window.requestAnimationFrame(() => this.updateStickyComposerFabLift());
     }
 

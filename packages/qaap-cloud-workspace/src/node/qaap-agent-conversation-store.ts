@@ -6,6 +6,7 @@
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { randomUUID } from 'crypto';
+import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import * as os from 'os';
@@ -44,7 +45,7 @@ export class QaapAgentConversationStore {
 
     protected readonly conversations = new Map<string, QaapAgentConversation>();
     /** Reverse index: task id → conversation turn metadata so we can route output/completion. */
-    protected readonly taskToConversation = new Map<string, { conversationId: string; userMessageId: string; agentMessageId?: string }>();
+    protected readonly taskToConversation = new Map<string, { conversationId: string; userMessageId: string; agentMessageId?: string; startSha?: string }>();
     /** Per-task parsers for QAIQ stream-json stdout. */
     protected readonly qaiqStreamByTaskId = new Map<string, QaapQaiqStreamAccumulator>();
 
@@ -170,7 +171,8 @@ export class QaapAgentConversationStore {
         const messagesWithTask = next.messages.map(m => m.id === userMessage.id ? { ...m, taskId: task!.id } : m);
         next = { ...next, messages: messagesWithTask };
         this.conversations.set(id, next);
-        this.taskToConversation.set(task.id, { conversationId: id, userMessageId: userMessage.id });
+        const startSha = this.captureGitSha(conv.cwd);
+        this.taskToConversation.set(task.id, { conversationId: id, userMessageId: userMessage.id, startSha });
         void this.persist();
         return next;
     }
@@ -296,7 +298,7 @@ export class QaapAgentConversationStore {
             return; // only react when the turn settles
         }
         this.taskToConversation.delete(task.id);
-        void this.applyTaskOutcome(ref.conversationId, ref.userMessageId, ref.agentMessageId, task);
+        void this.applyTaskOutcome(ref.conversationId, ref.userMessageId, ref.agentMessageId, task, ref.startSha);
     }
 
     protected applyTaskOutput(
@@ -382,6 +384,7 @@ export class QaapAgentConversationStore {
         userMessageId: string,
         agentMessageId: string | undefined,
         task: QaapAgentTask,
+        startSha?: string,
     ): Promise<void> {
         this.qaiqStreamByTaskId.delete(task.id);
         const conv = this.conversations.get(conversationId);
@@ -438,6 +441,10 @@ export class QaapAgentConversationStore {
             } else {
                 withReply = reply;
             }
+        }
+        const gitStats = this.computeGitDiffStats(conv.cwd, startSha);
+        if (gitStats) {
+            withReply = { ...withReply, gitDiffAdded: gitStats.added, gitDiffRemoved: gitStats.removed };
         }
         this.conversations.set(conversationId, withReply);
         const agentMessage = withReply.messages[withReply.messages.length - 1];
@@ -595,6 +602,43 @@ export class QaapAgentConversationStore {
         }
     }
 
+    protected captureGitSha(cwd: string): string | undefined {
+        try {
+            const result = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' });
+            if (result.status === 0) {
+                return result.stdout.trim();
+            }
+        } catch { /* not a git repo */ }
+        return undefined;
+    }
+
+    protected computeGitDiffStats(cwd: string, startSha?: string): { added: number; removed: number } | undefined {
+        try {
+            let added = 0;
+            let removed = 0;
+            if (startSha) {
+                const committed = spawnSync('git', ['diff', '--numstat', `${startSha}..HEAD`], { cwd, encoding: 'utf8' });
+                if (committed.status === 0 && committed.stdout) {
+                    const stats = parseGitNumstat(committed.stdout);
+                    added += stats.added;
+                    removed += stats.removed;
+                }
+            }
+            const uncommitted = spawnSync('git', ['diff', '--numstat', 'HEAD'], { cwd, encoding: 'utf8' });
+            if (uncommitted.status === 0 && uncommitted.stdout) {
+                const stats = parseGitNumstat(uncommitted.stdout);
+                added += stats.added;
+                removed += stats.removed;
+            }
+            if (added === 0 && removed === 0) {
+                return undefined;
+            }
+            return { added, removed };
+        } catch {
+            return undefined;
+        }
+    }
+
     protected isDirectory(target: string): boolean {
         try {
             return fs.statSync(target).isDirectory();
@@ -602,4 +646,19 @@ export class QaapAgentConversationStore {
             return false;
         }
     }
+}
+
+function parseGitNumstat(output: string): { added: number; removed: number } {
+    let added = 0;
+    let removed = 0;
+    for (const line of output.split('\n')) {
+        const parts = line.trim().split('\t');
+        if (parts.length >= 2) {
+            const a = parseInt(parts[0], 10);
+            const r = parseInt(parts[1], 10);
+            if (!isNaN(a)) { added += a; }
+            if (!isNaN(r)) { removed += r; }
+        }
+    }
+    return { added, removed };
 }

@@ -1763,6 +1763,12 @@
   display: none;
 }
 
+.theia-mobile-projects-fab[hidden],
+.theia-mobile-projects.theia-mod-repo-expanded .theia-mobile-projects-fab {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 .theia-mobile-projects-fab {
   position: absolute;
   right: calc(16px + env(safe-area-inset-right, 0px));
