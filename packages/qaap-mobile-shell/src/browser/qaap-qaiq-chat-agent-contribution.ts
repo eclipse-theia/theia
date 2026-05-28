@@ -18,12 +18,20 @@ import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 const QAIQ_CHAT_AGENT_ID = 'qaiq';
 /** Max time to wait for the task to complete before resolving with a "still running" message. */
 const STREAM_TIMEOUT_MS = 90_000;
+/** Delay before re-checking task state after an SSE disconnect, giving the browser time to reconnect. */
+const RECONNECT_CHECK_DELAY_MS = 2_000;
 
 interface QaapTaskSsePayload {
     readonly id: string;
     readonly state?: string;
     /** Present only on `output` events. */
     readonly chunk?: string;
+}
+
+interface QaapTaskDetail {
+    readonly id: string;
+    readonly state: string;
+    readonly log?: string;
 }
 
 @injectable()
@@ -123,6 +131,13 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     /**
      * Subscribes to the `/stream` SSE feed and drives the chat response in real time.
      * Resolves once the task reaches a terminal state, is cancelled by the user, or times out.
+     *
+     * Two correctness hazards are handled here:
+     * - Race condition: the task may finish between `startTask()` and the SSE connection
+     *   being established. The `open` handler fires a one-time state check.
+     * - Disconnect: if the SSE connection drops, the `completed` event may be missed.
+     *   The `error` handler schedules a delayed state check after each disconnect so the
+     *   response resolves correctly instead of hanging until the 90s timeout.
      */
     protected streamTask(
         taskId: string,
@@ -133,6 +148,8 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         return new Promise<void>(resolve => {
             let source: EventSource | undefined;
             let done = false;
+            /** Tracks how many bytes of the task log have already been pushed to the accumulator. */
+            let logOffset = 0;
 
             const finish = (state: string): void => {
                 if (done) {
@@ -155,6 +172,34 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                 resolve();
             };
 
+            /**
+             * Fetches the current task detail and applies any log bytes that have not yet
+             * been pushed to the accumulator (missed SSE output chunks). Calls finish() if
+             * the task has already reached a terminal state.
+             */
+            const checkTaskState = async (): Promise<void> => {
+                if (done) {
+                    return;
+                }
+                try {
+                    const detail = await this.fetchTaskDetail(taskId);
+                    if (!detail || done) {
+                        return;
+                    }
+                    const log = detail.log ?? '';
+                    if (log.length > logOffset) {
+                        accumulator.push(log.slice(logOffset));
+                        logOffset = log.length;
+                        sync.apply(accumulator);
+                    }
+                    if (detail.state !== 'running') {
+                        finish(detail.state);
+                    }
+                } catch {
+                    /* fetch failure — let timeout handle it */
+                }
+            };
+
             const timeoutHandle = setTimeout(() => finish('timeout'), STREAM_TIMEOUT_MS);
 
             const cancelListener = request.response.cancellationToken.onCancellationRequested(() => {
@@ -173,6 +218,9 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                 return;
             }
 
+            // Race-condition guard: check once as soon as the connection is live.
+            source.addEventListener('open', () => void checkTaskState());
+
             source.addEventListener('output', ev => {
                 if (done) {
                     return;
@@ -183,6 +231,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                         return;
                     }
                     accumulator.push(data.chunk);
+                    logOffset += data.chunk.length;
                     sync.apply(accumulator);
                 } catch {
                     /* malformed payload */
@@ -202,8 +251,12 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             };
             source.addEventListener('completed', onStateEvent);
             source.addEventListener('cancelled', onStateEvent);
-            // SSE errors are handled by the browser's built-in auto-reconnect; terminal
-            // state arrives via 'completed'/'cancelled' once the task finishes.
+
+            // Disconnect guard: after the browser auto-reconnects, verify task state in case
+            // the terminal event was emitted while the connection was down.
+            source.addEventListener('error', () => {
+                setTimeout(() => void checkTaskState(), RECONNECT_CHECK_DELAY_MS);
+            });
         });
     }
 
@@ -223,6 +276,14 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             throw new Error(detail || `QAIQ task start failed (${response.status}).`);
         }
         return response.json() as Promise<{ id: string }>;
+    }
+
+    protected async fetchTaskDetail(taskId: string): Promise<QaapTaskDetail | undefined> {
+        const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/${encodeURIComponent(taskId)}`, { credentials: 'include' });
+        if (!response.ok) {
+            return undefined;
+        }
+        return response.json() as Promise<QaapTaskDetail>;
     }
 
     protected async cancelTask(taskId: string): Promise<void> {
