@@ -169,7 +169,7 @@ export class QaapQaiqStreamAccumulator {
             case 'tool_use':
             case 'server_tool_use':
                 if (block.id && block.name) {
-                    this.upsertTool(block.id, normalizeQaiqToolName(block.name), JSON.stringify(block.input ?? {}), false);
+                    this.upsertTool(block.id, block.name, JSON.stringify(block.input ?? {}), false);
                 }
                 break;
             case 'tool_result':
