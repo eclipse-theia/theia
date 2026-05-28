@@ -4,7 +4,71 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.72.0 - tbd
+## 1.72.0 - 5/28/2026
+
+- [ai] continued ai white label [#17447](https://github.com/eclipse-theia/theia/pull/17447)
+- [ai] merged consecutive assistant messages to comply with strict role alternation [#17425](https://github.com/eclipse-theia/theia/pull/17425)
+- [ai-anthropic] removed old anthropic models and updated gemining flash [#17524](https://github.com/eclipse-theia/theia/pull/17524)
+- [ai-chat] drove token usage indicator from the active model's context window [#17443](https://github.com/eclipse-theia/theia/pull/17443)
+- [ai-chat] fixed synthesize result for unfinished tool calls on restore [#17496](https://github.com/eclipse-theia/theia/pull/17496)
+- [ai-chat] improved chat session card UI and provider error presentation in chat UI [#17502](https://github.com/eclipse-theia/theia/pull/17502)
+- [ai-chat] made tool confirmation default a dedicated preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
+- [ai-chat-ui] fixed chat capability selections resetting on refresh [#17480](https://github.com/eclipse-theia/theia/pull/17480)
+- [ai-chat-ui] fixed chat header reflow during "generating" animation [#17492](https://github.com/eclipse-theia/theia/pull/17492)
+- [ai-chat-ui] removed auto-generated groups from generic capabilities functions [#17470](https://github.com/eclipse-theia/theia/pull/17470)
+- [ai-chat-ui] showed description and arguments in tool confirmation [#17439](https://github.com/eclipse-theia/theia/pull/17439)
+- [ai-code-completion] fix(ai-code-completion): disable reasoning for inline completion [#17521](https://github.com/eclipse-theia/theia/pull/17521)
+- [ai-code-completion] fixed unit tests [#17527](https://github.com/eclipse-theia/theia/pull/17527)
+- [ai-core, ai-mcp] cleaned up tool registrations when MCP down [#17407](https://github.com/eclipse-theia/theia/pull/17407)
+- [ai-ide] allowed read tools to access user-allowlisted external paths [#17419](https://github.com/eclipse-theia/theia/pull/17419)
+- [ai-ide] improved pr-reviewer workflow [#17532](https://github.com/eclipse-theia/theia/pull/17532)
+- [ai-ide] improved user-interaction tool [#17530](https://github.com/eclipse-theia/theia/pull/17530)
+- [ai-ide] introduced new "fast" model alias for simpler agents [#17535](https://github.com/eclipse-theia/theia/pull/17535)
+- [ai-openai] fixed openAI responses API token usage aggregation [#17481](https://github.com/eclipse-theia/theia/pull/17481)
+- [ai-terminal] implemented terminal command AI variable [#17312](https://github.com/eclipse-theia/theia/pull/17312)
+- [application-manager] fixed issue with calling yargs as factory in esbuild ESM template [#17493](https://github.com/eclipse-theia/theia/pull/17493) - Contributed on behalf of STMicroelectronics
+- [application-manager] fixed parse process.argv in esbuild yargs setup [#17544](https://github.com/eclipse-theia/theia/pull/17544) - contributed on behalf of STMicroelectronics
+- [bundle-plugin] aligned webpack ripgrep resolution with esbuild [#17560](https://github.com/eclipse-theia/theia/pull/17560)
+- [bundle-plugin] fixed issue with esbuild source maps so breakpoints bind [#17517](https://github.com/eclipse-theia/theia/pull/17517) - Contributed on behalf of STMicroelectronics
+- [bundle-plugin, file-search, search-in-workspace] supported `@vscode/ripgrep>=1.18.0` [#17483](https://github.com/eclipse-theia/theia/pull/17483)
+- [ci] fixed set-milestone and check-new-package workflow for github-script v9 [#17463](https://github.com/eclipse-theia/theia/pull/17463) - Contributed on behalf of STMicroelectronics
+- [ci] updated GitHub Actions to Node.js 24 compatible versions [#17460](https://github.com/eclipse-theia/theia/pull/17460) - contributed on behalf of STMicroelectronics
+- [core] fixed escape backticks in markdownstringimpl.appendcodeblock [#17440](https://github.com/eclipse-theia/theia/pull/17440)
+- [core] fixed filesystem to show git decorations on every file when changes exceed the plugin-ext event cap [#17508](https://github.com/eclipse-theia/theia/pull/17508)
+- [core] fixed issue with unix process termination [#17563](https://github.com/eclipse-theia/theia/pull/17563)
+- [core] fixed node expansion when double-clicking checkbox [#17372](https://github.com/eclipse-theia/theia/pull/17372)
+- [core] fixed omission of '+' separator from menu shortcuts on macOS [#17423](https://github.com/eclipse-theia/theia/pull/17423) - contributed on behalf of STMicroelectronics
+- [core] fixed selectComponent dropdown z-index issue [#17472](https://github.com/eclipse-theia/theia/pull/17472)
+- [core] reverted "fix(filesystem): show git decorations on every file when changes exceed the plugin-ext event cap" [#17555](https://github.com/eclipse-theia/theia/pull/17555)
+- [core] supported bundling Theia with esbuild [#14414](https://github.com/eclipse-theia/theia/pull/14414)
+- [core] theia v1.71.0 merged [#17438](https://github.com/eclipse-theia/theia/pull/17438)
+- [core] Translation update for version 1.72.0 [#17572](https://github.com/eclipse-theia/theia/pull/17572)
+- [core] used MarkdownRendererImpl in HoverService to fix code block rendering in tool call tooltip [#17499](https://github.com/eclipse-theia/theia/pull/17499)
+- [core] wrapped long strings in hover popovers [#17548](https://github.com/eclipse-theia/theia/pull/17548)
+- [debug] added missing space between expression name and error/unavailable message [#17495](https://github.com/eclipse-theia/theia/pull/17495)
+- [debug] allowed the mouse to summon the context menu in editor gutter on macOS [#17422](https://github.com/eclipse-theia/theia/pull/17422) - Contributed on behalf of STMicroelectronics
+- [dev-container] implemented overrideCommand for non-compose containers [#17474](https://github.com/eclipse-theia/theia/pull/17474)
+- [dev-packages] ran npm upgrade after 1.71.x [#17446](https://github.com/eclipse-theia/theia/pull/17446) - Contributed on behalf of STMicroelectronics
+- [doc] added double-dashes so options are passed to npm run script [#17486](https://github.com/eclipse-theia/theia/pull/17486)
+- [doc] suggested using npm upgrade --save in publishing guide [#17511](https://github.com/eclipse-theia/theia/pull/17511)
+- [editor] improved navigation support in the merge editor [#17242](https://github.com/eclipse-theia/theia/pull/17242)
+- [ffmpeg] fixed fallback to package.json when electron dist/version is missing [#17569](https://github.com/eclipse-theia/theia/pull/17569)
+- [filesystem] bind filesystem proxy as singleton [#17424](https://github.com/eclipse-theia/theia/pull/17424)
+- [filesystem] replaced fixed sleep timeouts with event-driven waits in parcel watcher tests [#17273](https://github.com/eclipse-theia/theia/pull/17273)
+- [github] reverted using copilot and on-demand review agent until more mature [#17547](https://github.com/eclipse-theia/theia/pull/17547)
+- [localization-manager] re-translated changed source strings in update workflow [#17525](https://github.com/eclipse-theia/theia/pull/17525) - Contributed on behalf of STMicroelectronics
+- [output] used OutputChannelManager's state when available [#17550](https://github.com/eclipse-theia/theia/pull/17550)
+- [playwright] fix(playwright): stabilize output view tests [#17494](https://github.com/eclipse-theia/theia/pull/17494) - Contributed on behalf of STMicroelectronics
+- [plugin-ext] derived default for plugin config props like in vscode [#17459](https://github.com/eclipse-theia/theia/pull/17459)
+- [plugin-ext] fixed guarding tabs-main against untracked widget removal [#17434](https://github.com/eclipse-theia/theia/pull/17434)
+- [plugin-ext] fixed issue with undefined subject in history graph tooltip [#17436](https://github.com/eclipse-theia/theia/pull/17436)
+- [plugin-ext] honored 'when' clause on view containers [#17536](https://github.com/eclipse-theia/theia/pull/17536)
+- [plugin-ext] supported ESM VS Code extensions [#17503](https://github.com/eclipse-theia/theia/pull/17503)
+- [preferences] fixed disposal of preference storage and its provider [#17565](https://github.com/eclipse-theia/theia/pull/17565)
+- [sample-namespace] added browser-only plugin example [#17469](https://github.com/eclipse-theia/theia/pull/17469)
+- [vscode] API bump and nls update to 1.121.0 [#17571](https://github.com/eclipse-theia/theia/pull/17571) - contributed on behalf of STMicroelectronics
+- [vsx-registry] showed disabled extensions as installed [#17540](https://github.com/eclipse-theia/theia/pull/17540)
+- [workspace,core] workspace trust follow ups and made markdown hover tooltips interactive [#17518](https://github.com/eclipse-theia/theia/pull/17518)
 
 <a name="breaking_changes_1.72.0">[Breaking Changes:](#breaking_changes_1.72.0)</a>
 
