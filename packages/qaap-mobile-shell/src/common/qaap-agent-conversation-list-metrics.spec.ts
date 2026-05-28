@@ -12,19 +12,74 @@ import {
 
 describe('parseDiffStatsFromText', () => {
     it('parses git combined insert/delete summary', () => {
-        const stats = parseDiffStatsFromText('3 files changed, 12 insertions(+), 23 deletions(-)');
-        expect(stats).to.deep.equal({ added: 12, removed: 23 });
+        expect(parseDiffStatsFromText('3 files changed, 12 insertions(+), 23 deletions(-)'))
+            .to.deep.equal({ added: 12, removed: 23 });
+    });
+
+    it('parses singular forms (1 insertion, 1 deletion)', () => {
+        expect(parseDiffStatsFromText('1 file changed, 1 insertion(+), 1 deletion(-)'))
+            .to.deep.equal({ added: 1, removed: 1 });
+    });
+
+    it('parses insertions-only summary', () => {
+        expect(parseDiffStatsFromText('2 files changed, 8 insertions(+)'))
+            .to.deep.equal({ added: 8, removed: 0 });
+    });
+
+    it('parses deletions-only summary', () => {
+        expect(parseDiffStatsFromText('1 file changed, 4 deletions(-)'))
+            .to.deep.equal({ added: 0, removed: 4 });
     });
 
     it('parses cursor-style +N -M', () => {
-        const stats = parseDiffStatsFromText('summary +12 -23 done');
-        expect(stats).to.deep.equal({ added: 12, removed: 23 });
+        expect(parseDiffStatsFromText('summary +12 -23 done'))
+            .to.deep.equal({ added: 12, removed: 23 });
+    });
+
+    it('parses cursor-style with en-dash', () => {
+        expect(parseDiffStatsFromText('+5 –23'))
+            .to.deep.equal({ added: 5, removed: 23 });
+    });
+
+    it('returns undefined for empty or non-diff text', () => {
+        expect(parseDiffStatsFromText('')).to.be.undefined;
+        expect(parseDiffStatsFromText('no changes')).to.be.undefined;
     });
 });
 
 describe('formatToolActivityLabel', () => {
     it('maps search tools to Searching', () => {
         expect(formatToolActivityLabel('Grep')).to.equal('Searching');
+        expect(formatToolActivityLabel('web_search')).to.equal('Searching');
+        expect(formatToolActivityLabel('Glob')).to.equal('Searching');
+    });
+
+    it('maps read/list tools to Reading files', () => {
+        expect(formatToolActivityLabel('Read')).to.equal('Reading files');
+        expect(formatToolActivityLabel('list_dir')).to.equal('Reading files');
+    });
+
+    it('maps bash/shell tools to Running command', () => {
+        expect(formatToolActivityLabel('Bash')).to.equal('Running command');
+        expect(formatToolActivityLabel('run_command')).to.equal('Running command');
+    });
+
+    it('maps write/edit tools to Editing', () => {
+        expect(formatToolActivityLabel('Edit')).to.equal('Editing');
+        expect(formatToolActivityLabel('Write')).to.equal('Editing');
+        expect(formatToolActivityLabel('patch')).to.equal('Editing');
+    });
+
+    it('maps think tools to Thinking', () => {
+        expect(formatToolActivityLabel('think')).to.equal('Thinking');
+    });
+
+    it('humanizes unknown tool names by replacing underscores', () => {
+        expect(formatToolActivityLabel('custom_tool')).to.equal('custom tool');
+    });
+
+    it('returns Working for empty string', () => {
+        expect(formatToolActivityLabel('')).to.equal('Working');
     });
 });
 
@@ -50,6 +105,22 @@ describe('buildConversationListMetrics', () => {
         });
         expect(metrics.activityLabel).to.equal('Searching');
         expect(metrics.turnStartedAt).to.equal(1000);
+    });
+
+    it('shows Thinking when last segment is thinking and no text yet', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'streaming',
+            messages: [
+                { role: 'user', content: 'plan it', createdAt: 2000 },
+                {
+                    role: 'agent',
+                    content: '',
+                    createdAt: 2100,
+                    segments: [{ type: 'thinking', content: 'considering options' }],
+                },
+            ],
+        });
+        expect(metrics.activityLabel).to.equal('Thinking');
     });
 
     it('exposes diff stats and duration for a completed turn', () => {
@@ -89,5 +160,63 @@ describe('buildConversationListMetrics', () => {
         });
         expect(metrics.linesAdded).to.equal(5);
         expect(metrics.linesRemoved).to.equal(5);
+    });
+
+    it('reads diff stats from tool result segments', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'idle',
+            messages: [
+                { role: 'user', content: 'commit', createdAt: 1000 },
+                {
+                    role: 'agent',
+                    content: '',
+                    createdAt: 2000,
+                    segments: [{
+                        type: 'tool',
+                        toolUseId: 'tu1',
+                        name: 'Bash',
+                        args: 'git diff --stat',
+                        finished: true,
+                        result: '1 file changed, 3 insertions(+), 1 deletions(-)',
+                    }],
+                },
+            ],
+        });
+        expect(metrics.linesAdded).to.equal(3);
+        expect(metrics.linesRemoved).to.equal(1);
+    });
+
+    it('returns no activity label when no active tool is running', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'streaming',
+            messages: [
+                { role: 'user', content: 'hi', createdAt: 1000 },
+                {
+                    role: 'agent',
+                    content: 'sure',
+                    createdAt: 1100,
+                    segments: [{ type: 'text', content: 'sure' }],
+                },
+            ],
+        });
+        expect(metrics.activityLabel).to.be.undefined;
+    });
+
+    it('returns empty metrics for failed status with no messages', () => {
+        const metrics = buildConversationListMetrics({ status: 'failed', messages: [] });
+        expect(metrics.activityLabel).to.be.undefined;
+        expect(metrics.linesAdded).to.be.undefined;
+        expect(metrics.lastTurnDurationMs).to.be.undefined;
+    });
+
+    it('returns no duration when agent message precedes user message', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'idle',
+            messages: [
+                { role: 'agent', content: 'welcome', createdAt: 500 },
+                { role: 'user', content: 'hi', createdAt: 1000 },
+            ],
+        });
+        expect(metrics.lastTurnDurationMs).to.be.undefined;
     });
 });

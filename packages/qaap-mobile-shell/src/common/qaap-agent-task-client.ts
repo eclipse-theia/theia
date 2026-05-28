@@ -274,38 +274,28 @@ export function resolveAgentOptionId(agentId: string | undefined, agents: readon
     return normalizeBackendAgentId(trimmed) ?? migrateLegacyBackendAgentId(trimmed);
 }
 
+export async function fetchAgentTaskListAll(): Promise<QaapAgentTaskListSnapshot> {
+    const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/all`, { credentials: 'include' });
+    if (!response.ok) {
+        throw new Error(response.statusText);
+    }
+    return parseAgentTaskListBody(await response.json());
+}
+
 export async function fetchAgentTaskList(cwd?: string): Promise<QaapAgentTaskListSnapshot> {
     const query = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
     const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}${query}`, { credentials: 'include' });
     if (!response.ok) {
         throw new Error(response.statusText);
     }
-    const body = await response.json() as {
-        agents?: QaapAgentTaskAgentOption[];
-        agentConfigured?: boolean;
-        defaultAgent?: string;
-    };
-    const agents = [...(body.agents ?? [])];
-    if (agents.length === 0) {
-        agents.push(shellAgentFallback());
-    }
-    return {
-        agents,
-        agentConfigured: body.agentConfigured === true,
-        defaultAgent: body.defaultAgent,
-    };
+    return parseAgentTaskListBody(await response.json());
 }
 
-export async function fetchAgentTaskListAll(): Promise<QaapAgentTaskListSnapshot> {
-    const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/all`, { credentials: 'include' });
-    if (!response.ok) {
-        throw new Error(response.statusText);
-    }
-    const body = await response.json() as {
-        agents?: QaapAgentTaskAgentOption[];
-        agentConfigured?: boolean;
-        defaultAgent?: string;
-    };
+function parseAgentTaskListBody(body: {
+    agents?: QaapAgentTaskAgentOption[];
+    agentConfigured?: boolean;
+    defaultAgent?: string;
+}): QaapAgentTaskListSnapshot {
     const agents = [...(body.agents ?? [])];
     if (agents.length === 0) {
         agents.push(shellAgentFallback());
@@ -341,7 +331,7 @@ export async function cancelAgentTask(id: string): Promise<void> {
     }
 }
 
-function hashString(value: string): string {
+export function hashString(value: string): string {
     let hash = 0;
     for (let i = 0; i < value.length; i++) {
         hash = ((hash << 5) - hash) + value.charCodeAt(i);

@@ -6,7 +6,7 @@
 import { ChatMode } from '@theia/ai-chat/lib/common/chat-agents';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { isTheiaCoderAgent, QAIQ_AGENT_ID, THEIA_CODER_AGENT_ID } from './qaap-agent-task-client';
+import { hashString, isTheiaCoderAgent, QAIQ_AGENT_ID, THEIA_CODER_AGENT_ID } from './qaap-agent-task-client';
 
 const SELECTED_MODE_STORAGE_KEY = 'qaap.mobile.projects.selectedMode';
 
@@ -90,16 +90,6 @@ export function resolveStickyComposerModes(
         return QAAP_BACKEND_INTERACTION_MODES;
     }
     return [];
-}
-
-/** Prefix backend conversation prompts so QAIQ/Aider honor plan/ask without a Theia session. */
-function hashString(value: string): string {
-    let hash = 0;
-    for (let i = 0; i < value.length; i++) {
-        hash = ((hash << 5) - hash) + value.charCodeAt(i);
-        hash |= 0;
-    }
-    return Math.abs(hash).toString(36);
 }
 
 const PLAN_MODE_PREFIX = nls.localize(

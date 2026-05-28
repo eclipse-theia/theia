@@ -51,6 +51,8 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     protected sharedSource: EventSource | undefined;
     /** Number of active streamTask() calls currently listening on sharedSource. */
     protected activeStreamCount = 0;
+    /** finish() callbacks for all in-flight streams, so onStop() can resolve them immediately. */
+    protected readonly activeFinishCallbacks = new Set<(state: string) => void>();
 
     onStart(): void {
         if (this.registered) {
@@ -68,6 +70,10 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         this.chatAgentService.unregisterChatAgent(QAIQ_CHAT_AGENT_ID);
         this.agentService.unregisterAgent(QAIQ_CHAT_AGENT_ID);
         this.registered = false;
+        // Resolve all in-flight streams immediately rather than letting them hang for 90s.
+        for (const finish of [...this.activeFinishCallbacks]) {
+            finish('stopped');
+        }
         this.sharedSource?.close();
         this.sharedSource = undefined;
         this.activeStreamCount = 0;
@@ -255,6 +261,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                     return;
                 }
                 done = true;
+                this.activeFinishCallbacks.delete(finish);
                 clearTimeout(timeoutHandle);
                 cancelListener.dispose();
                 cleanup();
@@ -270,6 +277,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                 request.response.complete();
                 resolve();
             };
+            this.activeFinishCallbacks.add(finish);
 
             const timeoutHandle = setTimeout(() => finish('timeout'), STREAM_TIMEOUT_MS);
 
