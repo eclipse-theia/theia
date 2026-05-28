@@ -86,9 +86,8 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
             \n\
             - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).\
             \n\
-            - specify `reasoningSupport` to opt in to the chat reasoning selector. By default this is inferred from the\
-            `model` name (GPT-5 / o-series). Set to `null` to disable, or to an object with `supportedLevels` (e.g.\
-            `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel` to customize.\
+            - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
+            `supportedLevels` (e.g. `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel`.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
@@ -148,10 +147,9 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
                             + 'Note: Will automatically fall back to Chat Completions API when tools are used.'),
                     },
                     reasoningSupport: {
-                        type: ['object', 'null'],
+                        type: 'object',
                         title: nls.localize('theia/ai/openai/customEndpoints/reasoningSupport/title',
-                            'Declares the model\'s reasoning capabilities. When set the chat shows a reasoning selector'
-                            + ' for this model. Set to `null` to disable. Inferred from the model name by default.'),
+                            'Declares the model\'s reasoning capabilities. When set the chat shows a reasoning selector for this model.'),
                         properties: {
                             supportedLevels: {
                                 type: 'array',

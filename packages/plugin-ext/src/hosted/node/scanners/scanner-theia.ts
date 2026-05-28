@@ -842,6 +842,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             title: rawViewContainer.title,
             iconUrl,
             themeIcon,
+            when: rawViewContainer.when,
         };
     }
 

@@ -52,7 +52,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     name = 'Command';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'command',
-        identifier: 'default/universal',
+        identifier: 'default/fast',
     }];
     override iconClass: string = 'codicon codicon-server-process';
     protected defaultLanguageModelPurpose: string = 'command';
