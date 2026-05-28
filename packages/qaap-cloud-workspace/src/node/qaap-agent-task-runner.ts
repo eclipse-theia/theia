@@ -22,7 +22,7 @@ import {
     type QaapAgentTaskState,
     type QaapCreateAgentTaskRequest,
 } from '../common/qaap-agent-task';
-import { resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import {
     applyQaapQaiqCredentialEnv,
@@ -528,7 +528,7 @@ export class QaapAgentTaskRunner {
             return undefined;
         }
         const canonical = resolveQaapAgentMentionToken(normalized);
-        if (canonical === 'openclaude' && this.detectedAgents.has(QAIQ_AGENT_ID)) {
+        if (canonical === LEGACY_OPENCLAUDE_AGENT_ID && this.detectedAgents.has(QAIQ_AGENT_ID)) {
             return QAIQ_AGENT_ID;
         }
         if (canonical === SHELL_AGENT_ID) {
