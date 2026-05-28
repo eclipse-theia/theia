@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "請求失敗時的最大重試次數。預設值為 3"
           },
-          "mdDescription": "整合與Anthropic API相容的自訂模型。必填屬性為`model`與`url`。            \n            可選設定:            \n            - 指定唯一`id`以在介面中識別自訂模型。 若未提供,則以`model`作為`id`。            \n            - 提供`apiKey`以存取指定網址的API服務。使用`true`表示採用全球性Anthropic API金鑰。            \n            - 設定`enableStreaming: false`表示不使用串流功能。            \n            - 設定 `useCaching: false` 表示不使用提示詞快取。            \n            - 設定 `maxRetries: <number>` 表示請求失敗時的最大重試次數。預設值為 3。",
+          "mdDescription": "整合與 Anthropic API 相容的自訂模型。必填屬性為 `model` 和 `url`。            \n            您可選擇性地            \n            - 指定一個唯一的 `id`,用於在 UI 中識別該自訂模型。 若未提供,則 `model` 將被用作 `id`。            \n            - 提供 `apiKey` 以存取指定 URL 所提供的 API。使用 `true` 表示使用全域 Anthropic API 金鑰。            \n            - 指定 `enableStreaming: false` 以表示不使用串流功能。            \n            - 指定 `useCaching: false` 以表示不使用提示詞快取。            \n            - 指定 `maxRetries: <number>` 以表示請求失敗時的最大重試次數。預設值為 3。            \n            推理能力與最大輸出代碼限制取自端點的 `/v1/models` 回應。",
           "modelId": {
             "title": "模型 ID"
-          },
-          "reasoningApi": {
-            "title": "應使用哪種 Anthropic 推理 API 模式:`effort` 用於適應性思考(Claude 4.6+)、`budget` 用於傳統擴展思考(Claude 4.0–4.5),或 `null` 以停用。預設會根據模型名稱推斷。"
-          },
-          "supportsXHighEffort": {
-            "title": "表示模型是否接受 Anthropic 的 `xhigh` 努力值。預設情況下由模型名稱推斷得出。"
           },
           "url": {
             "title": "該模型所託管的 Anthropic API 相容端點"
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "無法為代理程式{0}找到現成的語言模型。請檢查您的設定！",
         "defaultAgent": {
           "description": "選用:若使用者查詢中未透過 @<代理名稱> 明確指定代理程式,則應呼叫的聊天代理程式 <代理名稱>。若未設定預設代理程式,則將套用 Theia 的預設值。"
+        },
+        "defaultToolConfirmation": {
+          "description": "此為預設確認行為,適用於在「ai-features.chat.toolConfirmation」下未設有工具專屬條目的工具。若工具明確要求在自動批准前進行確認,則無論此設定為何,預設均會採用「確認」行為。"
         },
         "fromClipboard": "$(clippy) 來自剪貼簿",
         "fromClipboardDescription": "從剪貼簿貼上圖片",
@@ -196,15 +193,15 @@
           "description": "用於持久化儲存及檢索任務上下文描述的工作區相對路徑。若設定為空值,生成的任務上下文將儲存於記憶體而非磁碟。"
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "自動執行工具,無需確認"
+          },
           "confirm": {
             "description": "執行工具前請先確認"
           },
-          "description": "設定不同工具的確認行為。鍵值為工具識別碼,值為確認模式。使用「*」作為鍵值可為所有工具設定全域預設值。",
+          "description": "設定個別工具的確認行為。鍵值為工具 ID,值為確認模式。若要變更所有工具的預設值,請使用 \"ai-features.chat.defaultToolConfirmation\"。",
           "disabled": {
             "description": "停用工具執行"
-          },
-          "yolo": {
-            "description": "自動執行工具,無需確認"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "切換功能設定"
         },
         "chatInputAriaLabel": "在此輸入您的訊息",
+        "chatRequestFailedWithDetail": "聊天請求失敗:{0}",
         "chatResponses": "聊天回應",
         "clearAllSelections": "清除搜尋字串與功能選項",
         "code-part-renderer": {
-          "copied": "複製",
           "generatedCode": "生成代碼"
         },
         "collapseAll": "收起所有",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "該指令的識別碼為「{0}」,但無法從聊天視窗執行。"
         },
-        "confirmDeleteChatMsg": "您確定要刪除此對話記錄嗎?",
         "copyCodeBlock": "複製程式碼區塊",
         "couldNotSendRequestToSession": "無法向會話 {1} 發送請求 \"{0}\"",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "焦點聊天輸入",
         "focusResponse": "焦點聊天回應",
         "functions": "功能",
-        "functionsDescription": "Theia 擴充套件提供的內建函數",
+        "functionsDescription": "由 {0} 擴充套件提供的內建功能",
         "genericCapabilities": "通用功能",
         "mcpFunctionsDescription": "來自連線伺服器的模型上下文協定(MCP)功能",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
@@ -305,9 +301,6 @@
         "persistedSession": "持久化會話(點擊恢復)",
         "promptFragmentsDescription": "對話中需包含的自訂提示片段",
         "reasoning": {
-          "high": "高",
-          "low": "低",
-          "medium": "中級",
           "minimal": "簡約"
         },
         "removeChat": "移除聊天功能",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "先前對話請求由其他客服人員處理。Claude Code 無法查看該對話內容。",
         "directory": "目錄",
         "domain": "網域",
+        "edit": "編輯 {0}",
         "editAutomatically": "自動編輯",
         "editing": "編輯",
         "editsCount": "{0} 編輯",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "此代理程式為 Theia IDE 中的程式碼編輯器提供內嵌式程式碼完成功能。",
+          "description": "此代理程式可在 {0} 的程式碼編輯器中提供內嵌程式碼自動完成功能。",
           "vars": {
             "file": {
               "description": "正在編輯的檔案之 URI"
@@ -587,7 +581,7 @@
           "expired": "授權已過期或遭拒絕。請重新嘗試。",
           "hint": "輸入代碼並完成授權後,請點擊下方「我已授權」。",
           "initiating": "正在啟動驗證...",
-          "instructions": "若要授權 Theia 使用 GitHub Copilot,請造訪下方網址並輸入代碼:",
+          "instructions": "若要授權 {0} 使用 GitHub Copilot,請造訪以下網址並輸入代碼:",
           "openGitHub": "開啟 GitHub",
           "privacy": "Theia 為開源專案。我們僅要求存取您的 GitHub 使用者名稱以連接 GitHub Copilot 服務——不會存取或儲存任何其他資料。",
           "success": "已成功登入 GitHub Copilot！",
@@ -650,8 +644,8 @@
           "label": "AI 設定"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - 代理程式已完成",
-          "namedAgentCompleted": "Theia - 代理程式「{0}」已完成"
+          "agentCompleted": "{0} - 代理程式已完成",
+          "namedAgentCompleted": "{0} - 代理程式「{1}」已完成"
         },
         "capabilityVariable": {
           "argDescription": "提示片段識別碼,可選後綴「預設開啟」或「預設關閉」(預設為關閉)",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "最適用於程式碼自動完成情境。"
+          },
+          "fast": {
+            "description": "針對探索或基本工具調用等較簡單的任務,提供更快且更經濟的模型,此類任務無需深度推理。"
           },
           "summarize": {
             "description": "優先用於內容摘要與濃縮的模型。"
@@ -744,7 +741,7 @@
           "description": "所有當前開啟檔案的簡短參考(相對路徑,以逗號分隔)"
         },
         "openEditorsVariable": {
-          "description": "以逗號分隔的清單,列出所有目前開啟的檔案,相對於工作區根目錄。"
+          "description": "以逗號分隔的清單,列出所有目前開啟的檔案,格式為工作區相對路徑(例如:my-project/src/index.ts)。"
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "無法顯示變數值。",
         "unableToResolveVariable": "無法解析變數。",
         "variable-contribution": {
-          "builtInVariable": "Theia 內建變數",
-          "currentAbsoluteFilePath": "目前開啟檔案的絕對路徑。請注意,多數代理程式預期使用相對檔案路徑(相對於當前工作區)。",
-          "currentFileContent": "目前開啟檔案的純文字內容。此處不包含內容來源資訊。請注意,多數代理程式在使用相對檔案路徑(相對於當前工作區)時運作效果更佳。",
-          "currentRelativeDirPath": "包含當前開啟檔案的目錄之相對路徑。",
-          "currentRelativeFilePath": "目前開啟檔案的相對路徑。",
-          "currentSelectedText": "目前在開啟檔案中選取的純文字內容。此處不包含內容來源資訊。請注意,多數代理程式在使用相對檔案路徑(相對於當前工作區)時運作效果更佳。",
-          "dotRelativePath": "當前開啟檔案的相對路徑簡稱('currentRelativeFilePath')。"
+          "builtInVariable": "{0} 內建變數",
+          "currentAbsoluteFilePath": "目前開啟檔案的絕對路徑。",
+          "currentFileContent": "目前開啟檔案的純文字內容。此處不包含內容來源的相關資訊。",
+          "currentRelativeDirPath": "包含目前開啟檔案之目錄的、以工作區為基準的路徑(例如:my-project/src)。",
+          "currentRelativeFilePath": "目前開啟檔案的工作區相對路徑(例如:my-project/src/index.ts)。",
+          "currentSelectedText": "目前在已開啟檔案中選取的純文字內容。此處不包含內容來源的相關資訊。",
+          "dotRelativePath": "指向目前開啟檔案('currentRelativeFilePath')之工作區相對路徑的簡要參考。"
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "開啟 AI 歷史紀錄...",
         "request-card": {
           "promptVariant": "提示變體",
-          "request": "請求",
           "response": "回應",
-          "timestamp": "時間戳記",
-          "title": "請求"
+          "timestamp": "時間戳記"
         },
         "sortChronologically": {
           "tooltip": "按時間排序"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "平面模式",
             "planNext": "規劃模式(下一步)",
             "simple": "簡易模式"
           },
@@ -1041,7 +1035,7 @@
             "label": "AI指令",
             "message": "執行回調函式時傳遞參數:{0}。首個參數為動態註冊指令所對應的指令識別碼,其餘參數則為處理函式實際接收的操作參數。"
           },
-          "description": "此代理程式能識別使用者在 Theia IDE(使用者當前操作的工具)中可執行的所有指令。根據使用者請求,它能找出正確指令並讓使用者執行。",
+          "description": "此代理程式知悉使用者可執行的所有指令。根據使用者的請求,它能找出正確的指令,並讓使用者執行該指令。",
           "response": {
             "customHandler": "請嘗試執行以下指令:",
             "noCommand": "抱歉,我找不到這樣的指令",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Theia 中可用的命令清單。"
+              "description": "可用指令清單。"
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "允許代理程式與 GitHub 進行互動。為此,代理程式可委派給 GitHub 代理程式,該代理程式能讀取與寫入問題、拉取請求、評論及儲存庫內容。"
         },
         "githubRepoName": {
-          "description": "當前 GitHub 儲存庫名稱(例如:\"eclipse-theia/theia\")"
+          "description": "與工作區根目錄相關聯的 GitHub 儲存庫(例如「eclipse-theia/theia」)"
         },
         "howToGetStarted": "如何開始使用",
         "model-selection-description": "請於 [AI 設定檢視窗]({0})中選擇各 AI 代理程式所使用的大型語言模型(LLMs)。",
@@ -1112,6 +1106,30 @@
           "progressMessage": "確定最合適的代理程式",
           "response": {
             "delegatingToAgent": "委派至 `@{0}`"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "此架構將探索工作(包括架構、使用方式、規範及測試)委派給 Explore 代理程式。若此功能被停用,PR 審查者將使用其自有工具進行探索。",
+              "name": "委派探索"
+            },
+            "githubInfo": {
+              "description": "委託 GitHub 代理程式擷取拉取請求的元資料、差異、留言、檢查項目及關聯的議題。",
+              "name": "GH PR 資訊"
+            },
+            "localCheckout": {
+              "description": "將拉取請求(pull request)檢出至本地端,並保護現有工作樹的變更。",
+              "name": "檢出"
+            },
+            "localValidation": {
+              "description": "針對拉取請求執行本機安裝、建置、語法檢查、測試或類似的驗證任務。",
+              "name": "建置"
+            },
+            "pendingGitHubReview": {
+              "description": "在獲得使用者明確確認後,將任務委派給 GitHub 代理程式,以預先準備好的內嵌評論來建立或更新待審查的拉取請求。",
+              "name": "待 GitHub 審查"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "錯誤訊息",
           "lastActivity": "最後活動",
           "lastMessage": "最後訊息",
           "messages": "訊息",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "用於介面中識別自訂模型的唯一識別碼"
           },
-          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm` 實現。必填屬性為 `model` 與 `url`。            \n            可選設定:            \n            - 指定唯一 `id` 以在介面中識別自訂模型。 若未提供則以 `model` 作為 `id`。            \n            - 提供 `apiKey` 以存取指定網址的 API。使用 `true` 表示採用全域 OpenAI API 金鑰。            \n            - 提供 `apiVersion` 以存取 Azure 環境中指定網址的 API。 使用 `true` 表示採用全域 OpenAI API 版本。            \n            - 提供 Azure 部署的 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息附加至後續使用者訊息前,或在後續訊息非使用者訊息時將系統訊息轉換為使用者訊息;`skip` 則直接移除系統訊息)。預設值為 `developer`。            \n            - 設定 `supportsStructuredOutput: false` 表示不使用結構化輸出。            \n            - 設定 `enableStreaming: false` 表示不使用串流處理。            \n            - 設定 `useResponseApi: true` 表示使用新版 OpenAI 回應 API 取代對話完成 API(需相容端點)。            \n            更多資訊請參閱[我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm`。必填屬性為 `model` 和 `url`。            \n            您可選擇性地            \n            - 指定一個唯一的 `id`,以便在 UI 中識別該自訂模型。 若未提供,則 `model` 將被用作 `id`。            \n            - 提供 `apiKey` 以存取指定 URL 所提供的 API。使用 `true` 表示使用全域 OpenAI API 金鑰。            \n            - 提供 `apiVersion` 以存取 Azure 中指定 URL 所提供的 API。 若要使用全域 OpenAI API 版本,請設定為 `true`。            \n            - 為您的 Azure 部署提供一個 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設定為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的            包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息作為前綴附加於後續的使用者訊息前,或若下一則訊息非使用者訊息,則將系統訊息轉換為使用者訊息;`skip` 則僅移除系統訊息)。預設值為 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表示不應使用結構化輸出。            \n            - 指定 `enableStreaming: false` 以表示不應使用串流功能。            \n            - 指定 `useResponseApi: true` 以使用較新的 OpenAI Response API 取代 Chat Completion API(需相容的端點)。            \n            - 設定 `reasoningSupport` 以啟用對話推理選擇器。請提供一個包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)及可選的 `defaultLevel` 的物件。            \n            更多資訊請參閱 [我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
           "modelId": {
             "title": "模型 ID"
           },
           "reasoningSupport": {
-            "title": "宣告模型的推理能力。設定此選項後,聊天視窗會顯示該模型的推理選單。設定為 `null` 即可停用。預設值會根據模型名稱推斷而出。"
+            "title": "宣告模型的推理能力。設定此選項後,聊天視窗將顯示此模型的推理選單。"
           },
           "supportsStructuredOutput": {
             "title": "指示模型是否支援結構化輸出。預設值為 `true`。"
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "詢問關於終端機指令...",
         "hitEnterConfirm": "按下 Enter 鍵以確認",
         "howCanIHelp": "我能為您提供什麼協助?",
+        "terminalCommandBlockAIVariable": {
+          "description": "儲存已執行的終端機指令及其對應的輸出內容。",
+          "index": {
+            "description": "終端機歷史紀錄中命令區塊的索引。若未指定,預設為最後一條命令。"
+          },
+          "quickPick": {
+            "placeholder": "輸入文字以篩選指令",
+            "title": "從終端機歷史紀錄中選取指令及其輸出結果"
+          }
+        },
         "tryAgain": "請重新嘗試...",
         "useArrowsAlternatives": " 或使用 ⇅ 顯示替代選項..."
       },
@@ -1485,6 +1514,7 @@
             "title": "模型 ID"
           },
           "model": {
+            "provider": "提供者",
             "title": "模型名稱"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "AI 工具可能讀取的工作區外部絕對路徑或檔案 URI(目錄或檔案)清單。 支援使用 `~` 指代使用者主目錄。預設為空;僅限主動啟用。此設定將由 getFileContent、findFilesByPattern、getWorkspaceFileList 及 getWorkspaceDirectoryStructure 功能所採用。當工作區未被信任時,工作區範圍內的值將被忽略。白名單目錄內的符號連結會被追蹤,且可能指向白名單外的檔案;請僅新增您信任其內容的目錄。",
+          "title": "允許的外部路徑"
+        },
         "coderAgent": {
           "description": "整合於 Theia IDE 的人工智慧助理,專為協助軟體開發者設計。此代理程式可存取使用者工作區,能取得所有可用檔案與資料夾清單並檢索其內容。此外,它可向使用者建議檔案修改方案,從而協助執行編碼任務或其他涉及檔案變更的工作。"
         },
         "considerGitignore": {
-          "description": "若啟用此設定,將排除全域 .gitignore 檔案(預期位置為工作區根目錄)中指定的檔案/資料夾。",
+          "description": "若啟用此功能,將排除各工作區根目錄中符合 .gitignore 規則的檔案/資料夾。",
           "title": "請考慮 .gitignore"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE 的 AI 支援功能現已開放使用！",
+        "header": "{0} 現已支援 AI 功能！",
         "openAIChatView": "立即開啟 AI 聊天視窗,學習如何開始！"
       },
       "apiComparator": "{0} API 相容性",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "AI 功能",
       "hostedPlugin": "託管外掛程式",
+      "input": {
+        "browse": "瀏覽"
+      },
       "toolbar": "工具列"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "附加至正在執行的容器",
+        "attachError": "無法連接到容器:{0}",
+        "attachWarning": "附加至容器將執行其中的程式碼。請僅附加至您信任來源的容器。",
+        "attachWarningTitle": "附加至容器",
+        "attaching": "連接至容器",
+        "cliAttachError": "無法連接到容器:{0}",
+        "cliContainerNotFound": "找不到容器「{0}」或該容器未執行中。",
         "connect": "重新開啟於容器中",
+        "enterCustomPath": "輸入自訂路徑...",
+        "enterWorkspacePath": "請在容器內輸入工作區路徑",
+        "foundConfigMsg": "在 {0} 發現了 devcontainer.json 檔案。您是否要套用其中的 post-attach 設定(擴充功能、端口轉發等)?",
+        "foundConfigTitle": "已找到開發容器設定",
         "noDevcontainerFiles": "工作區中未找到 devcontainer.json 檔案。請確認您已建立包含 devcontainer.json 檔案的 .devcontainer 目錄。",
         "noRunningContainers": "未找到正在執行的容器。",
         "rebuild": "重建容器",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "在容器中重新開啟",
         "selectContainer": "選擇一個正在運行的容器以進行附加",
         "selectDevcontainer": "選擇一個 devcontainer.json 檔案",
+        "selectWorkspacePath": "在容器內選取工作區路徑",
         "suggestion": "此工作區具有開發容器設定。您是否要在容器中重新開啟它?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "刪除群組",
       "deletePage": "刪除頁面",
       "deleteTerminal": "刪除終端機",
-      "group": "群組",
       "label": "終端機",
       "maximizeBottomPanel": "最大化底部面板",
       "minimizeBottomPanel": "最小化底部面板",
@@ -2298,6 +2345,7 @@
       "iconSet": "圖示集",
       "insertGroupLeft": "插入分組分隔符(左側)",
       "insertGroupRight": "插入分組分隔符號(右側)",
+      "jsonError": "讀取您的 toolbar.json 檔案時發生錯誤。請右鍵點擊工具列並選擇「自訂工具列」,以檢查檔案是否損毀。您也可以透過選擇「還原工具列預設值」將其重設為預設狀態。",
       "leftColumn": "左欄",
       "openJSON": "自訂工具列(開啟 JSON)",
       "removeCommand": "從工具列移除命令",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "兩項資源皆為目錄。",
-      "clickToManageTrust": "點擊以管理信任設定。",
       "compareWithEachOther": "相互比較",
       "confirmDeletePermanently.description": "無法使用垃圾桶刪除「{0}」。是否要改為永久刪除?",
       "confirmDeletePermanently.solution": "您可在偏好設定中停用「垃圾桶」功能。",
@@ -2368,7 +2415,7 @@
       "removeFolder": "您確定要從工作區移除以下資料夾嗎?",
       "removeFolders": "您確定要從工作區移除以下資料夾嗎?",
       "restrictedModeDescription": "由於此工作區未被信任,部分功能已停用。",
-      "restrictedModeNote": "*請注意:工作區信任功能目前仍在 Theia 開發中;並非所有功能皆已整合至工作區信任機制*",
+      "restrictedModeFeatures": "為防範潛在有害程式碼,任務執行、除錯、擴充功能及 AI 等功能已停用。",
       "schema": {
         "folders": {
           "description": "工作區中的根目錄"
@@ -2376,9 +2423,11 @@
         "title": "工作區檔案"
       },
       "trashTitle": "將 {0} 移至廢紙簍",
-      "trustDialogMessage": "若您信任作者,此資料夾內的程式碼可能被執行。\n\n若不信任,部分功能將被停用。\n\n工作區信任功能目前仍在 Theia 開發中;並非所有功能皆已整合此信任機制。\n請查看狀態列中的「受限模式」指示器以獲取詳細資訊。",
+      "trustDialogMessage": "若您信任作者,此資料夾中的程式碼可能會被執行,包括任務、除錯設定、擴充功能及 AI 功能。",
+      "trustDialogRestricted": "若您不信任作者,工作區將以「受限模式」開啟,此模式會停用這些功能,以防範潛在的有害程式碼。",
       "trustEmptyWindow": "控制是否預設信任空工作區。",
       "trustEnabled": "控制是否啟用工作區信任機制。若停用此功能,所有工作區均被視為可信。",
+      "trustLearnMore": "進一步了解 Theia 的工作區信任機制",
       "trustTrustedFolders": "無需提示即可信任的資料夾 URI 清單。",
       "untitled-cleanup": "似乎存在大量未命名的作業區檔案。請檢查 {0} 並移除所有未使用檔案。",
       "variables": {

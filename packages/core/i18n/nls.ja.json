@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "リクエスト失敗時の最大再試行回数。デフォルトは3回。"
           },
-          "mdDescription": "Anthropic APIと互換性のあるカスタムモデルを統合します。必須属性は`model`と`url`です。            \n            オプションで            \n            - UI内でカスタムモデルを識別するための一意の`id`を指定できます。 指定しない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな Anthropic API キーを使用する場合は `true` を指定します。            \n            - ストリーミングを使用しない場合は `enableStreaming: false` を指定します。            \n            - プロンプトキャッシュを使用しないことを示すには `useCaching: false` を指定します。            \n            - リクエスト失敗時の最大再試行回数を指定するには `maxRetries: <number>` を指定します。デフォルトは3です。",
+          "mdDescription": "Anthropic APIと互換性のあるカスタムモデルを統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI上でカスタムモデルを識別するための一意の `id` を指定します。 指定がない場合、`model`が`id`として使用されます。            \n            - 指定されたURLで提供されるAPIにアクセスするための`apiKey`を指定します。グローバルなAnthropic APIキーを使用する場合は`true`を指定します。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false`を指定します。            \n            - `useCaching: false` を指定して、プロンプトのキャッシュを使用しないことを示します。            \n            - `maxRetries: <number>` を指定して、リクエストが失敗した際の再試行の最大回数を示します。デフォルトは 3 回です。            \n            推論機能および出力トークンの最大制限は、エンドポイントの `/v1/models` レスポンスから取得されます。",
           "modelId": {
             "title": "モデルID"
-          },
-          "reasoningApi": {
-            "title": "Anthropicの推論APIのどのシェイプを使用するか:適応型思考には `effort`(Claude 4.6+)、レガシー拡張思考には `budget`(Claude 4.0–4.5)、無効化するには `null`。デフォルトではモデル名から推測されます。"
-          },
-          "supportsXHighEffort": {
-            "title": "モデルがAnthropicの`xhigh`エフォート値を受け入れるかどうかを示します。デフォルトではモデル名から推測されます。"
           },
           "url": {
             "title": "モデルがホストされているAnthropic API互換エンドポイント"
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "エージェント{0}用の既製言語モデルが見つかりませんでした。設定を確認してください！",
         "defaultAgent": {
           "description": "オプション: ユーザークエリで@<エージェント名>を明示的に指定していない場合、呼び出すべきチャットエージェントの<エージェント名>。デフォルトエージェントが設定されていない場合、Theiaのデフォルトが適用されます。"
+        },
+        "defaultToolConfirmation": {
+          "description": "「ai-features.chat.toolConfirmation」にツール固有のエントリがないツールに対して使用される、デフォルトの確認動作です。自動承認の前に明示的に確認を必要とするツールは、この設定にかかわらず、常にデフォルトで「確認」となります。"
         },
         "fromClipboard": "$(clippy) クリップボードから",
         "fromClipboardDescription": "クリップボードから画像を貼り付け",
@@ -196,15 +193,15 @@
           "description": "タスクコンテキストの説明を永続化および取得するための、ワークスペース相対パス。空の値に設定された場合、生成されたタスクコンテキストはディスクではなくメモリに保存されます。"
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "確認なしにツールを自動的に実行する"
+          },
           "confirm": {
             "description": "ツールを実行する前に確認を求める"
           },
-          "description": "異なるツールに対する設定確認動作を構成します。キーはツールID、値は確認モードです。すべてのツールに共通するグローバルデフォルトを設定するにはキーに「*」を使用します。",
+          "description": "個々のツールの確認動作を設定します。キーはツールID、値は確認モードです。すべてのツールのデフォルトを変更するには、「ai-features.chat.defaultToolConfirmation」を使用してください。",
           "disabled": {
             "description": "ツールの実行を無効化"
-          },
-          "yolo": {
-            "description": "確認なしでツールを自動的に実行する"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "機能設定の切り替え"
         },
         "chatInputAriaLabel": "ここにメッセージを入力してください",
+        "chatRequestFailedWithDetail": "チャットリクエストに失敗しました: {0}",
         "chatResponses": "チャット応答",
         "clearAllSelections": "検索文字列と機能選択をクリア",
         "code-part-renderer": {
-          "copied": "コピー",
           "generatedCode": "生成コード"
         },
         "collapseAll": "すべて折りたたむ",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "コマンドのIDは「{0}」ですが、チャットウィンドウからは実行できません。"
         },
-        "confirmDeleteChatMsg": "このチャットを削除してもよろしいですか?",
         "copyCodeBlock": "コードブロックをコピー",
         "couldNotSendRequestToSession": "セッション {1} へのリクエスト \"{0}\" を送信できませんでした",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "フォーカスチャット入力",
         "focusResponse": "フォーカスチャット応答",
         "functions": "機能",
-        "functionsDescription": "Theia拡張機能によって提供される組み込み関数",
+        "functionsDescription": "{0}拡張機能によって提供される組み込み機能",
         "genericCapabilities": "汎用機能",
         "mcpFunctionsDescription": "接続済みサーバーからのモデルコンテキストプロトコル(MCP)機能",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
@@ -305,9 +301,6 @@
         "persistedSession": "永続化されたセッション(クリックで復元)",
         "promptFragmentsDescription": "会話に含めるカスタムプロンプトフラグメント",
         "reasoning": {
-          "high": "高",
-          "low": "低",
-          "medium": "中",
           "minimal": "最小限"
         },
         "removeChat": "チャットを削除",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "前回のチャットリクエストは別のエージェントが対応しました。Claude Codeはそれらの他のメッセージを確認できません。",
         "directory": "ディレクトリ",
         "domain": "ドメイン",
+        "edit": "{0} を編集",
         "editAutomatically": "自動編集",
         "editing": "編集",
         "editsCount": "{0} 編集",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "このエージェントは、Theia IDEのコードエディタ内でインラインコード補完を提供します。",
+          "description": "このエージェントは、{0}のコードエディタ内でインラインコード補完機能を提供します。",
           "vars": {
             "file": {
               "description": "編集中のファイルのURI"
@@ -587,7 +581,7 @@
           "expired": "認証が期限切れか拒否されました。再度お試しください。",
           "hint": "コードを入力し認証後、下部の「認証済み」をクリックしてください。",
           "initiating": "認証を開始しています...",
-          "instructions": "TheiaがGitHub Copilotを使用することを許可するには、以下のURLにアクセスしコードを入力してください:",
+          "instructions": "{0}でGitHub Copilotを使用できるようにするには、以下のURLにアクセスし、コードを入力してください:",
           "openGitHub": "GitHubを開く",
           "privacy": "Theiaはオープンソースプロジェクトです。GitHub Copilotサービスに接続するため、GitHubユーザー名へのアクセスのみ要求します。その他のデータへのアクセスや保存は一切行いません。",
           "success": "GitHub Copilotへのサインインに成功しました！",
@@ -650,8 +644,8 @@
           "label": "AI 設定"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - Agent Completed",
-          "namedAgentCompleted": "Theia - エージェント「{0}」完了"
+          "agentCompleted": "{0} - エージェントが完了しました",
+          "namedAgentCompleted": "{0} - エージェント「{1}」完了"
         },
         "capabilityVariable": {
           "argDescription": "プロンプトフラグメントID(必要に応じて「デフォルトでオン」または「デフォルトでオフ」が続く。デフォルトはオフ)",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "コード補完シナリオに最適です。"
+          },
+          "fast": {
+            "description": "高度な推論を必要としない、探索や基本的なツールの呼び出しといった単純なタスク向けの、より高速で安価なモデル。"
           },
           "summarize": {
             "description": "コンテンツの要約と凝縮を優先するモデル。"
@@ -744,7 +741,7 @@
           "description": "現在開いている全ファイルの簡易参照(相対パス、カンマ区切り)"
         },
         "openEditorsVariable": {
-          "description": "ワークスペースのルートディレクトリを基準とした、現在開いている全ファイルのカンマ区切りリスト。"
+          "description": "現在開かれているすべてのファイルのカンマ区切りリスト(ワークスペース相対パス、例:my-project/src/index.ts)。"
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "変数値を表示できません。",
         "unableToResolveVariable": "変数を解決できません。",
         "variable-contribution": {
-          "builtInVariable": "Theia 内蔵変数",
-          "currentAbsoluteFilePath": "現在開いているファイルの絶対パス。ほとんどのエージェントは相対ファイルパス(現在のワークスペースに対する相対パス)を期待することに注意してください。",
-          "currentFileContent": "現在開いているファイルのプレーンテキスト内容。これにはコンテンツの出典情報は含まれません。ほとんどのエージェントは相対ファイルパス(現在のワークスペースからの相対パス)でより適切に動作することに留意してください。",
-          "currentRelativeDirPath": "現在開いているファイルを含むディレクトリの相対パス。",
-          "currentRelativeFilePath": "現在開いているファイルの相対パス。",
-          "currentSelectedText": "開いているファイル内で現在選択されているプレーンテキスト。コンテンツの出典元情報は含まれません。ほとんどのエージェントは相対ファイルパス(現在のワークスペースを基準とした相対パス)でより適切に動作することに留意してください。",
-          "dotRelativePath": "現在開いているファイルの相対パスへの短い参照('currentRelativeFilePath')。"
+          "builtInVariable": "{0} 組み込み変数",
+          "currentAbsoluteFilePath": "現在開いているファイルの絶対パス。",
+          "currentFileContent": "現在開かれているファイルのプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
+          "currentRelativeDirPath": "現在開いているファイルが含まれるディレクトリのワークスペース相対パス(例:my-project/src)。",
+          "currentRelativeFilePath": "現在開いているファイルのワークスペース相対パス(例:my-project/src/index.ts)。",
+          "currentSelectedText": "開いているファイル内で現在選択されているプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
+          "dotRelativePath": "現在開いているファイルのワークスペース相対パス('currentRelativeFilePath')への短い参照。"
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "AIの履歴を開く...",
         "request-card": {
           "promptVariant": "プロンプトのバリエーション",
-          "request": "リクエスト",
           "response": "回答",
-          "timestamp": "タイムスタンプ",
-          "title": "リクエスト"
+          "timestamp": "タイムスタンプ"
         },
         "sortChronologically": {
           "tooltip": "時系列順に並べ替え"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "プランモード",
             "planNext": "プランモード(次へ)",
             "simple": "シンプルモード"
           },
@@ -1041,7 +1035,7 @@
             "label": "AIコマンド",
             "message": "引数付きコールバックの実行 {0}最初の引数は動的に登録されたコマンドのコマンドIDです。その他の引数はハンドラへの実際の引数です。"
           },
-          "description": "このエージェントは、ユーザーが現在使用しているツールであるTheia IDE内で実行可能な全コマンドを認識しています。ユーザーのリクエストに基づき、適切なコマンドを検索し、ユーザーがそれを実行できるようにします。",
+          "description": "このエージェントは、ユーザーが実行可能なすべてのコマンドを把握しています。ユーザーの要求に基づいて適切なコマンドを特定し、ユーザーがそれを実行できるようにします。",
           "response": {
             "customHandler": "これを実行してみてください:",
             "noCommand": "申し訳ありませんが、そのようなコマンドは見つかりません",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Theiaで利用可能なコマンドの一覧。"
+              "description": "利用可能なコマンドの一覧。"
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "エージェントがGitHubと連携することを許可します。このため、エージェントはGitHubエージェントに委任でき、             これにより課題、プルリクエスト、コメント、リポジトリの内容を読み書きできます。"
         },
         "githubRepoName": {
-          "description": "現在のGitHubリポジトリ名(例: \"eclipse-theia/theia\")"
+          "description": "ワークスペースのルートに関連付けられたGitHubリポジトリ(例:「eclipse-theia/theia」)"
         },
         "howToGetStarted": "はじめ方",
         "model-selection-description": "各AIエージェントが使用する大規模言語モデル(LLM)を[AI設定ビュー]({0})で選択します。",
@@ -1112,6 +1106,30 @@
           "progressMessage": "最適なエージェントの選定",
           "response": {
             "delegatingToAgent": "`@{0}` への委任"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "アーキテクチャ、使用方法、規約、およびテストの調査は、Exploreエージェントに委譲されます。無効化されている場合、プルリクエストのレビュアーは自身のツールを使用して調査を行います。",
+              "name": "委任探索"
+            },
+            "githubInfo": {
+              "description": "GitHubエージェントに委譲して、プルリクエストのメタデータ、差分、コメント、チェック、および関連する課題を取得します。",
+              "name": "GH PR 情報"
+            },
+            "localCheckout": {
+              "description": "プルリクエストをローカルにチェックアウトし、既存のワークツリーの変更を保護します。",
+              "name": "チェックアウト"
+            },
+            "localValidation": {
+              "description": "プルリクエストに対して、ローカルでのインストール、ビルド、リンティング、テスト、またはこれらに相当する検証タスクを実行します。",
+              "name": "ビルド"
+            },
+            "pendingGitHubReview": {
+              "description": "ユーザーの明示的な確認後、GitHubエージェントに委任して、準備済みのインラインコメントを含む保留中のプルリクエストレビューを作成または更新します。",
+              "name": "GitHubのレビュー待ち"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "エラーメッセージ",
           "lastActivity": "最終アクティビティ",
           "lastMessage": "最後のメッセージ",
           "messages": "メッセージ",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "UI内でカスタムモデルを識別するために使用される一意の識別子"
           },
-          "mdDescription": "OpenAI APIと互換性のあるカスタムモデルを統合します(例:`vllm`経由)。必須属性は`model`と`url`です。            \n            オプションで            \n            - UI内でカスタムモデルを識別するための一意の`id`を指定できます。 指定しない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバル OpenAI API キーを使用する場合は `true` を指定します。            \n            - Azure で提供される指定 URL の API にアクセスするための `apiVersion` を指定します。 グローバルOpenAI APIバージョンの使用を指定するには`true`を使用します。            \n            - Azureデプロイメント用の`deployment`名を指定します。            \n            - `developerMessageSettings`を`user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または`skip`のいずれかに設定し、開発者メッセージの含め方を制御します (`user`、`system`、`developer`はロールとして使用され、`mergeWithFollowingUserMessage`は次のユーザーメッセージにシステムメッセージをプレフィックスするか、次のメッセージがユーザーメッセージでない場合にシステムメッセージをユーザーメッセージに変換します。`skip`はシステムメッセージを単に削除します)。デフォルトは`developer`です。            \n            - `supportsStructuredOutput: false` を指定すると構造化出力を使用しないことを示します。            \n            - `enableStreaming: false` を指定するとストリーミングを使用しないことを示します。            \n            - `useResponseApi: true` を指定すると、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            詳細は[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
+          "mdDescription": "OpenAI APIと互換性のあるカスタムモデルを、例えば`vllm`を介して統合します。必須の属性は`model`と`url`です。            \n            オプションで、以下の設定が可能です。            \n            - UI上でカスタムモデルを識別するための一意の`id`を指定します。 指定がない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな OpenAI API キーを使用する場合は `true` を指定します。            \n            - Azure 上の指定された URL で提供される API にアクセスするための `apiVersion` を指定します。 グローバルな OpenAI API バージョンを使用する場合は `true` を指定します。            \n            - Azure デプロイメントの `deployment` 名を指定します。            \n            - `developerMessageSettings` を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または `skip` のいずれかに設定して、開発者メッセージの組み込み方法を制御します (ここで、`user`、`system`、および `developer` はロールとして使用され、`mergeWithFollowingUserMessage` は、次のユーザーメッセージの先頭にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。`skip` は単にシステムメッセージを削除します)。デフォルトは `developer` です。            \n            - `supportsStructuredOutput: false` を指定して、構造化出力を使用しないことを示します。            \n            - `enableStreaming: false` を指定して、ストリーミングを使用しないことを示します。            \n            - `useResponseApi: true` を指定して、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            - `reasoningSupport` を指定して、チャット推論セレクタを有効にします。`supportedLevels`(例:`[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)と、オプションの `defaultLevel` を含むオブジェクトを指定してください。            \n            詳細については、[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
           "modelId": {
             "title": "モデルID"
           },
           "reasoningSupport": {
-            "title": "モデルの推論機能を宣言します。設定すると、チャットにこのモデルの推論セレクターが表示されます。無効にするには `null` に設定してください。デフォルトではモデル名から推測されます。"
+            "title": "モデルの推論機能を宣言します。設定すると、チャットにこのモデルの推論セレクターが表示されます。"
           },
           "supportsStructuredOutput": {
             "title": "モデルが構造化出力をサポートするかどうかを示します。デフォルトは`true`です。"
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "ターミナルコマンドについて質問する...",
         "hitEnterConfirm": "Enterキーを押して確定",
         "howCanIHelp": "ご用件をお聞かせください。",
+        "terminalCommandBlockAIVariable": {
+          "description": "実行されたターミナルコマンドとその対応する出力を保存します。",
+          "index": {
+            "description": "ターミナルの履歴におけるコマンドブロックのインデックス。指定がない場合は、デフォルトで最後のコマンドになります。"
+          },
+          "quickPick": {
+            "placeholder": "コマンドをフィルタリングするには入力してください",
+            "title": "ターミナルの履歴からコマンドとその出力を選択する"
+          }
+        },
         "tryAgain": "もう一度試してください...",
         "useArrowsAlternatives": " または⇅を使用して代替案を表示..."
       },
@@ -1485,6 +1514,7 @@
             "title": "モデルID"
           },
           "model": {
+            "provider": "プロバイダー",
             "title": "モデル名"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "AIツールが読み取ることができる、ワークスペース外の絶対パスまたはファイルURI(ディレクトリまたはファイル)のリスト。 ユーザーのホームディレクトリを指定するために `~` をサポートします。デフォルトでは空です。オプトインのみ有効です。getFileContent、findFilesByPattern、getWorkspaceFileList、および getWorkspaceDirectoryStructure によって処理されます。ワークスペースが信頼されていない場合、ワークスペーススコープの値は無視されます。許可リストに登録されたディレクトリ内のシンボリックリンクは追跡され、許可リスト外のファイルを指す可能性があります。内容は信頼できるディレクトリのみを追加してください。",
+          "title": "許可される外部パス"
+        },
         "coderAgent": {
           "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスでき、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得できます。さらに、ユーザーに対してファイルの変更を提案できます。したがって、コーディングタスクやファイル変更を伴うその他のタスクにおいてユーザーを支援することが可能です。"
         },
         "considerGitignore": {
-          "description": "有効化されている場合、グローバル .gitignore ファイル(想定される場所はワークスペースのルート)で指定されたファイル/フォルダを除外します。",
+          "description": "有効にすると、各ワークスペースのルートディレクトリにある .gitignore ルールに一致するファイルやフォルダが除外されます。",
           "title": ".gitignore を考慮する"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDEのAIサポートが利用可能になりました！",
+        "header": "{0}でのAIサポートが利用可能になりました！",
         "openAIChatView": "今すぐAIチャットビューを開いて、始め方をご覧ください！"
       },
       "apiComparator": "{0} API互換性",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "AI機能",
       "hostedPlugin": "ホスト型プラグイン",
+      "input": {
+        "browse": "閲覧"
+      },
       "toolbar": "ツールバー"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "実行中のコンテナに接続",
+        "attachError": "コンテナへの接続に失敗しました: {0}",
+        "attachWarning": "コンテナにアタッチすると、その内部でコードが実行されます。信頼できる発信元からのコンテナにのみアタッチしてください。",
+        "attachWarningTitle": "コンテナにアタッチ",
+        "attaching": "コンテナへの接続",
+        "cliAttachError": "コンテナへの接続に失敗しました: {0}",
+        "cliContainerNotFound": "コンテナ「{0}」が見つからないか、実行されていません。",
         "connect": "コンテナ内で再開",
+        "enterCustomPath": "カスタムパスを入力してください...",
+        "enterWorkspacePath": "コンテナ内のワークスペースのパスを入力してください",
+        "foundConfigMsg": "{0} に devcontainer.json が見つかりました。その post-attach 設定(拡張機能、ポートフォワーディングなど)を適用しますか?",
+        "foundConfigTitle": "Dev Containerの設定が見つかりました",
         "noDevcontainerFiles": "ワークスペース内にdevcontainer.jsonファイルが見つかりません。.devcontainerディレクトリ内にdevcontainer.jsonファイルが存在することを確認してください。",
         "noRunningContainers": "実行中のコンテナが見つかりませんでした。",
         "rebuild": "コンテナの再構築",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "コンテナで再起動",
         "selectContainer": "接続する実行中のコンテナを選択してください",
         "selectDevcontainer": "devcontainer.json ファイルを選択してください",
+        "selectWorkspacePath": "コンテナ内のワークスペースパスを選択してください",
         "suggestion": "このワークスペースには開発用コンテナの設定が適用されています。コンテナ内で再度開きますか?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "グループを削除",
       "deletePage": "ページを削除",
       "deleteTerminal": "ターミナルを削除",
-      "group": "グループ",
       "label": "ターミナル",
       "maximizeBottomPanel": "下部パネルを最大化",
       "minimizeBottomPanel": "下部のパネルを最小化",
@@ -2298,6 +2345,7 @@
       "iconSet": "アイコンセット",
       "insertGroupLeft": "グループ区切り記号を挿入(左)",
       "insertGroupRight": "グループ区切りを挿入(右)",
+      "jsonError": "toolbar.json ファイルの読み取り中にエラーが発生しました。ツールバーを右クリックし、「ツールバーのカスタマイズ」を選択して、ファイルが破損していないかご確認ください。また、「ツールバーのデフォルト設定に戻す」を選択することで、デフォルト設定にリセットすることもできます。",
       "leftColumn": "左カラム",
       "openJSON": "ツールバーのカスタマイズ (JSON を開く)",
       "removeCommand": "ツールバーからコマンドを削除",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "両リソースはディレクトリです。",
-      "clickToManageTrust": "クリックして信頼設定を管理します。",
       "compareWithEachOther": "互いに比較する",
       "confirmDeletePermanently.description": "ゴミ箱を使用して「{0}」を削除できませんでした。代わりに完全に削除しますか?",
       "confirmDeletePermanently.solution": "設定でゴミ箱の使用を無効にできます。",
@@ -2368,7 +2415,7 @@
       "removeFolder": "以下のフォルダーをワークスペースから削除してもよろしいですか?",
       "removeFolders": "以下のフォルダをワークスペースから削除してもよろしいですか?",
       "restrictedModeDescription": "このワークスペースは信頼されていないため、一部の機能が無効化されています。",
-      "restrictedModeNote": "*ご注意:ワークスペース信頼機能は現在Theiaで開発中であり、全ての機能がワークスペース信頼と統合されているわけではありません*",
+      "restrictedModeFeatures": "潜在的に有害なコードから保護するため、タスクの実行、デバッグ、拡張機能、AI などの機能は無効化されています。",
       "schema": {
         "folders": {
           "description": "ワークスペース内のルートフォルダ"
@@ -2376,9 +2423,11 @@
         "title": "ワークスペースファイル"
       },
       "trashTitle": "{0}をゴミ箱に移動",
-      "trustDialogMessage": "作成者を信頼する場合、このフォルダー内のコードが実行される可能性があります。\n\n信頼しない場合、一部の機能が無効化されます。\n\nワークスペース信頼機能は現在Theiaで開発中であり、全ての機能がワークスペース信頼と統合されているわけではありません。\n詳細はステータスバーの「制限モード」インジケーターを確認してください。",
+      "trustDialogMessage": "作成者を信頼している場合、このフォルダ内のコード(タスク、デバッグ構成、拡張機能、AI機能など)が実行される可能性があります。",
+      "trustDialogRestricted": "作成者を信頼できない場合、ワークスペースは制限モードで開かれます。このモードでは、潜在的に有害なコードから保護するために、これらの機能が無効化されます。",
       "trustEmptyWindow": "空のワークスペースがデフォルトで信頼されるかどうかを制御します。",
       "trustEnabled": "ワークスペースの信頼設定を有効にするかどうかを制御します。無効にすると、すべてのワークスペースが信頼されます。",
+      "trustLearnMore": "Theiaのワークスペース信頼性について詳しくはこちら",
       "trustTrustedFolders": "プロンプトなしで信頼されるフォルダURIのリスト。",
       "untitled-cleanup": "多くの未タイトルのワークスペースファイルが存在しているようです。{0} を確認し、未使用のファイルを削除してください。",
       "variables": {
