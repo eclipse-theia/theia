@@ -81,6 +81,32 @@ describe('formatToolActivityLabel', () => {
     it('returns Working for empty string', () => {
         expect(formatToolActivityLabel('')).to.equal('Working');
     });
+
+    it('enriches edit label with last two path segments from JSON args', () => {
+        expect(formatToolActivityLabel('str_replace_editor', '{"path":"src/auth/login.ts"}')).to.equal('Editing auth/login.ts');
+        expect(formatToolActivityLabel('Edit', '{"path":"packages/core/src/app.ts"}')).to.equal('Editing src/app.ts');
+    });
+
+    it('enriches bash label with command from JSON args', () => {
+        expect(formatToolActivityLabel('Bash', '{"command":"npm test"}')).to.equal('Running: npm test');
+    });
+
+    it('enriches search label with pattern from JSON args', () => {
+        expect(formatToolActivityLabel('Grep', '{"pattern":"findIndex"}')).to.equal('Searching: findIndex');
+    });
+
+    it('enriches read label with file path from JSON args', () => {
+        expect(formatToolActivityLabel('Read', '{"file_path":"src/index.ts"}')).to.equal('Reading src/index.ts');
+    });
+
+    it('falls back to generic label when args is not valid JSON', () => {
+        expect(formatToolActivityLabel('Bash', 'not json')).to.equal('Running command');
+        expect(formatToolActivityLabel('Edit', 'partial {')).to.equal('Editing');
+    });
+
+    it('falls back to generic label when args has no recognised detail field', () => {
+        expect(formatToolActivityLabel('Bash', '{"timeout":30}')).to.equal('Running command');
+    });
 });
 
 describe('buildConversationListMetrics', () => {

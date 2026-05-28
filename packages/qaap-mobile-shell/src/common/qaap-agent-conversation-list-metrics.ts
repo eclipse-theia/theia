@@ -78,22 +78,49 @@ export function parseDiffStatsFromText(text: string): { readonly added: number; 
     return undefined;
 }
 
-export function formatToolActivityLabel(toolName: string): string {
+export function formatToolActivityLabel(toolName: string, argsJson?: string): string {
     const name = toolName.trim().toLowerCase();
+
+    // Try to extract a meaningful detail (file name or command) from the tool args.
+    let detail: string | undefined;
+    if (argsJson) {
+        try {
+            const args = JSON.parse(argsJson) as Record<string, unknown>;
+            const filePath = (typeof args.path === 'string' && args.path)
+                ? args.path
+                : (typeof args.file_path === 'string' && args.file_path)
+                    ? args.file_path
+                    : undefined;
+            if (filePath) {
+                const parts = filePath.split('/').filter(Boolean);
+                detail = parts.slice(-2).join('/');
+            } else if (typeof args.command === 'string' && args.command.trim()) {
+                const cmd = args.command.trim();
+                detail = cmd.length > 40 ? `${cmd.slice(0, 37)}…` : cmd;
+            } else if (typeof args.pattern === 'string' && args.pattern.trim()) {
+                const pat = args.pattern.trim();
+                detail = pat.length > 30 ? `${pat.slice(0, 27)}…` : pat;
+            } else if (typeof args.query === 'string' && args.query.trim()) {
+                const q = args.query.trim();
+                detail = q.length > 30 ? `${q.slice(0, 27)}…` : q;
+            }
+        } catch { /* partial or non-JSON args — fall back to generic label */ }
+    }
+
     if (!name) {
-        return 'Working';
+        return detail ? `Working on ${detail}` : 'Working';
     }
     if (name.includes('grep') || name.includes('search') || name.includes('glob') || name.includes('web_search')) {
-        return 'Searching';
+        return detail ? `Searching: ${detail}` : 'Searching';
     }
     if (name.includes('read') || name.includes('list') || name.includes('ls')) {
-        return 'Reading files';
+        return detail ? `Reading ${detail}` : 'Reading files';
     }
     if (name.includes('bash') || name.includes('shell') || name.includes('terminal') || name.includes('run_')) {
-        return 'Running command';
+        return detail ? `Running: ${detail}` : 'Running command';
     }
     if (name.includes('write') || name.includes('edit') || name.includes('patch') || name.includes('replace')) {
-        return 'Editing';
+        return detail ? `Editing ${detail}` : 'Editing';
     }
     if (name.includes('think')) {
         return 'Thinking';
@@ -184,7 +211,7 @@ function resolveStreamingActivityLabel(
         .find((segment): segment is Extract<QaapAgentMessageSegment, { type: 'tool' }> =>
             segment.type === 'tool' && !segment.finished);
     if (activeTool) {
-        return formatToolActivityLabel(activeTool.name);
+        return formatToolActivityLabel(activeTool.name, activeTool.args);
     }
     const thinking = lastAgent.segments.some(segment =>
         segment.type === 'thinking' && segment.content.trim().length > 0);
