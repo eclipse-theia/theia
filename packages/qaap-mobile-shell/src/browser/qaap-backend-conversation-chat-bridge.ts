@@ -23,10 +23,16 @@ export function syncBackendConversationToChatModel(
     agentId: string,
 ): void {
     const pairs = pairConversationMessages(conversation.messages);
-    const requests = model.getRequests();
 
-    while (requests.length < pairs.length) {
-        const pair = pairs[requests.length];
+    // Conversation messages only ever append; fewer pairs than model entries means the caller
+    // passed the wrong model (e.g. reused a model from a different conversation). Return early
+    // so the caller can create a fresh model rather than leaving phantom requests behind.
+    if (model.getRequests().length > pairs.length) {
+        return;
+    }
+
+    while (model.getRequests().length < pairs.length) {
+        const pair = pairs[model.getRequests().length];
         model.addRequest(parsePlainChatRequest(pair.user.content), agentId);
         const request = model.getRequests()[model.getRequests().length - 1];
         if (pair.agent) {
