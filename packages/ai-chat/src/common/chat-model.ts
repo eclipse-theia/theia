@@ -590,7 +590,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
      * intermediate state for long-running tools (e.g. the user-interaction wizard) so
      * progress survives chat-session reloads. On restore the tool call is always marked
      * finished (no live handler exists anymore), so a partial result must be
-     * self-describing — consumers should not rely on `finished` to tell partial from final.
+     * self-describing; consumers should not rely on `finished` to tell partial from final.
      */
     updateResult(result: ToolCallResult): void;
     /**

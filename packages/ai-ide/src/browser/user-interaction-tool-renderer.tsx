@@ -56,9 +56,8 @@ interface UserInteractionComponentProps {
     result: UserInteractionResult | undefined;
     /**
      * Called whenever the user changes any step state. The parent persists this partial
-     * result on the response so it survives chat-session reloads. On restore the
-     * deserializer keeps the result and marks the tool finished, which the status logic
-     * below renders as canceled.
+     * result on the response (so it survives chat-session reloads) and pushes it to the
+     * tool (so a synchronous cancellation can return it instead of all-skipped).
      */
     onPartialResult: (result: UserInteractionResult) => void;
     openerService: OpenerService;
@@ -80,10 +79,11 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         }
         return steps.map(() => ({ comments: [] }));
     });
-    // Mirror stepStates into a ref so synchronous listeners (cancellation token) can read
-    // the latest value without re-registering on every change.
+    // Mirror stepStates into a ref so synchronous readers (cancellation fallback,
+    // terminal handlers) always see the latest value. The ref is updated synchronously
+    // by every code path that writes to stepStates, which also keeps these handlers
+    // free of `stepStates` deps and avoids state-updater side effects.
     const stepStatesRef = React.useRef(stepStates);
-    React.useEffect(() => { stepStatesRef.current = stepStates; }, [stepStates]);
     const [pendingComment, setPendingComment] = React.useState('');
 
     const activeStep: UserInteractionStep | undefined = steps[currentStep];
@@ -131,22 +131,12 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         })
     }), [steps]);
 
-    // Hand the tool a way to read the latest partial state on cancellation. The
-    // provider closes over the ref so a single registration covers every state change.
-    React.useEffect(() => {
-        const dispose = tool.setCancellationFallback(toolCallId, () =>
-            buildResult(false, stepStatesRef.current)
-        );
-        return () => dispose.dispose();
-    }, [tool, toolCallId, buildResult]);
-
     const updateStepState = React.useCallback((stepIndex: number, updater: (prev: StepState) => StepState) => {
-        setStepStates(prev => {
-            const next = prev.slice();
-            next[stepIndex] = updater(prev[stepIndex]);
-            onPartialResult(buildResult(false, next));
-            return next;
-        });
+        const next = stepStatesRef.current.slice();
+        next[stepIndex] = updater(next[stepIndex]);
+        stepStatesRef.current = next;
+        setStepStates(next);
+        onPartialResult(buildResult(false, next));
     }, [buildResult, onPartialResult]);
 
     const isSingleStep = stepCount === 1;
@@ -157,7 +147,8 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             return;
         }
         if (isSingleStep) {
-            const next: StepState[] = [{ ...stepStates[0], value }];
+            const next: StepState[] = [{ ...stepStatesRef.current[0], value }];
+            stepStatesRef.current = next;
             setStepStates(next);
             tool.completeInteraction(toolCallId, buildResult(true, next));
             return;
@@ -166,7 +157,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             ...prev,
             value: prev.value === value ? undefined : value
         }));
-    }, [buildResult, currentStep, isFinal, isSingleStep, stepStates, tool, toolCallId, updateStepState]);
+    }, [buildResult, currentStep, isFinal, isSingleStep, tool, toolCallId, updateStepState]);
 
     const handleAddComment = React.useCallback(() => {
         const trimmed = pendingComment.trim();
@@ -208,13 +199,13 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     const handleAdvance = React.useCallback(() => {
         if (isLastStep) {
             if (!isFinal) {
-                tool.completeInteraction(toolCallId, buildResult(true, stepStates));
+                tool.completeInteraction(toolCallId, buildResult(true, stepStatesRef.current));
             }
             return;
         }
         setCurrentStep(idx => idx + 1);
         setPendingComment('');
-    }, [buildResult, isFinal, isLastStep, stepStates, tool, toolCallId]);
+    }, [buildResult, isFinal, isLastStep, tool, toolCallId]);
 
     const handleBack = React.useCallback(() => {
         if (currentStep === 0) {
@@ -547,7 +538,10 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 finished={response.finished}
                 canceled={parentNode.response.isCanceled}
                 result={parseUserInteractionResult(response.result)}
-                onPartialResult={partial => response.updateResult(JSON.stringify(partial))}
+                onPartialResult={partial => {
+                    this.userInteractionTool.recordPartial(response.id!, partial);
+                    response.updateResult(JSON.stringify(partial));
+                }}
                 openerService={this.openerService}
                 toolConfirmation={{
                     response,

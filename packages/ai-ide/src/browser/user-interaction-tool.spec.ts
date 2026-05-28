@@ -205,16 +205,15 @@ describe('UserInteractionTool', () => {
 
         // Wait a microtask so the handler has registered the pending interaction.
         await Promise.resolve();
-        // Simulate the renderer registering a cancellation fallback that yields the
-        // latest partial state.
-        tool.setCancellationFallback('call-cancel', () => ({
+        // Simulate the renderer pushing the latest partial state.
+        tool.recordPartial('call-cancel', {
             completed: false,
             steps: [
                 { title: 'Step A', comments: ['first done'] },
                 { title: 'Step B', value: 'whatever' },
                 { title: 'Step C', skipped: true }
             ]
-        }));
+        });
         cts.cancel();
 
         const result = parseResult(await handlerPromise);

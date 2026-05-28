@@ -16,7 +16,6 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
-import { Disposable } from '@theia/core';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -45,11 +44,11 @@ interface PendingInteraction {
     steps: UserInteractionStep[];
     resolved: boolean;
     /**
-     * Provider that yields the latest partial result on cancellation. Set by the renderer
-     * via {@link UserInteractionTool.setCancellationFallback}. If absent (no renderer
-     * mounted) the tool resolves with all steps marked as skipped.
+     * Latest partial result pushed by the renderer via {@link UserInteractionTool.recordPartial}.
+     * Used to resolve the handler with what the user has collected so far when the interaction
+     * is canceled. If absent (no renderer mounted) the tool resolves with all steps skipped.
      */
-    cancellationFallback?: () => UserInteractionResult;
+    latestPartial?: UserInteractionResult;
 }
 
 // Schemas are module-level constants so they are built once at load time
@@ -204,22 +203,16 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     /**
-     * Register a provider that yields the latest partial result on cancellation. The
-     * renderer calls this once on mount and updates a closed-over ref as the user
-     * interacts. On cancellation the tool calls the provider to obtain what was
-     * collected, avoiding any race between renderer- and tool-side resolution.
+     * Push the latest partial result so the tool can resolve with it on cancellation.
+     * The renderer should call this whenever the user changes step state. Calls for
+     * an already-resolved interaction are silently ignored.
      */
-    setCancellationFallback(toolCallId: string, provider: () => UserInteractionResult): Disposable {
+    recordPartial(toolCallId: string, partial: UserInteractionResult): void {
         const pending = this.pendingInteractions.get(toolCallId);
         if (!pending || pending.resolved) {
-            return Disposable.NULL;
+            return;
         }
-        pending.cancellationFallback = provider;
-        return Disposable.create(() => {
-            if (pending.cancellationFallback === provider) {
-                pending.cancellationFallback = undefined;
-            }
-        });
+        pending.latestPartial = partial;
     }
 
     protected resolveInteraction(toolCallId: string, result: UserInteractionResult): void {
@@ -236,7 +229,7 @@ export class UserInteractionTool implements ToolProvider {
         if (!pending || pending.resolved) {
             return;
         }
-        const result = pending.cancellationFallback?.() ?? {
+        const result = pending.latestPartial ?? {
             completed: false,
             steps: pending.steps.map(step => ({ title: step.title, skipped: true }))
         };
