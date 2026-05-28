@@ -26,6 +26,7 @@
   - removed public constructors from DebugSession and PluginDebugSession in favor of dependency injection
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors
   - renamed DebugSessionFactory.get to DebugSessionFactory.createSession and removed the manager parameter
+- [preview] deprecated the `@theia/preview` extension and stopped publishing it on npm. Please use the built-in VS Code Markdown extension instead, which offers the same feature set. [#17680](https://github.com/eclipse-theia/theia/pull/17680)
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 ## 1.72.0 - 5/28/2026
