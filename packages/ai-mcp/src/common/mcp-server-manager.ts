@@ -30,6 +30,15 @@ export interface MCPFrontendService {
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ListToolsResult | undefined>;
     getPromptTemplateId(serverName: string): string;
+    /**
+     * Push the current workspace trust level down to the backend so that
+     * `MCPToolFilter`s see a meaningful `workspaceTrustLevel` in their
+     * context. Called by the frontend application contribution on init
+     * and on `WorkspaceTrustService.onDidChangeWorkspaceTrust`. The
+     * backend-side `WorkspaceTrustService` does not exist (it is a
+     * browser module), so the value must be pushed.
+     */
+    setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): Promise<void>;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
@@ -61,11 +70,34 @@ export interface MCPServerManager {
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
     getResources(serverName: string): Promise<ListResourcesResult>;
     setWorkspaceRoots(roots: string[] | undefined): void;
+    /**
+     * See {@link MCPFrontendService.setWorkspaceTrustLevel}. The backend
+     * caches the value and exposes it to {@link MCPToolFilter}s through
+     * the filter context.
+     */
+    setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): void;
 }
 
 export interface ToolInformation {
     name: string;
     description?: string;
+    /**
+     * The tool's name as advertised by the upstream MCP server, before
+     * any rewrites by the {@link MCPToolFilter} chain. Filters that
+     * rename a tool MUST preserve this if not already set, so downstream
+     * filters and consent UIs can attribute the tool back to its origin.
+     */
+    originalName?: string;
+    /**
+     * Free-form provenance tag identifying the tool's upstream origin.
+     * Useful in federated / gateway-fronted topologies (e.g. an MCP
+     * gateway that fronts multiple upstream servers under one connection)
+     * where `serverName` alone doesn't tell consumers which physical
+     * server backed the tool. Conventional values: the upstream server
+     * name (`"github-mcp-server"`), or `"<gateway>:<upstream>"`
+     * (`"agentgateway:jira"`).
+     */
+    provenance?: string;
 }
 
 export enum MCPServerStatus {
@@ -153,15 +185,58 @@ export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
      * Optional additional headers to include in requests to the server.
      */
     headers?: Record<string, string>;
+
+    /**
+     * Optional shell command that emits credential JSON to stdout — same
+     * shape as `git credential-helper` / `kubectl exec-credential`. When
+     * a `serverAuthToken` or any `headers` value is the sentinel
+     * `${helper}` (or `${helper:fieldName}`), the
+     * `HeadersHelperCredentialResolver` invokes this command with
+     * `MCP_SERVER_NAME` and `MCP_SERVER_URL` in env, parses the JSON,
+     * and uses the `field` (or explicit `fieldName`) as the lookup key.
+     *
+     * Hard-gated on workspace trust: the helper only runs when the
+     * frontend has pushed `workspaceTrustLevel: 'trusted'` to the
+     * backend. Untrusted / unknown workspaces fall through silently so
+     * an attacker-supplied project config can't run arbitrary code.
+     */
+    headersHelper?: string;
 }
 
-export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;
+export interface InProcessMCPServerDescription extends BaseMCPServerDescription {
+    /**
+     * Marker discriminating this variant from local (subprocess) and
+     * remote (HTTP/SSE) servers. The MCP server lives in the same
+     * Node.js process as Theia's backend; transport is a linked-pair
+     * memory channel created by `createInProcessTransportPair`.
+     *
+     * In-process servers have no `command` and no `serverUrl` because
+     * their lifecycle is owned by the contributing plugin, not by a
+     * subprocess or remote endpoint. The plugin writes its own
+     * `MCPTransportProvider` to wire the linked pair into a
+     * server-side `Server` from `@modelcontextprotocol/sdk/server`.
+     *
+     * Typically registered programmatically by a plugin's
+     * `BackendApplicationContribution.onStart` rather than via user
+     * preferences — these descriptions identify a plugin-bundled
+     * capability surface rather than an operator-managed connection.
+     */
+    kind: 'in-process';
+}
+
+export type MCPServerDescription =
+    | LocalMCPServerDescription
+    | RemoteMCPServerDescription
+    | InProcessMCPServerDescription;
 
 export function isLocalMCPServerDescription(description: MCPServerDescription): description is LocalMCPServerDescription {
     return (description as LocalMCPServerDescription).command !== undefined;
 }
 export function isRemoteMCPServerDescription(description: MCPServerDescription): description is RemoteMCPServerDescription {
     return (description as RemoteMCPServerDescription).serverUrl !== undefined;
+}
+export function isInProcessMCPServerDescription(description: MCPServerDescription): description is InProcessMCPServerDescription {
+    return (description as InProcessMCPServerDescription).kind === 'in-process';
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');

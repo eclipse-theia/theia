@@ -109,6 +109,14 @@ Example configuration:\n\
                         title: nls.localize('theia/ai/mcp/servers/headers/title', 'Headers'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
                             'Optional additional headers included with each request to the server.'),
+                    },
+                    headersHelper: {
+                        type: 'string',
+                        title: nls.localize('theia/ai/mcp/servers/headersHelper/title', 'Headers Helper Command'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/headersHelper/mdDescription',
+                            'Optional shell command emitting a JSON object on stdout (same shape as `git credential-helper`). \
+Used in combination with the `${helper}` (or `${helper:keyName}`) sentinel in `serverAuthToken` / `headers` values to fetch dynamic credentials per request. \
+The command runs with `MCP_SERVER_NAME` and `MCP_SERVER_URL` in env. **Only invoked in trusted workspaces** to prevent project-supplied configs from running arbitrary shell commands.'),
                     }
                 },
                 required: []
