@@ -57,6 +57,18 @@
             "numbers"
           ]
         }
+      },
+      {
+        "name": "sample-getSystemInfo",
+        "description": "Returns system information including platform, Node.js version, and uptime.",
+        "tags": [
+          "sample",
+          "system"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ]
   }

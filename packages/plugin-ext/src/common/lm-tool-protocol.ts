@@ -23,12 +23,31 @@ export interface LanguageModelToolDto {
     tags?: string[];
 }
 
-/**
- * Result of a tool invocation over RPC.
- * Mirrors VS Code's LanguageModelToolResult — content parts are passed through as-is.
- */
+export interface ToolResultTextPartDto {
+    type: 'text';
+    value: string;
+}
+
+export interface ToolResultDataPartDto {
+    type: 'data';
+    base64: string;
+    mimeType: string;
+}
+
+export interface ToolResultPromptTsxPartDto {
+    type: 'prompt-tsx';
+    value: unknown;
+}
+
+export interface ToolResultUnknownPartDto {
+    type: 'unknown';
+    json: string;
+}
+
+export type ToolResultPartDto = ToolResultTextPartDto | ToolResultDataPartDto | ToolResultPromptTsxPartDto | ToolResultUnknownPartDto;
+
 export interface LanguageModelToolResultDto {
-    content: unknown[];
+    content: ToolResultPartDto[];
 }
 
 export interface LanguageModelToolInvocationErrorDto {

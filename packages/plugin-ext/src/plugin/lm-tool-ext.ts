@@ -23,6 +23,7 @@ import {
     LanguageModelToolsMain,
     LanguageModelToolDto,
     ToolInvocationResult,
+    ToolResultPartDto,
     isToolInvocationError,
 } from '../common/lm-tool-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
@@ -131,10 +132,54 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             if (!result) {
                 return { content: [] };
             }
-            return { content: result.content };
+            return { content: result.content.map(part => this.convertPartToDto(part)) };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             return { error: errorMessage };
         }
+    }
+
+    private convertPartToDto(part: unknown): ToolResultPartDto {
+        if (this.isTextPart(part)) {
+            return { type: 'text', value: part.value };
+        }
+        if (this.isDataPart(part)) {
+            const base64 = this.uint8ArrayToBase64(part.data);
+            return { type: 'data', base64, mimeType: part.mimeType };
+        }
+        if (this.isPromptTsxPart(part)) {
+            return { type: 'prompt-tsx', value: part.value };
+        }
+        return { type: 'unknown', json: JSON.stringify(part) };
+    }
+
+    private isTextPart(part: unknown): part is { value: string } {
+        return typeof part === 'object' && part !== undefined
+            && 'value' in (part as object) && typeof (part as { value: unknown }).value === 'string'
+            && !('data' in (part as object)) && !('mimeType' in (part as object));
+    }
+
+    private isDataPart(part: unknown): part is { data: Uint8Array; mimeType: string } {
+        return typeof part === 'object' && part !== undefined
+            && 'data' in (part as object) && 'mimeType' in (part as object)
+            && typeof (part as { mimeType: unknown }).mimeType === 'string';
+    }
+
+    private isPromptTsxPart(part: unknown): part is { value: unknown } {
+        return typeof part === 'object' && part !== undefined
+            && 'value' in (part as object) && typeof (part as { value: unknown }).value !== 'string'
+            && !('data' in (part as object)) && !('mimeType' in (part as object));
+    }
+
+    private uint8ArrayToBase64(data: Uint8Array): string {
+        if (typeof Buffer !== 'undefined') {
+            return Buffer.from(data).toString('base64');
+        }
+        // Fallback for browser environments
+        let binary = '';
+        for (let i = 0; i < data.byteLength; i++) {
+            binary += String.fromCharCode(data[i]);
+        }
+        return btoa(binary);
     }
 }
