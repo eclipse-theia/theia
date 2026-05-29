@@ -65,7 +65,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/fast',
             defaultModelIds: [
-                'anthropic/claude-haiku-4-5',
+                'anthropic/claude-haiku-4-5-20251001',
                 'openai/gpt-5.4-mini',
                 'google/gemini-3.5-flash'
             ],

@@ -36,6 +36,21 @@ export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
     setProxyUrl(proxyUrl: string | undefined): void;
+    /**
+     * Sets the maximum number of retries to use when (re-)registering discovered official models.
+     * Custom endpoints carry their own `maxRetries` in their description.
+     */
+    setMaxRetries(maxRetries: number): void;
     createOrUpdateLanguageModels(...models: AnthropicModelDescription[]): Promise<void>;
-    removeLanguageModels(...modelIds: string[]): void
+    removeLanguageModels(...modelIds: string[]): void;
+    /**
+     * Discovers official Anthropic models from `/v1/models`, registers them with the language model registry,
+     * and persists the response under the Theia config directory so subsequent startups can skip the network call.
+     * Uses the persisted snapshot when present unless `force` is set.
+     */
+    discoverModels(force?: boolean): Promise<void>;
+    /**
+     * Invalidates the persisted snapshot and re-runs {@link discoverModels}.
+     */
+    refreshModels(): Promise<void>;
 }

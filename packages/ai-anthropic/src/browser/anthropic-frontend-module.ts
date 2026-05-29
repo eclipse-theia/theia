@@ -18,13 +18,16 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { AnthropicFrontendApplicationContribution } from './anthropic-frontend-application-contribution';
+import { AnthropicCommandContribution } from './anthropic-command-contribution';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common';
-import { PreferenceContribution } from '@theia/core';
+import { CommandContribution, PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AnthropicPreferencesSchema });
     bind(AnthropicFrontendApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(AnthropicFrontendApplicationContribution);
+    bind(AnthropicCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(AnthropicCommandContribution);
     bind(AnthropicLanguageModelsManager).toDynamicValue(ctx => {
         const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return provider.createProxy<AnthropicLanguageModelsManager>(ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH);

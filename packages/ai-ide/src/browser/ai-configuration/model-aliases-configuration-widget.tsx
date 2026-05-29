@@ -176,7 +176,7 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/defaultList', '[Default list]')}
                         </option>
                         {[...this.languageModels]
-                            .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
+                            .sort((a, b) => a.id.localeCompare(b.id))
                             .map(model => {
                                 const isNotReady = model.status.status !== 'ready';
                                 return (
@@ -184,9 +184,9 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
                                         key={model.id}
                                         value={model.id}
                                         className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
-                                        title={isNotReady && model.status.message ? model.status.message : undefined}
+                                        title={isNotReady && model.status.message ? model.status.message : model.name}
                                     >
-                                        {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
+                                        {model.id} {isNotReady ? '✗' : '✓'}
                                     </option>
                                 );
                             }
@@ -228,8 +228,8 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
                             className="ai-alias-evaluates-to-section"
                         >
                             {resolvedModel ? (
-                                <span className="ai-alias-evaluates-to-value">
-                                    {resolvedModel.name ?? resolvedModel.id}
+                                <span className="ai-alias-evaluates-to-value" title={resolvedModel.name}>
+                                    {resolvedModel.id}
                                     {resolvedModel.status.status === 'ready' ? (
                                         <span className="ai-model-status-ready"
                                             title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelReadyTooltip', 'Ready')}>✓</span>

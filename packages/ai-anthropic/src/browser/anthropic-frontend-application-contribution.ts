@@ -17,11 +17,9 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/anthropic-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF } from '../common/anthropic-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
-
-const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
 @injectable()
 export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -35,7 +33,6 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     @inject(AICorePreferences)
     protected aiCorePreferences: AICorePreferences;
 
-    protected prevModels: string[] = [];
     protected prevCustomModels: Partial<AnthropicModelDescription>[] = [];
 
     onStart(): void {
@@ -46,9 +43,11 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
-            this.prevModels = [...models];
+            this.manager.setMaxRetries(this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3);
+
+            // Kicks off discovery of official Anthropic models from `/v1/models`. Uses the persisted snapshot
+            // when present; otherwise fetches once. Subsequent refreshes are user-triggered via the command.
+            this.discoverModels();
 
             const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
@@ -56,13 +55,17 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
-                    this.updateAllModels();
-                } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    const newKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+                    this.manager.setApiKey(newKey);
+                    this.refreshCustomModels();
+                    // Re-discover when a key is configured so the user gets the model list as soon as one is available.
+                    // The discovery itself short-circuits when no key is set, so we can call it unconditionally.
+                    if (newKey) {
+                        this.discoverModels();
+                    }
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
-                    this.updateAllModels();
+                    this.refreshCustomModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 }
@@ -70,22 +73,13 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModels();
+                    this.manager.setMaxRetries(this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3);
+                    this.refreshCustomModels();
+                    // Re-apply the new retry count to the already-registered discovered models.
+                    this.discoverModels();
                 }
             });
         });
-    }
-
-    protected handleModelChanges(newModels: string[]): void {
-        const oldModels = new Set(this.prevModels);
-        const updatedModels = new Set(newModels);
-
-        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
-        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
-
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${ANTHROPIC_PROVIDER_ID}/${model}`));
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId)));
-        this.prevModels = newModels;
     }
 
     protected handleCustomModelChanges(newCustomModels: Partial<AnthropicModelDescription>[]): void {
@@ -108,27 +102,16 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
-
-        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+    /** Fire-and-forget wrapper that logs unexpected errors instead of leaving them as unhandled rejections. */
+    protected discoverModels(): void {
+        this.manager.discoverModels().catch(error => {
+            console.warn('Anthropic: model discovery failed:', error instanceof Error ? error.message : error);
+        });
     }
 
-    /** Per-model details are resolved by the backend from the Anthropic /v1/models endpoint. */
-    protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
-        const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
-        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-
-        return {
-            id: id,
-            model: modelId,
-            apiKey: true,
-            enableStreaming: true,
-            useCaching: true,
-            maxRetries: maxRetries
-        };
+    protected refreshCustomModels(): void {
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {

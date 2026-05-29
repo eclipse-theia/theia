@@ -238,7 +238,11 @@ export class AnthropicModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public name?: string,
+        public vendor?: string,
+        public family?: string,
+        public maxOutputTokens?: number
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
