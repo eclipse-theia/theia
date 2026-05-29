@@ -53,6 +53,22 @@ export interface QaapAgentTaskCreated {
     readonly createdAt?: number;
 }
 
+/** A task plus its captured stdout/stderr log — returned by `GET /qaap/api/agent-tasks/:id`. */
+export interface QaapAgentTaskDetailDTO {
+    readonly id: string;
+    readonly cwd: string;
+    readonly command?: string;
+    readonly state: string;
+    readonly exitCode?: number;
+    readonly finishedAt?: number;
+    readonly log: string;
+}
+
+/** True once a task has stopped and will not change state again. */
+export function isAgentTaskFinished(state: string): boolean {
+    return state !== 'running';
+}
+
 export type QaapCreateAgentTaskBody =
     | { readonly command: string; readonly cwd: string }
     | { readonly prompt: string; readonly agent: string; readonly cwd: string };
@@ -319,6 +335,14 @@ export async function createAgentTask(body: QaapCreateAgentTaskBody): Promise<Qa
         throw new Error(text || response.statusText);
     }
     return response.json() as Promise<QaapAgentTaskCreated>;
+}
+
+export async function fetchAgentTaskDetail(id: string): Promise<QaapAgentTaskDetailDTO> {
+    const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/${encodeURIComponent(id)}`, { credentials: 'include' });
+    if (!response.ok) {
+        throw new Error(response.statusText);
+    }
+    return response.json() as Promise<QaapAgentTaskDetailDTO>;
 }
 
 export async function cancelAgentTask(id: string): Promise<void> {

@@ -219,6 +219,24 @@ interface QaapDiffProjectTab {
     fileCount: number;
 }
 
+/** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
+type TranscriptTab = 'messages' | 'verify';
+
+/** A single verification step run on the project (build/test/lint). */
+interface VerifyCheck {
+    readonly label: string;
+    readonly command: string;
+}
+
+/** Result of running a {@link VerifyCheck} via the agent-task backend. */
+interface VerifyCheckResult {
+    readonly check: VerifyCheck;
+    state: 'idle' | 'running' | 'ok' | 'fail';
+    durationMs?: number;
+    exitCode?: number;
+    logTail?: string;
+}
+
 function isRestorableTheiaChatData(candidate: unknown): candidate is RestorableTheiaChatData {
     const data = candidate as Partial<RestorableTheiaChatData> | undefined;
     const model = data?.model as Partial<RestorableTheiaChatData['model']> | undefined;
@@ -299,6 +317,15 @@ export class MobileProjectsPanel {
     protected transcriptChatViewWidget: MobileProjectChatViewWidget | undefined;
     protected transcriptRefreshTimer: number | undefined;
     protected transcriptChatHost: HTMLElement | undefined;
+    protected transcriptChatInputHost: HTMLElement | undefined;
+    /** Verify tab of the transcript sheet: tab strip + content host + transient run state. */
+    protected transcriptTabStrip: HTMLElement | undefined;
+    protected transcriptVerifyHost: HTMLElement | undefined;
+    protected transcriptActiveTab: TranscriptTab = 'messages';
+    protected verifyRunning = false;
+    protected verifyResults: VerifyCheckResult[] = [];
+    /** Last transcript status seen — drives auto-verify on streaming→idle. */
+    protected transcriptLastStatus: QaapAgentConversationSummaryDTO['status'] | undefined;
     protected transcriptOpenSummaryId: string | undefined;
     protected transcriptLastFingerprint: string | undefined;
     protected transcriptLiveUpdatesDispose: Disposable = Disposable.NULL;
@@ -5706,11 +5733,25 @@ export class MobileProjectsPanel {
         const chatInputHost = document.createElement('div');
         chatInputHost.className = 'theia-mobile-agent-transcript-chat-input';
 
-        sheet.append(header, chatHost, chatInputHost);
+        // Verify tab: an additive sibling. The chat host + composer are only hidden (never
+        // disposed) when Verify is active, so the existing chat keeps streaming underneath.
+        const tabStrip = this.buildTranscriptTabStrip(project, summary);
+        const verifyHost = document.createElement('div');
+        verifyHost.className = 'theia-mobile-transcript-verify';
+        verifyHost.hidden = true;
+
+        sheet.append(header, tabStrip, chatHost, verifyHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
         this.transcriptChatHost = chatHost;
+        this.transcriptChatInputHost = chatInputHost;
+        this.transcriptTabStrip = tabStrip;
+        this.transcriptVerifyHost = verifyHost;
+        this.transcriptActiveTab = 'messages';
+        this.verifyResults = [];
+        this.verifyRunning = false;
+        this.transcriptLastStatus = summary.status;
         this.transcriptOpenSummaryId = summary.id;
         this.transcriptLastFingerprint = undefined;
         if (this.visible) {
@@ -5735,6 +5776,7 @@ export class MobileProjectsPanel {
                 }
                 this.transcriptLastFingerprint = fingerprint;
                 this.renderTranscriptMessages(chatHost, full);
+                this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
                 if (full.status === 'streaming' && this.conversations) {
                     this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
                         if (this.shouldRefreshOpenTranscript(project, summary.id)) {
@@ -5776,6 +5818,60 @@ export class MobileProjectsPanel {
             ?? readStoredAgent(summary.cwd);
         void this.refreshTranscriptComposerAgents(project);
         this.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
+    }
+
+    protected buildTranscriptTabStrip(
+        _project: MobileProjectEntry,
+        _summary: QaapAgentConversationSummaryDTO,
+    ): HTMLElement {
+        const strip = document.createElement('div');
+        strip.className = 'theia-mobile-transcript-tabs';
+        strip.setAttribute('role', 'tablist');
+
+        const messagesTab = document.createElement('button');
+        messagesTab.type = 'button';
+        messagesTab.className = 'theia-mobile-transcript-tab theia-mod-active';
+        messagesTab.textContent = nls.localize('qaap/mobileProjects/transcriptTabMessages', 'Messages');
+        messagesTab.setAttribute('role', 'tab');
+        messagesTab.setAttribute('aria-selected', 'true');
+
+        const verifyTab = document.createElement('button');
+        verifyTab.type = 'button';
+        verifyTab.className = 'theia-mobile-transcript-tab';
+        verifyTab.textContent = nls.localize('qaap/mobileProjects/transcriptTabVerify', 'Verify');
+        verifyTab.setAttribute('role', 'tab');
+        verifyTab.setAttribute('aria-selected', 'false');
+
+        const selectTab = (tab: TranscriptTab): void => {
+            this.transcriptActiveTab = tab;
+            const messages = tab === 'messages';
+            messagesTab.classList.toggle('theia-mod-active', messages);
+            verifyTab.classList.toggle('theia-mod-active', !messages);
+            messagesTab.setAttribute('aria-selected', messages ? 'true' : 'false');
+            verifyTab.setAttribute('aria-selected', messages ? 'false' : 'true');
+            if (this.transcriptChatHost) {
+                this.transcriptChatHost.hidden = !messages;
+            }
+            if (this.transcriptChatInputHost) {
+                this.transcriptChatInputHost.hidden = !messages;
+            }
+            if (this.transcriptVerifyHost) {
+                this.transcriptVerifyHost.hidden = messages;
+            }
+        };
+
+        messagesTab.addEventListener('click', () => selectTab('messages'));
+        verifyTab.addEventListener('click', () => selectTab('verify'));
+        strip.append(messagesTab, verifyTab);
+        return strip;
+    }
+
+    protected handleTranscriptStatusForAutoVerify(
+        _project: MobileProjectEntry,
+        _summary: QaapAgentConversationSummaryDTO,
+        status: QaapAgentConversationSummaryDTO['status'],
+    ): void {
+        this.transcriptLastStatus = status;
     }
 
     protected setTranscriptLiveUpdates(disposable: Disposable): void {
@@ -7162,6 +7258,13 @@ export class MobileProjectsPanel {
         this.transcriptOpenSummaryId = undefined;
         this.transcriptLastFingerprint = undefined;
         this.transcriptChatHost = undefined;
+        this.transcriptChatInputHost = undefined;
+        this.transcriptTabStrip = undefined;
+        this.transcriptVerifyHost = undefined;
+        this.transcriptActiveTab = 'messages';
+        this.verifyResults = [];
+        this.verifyRunning = false;
+        this.transcriptLastStatus = undefined;
         if (this.visible) {
             this.renderList();
         }
