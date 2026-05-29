@@ -30,7 +30,11 @@ export type QaapPreferenceReader = (key: string) => unknown;
 
 type AliasMap = Record<string, { readonly selectedModel?: string } | undefined>;
 
-const ALIAS_KEYS = ['default/code', 'default/chat', 'default/review'] as const;
+// Real Theia AI alias ids (see ai-core frontend-language-model-alias-registry).
+// Priority: the QAIQ coding agent prefers the "code" model, then the general-purpose
+// "universal" model, falling back to the remaining slots so a model the user configured
+// in any alias is honoured before the hard-coded env fallbacks kick in.
+const ALIAS_KEYS = ['default/code', 'default/universal', 'default/code-completion', 'default/summarize'] as const;
 
 const PROVIDER_MODEL_LIST_PREFS: readonly { readonly vendor: QaapModelVendor; readonly pref: string }[] = [
     { vendor: 'openrouter', pref: 'ai-features.openrouter.openrouterModels' },

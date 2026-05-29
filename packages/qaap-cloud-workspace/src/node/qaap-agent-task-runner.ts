@@ -879,6 +879,14 @@ export class QaapAgentTaskRunner {
         this.applyQaiqProviderEnv(env, task.command, binding);
         if (this.isQaiqRunner(undefined, task.command)) {
             env.QAAP_HOSTED_AGENT = '1';
+            // The hosted backend runs as root inside its container, where qaiq refuses
+            // `--dangerously-skip-permissions` unless it detects a sandbox. The container IS the
+            // sandbox, so opt in explicitly (qaiq honours IS_SANDBOX=1 as the root-bypass escape
+            // hatch). Scoped to the qaiq child rather than set globally so it never leaks into
+            // unrelated processes. Respect an operator override if one is already present.
+            if (env.IS_SANDBOX === undefined) {
+                env.IS_SANDBOX = '1';
+            }
         }
         this.applyHelperEnv(env, task.id);
         return env;

@@ -56,14 +56,37 @@ describe('resolveQaapQaiqModelBinding', () => {
         expect(binding?.modelId).to.equal('deepseek/deepseek-chat:free');
     });
 
-    it('resolves from default/chat alias when default/code is unset', () => {
+    it('resolves from default/universal alias when default/code is unset', () => {
         const binding = resolveQaapQaiqModelBinding(key => {
             if (key === 'ai-features.languageModelAliases') {
-                return { 'default/chat': { selectedModel: 'anthropic/claude-sonnet-4-20250514' } };
+                return { 'default/universal': { selectedModel: 'anthropic/claude-sonnet-4-20250514' } };
             }
             return undefined;
         });
         expect(binding?.provider).to.equal('anthropic');
+    });
+
+    it('prefers default/code over other aliases', () => {
+        const binding = resolveQaapQaiqModelBinding(key => {
+            if (key === 'ai-features.languageModelAliases') {
+                return {
+                    'default/code': { selectedModel: 'anthropic/claude-sonnet-4-20250514' },
+                    'default/universal': { selectedModel: 'openrouter/deepseek/deepseek-chat:free' }
+                };
+            }
+            return undefined;
+        });
+        expect(binding?.provider).to.equal('anthropic');
+    });
+
+    it('falls back to default/summarize when only that alias is set', () => {
+        const binding = resolveQaapQaiqModelBinding(key => {
+            if (key === 'ai-features.languageModelAliases') {
+                return { 'default/summarize': { selectedModel: 'nvidia/meta/llama-3.3-70b-instruct' } };
+            }
+            return undefined;
+        });
+        expect(binding?.vendor).to.equal('nvidia');
     });
 
     it('resolves nvidia from model list when aliases are empty', () => {
