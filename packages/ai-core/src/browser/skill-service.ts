@@ -23,7 +23,14 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
-import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile } from '../common/skill';
+import {
+    Skill,
+    SkillDescription,
+    SKILL_FILE_NAME,
+    validateSkillDescription,
+    parseSkillFile,
+    combineSkillDirectories
+} from '../common/skill';
 
 /** Debounce delay for coalescing rapid file system events */
 const UPDATE_DEBOUNCE_MS = 50;
@@ -183,31 +190,13 @@ export class DefaultSkillService implements SkillService {
         const newWatchedDirectories = new Set<string>();
         const newParentWatchers = new Map<string, string>();
 
-        for (const workspaceSkillsDir of workspaceSkillsDirs) {
-            const workspaceSkillsDirUri = URI.fromFilePath(workspaceSkillsDir).toString();
-            if (!newWatchedDirectories.has(workspaceSkillsDirUri)) {
+        const allDirectories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs);
+        for (const { path: directoryPath, tier } of allDirectories) {
+            if (tier === 'configured') {
+                await this.processConfiguredSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories);
+            } else {
                 await this.processSkillDirectoryWithParentWatching(
-                    workspaceSkillsDir,
-                    newSkills,
-                    newDisposables,
-                    newWatchedDirectories,
-                    newParentWatchers
-                );
-            }
-        }
-
-        for (const configuredDir of configuredDirectories) {
-            const configuredDirUri = URI.fromFilePath(configuredDir).toString();
-            if (!newWatchedDirectories.has(configuredDirUri)) {
-                await this.processConfiguredSkillDirectory(configuredDir, newSkills, newDisposables, newWatchedDirectories);
-            }
-        }
-
-        for (const defaultSkillsDir of defaultSkillsDirs) {
-            const defaultSkillsDirUri = URI.fromFilePath(defaultSkillsDir).toString();
-            if (!newWatchedDirectories.has(defaultSkillsDirUri)) {
-                await this.processSkillDirectoryWithParentWatching(
-                    defaultSkillsDir,
+                    directoryPath,
                     newSkills,
                     newDisposables,
                     newWatchedDirectories,

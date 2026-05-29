@@ -165,20 +165,44 @@ export function parseSkillFile(content: string): { metadata: SkillDescription | 
 }
 
 /**
- * Combines skill directories with proper priority ordering.
+ * Provenance tier of a skill directory, used to dispatch tier-specific processing.
+ */
+export type SkillDirectoryTier = 'workspace' | 'configured' | 'default';
+
+/**
+ * A skill directory paired with the tier it originates from.
+ */
+export interface SkillDirectoryEntry {
+    /** Absolute filesystem path to the skill directory */
+    path: string;
+    /** Tier the directory belongs to */
+    tier: SkillDirectoryTier;
+}
+
+/**
+ * Combines skill directories with proper priority ordering and provenance.
  * Workspace directories have highest priority, followed by configured directories, then defaults.
- * First directory wins on duplicates.
+ * First occurrence of a path wins on duplicates; later occurrences (regardless of tier) are dropped.
  */
 export function combineSkillDirectories(
     workspaceSkillsDirs: string[],
     configuredDirectories: string[],
     defaultSkillsDirs: string[]
-): string[] {
-    const allDirectories: string[] = [];
-    for (const dir of [...workspaceSkillsDirs, ...configuredDirectories, ...defaultSkillsDirs]) {
-        if (!allDirectories.includes(dir)) {
-            allDirectories.push(dir);
+): SkillDirectoryEntry[] {
+    const seen = new Set<string>();
+    const result: SkillDirectoryEntry[] = [];
+    const tiers: Array<{ dirs: string[]; tier: SkillDirectoryTier }> = [
+        { dirs: workspaceSkillsDirs, tier: 'workspace' },
+        { dirs: configuredDirectories, tier: 'configured' },
+        { dirs: defaultSkillsDirs, tier: 'default' }
+    ];
+    for (const { dirs, tier } of tiers) {
+        for (const dir of dirs) {
+            if (!seen.has(dir)) {
+                seen.add(dir);
+                result.push({ path: dir, tier });
+            }
         }
     }
-    return allDirectories;
+    return result;
 }

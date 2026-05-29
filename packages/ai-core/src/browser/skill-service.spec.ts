@@ -63,12 +63,28 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/workspace/.agents/skills', tier: 'workspace' },
+                { path: '/custom/skills1', tier: 'configured' },
+                { path: '/custom/skills2', tier: 'configured' },
+                { path: '/home/user/.theia/skills', tier: 'default' },
+                { path: '/home/user/.agents/skills', tier: 'default' }
+            ]);
+        });
+
+        it('preserves the workspace-tier order: .prompts/skills wins over .agents/skills on duplicate skill names', () => {
+            // The `.prompts/skills` directory is intentionally listed first within the workspace tier
+            // because it is the Theia-explicit folder; users opting into it signal stronger intent than
+            // those relying on the generic `.agents/skills` convention.
+            const result = combineSkillDirectories(
+                ['/workspace/.prompts/skills', '/workspace/.agents/skills'],
+                [],
+                []
+            );
+
+            expect(result.map(entry => entry.path)).to.deep.equal([
                 '/workspace/.prompts/skills',
-                '/workspace/.agents/skills',
-                '/custom/skills1',
-                '/custom/skills2',
-                '/home/user/.theia/skills',
-                '/home/user/.agents/skills'
+                '/workspace/.agents/skills'
             ]);
         });
 
@@ -80,8 +96,8 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/custom/skills',
-                '/home/user/.theia/skills'
+                { path: '/custom/skills', tier: 'configured' },
+                { path: '/home/user/.theia/skills', tier: 'default' }
             ]);
         });
 
@@ -93,8 +109,8 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/home/user/.theia/skills',
-                '/home/user/.agents/skills'
+                { path: '/home/user/.theia/skills', tier: 'default' },
+                { path: '/home/user/.agents/skills', tier: 'default' }
             ]);
         });
 
@@ -106,9 +122,9 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/workspace/.prompts/skills',
-                '/custom/skills',
-                '/home/user/.theia/skills'
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/custom/skills', tier: 'configured' },
+                { path: '/home/user/.theia/skills', tier: 'default' }
             ]);
         });
 
@@ -120,8 +136,8 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/workspace/.prompts/skills',
-                '/home/user/.theia/skills'
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/home/user/.theia/skills', tier: 'configured' }
             ]);
         });
 
@@ -133,8 +149,8 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/workspace/.prompts/skills',
-                '/home/user/.theia/skills'
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/home/user/.theia/skills', tier: 'default' }
             ]);
         });
 
@@ -146,8 +162,8 @@ describe('SkillService', () => {
             );
 
             expect(result).to.deep.equal([
-                '/workspace/.prompts/skills',
-                '/custom/skills'
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/custom/skills', tier: 'configured' }
             ]);
         });
 
@@ -158,7 +174,9 @@ describe('SkillService', () => {
                 []
             );
 
-            expect(result).to.deep.equal(['/workspace/.prompts/skills']);
+            expect(result).to.deep.equal([
+                { path: '/workspace/.prompts/skills', tier: 'workspace' }
+            ]);
         });
     });
 
@@ -491,6 +509,87 @@ Test skill content`
             const skills = service.getSkills();
             expect(skills).to.have.length(1);
             expect(skills[0].name).to.equal('test-skill');
+        });
+
+        it('prefers a workspace `.prompts/skills` skill over a same-named `.agents/skills` skill in the same root', async () => {
+            const service = createService();
+
+            workspaceServiceMock.tryGetRoots.returns([
+                { resource: URI.fromFilePath('/workspace') }
+            ]);
+
+            // Stub default skill directories as non-existent to keep focus on workspace behavior.
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves(false);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
+                .resolves(false);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.agents/skills'))
+                .resolves(false);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.agents'))
+                .resolves(false);
+
+            // Both workspace skill directories exist and contain a `dup-skill` directory.
+            const promptsSkillDir = '/workspace/.prompts/skills';
+            const agentsSkillDir = '/workspace/.agents/skills';
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === promptsSkillDir))
+                .resolves(true);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === agentsSkillDir))
+                .resolves(true);
+            fileServiceMock.resolve
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === promptsSkillDir))
+                .resolves({
+                    children: [{
+                        isDirectory: true,
+                        name: 'dup-skill',
+                        resource: URI.fromFilePath(`${promptsSkillDir}/dup-skill`)
+                    }]
+                });
+            fileServiceMock.resolve
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === agentsSkillDir))
+                .resolves({
+                    children: [{
+                        isDirectory: true,
+                        name: 'dup-skill',
+                        resource: URI.fromFilePath(`${agentsSkillDir}/dup-skill`)
+                    }]
+                });
+
+            // Each tier provides its own SKILL.md so we can distinguish them by location.
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${promptsSkillDir}/dup-skill/SKILL.md`))
+                .resolves(true);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${agentsSkillDir}/dup-skill/SKILL.md`))
+                .resolves(true);
+            fileServiceMock.read
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${promptsSkillDir}/dup-skill/SKILL.md`))
+                .resolves({
+                    value: '---\nname: dup-skill\ndescription: from prompts\n---\nFrom prompts'
+                });
+            fileServiceMock.read
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${agentsSkillDir}/dup-skill/SKILL.md`))
+                .resolves({
+                    value: '---\nname: dup-skill\ndescription: from agents\n---\nFrom agents'
+                });
+
+            (service as unknown as { init: () => void }).init();
+            await workspaceServiceMock.ready;
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const skill = service.getSkill('dup-skill');
+            expect(skill, 'dup-skill should be discovered').to.not.be.undefined;
+            expect(skill!.description).to.equal('from prompts');
+            expect(skill!.location).to.equal(`${promptsSkillDir}/dup-skill/SKILL.md`);
+            // The second occurrence is reported (not silently swallowed) via a warning.
+            expect(loggerWarnSpy.calledWith(
+                sinon.match(/Duplicate skill found.*dup-skill/)
+            )).to.be.true;
         });
     });
 });
