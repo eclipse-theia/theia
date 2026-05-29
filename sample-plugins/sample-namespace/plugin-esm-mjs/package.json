@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-esm-mjs",
-  "version": "1.72.0",
+  "version": "1.72.1",
   "main": "extension.mjs",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-namespace",

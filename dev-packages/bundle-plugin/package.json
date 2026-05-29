@@ -1,6 +1,6 @@
 {
   "name": "@theia/bundle-plugin",
-  "version": "1.72.0",
+  "version": "1.72.1",
   "description": "Contains bundler plugins for Theia.",
   "publishConfig": {
     "access": "public"
