@@ -52,6 +52,9 @@ import {
 } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
+    createAgentTask,
+    fetchAgentTaskDetail,
+    isAgentTaskFinished,
     extractBackendAgentMention,
     fetchAgentTaskListAll,
     isTheiaCoderAgent,
@@ -68,6 +71,7 @@ import {
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
     type QaapAgentTaskAgentOption,
+    type QaapAgentTaskDetailDTO,
     type QaapAgentTaskListSnapshot,
 } from '../common/qaap-agent-task-client';
 import {
@@ -5820,63 +5824,312 @@ export class MobileProjectsPanel {
         this.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
     }
 
-    protected buildTranscriptTabStrip(
-        _project: MobileProjectEntry,
-        _summary: QaapAgentConversationSummaryDTO,
-    ): HTMLElement {
-        const strip = document.createElement('div');
-        strip.className = 'theia-mobile-transcript-tabs';
-        strip.setAttribute('role', 'tablist');
-
-        const messagesTab = document.createElement('button');
-        messagesTab.type = 'button';
-        messagesTab.className = 'theia-mobile-transcript-tab theia-mod-active';
-        messagesTab.textContent = nls.localize('qaap/mobileProjects/transcriptTabMessages', 'Messages');
-        messagesTab.setAttribute('role', 'tab');
-        messagesTab.setAttribute('aria-selected', 'true');
-
-        const verifyTab = document.createElement('button');
-        verifyTab.type = 'button';
-        verifyTab.className = 'theia-mobile-transcript-tab';
-        verifyTab.textContent = nls.localize('qaap/mobileProjects/transcriptTabVerify', 'Verify');
-        verifyTab.setAttribute('role', 'tab');
-        verifyTab.setAttribute('aria-selected', 'false');
-
-        const selectTab = (tab: TranscriptTab): void => {
-            this.transcriptActiveTab = tab;
-            const messages = tab === 'messages';
-            messagesTab.classList.toggle('theia-mod-active', messages);
-            verifyTab.classList.toggle('theia-mod-active', !messages);
-            messagesTab.setAttribute('aria-selected', messages ? 'true' : 'false');
-            verifyTab.setAttribute('aria-selected', messages ? 'false' : 'true');
-            if (this.transcriptChatHost) {
-                this.transcriptChatHost.hidden = !messages;
-            }
-            if (this.transcriptChatInputHost) {
-                this.transcriptChatInputHost.hidden = !messages;
-            }
-            if (this.transcriptVerifyHost) {
-                this.transcriptVerifyHost.hidden = messages;
-            }
-        };
-
-        messagesTab.addEventListener('click', () => selectTab('messages'));
-        verifyTab.addEventListener('click', () => selectTab('verify'));
-        strip.append(messagesTab, verifyTab);
-        return strip;
-    }
-
-    protected handleTranscriptStatusForAutoVerify(
-        _project: MobileProjectEntry,
-        _summary: QaapAgentConversationSummaryDTO,
-        status: QaapAgentConversationSummaryDTO['status'],
-    ): void {
-        this.transcriptLastStatus = status;
-    }
-
     protected setTranscriptLiveUpdates(disposable: Disposable): void {
         this.transcriptLiveUpdatesDispose.dispose();
         this.transcriptLiveUpdatesDispose = disposable;
+    }
+
+    // ========================================================================
+    // Verify tab (execution view · Phase 1 of the agentic surfaces)
+    // ========================================================================
+
+    /** Default checks run by the Verify tab. Single "Build" for now; structured for Test/Lint later. */
+    protected defaultVerifyChecks(): VerifyCheck[] {
+        return [
+            { label: nls.localize('qaap/mobileProjects/verifyBuild', 'Build'), command: 'npm run compile' },
+        ];
+    }
+
+    protected verifyAutoStorageKey(cwd: string | undefined): string {
+        return `qaap.verify.auto:${cwd ?? ''}`;
+    }
+
+    protected isAutoVerifyEnabled(cwd: string | undefined): boolean {
+        try {
+            return localStorage.getItem(this.verifyAutoStorageKey(cwd)) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    protected setAutoVerifyEnabled(cwd: string | undefined, on: boolean): void {
+        try {
+            localStorage.setItem(this.verifyAutoStorageKey(cwd), on ? '1' : '0');
+        } catch {
+            /* private mode — ignore */
+        }
+    }
+
+    /** Messages · Verify tab strip. Messages mirrors the existing chat exactly. */
+    protected buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement {
+        const strip = document.createElement('div');
+        strip.className = 'theia-mobile-transcript-tabs';
+        strip.setAttribute('role', 'tablist');
+        const tabs: Array<{ id: TranscriptTab; label: string }> = [
+            { id: 'messages', label: nls.localize('qaap/mobileProjects/tabMessages', 'Messages') },
+            { id: 'verify', label: nls.localize('qaap/mobileProjects/tabVerify', 'Verify') },
+        ];
+        for (const tab of tabs) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theia-mobile-transcript-tab';
+            btn.dataset.tab = tab.id;
+            btn.setAttribute('role', 'tab');
+            const active = tab.id === this.transcriptActiveTab;
+            btn.classList.toggle('theia-mod-active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            btn.textContent = tab.label;
+            btn.addEventListener('click', () => this.selectTranscriptTab(tab.id, project, summary));
+            strip.append(btn);
+        }
+        return strip;
+    }
+
+    protected selectTranscriptTab(tab: TranscriptTab, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+        if (this.transcriptActiveTab === tab) {
+            return;
+        }
+        this.transcriptActiveTab = tab;
+        if (this.transcriptTabStrip) {
+            for (const btn of Array.from(this.transcriptTabStrip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab'))) {
+                const active = btn.dataset.tab === tab;
+                btn.classList.toggle('theia-mod-active', active);
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            }
+        }
+        const showVerify = tab === 'verify';
+        // Hide (never dispose) the chat + composer so live updates keep running underneath.
+        if (this.transcriptChatHost) {
+            this.transcriptChatHost.hidden = showVerify;
+        }
+        if (this.transcriptChatInputHost) {
+            this.transcriptChatInputHost.hidden = showVerify;
+        }
+        if (this.transcriptVerifyHost) {
+            this.transcriptVerifyHost.hidden = !showVerify;
+        }
+        if (showVerify) {
+            this.renderVerifyTab(project, summary);
+        }
+    }
+
+    protected renderVerifyTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+        const host = this.transcriptVerifyHost;
+        if (!host) {
+            return;
+        }
+        host.replaceChildren();
+
+        if (!summary.cwd) {
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-verify-note';
+            note.textContent = nls.localize('qaap/mobileProjects/verifyUnavailable', 'Verify is unavailable for this conversation (no workspace path).');
+            host.append(note);
+            return;
+        }
+
+        if (this.verifyResults.length === 0) {
+            this.verifyResults = this.defaultVerifyChecks().map(check => ({ check, state: 'idle' as const }));
+        }
+
+        const head = document.createElement('div');
+        head.className = 'theia-mobile-transcript-verify-head';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-transcript-verify-label';
+        const failed = this.verifyResults.filter(r => r.state === 'fail').length;
+        label.textContent = this.verifyRunning
+            ? nls.localize('qaap/mobileProjects/verifyRunning', 'Running…')
+            : failed > 0
+                ? nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed))
+                : nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
+        const runBtn = document.createElement('button');
+        runBtn.type = 'button';
+        runBtn.className = 'theia-mobile-transcript-verify-run';
+        runBtn.disabled = this.verifyRunning;
+        runBtn.textContent = this.verifyRunning
+            ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
+            : nls.localize('qaap/mobileProjects/verifyRun', 'Run');
+        runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
+        head.append(label, runBtn);
+        host.append(head);
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-transcript-verify-list';
+        for (const result of this.verifyResults) {
+            list.append(this.createVerifyCheckRow(result));
+        }
+        host.append(list);
+
+        const actions = document.createElement('div');
+        actions.className = 'theia-mobile-transcript-verify-actions';
+
+        if (failed > 0 && !this.verifyRunning) {
+            const sendBtn = document.createElement('button');
+            sendBtn.type = 'button';
+            sendBtn.className = 'theia-mobile-transcript-verify-send';
+            sendBtn.textContent = nls.localize('qaap/mobileProjects/verifySendFailure', 'Send failure to agent');
+            sendBtn.addEventListener('click', () => { void this.sendVerifyFailureToAgent(project, summary); });
+            actions.append(sendBtn);
+        }
+
+        const diffBtn = document.createElement('button');
+        diffBtn.type = 'button';
+        diffBtn.className = 'theia-mobile-transcript-verify-diff';
+        diffBtn.textContent = nls.localize('qaap/mobileProjects/verifyViewChanges', 'View changes');
+        diffBtn.addEventListener('click', () => {
+            // Reuse the existing mobile diff-review widget (WORKBENCH_OPEN_DIFF).
+            void this.commands.executeCommand('qaap.diff.openReview');
+        });
+        actions.append(diffBtn);
+        host.append(actions);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'theia-mobile-transcript-verify-toggle';
+        const toggleText = document.createElement('span');
+        toggleText.textContent = nls.localize('qaap/mobileProjects/verifyAuto', 'Auto-verify after each turn');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = this.isAutoVerifyEnabled(summary.cwd);
+        cb.addEventListener('change', () => this.setAutoVerifyEnabled(summary.cwd, cb.checked));
+        toggle.append(toggleText, cb);
+        host.append(toggle);
+    }
+
+    protected createVerifyCheckRow(result: VerifyCheckResult): HTMLElement {
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-transcript-verify-check';
+
+        const dot = document.createElement('span');
+        dot.className = `theia-mobile-transcript-verify-dot theia-mod-${result.state}`;
+        const name = document.createElement('span');
+        name.className = 'theia-mobile-transcript-verify-name';
+        name.textContent = result.check.label;
+        const meta = document.createElement('span');
+        meta.className = 'theia-mobile-transcript-verify-meta';
+        if (result.state === 'running') {
+            meta.textContent = nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…');
+        } else if (result.durationMs !== undefined) {
+            meta.textContent = `${(result.durationMs / 1000).toFixed(1)}s`;
+        }
+        row.append(dot, name, meta);
+
+        if (result.state === 'fail' && result.logTail) {
+            const log = document.createElement('pre');
+            log.className = 'theia-mobile-transcript-verify-log';
+            log.textContent = result.logTail;
+            row.append(log);
+        }
+        return row;
+    }
+
+    /** Run the checks sequentially via the agent-task backend (no new dependency). */
+    protected async runVerifyChecks(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void> {
+        if (this.verifyRunning || !summary.cwd) {
+            return;
+        }
+        this.verifyRunning = true;
+        this.verifyResults = this.defaultVerifyChecks().map(check => ({ check, state: 'idle' as const }));
+        this.renderVerifyTab(project, summary);
+
+        for (const result of this.verifyResults) {
+            if (this.transcriptOpenSummaryId !== summary.id) {
+                break; // sheet closed mid-run
+            }
+            result.state = 'running';
+            this.renderVerifyTab(project, summary);
+            try {
+                const created = await createAgentTask({ command: result.check.command, cwd: summary.cwd });
+                const detail = await this.pollVerifyTask(created.id, summary.id);
+                if (!detail) {
+                    break;
+                }
+                result.exitCode = detail.exitCode;
+                result.durationMs = detail.finishedAt ? Math.max(0, detail.finishedAt - (created.createdAt ?? detail.finishedAt)) : undefined;
+                result.logTail = this.tailLog(detail.log);
+                result.state = detail.state === 'completed' && (detail.exitCode ?? 0) === 0 ? 'ok' : 'fail';
+            } catch (error) {
+                result.state = 'fail';
+                result.logTail = error instanceof Error ? error.message : String(error);
+            }
+            this.renderVerifyTab(project, summary);
+        }
+
+        this.verifyRunning = false;
+        if (this.transcriptOpenSummaryId === summary.id && this.transcriptActiveTab === 'verify') {
+            this.renderVerifyTab(project, summary);
+        }
+    }
+
+    /** Poll a verify task until it finishes, aborting if the sheet closes. */
+    protected async pollVerifyTask(taskId: string, summaryId: string): Promise<QaapAgentTaskDetailDTO | undefined> {
+        const deadline = Date.now() + 180_000;
+        while (Date.now() < deadline) {
+            if (this.transcriptOpenSummaryId !== summaryId) {
+                return undefined;
+            }
+            const detail = await fetchAgentTaskDetail(taskId);
+            if (isAgentTaskFinished(detail.state)) {
+                return detail;
+            }
+            await new Promise(resolve => window.setTimeout(resolve, 700));
+        }
+        throw new Error(nls.localize('qaap/mobileProjects/verifyTimeout', 'Verification timed out'));
+    }
+
+    protected tailLog(log: string | undefined, lines = 12): string {
+        if (!log) {
+            return '';
+        }
+        return log.trimEnd().split('\n').slice(-lines).join('\n');
+    }
+
+    /** Compose a failure report and push it back into the agent conversation. */
+    protected async sendVerifyFailureToAgent(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void> {
+        const failed = this.verifyResults.filter(r => r.state === 'fail');
+        if (failed.length === 0) {
+            return;
+        }
+        const report = [
+            nls.localize('qaap/mobileProjects/verifyReportHeader', 'Verification failed. Please fix these checks:'),
+            '',
+            ...failed.map(r => `### ${r.check.label} — \`${r.check.command}\` (exit ${r.exitCode ?? '?'})\n${r.logTail ?? ''}`),
+        ].join('\n');
+
+        // VPS-backed conversations accept a follow-up message that triggers the next agent turn.
+        if (summary.source !== 'theia-chat') {
+            try {
+                await postConversationMessage(summary.id, report);
+                this.selectTranscriptTab('messages', project, summary);
+                MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifySent', 'Failure sent to agent'), { kind: 'success', duration: 1600 });
+            } catch (error) {
+                MobileSnackbar.show(error instanceof Error ? error.message : String(error), { kind: 'warning' });
+            }
+            return;
+        }
+
+        // Theia-chat sessions have no conversation endpoint — copy the report so the user can paste it.
+        try {
+            await navigator.clipboard.writeText(report);
+            MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifyCopied', 'Failure report copied — paste it into the chat'), { kind: 'success', duration: 2200 });
+        } catch {
+            MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifyCopyFailed', 'Could not copy the report'), { kind: 'warning' });
+        }
+    }
+
+    /** Auto-verify when a turn finishes (streaming → idle), if enabled for this workspace. */
+    protected handleTranscriptStatusForAutoVerify(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        status: QaapAgentConversationSummaryDTO['status'],
+    ): void {
+        const prev = this.transcriptLastStatus;
+        this.transcriptLastStatus = status;
+        if (prev === 'streaming' && status !== 'streaming'
+            && !this.verifyRunning
+            && this.transcriptOpenSummaryId === summary.id
+            && this.isAutoVerifyEnabled(summary.cwd)) {
+            void this.runVerifyChecks(project, summary);
+        }
     }
 
     protected bindTranscriptSheetDismiss(close: HTMLButtonElement, backdrop: HTMLElement): void {
