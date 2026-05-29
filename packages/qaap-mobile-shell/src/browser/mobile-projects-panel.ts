@@ -1160,7 +1160,13 @@ export class MobileProjectsPanel {
             btn.addEventListener('click', () => {
                 this.filter = tab.id;
                 this.projectsService.setFilter(tab.id);
-                this.soloExpanded = this.expandedId !== undefined;
+                const filtered = this.applySearch(this.applyFilter(this.projects, this.filter));
+                if (this.expandedId !== undefined && !filtered.some(p => p.id === this.expandedId)) {
+                    this.expandedId = undefined;
+                }
+                // Show every repo that matches the tab; solo mode would hide matches when
+                // expandedId pointed at a repo outside this filter (e.g. Active count > 0, empty list).
+                this.soloExpanded = false;
                 this.renderFilters();
                 this.renderList();
             });
@@ -1194,9 +1200,13 @@ export class MobileProjectsPanel {
                 }
             }
 
-            const visible = this.soloExpanded && this.expandedId !== undefined
+            let visible = this.soloExpanded && this.expandedId !== undefined
                 ? filtered.filter(p => p.id === this.expandedId)
                 : filtered;
+            if (visible.length === 0 && filtered.length > 0) {
+                visible = filtered;
+                this.soloExpanded = false;
+            }
 
             const list = document.createElement('div');
             list.className = 'theia-mobile-projects-rows';
