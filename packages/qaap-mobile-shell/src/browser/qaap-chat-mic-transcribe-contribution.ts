@@ -154,12 +154,15 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         }
         let recognition: SpeechRecognition | undefined;
         let baseline = '';
+        let detachObserver: MutationObserver | undefined;
 
         const stop = (): void => {
             if (recognition) {
                 try { recognition.onend = null; recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch { /* idempotent */ }
                 recognition = undefined;
             }
+            detachObserver?.disconnect();
+            detachObserver = undefined;
             this.markButtonIdle(button);
         };
 
@@ -183,6 +186,10 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             const trailingSpace = baseline.length > 0 && !/\s$/.test(baseline) ? ' ' : '';
 
             recognition.onresult = (event: SpeechRecognitionEvent) => {
+                if (!button.isConnected) {
+                    stop();
+                    return;
+                }
                 let transcript = '';
                 for (let i = 0; i < event.results.length; i++) {
                     transcript += event.results[i][0].transcript;
@@ -196,6 +203,16 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                 this.markButtonActive(button);
             } catch {
                 stop();
+                return;
+            }
+            // Set up detach observer after recognition starts successfully (button is in DOM by now).
+            if (typeof MutationObserver !== 'undefined') {
+                detachObserver = new MutationObserver(() => {
+                    if (!button.isConnected) {
+                        stop();
+                    }
+                });
+                detachObserver.observe(document.body, { childList: true, subtree: true });
             }
         };
 
@@ -208,21 +225,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         };
 
         this.wireToggleHandlers(button, toggle);
-
-        // Stop recognition if the button is detached (widget hidden, chat view closed).
-        if (typeof MutationObserver !== 'undefined') {
-            const parent = button.parentElement;
-            if (parent) {
-                const detachObserver = new MutationObserver(() => {
-                    if (!document.body.contains(button)) {
-                        stop();
-                        detachObserver.disconnect();
-                    }
-                });
-                detachObserver.observe(parent, { childList: true });
-                this.toDispose.push(Disposable.create(() => detachObserver.disconnect()));
-            }
-        }
+        this.toDispose.push(Disposable.create(() => stop()));
     }
 
     protected wireInlineRecognition(button: HTMLButtonElement, input: HTMLInputElement): void {
@@ -232,16 +235,25 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         }
         let recognition: SpeechRecognition | undefined;
         let baseline = '';
+        let detachObserver: MutationObserver | undefined;
 
         const stop = (): void => {
             if (recognition) {
                 try { recognition.onend = null; recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch { /* idempotent */ }
                 recognition = undefined;
             }
+            detachObserver?.disconnect();
+            detachObserver = undefined;
             this.markButtonIdle(button);
         };
 
         const start = (): void => {
+            // Re-resolve the live input from the wrap in case the DOM was remounted since wire time.
+            const wrap = button.parentElement;
+            const liveInput = wrap?.querySelector<HTMLInputElement>(
+                'input.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-inline-input'
+            ) ?? input;
+
             try {
                 recognition = new Ctor();
             } catch {
@@ -250,17 +262,21 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = this.preferredLang();
-            baseline = input.value;
+            baseline = liveInput.value;
             const trailingSpace = baseline.length > 0 && !/\s$/.test(baseline) ? ' ' : '';
 
             recognition.onresult = (event: SpeechRecognitionEvent) => {
+                if (!button.isConnected) {
+                    stop();
+                    return;
+                }
                 let transcript = '';
                 for (let i = 0; i < event.results.length; i++) {
                     transcript += event.results[i][0].transcript;
                 }
-                input.value = baseline + trailingSpace + transcript;
+                liveInput.value = baseline + trailingSpace + transcript;
                 // Notify the inline-composer listeners (enable/disable Start button, draft persistence).
-                input.dispatchEvent(new Event('input', { bubbles: true }));
+                liveInput.dispatchEvent(new Event('input', { bubbles: true }));
             };
             recognition.onerror = () => stop();
             recognition.onend = () => stop();
@@ -269,6 +285,16 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                 this.markButtonActive(button);
             } catch {
                 stop();
+                return;
+            }
+            // Set up detach observer after recognition starts successfully (button is in DOM by now).
+            if (typeof MutationObserver !== 'undefined') {
+                detachObserver = new MutationObserver(() => {
+                    if (!button.isConnected) {
+                        stop();
+                    }
+                });
+                detachObserver.observe(document.body, { childList: true, subtree: true });
             }
         };
 
@@ -281,19 +307,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         };
 
         this.wireToggleHandlers(button, toggle);
-
-        // Stop recognition if the inline input is removed (composer collapsed, project card replaced).
-        const parent = button.parentElement;
-        if (parent) {
-            const detachObserver = new MutationObserver(() => {
-                if (!document.body.contains(button)) {
-                    stop();
-                    detachObserver.disconnect();
-                }
-            });
-            detachObserver.observe(parent, { childList: true });
-            this.toDispose.push(Disposable.create(() => detachObserver.disconnect()));
-        }
+        this.toDispose.push(Disposable.create(() => stop()));
     }
 
     /**
