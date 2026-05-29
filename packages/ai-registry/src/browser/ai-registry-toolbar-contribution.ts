@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandRegistry, nls } from '@theia/core';
+import { CommandRegistry } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ADD_MCP_SERVER_COMMAND } from '@theia/ai-mcp/lib/browser/mcp-configuration-command-contribution';
@@ -32,7 +32,6 @@ export class AIRegistryToolbarContribution implements TabBarToolbarContribution 
         registry.registerItem({
             id: 'ai-registry.addMcpServerManually',
             command: ADD_MCP_SERVER_COMMAND.id,
-            text: nls.localize('theia/ai-registry/toolbar/addMcpServerManually', 'Manually add a MCP server'),
             group: 'other_1',
             // The view container's own in-container items use `widget === getTabBarDelegate()`,
             // which resolves to either the container itself (multi-part mode) or one of its

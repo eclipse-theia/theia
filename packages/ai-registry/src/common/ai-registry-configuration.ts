@@ -30,7 +30,7 @@ import { injectable } from '@theia/core/shared/inversify';
  * })());
  * ```
  *
- * Values are intentionally not exposed as user preferences — a user must not be able
+ * Values are intentionally not exposed as user preferences - a user must not be able
  * to redirect the IDE to a different registry URL or change the tool identity (both
  * are trust-relevant decisions).
  */

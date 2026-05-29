@@ -59,57 +59,65 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
         expect(service.classifyRegistryEntry(entry, [], [entry])).to.deep.equal({ kind: 'not-installed' });
     });
 
-    it('returns installed-from-registry with no update when registryServerId and registryConfigHash match', () => {
+    it('returns installed-from-registry with no update when the linked serverId matches and configHash matches', () => {
         const locals = [{
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: entry.serverId,
-            registryVersion: entry.version,
-            registryConfigHash: entry.configHash
+            registryMetadata: {
+                serverId: entry.serverId,
+                version: entry.version,
+                configHash: entry.configHash
+            }
         }];
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('returns installed-from-registry with update available when registryConfigHash differs from the entry configHash', () => {
+    it('returns installed-from-registry with update available when the linked configHash differs from the entry configHash', () => {
         const locals = [{
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: entry.serverId,
-            // Display version still matches — update detection must rely on the hash alone.
-            registryVersion: entry.version,
-            registryConfigHash: 'hash-v0'
+            registryMetadata: {
+                serverId: entry.serverId,
+                // Display version still matches - update detection must rely on the hash alone.
+                version: entry.version,
+                configHash: 'hash-v0'
+            }
         }];
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: true });
     });
 
-    it('does not offer an update when registryVersion drifts but the configHash still matches — version is display-only', () => {
+    it('does not offer an update when the linked version drifts but the configHash still matches - version is display-only', () => {
         const locals = [{
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: entry.serverId,
-            // Local version is stale, but the underlying approval hasn't changed.
-            registryVersion: '^0.9.0',
-            registryConfigHash: entry.configHash
+            registryMetadata: {
+                serverId: entry.serverId,
+                // Local version is stale, but the underlying approval hasn't changed.
+                version: '^0.9.0',
+                configHash: entry.configHash
+            }
         }];
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('does not offer an update when the registry entry has no configHash — keeps older payloads quiet', () => {
+    it('does not offer an update when the registry entry has no configHash - keeps older payloads quiet', () => {
         const noHashEntry: ResolvedRegistryEntry = { ...entry, configHash: undefined };
         const locals = [{
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: entry.serverId,
-            registryVersion: entry.version
+            registryMetadata: {
+                serverId: entry.serverId,
+                version: entry.version
+            }
         }];
         expect(service.classifyRegistryEntry(noHashEntry, locals, [noHashEntry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('returns installed-manually when a local stdio server matches name + command + args but has no registryServerId', () => {
+    it('returns installed-manually when a local stdio server matches name + command + args but has no registryMetadata', () => {
         const locals = [{
             name: 'example',
             command: 'npx',
@@ -118,7 +126,7 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-manually' });
     });
 
-    it('returns installed-manually for a remote entry when a local server matches name + serverUrl but has no registryServerId', () => {
+    it('returns installed-manually for a remote entry when a local server matches name + serverUrl but has no registryMetadata', () => {
         const remoteEntry: ResolvedRegistryEntry = {
             serverId: 'io.github.example/remote-mcp',
             name: 'Remote Example',
@@ -136,7 +144,7 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
         expect(service.classifyRegistryEntry(remoteEntry, locals, [remoteEntry])).to.deep.equal({ kind: 'installed-manually' });
     });
 
-    it('returns installed-manually for an unlinked local server matching the slug even if the config differs — drift only matters once linked', () => {
+    it('returns installed-manually for an unlinked local server matching the slug even if the config differs - drift only matters once linked', () => {
         const locals = [{
             name: 'example',
             command: 'node',
@@ -145,22 +153,24 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-manually' });
     });
 
-    it('returns installed-registry-revoked when the slug-matching local is linked to a server id that is absent from the registry', () => {
+    it('returns installed-link-stale when the slug-matching local is linked to a server id that is absent from the registry', () => {
         const locals = [{
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: 'io.example/gone',
-            registryVersion: '^1.0.0',
-            registryConfigHash: 'hash-v1'
+            registryMetadata: {
+                serverId: 'io.example/gone',
+                version: '^1.0.0',
+                configHash: 'hash-v1'
+            }
         }];
         // The registry still publishes `entry` (slug `example`) but no longer publishes
-        // `io.example/gone`. The local must surface as revoked so the Search view mirrors
-        // what the Installed view shows (Remove instead of Link).
-        expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-registry-revoked' });
+        // `io.example/gone`. The local must surface as link-stale so the Search view
+        // mirrors what the Installed view shows (Unlink + Uninstall instead of Link).
+        expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
-    it('returns installed-manually (not revoked) when the slug-matching local is linked to a different but valid registry id', () => {
+    it('returns installed-manually (not link-stale) when the slug-matching local is linked to a different but valid registry id', () => {
         const otherEntry: ResolvedRegistryEntry = {
             ...entry,
             serverId: 'io.github.example/other-mcp',
@@ -170,9 +180,9 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            // The id is real — just bound to a different registry entry. The user can still
-            // re-link this local to `entry` from Search, so we surface Link, not Remove.
-            registryServerId: otherEntry.serverId
+            // The id is real - just bound to a different registry entry. The user can still
+            // re-link this local to `entry` from Search, so we surface Link, not Unlink.
+            registryMetadata: { serverId: otherEntry.serverId }
         }];
         expect(service.classifyRegistryEntry(entry, locals, [entry, otherEntry])).to.deep.equal({ kind: 'installed-manually' });
     });
@@ -182,9 +192,11 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
             name: 'example',
             command: 'node',
             args: ['-y', 'example-mcp'],
-            registryServerId: entry.serverId,
-            registryVersion: entry.version,
-            registryConfigHash: entry.configHash
+            registryMetadata: {
+                serverId: entry.serverId,
+                version: entry.version,
+                configHash: entry.configHash
+            }
         }];
         expect(service.classifyRegistryEntry(entry, locals, [entry])).to.deep.equal({ kind: 'fix-config' });
     });
@@ -199,9 +211,11 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
             command: 'npx',
             args: ['-y', 'example-mcp'],
             env: { LOG_LEVEL: 'info', USER_TOKEN: 'secret' },
-            registryServerId: entry.serverId,
-            registryVersion: entry.version,
-            registryConfigHash: entry.configHash
+            registryMetadata: {
+                serverId: entry.serverId,
+                version: entry.version,
+                configHash: entry.configHash
+            }
         }];
         expect(service.classifyRegistryEntry(entryWithEnv, locals, [entryWithEnv])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
@@ -216,9 +230,11 @@ describe('MCPInstallService.classifyRegistryEntry', () => {
             command: 'npx',
             args: ['-y', 'example-mcp'],
             env: { LOG_LEVEL: 'debug' },
-            registryServerId: entry.serverId,
-            registryVersion: entry.version,
-            registryConfigHash: entry.configHash
+            registryMetadata: {
+                serverId: entry.serverId,
+                version: entry.version,
+                configHash: entry.configHash
+            }
         }];
         expect(service.classifyRegistryEntry(entryWithEnv, locals, [entryWithEnv])).to.deep.equal({ kind: 'fix-config' });
     });
@@ -243,48 +259,54 @@ describe('MCPInstallService.classifyLocalServer', () => {
         service = new MCPInstallService();
     });
 
-    it('returns installed-user-added when the local server has no registryServerId and no registry entry matches its slug', () => {
+    it('returns installed-user-added when the local server has no registryMetadata and no registry entry matches its slug', () => {
         const local = { name: 'unrelated', command: 'node', args: ['my-script.js'] };
         expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-user-added' });
     });
 
-    it('returns installed-from-registry with no update when registryServerId and registryConfigHash match', () => {
+    it('returns installed-from-registry with no update when the linked serverId matches and configHash matches', () => {
         const local = {
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: exampleEntry.serverId,
-            registryVersion: exampleEntry.version,
-            registryConfigHash: exampleEntry.configHash
+            registryMetadata: {
+                serverId: exampleEntry.serverId,
+                version: exampleEntry.version,
+                configHash: exampleEntry.configHash
+            }
         };
         expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('returns installed-from-registry with update available when registryConfigHash differs from the matched entry configHash', () => {
+    it('returns installed-from-registry with update available when the linked configHash differs from the matched entry configHash', () => {
         const local = {
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: exampleEntry.serverId,
-            registryVersion: exampleEntry.version,
-            registryConfigHash: 'hash-v0'
+            registryMetadata: {
+                serverId: exampleEntry.serverId,
+                version: exampleEntry.version,
+                configHash: 'hash-v0'
+            }
         };
         expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: true });
     });
 
-    it('returns installed-registry-revoked when registryServerId points to a serverId no longer in the registry', () => {
+    it('returns installed-link-stale when the linked serverId points to a serverId no longer in the registry', () => {
         const local = {
             name: 'example',
             command: 'npx',
             args: ['-y', 'example-mcp'],
-            registryServerId: 'io.github.example/removed-mcp',
-            registryVersion: '^1.0.0',
-            registryConfigHash: 'hash-removed'
+            registryMetadata: {
+                serverId: 'io.github.example/removed-mcp',
+                version: '^1.0.0',
+                configHash: 'hash-removed'
+            }
         };
-        expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-registry-revoked' });
+        expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
-    it('returns installed-manually when the local server has no registryServerId but its slug matches a registry entry', () => {
+    it('returns installed-manually when the local server has no registryMetadata but its slug matches a registry entry', () => {
         const local = {
             name: 'example',
             command: 'npx',
@@ -293,7 +315,7 @@ describe('MCPInstallService.classifyLocalServer', () => {
         expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'installed-manually' });
     });
 
-    it('returns installed-manually when an unlinked local server has a diverging command — Link must be offered before drift is actioned', () => {
+    it('returns installed-manually when an unlinked local server has a diverging command - Link must be offered before drift is actioned', () => {
         const local = {
             name: 'example',
             command: 'node',
@@ -307,9 +329,11 @@ describe('MCPInstallService.classifyLocalServer', () => {
             name: 'example',
             command: 'node',
             args: ['-y', 'example-mcp'],
-            registryServerId: exampleEntry.serverId,
-            registryVersion: exampleEntry.version,
-            registryConfigHash: exampleEntry.configHash
+            registryMetadata: {
+                serverId: exampleEntry.serverId,
+                version: exampleEntry.version,
+                configHash: exampleEntry.configHash
+            }
         };
         expect(service.classifyLocalServer(local, [exampleEntry])).to.deep.equal({ kind: 'fix-config' });
     });
@@ -335,7 +359,7 @@ describe('MCPInstallService actions', () => {
         const container = new Container();
         prefs = new FakePreferenceService();
         container.bind(PreferenceService).toConstantValue(prefs);
-        // Stubs for the editor's deps — we only exercise installFromEntry which uses
+        // Stubs for the editor's deps - we only exercise installFromEntry which uses
         // PreferenceService; MessageService and MCPFrontendService are referenced by other
         // editor methods that the install path doesn't touch.
         container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
@@ -362,29 +386,35 @@ describe('MCPInstallService actions', () => {
         expect(prefs.snapshot<Record<string, { serverAuthToken?: string }>>(MCP_SERVERS_PREF)!.example.serverAuthToken).to.equal('secret-123');
     });
 
-    it('install ignores a token override when the registry entry has no serverAuthToken slot — keeps local entries from accidentally storing one', async () => {
+    it('install ignores a token override when the registry entry has no serverAuthToken slot - keeps local entries from accidentally storing one', async () => {
         await service.install(entry, { serverAuthToken: 'ignored' });
 
         expect(prefs.snapshot<Record<string, Record<string, unknown>>>(MCP_SERVERS_PREF)!.example).to.not.have.property('serverAuthToken');
     });
 
-    it('install writes a new entry with the registry config and registry metadata (including configHash) to the preference', async () => {
+    it('install writes a new entry with the registry config and a registryMetadata block (including configHash) to the preference', async () => {
         await service.install(entry);
 
         expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
     });
 
     it('uninstall removes the entry by slug and leaves unrelated servers intact', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
-            example: { command: 'npx', args: ['-y', 'example-mcp'], registryServerId: 'io.github.example/example-mcp' },
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: { serverId: 'io.github.example/example-mcp' }
+            },
             other: { command: 'node', args: ['unrelated.js'] }
         });
 
@@ -395,7 +425,46 @@ describe('MCPInstallService actions', () => {
         });
     });
 
-    it('fixConfig overwrites the local config with the registry config and sets registry metadata', async () => {
+    it('unlink removes the registryMetadata block while leaving the server config intact', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                env: { USER_TOKEN: 'secret' },
+                autostart: true,
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
+            }
+        });
+
+        await service.unlink('example');
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                env: { USER_TOKEN: 'secret' },
+                autostart: true
+            }
+        });
+    });
+
+    it('unlink is a no-op on entries that have no registryMetadata block', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: { command: 'npx', args: ['-y', 'example-mcp'] }
+        });
+
+        await service.unlink('example');
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            example: { command: 'npx', args: ['-y', 'example-mcp'] }
+        });
+    });
+
+    it('fixConfig overwrites the local config with the registry config and sets the registryMetadata block', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
                 command: 'node',
@@ -409,14 +478,16 @@ describe('MCPInstallService actions', () => {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
     });
 
-    it('fixConfig preserves the existing autostart preference — the registry has no opinion on it', async () => {
+    it('fixConfig preserves the existing autostart preference - the registry has no opinion on it', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
                 command: 'node',
@@ -430,7 +501,7 @@ describe('MCPInstallService actions', () => {
         expect(prefs.snapshot<Record<string, { autostart?: boolean }>>(MCP_SERVERS_PREF)!.example.autostart).to.equal(false);
     });
 
-    it('link sets registryServerId, registryVersion and registryConfigHash on the existing entry, leaving its config untouched', async () => {
+    it('link sets the registryMetadata block on the existing entry, leaving its config untouched', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
                 command: 'npx',
@@ -448,9 +519,11 @@ describe('MCPInstallService actions', () => {
                 args: ['-y', 'example-mcp'],
                 env: { USER_TOKEN: 'secret' },
                 autostart: true,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
     });
@@ -465,9 +538,11 @@ describe('MCPInstallService actions', () => {
             example: {
                 serverUrl: 'https://example.com/mcp',
                 serverAuthToken: 'user-secret',
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
 
@@ -488,9 +563,11 @@ describe('MCPInstallService actions', () => {
                 args: ['-y', 'example-mcp'],
                 env: { LOG_LEVEL: 'debug' },
                 autostart: true,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
 
@@ -500,9 +577,11 @@ describe('MCPInstallService actions', () => {
             example: {
                 serverUrl: 'https://example.com/mcp',
                 autostart: true,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v2'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v2'
+                }
             }
         });
     });
@@ -520,9 +599,11 @@ describe('MCPInstallService actions', () => {
                 serverAuthTokenHeader: 'X-Token',
                 headers: { 'X-Custom': 'value' },
                 autostart: true,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
 
@@ -533,14 +614,16 @@ describe('MCPInstallService actions', () => {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
                 autostart: true,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v2'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v2'
+                }
             }
         });
     });
 
-    it('update overwrites registry-set fields, preserves user-added env keys and autostart, and bumps registryVersion + registryConfigHash', async () => {
+    it('update overwrites registry-set fields, preserves user-added env keys and autostart, and bumps the registryMetadata block', async () => {
         const newEntry: ResolvedRegistryEntry = {
             ...entry,
             config: {
@@ -557,9 +640,11 @@ describe('MCPInstallService actions', () => {
                 args: ['-y', 'example-mcp@0.9.0'],
                 env: { LOG_LEVEL: 'debug', USER_TOKEN: 'secret' },
                 autostart: false,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^0.9.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^0.9.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
 
@@ -571,9 +656,11 @@ describe('MCPInstallService actions', () => {
                 args: ['-y', 'example-mcp@1.0.0'],
                 env: { LOG_LEVEL: 'info', USER_TOKEN: 'secret' },
                 autostart: false,
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v2'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v2'
+                }
             }
         });
     });

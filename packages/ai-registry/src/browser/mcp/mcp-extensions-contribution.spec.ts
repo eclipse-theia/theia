@@ -14,9 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+// Entries render against the shared ExtensionCard, which pulls in browser-side modules,
+// so a DOM is required at import time.
+const disableJSDOM = enableJSDOM();
+try {
+    FrontendApplicationConfigProvider.get();
+} catch {
+    FrontendApplicationConfigProvider.set({});
+}
+
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, MessageService, PreferenceService } from '@theia/core';
+import { HoverService } from '@theia/core/lib/browser';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
@@ -26,6 +38,8 @@ import { MCPRegistryEntryResolver } from '../../common/mcp/mcp-registry-entry-re
 import { MCPInstallService } from './mcp-install-service';
 import { MCPExtensionsContribution } from './mcp-extensions-contribution';
 import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+
+after(() => disableJSDOM());
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();
@@ -63,6 +77,7 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     // MCPInstallService now injects MCPServerEditor so we stub its required services.
     container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
     container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
+    container.bind(HoverService).toConstantValue({ requestHover: () => undefined } as unknown as HoverService);
     container.bind(MCPServerEditor).toSelf().inSingletonScope();
     container.bind(MCPInstallService).toSelf().inSingletonScope();
     container.bind(MCPExtensionsContribution).toSelf().inSingletonScope();
@@ -89,9 +104,11 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: exampleRegistryEntry.serverId,
-                registryVersion: exampleRegistryEntry.version,
-                registryConfigHash: exampleRegistryEntry.configHash
+                registryMetadata: {
+                    serverId: exampleRegistryEntry.serverId,
+                    version: exampleRegistryEntry.version,
+                    configHash: exampleRegistryEntry.configHash
+                }
             },
             // User-added: no registry counterpart at all.
             standalone: { command: 'node', args: ['srv.js'] }
@@ -105,14 +122,16 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
         expect(entries[0].state).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('surfaces installed-registry-revoked entries so the view can render the warning + Remove action', async () => {
+    it('surfaces installed-link-stale entries so the view can render the warning + Unlink/Uninstall actions', async () => {
         const prefs = new FakePreferenceService();
         await prefs.set(MCP_SERVERS_PREF, {
-            revoked: {
+            stale: {
                 command: 'npx',
                 args: ['-y', 'gone-mcp'],
-                registryServerId: 'io.github.example/gone-server',
-                registryVersion: '^1.0.0'
+                registryMetadata: {
+                    serverId: 'io.github.example/gone-server',
+                    version: '^1.0.0'
+                }
             }
         });
         const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
@@ -120,24 +139,27 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
 
         const entries = [...await contribution.resolveInstalled()] as MCPInstalledEntry[];
 
-        expect(entries.map(e => e.local.name)).to.deep.equal(['revoked']);
-        expect(entries[0].state).to.deep.equal({ kind: 'installed-registry-revoked' });
+        expect(entries.map(e => e.local.name)).to.deep.equal(['stale']);
+        expect(entries[0].state).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
-    it('shows installed-registry-revoked (Remove) when the local is linked to a missing id, even if the slug still matches a registry entry', async () => {
+    it('shows installed-link-stale (Unlink + Uninstall) when the local is linked to a missing id, even if the slug still matches a registry entry', async () => {
         // PR scenario: user installs from the registry, then manually rewrites
-        // `registryServerId` to a value that no longer exists. The local slug still
-        // matches a registry `localSlug`, but the broken id linkage must take precedence
-        // — the entry has to surface as revoked so the user sees Remove + warning, not
-        // Link (which would suggest the entry is merely unlinked).
+        // `registryMetadata.serverId` to a value that no longer exists. The local slug
+        // still matches a registry `localSlug`, but the broken id linkage must take
+        // precedence - the entry has to surface as link-stale so the user sees the
+        // Unlink + Uninstall affordances and the warning, not Link (which would suggest
+        // the entry is merely unlinked).
         const prefs = new FakePreferenceService();
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: 'io.example/gone',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.example/gone',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
         const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
@@ -146,7 +168,7 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
         const entries = [...await contribution.resolveInstalled()] as MCPInstalledEntry[];
 
         expect(entries).to.have.length(1);
-        expect(entries[0].state).to.deep.equal({ kind: 'installed-registry-revoked' });
+        expect(entries[0].state).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
     it('skips malformed stored entries whose `command` is not a string — mere key presence is not enough', async () => {
@@ -158,9 +180,11 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: exampleRegistryEntry.serverId,
-                registryVersion: exampleRegistryEntry.version,
-                registryConfigHash: exampleRegistryEntry.configHash
+                registryMetadata: {
+                    serverId: exampleRegistryEntry.serverId,
+                    version: exampleRegistryEntry.version,
+                    configHash: exampleRegistryEntry.configHash
+                }
             }
         });
         const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
@@ -215,20 +239,22 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         expect(githubResult.searchableText).to.contain(githubEntry.description);
     });
 
-    it('classifies a registry entry as installed-registry-revoked when the matching-slug local is linked to a server id missing from the registry', async () => {
+    it('classifies a registry entry as installed-link-stale when the matching-slug local is linked to a server id missing from the registry', async () => {
         // PR scenario: user installed `example` from the registry, then manually pointed
-        // its `registryServerId` at an id not in the registry. In Search results the
-        // matching registry entry must show the **Remove** affordance — mirroring what
-        // the Installed view shows — instead of **Link** (which would imply the local is
-        // merely unlinked rather than revoked).
+        // its `registryMetadata.serverId` at an id not in the registry. In Search results
+        // the matching registry entry must show the **Unlink / Uninstall** affordances -
+        // mirroring what the Installed view shows - instead of **Link** (which would
+        // imply the local is merely unlinked rather than stale-linked).
         const prefs = new FakePreferenceService();
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: 'io.example/gone',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.example/gone',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
         const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
@@ -238,7 +264,7 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         const exampleResult = results.find(r => (r.element as MCPSearchResultEntry).entry.serverId === exampleRegistryEntry.serverId);
 
         expect(exampleResult, 'registry entry must surface in search results').to.not.be.undefined;
-        expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'installed-registry-revoked' });
+        expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
     it('omits unverified entries when verifiedOnly is true and keeps verified ones', async () => {

@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MCPRegistryMetadata } from './mcp-server-manager';
+
 /**
  * Shape and value-guard for the `ai-features.mcp.mcpServers` preference. Lives in
  * `common` so any consumer (browser-side contribution, registry view, future Node-side
@@ -22,6 +24,8 @@
 
 export interface BaseMCPServerPreferenceValue {
     autostart?: boolean;
+    /** Provenance link to an AI registry entry; written by `@theia/ai-registry`. */
+    registryMetadata?: MCPRegistryMetadata;
 }
 
 export interface LocalMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
@@ -55,10 +59,15 @@ export namespace MCPServersPreference {
             (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
             (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
             (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string')) &&
-            (!('registryServerId' in obj) || typeof obj.registryServerId === 'string') &&
-            (!('registryVersion' in obj) || typeof obj.registryVersion === 'string') &&
-            (!('registryConfigHash' in obj) || typeof obj.registryConfigHash === 'string');
+            (!('registryMetadata' in obj) || isRegistryMetadata(obj.registryMetadata));
     }
+}
+
+function isRegistryMetadata(obj: unknown): obj is MCPRegistryMetadata {
+    return !!obj && typeof obj === 'object'
+        && 'serverId' in obj && typeof obj.serverId === 'string'
+        && (!('version' in obj) || typeof obj.version === 'string')
+        && (!('configHash' in obj) || typeof obj.configHash === 'string');
 }
 
 export function filterValidValues(servers: unknown): MCPServersPreference {

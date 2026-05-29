@@ -60,7 +60,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     protected readonly serverEditor: MCPServerEditor;
 
     /**
-     * Registry integration is optional — `@theia/ai-registry` binds it. When absent
+     * Registry integration is optional - `@theia/ai-registry` binds it. When absent
      * (registry package not in the bundle), all registry-specific affordances are hidden.
      */
     @inject(MCPRegistryUiBridge) @optional()
@@ -481,7 +481,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
      * package isn't installed so we can't drive the navigation.
      */
     protected renderRegistryAffordance(server: MCPServerDescription): React.ReactNode {
-        const registryId = server.registryServerId;
+        const registryId = server.registryMetadata?.serverId;
         const bridge = this.registryBridge;
         if (!registryId || !bridge) {
             return undefined;
@@ -510,10 +510,14 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.registryBridge && (
                         <button
                             className="theia-button secondary"
+                            title={nls.localize(
+                                'theia/ai/mcpConfiguration/browseAIRegistryTooltip',
+                                'Open the Extensions view to browse AI registry entries'
+                            )}
                             onClick={() => this.registryBridge?.openRegistry()}
                         >
-                            <i className={codicon('search')}></i>
-                            {nls.localize('theia/ai/mcpConfiguration/searchInRegistry', 'Search in registry')}
+                            <i className={codicon('link-external')}></i>
+                            {nls.localize('theia/ai/mcpConfiguration/browseAIRegistry', 'Browse AI registry')}
                         </button>
                     )}
                 </div>

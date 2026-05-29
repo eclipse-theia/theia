@@ -20,7 +20,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
 import { VSXExtensionsModel } from './vsx-extensions-model';
-import { ExtensionsContribution, SearchContext } from './extensions-contribution';
+import { ExtensionsSourceContribution, SearchContext } from './extensions-source-contribution';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -42,8 +42,8 @@ export class VSXExtensionsSource extends TreeSource {
     @inject(VSXExtensionsModel)
     protected readonly model: VSXExtensionsModel;
 
-    @inject(ContributionProvider) @named(ExtensionsContribution)
-    protected readonly contributions: ContributionProvider<ExtensionsContribution>;
+    @inject(ContributionProvider) @named(ExtensionsSourceContribution)
+    protected readonly contributions: ContributionProvider<ExtensionsSourceContribution>;
 
     @inject(VSXExtensionsSearchModel)
     protected readonly searchModel: VSXExtensionsSearchModel;
@@ -93,7 +93,7 @@ export class VSXExtensionsSource extends TreeSource {
      * Sort the combined hits globally by fuzzy match so the best results surface first
      * regardless of which contribution produced them.
      */
-    protected async collectSearchResults(contributions: ExtensionsContribution[]): Promise<IterableIterator<TreeElement>> {
+    protected async collectSearchResults(contributions: ExtensionsSourceContribution[]): Promise<IterableIterator<TreeElement>> {
         const query = this.searchModel.query;
         const ctx: SearchContext = {
             verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
@@ -112,7 +112,7 @@ export class VSXExtensionsSource extends TreeSource {
         return matches.map(m => m.item.element).values();
     }
 
-    protected async resolveForSection(contribution: ExtensionsContribution): Promise<Iterable<TreeElement> | undefined> {
+    protected async resolveForSection(contribution: ExtensionsSourceContribution): Promise<Iterable<TreeElement> | undefined> {
         switch (this.options.id) {
             case VSXExtensionsSourceOptions.INSTALLED:
                 return contribution.resolveInstalled?.();

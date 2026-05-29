@@ -100,7 +100,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
             const entries = await this.fetchService.getEntries();
             const next = new Set(entries.map(entry => entry.serverId));
             // Refresh the per-id lookup table regardless of whether the id set itself
-            // changed — the *contents* of an entry (config, configHash) may have moved
+            // changed - the *contents* of an entry (config, configHash) may have moved
             // even when the id list is unchanged, and `getInstallEntry` callers expect
             // the latest values.
             this.entriesByServerId = new Map(entries.map(entry => [entry.serverId, entry]));
@@ -111,7 +111,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
         } catch {
             // Leave the cache as-is on failure; surfaced errors are the fetch service's job.
         } finally {
-            // Signal readiness regardless of outcome — failed fetch is still a "we tried".
+            // Signal readiness regardless of outcome - failed fetch is still a "we tried".
             this.readyDeferred.resolve();
         }
     }

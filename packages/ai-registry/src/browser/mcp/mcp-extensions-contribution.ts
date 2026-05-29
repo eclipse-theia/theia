@@ -16,8 +16,9 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Emitter, Event, nls, PreferenceChange, PreferenceService } from '@theia/core';
+import { HoverService } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { ExtensionsContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-contribution';
+import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServersPreference, MCPServersPreferenceValue } from '@theia/ai-mcp/lib/common/mcp-servers-preference';
@@ -26,14 +27,10 @@ import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPInstallService } from './mcp-install-service';
 import { MCPEntryHandlers, MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
 
-type StoredServer = MCPServersPreferenceValue & {
-    registryServerId?: string;
-    registryVersion?: string;
-    registryConfigHash?: string;
-};
+type StoredServer = MCPServersPreferenceValue;
 
 @injectable()
-export class MCPExtensionsContribution implements ExtensionsContribution, Disposable {
+export class MCPExtensionsContribution implements ExtensionsSourceContribution, Disposable {
 
     readonly type = 'mcp-server';
     readonly displayName = nls.localizeByDefault('MCP Servers');
@@ -48,6 +45,9 @@ export class MCPExtensionsContribution implements ExtensionsContribution, Dispos
     @inject(RegistryFetchService)
     protected readonly fetchService: RegistryFetchService;
 
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
@@ -60,6 +60,7 @@ export class MCPExtensionsContribution implements ExtensionsContribution, Dispos
         this.handlers = {
             install: entry => this.confirmAndInstall(entry),
             uninstall: slug => this.installService.uninstall(slug),
+            unlink: slug => this.installService.unlink(slug),
             update: entry => this.installService.update(entry),
             link: entry => this.installService.link(entry),
             fixConfig: entry => this.installService.fixConfig(entry)
@@ -89,13 +90,14 @@ export class MCPExtensionsContribution implements ExtensionsContribution, Dispos
             }
             const state = this.installService.classifyLocalServer(local, registryEntries);
             // Hand-added local servers belong to the MCP configuration widget, not this view.
-            // Revoked entries (registryServerId set but registry no longer lists it) do belong
-            // here so we can surface the warning and offer a one-click Remove.
+            // Stale-linked entries (registryMetadata.serverId set but registry no longer lists
+            // it) do belong here so we can surface the warning and offer Unlink / Uninstall.
             if (state.kind === 'installed-user-added') {
                 continue;
             }
-            const matchedEntry = (local.registryServerId && byServerId.get(local.registryServerId)) || bySlug.get(local.name);
-            result.push(new MCPInstalledEntry(local, matchedEntry, state, this.handlers));
+            const linkedId = local.registryMetadata?.serverId;
+            const matchedEntry = (linkedId && byServerId.get(linkedId)) || bySlug.get(local.name);
+            result.push(new MCPInstalledEntry(local, matchedEntry, state, this.handlers, this.hoverService));
         }
         return result;
     }
@@ -127,7 +129,7 @@ export class MCPExtensionsContribution implements ExtensionsContribution, Dispos
             const searchableText = `${entry.name} ${entry.serverId} ${entry.description}`;
             const state = this.installService.classifyRegistryEntry(entry, localDescriptions, registryEntries);
             result.push({
-                element: new MCPSearchResultEntry(entry, state, this.handlers),
+                element: new MCPSearchResultEntry(entry, state, this.handlers, this.hoverService),
                 searchableText
             });
         }

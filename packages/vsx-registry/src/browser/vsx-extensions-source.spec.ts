@@ -37,7 +37,7 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
-import { ExtensionsContribution, SearchResult } from './extensions-contribution';
+import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution';
 
 after(() => disableJSDOM());
 
@@ -45,7 +45,7 @@ after(() => disableJSDOM());
  * Minimal contribution stub: yields a fixed set of search results. The element is
  * tagged with `id` so we can assert ordering after the fuzzy ranker has run.
  */
-class StubContribution implements ExtensionsContribution {
+class StubContribution implements ExtensionsSourceContribution {
     readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
     constructor(
@@ -82,14 +82,14 @@ class StubPreferenceService {
     }
 }
 
-function buildSource(contributions: ExtensionsContribution[], query: string): VSXExtensionsSource {
+function buildSource(contributions: ExtensionsSourceContribution[], query: string): VSXExtensionsSource {
     const container = new Container();
     container.bind(VSXExtensionsSourceOptions).toConstantValue({ id: VSXExtensionsSourceOptions.SEARCH_RESULT });
     container.bind(VSXExtensionsModel).toConstantValue({
         onDidChange: new Emitter<void>().event
     } as unknown as VSXExtensionsModel);
-    const provider: ContributionProvider<ExtensionsContribution> = { getContributions: () => contributions };
-    container.bind(ContributionProvider).toConstantValue(provider).whenTargetNamed(ExtensionsContribution);
+    const provider: ContributionProvider<ExtensionsSourceContribution> = { getContributions: () => contributions };
+    container.bind(ContributionProvider).toConstantValue(provider).whenTargetNamed(ExtensionsSourceContribution);
     const searchModel = new StubSearchModel();
     searchModel.query = query;
     container.bind(VSXExtensionsSearchModel).toConstantValue(searchModel as unknown as VSXExtensionsSearchModel);

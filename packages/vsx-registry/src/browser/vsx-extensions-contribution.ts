@@ -43,7 +43,7 @@ import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensi
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsContribution } from './extensions-contribution';
+import { ExtensionsSourceContribution } from './extensions-source-contribution';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace VSXCommands {
@@ -67,8 +67,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(ApplicationServer) protected applicationServer: ApplicationServer;
     @inject(QuickInputService) protected quickInput: QuickInputService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(ContributionProvider) @named(ExtensionsContribution)
-    protected readonly extensionsContributions: ContributionProvider<ExtensionsContribution>;
+    @inject(ContributionProvider) @named(ExtensionsSourceContribution)
+    protected readonly extensionsContributions: ContributionProvider<ExtensionsSourceContribution>;
 
     constructor() {
         super({
@@ -157,7 +157,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         });
     }
 
-    /** Refreshes every contribution that opts in — e.g. MCP re-fetches its registry JSON. */
+    /** Refreshes every contribution that opts in - e.g. MCP re-fetches its registry JSON. */
     protected async refresh(): Promise<void> {
         const failures = await Promise.allSettled(
             this.extensionsContributions.getContributions()

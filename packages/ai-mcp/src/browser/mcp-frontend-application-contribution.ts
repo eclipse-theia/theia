@@ -239,11 +239,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         Object.entries(servers).forEach(([name, description]) => {
             let filteredDescription: MCPServerDescription;
 
-            const { registryServerId, registryVersion, registryConfigHash } = description as {
-                registryServerId?: string;
-                registryVersion?: string;
-                registryConfigHash?: string;
-            };
+            const { registryMetadata } = description;
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
@@ -255,9 +251,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
                     ...(headers && { headers }),
                     autostart: autostart ?? true,
-                    ...(registryServerId && { registryServerId }),
-                    ...(registryVersion && { registryVersion }),
-                    ...(registryConfigHash && { registryConfigHash }),
+                    ...(registryMetadata && { registryMetadata }),
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
@@ -268,9 +262,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(args && { args }),
                     ...(env && { env }),
                     autostart: autostart ?? true,
-                    ...(registryServerId && { registryServerId }),
-                    ...(registryVersion && { registryVersion }),
-                    ...(registryConfigHash && { registryConfigHash }),
+                    ...(registryMetadata && { registryMetadata }),
                 };
             }
 

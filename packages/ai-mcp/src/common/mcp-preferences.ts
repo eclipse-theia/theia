@@ -110,23 +110,32 @@ Example configuration:\n\
                         markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
                             'Optional additional headers included with each request to the server.'),
                     },
-                    registryServerId: {
-                        type: 'string',
-                        title: nls.localize('theia/ai/mcp/servers/registryServerId/title', 'Registry Server Id'),
-                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryServerId/mdDescription',
-                            'Identifies the AI registry entry this server was installed from.'),
-                    },
-                    registryVersion: {
-                        type: 'string',
-                        title: nls.localize('theia/ai/mcp/servers/registryVersion/title', 'Registry Version'),
-                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryVersion/mdDescription',
-                            'The registry-published version recorded at the time of install.'),
-                    },
-                    registryConfigHash: {
-                        type: 'string',
-                        title: nls.localize('theia/ai/mcp/servers/registryConfigHash/title', 'Registry Config Hash'),
-                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryConfigHash/mdDescription',
-                            'Content hash of the registry approval used to install this server.'),
+                    registryMetadata: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/mcp/servers/registryMetadata/title', 'Registry Metadata'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/mdDescription',
+                            'Provenance metadata for a server installed from an AI registry. Written by `@theia/ai-registry`; not user-editable.'),
+                        properties: {
+                            serverId: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/title', 'Registry Server Id'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/mdDescription',
+                                    'Identifies the AI registry entry this server was installed from.'),
+                            },
+                            version: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/version/title', 'Registry Version'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/version/mdDescription',
+                                    'The registry-published version recorded at the time of install.'),
+                            },
+                            configHash: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/title', 'Registry Config Hash'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/mdDescription',
+                                    'Content hash of the registry approval used to install this server.'),
+                            }
+                        },
+                        required: ['serverId']
                     }
                 },
                 required: []

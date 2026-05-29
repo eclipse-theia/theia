@@ -33,7 +33,7 @@ import { Emitter } from '@theia/core';
 import { VSXExtension } from './vsx-extension';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { VSXExtensionsContributionAdapter } from './vsx-extensions-contribution-adapter';
-import { SearchResult } from './extensions-contribution';
+import { SearchResult } from './extensions-source-contribution';
 
 after(() => disableJSDOM());
 

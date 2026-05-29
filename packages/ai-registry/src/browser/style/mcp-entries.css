@@ -32,6 +32,15 @@
     display: flex;
     align-items: center;
     gap: var(--theia-ui-padding);
+    /* Keep the action controls at full width when a long publisher string competes for space. */
+    flex-shrink: 0;
+}
+
+/* Invisible spacer reserving the same width VSX cards use for their context-menu gear,
+   so MCP and VSX action bars line up across the unified Extensions view. */
+.theia-mcp-extension-gear-placeholder {
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .theia-mcp-extension-warning {
@@ -39,19 +48,10 @@
     font-size: 14px;
 }
 
-.theia-mcp-extension-revoked-message {
+.theia-mcp-extension-link-stale-message {
     display: inline-flex;
     align-items: center;
     gap: calc(var(--theia-ui-padding) / 2);
     font-size: 90%;
     color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
-}
-
-.theia-mcp-extension-actions .theia-button.action.theia-mcp-extension-remove {
-    color: var(--theia-button-foreground);
-    background-color: var(--theia-errorForeground);
-}
-
-.theia-mcp-extension-actions .theia-button.action.theia-mcp-extension-remove:hover {
-    filter: brightness(1.1);
 }

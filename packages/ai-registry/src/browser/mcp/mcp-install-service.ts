@@ -16,18 +16,21 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceScope, PreferenceService } from '@theia/core';
-import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import {
+    isLocalMCPServerDescription,
+    isRemoteMCPServerDescription,
+    MCPRegistryMetadata,
+    MCPServerDescription
+} from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
-import { ClassificationResult, ResolvedRegistryEntry, RegistryMCPServerConfigEntry } from '../../common/mcp/mcp-registry-types';
+import { MCPInstallEntryConfig, MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
+import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 
 export { MCPInstallOverrides };
 
-type StoredEntry = RegistryMCPServerConfigEntry & {
+type StoredEntry = MCPInstallEntryConfig & {
     autostart?: boolean;
-    registryServerId?: string;
-    registryVersion?: string;
-    registryConfigHash?: string;
+    registryMetadata?: MCPRegistryMetadata;
 };
 
 type StoredServers = Record<string, StoredEntry>;
@@ -65,7 +68,7 @@ export class MCPInstallService {
         if (!existing) {
             return;
         }
-        // If the registry switched the entry's transport (e.g. local stdio → remote URL),
+        // If the registry switched the entry's transport (e.g. local stdio -> remote URL),
         // drop the previous side's fields so settings.json doesn't end up carrying both.
         const sanitized: StoredEntry = { ...existing };
         if (entry.config.serverUrl !== undefined) {
@@ -89,7 +92,7 @@ export class MCPInstallService {
             ? { ...sanitized.env, ...(entry.config.env ?? {}) }
             : undefined;
         // Preserve user-supplied additions across updates. Today we only carry the auth
-        // token forward — registries should not ship secrets, so the new approval will
+        // token forward - registries should not ship secrets, so the new approval will
         // either omit `serverAuthToken` entirely or carry it as an empty slot, both of
         // which would otherwise wipe a token the user previously entered in the install
         // dialog. A broader policy for user-additions belongs with the planned parameter
@@ -102,7 +105,7 @@ export class MCPInstallService {
             ...entry.config,
             ...userAdditions,
             ...(mergedEnv && { env: mergedEnv }),
-            ...this.metadata(entry)
+            registryMetadata: this.metadata(entry)
         };
         await this.writeServers({ ...current, [entry.localSlug]: updated });
     }
@@ -113,7 +116,26 @@ export class MCPInstallService {
         if (!existing) {
             return;
         }
-        await this.writeServers({ ...current, [entry.localSlug]: { ...existing, ...this.metadata(entry) } });
+        await this.writeServers({
+            ...current,
+            [entry.localSlug]: { ...existing, registryMetadata: this.metadata(entry) }
+        });
+    }
+
+    /**
+     * Drop the registry link from a local server while keeping its config intact.
+     * Used to convert a stale-linked entry (registry no longer lists the serverId)
+     * into a plain user-added entry without losing the user's running server config.
+     */
+    async unlink(slug: string): Promise<void> {
+        const current = this.readServers();
+        const existing = current[slug];
+        if (!existing || existing.registryMetadata === undefined) {
+            return;
+        }
+        const next: StoredEntry = { ...existing };
+        delete next.registryMetadata;
+        await this.writeServers({ ...current, [slug]: next });
     }
 
     async uninstall(slug: string): Promise<void> {
@@ -134,20 +156,21 @@ export class MCPInstallService {
         await this.preferenceService.set(MCP_SERVERS_PREF, next, PreferenceScope.User);
     }
 
-    /** Registry-managed fields written onto every linked server entry. */
-    protected metadata(entry: ResolvedRegistryEntry): Pick<StoredEntry, 'registryServerId' | 'registryVersion' | 'registryConfigHash'> {
+    /** Registry-managed metadata block written onto every linked server entry. */
+    protected metadata(entry: ResolvedRegistryEntry): MCPRegistryMetadata {
         return {
-            registryServerId: entry.serverId,
-            ...(entry.version !== undefined && { registryVersion: entry.version }),
-            ...(entry.configHash !== undefined && { registryConfigHash: entry.configHash })
+            serverId: entry.serverId,
+            ...(entry.version !== undefined && { version: entry.version }),
+            ...(entry.configHash !== undefined && { configHash: entry.configHash })
         };
     }
 
     classifyLocalServer(local: MCPServerDescription, registryEntries: ResolvedRegistryEntry[]): ClassificationResult {
-        if (local.registryServerId) {
-            const byServerId = registryEntries.find(e => e.serverId === local.registryServerId);
+        const linkedId = local.registryMetadata?.serverId;
+        if (linkedId) {
+            const byServerId = registryEntries.find(e => e.serverId === linkedId);
             if (!byServerId) {
-                return { kind: 'installed-registry-revoked' };
+                return { kind: 'installed-link-stale' };
             }
             return this.classifyLinked(byServerId, local);
         }
@@ -169,28 +192,30 @@ export class MCPInstallService {
         if (!local) {
             return { kind: 'not-installed' };
         }
-        if (local.registryServerId === entry.serverId) {
+        const linkedId = local.registryMetadata?.serverId;
+        if (linkedId === entry.serverId) {
             return this.classifyLinked(entry, local);
         }
-        // Local links to a registry id that doesn't exist in the registry — the local is
-        // revoked. Surface the same state Installed shows so the user sees the Remove
-        // affordance in both views instead of a misleading Link button.
-        if (local.registryServerId && !registryEntries.some(e => e.serverId === local.registryServerId)) {
-            return { kind: 'installed-registry-revoked' };
+        // Local links to a registry id that doesn't exist in the registry - the link is
+        // stale. Surface the same state Installed shows so the user sees the Unlink and
+        // Uninstall affordances in both views instead of a misleading Link button.
+        if (linkedId && !registryEntries.some(e => e.serverId === linkedId)) {
+            return { kind: 'installed-link-stale' };
         }
-        // Same slug but not linked (no registryServerId, or pointing to a different valid
-        // id): offer Link before surfacing any drift — drift handling is a post-link concern.
+        // Same slug but not linked (no registryMetadata, or pointing to a different valid
+        // id): offer Link before surfacing any drift - drift handling is a post-link concern.
         return { kind: 'installed-manually' };
     }
 
     /**
      * Classify a local server that is already linked to a registry entry. Either the
      * registry config matches (eligible for Update when the registry has published a new
-     * approval — detected via `configHash`) or it has drifted away (`fix-config`).
+     * approval - detected via `configHash`) or it has drifted away (`fix-config`).
      *
-     * Update detection uses `registryConfigHash` exclusively. `registryVersion` is kept
-     * on the local entry for display only; the registry may publish a new version
-     * without changing the install config, in which case we still want to offer Update.
+     * Update detection uses `registryMetadata.configHash` exclusively.
+     * `registryMetadata.version` is kept on the local entry for display only; the
+     * registry may publish a new version without changing the install config, in which
+     * case we still want to offer Update.
      */
     protected classifyLinked(entry: ResolvedRegistryEntry, local: MCPServerDescription): ClassificationResult {
         if (!this.matchesByConfig(entry, local)) {
@@ -202,15 +227,15 @@ export class MCPInstallService {
 
     /**
      * True when the registry's `configHash` differs from the locally stored
-     * `registryConfigHash`. Returns false when the registry has no `configHash` to
-     * compare against (older payloads) — without a hash we cannot make a confident
+     * `registryMetadata.configHash`. Returns false when the registry has no `configHash`
+     * to compare against (older payloads) - without a hash we cannot make a confident
      * "update available" decision and prefer not to nag the user.
      */
     protected isUpdateAvailable(entry: ResolvedRegistryEntry, local: MCPServerDescription): boolean {
         if (entry.configHash === undefined) {
             return false;
         }
-        return local.registryConfigHash !== entry.configHash;
+        return local.registryMetadata?.configHash !== entry.configHash;
     }
 
     protected matchesByConfig(entry: ResolvedRegistryEntry, local: MCPServerDescription): boolean {

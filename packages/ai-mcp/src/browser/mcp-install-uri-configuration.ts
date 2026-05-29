@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 /**
  * Configuration for the `install-mcp` deep-link URL handler.
  *
- * Defaults to `<electron-uri-scheme>://install-mcp` — products override by rebinding
+ * Defaults to `<electron-uri-scheme>://install-mcp` - products override by rebinding
  * this class in their frontend module. The same scheme/authority is used by the
  * registry maintainer when generating per-entry install URLs in the registry JSON, so
  * that a click on such a link is routed to Theia and dispatched to this package's
@@ -30,7 +30,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 export class MCPInstallUriConfiguration {
 
     /**
-     * Scheme of the install URL — must match the product's Electron protocol
+     * Scheme of the install URL - must match the product's Electron protocol
      * registration (see `theia.frontend.config.electron.uriScheme` in `package.json`).
      */
     getScheme(): string {

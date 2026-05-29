@@ -64,14 +64,16 @@ describe('MCPServerEditor.installFromEntry', () => {
             example: {
                 command: 'npx',
                 args: ['-y', 'example-mcp'],
-                registryServerId: 'io.github.example/example-mcp',
-                registryVersion: '^1.0.0',
-                registryConfigHash: 'hash-v1'
+                registryMetadata: {
+                    serverId: 'io.github.example/example-mcp',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1'
+                }
             }
         });
     });
 
-    it('omits registry metadata fields the entry does not carry — keeps the preference free of registry-link traces for URL-driven installs', async () => {
+    it('omits registryMetadata when the entry carries no serverId - keeps the preference free of registry-link traces for URL-driven installs', async () => {
         const entry: MCPInstallEntry = {
             localSlug: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
@@ -80,9 +82,20 @@ describe('MCPServerEditor.installFromEntry', () => {
         await editor.installFromEntry(entry);
 
         const stored = prefs.snapshot<Record<string, Record<string, unknown>>>(MCP_SERVERS_PREF)!.example;
-        expect(stored).to.not.have.property('registryServerId');
-        expect(stored).to.not.have.property('registryVersion');
-        expect(stored).to.not.have.property('registryConfigHash');
+        expect(stored).to.not.have.property('registryMetadata');
+    });
+
+    it('omits optional metadata fields the entry does not carry while keeping the required serverId', async () => {
+        const entry: MCPInstallEntry = {
+            localSlug: 'example',
+            config: { command: 'npx', args: ['-y', 'example-mcp'] },
+            serverId: 'io.github.example/example-mcp'
+        };
+
+        await editor.installFromEntry(entry);
+
+        const stored = prefs.snapshot<Record<string, { registryMetadata?: Record<string, unknown> }>>(MCP_SERVERS_PREF)!.example;
+        expect(stored.registryMetadata).to.deep.equal({ serverId: 'io.github.example/example-mcp' });
     });
 
     it('applies the autostart override the dialog collected', async () => {
@@ -96,7 +109,7 @@ describe('MCPServerEditor.installFromEntry', () => {
         expect(prefs.snapshot<Record<string, { autostart?: boolean }>>(MCP_SERVERS_PREF)!.example.autostart).to.equal(false);
     });
 
-    it('fills serverAuthToken when the entry config advertises the slot — even if the slot was empty', async () => {
+    it('fills serverAuthToken when the entry config advertises the slot - even if the slot was empty', async () => {
         const entry: MCPInstallEntry = {
             localSlug: 'example',
             config: { serverUrl: 'https://example.com/mcp', serverAuthToken: '' }
@@ -107,10 +120,10 @@ describe('MCPServerEditor.installFromEntry', () => {
         expect(prefs.snapshot<Record<string, { serverAuthToken?: string }>>(MCP_SERVERS_PREF)!.example.serverAuthToken).to.equal('secret-123');
     });
 
-    it('ignores serverAuthToken when the entry config does not advertise the slot — avoids leaking it onto local entries', async () => {
+    it('ignores serverAuthToken when the entry config does not advertise the slot - avoids leaking it onto local entries', async () => {
         const entry: MCPInstallEntry = {
             localSlug: 'example',
-            // No `serverAuthToken` key — entry is local stdio.
+            // No `serverAuthToken` key - entry is local stdio.
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
         };
 

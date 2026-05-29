@@ -29,6 +29,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { TypeBadge } from './type-badge';
+import { ExtensionCard, ExtensionCardTrust } from './extension-card';
 import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ConfirmDialog, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
@@ -586,61 +587,42 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
             averageRating, tooltip, verified, disabled, disabledByTrust, installed
         } = this.props.extension;
 
-        return <div
-            className={`theia-vsx-extension noselect${disabledByTrust ? ' theia-vsx-extension-disabled-by-trust' : ''}`}
-            onMouseEnter={event => {
-                this.props.hoverService.requestHover({
-                    content: new MarkdownStringImpl(tooltip),
-                    target: event.currentTarget,
-                    position: 'right'
-                });
-            }}
-            onMouseUp={event => {
-                if (event.button === 2) {
-                    this.manage(event);
-                }
-            }}
-        >
-            {iconUrl ?
-                <img className='theia-vsx-extension-icon' src={iconUrl} /> :
-                <div className='theia-vsx-extension-icon placeholder' />}
-            <div className='theia-vsx-extension-content'>
-                <div className='title'>
-                    <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span>&nbsp;
-                        <span className='version'>{VSXExtension.formatVersion(version)}</span>&nbsp;
-                        <TypeBadge
-                            icon={<i className='theia-extensions-type-badge-icon theia-extensions-type-badge-icon--extension' />}
-                            label={nls.localizeByDefault('Extension')}
-                            variant='extension'
-                        />
-                        {disabled && installed && <span className='disabled'>&nbsp;({nls.localizeByDefault('disabled')})</span>}
-                        {disabledByTrust && <span className='disabled' title={nls.localizeByDefault('Disabled in Restricted Mode')}>
-                            ({nls.localizeByDefault('Restricted Mode')})
-                        </span>}
-                    </div>
-                    <div className='stat'>
-                        {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRatingFormatter(averageRating)}</span>}
-                    </div>
-                </div>
-                <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
+        const trust: ExtensionCardTrust = verified === true ? 'verified' : verified === false ? 'unverified' : 'unknown';
 
-                <div className='theia-vsx-extension-action-bar'>
-                    <div className='theia-vsx-extension-publisher-container'>
-                        {verified === true ? (
-                            <i className={codicon('verified-filled')} />
-                        ) : verified === false ? (
-                            <i className={codicon('verified')} />
-                        ) : (
-                            <i className={codicon('question')} />
-                        )}
-                        <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
-                    </div>
-                    {this.renderAction(this.props.host)}
-                </div>
-            </div>
-        </div >;
+        return <ExtensionCard
+            title={displayName ?? ''}
+            version={VSXExtension.formatVersion(version)}
+            // Preserve the previous behaviour of always rendering the description row.
+            description={description ?? ''}
+            iconUrl={iconUrl}
+            typeBadge={
+                <TypeBadge
+                    icon={<i className='theia-extensions-type-badge-icon theia-extensions-type-badge-icon--extension' />}
+                    label={nls.localizeByDefault('Extension')}
+                    variant='extension'
+                />
+            }
+            titleLabels={
+                <>
+                    {disabled && installed && <span className='disabled'>&nbsp;({nls.localizeByDefault('disabled')})</span>}
+                    {disabledByTrust && <span className='disabled' title={nls.localizeByDefault('Disabled in Restricted Mode')}>
+                        ({nls.localizeByDefault('Restricted Mode')})
+                    </span>}
+                </>
+            }
+            stat={
+                <>
+                    {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
+                    {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRatingFormatter(averageRating)}</span>}
+                </>
+            }
+            publisher={publisher}
+            trust={trust}
+            actions={this.renderAction(this.props.host)}
+            extraClassName={disabledByTrust ? 'theia-vsx-extension-disabled-by-trust' : undefined}
+            hover={{ content: new MarkdownStringImpl(tooltip), hoverService: this.props.hoverService }}
+            onContextMenu={event => this.manage(event)}
+        />;
     }
 }
 

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { nls } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
+import { DialogError, DialogMode } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 
 export interface MCPServerInstallParameters {
@@ -29,9 +30,9 @@ export interface MCPServerInstallParameters {
  * Trust signal rendered as a banner at the top of the install dialog. Lets the user see
  * whether the install they're about to perform is approved by the configured AI registry.
  *
- * - `verified`     — registry is configured and lists this server
- * - `unverified`   — registry is configured but does NOT list this server
- * - `no-registry`  — no registry is configured, so trust can't be assessed
+ * - `verified`     - registry is configured and lists this server
+ * - `unverified`   - registry is configured but does NOT list this server
+ * - `no-registry`  - no registry is configured, so trust can't be assessed
  */
 export type MCPServerInstallTrust =
     | { readonly status: 'verified'; readonly serverId: string }
@@ -52,7 +53,7 @@ export interface MCPServerInstallDialogOptions {
 /**
  * Lightweight install confirmation dialog. Distinct from `MCPServerDialog` because the
  * user can't rename a server picked from the registry and the rest of the config comes
- * from the registry entry — we only need to collect the truly user-supplied parameters
+ * from the registry entry - we only need to collect the truly user-supplied parameters
  * (autostart and, when relevant, an auth token).
  */
 export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParameters | undefined> {
@@ -77,6 +78,22 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
                 ? { serverAuthToken: this.serverAuthToken.trim() }
                 : {})
         };
+    }
+
+    /**
+     * Guard the auth-token field: when the server requires a token, an empty value must
+     * block the install. Otherwise the registry-supplied placeholder (e.g.
+     * `<github-pat-or-app-token>`) would survive into settings.json and the server would
+     * fail later with an opaque error.
+     */
+    protected override isValid(_value: MCPServerInstallParameters | undefined, _mode: DialogMode): MaybePromise<DialogError> {
+        if (this.options.requireAuthToken && !this.serverAuthToken.trim()) {
+            return nls.localize(
+                'theia/ai-mcp/installDialog/authTokenRequired',
+                'An auth token is required to install this server.'
+            );
+        }
+        return '';
     }
 
     protected handleAutostartChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -128,7 +145,7 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
                         <span>
                             {nls.localize(
                                 'theia/ai-mcp/installDialog/trust/unknown',
-                                'No AI registry is configured — trust cannot be verified.'
+                                'No AI registry is configured - trust cannot be verified.'
                             )}
                         </span>
                     </div>

@@ -68,7 +68,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         });
     });
 
-    it('omits configHash when the approval has none — supports payloads pre-dating the field', () => {
+    it('omits configHash when the approval has none - supports payloads pre-dating the field', () => {
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/legacy-mcp',
             name: 'Legacy',

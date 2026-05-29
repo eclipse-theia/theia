@@ -17,7 +17,13 @@
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
-FrontendApplicationConfigProvider.set({});
+// Another spec in this package may have already set the configuration; mocha loads all
+// specs into one process and `set` throws if called twice, so guard it.
+try {
+    FrontendApplicationConfigProvider.get();
+} catch {
+    FrontendApplicationConfigProvider.set({});
+}
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
@@ -138,7 +144,7 @@ describe('InstallMcpUriHandler.open', () => {
 
     it('reports an error when the registry has no entry for the given id', async () => {
         const bridge = new FakeRegistryBridge();
-        // Bridge has no entries — `getInstallEntry` returns undefined.
+        // Bridge has no entries - `getInstallEntry` returns undefined.
         const { handler, messages } = buildHandler({ bridge });
 
         await handler.open(new URI('theia://install-mcp?id=io.example/unknown'));

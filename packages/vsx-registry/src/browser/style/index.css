@@ -214,6 +214,9 @@
 
 .theia-vsx-extension-publisher-container {
   display: flex;
+  /* Allow the publisher text to shrink and ellipsis instead of pushing the actions out of view. */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .theia-vsx-extension-action-bar .action {
@@ -448,12 +451,12 @@
   background-color: var(--theia-extensionButton-prominentHoverBackground);
 }
 
-/** Type badge — pill shown next to the version on each entry to indicate which contribution it came from. */
+/** Type badge - pill shown next to the version on each entry to indicate which contribution it came from. */
 
 .theia-extensions-type-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: calc(var(--theia-ui-padding) / 2);
   font-size: var(--theia-ui-font-size0);
   padding: 0 calc(var(--theia-ui-padding) * 4 / 3);
   border-radius: 8px;
@@ -465,7 +468,7 @@
 }
 
 .theia-extensions-type-badge .codicon {
-  font-size: 12px;
+  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-extensions-type-badge-icon {
@@ -482,7 +485,6 @@
 }
 
 .theia-extensions-type-badge-label {
-  text-transform: uppercase;
   font-size: 90%;
   letter-spacing: 0.02em;
 }

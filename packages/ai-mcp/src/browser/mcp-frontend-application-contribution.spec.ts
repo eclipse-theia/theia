@@ -17,7 +17,13 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-FrontendApplicationConfigProvider.set({});
+// Another spec in this package may have already set the configuration; mocha loads all
+// specs into one process and `set` throws if called twice, so guard it.
+try {
+    FrontendApplicationConfigProvider.get();
+} catch {
+    FrontendApplicationConfigProvider.set({});
+}
 
 import 'reflect-metadata';
 

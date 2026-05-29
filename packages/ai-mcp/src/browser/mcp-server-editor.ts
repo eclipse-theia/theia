@@ -21,44 +21,31 @@ import {
     isRemoteMCPServerDescription,
     LocalMCPServerDescription,
     MCPFrontendService,
+    MCPInstallEntryConfig,
+    MCPRegistryMetadata,
     MCPServerDescription,
     RemoteMCPServerDescription
 } from '../common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import type { MCPServerFormData } from './mcp-server-edit-dialog';
 
-/**
- * Subset of an MCP server's persisted configuration that an install flow may carry:
- * either set by a registry entry or hand-crafted in an install URL. Identical in shape
- * to `RegistryMCPServerConfigEntry` from `@theia/ai-registry`; kept here so ai-mcp can
- * own the install path without depending on the registry package.
- */
-export interface MCPInstallEntryConfig {
-    command?: string;
-    args?: string[];
-    env?: Record<string, string>;
-    serverUrl?: string;
-    serverAuthToken?: string;
-    serverAuthTokenHeader?: string;
-    headers?: Record<string, string>;
-}
+export type { MCPInstallEntryConfig };
 
 /**
  * Self-contained install payload: the slug to use in the preference, the config blob
- * to write, and optional registry-provenance metadata. `serverId` is used for the
- * `registryServerId` link-back when present; `version` becomes `registryVersion`
- * (display-only) and `configHash` becomes `registryConfigHash` (update detection).
+ * to write, and optional registry-provenance metadata. When `serverId` is set the
+ * fields are persisted as a single `registryMetadata` block on the stored entry.
  */
 export interface MCPInstallEntry {
     /** Local preference key. */
     localSlug: string;
     /** Config blob to write under `mcpServers[localSlug]`. */
     config: MCPInstallEntryConfig;
-    /** Registry server id — populates `registryServerId` so updates stay tracked. */
+    /** Registry server id - populates `registryMetadata.serverId` so updates stay tracked. */
     serverId?: string;
-    /** Approved version published by the registry — populates `registryVersion` for display. */
+    /** Approved version published by the registry - populates `registryMetadata.version` for display. */
     version?: string;
-    /** Hash of the registry approval — populates `registryConfigHash` and drives update detection. */
+    /** Hash of the registry approval - populates `registryMetadata.configHash` and drives update detection. */
     configHash?: string;
 }
 
@@ -134,14 +121,9 @@ export class MCPServerEditor {
             ...entry.config,
             ...this.applyOverrides(entry.config, overrides)
         };
-        if (entry.serverId !== undefined) {
-            stored.registryServerId = entry.serverId;
-        }
-        if (entry.version !== undefined) {
-            stored.registryVersion = entry.version;
-        }
-        if (entry.configHash !== undefined) {
-            stored.registryConfigHash = entry.configHash;
+        const metadata = this.buildMetadata(entry);
+        if (metadata) {
+            stored.registryMetadata = metadata;
         }
         try {
             await this.preferenceService.set(
@@ -156,6 +138,22 @@ export class MCPServerEditor {
 
     protected readServers(): Record<string, unknown> {
         return this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {}) ?? {};
+    }
+
+    /**
+     * Build a `registryMetadata` block from an install entry's flat provenance fields,
+     * or return undefined when the entry carries no registry link (e.g. a hand-crafted
+     * `install-mcp` URL without an id).
+     */
+    protected buildMetadata(entry: MCPInstallEntry): MCPRegistryMetadata | undefined {
+        if (entry.serverId === undefined) {
+            return undefined;
+        }
+        return {
+            serverId: entry.serverId,
+            ...(entry.version !== undefined && { version: entry.version }),
+            ...(entry.configHash !== undefined && { configHash: entry.configHash })
+        };
     }
 
     /** Merge user overrides into the config blob (only fields the dialog collects). */
@@ -179,7 +177,7 @@ export class MCPServerEditor {
 
     /**
      * Persist the form to the user preference. Preserves any extra fields on an existing entry
-     * (e.g. `registryServerId`) since the dialog only edits user-facing fields.
+     * (e.g. `registryMetadata`) since the dialog only edits user-facing fields.
      */
     async save(formData: MCPServerFormData): Promise<void> {
         const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {}) ?? {};

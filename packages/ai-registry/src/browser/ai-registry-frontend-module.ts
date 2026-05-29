@@ -18,7 +18,7 @@ import '../../src/browser/style/mcp-entries.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { ExtensionsContribution } from '@theia/vsx-registry/lib/browser/extensions-contribution';
+import { ExtensionsSourceContribution } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-bridge';
 import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
 import { MCPRegistryEntryResolver } from '../common/mcp/mcp-registry-entry-resolver';
@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     bind(MCPInstallService).toSelf().inSingletonScope();
 
     bind(MCPExtensionsContribution).toSelf().inSingletonScope();
-    bind(ExtensionsContribution).toService(MCPExtensionsContribution);
+    bind(ExtensionsSourceContribution).toService(MCPExtensionsContribution);
 
     bind(MCPRegistryUiBridgeImpl).toSelf().inSingletonScope();
     bind(MCPRegistryUiBridge).toService(MCPRegistryUiBridgeImpl);

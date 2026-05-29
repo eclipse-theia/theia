@@ -116,26 +116,52 @@ export interface BaseMCPServerDescription {
     resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
 
     /**
-     * If set, identifies the AI registry entry this server was installed from.
-     * Written by `@theia/ai-registry` on install / link / fix; not user-editable.
+     * If set, provenance metadata for a server installed from an AI registry.
+     * Written by `@theia/ai-registry` on install / link / fix / update; not user-editable.
      */
-    registryServerId?: string;
+    registryMetadata?: MCPRegistryMetadata;
+}
+
+/**
+ * Provenance metadata for an MCP server linked to an AI registry approval. Grouped
+ * under a single `registryMetadata` block in {@link BaseMCPServerDescription} and in
+ * the `ai-features.mcp.mcpServers` preference so registry-link data stays visually
+ * separated from the server configuration the user edits.
+ */
+export interface MCPRegistryMetadata {
+    /** Identifies the AI registry entry this server was installed from. */
+    serverId: string;
 
     /**
-     * If set, the registry's published version at the time of install / link / fix.
+     * Registry-published version recorded at install / link / fix / update time.
      * Kept purely for display in the UI; the registry may publish a different version
      * later, but we don't want to lose the version the user actually installed.
-     * Update detection uses {@link registryConfigHash} instead.
+     * Update detection uses {@link configHash} instead.
      */
-    registryVersion?: string;
+    version?: string;
 
     /**
-     * If set, a content hash of the registry approval that produced this entry.
-     * Written by `@theia/ai-registry` on install / link / fix / update and used to
-     * detect when the registry has published a new approval for this server.
-     * Do not use {@link registryVersion} for update checks — it is display-only.
+     * Content hash of the registry approval that produced this entry. Used to detect
+     * when the registry has published a new approval for this server. Do not use
+     * {@link version} for update checks - it is display-only.
      */
-    registryConfigHash?: string;
+    configHash?: string;
+}
+
+/**
+ * Subset of an MCP server's persisted configuration that an install flow may carry:
+ * either set by a registry entry or hand-crafted in an install URL. Lives in `common`
+ * so `@theia/ai-registry` (which resolves registry entries in `common`) can reference
+ * the same canonical shape the browser-side install path writes.
+ */
+export interface MCPInstallEntryConfig {
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
+    serverUrl?: string;
+    serverAuthToken?: string;
+    serverAuthTokenHeader?: string;
+    headers?: Record<string, string>;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {

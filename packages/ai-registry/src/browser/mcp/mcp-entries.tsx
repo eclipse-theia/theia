@@ -16,8 +16,11 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
+import { HoverService } from '@theia/core/lib/browser';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
+import { ExtensionCard, ExtensionCardTrust } from '@theia/vsx-registry/lib/browser/extension-card';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 
@@ -29,6 +32,7 @@ import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mc
 export interface MCPEntryHandlers {
     install(entry: ResolvedRegistryEntry): Promise<void>;
     uninstall(slug: string): Promise<void>;
+    unlink(slug: string): Promise<void>;
     update(entry: ResolvedRegistryEntry): Promise<void>;
     link(entry: ResolvedRegistryEntry): Promise<void>;
     fixConfig(entry: ResolvedRegistryEntry): Promise<void>;
@@ -43,12 +47,14 @@ export class MCPInstalledEntry implements TreeElement {
         readonly local: MCPServerDescription,
         readonly matchedEntry: ResolvedRegistryEntry | undefined,
         readonly state: ClassificationResult,
-        readonly handlers: MCPEntryHandlers
+        readonly handlers: MCPEntryHandlers,
+        readonly hoverService: HoverService
     ) {
         this.id = `mcp-installed-${local.name}`;
     }
 
     render(): React.ReactNode {
+        const localVersion = this.local.registryMetadata?.version;
         return (
             <MCPCard
                 // When the registry knows this server we prefer its display name / description;
@@ -57,10 +63,11 @@ export class MCPInstalledEntry implements TreeElement {
                 description={this.matchedEntry?.description}
                 // Show what the user has actually installed; fall back to the registry range
                 // for the unusual case where the local entry is missing a recorded version.
-                version={this.local.registryVersion ?? this.matchedEntry?.version}
-                identifier={this.matchedEntry?.serverId ?? this.local.registryServerId}
+                version={localVersion ?? this.matchedEntry?.version}
+                identifier={this.matchedEntry?.serverId ?? this.local.registryMetadata?.serverId}
                 verified={this.matchedEntry?.mcpRegistryVerified}
-                actions={renderActions(this.state, this.matchedEntry, this.local.name, this.handlers, this.local.registryVersion)}
+                hoverService={this.hoverService}
+                actions={renderActions(this.state, this.matchedEntry, this.local.name, this.handlers, localVersion)}
             />
         );
     }
@@ -74,7 +81,8 @@ export class MCPSearchResultEntry implements TreeElement {
     constructor(
         readonly entry: ResolvedRegistryEntry,
         readonly state: ClassificationResult,
-        readonly handlers: MCPEntryHandlers
+        readonly handlers: MCPEntryHandlers,
+        readonly hoverService: HoverService
     ) {
         this.id = `mcp-search-${entry.serverId}`;
     }
@@ -87,6 +95,7 @@ export class MCPSearchResultEntry implements TreeElement {
                 version={this.entry.version}
                 identifier={this.entry.serverId}
                 verified={this.entry.mcpRegistryVerified}
+                hoverService={this.hoverService}
                 actions={renderActions(this.state, this.entry, this.entry.localSlug, this.handlers)}
             />
         );
@@ -97,66 +106,78 @@ interface MCPCardProps {
     title: string;
     description?: string;
     version?: string;
-    /** Stable identifier shown in the publisher-row slot — typically the registry serverId. */
+    /** Stable identifier shown in the publisher-row slot - typically the registry serverId. */
     identifier?: string;
-    /** Drives the trust icon next to `identifier`: verified → filled check, unverified → question mark. */
+    /** Drives the trust icon next to `identifier`: verified -> filled check, otherwise question mark. */
     verified?: boolean;
+    hoverService: HoverService;
     actions?: React.ReactNode;
 }
 
+/** Build the markdown tooltip shown on hover, mirroring the depth of the VSX card's tooltip. */
+function buildHoverContent(props: MCPCardProps): MarkdownStringImpl {
+    const lines = [`**${props.title}**`];
+    if (props.description) {
+        lines.push('', props.description);
+    }
+    if (props.identifier) {
+        lines.push('', `_${props.identifier}_`);
+    }
+    return new MarkdownStringImpl(lines.join('\n'));
+}
+
 /**
- * MCP entry card. Reuses the VSX extension card's CSS classes so MCP entries
- * sit visually alongside extensions in the unified Extensions view without
- * duplicating styles. The MCP-specific bits are the codicon-based icon
- * placeholder, the type badge and the publisher-row trust icon.
+ * MCP entry card. Renders against the shared {@link ExtensionCard} shell so MCP entries
+ * sit visually alongside extensions in the unified Extensions view, sharing the layout,
+ * trust icon and hover tooltip. The MCP-specific bits are the codicon icon, the type
+ * badge, the derived trust state and the action set.
+ *
+ * The trailing invisible settings-gear element reserves the same layout space VSX cards
+ * use for their context-menu gear, so MCP and VSX action bars align across the view.
  */
-const MCPCard: React.FC<MCPCardProps> = props => (
-    <div className="theia-vsx-extension noselect">
-        <div className="theia-vsx-extension-icon placeholder theia-mcp-extension-icon">
-            <i className="codicon codicon-mcp" />
-        </div>
-        <div className="theia-vsx-extension-content">
-            <div className="title">
-                <div className="noWrapInfo">
-                    <span className="name">{props.title}</span>&nbsp;
-                    {props.version && <><span className="version">{props.version}</span>&nbsp;</>}
-                    <TypeBadge
-                        icon={<i className="codicon codicon-mcp" />}
-                        label={nls.localizeByDefault('MCP')}
-                        variant="mcp"
-                    />
-                </div>
-            </div>
-            {props.description && (
-                <div className="noWrapInfo theia-vsx-extension-description">{props.description}</div>
-            )}
-            <div className="theia-vsx-extension-action-bar">
-                <div className="theia-vsx-extension-publisher-container">
-                    <i className={`codicon codicon-${props.verified === true ? 'verified-filled' : 'question'}`} />
-                    {props.identifier && (
-                        <span className="noWrapInfo theia-vsx-extension-publisher" title={props.identifier}>
-                            {props.identifier}
-                        </span>
-                    )}
-                </div>
+const MCPCard: React.FC<MCPCardProps> = props => {
+    const trust: ExtensionCardTrust = props.verified === true ? 'verified' : 'unknown';
+    return (
+        <ExtensionCard
+            title={props.title}
+            version={props.version}
+            description={props.description}
+            icon={<i className="codicon codicon-mcp" />}
+            iconClassName="theia-mcp-extension-icon"
+            typeBadge={
+                <TypeBadge
+                    icon={<i className="codicon codicon-mcp" />}
+                    label={nls.localizeByDefault('MCP')}
+                    variant="mcp"
+                />
+            }
+            publisher={props.identifier}
+            publisherTitle={props.identifier}
+            trust={trust}
+            hover={{ content: buildHoverContent(props), hoverService: props.hoverService }}
+            actions={
                 <div className="theia-mcp-extension-actions">
                     {props.actions}
+                    <div
+                        className="codicon codicon-settings-gear action theia-mcp-extension-gear-placeholder"
+                        aria-hidden="true"
+                    />
                 </div>
-            </div>
-        </div>
-    </div>
-);
+            }
+        />
+    );
+};
 
 /**
  * Buttons are state-driven and identical in the Installed and Search sections, mirroring
  * how VSX renders extension actions. State conveys itself through which buttons appear:
  *
- * - `not-installed`              → [Install]
- * - `installed-from-registry`    → [Update?] [Uninstall]      (Update only when newer version is available)
- * - `installed-manually`         → [Link to registry]         (no Uninstall — user wanted only the link affordance)
- * - `fix-config`                 → ⚠︎ [Fix config] [Uninstall]
- * - `installed-registry-revoked` → ⚠︎ "no longer in registry" [Remove]
- * - `installed-user-added`       → filtered out before reaching this view
+ * - `not-installed`              -> [Install]
+ * - `installed-from-registry`    -> [Update?] [Uninstall]      (Update only when newer version is available)
+ * - `installed-manually`         -> [Link to registry]         (no Uninstall - user wanted only the link affordance)
+ * - `fix-config`                 -> warning [Fix config] [Uninstall]
+ * - `installed-link-stale`       -> warning "Not in registry" [Unlink] [Uninstall]
+ * - `installed-user-added`       -> filtered out before reaching this view
  */
 function renderActions(
     state: ClassificationResult,
@@ -199,7 +220,7 @@ function renderActions(
                 </>
             );
         case 'installed-manually':
-            // No Uninstall here by design — the only meaningful action is to link
+            // No Uninstall here by design - the only meaningful action is to link
             // the existing local server to the registry so future updates are tracked.
             return registryEntry && (
                 <button className="theia-button action" onClick={() => handlers.link(registryEntry)}>
@@ -226,24 +247,37 @@ function renderActions(
                     </button>
                 </>
             );
-        case 'installed-registry-revoked':
+        case 'installed-link-stale': {
+            // The registry no longer lists the linked serverId. The server itself may
+            // still work, so we offer Unlink (drop the registry link, keep the config)
+            // as the soft option and keep Uninstall available for users who want the
+            // server gone. Wording stays cautious - we don't assert the server works,
+            // we let the user decide.
+            const tooltip = nls.localize(
+                'theia/ai-registry/warning/linkStale',
+                'This server was installed from the registry, but the registry no longer lists it. '
+                + 'If you are sure you want to keep it and it still works for you, click Unlink to drop '
+                + 'the registry link. Otherwise click Uninstall to remove the server.'
+            );
             return (
                 <>
-                    <span
-                        className="theia-mcp-extension-revoked-message"
-                        title={nls.localize(
-                            'theia/ai-registry/warning/revokedTitle',
-                            "This MCP server no longer exists in the registry. Click 'Remove' to uninstall."
-                        )}
-                    >
+                    <span className="theia-mcp-extension-link-stale-message" title={tooltip}>
                         <i className="codicon codicon-warning theia-mcp-extension-warning" />
-                        {nls.localize('theia/ai-registry/warning/revoked', 'No longer in registry')}
+                        {nls.localize('theia/ai-registry/warning/notInRegistry', 'Not in registry')}
                     </span>
-                    <button className="theia-button action theia-mcp-extension-remove" onClick={() => handlers.uninstall(localName)}>
-                        {nls.localizeByDefault('Remove')}
+                    <button
+                        className="theia-button action"
+                        title={tooltip}
+                        onClick={() => handlers.unlink(localName)}
+                    >
+                        {nls.localize('theia/ai-registry/action/unlink', 'Unlink')}
+                    </button>
+                    <button className="theia-button action" onClick={() => handlers.uninstall(localName)}>
+                        {nls.localizeByDefault('Uninstall')}
                     </button>
                 </>
             );
+        }
         case 'installed-user-added':
             // Filtered out of resolveInstalled and never returned from search; render nothing defensively.
             return undefined;

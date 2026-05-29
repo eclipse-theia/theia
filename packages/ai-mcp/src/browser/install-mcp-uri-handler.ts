@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPInstallEntry, MCPServerEditor } from './mcp-server-editor';
+import { MCPServerEditor } from './mcp-server-editor';
 import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
 import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
 import { MCPServerInstallDialog, MCPServerInstallTrust } from './mcp-server-install-dialog';
@@ -34,7 +34,7 @@ const ID_PARAM = 'id';
  * what the registry currently publishes and keeps install links short and stable.
  *
  * Lives in `@theia/ai-mcp` so products without the registry package still receive the
- * URL — but installation only succeeds when an `MCPRegistryUiBridge` is bound and the
+ * URL - but installation only succeeds when an `MCPRegistryUiBridge` is bound and the
  * id exists in the registry. The bridge is consulted via `@optional()`.
  */
 @injectable()
@@ -78,7 +78,7 @@ export class InstallMcpUriHandler implements OpenHandler {
         if (!this.registryBridge) {
             this.messageService.error(nls.localize(
                 'theia/ai-mcp/installUri/noRegistry',
-                'Cannot install MCP server "{0}" — no AI registry is configured in this product.',
+                'Cannot install MCP server "{0}" - no AI registry is configured in this product.',
                 serverId
             ));
             return undefined;
@@ -129,7 +129,7 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     /**
      * Acknowledge prompt for already-installed servers. We don't try to be clever about
-     * "is this the same registry entry?" — the user may have edited the local config
+     * "is this the same registry entry?" - the user may have edited the local config
      * and any overwrite should be an explicit decision.
      */
     protected async confirmOverwrite(localSlug: string): Promise<boolean> {
@@ -150,5 +150,3 @@ export class InstallMcpUriHandler implements OpenHandler {
         return new URLSearchParams(uri.query).get(ID_PARAM)?.trim() || undefined;
     }
 }
-
-export type { MCPInstallEntry };

@@ -42,7 +42,7 @@ export class MCPRegistryEntryResolver {
             return undefined;
         }
         if (slugs.length > 1) {
-            // Multi-server install configs aren't a Theia concept — we install one server
+            // Multi-server install configs aren't a Theia concept - we install one server
             // per registry entry. Warn so the registry maintainer is aware their payload
             // exposed more than we use, and pick the first slug deterministically.
             console.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${slugs[0]}.`);

@@ -20,7 +20,7 @@ export interface TypeBadgeProps {
     /**
      * Icon shown to the left of the label. Either pass a codicon `<i>` (e.g.
      * `<i className="codicon codicon-mcp" />`) or an image `<i>` whose CSS class
-     * sets a background-image — anything that renders as a small inline glyph.
+     * sets a background-image - anything that renders as a small inline glyph.
      */
     readonly icon: React.ReactNode;
     /** Visible label, e.g. "Extension" or "MCP". */

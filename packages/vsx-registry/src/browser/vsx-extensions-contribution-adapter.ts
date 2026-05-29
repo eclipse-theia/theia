@@ -18,12 +18,12 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Event, nls } from '@theia/core';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { PluginIdentifiers } from '@theia/plugin-ext';
-import { ExtensionsContribution, SearchResult } from './extensions-contribution';
+import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution';
 import { VSXExtension } from './vsx-extension';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 
 /**
- * Adapter that exposes the VSX extensions model as a generic `ExtensionsContribution`.
+ * Adapter that exposes the VSX extensions model as a generic `ExtensionsSourceContribution`.
  *
  * The model continues to own all VSX-specific state (OVSX search, plugin server
  * lifecycle, recommendations). This adapter is a thin translation layer that lets
@@ -31,7 +31,7 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
  * as MCP servers and future artifact types.
  */
 @injectable()
-export class VSXExtensionsContributionAdapter implements ExtensionsContribution {
+export class VSXExtensionsContributionAdapter implements ExtensionsSourceContribution {
 
     readonly type = 'extension';
     readonly displayName = nls.localizeByDefault('Extensions');
@@ -67,7 +67,7 @@ export class VSXExtensionsContributionAdapter implements ExtensionsContribution 
     *resolveSearchResults(): Iterable<SearchResult> {
         // VSX's search results are driven by the search bar's query into the model
         // (the model subscribes to `VSXExtensionsSearchModel.onDidChangeQuery`). The
-        // contribution interface's `query` argument is therefore not consumed here —
+        // contribution interface's `query` argument is therefore not consumed here -
         // the model already maintains the result set in step with the query.
         for (const id of this.model.searchResult) {
             const extension = this.model.getExtension(id);

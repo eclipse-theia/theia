@@ -17,7 +17,7 @@
 import { Event } from '@theia/core/lib/common/event';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 
-export const ExtensionsContribution = Symbol('ExtensionsContribution');
+export const ExtensionsSourceContribution = Symbol('ExtensionsSourceContribution');
 
 /**
  * Context passed to `resolveSearchResults` so contributions can honour the search
@@ -27,7 +27,7 @@ export interface SearchContext {
     /**
      * Toggled by the `extensions.onlyShowVerifiedExtensions` preference. The preference
      * was introduced to filter the OVSX result set down to namespace-verified publishers,
-     * but the same flag also drives "verified" filters in other contributions — each one
+     * but the same flag also drives "verified" filters in other contributions - each one
      * decides what "verified" means in its domain (e.g. `@theia/ai-registry` reads it as
      * "approved in the AI registry"). Document this domain mapping next to any consumer.
      */
@@ -43,7 +43,7 @@ export interface SearchContext {
 export interface SearchResult {
     readonly element: TreeElement;
     /**
-     * Text the global fuzzy matcher should consider when ranking this entry —
+     * Text the global fuzzy matcher should consider when ranking this entry -
      * typically a concatenation of the entry's most distinctive fields
      * (name, identifier, description, etc.). Contributions are encouraged to
      * include anything the user might plausibly have searched for.
@@ -59,12 +59,12 @@ export interface SearchResult {
  * Contributions implement only the modes they participate in. A contribution
  * that has no concept of "built-in", for example, simply omits `resolveBuiltIn`.
  *
- * Each returned `TreeElement` carries its own `render(host)` — the contribution
+ * Each returned `TreeElement` carries its own `render(host)` - the contribution
  * controls how its entries look. The view groups results by contribution type
  * (using `displayName` as the group header) when more than one contribution
  * yields entries for a section.
  */
-export interface ExtensionsContribution {
+export interface ExtensionsSourceContribution {
     /** Stable, machine-readable identifier for the artifact type. */
     readonly type: string;
 
@@ -102,7 +102,7 @@ export interface ExtensionsContribution {
     /**
      * Called when the user triggers a refresh on the view toolbar. Contributions
      * should re-fetch any remote state and fire `onDidChange` once new data is
-     * available. Optional — contributions without remote data can omit this.
+     * available. Optional - contributions without remote data can omit this.
      */
     refresh?(): Promise<void>;
 }

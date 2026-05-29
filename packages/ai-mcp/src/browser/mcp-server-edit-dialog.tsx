@@ -20,7 +20,7 @@ import { DialogProps } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 
-/** Server type discriminator the dialog edits — stdio launch vs remote URL. */
+/** Server type discriminator the dialog edits - stdio launch vs remote URL. */
 export type MCPServerType = 'local' | 'remote';
 
 /** User-facing form fields collected by the Add/Edit MCP Server dialog. */
@@ -53,7 +53,7 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
 /**
  * Dialog for adding or editing an MCP server. Kept in a separate module from
  * `MCPServerEditor` so importing the editor doesn't pull in the DOM-touching
- * `ReactDialog` chain — important for unit tests that load the editor's types.
+ * `ReactDialog` chain - important for unit tests that load the editor's types.
  */
 export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefined> {
 
