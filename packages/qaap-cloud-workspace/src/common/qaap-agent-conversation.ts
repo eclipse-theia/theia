@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { buildConversationListMetrics } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-conversation-list-metrics';
+import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 
 /** HTTP base path for the persistent agent-conversation endpoints. */
 export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
@@ -70,6 +71,8 @@ export interface QaapAgentConversation {
      */
     readonly gitDiffAdded?: number;
     readonly gitDiffRemoved?: number;
+    /** When set, this thread is tied to a GitHub pull request (Work Hub inbox). */
+    readonly linkedPullRequest?: QaapLinkedPullRequest;
 }
 
 /** Summary row used by list endpoints — omits messages to keep payloads small. */
@@ -95,8 +98,13 @@ export interface QaapAgentConversationSummary {
     readonly linesRemoved?: number;
     /** Epoch ms when the current turn started (last user message). */
     readonly turnStartedAt?: number;
+    readonly turnProgressCurrent?: number;
+    readonly turnProgressTotal?: number;
     /** Duration of the last completed agent turn. */
     readonly lastTurnDurationMs?: number;
+    readonly linkedPullRequest?: QaapLinkedPullRequest;
+    /** Set when the thread ran `git` or is tied to a PR — used by the Work Hub inbox filter. */
+    readonly hasGitOperation?: boolean;
 }
 
 /** Conversations bucketed by project working directory. */
@@ -138,6 +146,15 @@ export interface QaapUpdateAgentConversationRequest {
     readonly title?: string;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly linkedPullRequest?: QaapLinkedPullRequest | null;
+}
+
+export interface QaapLinkConversationsByBranchRequest {
+    readonly owner: string;
+    readonly repo: string;
+    readonly number: number;
+    readonly branch: string;
+    readonly title?: string;
 }
 
 /** Payload pushed over SSE when a conversation changes. */
@@ -163,11 +180,16 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         priority: conv.priority || undefined,
         paused: conv.paused || undefined,
         forkedFromId: conv.forkedFromId,
+        linkedPullRequest: conv.linkedPullRequest,
     };
     const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });
+    const hasGitOperation = metrics.hasGitOperation || conv.linkedPullRequest
+        ? true
+        : undefined;
     return {
         ...base,
         ...metrics,
+        hasGitOperation,
         ...(conv.gitDiffAdded !== undefined ? { linesAdded: conv.gitDiffAdded } : {}),
         ...(conv.gitDiffRemoved !== undefined ? { linesRemoved: conv.gitDiffRemoved } : {}),
     };

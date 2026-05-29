@@ -7,15 +7,24 @@ import type { QaapAgentMessageSegment } from './qaap-qaiq-stream';
 
 /** Denormalized list-row metrics derived from conversation messages (Work Hub / SSE). */
 export interface QaapAgentConversationListMetrics {
+    /** True when the thread ran a `git` command or is linked to a pull request (Work Hub inbox). */
+    readonly hasGitOperation?: boolean;
     /** Human-readable in-flight status, e.g. "Searching" or "Running bash". */
     readonly activityLabel?: string;
     readonly linesAdded?: number;
     readonly linesRemoved?: number;
     /** Epoch ms when the current streaming turn started (last user message). */
     readonly turnStartedAt?: number;
+    /** Completed steps in the current streaming turn (tool uses + early-phase estimate). */
+    readonly turnProgressCurrent?: number;
+    /** Total steps in the current streaming turn. */
+    readonly turnProgressTotal?: number;
     /** Duration of the last completed agent turn in milliseconds. */
     readonly lastTurnDurationMs?: number;
 }
+
+/** Minimum step count shown while streaming before any tool call appears. */
+const STREAMING_TURN_FALLBACK_TOTAL = 6;
 
 export interface QaapAgentConversationListMetricsInput {
     readonly status: 'idle' | 'streaming' | 'failed';
@@ -27,20 +36,57 @@ export interface QaapAgentConversationListMetricsInput {
     }>;
 }
 
+/** Detects shell/tool text that invokes the `git` CLI (not substrings like "github"). */
+export function textInvokesGit(text: string): boolean {
+    if (!text.trim()) {
+        return false;
+    }
+    if (!/\bgit\b/i.test(text)) {
+        return false;
+    }
+    if (/(?:^|[\s;&|`'"(]|&&|\|\|)git(?:\s|$|[\s;&|`'")])/i.test(text)) {
+        return true;
+    }
+    return /["']command["']\s*:\s*["'][^"']*\bgit\s/i.test(text);
+}
+
+export function conversationMessagesHaveGitOperation(
+    messages: QaapAgentConversationListMetricsInput['messages'],
+): boolean {
+    for (const message of messages) {
+        if (message.role === 'user' && textInvokesGit(message.content)) {
+            return true;
+        }
+        for (const text of collectMessageTexts(message)) {
+            if (textInvokesGit(text)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 export function buildConversationListMetrics(
     input: QaapAgentConversationListMetricsInput,
 ): QaapAgentConversationListMetrics {
     const turnMessages = sliceLastTurnMessages(input.messages);
     const diff = aggregateDiffStats(input.messages);
+    const hasGitOperation = conversationMessagesHaveGitOperation(input.messages)
+        ? true
+        : undefined;
     if (input.status === 'streaming') {
+        const turnProgress = resolveConversationTurnProgress(turnMessages);
         return {
             ...diff,
+            hasGitOperation,
             turnStartedAt: findLastUserMessage(input.messages)?.createdAt,
             activityLabel: resolveStreamingActivityLabel(turnMessages),
+            ...turnProgress,
         };
     }
     return {
         ...diff,
+        hasGitOperation,
         lastTurnDurationMs: resolveLastTurnDurationMs(input.messages),
     };
 }
@@ -197,6 +243,54 @@ function collectMessageTexts(
         }
     }
     return texts;
+}
+
+export function conversationTurnProgressRatio(current: number, total: number): number {
+    if (total <= 0) {
+        return 0;
+    }
+    return Math.min(1, Math.max(0, current / total));
+}
+
+function resolveConversationTurnProgress(
+    turnMessages: QaapAgentConversationListMetricsInput['messages'],
+): Pick<QaapAgentConversationListMetrics, 'turnProgressCurrent' | 'turnProgressTotal'> | undefined {
+    const tools: boolean[] = [];
+    for (const message of turnMessages) {
+        if (message.role !== 'agent') {
+            continue;
+        }
+        for (const segment of message.segments ?? []) {
+            if (segment.type === 'tool') {
+                tools.push(segment.finished);
+            }
+        }
+    }
+    if (tools.length > 0) {
+        const finished = tools.filter(done => done).length;
+        const hasActive = tools.some(done => !done);
+        const total = tools.length;
+        const current = Math.min(total, finished + (hasActive ? 1 : 0));
+        return { turnProgressCurrent: current, turnProgressTotal: total };
+    }
+    const lastAgent = [...turnMessages].reverse().find(message => message.role === 'agent');
+    if (!lastAgent) {
+        return undefined;
+    }
+    const hasThinking = lastAgent.segments?.some(segment =>
+        segment.type === 'thinking' && segment.content.trim().length > 0) ?? false;
+    const hasText = lastAgent.segments?.some(segment =>
+        segment.type === 'text' && segment.content.trim().length > 0) ?? false;
+    let current = 1;
+    if (hasText) {
+        current = 3;
+    } else if (hasThinking) {
+        current = 2;
+    }
+    return {
+        turnProgressCurrent: current,
+        turnProgressTotal: STREAMING_TURN_FALLBACK_TOTAL,
+    };
 }
 
 function resolveStreamingActivityLabel(

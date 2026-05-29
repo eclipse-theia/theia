@@ -6,9 +6,54 @@
 import { expect } from 'chai';
 import {
     buildConversationListMetrics,
+    conversationMessagesHaveGitOperation,
+    conversationTurnProgressRatio,
     formatToolActivityLabel,
     parseDiffStatsFromText,
+    textInvokesGit,
 } from './qaap-agent-conversation-list-metrics';
+
+describe('textInvokesGit', () => {
+    it('detects git commands in shell text and JSON args', () => {
+        expect(textInvokesGit('git status')).to.equal(true);
+        expect(textInvokesGit('cd repo && git push origin main')).to.equal(true);
+        expect(textInvokesGit('{"command":"git diff --stat"}')).to.equal(true);
+    });
+
+    it('ignores unrelated words and empty input', () => {
+        expect(textInvokesGit('')).to.equal(false);
+        expect(textInvokesGit('github.com/org/repo')).to.equal(false);
+        expect(textInvokesGit('legit refactor')).to.equal(false);
+    });
+});
+
+describe('conversationMessagesHaveGitOperation', () => {
+    it('sets hasGitOperation via buildConversationListMetrics when git ran in a tool', () => {
+        expect(conversationMessagesHaveGitOperation([
+            {
+                role: 'agent',
+                content: '',
+                createdAt: 1,
+                segments: [{
+                    type: 'tool',
+                    toolUseId: 'tu1',
+                    name: 'Bash',
+                    args: '{"command":"git commit -m fix"}',
+                    finished: true,
+                }],
+            },
+        ])).to.equal(true);
+        const metrics = buildConversationListMetrics({
+            status: 'idle',
+            messages: [{
+                role: 'user',
+                content: 'please run git pull',
+                createdAt: 1,
+            }],
+        });
+        expect(metrics.hasGitOperation).to.equal(true);
+    });
+});
 
 describe('parseDiffStatsFromText', () => {
     it('parses git combined insert/delete summary', () => {
@@ -131,6 +176,85 @@ describe('buildConversationListMetrics', () => {
         });
         expect(metrics.activityLabel).to.equal('Searching');
         expect(metrics.turnStartedAt).to.equal(1000);
+        expect(metrics.turnProgressCurrent).to.equal(1);
+        expect(metrics.turnProgressTotal).to.equal(1);
+    });
+
+    it('counts finished and active tools in the current turn', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'streaming',
+            messages: [
+                { role: 'user', content: 'go', createdAt: 1000 },
+                {
+                    role: 'agent',
+                    content: '',
+                    createdAt: 1100,
+                    segments: [
+                        {
+                            type: 'tool',
+                            toolUseId: 't1',
+                            name: 'Read',
+                            args: '{}',
+                            finished: true,
+                        },
+                        {
+                            type: 'tool',
+                            toolUseId: 't2',
+                            name: 'Read',
+                            args: '{}',
+                            finished: true,
+                        },
+                        {
+                            type: 'tool',
+                            toolUseId: 't3',
+                            name: 'Read',
+                            args: '{}',
+                            finished: true,
+                        },
+                        {
+                            type: 'tool',
+                            toolUseId: 't4',
+                            name: 'Read',
+                            args: '{}',
+                            finished: true,
+                        },
+                        {
+                            type: 'tool',
+                            toolUseId: 't5',
+                            name: 'Grep',
+                            args: '{}',
+                            finished: false,
+                        },
+                        {
+                            type: 'tool',
+                            toolUseId: 't6',
+                            name: 'Bash',
+                            args: '{}',
+                            finished: false,
+                        },
+                    ],
+                },
+            ],
+        });
+        expect(metrics.turnProgressCurrent).to.equal(5);
+        expect(metrics.turnProgressTotal).to.equal(6);
+    });
+
+    it('estimates early-turn progress before tools appear', () => {
+        const metrics = buildConversationListMetrics({
+            status: 'streaming',
+            messages: [
+                { role: 'user', content: 'plan', createdAt: 2000 },
+                {
+                    role: 'agent',
+                    content: '',
+                    createdAt: 2100,
+                    segments: [{ type: 'thinking', content: 'hmm' }],
+                },
+            ],
+        });
+        expect(metrics.turnProgressCurrent).to.equal(2);
+        expect(metrics.turnProgressTotal).to.equal(6);
     });
 
     it('shows Thinking when last segment is thinking and no text yet', () => {
@@ -244,5 +368,13 @@ describe('buildConversationListMetrics', () => {
             ],
         });
         expect(metrics.lastTurnDurationMs).to.be.undefined;
+    });
+});
+
+describe('conversationTurnProgressRatio', () => {
+    it('clamps to a 0..1 range', () => {
+        expect(conversationTurnProgressRatio(4, 6)).to.be.closeTo(4 / 6, 0.001);
+        expect(conversationTurnProgressRatio(0, 0)).to.equal(0);
+        expect(conversationTurnProgressRatio(8, 6)).to.equal(1);
     });
 });

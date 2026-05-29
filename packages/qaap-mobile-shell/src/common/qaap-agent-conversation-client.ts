@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import { buildConversationListMetrics } from './qaap-agent-conversation-list-metrics';
 
 /**
@@ -35,7 +36,12 @@ export interface QaapAgentConversationSummaryDTO {
     readonly linesAdded?: number;
     readonly linesRemoved?: number;
     readonly turnStartedAt?: number;
+    readonly turnProgressCurrent?: number;
+    readonly turnProgressTotal?: number;
     readonly lastTurnDurationMs?: number;
+    readonly linkedPullRequest?: QaapLinkedPullRequest;
+    /** Set when the thread ran `git` or is tied to a PR — used by the Work Hub inbox filter. */
+    readonly hasGitOperation?: boolean;
 }
 
 export type QaapAgentMessageSegmentDTO =
@@ -77,6 +83,7 @@ export interface QaapAgentConversationDTO {
     readonly priority?: boolean;
     readonly paused?: boolean;
     readonly forkedFromId?: string;
+    readonly linkedPullRequest?: QaapLinkedPullRequest;
 }
 
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {
@@ -85,6 +92,10 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
     const preview = clean === undefined
         ? undefined
         : clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
+    const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });
+    const hasGitOperation = metrics.hasGitOperation || conv.linkedPullRequest
+        ? true
+        : undefined;
     return {
         id: conv.id,
         cwd: conv.cwd,
@@ -99,7 +110,9 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         priority: conv.priority,
         paused: conv.paused,
         forkedFromId: conv.forkedFromId,
-        ...buildConversationListMetrics({ status: conv.status, messages: conv.messages }),
+        linkedPullRequest: conv.linkedPullRequest,
+        ...metrics,
+        hasGitOperation,
     };
 }
 
@@ -182,6 +195,7 @@ export interface QaapUpdateConversationBody {
     readonly title?: string;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly linkedPullRequest?: QaapLinkedPullRequest | null;
 }
 
 export async function updateConversation(id: string, patch: QaapUpdateConversationBody): Promise<QaapAgentConversationDTO> {

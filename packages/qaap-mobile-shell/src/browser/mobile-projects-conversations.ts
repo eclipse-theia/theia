@@ -16,6 +16,7 @@ import {
     QaapAgentMessageDTO,
     listAllConversationGroups,
 } from '../common/qaap-agent-conversation-client';
+import { buildConversationListMetrics } from '../common/qaap-agent-conversation-list-metrics';
 import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
 const STREAM_URL = `${QAAP_AGENT_CONVERSATION_API_PATH}/stream`;
@@ -148,6 +149,10 @@ export class MobileProjectsConversations {
                     const sessionFile = chatRoot.resolve(`${metadata.sessionId}.json`);
                     const detail = await this.readJson<TheiaSerializedChatData>(sessionFile);
                     const preview = detail ? previewFromTheiaChat(detail) : undefined;
+                    const theiaMessages = detail ? theiaMessagesToConversationMessages(detail) : [];
+                    const metrics = detail
+                        ? buildConversationListMetrics({ status: 'idle', messages: theiaMessages })
+                        : {};
                     summaries.push({
                         id,
                         source: 'theia-chat',
@@ -162,6 +167,7 @@ export class MobileProjectsConversations {
                         messageCount: detail ? countTheiaMessages(detail) : 0,
                         lastMessagePreview: preview,
                         lastMessageRole: preview ? 'user' : undefined,
+                        ...metrics,
                     });
                     nextFiles.set(id, sessionFile);
                 }
