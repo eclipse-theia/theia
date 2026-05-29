@@ -14,6 +14,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     cloneQaapGithubRepository,
     createQaapGithubRepository,
+    fetchQaapAuthConfig,
     fetchQaapGithubRepositories,
     fetchQaapProjectSessions,
     openQaapGithubRepository,
@@ -924,6 +925,13 @@ export class MobileProjectsService {
 
     protected async loadSessionMap(): Promise<Map<string, QaapProjectSessionSummary>> {
         const local = readLocalProjectSessions();
+        const config = await fetchQaapAuthConfig().catch(() => ({ skipAuth: false, githubOAuth: false }));
+        if (config.skipAuth) {
+            return local;
+        }
+        if (readQaapSignedIn()) {
+            await syncQaapAuthSessionFromServer();
+        }
         if (!readQaapSignedIn()) {
             return local;
         }

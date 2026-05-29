@@ -13,6 +13,10 @@ import {
     installMobileVerticalTouchScroll,
     MOBILE_VERTICAL_SCROLL_SELECTOR,
 } from './mobile-vertical-touch-scroll';
+import {
+    installMobileHorizontalTouchScroll,
+    MOBILE_HORIZONTAL_SCROLL_SELECTOR,
+} from './mobile-horizontal-touch-scroll';
 
 /**
  * Wires {@link installMobileVerticalTouchScroll} onto dynamically created scroll
@@ -22,7 +26,8 @@ import {
 export class MobileTouchScrollContribution implements FrontendApplicationContribution {
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly patched = new WeakSet<HTMLElement>();
+    protected readonly patchedVertical = new WeakSet<HTMLElement>();
+    protected readonly patchedHorizontal = new WeakSet<HTMLElement>();
     protected scrollPatches = new DisposableCollection();
     protected observer: MutationObserver | undefined;
     protected mobileMq: MediaQueryList | undefined;
@@ -94,16 +99,31 @@ export class MobileTouchScrollContribution implements FrontendApplicationContrib
             this.patchElement(root);
         }
         root.querySelectorAll<HTMLElement>(MOBILE_VERTICAL_SCROLL_SELECTOR).forEach(el => this.patchElement(el));
+        if (root instanceof HTMLElement && root.matches(MOBILE_HORIZONTAL_SCROLL_SELECTOR)) {
+            this.patchHorizontalElement(root);
+        }
+        root.querySelectorAll<HTMLElement>(MOBILE_HORIZONTAL_SCROLL_SELECTOR).forEach(el => this.patchHorizontalElement(el));
     }
 
     protected patchElement(element: HTMLElement): void {
-        if (this.patched.has(element)) {
+        if (this.patchedVertical.has(element)) {
             return;
         }
         if (!element.isConnected) {
             return;
         }
-        this.patched.add(element);
+        this.patchedVertical.add(element);
         this.scrollPatches.push(installMobileVerticalTouchScroll(element));
+    }
+
+    protected patchHorizontalElement(element: HTMLElement): void {
+        if (this.patchedHorizontal.has(element)) {
+            return;
+        }
+        if (!element.isConnected) {
+            return;
+        }
+        this.patchedHorizontal.add(element);
+        this.scrollPatches.push(installMobileHorizontalTouchScroll(element));
     }
 }

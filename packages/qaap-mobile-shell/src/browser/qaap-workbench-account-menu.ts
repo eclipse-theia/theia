@@ -5,6 +5,7 @@
 
 import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
+import type { WorkHubCatalogAction, WorkHubCatalogItem, WorkHubCatalogSection } from '../common/mobile-work-hub-catalog';
 
 export const QAAP_AUTH_SIGN_IN_GITHUB_COMMAND = 'qaap.auth.signInGithub';
 export const QAAP_AUTH_SIGN_OUT_COMMAND = 'qaap.auth.signOut';
@@ -17,6 +18,11 @@ export interface QaapAccountMenuEntry {
     kind: 'action' | 'separator';
     label?: string;
     commandId?: string;
+}
+
+export interface QaapAccountMenuGettingStartedOptions {
+    readonly section: WorkHubCatalogSection;
+    readonly onCatalogAction: (action: WorkHubCatalogAction) => void;
 }
 
 let activeMenu: HTMLElement | undefined;
@@ -105,15 +111,25 @@ export function isQaapAccountMenuOpen(anchor?: HTMLElement): boolean {
 }
 
 /** Open the account menu, or close it if it is already open for the same anchor. */
-export function toggleQaapAccountMenu(anchor: HTMLElement, commands: CommandRegistry, entries: QaapAccountMenuEntry[]): void {
+export function toggleQaapAccountMenu(
+    anchor: HTMLElement,
+    commands: CommandRegistry,
+    entries: QaapAccountMenuEntry[],
+    gettingStarted?: QaapAccountMenuGettingStartedOptions,
+): void {
     if (isQaapAccountMenuOpen(anchor)) {
         dismissQaapAccountMenu();
         return;
     }
-    openQaapAccountMenu(anchor, commands, entries);
+    openQaapAccountMenu(anchor, commands, entries, gettingStarted);
 }
 
-export function openQaapAccountMenu(anchor: HTMLElement, commands: CommandRegistry, entries: QaapAccountMenuEntry[]): void {
+export function openQaapAccountMenu(
+    anchor: HTMLElement,
+    commands: CommandRegistry,
+    entries: QaapAccountMenuEntry[],
+    gettingStarted?: QaapAccountMenuGettingStartedOptions,
+): void {
     if (activeAnchor !== anchor) {
         dismissQaapAccountMenu();
     }
@@ -122,6 +138,18 @@ export function openQaapAccountMenu(anchor: HTMLElement, commands: CommandRegist
     panel.className = 'theia-qaap-account-menu';
     panel.setAttribute('role', 'menu');
     panel.tabIndex = -1;
+
+    if (gettingStarted && gettingStarted.section.items.length > 0) {
+        panel.classList.add('theia-mod-with-getting-started');
+        panel.appendChild(createAccountMenuGettingStartedBlock(
+            gettingStarted.section,
+            gettingStarted.onCatalogAction,
+        ));
+        const sep = document.createElement('div');
+        sep.className = 'theia-qaap-account-menu-separator';
+        sep.setAttribute('role', 'separator');
+        panel.appendChild(sep);
+    }
 
     for (const entry of entries) {
         if (entry.kind === 'separator') {
@@ -221,4 +249,94 @@ export function openQaapAccountMenu(anchor: HTMLElement, commands: CommandRegist
         document.addEventListener('keydown', onKeyDown, true);
         panel.focus();
     });
+}
+
+function createAccountMenuGettingStartedBlock(
+    section: WorkHubCatalogSection,
+    onCatalogAction: (action: WorkHubCatalogAction) => void,
+): HTMLElement {
+    const block = document.createElement('div');
+    block.className = 'theia-qaap-account-menu-getting-started';
+
+    const head = document.createElement('div');
+    head.className = 'theia-qaap-account-menu-getting-started-head';
+    const title = document.createElement('span');
+    title.className = 'theia-qaap-account-menu-getting-started-title';
+    title.textContent = section.title;
+    const count = document.createElement('span');
+    count.className = 'theia-qaap-account-menu-getting-started-count';
+    count.textContent = String(section.items.length);
+    head.append(title, count);
+
+    const list = document.createElement('div');
+    list.className = 'theia-qaap-account-menu-getting-started-cards';
+    for (const item of section.items) {
+        list.appendChild(createAccountMenuCatalogCard(item, onCatalogAction));
+    }
+
+    block.append(head, list);
+    return block;
+}
+
+function createAccountMenuCatalogCard(
+    item: WorkHubCatalogItem,
+    onCatalogAction: (action: WorkHubCatalogAction) => void,
+): HTMLElement {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'theia-qaap-account-menu-catalog-card';
+    card.setAttribute('role', 'menuitem');
+    if (item.accent) {
+        card.style.setProperty('--qaap-hub-catalog-accent', item.accent);
+    }
+
+    const icon = document.createElement('span');
+    icon.className = `theia-qaap-account-menu-catalog-card-icon codicon ${item.iconClass}`;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const body = document.createElement('div');
+    body.className = 'theia-qaap-account-menu-catalog-card-body';
+
+    const title = document.createElement('span');
+    title.className = 'theia-qaap-account-menu-catalog-card-title';
+    title.textContent = item.title;
+
+    const subtitle = document.createElement('span');
+    subtitle.className = 'theia-qaap-account-menu-catalog-card-subtitle';
+    subtitle.textContent = item.subtitle;
+
+    body.append(title, subtitle);
+
+    if (item.progress !== undefined) {
+        const progressWrap = document.createElement('div');
+        progressWrap.className = 'theia-qaap-account-menu-catalog-card-progress';
+        progressWrap.setAttribute('role', 'progressbar');
+        progressWrap.setAttribute('aria-valuemin', '0');
+        progressWrap.setAttribute('aria-valuemax', '100');
+        const percent = Math.round(Math.max(0, Math.min(1, item.progress)) * 100);
+        progressWrap.setAttribute('aria-valuenow', String(percent));
+        const bar = document.createElement('span');
+        bar.className = 'theia-qaap-account-menu-catalog-card-progress-bar';
+        bar.style.width = `${percent}%`;
+        progressWrap.append(bar);
+        body.append(progressWrap);
+    }
+
+    if (item.meta) {
+        const meta = document.createElement('span');
+        meta.className = 'theia-qaap-account-menu-catalog-card-meta';
+        meta.textContent = item.meta;
+        body.append(meta);
+    }
+
+    const chevron = document.createElement('span');
+    chevron.className = 'theia-qaap-account-menu-catalog-card-chevron codicon codicon-chevron-right';
+    chevron.setAttribute('aria-hidden', 'true');
+
+    card.append(icon, body, chevron);
+    card.addEventListener('click', () => {
+        dismissQaapAccountMenu();
+        onCatalogAction(item.action);
+    });
+    return card;
 }

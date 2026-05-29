@@ -20,6 +20,10 @@ import { QaapPushSubscriptionStore } from './qaap-push-subscription-store';
 import { QaapTerminalSessionStore } from './qaap-terminal-session-store';
 import { QaapPreviewShareProxyContribution } from './qaap-preview-share-proxy';
 import { QaapWebPushService } from './qaap-web-push-service';
+import { QaapWorkHubRoutineEndpoint } from './qaap-work-hub-routine-endpoint';
+import { QaapWorkHubRoutineRunner } from './qaap-work-hub-routine-runner';
+import { QaapWorkHubRoutineScheduler } from './qaap-work-hub-routine-scheduler';
+import { QaapWorkHubRoutineStore } from './qaap-work-hub-routine-store';
 
 export default new ContainerModule((bind, _unbind, _isBound, _rebind, _unbindAsync, onActivation) => {
     bind(QaapCloudWorkspaceStore).toSelf().inSingletonScope();
@@ -40,7 +44,11 @@ export default new ContainerModule((bind, _unbind, _isBound, _rebind, _unbindAsy
     bind(QaapAgentConversationStore).toSelf().inSingletonScope();
     bind(QaapAgentConversationEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapAgentConversationEndpoint);
-
+    bind(QaapWorkHubRoutineStore).toSelf().inSingletonScope();
+    bind(QaapWorkHubRoutineRunner).toSelf().inSingletonScope();
+    bind(QaapWorkHubRoutineScheduler).toSelf().inSingletonScope();
+    bind(QaapWorkHubRoutineEndpoint).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(QaapWorkHubRoutineEndpoint);
     // Inject the `qaap-task` helper env (PATH prefix, token, API URL) into every interactive
     // shell so users can call `qaap-task` from the Terminal tab — not just background-task
     // subprocesses, which already get it via QaapAgentTaskRunner.buildChildEnv.

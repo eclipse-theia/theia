@@ -12,8 +12,7 @@ import {
     createTreeContainer,
     NodeProps,
     TreeModel,
-    TreeModelImpl,
-    Widget
+    TreeModelImpl
 } from '@theia/core/lib/browser';
 import { CommandMenu } from '@theia/core/lib/common/menu';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -26,6 +25,7 @@ import {
     ScmTreeWidget
 } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmTreeModelProps } from '@theia/scm/lib/browser/scm-tree-model';
+import { collapseShellSidePanelContainingWidget } from './mobile-side-sheet-collapse';
 
 @injectable()
 export class QaapScmTreeWidget extends ScmTreeWidget {
@@ -44,6 +44,8 @@ export class QaapScmTreeWidget extends ScmTreeWidget {
             labelProvider={this.labelProvider}
             corePreferences={this.corePreferences}
             caption={caption}
+            shell={this.shell}
+            scmTreeWidget={this}
             {...{
                 ...this.props,
                 parentPath,
@@ -52,21 +54,8 @@ export class QaapScmTreeWidget extends ScmTreeWidget {
                 colors: this.colors,
                 isLightTheme: this.isCurrentThemeLight(),
                 renderExpansionToggle: () => this.renderExpansionToggle(node, props),
-                collapseContainingPanel: () => this.collapseContainingPanel()
             }}
         />;
-    }
-
-    protected collapseContainingPanel(): void {
-        let widget: Widget | null = this;
-        while (widget) {
-            const area = this.shell.getAreaFor(widget);
-            if (area === 'left' || area === 'right') {
-                this.shell.collapsePanel(area);
-                return;
-            }
-            widget = widget.parent;
-        }
     }
 }
 
@@ -74,18 +63,22 @@ export class QaapScmResourceComponent extends ScmResourceComponent {
 
     declare readonly props: QaapScmResourceComponent.Props;
 
-    protected override open = () => {
+    protected override open = async (): Promise<void> => {
         const resource = this.props.model.getResourceFromNode(this.props.treeNode);
-        if (resource) {
-            resource.open()
-                .then(() => this.props.collapseContainingPanel())
-                .catch(e => console.error('Failed to open a SCM resource', e));
+        if (!resource) {
+            return;
+        }
+        try {
+            await resource.open();
+            await collapseShellSidePanelContainingWidget(this.props.shell, this.props.scmTreeWidget);
+        } catch (e) {
+            console.error('Failed to open a SCM resource', e);
         }
     };
 
     protected override handleInlineCommand = (node: CommandMenu): void => {
         if (this.isOpenResourceCommand(node)) {
-            this.props.collapseContainingPanel();
+            void collapseShellSidePanelContainingWidget(this.props.shell, this.props.scmTreeWidget);
         }
     };
 
@@ -97,7 +90,8 @@ export class QaapScmResourceComponent extends ScmResourceComponent {
 
     protected override handleClick = (event: React.MouseEvent) => {
         if (!this.hasCtrlCmdOrShiftMask(event)) {
-            this.open();
+            event.stopPropagation();
+            void this.open();
         }
     };
 
@@ -112,7 +106,8 @@ export namespace QaapScmResourceComponent {
         decoration: Decoration | undefined;
         colors: ColorRegistry;
         isLightTheme: boolean;
-        collapseContainingPanel: () => void;
+        shell: ApplicationShell;
+        scmTreeWidget: QaapScmTreeWidget;
     }
 }
 

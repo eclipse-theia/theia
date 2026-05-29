@@ -289,11 +289,19 @@ body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
   font-family: var(--q-font-sans);
 }
 
-body.qaap-theme-dark .theia-mobile-projects-fab {
+body.qaap-theme-dark .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab {
   border-color: var(--q-accent);
   border-radius: 50%;
   background: var(--q-accent);
   color: var(--q-bg);
+  font-family: var(--q-font-sans);
+}
+
+body.qaap-theme-dark .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab {
+  border-color: transparent;
+  border-radius: var(--q-radius-pill, 99px);
+  background: var(--q-accent-soft);
+  color: var(--q-accent);
   font-family: var(--q-font-sans);
 }
 

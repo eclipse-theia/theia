@@ -41,8 +41,8 @@ export interface MobileProjectEntry {
 
 export type MobileProjectFilter = 'all' | 'active' | 'pinned';
 
-/** Work Hub primary list: repositories (expandable cards) or flat chat inbox. */
-export type MobileProjectsHubView = 'repos' | 'chats';
+/** Work Hub primary list: repositories, inbox, diff, learn catalog, or routines catalog. */
+export type MobileProjectsHubView = 'repos' | 'chats' | 'diff' | 'workflows' | 'routines';
 
 /** Persisted clone of a project card (URI optional). */
 export interface StoredMobileProject {

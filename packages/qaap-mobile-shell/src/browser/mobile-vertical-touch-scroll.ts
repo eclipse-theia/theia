@@ -8,8 +8,9 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 
 /** Elements that must keep horizontal pan only (see qaap-mobile-touch-scroll.css). */
 const HORIZONTAL_STRIP_SELECTOR =
-    '.lm-TabBar-content-container, .theia-mobile-bottom-activity-bar, ' +
-    '#theia-statusBar, .theia-mobile-keyboard-accessory-page, .theia-statusBar-track';
+    '.lm-TabBar-content-container, .lm-DockPanel-tabBar[data-orientation="horizontal"], ' +
+    '.theia-mobile-bottom-activity-bar, #theia-statusBar, .theia-mobile-keyboard-accessory-page, ' +
+    '.theia-statusBar-track';
 
 /**
  * Touch fallback for vertically scrollable regions on iOS / coarse pointers when

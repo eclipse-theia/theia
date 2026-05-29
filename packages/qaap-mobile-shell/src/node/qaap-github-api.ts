@@ -45,6 +45,7 @@ interface GithubPullResponse {
     number: number;
     title: string;
     html_url: string;
+    updated_at: string;
     user?: { login?: string | null } | null;
     head: { ref: string; sha: string; repo?: { full_name?: string | null } | null };
     base: { ref: string };
@@ -200,8 +201,9 @@ export async function fetchGithubPullRequests(
 ): Promise<QaapGithubPullRequestSummary[]> {
     const pulls: QaapGithubPullRequestSummary[] = [];
     const reposToScan = repositories.slice(0, 30);
+    const maxTotal = Math.min(24, Math.max(8, repositories.length * 2));
     for (const repo of reposToScan) {
-        if (pulls.length >= 8) {
+        if (pulls.length >= maxTotal) {
             break;
         }
         const url = new URL(`https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}/pulls`);
@@ -215,7 +217,7 @@ export async function fetchGithubPullRequests(
         }
         const batch = await response.json() as GithubPullResponse[];
         for (const pull of batch) {
-            if (pulls.length >= 8) {
+            if (pulls.length >= maxTotal) {
                 break;
             }
             const filesPreview = await fetchGithubPullRequestFiles(accessToken, repo.owner, repo.name, pull.number);
@@ -234,6 +236,7 @@ export async function fetchGithubPullRequests(
                 htmlUrl: pull.html_url,
                 mergeable: pull.mergeable ?? undefined,
                 filesPreview,
+                updatedAt: pull.updated_at,
             });
         }
     }
@@ -269,7 +272,7 @@ export async function mergeGithubPullRequest(
     };
 }
 
-async function fetchGithubPullRequestFiles(
+export async function fetchGithubPullRequestFiles(
     accessToken: string,
     owner: string,
     repo: string,

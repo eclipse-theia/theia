@@ -10,6 +10,7 @@ import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
 import '../../src/browser/style/qaap-chat-mic.css';
 import '../../src/browser/style/qaap-chat-select-dropdown.css';
+import '../../src/browser/style/qaap-diff-review.css';
 import '@theia/ai-claude-code/src/browser/style/claude-code-tool-renderers.css';
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
@@ -44,6 +45,7 @@ import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-con
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import {
     MobileProjectAIChatInputWidget,
@@ -65,10 +67,15 @@ import { MobileChatSessionRestoreContribution } from './mobile-chat-session-rest
 import { QaapQaiqChatAgentContribution } from './qaap-qaiq-chat-agent-contribution';
 import { QaapQaiqBashToolRenderer } from './qaap-qaiq-bash-tool-renderer';
 import { QaapQaiqGenericToolRenderer } from './qaap-qaiq-generic-tool-renderer';
+import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-layout-contribution';
+import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
+import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
+import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
     bind(MobileProjectsConversations).toSelf().inSingletonScope();
+    bind(MobileWorkHubInboxStream).toSelf().inSingletonScope();
     bind(MobileProjectsConversationFlags).toSelf().inSingletonScope();
     // Transient binding so each `getOrCreateWidget` call (with a unique options.id) gets a fresh
     // instance — the workspace Agent AI view already mounts an AIChatInputWidget with a fixed
@@ -103,6 +110,8 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(MobileOneColumnShellContribution);
     bind(QaapShellLayoutRestoreContribution).toSelf().inSingletonScope();
     bind(ShellLayoutTransformer).toService(QaapShellLayoutRestoreContribution);
+    bind(QaapDesktopTerminalLayoutContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapDesktopTerminalLayoutContribution);
     bind(MobileOnboardingTutorialContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileOnboardingTutorialContribution);
     bind(CommandContribution).toService(MobileOnboardingTutorialContribution);
@@ -151,4 +160,14 @@ export default new ContainerModule(bind => {
 
     bind(QaapBootstrapVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(QaapBootstrapVariableContribution);
+
+    bind(QaapWorkHubDiffService).toSelf().inSingletonScope();
+    bind(QaapDiffReviewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: QaapDiffReviewWidget.ID,
+        createWidget: () => container.get(QaapDiffReviewWidget),
+    })).inSingletonScope();
+    bind(QaapDiffReviewContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapDiffReviewContribution);
+    bind(FrontendApplicationContribution).toService(QaapDiffReviewContribution);
 });

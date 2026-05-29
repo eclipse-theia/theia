@@ -124,6 +124,19 @@ export function clearMobileWorkHubBootGuard(): void {
     }
 }
 
+/** Work Hub landing list (all projects collapsed): show bottom navigation like the hub mock. */
+export const QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS = 'theia-mobile-mod-landing-hub-list';
+
+export const QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT = 'qaap-mobile-landing-hub-list-changed';
+
+export function setMobileLandingHubListChrome(visible: boolean): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.body.classList.toggle(QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS, visible);
+    window.dispatchEvent(new CustomEvent(QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT, { detail: { visible } }));
+}
+
 export function markMobileProjectReadmeForOpen(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_OPEN_README_KEY, '1');

@@ -40,12 +40,17 @@ import {
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
 import { QaapSidePanelHandler } from '@theia/qaap-shell/lib/browser/qaap-side-panel-handler';
+import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-layout-contribution';
+import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
+import { QaapWorkHubDiffDelegate, QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
 import { MobileHaptics } from './mobile-haptics';
 import { installMobileHorizontalTouchScroll } from './mobile-horizontal-touch-scroll';
+import { markMobileSidePanelCollapsed } from './mobile-side-sheet-collapse';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
@@ -53,6 +58,7 @@ import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-inp
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
+import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import { MobileSnackbar } from './mobile-snackbar';
 import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
 import {
@@ -64,11 +70,15 @@ import {
     markMobileProjectsPanelDismiss,
     shouldSkipMobileProjectsLanding,
     QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
+    QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS,
+    QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
+    setMobileLandingHubListChrome,
 } from './mobile-projects-open';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
+import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -88,8 +98,6 @@ class MobileBottomBarWidget extends LuminoWidget {
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
-const WORKBENCH_OPEN_DIFF = 'qaap.diff.openReview';
-const WORKBENCH_OPEN_AGENT_TASKS = 'qaap.agentTasks.open';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 const GETTING_STARTED_WIDGET_COMMAND = 'getting.started.widget';
 const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
@@ -104,7 +112,17 @@ interface ShellWithMaximizedOverlay {
     readonly maximizedElement: HTMLElement;
 }
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'jobs' | 'terminal';
+type MobileBottomButtonId =
+    | 'projects'
+    | 'agent'
+    | 'preview'
+    | 'explore'
+    | 'pr'
+    | 'terminal'
+    | 'hub-home'
+    | 'hub-chats'
+    | 'hub-workflows'
+    | 'hub-automations';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -125,7 +143,7 @@ interface BottomBarSecondaryItem {
  * edge swipes and backdrop; main editor tabs in a horizontally scrollable tab row.
  */
 @injectable()
-export class MobileOneColumnShellContribution implements FrontendApplicationContribution, CommandContribution {
+export class MobileOneColumnShellContribution implements FrontendApplicationContribution, CommandContribution, QaapWorkHubDiffDelegate {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -142,11 +160,17 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
 
+    @inject(QaapDesktopTerminalLayoutContribution)
+    protected readonly desktopTerminalLayout: QaapDesktopTerminalLayoutContribution;
+
     @inject(MobileProjectsActiveTasks)
     protected readonly activeTasks: MobileProjectsActiveTasks;
 
     @inject(MobileProjectsConversations)
     protected readonly conversations: MobileProjectsConversations;
+
+    @inject(MobileWorkHubInboxStream)
+    protected readonly inboxStream: MobileWorkHubInboxStream;
 
     @inject(MobileProjectsConversationFlags)
     protected readonly conversationFlags: MobileProjectsConversationFlags;
@@ -174,6 +198,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MobileProjectChatViewWidgetFactory)
     protected readonly mobileProjectChatViewWidgetFactory: MobileProjectChatViewWidgetFactory;
+
+    @inject(QaapWorkHubDiffService)
+    protected readonly workHubDiff: QaapWorkHubDiffService;
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
@@ -214,7 +241,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.onProjectsWorkspaceOpened();
     };
 
+    protected readonly onLandingHubListChanged = (): void => {
+        this.refreshBottomBar();
+        this.scheduleSnapAndUiRefresh();
+    };
+
     onStart(_app: FrontendApplication): void {
+        this.workHubDiff.setDelegate(this);
         this.syncLandingStateFromStorage();
         if (this.mobileMq?.matches && !shouldSkipMobileProjectsLanding() && !this.hasPendingHubAction()) {
             document.body.classList.add('theia-mobile-mod-landing');
@@ -222,6 +255,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.mobileMq?.addEventListener('change', this.onMediaChange);
         window.addEventListener('resize', this.onWindowResize);
         window.addEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
+        window.addEventListener(QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT, this.onLandingHubListChanged);
         if (!this.authOpenFirstRepoListenerInstalled) {
             this.authOpenFirstRepoListenerInstalled = true;
             window.addEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
@@ -250,9 +284,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     onStop(_app: FrontendApplication): void {
+        this.workHubDiff.setDelegate(undefined);
         this.mobileMq?.removeEventListener('change', this.onMediaChange);
         window.removeEventListener('resize', this.onWindowResize);
         window.removeEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
+        window.removeEventListener(QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT, this.onLandingHubListChanged);
         this.teardownMobileUi();
         this.toDispose.dispose();
     }
@@ -414,6 +450,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.setSidePanelSize('right', target);
         }
         this.requestFullShellRelayout();
+        await this.desktopTerminalLayout.ensureDesktopTerminalMaximized();
     }
 
     protected async setSidePanelSize(side: 'left' | 'right', size: number): Promise<void> {
@@ -785,11 +822,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 onOpenAgentOnTask: (project) => {
                     void this.commands.executeCommand('qaap.mobile.openAgentOnTask', project);
                 },
+                onOpenPullRequest: pullRequest => {
+                    void this.openPullRequestFromInbox(pullRequest);
+                },
             },
             {
                 homeMode,
                 activeTasks: this.activeTasks,
                 conversations: this.conversations,
+                inboxStream: this.inboxStream,
                 conversationFlags: this.conversationFlags,
                 // Use WidgetManager with our own factory id (registered by the mobile-shell
                 // module) so each call returns a fresh `MobileProjectAIChatInputWidget` instance.
@@ -811,6 +852,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 messageService: this.messageService,
                 pickContextVariable: () => this.contextVariablePicker.pickContextVariable(),
                 getComposerVariables: () => this.variableService.getVariables(),
+                createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -865,6 +907,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.projectsPanel = undefined;
         }
         document.body.classList.remove('theia-mobile-mod-landing');
+        setMobileLandingHubListChrome(false);
         void this.projectBootstrap.refreshFromCurrentWorkspace();
     }
 
@@ -876,6 +919,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         clearMobileWorkHubBootGuard();
         this.landingLeftThisSession = true;
         document.body.classList.remove('theia-mobile-mod-landing');
+        setMobileLandingHubListChrome(false);
         const panel = this.projectsPanel;
         if (panel?.isHomeMode()) {
             panel.hide();
@@ -906,10 +950,23 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected openPullRequestPanel(): void {
         this.disposePullRequestPanel();
         this.pullRequestPanel = new MobilePullRequestPanel({
-            onDismiss: () => this.scheduleSnapAndUiRefresh(),
+            onDismiss: () => {
+                this.scheduleSnapAndUiRefresh();
+                this.refreshBottomBar();
+            },
         });
         this.shell.node.appendChild(this.pullRequestPanel.node);
         this.pullRequestPanel.show();
+    }
+
+    protected async openPullRequestFromInbox(pullRequest: QaapGithubPullRequestSummary): Promise<void> {
+        await this.dismissSheetsAsync();
+        if (this.shell.isExpanded('bottom')) {
+            await this.shell.collapsePanel('bottom');
+        }
+        this.openPullRequestPanel();
+        this.pullRequestPanel?.showWithPullRequest(pullRequest);
+        this.refreshBottomBar();
     }
 
     protected async refreshProjectsCount(): Promise<void> {
@@ -1306,21 +1363,91 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         });
     }
 
+    protected isWorkHubLandingBottomBar(): boolean {
+        return this.mobileActive
+            && document.body.classList.contains('theia-mobile-mod-landing')
+            && document.body.classList.contains(QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS);
+    }
+
+    /** Icon-only hub tabs (reference mock) while the project list is visible. */
+    protected getWorkHubLandingBottomButtons(): MobileBottomButton[] {
+        return [
+            {
+                id: 'hub-home',
+                label: nls.localize('qaap/mobileBottomBar/hubHome', 'Projects'),
+                icon: 'codicon-home',
+            },
+            {
+                id: 'hub-chats',
+                label: nls.localize('qaap/mobileBottomBar/hubInbox', 'Inbox'),
+                icon: 'codicon-inbox',
+            },
+            {
+                id: 'hub-workflows',
+                label: nls.localize('qaap/mobileBottomBar/hubWorkflows', 'Workflows'),
+                icon: 'codicon-type-hierarchy',
+            },
+            {
+                id: 'hub-automations',
+                label: nls.localize('qaap/mobileBottomBar/hubRoutines', 'Routines'),
+                icon: 'codicon-zap',
+            },
+        ];
+    }
+
+    async openDiffInWorkHub(projectId?: string): Promise<void> {
+        if (!this.mobileActive) {
+            const widget = await this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID);
+            if (!widget.isAttached) {
+                this.shell.addWidget(widget, { area: 'main' });
+            }
+            await this.shell.activateWidget(widget.id);
+            return;
+        }
+        const inHubLanding = this.projectsPanel?.isHomeMode() === true
+            && this.projectsPanel.isVisible()
+            && document.body.classList.contains('theia-mobile-mod-landing');
+        if (!inHubLanding) {
+            await this.showMobileProjectsHome();
+        } else {
+            this.applyLandingChrome();
+        }
+        await this.projectsPanel?.openDiffView(projectId);
+        this.refreshBottomBar();
+    }
+
     /** Primary workspace views. Projects is isolated in the top-bar return action. */
     protected getMobileBottomButtons(): MobileBottomButton[] {
+        if (this.isWorkHubLandingBottomBar()) {
+            return this.getWorkHubLandingBottomButtons();
+        }
         return [
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
             { id: 'terminal', label: nls.localize('theia/core/mobileBottomBar/terminal', 'Terminal'), icon: 'codicon-terminal' },
             { id: 'explore', label: nls.localize('qaap/mobileBottomBar/explore', 'Explore'), icon: 'codicon-folder-opened' },
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
-            { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
-            { id: 'jobs', label: nls.localize('qaap/mobileBottomBar/jobs', 'Jobs'), icon: 'codicon-server-process', commandId: WORKBENCH_OPEN_AGENT_TASKS },
         ];
     }
 
     protected isMobileBottomButtonActive(id: MobileBottomButtonId): boolean {
         switch (id) {
+            case 'hub-home':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'repos'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-chats':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'chats'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-workflows':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'workflows'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-automations':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'routines'
+                    && this.projectsPanel.isHomeMode();
             case 'projects':
                 return !!this.projectsPanel?.isVisible();
             case 'pr':
@@ -1390,6 +1517,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (!this.bottomBar || !this.mobileActive) {
             return;
         }
+        dismissQaapAccountMenu();
         this.bottomBar.replaceChildren();
         for (const def of this.getMobileBottomButtons()) {
             this.bottomBar.appendChild(this.createMobileBottomButton(def));
@@ -1427,7 +1555,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         } else {
             btn.setAttribute('aria-pressed', 'false');
         }
-        btn.addEventListener('click', () => { void this.onMobileBottomButtonClick(def); });
+        btn.addEventListener('click', () => { void this.onMobileBottomButtonClick(def, btn); });
         this.installBottomBarLongPress(btn, def);
         return btn;
     }
@@ -1571,6 +1699,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async getBottomBarSecondaryItems(def: MobileBottomButton): Promise<BottomBarSecondaryItem[]> {
+        if (def.id === 'hub-home' || def.id === 'hub-chats' || def.id === 'hub-workflows' || def.id === 'hub-automations') {
+            return [];
+        }
         switch (def.id) {
             case 'projects':
                 return this.getProjectsSecondaryItems();
@@ -1765,8 +1896,53 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.scheduleSnapAndUiRefresh();
     }
 
-    protected async onMobileBottomButtonClick(def: MobileBottomButton): Promise<void> {
+    protected async onMobileBottomButtonClick(def: MobileBottomButton, btn: HTMLButtonElement): Promise<void> {
         MobileHaptics.fire(MobileHaptics.LIGHT);
+        if (def.id === 'hub-home') {
+            dismissQaapAccountMenu();
+            if (this.projectsPanel?.isProjectDetailView()) {
+                this.projectsPanel.closeProjectDetail();
+            } else {
+                this.projectsPanel?.selectHubLandingView('repos');
+            }
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-chats') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.conversations.start();
+            this.inboxStream.start();
+            this.projectsPanel?.selectHubLandingView('chats');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-workflows') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.projectsPanel?.selectHubLandingView('workflows');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-automations') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.projectsPanel?.selectHubLandingView('routines');
+            this.refreshBottomBar();
+            return;
+        }
         if (def.id === 'projects') {
             await this.toggleProjectsPanel();
             return;
@@ -1824,7 +2000,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.scheduleSnapAndUiRefresh();
             return;
         }
-        // Mobile "Agent" should open Theia AI Chat (right sheet). Background tasks stay on "Jobs".
+        // Mobile "Agent" opens Theia AI Chat in the right sheet.
         await this.openMobileSideSheet('right', WORKBENCH_CHAT_VIEW_WIDGET_ID);
         this.scheduleSnapAndUiRefresh();
     }
@@ -2030,9 +2206,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (!this.mobileActive || this.shell.isExpanded(side)) {
             return;
         }
-        const id = side === 'left' ? 'theia-left-content-panel' : 'theia-right-content-panel';
-        const panel = document.getElementById(id);
-        panel?.classList.add('theia-mod-collapsed', 'lm-mod-hidden');
+        markMobileSidePanelCollapsed(side);
     }
 
     protected isSidePanelSheetCollapsedInDom(side: 'left' | 'right'): boolean {

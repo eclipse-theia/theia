@@ -3,6 +3,128 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.theia-qaap-account-menu.theia-mod-with-getting-started {
+  min-width: min(360px, calc(100vw - 16px));
+  max-width: min(400px, calc(100vw - 16px));
+  padding: 8px 0 4px;
+}
+
+.theia-qaap-account-menu-getting-started {
+  padding: 0 8px 4px;
+}
+
+.theia-qaap-account-menu-getting-started-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px 8px;
+}
+
+.theia-qaap-account-menu-getting-started-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-qaap-account-menu-getting-started-count {
+  font-size: 11px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-qaap-account-menu-getting-started-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.theia-qaap-account-menu-catalog-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--theia-dropdown-border, var(--theia-contrastBorder));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theia-editor-background) 88%, var(--theia-menu-background));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.theia-qaap-account-menu-catalog-card:hover,
+.theia-qaap-account-menu-catalog-card:focus-visible {
+  border-color: var(--qaap-hub-catalog-accent, var(--q-accent, #E58E40));
+  outline: none;
+}
+
+.theia-qaap-account-menu-catalog-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  background: color-mix(
+    in srgb,
+    var(--qaap-hub-catalog-accent, var(--q-accent, #E58E40)) 22%,
+    transparent
+  );
+  color: var(--qaap-hub-catalog-accent, var(--q-accent, #E58E40));
+}
+
+.theia-qaap-account-menu-catalog-card-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.theia-qaap-account-menu-catalog-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.theia-qaap-account-menu-catalog-card-subtitle {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-qaap-account-menu-catalog-card-progress {
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+}
+
+.theia-qaap-account-menu-catalog-card-progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--qaap-hub-catalog-accent, var(--q-accent, #E58E40));
+}
+
+.theia-qaap-account-menu-catalog-card-meta {
+  font-size: 10px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-qaap-account-menu-catalog-card-chevron {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  opacity: 0.55;
+}
+
 .theia-qaap-account-menu {
   position: fixed;
   z-index: 10100;

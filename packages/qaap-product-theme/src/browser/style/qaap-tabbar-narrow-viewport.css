@@ -21,6 +21,11 @@
         overflow-x: auto !important;
         overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        overscroll-behavior-x: contain;
+        user-select: none;
+        -webkit-user-select: none;
+        scroll-snap-type: x proximity;
         scrollbar-width: none;
     }
 
@@ -38,11 +43,23 @@
     .lm-DockPanel-tabBar[data-orientation="horizontal"] > .lm-TabBar-content > .lm-TabBar-tab {
         flex: 0 0 auto;
         min-width: 0;
+        touch-action: pan-x;
+        scroll-snap-align: start;
     }
 
     .lm-DockPanel-tabBar[data-orientation="horizontal"] > .lm-TabBar-content > .lm-TabBar-tab > .lm-TabBar-tabLabel {
         overflow: visible;
         text-overflow: clip;
         white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .lm-DockPanel-tabBar[data-orientation="horizontal"] {
+            scroll-snap-type: none;
+        }
+
+        .lm-DockPanel-tabBar[data-orientation="horizontal"] > .lm-TabBar-content > .lm-TabBar-tab {
+            scroll-snap-align: none;
+        }
     }
 }

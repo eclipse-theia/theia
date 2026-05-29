@@ -79,6 +79,11 @@ export class QaapGithubSessionStore {
         return this.sessions.get(sessionId);
     }
 
+    /** First persisted session — used for webhook file previews when no browser cookie is present. */
+    getAnySession(): QaapGithubStoredSession | undefined {
+        return this.sessions.values().next().value;
+    }
+
     deleteSession(sessionId: string | undefined): void {
         if (sessionId && this.sessions.delete(sessionId)) {
             this.schedulePersist();

@@ -61,9 +61,11 @@
 
 /* Mic in the Work Hub sticky composer (between text field and send). */
 .qaap-chat-mic-btn-sticky {
-    flex: 0 0 28px;
-    width: 28px;
-    height: 28px;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    height: 30px;
     color: var(--theia-descriptionForeground);
     opacity: 0.85;
 }

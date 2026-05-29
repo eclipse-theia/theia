@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     QaapAgentConversation,
     QaapAgentConversationCwdGroup,
@@ -18,6 +19,7 @@ import {
     QaapAgentConversationSummary,
     QaapAgentMessage,
     QaapCreateAgentConversationRequest,
+    QaapLinkConversationsByBranchRequest,
     QaapRenameAgentConversationRequest,
     QaapUpdateAgentConversationRequest,
     toConversationSummary,
@@ -170,11 +172,58 @@ export class QaapAgentConversationStore {
 
         const messagesWithTask = next.messages.map(m => m.id === userMessage.id ? { ...m, taskId: task!.id } : m);
         next = { ...next, messages: messagesWithTask };
+        const autoLinked = this.tryAutoLinkConversationToGitBranch(next);
+        if (autoLinked) {
+            next = autoLinked;
+        }
         this.conversations.set(id, next);
         const startSha = this.captureGitSha(conv.cwd);
         this.taskToConversation.set(task.id, { conversationId: id, userMessageId: userMessage.id, startSha });
         void this.persist();
         return next;
+    }
+
+    /**
+     * Attach open PR metadata to every conversation in the repo whose checked-out branch matches
+     * the PR head (used by the GitHub webhook → Work Hub inbox pipeline).
+     */
+    linkConversationsToPullRequest(input: QaapLinkConversationsByBranchRequest): number {
+        const link: QaapLinkedPullRequest = {
+            owner: input.owner,
+            repo: input.repo,
+            number: input.number,
+            branch: input.branch,
+            title: input.title,
+        };
+        let linked = 0;
+        for (const [conversationId, conv] of this.conversations) {
+            const existing = conv.linkedPullRequest;
+            if (existing
+                && existing.number === link.number
+                && existing.owner.toLowerCase() === link.owner.toLowerCase()
+                && existing.repo.toLowerCase() === link.repo.toLowerCase()) {
+                continue;
+            }
+            if (!this.cwdMatchesGithubRepo(conv.cwd, link.owner, link.repo)) {
+                continue;
+            }
+            const head = this.readGitBranch(conv.cwd);
+            if (head && head !== link.branch) {
+                continue;
+            }
+            const next: QaapAgentConversation = {
+                ...conv,
+                linkedPullRequest: link,
+                updatedAt: Date.now(),
+            };
+            this.conversations.set(conversationId, next);
+            this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+            linked++;
+        }
+        if (linked > 0) {
+            void this.persist();
+        }
+        return linked;
     }
 
     retry(id: string): QaapAgentConversation {
@@ -252,6 +301,9 @@ export class QaapAgentConversationStore {
                 }
                 patch.status = 'idle';
             }
+        }
+        if (request.linkedPullRequest !== undefined) {
+            patch.linkedPullRequest = request.linkedPullRequest ?? undefined;
         }
         if (Object.keys(patch).length === 0) {
             return conv;
@@ -603,6 +655,70 @@ export class QaapAgentConversationStore {
 
     protected fire(event: QaapAgentConversationEvent): void {
         this.onDidChangeEmitter.fire(event);
+    }
+
+    protected tryAutoLinkConversationToGitBranch(conv: QaapAgentConversation): QaapAgentConversation | undefined {
+        if (conv.linkedPullRequest?.number) {
+            return undefined;
+        }
+        const repo = this.parseGithubRepoFromCwd(conv.cwd);
+        const branch = this.readGitBranch(conv.cwd);
+        if (!repo || !branch) {
+            return undefined;
+        }
+        const link: QaapLinkedPullRequest = {
+            owner: repo.owner,
+            repo: repo.name,
+            branch,
+            number: conv.linkedPullRequest?.number,
+            title: conv.linkedPullRequest?.title,
+        };
+        if (conv.linkedPullRequest
+            && conv.linkedPullRequest.owner === link.owner
+            && conv.linkedPullRequest.repo === link.repo
+            && conv.linkedPullRequest.branch === link.branch) {
+            return undefined;
+        }
+        return { ...conv, linkedPullRequest: link, updatedAt: Date.now() };
+    }
+
+    protected cwdMatchesGithubRepo(cwd: string, owner: string, repo: string): boolean {
+        const parsed = this.parseGithubRepoFromCwd(cwd);
+        if (!parsed) {
+            return false;
+        }
+        return parsed.owner.toLowerCase() === owner.toLowerCase()
+            && parsed.name.toLowerCase() === repo.toLowerCase();
+    }
+
+    protected parseGithubRepoFromCwd(cwd: string): { owner: string; name: string } | undefined {
+        try {
+            const result = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf8' });
+            if (result.status !== 0) {
+                return undefined;
+            }
+            const url = result.stdout.trim();
+            const ssh = /^git@github\.com:([^/]+)\/(.+?)(?:\.git)?$/i.exec(url);
+            if (ssh) {
+                return { owner: ssh[1], name: ssh[2].replace(/\.git$/, '') };
+            }
+            const https = /github\.com[/:]([^/]+)\/(.+?)(?:\.git)?/i.exec(url);
+            if (https) {
+                return { owner: https[1], name: https[2].replace(/\.git$/, '') };
+            }
+        } catch { /* not a git repo */ }
+        return undefined;
+    }
+
+    protected readGitBranch(cwd: string): string | undefined {
+        try {
+            const result = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd, encoding: 'utf8' });
+            if (result.status === 0) {
+                const branch = result.stdout.trim();
+                return branch && branch !== 'HEAD' ? branch : undefined;
+            }
+        } catch { /* not a git repo */ }
+        return undefined;
     }
 
     protected async restoreFromDisk(): Promise<void> {

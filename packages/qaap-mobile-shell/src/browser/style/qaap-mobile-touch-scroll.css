@@ -136,12 +136,17 @@
    * keyboard accessory pages).
    */
   #theia-app-shell .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
-  #theia-app-shell .theia-mobile-bottom-activity-bar,
-  #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar,
+  #theia-app-shell .lm-DockPanel-tabBar[data-orientation="horizontal"],
   #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-statusBar,
   #theia-app-shell .theia-mobile-keyboard-accessory-page,
   #theia-app-shell .theia-statusBar-track {
     touch-action: pan-x !important;
+    overflow-y: hidden !important;
+  }
+
+  #theia-app-shell .theia-mobile-bottom-activity-bar,
+  #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar {
+    touch-action: manipulation !important;
     overflow-y: hidden !important;
   }
 

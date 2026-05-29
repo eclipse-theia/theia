@@ -24,6 +24,7 @@ import {
 import {
     clearQaapAuthSession,
     readQaapAuthSessionId,
+    readQaapSignedIn,
     writeQaapAuthSession,
     type QaapAuthProvider,
 } from './qaap-auth-session';
@@ -40,6 +41,32 @@ export function qaapAuthenticatedFetchInit(extra?: RequestInit): RequestInit {
         ...extra,
         headers,
     };
+}
+
+/** Drop a stale session id that no longer exists on the server (avoids 401 loops). */
+export async function reconcileQaapAuthSessionHeader(): Promise<void> {
+    const sessionId = readQaapAuthSessionId();
+    if (!sessionId) {
+        return;
+    }
+    const session = await fetchQaapAuthSession();
+    if (session.signedIn && session.sessionId) {
+        if (session.sessionId !== sessionId) {
+            writeQaapAuthSession(
+                session.user!.provider as QaapAuthProvider,
+                session.user,
+                session.sessionId,
+            );
+        }
+        return;
+    }
+    const config = await fetchQaapAuthConfig().catch(() => ({ skipAuth: false, githubOAuth: false }));
+    if (config.skipAuth) {
+        return;
+    }
+    if (readQaapSignedIn()) {
+        await syncQaapAuthSessionFromServer();
+    }
 }
 
 export const QAAP_REQUIRE_LOGIN_EVENT = 'qaap-require-login';
@@ -61,8 +88,10 @@ export async function fetchQaapAuthSession(): Promise<QaapAuthSessionResponse> {
 }
 
 export async function fetchQaapProjectSessions(): Promise<QaapProjectSessionsResponse> {
+    await reconcileQaapAuthSessionHeader();
     const response = await fetch(`${QAAP_GITHUB_API_PATH}/project-sessions`, qaapAuthenticatedFetchInit());
     if (response.status === 401) {
+        await reconcileQaapAuthSessionHeader();
         return { sessions: [] };
     }
     if (!response.ok) {
@@ -94,8 +123,13 @@ export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositor
     return response.json() as Promise<QaapGithubRepositoriesResponse>;
 }
 
-export async function fetchQaapGithubPullRequests(): Promise<QaapGithubPullRequestsResponse> {
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests`, qaapAuthenticatedFetchInit());
+export async function fetchQaapGithubPullRequests(
+    repositories?: readonly string[],
+): Promise<QaapGithubPullRequestsResponse> {
+    const reposQuery = repositories?.length
+        ? `?repos=${encodeURIComponent(repositories.join(','))}`
+        : '';
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests${reposQuery}`, qaapAuthenticatedFetchInit());
     if (response.status === 401) {
         return { pullRequests: [], signedIn: false };
     }
@@ -176,9 +210,12 @@ export async function signOutQaapAuth(): Promise<void> {
 
 /** Apply server session to local storage; returns true when signed in. */
 export async function syncQaapAuthSessionFromServer(): Promise<boolean> {
+    const config = await fetchQaapAuthConfig().catch(() => ({ skipAuth: false, githubOAuth: false }));
     const session = await fetchQaapAuthSession();
     if (!session.signedIn || !session.user) {
-        clearQaapAuthSession();
+        if (!config.skipAuth) {
+            clearQaapAuthSession();
+        }
         return false;
     }
     writeQaapAuthSession(session.user.provider as QaapAuthProvider, session.user, session.sessionId);

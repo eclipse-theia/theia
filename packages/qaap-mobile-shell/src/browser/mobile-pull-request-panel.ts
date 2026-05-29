@@ -199,6 +199,27 @@ export class MobilePullRequestPanel {
         }
     }
 
+    /** Opens the swipe review UI for a PR already loaded by the Work Hub inbox. */
+    showWithPullRequest(pullRequest: QaapGithubPullRequestSummary): void {
+        this.visible = true;
+        this.root.hidden = false;
+        this.root.setAttribute('aria-hidden', 'false');
+        this.root.classList.add('theia-mod-visible');
+        this.loading = false;
+        this.errorMessage = undefined;
+        this.signedOut = false;
+        this.loaded = true;
+        const existing = this.pullRequests.find(
+            candidate => candidate.owner === pullRequest.owner
+                && candidate.repo === pullRequest.repo
+                && candidate.number === pullRequest.number,
+        );
+        if (!existing) {
+            this.pullRequests = [pullRequest, ...this.pullRequests];
+        }
+        this.usePullRequest(existing ?? pullRequest);
+    }
+
     hide(): void {
         if (!this.visible) {
             return;

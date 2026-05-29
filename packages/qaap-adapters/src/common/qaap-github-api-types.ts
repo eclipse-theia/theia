@@ -96,6 +96,8 @@ export interface QaapGithubPullRequestSummary {
     htmlUrl: string;
     mergeable?: boolean;
     filesPreview: QaapGithubPullRequestFile[];
+    /** ISO-8601 — used for inbox ordering (GitHub `updated_at`). */
+    updatedAt: string;
 }
 
 export interface QaapGithubPullRequestsResponse {
@@ -117,6 +119,26 @@ export interface QaapGithubMergePullRequestResponse {
     message: string;
     sha?: string;
 }
+
+/** GitHub pull request linked to an agent conversation thread. */
+export interface QaapLinkedPullRequest {
+    readonly owner: string;
+    readonly repo: string;
+    /** Set when known (webhook or manual link); omitted for branch-only auto-link. */
+    readonly number?: number;
+    readonly branch?: string;
+    readonly title?: string;
+}
+
+/** SSE payload when GitHub notifies the IDE about pull-request activity. */
+export type QaapGithubInboxEvent =
+    | {
+        readonly type: 'pull_request';
+        readonly action: string;
+        readonly pullRequest: QaapGithubPullRequestSummary;
+        readonly linkedConversationCount: number;
+    }
+    | { readonly type: 'inbox_refresh' };
 
 /** Per-repository agent/dev session snapshot (hub + KPI). */
 export interface QaapProjectSessionSummary {

@@ -21,7 +21,10 @@ export function buildQaapGithubCallbackUrl(publicUrl: string): string {
     return `${normalizeQaapPublicUrl(publicUrl)}${QAAP_GITHUB_OAUTH_CALLBACK_PATH}`;
 }
 
-/** Reads QAAP_GITHUB_CLIENT_ID, QAAP_GITHUB_CLIENT_SECRET, QAAP_OAUTH_PUBLIC_URL from process.env. */
+/**
+ * Reads QAAP_GITHUB_CLIENT_ID, QAAP_GITHUB_CLIENT_SECRET, QAAP_OAUTH_PUBLIC_URL from process.env.
+ * Optional QAAP_GITHUB_WEBHOOK_SECRET verifies POST /qaap/api/github/webhook (GitHub App / repo hook).
+ */
 export function readQaapGithubOAuthConfig(): QaapGithubOAuthConfig | undefined {
     const clientId = process.env.QAAP_GITHUB_CLIENT_ID?.trim();
     const clientSecret = process.env.QAAP_GITHUB_CLIENT_SECRET?.trim();
