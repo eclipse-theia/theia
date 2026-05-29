@@ -20,11 +20,12 @@ import {
     LanguageModelToolsMain,
     LanguageModelToolsExt,
     LanguageModelToolDto,
+    ToolResultPartDto,
     isToolInvocationError,
 } from '../../common/lm-tool-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common';
-import { ToolRequest, ToolRequestParameters, ToolInvocationContext, createToolCallError } from '@theia/ai-core/lib/common/language-model';
+import { ToolRequest, ToolRequestParameters, ToolInvocationContext, ToolCallContent, ToolCallContentResult, createToolCallError } from '@theia/ai-core/lib/common/language-model';
 
 export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
     private readonly proxy: LanguageModelToolsExt;
@@ -65,20 +66,13 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
             providerName: `plugin_lm_tools_${pluginId}`,
             description: metadata.description,
             parameters,
-            handler: async (argString: string, ctx?: ToolInvocationContext) => {
+            handler: async (argString: string, ctx?: ToolInvocationContext): Promise<ToolCallContent> => {
                 const result = await this.proxy.$invokeTool(handle, argString, ctx?.cancellationToken);
                 if (isToolInvocationError(result)) {
                     return createToolCallError(result.error);
                 }
-                const parts: string[] = [];
-                for (const part of result.content) {
-                    if (part && typeof part === 'object' && 'value' in part && typeof (part as { value: unknown }).value === 'string') {
-                        parts.push((part as { value: string }).value);
-                    } else {
-                        parts.push(JSON.stringify(part));
-                    }
-                }
-                return parts.join('\n');
+                const content: ToolCallContentResult[] = result.content.map(part => this.convertDtoToToolCallResult(part));
+                return { content };
             }
         };
         this.toolHandleToName.set(handle, name);
@@ -94,5 +88,30 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
             this.toolInvocationRegistry.unregisterTool(name);
             this.toolHandleToName.delete(handle);
         }
+    }
+
+    private convertDtoToToolCallResult(part: ToolResultPartDto): ToolCallContentResult {
+        switch (part.type) {
+            case 'text':
+                return { type: 'text', text: part.value };
+            case 'data':
+                return this.convertDataPart(part.base64, part.mimeType);
+            case 'prompt-tsx':
+                return { type: 'text', text: JSON.stringify(part.value) };
+            case 'unknown':
+                return { type: 'text', text: part.json };
+        }
+    }
+
+    private convertDataPart(base64: string, mimeType: string): ToolCallContentResult {
+        if (mimeType.startsWith('image/')) {
+            return { type: 'image', base64data: base64, mimeType };
+        }
+        if (mimeType.startsWith('audio/')) {
+            return { type: 'audio', data: base64, mimeType };
+        }
+        // Text-like MIME types: decode base64 to string
+        const decoded = atob(base64);
+        return { type: 'text', text: decoded };
     }
 }

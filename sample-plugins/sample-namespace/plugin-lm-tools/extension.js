@@ -53,8 +53,8 @@ async function activate(context) {
                     throw new Error('Tool invocation was cancelled.');
                 }
                 sum += n;
-                // Delay for 10 seconds to test long-running tool calls
-                await delay(10000);
+                // Delay for 2 seconds per number in the input
+                await delay(2000);
             }
             const result = `The sum of [${numbers.join(', ')}] is ${sum}.`;
             console.log('[plugin-lm-tools] sample-calculateSum invoked:', result);
@@ -69,7 +69,21 @@ async function activate(context) {
     });
     context.subscriptions.push(sumTool);
 
-    console.log('[plugin-lm-tools] Registered 2 tools: sample-getCurrentTime, sample-calculateSum');
+    // Tool 3: Get System Info (returns mixed content parts)
+    const infoTool = vscode.lm.registerTool('sample-getSystemInfo', {
+        invoke(_options, _token) {
+            const textPart = new vscode.LanguageModelTextPart('System information:');
+            const jsonPart = vscode.LanguageModelDataPart.json({
+                platform: process.platform,
+                nodeVersion: process.version,
+                uptime: process.uptime()
+            });
+            return { content: [textPart, jsonPart] };
+        }
+    });
+    context.subscriptions.push(infoTool);
+
+    console.log('[plugin-lm-tools] Registered 3 tools: sample-getCurrentTime, sample-calculateSum, sample-getSystemInfo');
 }
 
 function deactivate() {
