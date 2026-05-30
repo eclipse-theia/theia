@@ -19,7 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { MessageService, PreferenceService } from '@theia/core';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPFrontendService } from '../common/mcp-server-manager';
-import { MCPInstallEntry, MCPServerEditor } from './mcp-server-editor';
+import { MCPInstallEntry, MCPServerEditDialogFactory, MCPServerEditorImpl } from './mcp-server-editor';
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();
@@ -37,7 +37,7 @@ class FakePreferenceService {
 describe('MCPServerEditor.installFromEntry', () => {
 
     let prefs: FakePreferenceService;
-    let editor: MCPServerEditor;
+    let editor: MCPServerEditorImpl;
 
     beforeEach(() => {
         const container = new Container();
@@ -45,13 +45,17 @@ describe('MCPServerEditor.installFromEntry', () => {
         container.bind(PreferenceService).toConstantValue(prefs as unknown as PreferenceService);
         container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
         container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
-        container.bind(MCPServerEditor).toSelf().inSingletonScope();
-        editor = container.get(MCPServerEditor);
+        // installFromEntry never opens a dialog; bind a factory that fails loudly if it is used.
+        container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
+            throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
+        });
+        container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+        editor = container.get(MCPServerEditorImpl);
     });
 
-    it('writes the config blob under entry.localSlug and tags it with registry metadata', async () => {
+    it('writes the config blob under entry.localName and tags it with registry metadata', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] },
             serverId: 'io.github.example/example-mcp',
             version: '^1.0.0',
@@ -75,7 +79,7 @@ describe('MCPServerEditor.installFromEntry', () => {
 
     it('omits registryMetadata when the entry carries no serverId - keeps the preference free of registry-link traces for URL-driven installs', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
         };
 
@@ -87,7 +91,7 @@ describe('MCPServerEditor.installFromEntry', () => {
 
     it('omits optional metadata fields the entry does not carry while keeping the required serverId', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] },
             serverId: 'io.github.example/example-mcp'
         };
@@ -100,7 +104,7 @@ describe('MCPServerEditor.installFromEntry', () => {
 
     it('applies the autostart override the dialog collected', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
         };
 
@@ -111,7 +115,7 @@ describe('MCPServerEditor.installFromEntry', () => {
 
     it('fills serverAuthToken when the entry config advertises the slot - even if the slot was empty', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { serverUrl: 'https://example.com/mcp', serverAuthToken: '' }
         };
 
@@ -122,7 +126,7 @@ describe('MCPServerEditor.installFromEntry', () => {
 
     it('ignores serverAuthToken when the entry config does not advertise the slot - avoids leaking it onto local entries', async () => {
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             // No `serverAuthToken` key - entry is local stdio.
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
         };
@@ -137,7 +141,7 @@ describe('MCPServerEditor.installFromEntry', () => {
             other: { command: 'node', args: ['unrelated.js'] }
         });
         const entry: MCPInstallEntry = {
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] }
         };
 

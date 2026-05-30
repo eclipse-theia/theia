@@ -80,8 +80,8 @@ export interface ResolvedRegistryEntry {
     name: string;
     description: string;
     /** The local preference key the registry maintainer chose (inner config.servers key). */
-    localSlug: string;
-    /** The config blob to write into `ai-features.mcp.mcpServers[localSlug]`. */
+    localName: string;
+    /** The config blob to write into `ai-features.mcp.mcpServers[localName]`. */
     config: MCPInstallEntryConfig;
     /** Registry-published version. Stored alongside installed entries for display only - update detection uses {@link configHash}. */
     version?: string;

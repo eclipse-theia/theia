@@ -31,7 +31,6 @@
 .theia-mcp-extension-actions {
     display: flex;
     align-items: center;
-    gap: var(--theia-ui-padding);
     /* Keep the action controls at full width when a long publisher string competes for space. */
     flex-shrink: 0;
 }

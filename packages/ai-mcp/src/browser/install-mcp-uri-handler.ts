@@ -23,7 +23,7 @@ import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPServerEditor } from './mcp-server-editor';
 import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
 import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
-import { MCPServerInstallDialog, MCPServerInstallTrust } from './mcp-server-install-dialog';
+import { MCPServerInstallDialogFactory, MCPServerInstallTrust } from './mcp-server-install-dialog';
 
 const ID_PARAM = 'id';
 
@@ -56,6 +56,9 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     @inject(MCPRegistryUiBridge) @optional()
     protected readonly registryBridge?: MCPRegistryUiBridge;
+
+    @inject(MCPServerInstallDialogFactory)
+    protected readonly installDialogFactory: MCPServerInstallDialogFactory;
 
     canHandle(uri: URI): number {
         // Validate both scheme (must match the product's electron URI scheme) and authority
@@ -95,11 +98,11 @@ export class InstallMcpUriHandler implements OpenHandler {
             ));
             return undefined;
         }
-        if (this.isAlreadyInstalled(entry.localSlug) && !await this.confirmOverwrite(entry.localSlug)) {
+        if (this.isAlreadyInstalled(entry.localName) && !await this.confirmOverwrite(entry.localName)) {
             return undefined;
         }
-        const dialog = new MCPServerInstallDialog({
-            name: entry.localSlug,
+        const dialog = this.installDialogFactory({
+            name: entry.localName,
             autostart: true,
             requireAuthToken: 'serverAuthToken' in entry.config,
             // Bridge already resolved this id, so trust is always "verified" here.
@@ -116,15 +119,15 @@ export class InstallMcpUriHandler implements OpenHandler {
         this.messageService.info(nls.localize(
             'theia/ai-mcp/installUri/success',
             'Installed MCP server "{0}" from the AI registry.',
-            entry.localSlug
+            entry.localName
         ));
         return undefined;
     }
 
-    /** True if a server with this slug is already in `ai-features.mcp.mcpServers`. */
-    protected isAlreadyInstalled(localSlug: string): boolean {
+    /** True if a server with this name is already in `ai-features.mcp.mcpServers`. */
+    protected isAlreadyInstalled(localName: string): boolean {
         const stored = this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {}) ?? {};
-        return Object.prototype.hasOwnProperty.call(stored, localSlug);
+        return Object.prototype.hasOwnProperty.call(stored, localName);
     }
 
     /**
@@ -132,13 +135,13 @@ export class InstallMcpUriHandler implements OpenHandler {
      * "is this the same registry entry?" - the user may have edited the local config
      * and any overwrite should be an explicit decision.
      */
-    protected async confirmOverwrite(localSlug: string): Promise<boolean> {
+    protected async confirmOverwrite(localName: string): Promise<boolean> {
         const dialog = new ConfirmDialog({
             title: nls.localize('theia/ai-mcp/installUri/alreadyInstalled/title', 'MCP server already installed'),
             msg: nls.localize(
                 'theia/ai-mcp/installUri/alreadyInstalled/msg',
                 'An MCP server named "{0}" is already configured. Continuing will overwrite the existing entry with the configuration from the registry.',
-                localSlug
+                localName
             ),
             ok: nls.localizeByDefault('Continue'),
             cancel: nls.localizeByDefault('Cancel')

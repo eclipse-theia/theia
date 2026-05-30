@@ -30,7 +30,8 @@ or remote with server URL, authentication token and optionally an authentication
 Each server is identified by a unique key, such as "brave-search" or "filesystem". \
 To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server. \
 To stop a server, use the "MCP: Stop MCP Server" command. \
-Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\
+Please note that autostart will only take effect after a restart, you need to start a server manually for the first time. \
+Servers installed from an AI registry carry an additional `registryMetadata` block that is managed automatically and is not meant to be edited manually.\
 \n\
 Example configuration:\n\
 ```\

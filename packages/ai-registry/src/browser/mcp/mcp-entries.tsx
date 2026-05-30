@@ -96,7 +96,7 @@ export class MCPSearchResultEntry implements TreeElement {
                 identifier={this.entry.serverId}
                 verified={this.entry.mcpRegistryVerified}
                 hoverService={this.hoverService}
-                actions={renderActions(this.state, this.entry, this.entry.localSlug, this.handlers)}
+                actions={renderActions(this.state, this.entry, this.entry.localName, this.handlers)}
             />
         );
     }
@@ -117,6 +117,9 @@ interface MCPCardProps {
 /** Build the markdown tooltip shown on hover, mirroring the depth of the VSX card's tooltip. */
 function buildHoverContent(props: MCPCardProps): MarkdownStringImpl {
     const lines = [`**${props.title}**`];
+    if (props.version) {
+        lines.push('', `_${props.version}_`);
+    }
     if (props.description) {
         lines.push('', props.description);
     }

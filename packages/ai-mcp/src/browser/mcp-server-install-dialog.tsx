@@ -51,6 +51,14 @@ export interface MCPServerInstallDialogOptions {
 }
 
 /**
+ * Factory for the {@link MCPServerInstallDialog}. Injected so the registry install actions
+ * and the `install-mcp` URL handler construct the dialog through dependency injection
+ * rather than importing it directly, and so adopters can rebind the dialog if needed.
+ */
+export const MCPServerInstallDialogFactory = Symbol('MCPServerInstallDialogFactory');
+export type MCPServerInstallDialogFactory = (options: MCPServerInstallDialogOptions) => MCPServerInstallDialog;
+
+/**
  * Lightweight install confirmation dialog. Distinct from `MCPServerDialog` because the
  * user can't rename a server picked from the registry and the rest of the config comes
  * from the registry entry - we only need to collect the truly user-supplied parameters

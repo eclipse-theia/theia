@@ -34,7 +34,9 @@ import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerS
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { GenericCapabilitiesContribution } from '@theia/ai-core';
 import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
-import { MCPServerEditor } from './mcp-server-editor';
+import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPServerEditDialogParameters } from './mcp-server-editor';
+import { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } from './mcp-server-edit-dialog';
+import { MCPServerInstallDialog, MCPServerInstallDialogFactory, MCPServerInstallDialogOptions } from './mcp-server-install-dialog';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
 import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution';
 import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
@@ -47,7 +49,17 @@ export default new ContainerModule(bind => {
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
 
-    bind(MCPServerEditor).toSelf().inSingletonScope();
+    bind(MCPServerEditDialogFactory).toFactory(() =>
+        (parameters: MCPServerEditDialogParameters) => new MCPServerEditDialog(
+            parameters.props,
+            parameters.initialData ?? { ...DEFAULT_MCP_SERVER_FORM_DATA },
+            parameters.existingServerNames,
+            parameters.isEditing
+        ));
+    bind(MCPServerInstallDialogFactory).toFactory(() =>
+        (options: MCPServerInstallDialogOptions) => new MCPServerInstallDialog(options));
+    bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+    bind(MCPServerEditor).toService(MCPServerEditorImpl);
 
     bind(AIMCPConfigurationWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({

@@ -31,7 +31,8 @@ import { MessageService, PreferenceService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPFrontendService } from '../common/mcp-server-manager';
-import { MCPServerEditor, MCPInstallEntry } from './mcp-server-editor';
+import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPInstallEntry } from './mcp-server-editor';
+import { MCPServerInstallDialogFactory } from './mcp-server-install-dialog';
 import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
 import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
 import { InstallMcpUriHandler } from './install-mcp-uri-handler';
@@ -93,7 +94,15 @@ function buildHandler(options: {
     container.bind(PreferenceService).toConstantValue(prefs as unknown as PreferenceService);
     container.bind(MessageService).toConstantValue(messages as unknown as MessageService);
     container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
-    container.bind(MCPServerEditor).toSelf().inSingletonScope();
+    // The error-path tests never open a dialog; bind factories that fail loudly if used.
+    container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
+        throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
+    });
+    container.bind(MCPServerInstallDialogFactory).toConstantValue(() => {
+        throw new Error('MCPServerInstallDialogFactory should not be invoked in these tests');
+    });
+    container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+    container.bind(MCPServerEditor).toService(MCPServerEditorImpl);
     container.bind(MCPInstallUriConfiguration).toConstantValue(new FakeConfiguration(options.scheme ?? 'theia'));
     if (options.bridge) {
         container.bind(MCPRegistryUiBridge).toConstantValue(options.bridge);

@@ -31,11 +31,12 @@ import { Emitter, MessageService, PreferenceService } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
+import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
+import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { MCPRegistryEntryResolver } from '../../common/mcp/mcp-registry-entry-resolver';
-import { MCPInstallService } from './mcp-install-service';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver';
+import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
 import { MCPExtensionsContribution } from './mcp-extensions-contribution';
 import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
 
@@ -72,14 +73,24 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     const container = new Container();
     container.bind(PreferenceService).toConstantValue(prefs);
     container.bind(RegistryFetchService).toConstantValue(fetch as unknown as RegistryFetchService);
-    container.bind(MCPRegistryEntryResolver).toSelf().inSingletonScope();
+    container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
+    container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
     // Editor dependencies — the contribution doesn't invoke the install path here, but
     // MCPInstallService now injects MCPServerEditor so we stub its required services.
     container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
     container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
     container.bind(HoverService).toConstantValue({ requestHover: () => undefined } as unknown as HoverService);
-    container.bind(MCPServerEditor).toSelf().inSingletonScope();
-    container.bind(MCPInstallService).toSelf().inSingletonScope();
+    // The contribution doesn't open dialogs in these tests; bind factories that fail loudly if used.
+    container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
+        throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
+    });
+    container.bind(MCPServerInstallDialogFactory).toConstantValue(() => {
+        throw new Error('MCPServerInstallDialogFactory should not be invoked in these tests');
+    });
+    container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+    container.bind(MCPServerEditor).toService(MCPServerEditorImpl);
+    container.bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
+    container.bind(MCPInstallService).toService(MCPInstallServiceImpl);
     container.bind(MCPExtensionsContribution).toSelf().inSingletonScope();
     return container;
 }
@@ -88,7 +99,7 @@ const exampleRegistryEntry: ResolvedRegistryEntry = {
     serverId: 'io.github.example/example-mcp',
     name: 'Example',
     description: 'Example MCP server',
-    localSlug: 'example',
+    localName: 'example',
     config: { command: 'npx', args: ['-y', 'example-mcp'] },
     version: '^1.0.0',
     configHash: 'hash-v1',
@@ -146,7 +157,7 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
     it('shows installed-link-stale (Unlink + Uninstall) when the local is linked to a missing id, even if the slug still matches a registry entry', async () => {
         // PR scenario: user installs from the registry, then manually rewrites
         // `registryMetadata.serverId` to a value that no longer exists. The local slug
-        // still matches a registry `localSlug`, but the broken id linkage must take
+        // still matches a registry `localName`, but the broken id linkage must take
         // precedence - the entry has to surface as link-stale so the user sees the
         // Unlink + Uninstall affordances and the warning, not Link (which would suggest
         // the entry is merely unlinked).
@@ -202,7 +213,7 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         serverId: 'io.github.github/github-mcp-server',
         name: 'GitHub',
         description: 'Connect AI assistants to GitHub repositories',
-        localSlug: 'github',
+        localName: 'github',
         config: { command: 'docker', args: ['run', '-i', '--rm'] },
         version: '^1.0.0',
         configHash: 'hash-github',

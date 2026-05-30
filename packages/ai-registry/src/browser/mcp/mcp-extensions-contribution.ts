@@ -22,6 +22,7 @@ import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@thei
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServersPreference, MCPServersPreferenceValue } from '@theia/ai-mcp/lib/common/mcp-servers-preference';
+import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPInstallService } from './mcp-install-service';
@@ -47,6 +48,9 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
+
+    @inject(MCPServerInstallDialogFactory)
+    protected readonly installDialogFactory: MCPServerInstallDialogFactory;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -81,7 +85,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
         const stored = this.readStoredServers();
         const registryEntries = await this.safeGetRegistryEntries();
         const byServerId = new Map(registryEntries.map(e => [e.serverId, e]));
-        const bySlug = new Map(registryEntries.map(e => [e.localSlug, e]));
+        const byName = new Map(registryEntries.map(e => [e.localName, e]));
         const result: TreeElement[] = [];
         for (const [name, config] of Object.entries(stored)) {
             const local = this.toServerDescription(name, config);
@@ -96,7 +100,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
                 continue;
             }
             const linkedId = local.registryMetadata?.serverId;
-            const matchedEntry = (linkedId && byServerId.get(linkedId)) || bySlug.get(local.name);
+            const matchedEntry = (linkedId && byServerId.get(linkedId)) || byName.get(local.name);
             result.push(new MCPInstalledEntry(local, matchedEntry, state, this.handlers, this.hoverService));
         }
         return result;
@@ -175,13 +179,12 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
     /**
      * Prompts the user for parameters the registry can't decide for them (autostart,
      * auth token) before writing the entry. Cancelling the dialog aborts the install.
-     * The dialog module is imported lazily to keep the DOM-touching `ReactDialog`
-     * chain out of the test-time module graph.
+     * The dialog is created through an injected factory so this contribution doesn't
+     * import the DOM-touching `ReactDialog` chain directly.
      */
     protected async confirmAndInstall(entry: ResolvedRegistryEntry): Promise<void> {
-        const { MCPServerInstallDialog } = await import('@theia/ai-mcp/lib/browser/mcp-server-install-dialog');
-        const dialog = new MCPServerInstallDialog({
-            name: entry.localSlug,
+        const dialog = this.installDialogFactory({
+            name: entry.localName,
             autostart: true,
             // The registry sets `serverAuthToken` to mark auth as part of the connection
             // contract, even with no default value — so we check key presence, not value.

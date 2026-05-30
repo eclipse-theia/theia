@@ -19,11 +19,12 @@ import { PreferenceScope, PreferenceService } from '@theia/core';
 import {
     isLocalMCPServerDescription,
     isRemoteMCPServerDescription,
+    MCPInstallEntryConfig,
     MCPRegistryMetadata,
     MCPServerDescription
 } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { MCPInstallEntryConfig, MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
+import { MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
 import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 
 export { MCPInstallOverrides };
@@ -35,8 +36,28 @@ type StoredEntry = MCPInstallEntryConfig & {
 
 type StoredServers = Record<string, StoredEntry>;
 
+export const MCPInstallService = Symbol('MCPInstallService');
+export interface MCPInstallService {
+    /** Installs a registry entry, applying any user-supplied overrides collected by the install dialog. */
+    install(entry: ResolvedRegistryEntry, overrides?: MCPInstallOverrides): Promise<void>;
+    /** Restores a drifted entry's registry-owned config fields while preserving user-owned ones. */
+    fixConfig(entry: ResolvedRegistryEntry): Promise<void>;
+    /** Applies a newer registry approval to an installed entry, preserving user-supplied additions. */
+    update(entry: ResolvedRegistryEntry): Promise<void>;
+    /** Links an existing local server to a registry entry by stamping its registry metadata. */
+    link(entry: ResolvedRegistryEntry): Promise<void>;
+    /** Drops the registry link from a local server while keeping its config intact. */
+    unlink(name: string): Promise<void>;
+    /** Removes an installed server entry by its local preference key. */
+    uninstall(name: string): Promise<void>;
+    /** Classifies a locally stored server against the registry (for the Installed view). */
+    classifyLocalServer(local: MCPServerDescription, registryEntries: ResolvedRegistryEntry[]): ClassificationResult;
+    /** Classifies a registry entry against the locally stored servers (for the Search view). */
+    classifyRegistryEntry(entry: ResolvedRegistryEntry, locals: MCPServerDescription[], registryEntries: ResolvedRegistryEntry[]): ClassificationResult;
+}
+
 @injectable()
-export class MCPInstallService {
+export class MCPInstallServiceImpl implements MCPInstallService {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -54,7 +75,7 @@ export class MCPInstallService {
         // (today: autostart). The registry has no opinion on `autostart`, so wiping it on
         // fix-config would silently discard a user preference. Once the registry grows a
         // formal notion of "user-configurable parameters", extend the forwarded set here.
-        const existing = this.readServers()[entry.localSlug];
+        const existing = this.readServers()[entry.localName];
         const overrides: MCPInstallOverrides = {};
         if (existing?.autostart !== undefined) {
             overrides.autostart = existing.autostart;
@@ -64,7 +85,7 @@ export class MCPInstallService {
 
     async update(entry: ResolvedRegistryEntry): Promise<void> {
         const current = this.readServers();
-        const existing = current[entry.localSlug];
+        const existing = current[entry.localName];
         if (!existing) {
             return;
         }
@@ -107,18 +128,18 @@ export class MCPInstallService {
             ...(mergedEnv && { env: mergedEnv }),
             registryMetadata: this.metadata(entry)
         };
-        await this.writeServers({ ...current, [entry.localSlug]: updated });
+        await this.writeServers({ ...current, [entry.localName]: updated });
     }
 
     async link(entry: ResolvedRegistryEntry): Promise<void> {
         const current = this.readServers();
-        const existing = current[entry.localSlug];
+        const existing = current[entry.localName];
         if (!existing) {
             return;
         }
         await this.writeServers({
             ...current,
-            [entry.localSlug]: { ...existing, registryMetadata: this.metadata(entry) }
+            [entry.localName]: { ...existing, registryMetadata: this.metadata(entry) }
         });
     }
 
@@ -127,24 +148,24 @@ export class MCPInstallService {
      * Used to convert a stale-linked entry (registry no longer lists the serverId)
      * into a plain user-added entry without losing the user's running server config.
      */
-    async unlink(slug: string): Promise<void> {
+    async unlink(name: string): Promise<void> {
         const current = this.readServers();
-        const existing = current[slug];
+        const existing = current[name];
         if (!existing || existing.registryMetadata === undefined) {
             return;
         }
         const next: StoredEntry = { ...existing };
         delete next.registryMetadata;
-        await this.writeServers({ ...current, [slug]: next });
+        await this.writeServers({ ...current, [name]: next });
     }
 
-    async uninstall(slug: string): Promise<void> {
+    async uninstall(name: string): Promise<void> {
         const current = this.readServers();
-        if (!(slug in current)) {
+        if (!(name in current)) {
             return;
         }
         const next: StoredServers = { ...current };
-        delete next[slug];
+        delete next[name];
         await this.writeServers(next);
     }
 
@@ -174,7 +195,7 @@ export class MCPInstallService {
             }
             return this.classifyLinked(byServerId, local);
         }
-        const matchingEntry = registryEntries.find(e => e.localSlug === local.name);
+        const matchingEntry = registryEntries.find(e => e.localName === local.name);
         if (!matchingEntry) {
             return { kind: 'installed-user-added' };
         }
@@ -188,7 +209,7 @@ export class MCPInstallService {
         locals: MCPServerDescription[],
         registryEntries: ResolvedRegistryEntry[]
     ): ClassificationResult {
-        const local = locals.find(l => l.name === entry.localSlug);
+        const local = locals.find(l => l.name === entry.localName);
         if (!local) {
             return { kind: 'not-installed' };
         }

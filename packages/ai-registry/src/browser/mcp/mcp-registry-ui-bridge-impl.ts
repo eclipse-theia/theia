@@ -72,7 +72,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
             return undefined;
         }
         return {
-            localSlug: entry.localSlug,
+            localName: entry.localName,
             config: { ...entry.config },
             serverId: entry.serverId,
             ...(entry.version !== undefined && { version: entry.version }),
@@ -83,12 +83,12 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
     async openRegistry(serverId?: string): Promise<void> {
         // Pre-populate the search only for known-good ids so the entry is in focus when
         // the view opens. For revoked ids the server appears in the Installed section
-        // (with a warning + Remove); jumping to an empty search hides it, so we just
-        // show the view and let the user see the warning in Installed.
+        // (with a warning + Unlink / Uninstall); jumping to an empty search hides it, so
+        // we just show the view and let the user see the warning in Installed.
         if (serverId && this.hasServer(serverId)) {
             this.searchModel.query = serverId;
         }
-        // Reveal-and-activate rather than toggle: a second click on "Search in registry"
+        // Reveal-and-activate rather than toggle: a second click on "Browse AI registry"
         // must keep the view visible, not collapse it again.
         const widget = await this.widgetManager.getOrCreateWidget(VSXExtensionsViewContainer.ID);
         await this.shell.revealWidget(widget.id);
@@ -104,7 +104,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
             // even when the id list is unchanged, and `getInstallEntry` callers expect
             // the latest values.
             this.entriesByServerId = new Map(entries.map(entry => [entry.serverId, entry]));
-            if (!setsEqual(next, this.knownServerIds)) {
+            if (!areSetsEqual(next, this.knownServerIds)) {
                 this.knownServerIds = next;
                 this.onDidChangeEmitter.fire();
             }
@@ -117,7 +117,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
     }
 }
 
-function setsEqual(a: Set<string>, b: Set<string>): boolean {
+function areSetsEqual(a: Set<string>, b: Set<string>): boolean {
     if (a.size !== b.size) {
         return false;
     }

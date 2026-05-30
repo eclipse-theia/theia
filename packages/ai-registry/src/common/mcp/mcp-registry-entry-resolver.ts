@@ -18,8 +18,14 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
 import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types';
 
+export const MCPRegistryEntryResolver = Symbol('MCPRegistryEntryResolver');
+export interface MCPRegistryEntryResolver {
+    /** Normalises a raw registry server entry into the single (slug, config, version) tuple the install path uses. */
+    resolve(raw: RegistryMCPServer): ResolvedRegistryEntry | undefined;
+}
+
 @injectable()
-export class MCPRegistryEntryResolver {
+export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
 
     @inject(AIRegistryConfiguration)
     protected readonly configuration: AIRegistryConfiguration;
@@ -47,13 +53,13 @@ export class MCPRegistryEntryResolver {
             // exposed more than we use, and pick the first slug deterministically.
             console.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${slugs[0]}.`);
         }
-        const localSlug = slugs[0];
+        const localName = slugs[0];
         return {
             serverId: raw.serverId,
             name: raw.name,
             description: raw.description,
-            localSlug,
-            config: servers[localSlug],
+            localName,
+            config: servers[localName],
             version: approval.version,
             ...(approval.configHash !== undefined && { configHash: approval.configHash }),
             mcpRegistryVerified: raw.mcpRegistryVerified

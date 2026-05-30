@@ -27,19 +27,38 @@ import {
     RemoteMCPServerDescription
 } from '../common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import type { MCPServerFormData } from './mcp-server-edit-dialog';
-
-export type { MCPInstallEntryConfig };
+import type { DialogProps } from '@theia/core/lib/browser/dialogs';
+import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog';
 
 /**
- * Self-contained install payload: the slug to use in the preference, the config blob
+ * Parameters consumed by {@link MCPServerEditDialogFactory}. `initialData` is omitted for
+ * the "add" flow, where the factory seeds the form with defaults.
+ */
+export interface MCPServerEditDialogParameters {
+    props: DialogProps;
+    initialData?: MCPServerFormData;
+    existingServerNames: string[];
+    isEditing: boolean;
+}
+
+/**
+ * Factory for the DOM-touching {@link MCPServerEditDialog}. Injected (rather than the
+ * dialog module being imported directly) so the editor stays free of the Lumino widget
+ * chain - keeping it loadable in Node-only unit tests - and so adopters can rebind the
+ * dialog if needed.
+ */
+export const MCPServerEditDialogFactory = Symbol('MCPServerEditDialogFactory');
+export type MCPServerEditDialogFactory = (parameters: MCPServerEditDialogParameters) => MCPServerEditDialog;
+
+/**
+ * Self-contained install payload: the local preference key, the config blob
  * to write, and optional registry-provenance metadata. When `serverId` is set the
  * fields are persisted as a single `registryMetadata` block on the stored entry.
  */
 export interface MCPInstallEntry {
     /** Local preference key. */
-    localSlug: string;
-    /** Config blob to write under `mcpServers[localSlug]`. */
+    localName: string;
+    /** Config blob to write under `mcpServers[localName]`. */
     config: MCPInstallEntryConfig;
     /** Registry server id - populates `registryMetadata.serverId` so updates stay tracked. */
     serverId?: string;
@@ -60,12 +79,24 @@ export interface MCPInstallOverrides {
  * Owns the persistence + dialog flows for MCP servers. Lives in `@theia/ai-mcp`
  * alongside the data model so both the configuration widget (in ai-ide) and the
  * registry/URL-driven install flows (in ai-registry / ai-mcp) can share it.
- *
- * The DOM-touching `MCPServerEditDialog` is imported lazily so test-time imports
- * of this service don't drag the Lumino widget chain into Node-only test runs.
+ */
+export const MCPServerEditor = Symbol('MCPServerEditor');
+export interface MCPServerEditor {
+    /** Opens the "Add MCP Server" dialog and persists the result. */
+    openAddServer(): Promise<void>;
+    /** Opens the "Edit MCP Server" dialog pre-filled from `server` and persists the result. */
+    openEditServer(server: MCPServerDescription, existingNames: string[]): Promise<void>;
+    /** Installs a self-contained entry, applying any user-supplied overrides. */
+    installFromEntry(entry: MCPInstallEntry, overrides?: MCPInstallOverrides): Promise<void>;
+}
+
+/**
+ * Default {@link MCPServerEditor} implementation. The DOM-touching `MCPServerEditDialog`
+ * is created through an injected {@link MCPServerEditDialogFactory} rather than imported
+ * directly, so this service stays loadable in Node-only unit tests.
  */
 @injectable()
-export class MCPServerEditor {
+export class MCPServerEditorImpl implements MCPServerEditor {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -76,15 +107,16 @@ export class MCPServerEditor {
     @inject(MCPFrontendService)
     protected readonly mcpFrontendService: MCPFrontendService;
 
+    @inject(MCPServerEditDialogFactory)
+    protected readonly editDialogFactory: MCPServerEditDialogFactory;
+
     async openAddServer(): Promise<void> {
         const existing = (await this.mcpFrontendService.getServerNames()) ?? [];
-        const { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } = await import('./mcp-server-edit-dialog');
-        const dialog = new MCPServerEditDialog(
-            { title: nls.localizeByDefault('Add MCP Server'), maxWidth: 500 },
-            { ...DEFAULT_MCP_SERVER_FORM_DATA },
-            existing,
-            false
-        );
+        const dialog = this.editDialogFactory({
+            props: { title: nls.localizeByDefault('Add MCP Server'), maxWidth: 500 },
+            existingServerNames: existing,
+            isEditing: false
+        });
         const result = await dialog.open();
         if (result) {
             await this.save(result);
@@ -96,13 +128,12 @@ export class MCPServerEditor {
         if (!formData) {
             return;
         }
-        const { MCPServerEditDialog } = await import('./mcp-server-edit-dialog');
-        const dialog = new MCPServerEditDialog(
-            { title: nls.localize('theia/ai/mcpConfiguration/editServerTitle', 'Edit MCP Server'), maxWidth: 500 },
-            formData,
-            existingNames.filter(n => n !== server.name),
-            true
-        );
+        const dialog = this.editDialogFactory({
+            props: { title: nls.localize('theia/ai/mcpConfiguration/editServerTitle', 'Edit MCP Server'), maxWidth: 500 },
+            initialData: formData,
+            existingServerNames: existingNames.filter(n => n !== server.name),
+            isEditing: true
+        });
         const result = await dialog.open();
         if (result) {
             await this.save(result);
@@ -110,8 +141,8 @@ export class MCPServerEditor {
     }
 
     /**
-     * Install an MCP server from a self-contained entry — used by registry install actions
-     * and the `install-mcp` URL handler. Writes the config blob to `mcpServers[localSlug]`
+     * Install an MCP server from a self-contained entry - used by registry install actions
+     * and the `install-mcp` URL handler. Writes the config blob to `mcpServers[localName]`
      * along with registry-provenance metadata, applying any user-supplied overrides
      * collected by the install dialog.
      */
@@ -128,7 +159,7 @@ export class MCPServerEditor {
         try {
             await this.preferenceService.set(
                 MCP_SERVERS_PREF,
-                { ...current, [entry.localSlug]: stored },
+                { ...current, [entry.localName]: stored },
                 PreferenceScope.User
             );
         } catch (error) {

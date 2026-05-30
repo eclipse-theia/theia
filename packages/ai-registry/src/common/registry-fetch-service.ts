@@ -25,8 +25,16 @@ interface RegistryResponse {
     mcp?: RegistryMCPServer[];
 }
 
+export const RegistryFetchService = Symbol('RegistryFetchService');
+export interface RegistryFetchService {
+    /** Fires whenever the cached set of resolved entries changes (initial load, manual refresh). */
+    readonly onDidChange: Event<void>;
+    /** Returns the resolved registry entries, fetching (and caching) them on first use or when `forceRefresh` is set. */
+    getEntries(forceRefresh?: boolean): Promise<ResolvedRegistryEntry[]>;
+}
+
 @injectable()
-export class RegistryFetchService {
+export class RegistryFetchServiceImpl implements RegistryFetchService {
 
     @inject(RequestService)
     protected readonly requestService: RequestService;

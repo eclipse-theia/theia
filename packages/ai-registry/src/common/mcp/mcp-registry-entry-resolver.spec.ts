@@ -16,11 +16,11 @@
 
 import { expect } from 'chai';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
-import { MCPRegistryEntryResolver } from './mcp-registry-entry-resolver';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
 import { RegistryMCPServer } from './mcp-registry-types';
 
 function createResolver(toolName: string = 'theia-ide'): MCPRegistryEntryResolver {
-    const resolver = new MCPRegistryEntryResolver();
+    const resolver = new MCPRegistryEntryResolverImpl();
     const configuration: AIRegistryConfiguration = Object.assign(new AIRegistryConfiguration(), {
         getToolName(): string {
             return toolName;
@@ -60,7 +60,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
             serverId: 'io.github.example/example-mcp',
             name: 'Example',
             description: 'Example MCP server',
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] },
             version: '^1.0.0',
             configHash: 'hash-v1',
@@ -238,7 +238,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')); };
         try {
             const resolved = resolver.resolve(raw);
-            expect(resolved?.localSlug).to.equal('primary');
+            expect(resolved?.localName).to.equal('primary');
             expect(resolved?.config).to.deep.equal({ command: 'first-cmd' });
             expect(warnings.some(w => w.includes('multiple servers'))).to.equal(true);
         } finally {

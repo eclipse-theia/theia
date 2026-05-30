@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
-import { MCPRegistryEntryResolver } from './mcp/mcp-registry-entry-resolver';
-import { RegistryFetchService } from './registry-fetch-service';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
+import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
 
 class FakeRequestService implements RequestService {
     public lastUrl: string | undefined;
@@ -73,15 +73,17 @@ describe('RegistryFetchService', () => {
         const container = new Container();
         container.bind(RequestService).toConstantValue(requestService);
         container.bind(AIRegistryConfiguration).toConstantValue(config);
-        container.bind(MCPRegistryEntryResolver).toSelf().inSingletonScope();
-        container.bind(RegistryFetchService).toSelf().inSingletonScope();
+        container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
+        container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
+        container.bind(RegistryFetchServiceImpl).toSelf().inSingletonScope();
+        container.bind(RegistryFetchService).toService(RegistryFetchServiceImpl);
         return container;
     }
 
     it('fetches the per-tool JSON from <baseUrl>/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = buildContainer(request, config).get(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
@@ -91,7 +93,7 @@ describe('RegistryFetchService', () => {
             serverId: 'io.github.example/example-mcp',
             name: 'Example',
             description: 'Example MCP server',
-            localSlug: 'example',
+            localName: 'example',
             config: { command: 'npx', args: ['-y', 'example-mcp'] },
             version: '^1.0.0',
             configHash: 'hash-v1',
@@ -101,7 +103,7 @@ describe('RegistryFetchService', () => {
 
     it('serves cached entries on a second call without issuing a new request', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get(RegistryFetchService);
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries();
@@ -111,7 +113,7 @@ describe('RegistryFetchService', () => {
 
     it('refetches when forceRefresh is true', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get(RegistryFetchService);
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries(true);
@@ -121,7 +123,7 @@ describe('RegistryFetchService', () => {
 
     it('throws a descriptive error when the server returns a non-success status', async () => {
         const request = new FakeRequestService('', 404);
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get(RegistryFetchService);
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
 
         let caught: Error | undefined;
         try {
