@@ -234,11 +234,12 @@ export class DefaultAIVariableService implements AIVariableService {
     protected readonly onDidChangeVariablesEmitter = new Emitter<void>();
     readonly onDidChangeVariables: Event<void> = this.onDidChangeVariablesEmitter.event;
 
+    @inject(ILogger) @named('ai-core:DefaultAIVariableService')
+    protected readonly logger: ILogger;
+
     constructor(
         @inject(ContributionProvider) @named(AIVariableContribution)
         protected readonly contributionProvider: ContributionProvider<AIVariableContribution>,
-        @inject(ILogger) @named('ai-core:DefaultAIVariableService')
-        protected readonly logger: ILogger
     ) { }
 
     protected initContributions(): void {

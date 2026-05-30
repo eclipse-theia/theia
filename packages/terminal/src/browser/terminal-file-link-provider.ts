@@ -66,7 +66,7 @@ export class FileLinkProvider implements TerminalLinkProvider {
                 return this.isValidFileURI(toOpen);
             }
         } catch (err) {
-            this.logger.trace('Error validating ' + match, err);
+            this.logger.error('Error validating ' + match, err);
         }
         return false;
     }

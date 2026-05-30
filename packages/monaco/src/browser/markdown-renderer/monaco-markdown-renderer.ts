@@ -27,12 +27,11 @@ import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@
 import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { DisposableCollection, DisposableGroup, PreferenceService, ILogger } from '@theia/core';
+import { DisposableCollection, DisposableGroup, ILogger } from '@theia/core';
 
 @injectable()
 export class MonacoMarkdownRenderer implements MarkdownRenderer {
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(PreferenceService) protected readonly preferences: PreferenceService;
     @inject(ILogger) @named('monaco:MonacoMarkdownRenderer')
     protected readonly logger: ILogger;
 

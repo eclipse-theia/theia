@@ -28,6 +28,7 @@ import {
     RootContainer
 } from './backend-application';
 import { CliContribution } from './cli';
+import { MockLogger } from '../common/test/mock-logger';
 
 /**
  * Test subclass that exposes the protected `gracefulShutdown` for direct testing.
@@ -81,14 +82,7 @@ describe('BackendApplication', () => {
         const container = new Container();
 
         container.bind(RootContainer).toConstantValue(container);
-        container.bind(ILogger).toConstantValue({
-            error: () => { },
-            warn: () => { },
-            info: () => { },
-            debug: () => { },
-            trace: () => { },
-            fatal: () => { }
-        } as unknown as ILogger);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(Stopwatch).to(NodeStopwatch).inSingletonScope();
         container.bind(ProcessUtils).toSelf().inSingletonScope();
         container.bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
@@ -247,10 +241,7 @@ describe('BackendApplication', () => {
             container.bind(BackendApplicationContribution).toConstantValue({
                 onStop: () => { secondRan = true; }
             });
-
-            // Get the mock logger instance from the container
             const mockLogger = container.get(ILogger) as ILogger;
-            // Stub the 'error' method on our mock logger
             const errorStub = sandbox.stub(mockLogger, 'error');
 
             const app = container.get(TestBackendApplication);

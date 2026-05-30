@@ -20,6 +20,7 @@ import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { DefaultWindowService } from './default-window-service';
 import assert = require('assert');
+import { MockLogger } from '../../common/test/mock-logger';
 
 describe('DefaultWindowService', () => {
     class TestFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -42,14 +43,7 @@ describe('DefaultWindowService', () => {
             .toConstantValue({
                 'application.confirmExit': confirmExit,
             });
-        container.bind(ILogger).toConstantValue({
-            error: () => { },
-            warn: () => { },
-            info: () => { },
-            debug: () => { },
-            trace: () => { },
-            fatal: () => { }
-        } as unknown as ILogger).whenTargetNamed('core:DefaultWindowService');
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         return container.get(DefaultWindowService);
     }
     it('onWillStop should be called on every contribution (never)', () => {

@@ -224,7 +224,7 @@ export class DiskFileSystemProvider implements Disposable,
                     const stat = await this.stat(resource.resolve(child));
                     result.push([child, stat.type]);
                 } catch (error) {
-                    this.logger.trace(error); // ignore errors for individual entries that can arise from permission denied
+                    this.logger.error(error); // ignore errors for individual entries that can arise from permission denied
                 }
             }));
 
@@ -336,7 +336,7 @@ export class DiskFileSystemProvider implements Disposable,
                         // After a successful truncate() the flag can be set to 'r+' which will not truncate.
                         flags = 'r+';
                     } catch (error) {
-                        this.logger.trace(error);
+                        this.logger.error(error);
                     }
                 }
 

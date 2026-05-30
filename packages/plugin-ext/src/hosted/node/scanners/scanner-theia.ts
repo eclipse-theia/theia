@@ -165,9 +165,6 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
 
-    @inject(ILogger) @named('plugin-ext:AbstractPluginScanner')
-    protected readonly logger: ILogger;
-
     constructor(
         @unmanaged() private readonly _apiType: PluginEngine,
         @unmanaged() private readonly _backendInitPath?: string) {
@@ -279,6 +276,9 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     constructor() {
         super('theiaPlugin', 'backend-init-theia');
     }
+
+    @inject(ILogger) @named('plugin-ext:TheiaPluginScanner')
+    protected readonly logger: ILogger;
 
     protected getEntryPoint(plugin: PluginPackage): PluginEntryPoint {
         const result: PluginEntryPoint = {

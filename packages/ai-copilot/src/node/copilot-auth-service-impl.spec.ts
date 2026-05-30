@@ -21,6 +21,7 @@ import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('CopilotAuthServiceImpl', () => {
 
@@ -30,10 +31,6 @@ describe('CopilotAuthServiceImpl', () => {
 
     beforeEach(() => {
         const container = new Container();
-
-        container.bind(ILogger).toConstantValue({
-            error: () => { }, warn: () => { }, info: () => { }, debug: () => { }, trace: () => { }, fatal: () => { }
-        } as unknown as ILogger);
 
         getPasswordStub = sinon.stub();
         keyStoreService = {
@@ -48,6 +45,7 @@ describe('CopilotAuthServiceImpl', () => {
         container.bind(KeyStoreService).toConstantValue(keyStoreService);
         container.bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
         container.bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         authService = container.get(CopilotAuthServiceImpl);
     });
@@ -207,14 +205,7 @@ describe('CopilotAuthServiceImpl with custom CopilotOAuthConfig', () => {
     beforeEach(() => {
         const container = new Container();
 
-        container.bind(ILogger).toConstantValue({
-            error: () => { },
-            warn: () => { },
-            info: () => { },
-            debug: () => { },
-            trace: () => { },
-            fatal: () => { }
-        } as unknown as ILogger);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         getPasswordStub = sinon.stub().resolves(undefined);
         deletePasswordStub = sinon.stub().resolves(true);

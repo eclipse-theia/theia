@@ -584,7 +584,7 @@ export class FileService {
 
                         return await this.toFileStat(provider, childResource, childStat, entries.length, resolveMetadata, recurse);
                     } catch (error) {
-                        this.logger.trace(error);
+                        this.logger.error(error);
 
                         return null; // can happen e.g. due to permission errors
                     }
@@ -593,7 +593,7 @@ export class FileService {
                 // make sure to get rid of null values that signal a failure to resolve a particular entry
                 fileStat.children = resolvedEntries.filter(e => !!e) as FileStat[];
             } catch (error) {
-                this.logger.trace(error);
+                this.logger.error(error);
 
                 fileStat.children = []; // gracefully handle errors, we may not have permissions to read
             }
@@ -618,7 +618,7 @@ export class FileService {
             try {
                 return { stat: await this.doResolveFile(entry.resource, entry.options), success: true };
             } catch (error) {
-                this.logger.trace(error);
+                this.logger.error(error);
 
                 return { stat: undefined, success: false };
             }

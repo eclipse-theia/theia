@@ -251,7 +251,7 @@ export class DebugConsoleSession extends ConsoleSession {
         const body = event.body;
         const { category, variablesReference } = body;
         if (category === 'telemetry') {
-        this.logger.debug(`telemetry/${event.body.output}`, event.body.data);
+            this.logger.debug(`telemetry/${event.body.output}`, event.body.data);
             return;
         }
         const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;

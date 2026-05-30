@@ -23,6 +23,7 @@ import { ConnectionContainerModule } from '../connection-container-module';
 import { DefaultMessagingService, MessagingContainer } from '../default-messaging-service';
 import { FrontendConnectionService } from '../frontend-connection-service';
 import { MessagingService } from '../messaging-service';
+import { MockLogger } from '../../../common/test/mock-logger';
 
 describe('DefaultMessagingService', () => {
 
@@ -63,14 +64,7 @@ describe('DefaultMessagingService', () => {
                 }
             };
             container.bind(FrontendConnectionService).toConstantValue(frontendConnectionService);
-            container.bind(ILogger).toConstantValue({
-                error: () => { },
-                warn: () => { },
-                info: () => { },
-                debug: () => { },
-                trace: () => { },
-                fatal: () => { }
-            } as unknown as ILogger).whenTargetNamed('core:DefaultMessagingService');
+            container.bind(ILogger).to(MockLogger).inSingletonScope();
 
             const messagingService = container.get(DefaultMessagingService);
             messagingService.initialize();

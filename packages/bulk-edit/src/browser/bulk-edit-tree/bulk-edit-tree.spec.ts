@@ -27,6 +27,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const expect = chai.expect;
 let bulkEditTree: BulkEditTree;
@@ -40,14 +41,7 @@ before(() => {
     disableJSDOM = enableJSDOM();
 
     testContainer = new Container();
-    testContainer.bind(ILogger).toConstantValue({
-        error: () => { },
-        warn: () => { },
-        info: () => { },
-        debug: () => { },
-        trace: () => { },
-        fatal: () => { }
-    } as unknown as ILogger);
+    testContainer.bind(ILogger).to(MockLogger).inSingletonScope();
     testContainer.bind(BulkEditTree).toSelf();
     bulkEditTree = testContainer.get(BulkEditTree);
 
