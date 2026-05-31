@@ -120,7 +120,7 @@ const ALLOWED = [
     /^package\.json$/,
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,
-    /^doc\/qaap-.*\.md$/,
+    /^doc\/qaap-.*\.(md|html)$/,
     /^\.github\/workflows\/qaap-.*\.yml$/,
     /^\.prompts\//,
     /^\.theia\//,
