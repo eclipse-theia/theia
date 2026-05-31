@@ -296,21 +296,20 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         return confirmed === true;
     }
 
-    addTerminalPage(widget: Widget): void {
-        this.doAddTerminalPage(widget);
-    }
-
-    protected doAddTerminalPage(widget: Widget): TerminalManagerTreeTypes.PageSplitPanel | undefined {
+    /**
+     * Add a terminal to a page. If no `pageId` is given, a new auto-numbered
+     * page is created. If a `pageId` is given, the existing page is reused
+     * or a new one is created (with special-page config applied if available).
+     */
+    addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId): void {
         if (widget instanceof TerminalWidgetImpl) {
+            const resolvedPageId = pageId ?? this.createPagePanel().id;
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
             this.addTerminalReference(widget, terminalKey);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
-            const pagePanel = this.createPagePanel();
-            pagePanel.addWidget(groupPanel);
-            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, pagePanel.id, widget.title.label);
-            return pagePanel;
+            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, resolvedPageId, widget.title.label);
         }
     }
 
@@ -515,17 +514,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
     }
 
-    addTerminalToTasksPage(widget: Widget): void {
-        if (widget instanceof TerminalWidgetImpl) {
-            const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
-            this.addTerminalReference(widget, terminalKey);
-            this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
-            const groupPanel = this.createTerminalGroupPanel();
-            groupPanel.addWidget(widget);
-            this.treeWidget.model.addTerminalToTasksPage(terminalKey, groupPanel.id, widget.title.label);
-        }
-    }
-
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         const activeTerminalId = this.treeWidget.model.activeTerminalNode?.id;
@@ -637,9 +625,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     async resetView(): Promise<void> {
         const terminalWidget = await this.createTerminalWidget();
-        const page = this.doAddTerminalPage(terminalWidget);
+        const pagePanel = this.createPagePanel();
+        this.addTerminalPage(terminalWidget, pagePanel.id);
         for (const id of this.pagePanels.keys()) {
-            if (id !== page?.id) {
+            if (id !== pagePanel.id) {
                 this.deletePage(id);
             }
         }

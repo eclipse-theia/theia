@@ -21,9 +21,12 @@ import { TerminalManagerPreferences } from './terminal-manager-preferences';
  * manager widget when tree grouping mode is active.
  *
  * This hooks into {@link TerminalFrontendContribution.open} so that terminals
- * created by any caller (plugins, commands, profiles, etc.) are routed into
+ * created by any caller (plugins, tasks, debug, etc.) are routed into
  * the manager at the point of placement, rather than being intercepted
  * after the fact via `onDidCreateTerminal` events.
+ *
+ * Task and debug terminals are routed to dedicated pages in the tree;
+ * regular user terminals get their own numbered pages.
  */
 @injectable()
 export class TerminalManagerCreationHandler implements TerminalCreationHandler {
@@ -46,7 +49,7 @@ export class TerminalManagerCreationHandler implements TerminalCreationHandler {
             return false;
         }
 
-        if (terminal.kind === 'task' || terminal.hiddenFromUser) {
+        if (terminal.hiddenFromUser) {
             return false;
         }
 
@@ -57,7 +60,8 @@ export class TerminalManagerCreationHandler implements TerminalCreationHandler {
         }
 
         if (!resolvedWidget.terminalWidgetIdsToNodeIds.has(terminal.id)) {
-            resolvedWidget.addTerminalPage(terminal);
+            const specialConfig = resolvedWidget.treeWidget.model.getSpecialPageConfig(terminal.kind);
+            resolvedWidget.addTerminalPage(terminal, specialConfig?.pageId);
             await this.terminalManagerViewContribution.openView({ reveal: true });
         }
 
