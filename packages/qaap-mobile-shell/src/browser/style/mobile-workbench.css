@@ -2852,6 +2852,14 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   min-height: 0;
 }
 
+.theia-mobile-projects-history-surface {
+  padding: 12px 40px 4px;
+}
+
+.theia-mobile-projects-history-surface .theia-qaap-segmented-bar {
+  width: 100%;
+}
+
 .theia-mobile-review-hub-root {
   display: flex;
   flex-direction: column;

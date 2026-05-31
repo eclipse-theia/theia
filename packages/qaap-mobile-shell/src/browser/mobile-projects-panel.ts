@@ -386,6 +386,7 @@ export class MobileProjectsPanel {
     protected stickyComposerModeSheet: HTMLElement | undefined;
     protected stickyComposerModeId: string | undefined;
     protected stickyComposerSurface: QaapComposerSurface = 'task';
+    protected tasksHubSurface: QaapComposerSurface = 'task';
     protected transcriptComposerHost: HTMLElement | undefined;
     protected transcriptComposerProject: MobileProjectEntry | undefined;
     protected transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
@@ -809,6 +810,9 @@ export class MobileProjectsPanel {
 
     /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
     selectHubLandingView(view: MobileProjectsHubView, preferredDiffProjectId?: string): void {
+        if (view === 'chat' || view === 'tasks') {
+            this.tasksHubSurface = view === 'chat' ? 'chat' : 'task';
+        }
         view = this.redirectHubView(normalizeWorkHubViewId(view) as MobileProjectsHubView);
         if (this.hubView === view && view === 'home') {
             this.refreshHomeHubData(false);
@@ -980,7 +984,9 @@ export class MobileProjectsPanel {
         await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
         await this.refreshChatServiceSessionSummaries();
         this.filter = this.projectsService.getFilter();
-        this.hubView = this.redirectHubView(normalizeWorkHubViewId(this.projectsService.getHubView()) as MobileProjectsHubView);
+        const storedHubView = this.projectsService.getHubView();
+        this.tasksHubSurface = storedHubView === 'chat' ? 'chat' : 'task';
+        this.hubView = this.redirectHubView(normalizeWorkHubViewId(storedHubView) as MobileProjectsHubView);
         // A view persisted before the unified Work nav was enabled (Chat/Tasks) lands on Work too.
         if (isWorkMissionControlEnabled() && (this.hubView === 'chat' || this.hubView === 'tasks')) {
             this.hubView = 'work';
@@ -1338,6 +1344,23 @@ export class MobileProjectsPanel {
         }
         if (this.homeMode && this.hubView === 'tasks') {
             this.subtitleEl.className = 'theia-mobile-projects-subtitle';
+            if (this.tasksHubSurface === 'chat') {
+                const chatCount = this.projects.reduce(
+                    (sum, project) => sum + this.localChatsForProject(project).length,
+                    0,
+                );
+                this.subtitleEl.textContent = chatCount > 0
+                    ? nls.localize(
+                        'qaap/mobileProjects/chatSubtitleCount',
+                        '{0} local chat sessions · saved on this device',
+                        String(chatCount),
+                    )
+                    : nls.localize(
+                        'qaap/mobileProjects/chatSubtitleEmpty',
+                        'Local chat sessions saved on this device',
+                    );
+                return;
+            }
             const attention = this.countTasksAttention();
             const streamingCount = this.projects.reduce(
                 (sum, project) => sum + this.vpsTasksForProject(project).filter(c => c.status === 'streaming').length,
@@ -1935,8 +1958,12 @@ export class MobileProjectsPanel {
             );
         } else if (this.hubView === 'tasks') {
             this.searchInput.placeholder = nls.localize(
-                'qaap/mobileProjects/searchTasksPlaceholder',
-                'Search VPS tasks and agents',
+                this.tasksHubSurface === 'chat'
+                    ? 'qaap/mobileProjects/searchChatPlaceholder'
+                    : 'qaap/mobileProjects/searchTasksPlaceholder',
+                this.tasksHubSurface === 'chat'
+                    ? 'Search local chat sessions'
+                    : 'Search VPS tasks and agents',
             );
         } else if (this.hubView === 'review') {
             this.searchInput.placeholder = nls.localize(
@@ -2456,7 +2483,7 @@ export class MobileProjectsPanel {
                 if (surface === 'chat') {
                     this.pinStickyComposerToCoder(cwd);
                 }
-                this.renderStickyComposer();
+                this.renderList();
             },
             getContext: () => this.stickyComposerContext,
             clearContext: () => {
@@ -3651,7 +3678,7 @@ export class MobileProjectsPanel {
     }
 
     protected updateTasksAttentionChrome(): void {
-        if (!this.homeMode || !this.isTasksHubView()) {
+        if (!this.homeMode || !this.isTasksHubView() || this.tasksHubSurface === 'chat') {
             this.titleAttentionEl.hidden = true;
             this.titleAttentionEl.setAttribute('aria-hidden', 'true');
             return;
@@ -3745,9 +3772,36 @@ export class MobileProjectsPanel {
     }
 
     protected renderTasksHubView(projects: MobileProjectEntry[]): void {
-        const groups = this.collectTasksInboxGroups(projects);
         const root = document.createElement('div');
         root.className = 'theia-mobile-tasks-hub-root';
+        root.append(this.createTasksHubSurfacePicker());
+
+        if (this.tasksHubSurface === 'chat') {
+            const groups = this.collectChatHubGroups(projects);
+            if (groups.length === 0) {
+                root.append(this.createChatEmptyState());
+            } else {
+                const host = document.createElement('div');
+                host.className = 'theia-mobile-projects-chats-inbox theia-mod-local-chat';
+                for (const group of groups) {
+                    const items: MobileWorkHubInboxItem[] = group.summaries.map(summary => ({
+                        kind: 'conversation',
+                        project: group.project,
+                        summary,
+                        sortAt: summary.updatedAt,
+                        priority: 0,
+                    }));
+                    host.append(this.createInboxProjectGroup(group.project, items));
+                }
+                root.append(host);
+            }
+            this.scroll.append(root);
+            this.updateTasksAttentionChrome();
+            this.renderSubtitle();
+            return;
+        }
+
+        const groups = this.collectTasksInboxGroups(projects);
         const teamRendered = this.appendTasksHubTeamSection(root);
 
         if (groups.length > 0) {
@@ -3769,12 +3823,36 @@ export class MobileProjectsPanel {
         }
 
         if (!teamRendered && groups.length === 0) {
-            this.scroll.append(this.createTasksEmptyState());
-        } else {
-            this.scroll.append(root);
+            root.append(this.createTasksEmptyState());
         }
+        this.scroll.append(root);
         this.updateTasksAttentionChrome();
         this.renderSubtitle();
+    }
+
+    protected createTasksHubSurfacePicker(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-projects-history-surface';
+        const field = createSegmentedField<QaapComposerSurface>({
+            segments: [
+                {
+                    id: 'chat',
+                    label: nls.localize('qaap/composerSurface/chat', 'Chat'),
+                },
+                {
+                    id: 'task',
+                    label: nls.localize('qaap/composerSurface/task', 'Task'),
+                },
+            ],
+            value: this.tasksHubSurface,
+            onChange: surface => {
+                this.tasksHubSurface = surface;
+                writeStoredComposerSurface(undefined, surface);
+                this.renderList();
+            },
+        });
+        wrap.append(field.root);
+        return wrap;
     }
 
     protected renderReviewHubView(projects: MobileProjectEntry[]): void {
@@ -5524,11 +5602,17 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         const block = document.createElement('div');
         block.className = 'theia-mobile-projects-tasks-block';
-        const allConversations = this.vpsTasksForProject(project);
+        const surface = this.detailComposerSurfaceForProject(project);
+        const isChatSurface = surface === 'chat';
+        const allConversations = isChatSurface
+            ? this.localChatsForProject(project)
+            : this.vpsTasksForProject(project);
         const head = document.createElement('div');
         head.className = 'theia-mobile-projects-tasks-head';
         const headLabel = document.createElement('span');
-        headLabel.textContent = nls.localize('qaap/mobileProjects/tasksHeading', 'Tasks');
+        headLabel.textContent = isChatSurface
+            ? nls.localize('qaap/mobileProjects/chatsHeading', 'Chats')
+            : nls.localize('qaap/mobileProjects/tasksHeading', 'Tasks');
         head.append(headLabel);
 
         if (allConversations.length > 0) {
@@ -5540,6 +5624,15 @@ export class MobileProjectsPanel {
         block.append(head);
 
         if (allConversations.length === 0) {
+            if (isChatSurface) {
+                const empty = document.createElement('div');
+                empty.className = 'theia-mobile-projects-tasks-empty';
+                empty.textContent = nls.localize(
+                    'qaap/mobileProjects/chatsEmpty', 'No local chats yet. Start one below.'
+                );
+                block.append(empty);
+                return block;
+            }
             const fallbackTasks = this.fallbackTasksFromProject(project);
             if (fallbackTasks.length === 0) {
                 const empty = document.createElement('div');
@@ -5611,7 +5704,9 @@ export class MobileProjectsPanel {
             moreBtn.append(
                 icon,
                 document.createTextNode(
-                    nls.localize('qaap/mobileProjects/tasksMore', 'More tasks ({0})', String(hiddenCount)),
+                    isChatSurface
+                        ? nls.localize('qaap/mobileProjects/chatsMore', 'More chats ({0})', String(hiddenCount))
+                        : nls.localize('qaap/mobileProjects/tasksMore', 'More tasks ({0})', String(hiddenCount)),
                 ),
             );
             moreBtn.addEventListener('click', ev => {
@@ -5624,6 +5719,14 @@ export class MobileProjectsPanel {
         }
 
         return block;
+    }
+
+    protected detailComposerSurfaceForProject(project: MobileProjectEntry): QaapComposerSurface {
+        if (!this.homeMode || this.hubView !== 'repos' || this.expandedId !== project.id) {
+            return 'task';
+        }
+        const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
+        return readStoredComposerSurface(cwd) ?? this.stickyComposerSurface ?? 'task';
     }
 
     protected groupConversationTasks(tasks: MobileProjectTaskView[]): Array<{

@@ -126,7 +126,6 @@ type MobileBottomButtonId =
     | 'hub-home'
     | 'hub-work'
     | 'hub-projects'
-    | 'hub-chat'
     | 'hub-tasks'
     | 'hub-review'
     | 'hub-inbox'
@@ -1426,11 +1425,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 icon: 'codicon-folder',
             },
             {
-                id: 'hub-chat',
-                label: nls.localize('qaap/mobileBottomBar/hubChat', 'Chat'),
-                icon: 'codicon-comment-discussion',
-            },
-            {
                 id: 'hub-tasks',
                 label: nls.localize('qaap/mobileBottomBar/hubTasks', 'Tasks'),
                 icon: 'codicon-server-process',
@@ -1530,10 +1524,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     && this.projectsPanel.getHubView() === 'repos'
                     && this.projectsPanel.isHomeMode()
                     && !this.projectsPanel.isProjectDetailView();
-            case 'hub-chat':
-                return this.projectsPanel?.isVisible() === true
-                    && this.projectsPanel.getHubView() === 'chat'
-                    && this.projectsPanel.isHomeMode();
             case 'hub-tasks':
                 return this.projectsPanel?.isVisible() === true
                     && this.projectsPanel.getHubView() === 'tasks'
@@ -1807,7 +1797,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async getBottomBarSecondaryItems(def: MobileBottomButton): Promise<BottomBarSecondaryItem[]> {
-        if (def.id === 'hub-home' || def.id === 'hub-projects' || def.id === 'hub-chat' || def.id === 'hub-tasks' || def.id === 'hub-review' || def.id === 'hub-team' || def.id === 'hub-automations') {
+        if (def.id === 'hub-home' || def.id === 'hub-projects' || def.id === 'hub-tasks' || def.id === 'hub-review' || def.id === 'hub-team' || def.id === 'hub-automations') {
             return [];
         }
         switch (def.id) {
@@ -2060,18 +2050,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.projectsPanel.closeProjectDetail();
             }
             this.projectsPanel?.selectHubLandingView('repos');
-            this.refreshBottomBar();
-            return;
-        }
-        if (def.id === 'hub-chat') {
-            dismissQaapAccountMenu();
-            this.ensureProjectsPanel();
-            if (!this.projectsPanel?.isVisible()) {
-                await this.projectsPanel?.show();
-                this.applyLandingChrome();
-            }
-            this.projectsPanel?.preferComposerSurface('chat');
-            this.projectsPanel?.selectHubLandingView('chat');
             this.refreshBottomBar();
             return;
         }
