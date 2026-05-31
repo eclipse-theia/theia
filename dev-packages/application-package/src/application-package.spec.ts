@@ -20,7 +20,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ApplicationPackage } from './application-package';
 import { ApplicationProps } from './application-props';
-import { IDE_APPLICATION_ICON_ENV } from './local-env-file';
+import { IDE_APPLICATION_ICON_ENV, IDE_APPLICATION_NAME_ENV } from './local-env-file';
 import * as sinon from 'sinon';
 
 const track = temp.track();
@@ -56,13 +56,23 @@ describe('application-package', function (): void {
     });
 
     it('should override application name from .env IDE_APPLICATION_NAME', function (): void {
-        const root = track.mkdirSync('env-app');
-        fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
-            theia: { frontend: { config: { applicationName: 'Pkg Name' } } }
-        }));
-        fs.writeFileSync(path.join(root, '.env'), 'IDE_APPLICATION_NAME=From Env\n');
-        const applicationPackage = new ApplicationPackage({ projectPath: root });
-        assert.strictEqual(applicationPackage.props.frontend.config.applicationName, 'From Env');
+        const originalName = process.env[IDE_APPLICATION_NAME_ENV];
+        delete process.env[IDE_APPLICATION_NAME_ENV];
+        try {
+            const root = track.mkdirSync('env-app');
+            fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+                theia: { frontend: { config: { applicationName: 'Pkg Name' } } }
+            }));
+            fs.writeFileSync(path.join(root, '.env'), 'IDE_APPLICATION_NAME=From Env\n');
+            const applicationPackage = new ApplicationPackage({ projectPath: root });
+            assert.strictEqual(applicationPackage.props.frontend.config.applicationName, 'From Env');
+        } finally {
+            if (originalName !== undefined) {
+                process.env[IDE_APPLICATION_NAME_ENV] = originalName;
+            } else {
+                delete process.env[IDE_APPLICATION_NAME_ENV];
+            }
+        }
     });
 
     it('should override application icon from .env IDE_APPLICATION_ICON', function (): void {

@@ -116,8 +116,11 @@ export class ApplicationPackageManager {
             await fs.copy(webManifest, this.pck.lib('frontend', 'manifest.webmanifest'));
         }
         const serviceWorker = this.pck.frontend('service-worker.js');
+        const libServiceWorker = this.pck.lib('frontend', 'service-worker.js');
         if (await fs.pathExists(serviceWorker)) {
-            await fs.copy(serviceWorker, this.pck.lib('frontend', 'service-worker.js'));
+            await fs.copy(serviceWorker, libServiceWorker);
+        } else if (await fs.pathExists(libServiceWorker)) {
+            await fs.remove(libServiceWorker);
         }
         const secondaryHtml = this.pck.frontend('secondary-window.html');
         if (await fs.pathExists(secondaryHtml)) {

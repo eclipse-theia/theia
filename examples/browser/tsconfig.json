@@ -177,6 +177,9 @@
       "path": "../../packages/qaap-ai-openrouter"
     },
     {
+      "path": "../../packages/qaap-cloud-workspace"
+    },
+    {
       "path": "../../packages/qaap-product"
     },
     {

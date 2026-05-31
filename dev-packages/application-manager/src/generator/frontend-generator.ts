@@ -19,6 +19,7 @@
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
+import * as fs from 'fs-extra';
 import { BundlerGenerator } from './bundler-generator';
 
 interface WebAppManifestIcon {
@@ -91,6 +92,8 @@ export class FrontendGenerator extends AbstractGenerator {
             await this.write(this.pck.frontend('manifest.webmanifest'), this.compileWebAppManifest());
             if (this.isServiceWorkerEnabled()) {
                 await this.write(this.pck.frontend('service-worker.js'), this.compileServiceWorker());
+            } else {
+                await this.removeGeneratedServiceWorker();
             }
         }
         if (this.pck.isElectron()) {
@@ -265,18 +268,50 @@ export class FrontendGenerator extends AbstractGenerator {
         return this.pck.props.frontend.config.pwa as PwaManifestConfig | undefined;
     }
 
+    /**
+     * PWA service worker generation. Off when `pwa.serviceWorker === false`, when
+     * `QAAP_DISABLE_SERVICE_WORKER` is set, or by default for `mode: 'development'` builds
+     * (local iteration — stale SW caches mask fresh `bundle.js`). Set
+     * `QAAP_ENABLE_SERVICE_WORKER=1` to keep the SW in development builds.
+     */
     protected isServiceWorkerEnabled(): boolean {
+        if (this.getPwaManifestConfig()?.serviceWorker === false) {
+            return false;
+        }
+        const disable = process.env.QAAP_DISABLE_SERVICE_WORKER?.trim();
+        if (disable === '1' || disable === 'true') {
+            return false;
+        }
+        if (this.options.mode === 'development') {
+            const enable = process.env.QAAP_ENABLE_SERVICE_WORKER?.trim();
+            return enable === '1' || enable === 'true';
+        }
         return this.getPwaManifestConfig()?.serviceWorker !== false;
+    }
+
+    protected async removeGeneratedServiceWorker(): Promise<void> {
+        const swPath = this.pck.frontend('service-worker.js');
+        if (await fs.pathExists(swPath)) {
+            await fs.remove(swPath);
+        }
     }
 
     /**
      * Cache-busting version used in the SW cache keys.  We prefer the package version + a
      * `BUILD_VERSION` env var (set by CI) so each deployment invalidates the previous shell cache.
+     * Development builds without `BUILD_VERSION` stamp a unique id on each generate so local
+     * rebuilds evict `qaap-runtime-*` / `qaap-shell-*` caches even when the package version is unchanged.
      */
     protected resolveServiceWorkerVersion(): string {
         const pkgVersion = (this.pck.pck as { version?: string }).version ?? '0.0.0';
         const buildId = process.env.BUILD_VERSION?.trim() || process.env.VERCEL_GIT_COMMIT_SHA?.trim();
-        return buildId ? `${pkgVersion}+${buildId}` : pkgVersion;
+        if (buildId) {
+            return `${pkgVersion}+${buildId}`;
+        }
+        if (this.options.mode === 'development') {
+            return `${pkgVersion}+dev-${Date.now()}`;
+        }
+        return pkgVersion;
     }
 
     /**
