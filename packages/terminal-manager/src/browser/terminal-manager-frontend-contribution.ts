@@ -13,7 +13,6 @@ import { CommandRegistry, PreferenceService, DisposableCollection } from '@theia
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalFrontendContribution, TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { ApplicationShell, WidgetManager, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
-import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
@@ -44,9 +43,6 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    @inject(FrontendApplicationStateService)
-    protected readonly stateService: FrontendApplicationStateService;
-
     protected commandHandlerDisposables = new DisposableCollection();
 
     /**
@@ -55,36 +51,6 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
      */
     protected isTaskTerminal(terminal: TerminalWidget): boolean {
         return terminal.kind === 'task';
-    }
-
-    /**
-     * Register a listener to route externally created terminals (e.g. from plugins)
-     * into the terminal manager when tree mode is active.
-     * Terminals created internally via {@link TerminalManagerWidget.createTerminalWidget}
-     * are skipped because the command handlers handle their placement.
-     */
-    protected registerTerminalListener(): void {
-        this.commandHandlerDisposables.push(
-            this.terminalFrontendContribution.onDidCreateTerminal(async terminal => {
-                if (this.isTaskTerminal(terminal) || terminal.hiddenFromUser) {
-                    return;
-                }
-                // Check the flag synchronously (before any await) to correctly
-                // identify terminals created by the manager's command handlers.
-                const managerWidget = this.terminalManagerViewContribution.tryGetWidget();
-                if (managerWidget instanceof TerminalManagerWidget && managerWidget.creatingTerminalInternally) {
-                    return;
-                }
-                const resolvedWidget = managerWidget ?? await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
-                if (!(resolvedWidget instanceof TerminalManagerWidget)) {
-                    return;
-                }
-                if (!resolvedWidget.terminalWidgetIdsToNodeIds.has(terminal.id)) {
-                    resolvedWidget.addTerminalPage(terminal);
-                    await this.terminalManagerViewContribution.openView({ reveal: true });
-                }
-            })
-        );
     }
 
     onStart(app: FrontendApplication): void {
@@ -180,19 +146,6 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     protected registerHandlers(): void {
         this.unregisterHandlers();
         this.registerCommands();
-        this.deferTerminalListenerUntilLayoutReady();
-    }
-
-    /**
-     * Defers the terminal creation listener until layout restoration is complete,
-     * preventing restored terminals from being mistaken for externally created ones.
-     */
-    protected deferTerminalListenerUntilLayoutReady(): void {
-        this.stateService.reachedState('initialized_layout').then(() => {
-            if (!this.commandHandlerDisposables.disposed) {
-                this.registerTerminalListener();
-            }
-        });
     }
 
     protected registerCommands(): void {

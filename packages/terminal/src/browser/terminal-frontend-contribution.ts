@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import {
     CommandContribution,
     Command,
@@ -59,6 +59,8 @@ import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/t
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
+import { ContributionProvider } from '@theia/core';
+import { TerminalCreationHandler } from './terminal-creation-handler';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -246,6 +248,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ContributionProvider) @named(TerminalCreationHandler)
+    protected readonly terminalCreationHandlers: ContributionProvider<TerminalCreationHandler>;
 
     @postConstruct()
     protected init(): void {
@@ -1005,8 +1010,28 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         return widget;
     }
 
-    // TODO: reuse WidgetOpenHandler.open
-    open(widget: TerminalWidget, options?: WidgetOpenerOptions): void {
+    /**
+     * Consult registered {@link TerminalCreationHandler}s before placing a terminal.
+     * Handlers are consulted in priority order (highest first). The first handler that
+     * returns `true` claims ownership; subsequent handlers are not consulted.
+     *
+     * @returns `true` if a handler claimed the terminal, `false` otherwise.
+     */
+    protected async delegateOpen(terminal: TerminalWidget, options?: WidgetOpenerOptions): Promise<boolean> {
+        const handlers = this.terminalCreationHandlers.getContributions(true)
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+        for (const handler of handlers) {
+            if (await handler.onWillOpenTerminal(terminal, options)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async open(widget: TerminalWidget, options?: WidgetOpenerOptions): Promise<void> {
+        if (await this.delegateOpen(widget, options)) {
+            return;
+        }
         const area = widget.location === TerminalLocation.Editor ? 'main' : 'bottom';
         const widgetOptions: ApplicationShell.WidgetOptions = { area: area, ...options?.widgetOptions };
         let preserveFocus = false;
