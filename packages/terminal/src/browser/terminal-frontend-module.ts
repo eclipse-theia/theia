@@ -32,6 +32,7 @@ import { TerminalService } from './base/terminal-service';
 import { bindTerminalPreferences } from '../common/terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import { TerminalCreationHandler } from './terminal-creation-handler';
+import { TerminalShellHandler } from './terminal-shell-handler';
 import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
 import { createTerminalSearchFactory } from './search/terminal-search-container';
@@ -107,6 +108,8 @@ export default new ContainerModule(bind => {
 
     bindRootContributionProvider(bind, TerminalContribution);
     bindRootContributionProvider(bind, TerminalCreationHandler);
+    bind(TerminalShellHandler).toSelf().inSingletonScope();
+    bind(TerminalCreationHandler).toService(TerminalShellHandler);
 
     // terminal link provider contribution point
     bindRootContributionProvider(bind, TerminalLinkProvider);

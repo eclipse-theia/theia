@@ -28,7 +28,9 @@ import { TerminalManagerPreferences } from './terminal-manager-preferences';
 @injectable()
 export class TerminalManagerCreationHandler implements TerminalCreationHandler {
 
-    readonly priority = 100;
+    get priority(): number {
+        return this.preferences.get('terminal.grouping.mode') === 'tree' ? 100 : -200;
+    }
 
     @inject(TerminalManagerFrontendViewContribution)
     protected readonly terminalManagerViewContribution: TerminalManagerFrontendViewContribution;
