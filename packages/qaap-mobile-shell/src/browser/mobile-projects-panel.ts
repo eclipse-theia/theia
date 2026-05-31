@@ -39,15 +39,6 @@ import {
 } from '../common/qaap-work-hub-team';
 import { MobileProjectsTimelineUi } from './mobile-projects-timeline-ui';
 import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
-import {
-    MobileWorkMissionControl,
-    classifyMissionControlLane,
-    classifyMissionControlSurface,
-    isWorkMissionControlEnabled,
-    type MissionControlItem,
-    type MissionControlLaneFilter,
-    type MissionControlSurfaceFilter,
-} from './mobile-work-mission-control';
 import { MobileProjectsService } from './mobile-projects-service';
 import { conversationTurnProgressRatio } from '../common/qaap-agent-conversation-list-metrics';
 import {
@@ -431,11 +422,6 @@ export class MobileProjectsPanel {
         teamHub: MobileProjectsTeamHubUi;
         home: MobileProjectsHomeUi;
     } | undefined;
-    /** Lazily-built mission-control view for the unified Work surface. */
-    protected missionControl: MobileWorkMissionControl | undefined;
-    /** Ephemeral lane/surface filters for the full "Work" view (Phase 1). Not persisted. */
-    protected workLaneFilter: MissionControlLaneFilter = 'all';
-    protected workSurfaceFilter: MissionControlSurfaceFilter = 'all';
     protected transcriptOpenSummaryId: string | undefined;
     protected transcriptAutoApproveBusy = false;
     protected transcriptLastFingerprint: string | undefined;
@@ -800,12 +786,8 @@ export class MobileProjectsPanel {
         this.delegate.onProjectsChanged?.();
     }
 
-    /**
-     * Legacy Home entry points redirect to Work so persisted state and old links land on the
-     * unified, context-first surface.
-     */
     protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
-        return isWorkMissionControlEnabled() && view === 'home' ? 'work' : view;
+        return normalizeWorkHubViewId(view) as MobileProjectsHubView;
     }
 
     /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
@@ -813,15 +795,9 @@ export class MobileProjectsPanel {
         if (view === 'chat' || view === 'tasks') {
             this.tasksHubSurface = view === 'chat' ? 'chat' : 'task';
         }
-        view = this.redirectHubView(normalizeWorkHubViewId(view) as MobileProjectsHubView);
+        view = this.redirectHubView(view);
         if (this.hubView === view && view === 'home') {
             this.refreshHomeHubData(false);
-            return;
-        }
-        if (this.hubView === view && view === 'work') {
-            this.conversations?.start();
-            this.activeTasks?.start();
-            this.render();
             return;
         }
         if (this.hubView === view && view === 'repos' && this.expandedId === undefined) {
@@ -883,10 +859,6 @@ export class MobileProjectsPanel {
             this.activeTasks?.start();
             this.conversations?.start();
             this.refreshTasksHubApprovals(true);
-        }
-        if (view === 'work') {
-            this.activeTasks?.start();
-            this.conversations?.start();
         }
         if (view === 'diff') {
             this.diffPendingPreferredProjectId = preferredDiffProjectId;
@@ -986,19 +958,11 @@ export class MobileProjectsPanel {
         this.filter = this.projectsService.getFilter();
         const storedHubView = this.projectsService.getHubView();
         this.tasksHubSurface = storedHubView === 'chat' ? 'chat' : 'task';
-        this.hubView = this.redirectHubView(normalizeWorkHubViewId(storedHubView) as MobileProjectsHubView);
-        // Views persisted before the unified Work nav (Chat/Tasks) land on Work too.
-        if (isWorkMissionControlEnabled() && (this.hubView === 'chat' || this.hubView === 'tasks')) {
-            this.hubView = 'work';
-        }
+        this.hubView = this.redirectHubView(storedHubView);
         this.updateSearchPlaceholder();
         this.render();
         if (this.hubView === 'diff') {
             void this.refreshDiffHubView();
-        }
-        if (this.hubView === 'work') {
-            this.conversations?.start();
-            this.activeTasks?.start();
         }
         if (this.hubView === 'tasks') {
             this.conversations?.start();
@@ -1220,12 +1184,6 @@ export class MobileProjectsPanel {
             this.titleEl.textContent = nls.localize('qaap/diff/reviewLabel', 'Working changes');
             return;
         }
-        if (this.hubView === 'work') {
-            this.titleEl.textContent = nls.localize('qaap/mobileProjects/workHubTitle', 'Work');
-            this.titleAttentionEl.hidden = true;
-            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
-            return;
-        }
         if (this.hubView === 'chat') {
             this.titleEl.textContent = nls.localize('qaap/mobileProjects/chatTitle', 'Chat');
             return;
@@ -1435,28 +1393,6 @@ export class MobileProjectsPanel {
                     'qaap/mobileProjects/chatSubtitle',
                     'Interactive workspace chat — persists when you close the app',
                 );
-            return;
-        }
-        if (this.homeMode && this.hubView === 'work') {
-            this.subtitleEl.className = 'theia-mobile-projects-subtitle q-fs-meta';
-            const items = this.buildMissionControlItems();
-            const needsYou = items.filter(item => item.lane === 'needs-you').length;
-            const running = items.filter(item => item.lane === 'running').length;
-            if (needsYou > 0) {
-                this.subtitleEl.textContent = needsYou === 1
-                    ? nls.localize('qaap/mobileProjects/workSubtitleNeedsYouOne', '1 agent needs you')
-                    : nls.localize('qaap/mobileProjects/workSubtitleNeedsYouMany', '{0} agents need you', String(needsYou));
-            } else if (running > 0) {
-                this.subtitleEl.textContent = running === 1
-                    ? nls.localize('qaap/mobileProjects/workSubtitleRunningOne', '1 agent working')
-                    : nls.localize('qaap/mobileProjects/workSubtitleRunningMany', '{0} agents working', String(running));
-            } else {
-                this.subtitleEl.textContent = nls.localize(
-                    'qaap/mobileProjects/workSubtitleAllClear',
-                    'Every agent is idle — delegate a task to get going',
-                );
-            }
-            this.subtitleEl.hidden = false;
             return;
         }
         if (this.isProjectDetailView()) {
@@ -1879,14 +1815,6 @@ export class MobileProjectsPanel {
             this.openRoutineEditor();
             return;
         }
-        if (this.hubView === 'work') {
-            // Compose: delegate a new task scoped to the active (or most relevant) project.
-            const project = this.resolveHomePinnedProject();
-            if (project) {
-                await this.delegate.onOpenAgentOnTask?.(project);
-            }
-            return;
-        }
         if (!this.openRepoDialog) {
             this.openRepoDialog = new MobileOpenRepositoryDialog(this.projectsService, {
                 onProjectsChanged: nextProjects => {
@@ -1932,7 +1860,6 @@ export class MobileProjectsPanel {
 
     protected render(): void {
         this.root.classList.toggle('theia-mod-hub-home', this.hubView === 'home');
-        this.root.classList.toggle('theia-mod-hub-work', this.hubView === 'work');
         this.root.classList.toggle('theia-mod-hub-diff', this.hubView === 'diff');
         this.root.classList.toggle('theia-mod-hub-project-diff', this.isProjectDiffView());
         this.root.classList.toggle('theia-mod-hub-inbox', this.hubView === 'tasks');
@@ -2004,7 +1931,6 @@ export class MobileProjectsPanel {
         const searchWrap = this.searchInput.parentElement;
         const hideSearch = this.hubView === 'diff'
             || this.hubView === 'home'
-            || this.hubView === 'work'
             || this.hubView === 'tasks'
             || this.hubView === 'review'
             || this.hubView === 'chat'
@@ -2077,10 +2003,6 @@ export class MobileProjectsPanel {
 
             if (this.hubView === 'home') {
                 this.renderHomeHubView();
-                return;
-            }
-            if (this.hubView === 'work') {
-                this.renderWorkHubView();
                 return;
             }
             if (this.hubView === 'chat') {
@@ -2158,16 +2080,12 @@ export class MobileProjectsPanel {
         this.root.classList.toggle('theia-mod-repo-expanded', repoExpanded);
         const showRepoFab = this.hubView === 'repos' && !repoExpanded;
         const showRoutineFab = this.hubView === 'routines';
-        // Work view (Phase 3): the FAB delegates a new task — needs at least one project to scope to.
-        const showWorkFab = this.hubView === 'work' && this.projects.length > 0;
-        const showFab = showRepoFab || showRoutineFab || showWorkFab;
+        const showFab = showRepoFab || showRoutineFab;
         this.newFabBtn.hidden = !showFab;
         this.newFabBtn.setAttribute('aria-hidden', showFab ? 'false' : 'true');
         this.newFabBtn.title = showRoutineFab
             ? nls.localize('qaap/mobileProjects/newRoutine', 'New routine')
-            : showWorkFab
-                ? nls.localize('qaap/mobileProjects/newTask', 'New task')
-                : nls.localize('qaap/mobileProjects/newRepository', 'Add repository');
+            : nls.localize('qaap/mobileProjects/newRepository', 'Add repository');
         this.newFabBtn.setAttribute('aria-label', this.newFabBtn.title);
     }
 
@@ -3341,7 +3259,7 @@ export class MobileProjectsPanel {
                 title: nls.localize('qaap/workHubHome/openPullRequestsTitle', 'Open pull requests'),
                 subtitle: nls.localize(
                     'qaap/workHubHome/openPullRequestsSubtitle',
-                    'Review changes waiting on GitHub',
+                    'Finish agent handoffs waiting on GitHub',
                 ),
                 meta: this.inboxPullRequests.length === 1
                     ? nls.localize('qaap/workHubHome/openPullRequestsMetaOne', '1 PR')
@@ -3466,26 +3384,26 @@ export class MobileProjectsPanel {
         }
         if (stats.runningTasks > 0) {
             return stats.runningTasks === 1
-                ? nls.localize('qaap/workHubHome/subtitleRunningOne', '1 agent working on the VPS')
+                ? nls.localize('qaap/workHubHome/subtitleRunningOne', '1 agent moving work toward PR')
                 : nls.localize(
                     'qaap/workHubHome/subtitleRunningMany',
-                    '{0} agents working on the VPS',
+                    '{0} agents moving work toward PR',
                     String(stats.runningTasks),
                 );
         }
         if (stats.openPullRequests > 0) {
             return stats.openPullRequests === 1
-                ? nls.localize('qaap/workHubHome/subtitlePullRequestsOne', '1 open pull request')
+                ? nls.localize('qaap/workHubHome/subtitlePullRequestsOne', '1 pull request ready to review')
                 : nls.localize(
                     'qaap/workHubHome/subtitlePullRequestsMany',
-                    '{0} open pull requests',
+                    '{0} pull requests ready to review',
                     String(stats.openPullRequests),
                 );
         }
         if (stats.projectCount === 0) {
-            return nls.localize('qaap/workHubHome/subtitleNoProjects', 'Add a repository to get started');
+            return nls.localize('qaap/workHubHome/subtitleNoProjects', 'Add a GitHub repository to start agent work');
         }
-        return nls.localize('qaap/workHubHome/subtitleAllClear', 'You\'re all caught up');
+        return nls.localize('qaap/workHubHome/subtitleAllClear', 'Ready to capture the next task');
     }
 
     protected resolveHomeAgentLabel(agentId: string): string {
@@ -3503,99 +3421,9 @@ export class MobileProjectsPanel {
             .filter((project): project is MobileProjectEntry => !!project);
         const host = document.createElement('div');
         host.className = 'theia-mobile-work-hub-home-host';
-        if (isWorkMissionControlEnabled()) {
-            this.renderMissionControlPreview(host);
-        }
         this.ensureOverlayUi().home.renderDashboard(host, snapshot, pinnedProjects, this.projects.length);
         this.scroll.append(host);
         this.renderSubtitle();
-    }
-
-    /**
-     * Unified "Agents" view: one cross-project, attention-first list built from the same live
-     * streams the Chat/Tasks/Review histories already consume.
-     */
-    protected renderMissionControlPreview(host: HTMLElement): void {
-        this.ensureMissionControl().render(host, this.buildMissionControlItems());
-    }
-
-    protected ensureMissionControl(): MobileWorkMissionControl {
-        if (!this.missionControl) {
-            this.missionControl = new MobileWorkMissionControl({
-                formatRelativeTime: updatedAt => this.formatHomeRelativeTime(updatedAt),
-                onOpenItem: item => { void this.onMissionControlOpen(item); },
-                onShowAll: () => this.selectHubLandingView('work'),
-                onLaneFilter: lane => {
-                    this.workLaneFilter = lane;
-                    this.renderList();
-                    this.renderSubtitle();
-                },
-                onSurfaceFilter: surface => {
-                    this.workSurfaceFilter = surface;
-                    this.renderList();
-                    this.renderSubtitle();
-                },
-            });
-        }
-        return this.missionControl;
-    }
-
-    /**
-     * Full-view "Work" surface (Phase 0 of the mission-control promotion). Same data and view as the
-     * home preview card, rendered as the whole hub body so it can host the lane/surface filters next.
-     * Exposed as the primary Work destination in the bottom navigation.
-     */
-    protected renderWorkHubView(): void {
-        const host = document.createElement('div');
-        host.className = 'theia-mobile-work-hub-home-host theia-mobile-mission-control-host';
-        this.ensureMissionControl().render(host, this.buildMissionControlItems(), {
-            showFilters: true,
-            laneFilter: this.workLaneFilter,
-            surfaceFilter: this.workSurfaceFilter,
-        });
-        this.scroll.append(host);
-    }
-
-    protected buildMissionControlItems(): MissionControlItem[] {
-        const items: MissionControlItem[] = [];
-        for (const project of this.projects) {
-            for (const summary of this.conversationsForProject(project)) {
-                const lane = classifyMissionControlLane(summary, this.isConversationUnread(summary));
-                items.push({
-                    key: `${project.id}:${summary.id}`,
-                    conversationId: summary.id,
-                    projectId: project.id,
-                    projectName: project.name,
-                    projectColor: project.color,
-                    title: summary.title?.trim()
-                        || nls.localize('qaap/mobileProjects/untitledChat', 'Untitled chat'),
-                    preview: summary.lastMessagePreview,
-                    lane,
-                    surface: classifyMissionControlSurface(summary),
-                    agentLabel: summary.agentId ? this.resolveHomeAgentLabel(summary.agentId) : undefined,
-                    updatedAt: summary.updatedAt,
-                    progressCurrent: summary.turnProgressCurrent,
-                    progressTotal: summary.turnProgressTotal,
-                    linesAdded: summary.linesAdded,
-                    linesRemoved: summary.linesRemoved,
-                    hasPullRequest: !!summary.linkedPullRequest?.number,
-                });
-            }
-        }
-        return items;
-    }
-
-    protected async onMissionControlOpen(item: MissionControlItem): Promise<void> {
-        const project = this.projects.find(entry => entry.id === item.projectId);
-        if (!project) {
-            return;
-        }
-        const summary = this.conversationsForProject(project)
-            .find(entry => entry.id === item.conversationId);
-        if (!summary) {
-            return;
-        }
-        await this.openTranscriptSheet(project, summary);
     }
 
     protected resolveHomePinnedProject(): MobileProjectEntry | undefined {

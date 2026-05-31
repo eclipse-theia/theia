@@ -46,7 +46,7 @@ export type MobileProjectFilter = 'all' | 'active' | 'pinned';
  * - `chat` — local Theia sessions (persist in workspace metadata).
  * - `tasks` — VPS agent work (conversations + background tasks).
  */
-export type MobileProjectsHubView = 'home' | 'work' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff' | 'workflows' | 'routines' | 'team';
+export type MobileProjectsHubView = 'home' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff' | 'workflows' | 'routines' | 'team';
 
 /** Persisted clone of a project card (URI optional). */
 export interface StoredMobileProject {

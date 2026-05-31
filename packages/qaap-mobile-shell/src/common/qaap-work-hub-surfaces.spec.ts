@@ -42,6 +42,7 @@ describe('qaap-work-hub-surfaces', () => {
     it('maps legacy hub ids to tasks', () => {
         expect(normalizeWorkHubViewId('chats')).to.equal('tasks');
         expect(normalizeWorkHubViewId('team')).to.equal('tasks');
+        expect(normalizeWorkHubViewId('work')).to.equal('tasks');
         expect(normalizeWorkHubViewId('tasks')).to.equal('tasks');
         expect(normalizeWorkHubViewId('home')).to.equal('home');
     });

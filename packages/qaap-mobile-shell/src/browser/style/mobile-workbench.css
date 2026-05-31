@@ -3220,6 +3220,25 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   overflow: hidden;
 }
 
+.theia-mobile-work-hub-home-positioning {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--q-line, var(--qaap-line, color-mix(in srgb, var(--theia-foreground) 10%, transparent)));
+}
+
+.theia-mobile-work-hub-home-positioning-label {
+  display: block;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-work-hub-home-positioning-copy {
+  margin: 7px 0 0;
+  max-width: 34rem;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--q-text, var(--theia-foreground));
+}
+
 .theia-mobile-work-hub-home-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

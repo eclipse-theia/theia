@@ -40,6 +40,7 @@ import {
     resolveQaapQaiqModelBinding,
     type QaapQaiqModelBinding,
 } from '../common/qaap-qaiq-model-binding';
+import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
 import { QaapWebPushService } from './qaap-web-push-service';
 
 /** Built-in coding agents the runner can auto-detect on the server's PATH. */
@@ -616,17 +617,18 @@ export class QaapAgentTaskRunner {
         if (id === SHELL_AGENT_ID) {
             return runnerPrompt;
         }
+        const agentPrompt = appendAgentDefaultWorkflowToPrompt(runnerPrompt, id);
         this.assertQaiqConfigured(id);
         const detected = this.detectedAgents.get(id);
         let command: string;
         if (detected) {
-            command = this.applyTemplate(detected.template, runnerPrompt, this.buildTemplateVars(id));
+            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id));
         } else {
             const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
             if (envTemplate) {
-                command = this.applyTemplate(envTemplate, runnerPrompt, this.buildTemplateVars(id));
+                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id));
             } else {
-                command = runnerPrompt;
+                command = agentPrompt;
             }
         }
         if (autoApprove) {

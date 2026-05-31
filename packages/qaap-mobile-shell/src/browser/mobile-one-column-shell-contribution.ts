@@ -123,7 +123,6 @@ type MobileBottomButtonId =
     | 'pr'
     | 'terminal'
     | 'hub-home'
-    | 'hub-work'
     | 'hub-projects'
     | 'hub-tasks'
     | 'hub-review'
@@ -1387,13 +1386,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Icon-only hub tabs (reference mock) while the project list is visible. */
     protected getWorkHubLandingBottomButtons(): MobileBottomButton[] {
-        // Global bottom navigation stays at destination level. Chat/Task histories live inside Work.
         return [
-            {
-                id: 'hub-work',
-                label: nls.localize('qaap/mobileBottomBar/hubWork', 'Work'),
-                icon: 'codicon-inbox',
-            },
             {
                 id: 'hub-projects',
                 label: nls.localize('qaap/mobileBottomBar/hubProjects', 'Projects'),
@@ -1480,10 +1473,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             case 'hub-home':
                 return this.projectsPanel?.isVisible() === true
                     && this.projectsPanel.getHubView() === 'home'
-                    && this.projectsPanel.isHomeMode();
-            case 'hub-work':
-                return this.projectsPanel?.isVisible() === true
-                    && this.projectsPanel.getHubView() === 'work'
                     && this.projectsPanel.isHomeMode();
             case 'hub-inbox':
                 return this.projectsPanel?.isVisible() === true
@@ -1977,22 +1966,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.projectsPanel.closeProjectDetail();
             }
             this.projectsPanel?.selectHubLandingView('home');
-            this.refreshBottomBar();
-            return;
-        }
-        if (def.id === 'hub-work') {
-            dismissQaapAccountMenu();
-            this.ensureProjectsPanel();
-            if (!this.projectsPanel?.isVisible()) {
-                await this.projectsPanel?.show();
-                this.applyLandingChrome();
-            }
-            if (this.projectsPanel?.isProjectDetailView()) {
-                this.projectsPanel.closeProjectDetail();
-            }
-            this.conversations.start();
-            this.activeTasks.start();
-            this.projectsPanel?.selectHubLandingView('work');
             this.refreshBottomBar();
             return;
         }

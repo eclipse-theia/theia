@@ -42,26 +42,26 @@ export class MobileProjectsHomeUi {
         {
             action: 'new-chat',
             icon: 'codicon-comment-discussion',
-            label: 'New chat',
-            hint: 'Local Coder session',
+            label: 'Capture',
+            hint: 'Start from a task',
         },
         {
             action: 'delegate-task',
             icon: 'codicon-server-process',
             label: 'Delegate',
-            hint: 'VPS background task',
+            hint: 'Agent to branch',
         },
         {
             action: 'open-review',
             icon: 'codicon-git-pull-request',
-            label: 'Review',
-            hint: 'Pull requests',
+            label: 'PR review',
+            hint: 'Diffs and checks',
         },
         {
             action: 'all-projects',
             icon: 'codicon-folder',
-            label: 'Projects',
-            hint: 'Browse repositories',
+            label: 'Repos',
+            hint: 'GitHub workspaces',
         },
     ];
 
@@ -92,14 +92,29 @@ export class MobileProjectsHomeUi {
 
     protected createOverviewPanel(snapshot: WorkHubHomeSnapshot): HTMLElement {
         const panel = this.createPanel('theia-mobile-work-hub-home-overview');
+        const header = document.createElement('div');
+        header.className = 'theia-mobile-work-hub-home-positioning';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-work-hub-home-positioning-label q-overline';
+        label.textContent = nls.localize(
+            'qaap/workHubHome/positioningLabel',
+            'Mobile agent workbench',
+        );
+        const copy = document.createElement('p');
+        copy.className = 'theia-mobile-work-hub-home-positioning-copy';
+        copy.textContent = nls.localize(
+            'qaap/workHubHome/positioningCopy',
+            'Take tasks from capture to branch, review, and pull request without turning your phone into an IDE.',
+        );
+        header.append(label, copy);
         const stats = document.createElement('div');
         stats.className = 'theia-mobile-work-hub-home-metrics';
         stats.append(
             this.createMetric(snapshot.stats.runningTasks, nls.localize('qaap/workHubHome/statRunning', 'Running')),
-            this.createMetric(snapshot.stats.needsYou, nls.localize('qaap/workHubHome/statPending', 'Pending')),
-            this.createMetric(snapshot.stats.projectCount, nls.localize('qaap/workHubHome/statProjects', 'Projects')),
+            this.createMetric(snapshot.stats.needsYou, nls.localize('qaap/workHubHome/statPending', 'Needs you')),
+            this.createMetric(snapshot.stats.openPullRequests, nls.localize('qaap/workHubHome/statPrs', 'PRs')),
         );
-        panel.append(stats);
+        panel.append(header, stats);
         return panel;
     }
 
@@ -211,7 +226,7 @@ export class MobileProjectsHomeUi {
             empty.className = 'theia-mobile-work-hub-home-empty q-fs-meta';
             empty.textContent = nls.localize(
                 'qaap/workHubHome/noProjects',
-                'Add a GitHub repository to start working with agents.',
+                'Add a GitHub repository to delegate agent work and review the resulting PR.',
             );
             panel.append(empty);
         } else {

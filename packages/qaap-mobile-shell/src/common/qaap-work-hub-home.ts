@@ -135,18 +135,18 @@ export function buildWorkHubHomeSubtitle(stats: WorkHubHomeStats): string {
     }
     if (stats.runningTasks > 0) {
         return stats.runningTasks === 1
-            ? '1 agent working on the VPS'
-            : `${stats.runningTasks} agents working on the VPS`;
+            ? '1 agent moving work toward PR'
+            : `${stats.runningTasks} agents moving work toward PR`;
     }
     if (stats.openPullRequests > 0) {
         return stats.openPullRequests === 1
-            ? '1 open pull request'
-            : `${stats.openPullRequests} open pull requests`;
+            ? '1 pull request ready to review'
+            : `${stats.openPullRequests} pull requests ready to review`;
     }
     if (stats.projectCount === 0) {
-        return 'Add a repository to get started';
+        return 'Add a GitHub repository to start agent work';
     }
-    return 'You\'re all caught up';
+    return 'Ready to capture the next task';
 }
 
 function sortProjectsByRecency<T extends WorkHubHomeProjectRef>(projects: readonly T[]): T[] {

@@ -18,7 +18,7 @@ export type MissionControlLane = 'needs-you' | 'running' | 'done';
 /**
  * The surface an item came from — recovers the legacy Chat / Tasks / Review tabs as a secondary
  * filter axis instead of three separate destinations. `pr` wins over `chat`/`task` so the "PRs"
- * filter surfaces any work that already opened a pull request.
+ * filter surfaces work that reached the reviewable GitHub handoff.
  */
 export type MissionControlSurface = 'chat' | 'task' | 'pr';
 
@@ -202,7 +202,7 @@ export class MobileWorkMissionControl {
         if (items.length === 0) {
             panel.append(this.createEmpty(nls.localize(
                 'qaap/workMissionControl/empty',
-                'No agents are working. Delegate a task to see it here.',
+                'No agent work in flight. Capture a task, delegate it, then track it here until PR.',
             )));
             host.append(panel);
             return;
@@ -323,7 +323,7 @@ export class MobileWorkMissionControl {
 
         const title = document.createElement('span');
         title.className = 'theia-mobile-work-hub-home-section-title q-overline';
-        title.textContent = nls.localize('qaap/workMissionControl/title', 'Agents');
+        title.textContent = nls.localize('qaap/workMissionControl/title', 'Agent work to PR');
         head.append(title);
 
         if (needsYou > 0) {

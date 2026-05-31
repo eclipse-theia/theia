@@ -64,6 +64,24 @@ describe('qaap-work-hub-home', () => {
         })).to.equal('2 items need your attention');
     });
 
+    it('buildWorkHubHomeSubtitle frames running work and PR review', () => {
+        expect(buildWorkHubHomeSubtitle({
+            projectCount: 2,
+            runningTasks: 1,
+            needsYou: 0,
+            openPullRequests: 0,
+            localChatCount: 0,
+        })).to.equal('1 agent moving work toward PR');
+
+        expect(buildWorkHubHomeSubtitle({
+            projectCount: 2,
+            runningTasks: 0,
+            needsYou: 0,
+            openPullRequests: 2,
+            localChatCount: 0,
+        })).to.equal('2 pull requests ready to review');
+    });
+
     it('buildWorkHubHomeGreeting uses time of day and user name', () => {
         const morning = new Date('2026-05-30T09:00:00').getTime();
         expect(buildWorkHubHomeGreeting('Alex', morning)).to.equal('Good morning, Alex');
