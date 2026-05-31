@@ -8174,28 +8174,24 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         conv: QaapAgentConversationDTO | undefined,
     ): string | undefined {
-        if (project.previewUrl) {
-            return project.previewUrl;
-        }
-        if (!conv) {
-            return undefined;
-        }
-        for (const message of [...conv.messages].reverse()) {
-            const fromContent = this.extractDevPreviewUrlFromText(message.content);
-            if (fromContent) {
-                return fromContent;
-            }
-            for (const segment of [...(message.segments ?? [])].reverse()) {
-                const text = segment.type === 'tool'
-                    ? `${segment.args}\n${segment.result ?? ''}`
-                    : segment.content;
-                const fromSegment = this.extractDevPreviewUrlFromText(text);
-                if (fromSegment) {
-                    return fromSegment;
+        if (conv) {
+            for (const message of [...conv.messages].reverse()) {
+                const fromContent = this.extractDevPreviewUrlFromText(message.content);
+                if (fromContent) {
+                    return fromContent;
+                }
+                for (const segment of [...(message.segments ?? [])].reverse()) {
+                    const text = segment.type === 'tool'
+                        ? `${segment.args}\n${segment.result ?? ''}`
+                        : segment.content;
+                    const fromSegment = this.extractDevPreviewUrlFromText(text);
+                    if (fromSegment) {
+                        return fromSegment;
+                    }
                 }
             }
         }
-        return undefined;
+        return project.previewUrl;
     }
 
     protected extractDevPreviewUrlFromText(text: string | undefined): string | undefined {
@@ -8229,10 +8225,14 @@ export class MobileProjectsPanel {
 
         const message = nls.localize(
             'qaap/mobileProjects/previewAgentRequest',
-            'Levanta esta app para vista previa. Instala dependencias si hace falta, ejecuta el servidor de desarrollo, expón el puerto disponible y avísame cuando la preview esté lista.',
+            'Levanta esta app para vista previa. Instala dependencias si hace falta. Antes de iniciar el servidor, detecta si el puerto por defecto ya está ocupado; si lo está, elige otro puerto libre para este proyecto sin detener previews de otros proyectos. Ejecuta el servidor de desarrollo en ese puerto disponible y mantenlo corriendo con recarga dinámica/HMR para que los cambios se vean automáticamente en la preview. Cada vez que modifiques código o cualquier archivo del proyecto, ejecuta el build, compile, typecheck o check disponible antes de dar el cambio por terminado; si falla, corrige el problema y vuelve a verificar. Expón la URL final y avísame cuando la preview esté lista.',
         );
         this.transcriptPreviewRequestRunning = true;
         this.transcriptPreviewRequestPending = true;
+        if (summary.cwd) {
+            this.setAutoVerifyEnabled(summary.cwd, true);
+            this.refreshTranscriptChecksViews(project, summary);
+        }
         this.renderPreviewTab(project, summary);
         try {
             if (summary.source === 'theia-chat') {
