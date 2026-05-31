@@ -56,7 +56,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && corepack enable \
     && corepack prepare pnpm@10 --activate \
     && corepack prepare yarn@stable --activate \
+    && npm install -g @openai/codex \
     && npm install -g bun \
+    && codex --version \
     && git clone --depth 1 --branch "${QAIQ_REF}" "${QAIQ_REPO}" /opt/qaiq \
     && cd /opt/qaiq && bun install && bun run build \
     && ln -sf /opt/qaiq/bin/qaiq /usr/local/bin/qaiq \

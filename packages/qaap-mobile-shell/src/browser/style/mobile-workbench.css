@@ -6058,6 +6058,8 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 
 /* Status badges — muted fill + light glyph (reference mock). */
 .theia-mobile-projects-task-dot.theia-mod-complete,
+.theia-mobile-projects-task-dot.theia-mod-verified,
+.theia-mobile-projects-task-dot.theia-mod-pr-ready,
 .theia-mobile-projects-task-dot.theia-mod-failed,
 .theia-mobile-projects-task-dot.theia-mod-running,
 .theia-mobile-projects-task-dot.theia-mod-needs-input {
@@ -6081,6 +6083,18 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 .theia-mobile-projects-task-dot.theia-mod-complete {
   background: transparent !important;
   color: var(--theia-charts-green, #4caf7c);
+  font-size: 18px;
+}
+
+.theia-mobile-projects-task-dot.theia-mod-verified {
+  background: transparent !important;
+  color: var(--theia-charts-green, #4caf7c);
+  font-size: 18px;
+}
+
+.theia-mobile-projects-task-dot.theia-mod-pr-ready {
+  background: transparent !important;
+  color: var(--theia-charts-purple, #b180d7);
   font-size: 18px;
 }
 
@@ -6246,7 +6260,12 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 
 .theia-mobile-projects-task-foot-sep { opacity: 0.4; }
 
-.theia-mobile-projects-task-state { font-weight: 600; }
+.theia-mobile-projects-task-state {
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 1px 6px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
 
 .theia-mobile-projects-task-message-count {
   opacity: 0.85;

@@ -26,6 +26,7 @@ import {
     QAAP_BUILTIN_AGENT_DEFINITIONS,
     QAAP_BUILTIN_AGENT_IDS,
     resolveQaapBuiltinAgentMentionId,
+    resolveQaapCodexTemplate,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import {
@@ -287,6 +288,7 @@ export class QaapAgentTaskRunner {
                 this.detectedAgents.set(candidate.id, candidate);
             }
         }
+        this.detectCodexAgent();
         this.detectQaiqAgent();
         for (const candidate of this.readCustomAgents()) {
             if (this.isCandidateAvailable(candidate)) {
@@ -340,6 +342,28 @@ export class QaapAgentTaskRunner {
             bin,
             template: `${bin} --bare --print --output-format stream-json --verbose --include-partial-messages --dangerously-skip-permissions {qaiq_flags} {prompt}`,
         });
+    }
+
+    protected detectCodexAgent(): void {
+        if (!this.isOnPath('codex')) {
+            return;
+        }
+        const help = this.readCodexHelp();
+        this.detectedAgents.set('codex', {
+            id: 'codex',
+            label: 'Codex',
+            bin: 'codex',
+            template: resolveQaapCodexTemplate(help),
+        });
+    }
+
+    protected readCodexHelp(): string {
+        try {
+            const probe = spawnSync('codex', ['--help'], { encoding: 'utf8' });
+            return `${probe.stdout || ''}\n${probe.stderr || ''}`;
+        } catch {
+            return '';
+        }
     }
 
     protected isQaiqRunner(agentId: string | undefined, command: string): boolean {
@@ -926,6 +950,7 @@ export class QaapAgentTaskRunner {
      */
     protected buildChildEnv(task: QaapAgentTask): NodeJS.ProcessEnv {
         const env: NodeJS.ProcessEnv = { ...process.env };
+        env.PWD = task.cwd;
         this.applyProviderPreferenceEnv(env);
         const binding = this.isQaiqRunner(undefined, task.command) ? this.resolveQaapQaiqBinding() : undefined;
         if (binding) {

@@ -35,6 +35,20 @@ export const QAAP_BUILTIN_AGENT_DEFINITIONS: readonly QaapBuiltinAgentDefinition
 
 export const QAAP_BUILTIN_AGENT_IDS = new Set(QAAP_BUILTIN_AGENT_DEFINITIONS.map(definition => definition.id));
 
+/**
+ * OpenAI Codex CLI changed its headless entrypoint over time:
+ * - newer versions expose `codex exec <prompt>`;
+ * - older research-preview builds only support `codex -q <prompt>`.
+ *
+ * Background tasks cannot use the interactive TUI because the server process has no raw TTY,
+ * so detect the installed CLI shape and always pick a non-interactive template.
+ */
+export function resolveQaapCodexTemplate(helpText: string): string {
+    return /\bcodex\s+exec\b/.test(helpText) || /^\s+exec\b/m.test(helpText)
+        ? 'codex exec {prompt}'
+        : 'codex -q {prompt}';
+}
+
 /** Mention / storage alias for {@link QAAP_BUILTIN_AGENT_DEFINITIONS} ids. */
 export function resolveQaapBuiltinAgentMentionId(token: string): string | undefined {
     const normalized = token.trim().toLowerCase();

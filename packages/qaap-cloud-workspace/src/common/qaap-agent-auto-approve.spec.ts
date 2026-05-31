@@ -52,6 +52,8 @@ describe('qaap-agent-auto-approve', () => {
             .to.equal("claude --dangerously-skip-permissions -p 'hi'");
         expect(applyAutoApproveToCommand("codex exec 'hi'", 'codex'))
             .to.equal("codex --full-auto exec 'hi'");
+        expect(applyAutoApproveToCommand("codex -q 'hi'", 'codex'))
+            .to.equal("codex --full-auto -q 'hi'");
     });
 
     it('applyAutoApproveToCommand is idempotent', () => {

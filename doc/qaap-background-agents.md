@@ -3,7 +3,8 @@
 QAAP background tasks run in the server process, so they continue after the
 browser tab is closed. The server auto-detects these CLIs on `PATH`:
 
-- `codex` -> `codex exec {prompt}`
+- `codex` -> `codex exec {prompt}` on current Codex CLI, or `codex -q {prompt}` on older
+  research-preview builds that do not expose `exec`
 - `claude` -> `claude -p {prompt}`
 - `qaiq` -> `qaiq --bare --print --output-format stream-json --verbose --include-partial-messages --dangerously-skip-permissions {qaiq_flags} {prompt}`
   (stream-json is parsed live in chat/transcript UIs: thinking blocks, tool calls, and assistant text)
@@ -20,8 +21,8 @@ browser tab is closed. The server auto-detects these CLIs on `PATH`:
 - `kimi` -> `kimi -p {prompt}` (prompt mode auto-approves tool calls)
 
 The Docker runtime image builds and installs **[QAIQ](https://github.com/juancristobalgd1/qaiq)**
-(QAAP's fork of the OpenClaude coding-agent CLI) and Aider. Codex and Claude Code still need
-their own CLI/auth setup if you want to use them.
+(QAAP's fork of the OpenClaude coding-agent CLI), Codex CLI, and Aider. Codex still needs
+auth/API-key setup if you want to use `@codex`; Claude Code still needs its own CLI/auth setup.
 
 QAIQ is the generic BYOK/free-tier path: it can run non-interactively in the server with
 providers such as `openai`, `gemini`, `ollama`, and other OpenAI-compatible routes. Select it

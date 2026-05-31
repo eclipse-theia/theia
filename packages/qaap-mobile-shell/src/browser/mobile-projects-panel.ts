@@ -158,6 +158,7 @@ import {
     writeStoredComposerSurface,
     type QaapComposerSurface,
 } from '../common/qaap-composer-surface';
+import { resolveQaapAgentTaskVisualStatus, type QaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
 import {
     filterCatalogSections,
     QAAP_WORK_HUB_GETTING_STARTED,
@@ -5626,19 +5627,13 @@ export class MobileProjectsPanel {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'theia-mobile-projects-task-item';
-        const isRunning = task.state === 'running';
-        const needsInput = task.state === 'needs-input';
-        const isDone = task.state === 'completed';
-        const isFailed = task.state === 'failed' || task.state === 'interrupted';
-        const stateColor = isRunning
-            ? 'var(--theia-charts-green, #4caf7c)'
-            : needsInput
-                ? 'var(--theia-notificationsWarningIcon-foreground, #cca700)'
-                : isDone
-                    ? 'var(--theia-charts-green, #4caf7c)'
-                    : isFailed
-                        ? 'var(--theia-errorForeground, #f14c4c)'
-                        : 'var(--theia-descriptionForeground)';
+        const isUnread = summary ? this.isConversationUnread(summary) : false;
+        const visualStatus = resolveQaapAgentTaskVisualStatus(task, summary, isUnread);
+        const isRunning = visualStatus.id === 'running';
+        const needsInput = visualStatus.id === 'needs-you';
+        const isDone = visualStatus.id === 'verified' || visualStatus.id === 'pr-ready';
+        const isFailed = visualStatus.id === 'failed';
+        const stateColor = visualStatus.color;
         if (this.justAddedTaskId === task.id) {
             item.classList.add('theia-mod-flash');
         }
@@ -5652,16 +5647,18 @@ export class MobileProjectsPanel {
         const lineage = summary ? this.resolveConversationLineage(summary, parentIds) : 'none';
         const taskDot = document.createElement('span');
         if (lineage === 'none') {
-            if (isDone && summary && summary.messageCount > 0) {
-                taskDot.className = 'theia-mobile-projects-task-dot theia-mod-complete codicon codicon-pass';
+            if (visualStatus.id === 'verified') {
+                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className} codicon ${visualStatus.iconClass}`;
+            } else if (visualStatus.id === 'pr-ready') {
+                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className} codicon ${visualStatus.iconClass}`;
             } else if (isFailed) {
-                taskDot.className = 'theia-mobile-projects-task-dot theia-mod-failed codicon codicon-error';
+                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className} codicon ${visualStatus.iconClass}`;
             } else if (isRunning) {
                 this.renderConversationTurnProgress(taskDot, summary);
             } else if (needsInput) {
-                taskDot.className = 'theia-mobile-projects-task-dot theia-mod-needs-input codicon codicon-warning';
+                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className} codicon ${visualStatus.iconClass}`;
             } else {
-                taskDot.className = 'theia-mobile-projects-task-dot theia-mod-idle';
+                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
                 taskDot.style.background = stateColor;
             }
         } else {
@@ -5737,15 +5734,12 @@ export class MobileProjectsPanel {
         }
         this.appendConversationFootMetrics(footRow, summary, isRunning, stateColor);
 
-        const showStateChip = !isRunning || !summary?.activityLabel;
-        if (showStateChip) {
-            this.appendTaskFootSeparator(footRow);
-            const stateChip = document.createElement('span');
-            stateChip.className = 'theia-mobile-projects-task-state';
-            stateChip.style.color = stateColor;
-            stateChip.textContent = this.taskStateLabel(task.state);
-            footRow.append(stateChip);
-        }
+        this.appendTaskFootSeparator(footRow);
+        const stateChip = document.createElement('span');
+        stateChip.className = `theia-mobile-projects-task-state ${visualStatus.className}`;
+        stateChip.style.color = stateColor;
+        stateChip.textContent = this.taskStateLabel(visualStatus);
+        footRow.append(stateChip);
 
         if (summary && summary.messageCount > 0 && !this.hasConversationDiffStats(summary)) {
             this.appendTaskFootSeparator(footRow);
@@ -5765,7 +5759,7 @@ export class MobileProjectsPanel {
         });
         row.append(item);
 
-        if (summary && this.isConversationUnread(summary)) {
+        if (summary && isUnread) {
             const unread = document.createElement('span');
             unread.className = 'theia-mobile-projects-task-unread';
             const unreadLabel = nls.localize('qaap/mobileProjects/unreadBadge', 'New agent reply');
@@ -6051,20 +6045,8 @@ export class MobileProjectsPanel {
         return agentId.startsWith('@') ? agentId : `@${agentId}`;
     }
 
-    protected taskStateLabel(state: string): string {
-        switch (state) {
-            case 'running':
-                return nls.localize('qaap/mobileProjects/taskStateRunning', 'running');
-            case 'needs-input':
-                return nls.localize('qaap/mobileProjects/taskStateNeedsInput', 'needs you');
-            case 'completed':
-                return nls.localize('qaap/mobileProjects/taskStateIdle', 'idle');
-            case 'failed':
-            case 'interrupted':
-                return nls.localize('qaap/mobileProjects/taskStateFailed', 'failed');
-            default:
-                return state;
-        }
+    protected taskStateLabel(status: QaapAgentTaskVisualStatus): string {
+        return nls.localize(status.labelKey, status.label);
     }
 
     /**
