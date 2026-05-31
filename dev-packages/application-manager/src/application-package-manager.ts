@@ -224,6 +224,13 @@ export class ApplicationPackageManager {
         if (!theiaElectron.electronVersion || !semver.satisfies(theiaElectron.electronVersion, currentRange)) {
             throw new AbortError('Dependencies are out of sync, please run "install" again');
         }
+        // Electron ≥42 no longer runs a postinstall to download its binary;
+        // ensure it is present before the ffmpeg replacement step needs it.
+        const electronDistPath = path.resolve(require.resolve('electron/package.json'), '..', 'dist');
+        if (!await fs.pathExists(path.join(electronDistPath, 'version'))) {
+            const installScript = path.resolve(require.resolve('electron/package.json'), '..', 'install.js');
+            cp.execFileSync(process.execPath, [installScript], { stdio: 'inherit' });
+        }
         const ffmpeg = await import('@theia/ffmpeg');
         await ffmpeg.replaceFfmpeg();
         await ffmpeg.checkFfmpeg();
