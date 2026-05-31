@@ -431,7 +431,7 @@ export class MobileProjectsPanel {
         teamHub: MobileProjectsTeamHubUi;
         home: MobileProjectsHomeUi;
     } | undefined;
-    /** Lazily-built prototype mission-control view (gated by {@link isWorkMissionControlEnabled}). */
+    /** Lazily-built mission-control view for the unified Work surface. */
     protected missionControl: MobileWorkMissionControl | undefined;
     /** Ephemeral lane/surface filters for the full "Work" view (Phase 1). Not persisted. */
     protected workLaneFilter: MissionControlLaneFilter = 'all';
@@ -801,8 +801,8 @@ export class MobileProjectsPanel {
     }
 
     /**
-     * When the unified Work view is enabled, the legacy Home landing redirects to it so every
-     * entry point (nav, deep links, persisted state) lands on `work`. No-op when the flag is off.
+     * Legacy Home entry points redirect to Work so persisted state and old links land on the
+     * unified, context-first surface.
      */
     protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
         return isWorkMissionControlEnabled() && view === 'home' ? 'work' : view;
@@ -987,7 +987,7 @@ export class MobileProjectsPanel {
         const storedHubView = this.projectsService.getHubView();
         this.tasksHubSurface = storedHubView === 'chat' ? 'chat' : 'task';
         this.hubView = this.redirectHubView(normalizeWorkHubViewId(storedHubView) as MobileProjectsHubView);
-        // A view persisted before the unified Work nav was enabled (Chat/Tasks) lands on Work too.
+        // Views persisted before the unified Work nav (Chat/Tasks) land on Work too.
         if (isWorkMissionControlEnabled() && (this.hubView === 'chat' || this.hubView === 'tasks')) {
             this.hubView = 'work';
         }
@@ -3512,9 +3512,8 @@ export class MobileProjectsPanel {
     }
 
     /**
-     * Prototype unified "Agents" view: one cross-project, attention-first list built from the same
-     * live streams the Chat/Tasks/Review tabs already consume. Additive — only rendered behind the
-     * {@link isWorkMissionControlEnabled} flag, so the default landing is byte-for-byte unchanged.
+     * Unified "Agents" view: one cross-project, attention-first list built from the same live
+     * streams the Chat/Tasks/Review histories already consume.
      */
     protected renderMissionControlPreview(host: HTMLElement): void {
         this.ensureMissionControl().render(host, this.buildMissionControlItems());
@@ -3544,7 +3543,7 @@ export class MobileProjectsPanel {
     /**
      * Full-view "Work" surface (Phase 0 of the mission-control promotion). Same data and view as the
      * home preview card, rendered as the whole hub body so it can host the lane/surface filters next.
-     * Reachable only via the gated home card's "View all" until the bottom-nav rewire lands.
+     * Exposed as the primary Work destination in the bottom navigation.
      */
     protected renderWorkHubView(): void {
         const host = document.createElement('div');

@@ -54,7 +54,6 @@ import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
-import { isWorkMissionControlEnabled } from './mobile-work-mission-control';
 import { resolveAgentVerifyChecksForCwd } from './qaap-agent-verify-checks-resolver';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
@@ -1388,36 +1387,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Icon-only hub tabs (reference mock) while the project list is visible. */
     protected getWorkHubLandingBottomButtons(): MobileBottomButton[] {
-        if (isWorkMissionControlEnabled()) {
-            // Unified 4-tab nav: Work (mission-control) replaces Home/Chat/Tasks; Inbox absorbs Review.
-            return [
-                {
-                    id: 'hub-work',
-                    label: nls.localize('qaap/mobileBottomBar/hubWork', 'Work'),
-                    icon: 'codicon-inbox',
-                },
-                {
-                    id: 'hub-projects',
-                    label: nls.localize('qaap/mobileBottomBar/hubProjects', 'Projects'),
-                    icon: 'codicon-folder',
-                },
-                {
-                    id: 'hub-inbox',
-                    label: nls.localize('qaap/mobileBottomBar/hubInbox', 'Inbox'),
-                    icon: 'codicon-git-pull-request',
-                },
-                {
-                    id: 'hub-automations',
-                    label: nls.localize('qaap/mobileBottomBar/hubRoutines', 'Routines'),
-                    icon: 'codicon-zap',
-                },
-            ];
-        }
+        // Global bottom navigation stays at destination level. Chat/Task histories live inside Work.
         return [
             {
-                id: 'hub-home',
-                label: nls.localize('qaap/mobileBottomBar/hubHome', 'Home'),
-                icon: 'codicon-home',
+                id: 'hub-work',
+                label: nls.localize('qaap/mobileBottomBar/hubWork', 'Work'),
+                icon: 'codicon-inbox',
             },
             {
                 id: 'hub-projects',
@@ -1425,13 +1400,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 icon: 'codicon-folder',
             },
             {
-                id: 'hub-tasks',
-                label: nls.localize('qaap/mobileBottomBar/hubTasks', 'Tasks'),
-                icon: 'codicon-server-process',
-            },
-            {
-                id: 'hub-review',
-                label: nls.localize('qaap/mobileBottomBar/hubReview', 'Review'),
+                id: 'hub-inbox',
+                label: nls.localize('qaap/mobileBottomBar/hubInbox', 'Inbox'),
                 icon: 'codicon-git-pull-request',
             },
             {

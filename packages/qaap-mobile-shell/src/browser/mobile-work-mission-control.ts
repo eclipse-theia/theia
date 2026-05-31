@@ -11,7 +11,7 @@ import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conve
  * grouped by what the human should do next, instead of splitting the same conversation object across
  * the Chat / Tasks / Review tabs. It reuses the live cross-project streams already maintained by
  * {@link MobileProjectsConversations} and {@link MobileProjectsActiveTasks}; it adds no new data
- * source. Gated behind {@link isWorkMissionControlEnabled} so the default landing is unchanged.
+ * source.
  */
 export type MissionControlLane = 'needs-you' | 'running' | 'done';
 
@@ -168,14 +168,14 @@ const SURFACE_FILTER_LABEL: Record<MissionControlSurfaceFilter, { key: string; l
 const FLAG_KEY = 'qaap.workMissionControl';
 
 /**
- * Dev/preview flag. Off by default — when unset the Work Hub landing renders exactly as today.
- * Toggle from the browser console with `localStorage.setItem('qaap.workMissionControl', '1')`.
+ * Work mission control is the default Work Hub surface. Keep a local opt-out for comparing the
+ * previous landing while iterating: `localStorage.setItem('qaap.workMissionControl', '0')`.
  */
 export function isWorkMissionControlEnabled(): boolean {
     try {
-        return typeof localStorage !== 'undefined' && localStorage.getItem(FLAG_KEY) === '1';
+        return typeof localStorage === 'undefined' || localStorage.getItem(FLAG_KEY) !== '0';
     } catch {
-        return false;
+        return true;
     }
 }
 
