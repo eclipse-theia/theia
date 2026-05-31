@@ -26,6 +26,8 @@ export interface MobileProjectTaskView {
     readonly state: string;
     readonly createdAt: number;
     readonly finishedAt?: number;
+    /** Set when spawned by a leader via `qaap-task`. */
+    readonly parentId?: string;
 }
 
 interface TaskEventPayload {
@@ -36,6 +38,7 @@ interface TaskEventPayload {
     readonly command?: string;
     readonly createdAt?: number;
     readonly finishedAt?: number;
+    readonly parentId?: string;
 }
 
 export interface MobileProjectAgentDescriptor {
@@ -105,6 +108,28 @@ export class MobileProjectsActiveTasks {
     /** All tasks for a project cwd, running first then newest — excludes cancelled. */
     getTasksForCwd(cwd: string): MobileProjectTaskView[] {
         return lookupByCwd(this.tasksByCwd, cwd) ?? [];
+    }
+
+    /** All VPS background tasks across every project cwd. */
+    getAllTasks(): MobileProjectTaskView[] {
+        const merged: MobileProjectTaskView[] = [];
+        for (const tasks of this.tasksByCwd.values()) {
+            merged.push(...tasks);
+        }
+        return sortTasks(merged);
+    }
+
+    /** Sub-tasks spawned by a leader task via `qaap-task`. */
+    getChildTasksForParent(parentId: string): MobileProjectTaskView[] {
+        const merged: MobileProjectTaskView[] = [];
+        for (const tasks of this.tasksByCwd.values()) {
+            for (const task of tasks) {
+                if (task.parentId === parentId) {
+                    merged.push(task);
+                }
+            }
+        }
+        return sortTasks(merged);
     }
 
     /**
@@ -308,6 +333,7 @@ export function toTaskView(task: TaskEventPayload): MobileProjectTaskView {
         state: task.state,
         createdAt: task.createdAt ?? Date.now(),
         finishedAt: task.finishedAt,
+        parentId: task.parentId,
     };
 }
 

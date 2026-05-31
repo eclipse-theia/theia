@@ -87,6 +87,24 @@ export class MobileProjectsConversations {
     }
 
     /**
+     * Parallel-run variant conversations live in a tmpdir worktree (so their own cwd won't match
+     * the repo), but carry `parallelBaseCwd` pointing at the originating repo. This returns the
+     * variants whose base equals {@link baseCwd} so they can be grouped under that repo in Chats.
+     */
+    getVariantsForBaseCwd(baseCwd: string): QaapAgentConversationSummaryDTO[] {
+        const normalized = normalizeCwd(baseCwd);
+        const variants: QaapAgentConversationSummaryDTO[] = [];
+        for (const [, conversations] of this.byCwd) {
+            for (const conversation of conversations) {
+                if (conversation.parallelBaseCwd && normalizeCwd(conversation.parallelBaseCwd) === normalized) {
+                    variants.push(conversation);
+                }
+            }
+        }
+        return sortConversations(variants);
+    }
+
+    /**
      * Match conversations when the panel only knows repo identity (a GitHub card without a local
      * cwd yet). Mirrors the heuristic used by {@link MobileProjectsActiveTasks}.
      */
@@ -263,6 +281,23 @@ export class MobileProjectsConversations {
     recordSnapshot(conv: QaapAgentConversationSummaryDTO): void {
         this.upsert(conv);
         this.onDidChangeEmitter.fire();
+    }
+
+    /** Latest summary row for a conversation id (VPS or Theia-backed). */
+    findSummaryById(id: string): QaapAgentConversationSummaryDTO | undefined {
+        for (const list of this.byCwd.values()) {
+            const found = list.find(c => c.id === id);
+            if (found) {
+                return found;
+            }
+        }
+        for (const list of this.theiaByCwd.values()) {
+            const found = list.find(c => c.id === id || c.sessionId === id);
+            if (found) {
+                return found;
+            }
+        }
+        return undefined;
     }
 
     /** Optimistic update after deleting a conversation before SSE/storage refresh catches up. */

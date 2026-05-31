@@ -25,9 +25,29 @@ import {
     MobileProjectsHubView,
     mobileProjectInitials,
 } from './mobile-projects-types';
-import { MobileProjectsActiveTasks, MobileProjectTaskView } from './mobile-projects-active-tasks';
+import { MobileProjectsActiveTasks, MobileProjectTaskView, cwdMatchesProject } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
+import { MobileProjectsParallelUi } from './mobile-projects-parallel-ui';
+import { MobileProjectsTeamUi } from './mobile-projects-team-ui';
+import { MobileProjectsTeamHubUi, type WorkHubApprovalItem } from './mobile-projects-team-hub-ui';
+import {
+    collectAgentMembers,
+    countRunningTeamMembers,
+    filterTeamMembersForDisplay,
+    type WorkHubTeamMember,
+} from '../common/qaap-work-hub-team';
+import { MobileProjectsTimelineUi } from './mobile-projects-timeline-ui';
+import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
+import {
+    MobileWorkMissionControl,
+    classifyMissionControlLane,
+    classifyMissionControlSurface,
+    isWorkMissionControlEnabled,
+    type MissionControlItem,
+    type MissionControlLaneFilter,
+    type MissionControlSurfaceFilter,
+} from './mobile-work-mission-control';
 import { MobileProjectsService } from './mobile-projects-service';
 import { conversationTurnProgressRatio } from '../common/qaap-agent-conversation-list-metrics';
 import {
@@ -36,6 +56,7 @@ import {
     QaapAgentMessageSegmentDTO,
     cancelConversation,
     conversationToSummary,
+    isConversationAutoApproveEnabled,
     createConversation,
     deleteConversation,
     forkConversation,
@@ -45,6 +66,12 @@ import {
     retryConversation,
     updateConversation,
 } from '../common/qaap-agent-conversation-client';
+import {
+    approveAgentRequest,
+    fetchAgentApprovals,
+    rejectAgentRequest,
+    type QaapAgentApprovalRequestDTO,
+} from '../common/qaap-agent-approval-client';
 import {
     markMobileProjectReadmeForOpen,
     markMobileProjectsPanelDismiss,
@@ -65,8 +92,9 @@ import {
     isStickyComposerAgentSelected,
     reconcileStickyComposerAgent,
     resolveBackendAgentForTurn,
-    QAIQ_AGENT_ID,
     resolveExplicitAgentForSubmit,
+    QAIQ_AGENT_ID,
+    stripNonCoderAgentMention,
     SHELL_AGENT_ID,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
@@ -88,6 +116,16 @@ import {
     type StickyComposerTokenOption,
 } from '../common/qaap-sticky-composer-mention';
 import {
+    appendSubtitleMetaPart,
+    createAgentMetaBadge,
+    createAgentRowAvatar,
+    createAgentPickerField,
+    createAgentSheetOptionButton,
+    createAgentTaskBadge,
+    populateAgentToolbarButton,
+} from './qaap-agent-ui';
+import { createFormFieldLabel, createSegmentedField } from './qaap-mobile-form-ui';
+import {
     createMobileSheetGrabber,
     installMobilePullToRefresh,
     installMobileSheetDragDismiss,
@@ -105,8 +143,30 @@ import {
     fetchQaapGithubPullRequests,
     startGithubOAuth,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
-import { clearQaapAuthSession, readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { clearQaapAuthSession, readQaapAuthUser, readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import {
+    filterLocalChatSummaries,
+    filterVpsTaskSummaries,
+    isLocalChatSummary,
+    normalizeWorkHubViewId,
+} from '../common/qaap-work-hub-surfaces';
+import {
+    buildWorkHubHomeGreeting,
+    buildWorkHubHomeRecentItems,
+    formatWorkHubRelativeTime,
+    selectWorkHubHomePinnedProjectIds,
+    type WorkHubHomeAttentionItem,
+    type WorkHubHomeRecentItem,
+    type WorkHubHomeRecentSource,
+    type WorkHubHomeSnapshot,
+} from '../common/qaap-work-hub-home';
+import {
+    composerSurfaceHint,
+    readStoredComposerSurface,
+    writeStoredComposerSurface,
+    type QaapComposerSurface,
+} from '../common/qaap-composer-surface';
 import {
     filterCatalogSections,
     QAAP_WORK_HUB_GETTING_STARTED,
@@ -127,9 +187,12 @@ import {
     filterRoutinesByQuery,
     routineScheduleLabel,
     type QaapWorkHubRoutine,
+    type QaapWorkHubRoutineRunMode,
     type QaapWorkHubRoutineTrigger,
 } from '../common/qaap-work-hub-routine';
+import { QAAP_ROUTINE_CRON_PRESETS } from '../common/qaap-work-hub-cron';
 import {
+    buildReviewHubPullRequestItems,
     buildWorkHubInboxItems,
     githubRepoKeysForProjects,
     pullRequestKey,
@@ -201,6 +264,8 @@ export interface MobileProjectsPanelOptions {
     chatService?: ChatService;
     chatAgentService?: ChatAgentService;
     messageService?: MessageService;
+    /** Picks compile/build/test verification commands from the conversation workspace. */
+    resolveVerifyChecks?: (cwd: string) => Promise<Array<{ readonly label: string; readonly command: string }>>;
 }
 
 interface RestorableTheiaChatData {
@@ -224,7 +289,13 @@ interface QaapDiffProjectTab {
 }
 
 /** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
-type TranscriptTab = 'messages' | 'verify';
+type TranscriptTab = 'messages' | 'plan' | 'review' | 'verify';
+
+/** A step of the agent's plan, parsed from the latest `todoWrite` tool segment. */
+interface PlanStep {
+    readonly label: string;
+    readonly status: 'done' | 'current' | 'pending';
+}
 
 /** A single verification step run on the project (build/test/lint). */
 interface VerifyCheck {
@@ -255,6 +326,9 @@ export class MobileProjectsPanel {
     /** Max conversation rows per repo card before "More" expands the list. */
     protected static readonly CONVERSATIONS_COLLAPSED_LIMIT = 6;
 
+    /** Max automatic verify→fix loops before the closed loop gives up (avoids runaway turns/cost). */
+    protected static readonly VERIFY_AUTO_MAX_ATTEMPTS = 3;
+
     protected readonly root: HTMLElement;
     protected readonly scroll: HTMLElement;
     protected readonly stickyComposerHost: HTMLElement;
@@ -266,11 +340,14 @@ export class MobileProjectsPanel {
     protected readonly titleBlock: HTMLElement;
     protected readonly titleRow: HTMLElement;
     protected readonly titleEl: HTMLHeadingElement;
+    protected readonly titleAttentionEl: HTMLSpanElement;
     protected readonly headerBackBtn: HTMLButtonElement;
     protected readonly newFabBtn: HTMLButtonElement;
     protected filter: MobileProjectFilter = 'all';
-    protected hubView: MobileProjectsHubView = 'repos';
+    protected hubView: MobileProjectsHubView = 'home';
     protected query = '';
+    protected cachedAgentApprovals: QaapAgentApprovalRequestDTO[] = [];
+    protected agentApprovalsFetchGeneration = 0;
     /** Project ids whose conversation list is fully expanded (not capped at {@link CONVERSATIONS_COLLAPSED_LIMIT}). */
     protected readonly expandedConversationProjectIds = new Set<string>();
     protected readonly diffProjectTabsHost: HTMLElement;
@@ -280,6 +357,10 @@ export class MobileProjectsPanel {
     protected diffReviewWidget: QaapDiffReviewWidget | undefined;
     protected diffScanning = false;
     protected diffPendingPreferredProjectId: string | undefined;
+    /** When true, diff is scoped to one repo (workspace sheet) instead of cross-project hub tabs. */
+    protected diffScopedToProject = false;
+    /** Project row to restore when leaving a scoped diff via the header back control. */
+    protected diffReturnProjectId: string | undefined;
     protected projects: MobileProjectEntry[] = [];
     protected visible = false;
     /** Id of the single project row currently expanded; undefined when all are collapsed. */
@@ -304,6 +385,7 @@ export class MobileProjectsPanel {
     protected stickyComposerAgentSheet: HTMLElement | undefined;
     protected stickyComposerModeSheet: HTMLElement | undefined;
     protected stickyComposerModeId: string | undefined;
+    protected stickyComposerSurface: QaapComposerSurface = 'task';
     protected transcriptComposerHost: HTMLElement | undefined;
     protected transcriptComposerProject: MobileProjectEntry | undefined;
     protected transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
@@ -322,16 +404,41 @@ export class MobileProjectsPanel {
     protected transcriptRefreshTimer: number | undefined;
     protected transcriptChatHost: HTMLElement | undefined;
     protected transcriptChatInputHost: HTMLElement | undefined;
-    /** Verify tab of the transcript sheet: tab strip + content host + transient run state. */
+    /** Execution-view tabs: strip + per-tab content hosts. */
     protected transcriptTabStrip: HTMLElement | undefined;
+    protected transcriptReviewHost: HTMLElement | undefined;
+    protected transcriptReviewDiffHost: HTMLElement | undefined;
+    protected transcriptReviewChecksHost: HTMLElement | undefined;
+    protected transcriptReviewComposerHost: HTMLElement | undefined;
+    protected transcriptReviewComposerDraft = '';
     protected transcriptVerifyHost: HTMLElement | undefined;
+    protected transcriptPlanHost: HTMLElement | undefined;
+    protected transcriptPlanSteps: PlanStep[] = [];
     protected transcriptActiveTab: TranscriptTab = 'messages';
     protected verifyRunning = false;
     protected verifyResults: VerifyCheckResult[] = [];
+    protected verifyChecksCwd: string | undefined;
+    protected verifyChecksLoading = false;
+    /** Count of consecutive automatic verify→fix loops for the open conversation. */
+    protected verifyAutoAttempts = 0;
     /** Last transcript status seen — drives auto-verify on streaming→idle. */
     protected transcriptLastStatus: QaapAgentConversationSummaryDTO['status'] | undefined;
+    protected overlayUi: {
+        parallel: MobileProjectsParallelUi;
+        timeline: MobileProjectsTimelineUi;
+        team: MobileProjectsTeamUi;
+        teamHub: MobileProjectsTeamHubUi;
+        home: MobileProjectsHomeUi;
+    } | undefined;
+    /** Lazily-built prototype mission-control view (gated by {@link isWorkMissionControlEnabled}). */
+    protected missionControl: MobileWorkMissionControl | undefined;
+    /** Ephemeral lane/surface filters for the full "Work" view (Phase 1). Not persisted. */
+    protected workLaneFilter: MissionControlLaneFilter = 'all';
+    protected workSurfaceFilter: MissionControlSurfaceFilter = 'all';
     protected transcriptOpenSummaryId: string | undefined;
+    protected transcriptAutoApproveBusy = false;
     protected transcriptLastFingerprint: string | undefined;
+    protected transcriptLastConv: QaapAgentConversationDTO | undefined;
     protected transcriptLiveUpdatesDispose: Disposable = Disposable.NULL;
     protected readonly transcriptTheiaSessionByConversationId = new Map<string, string>();
     /** Monotonic counter that disambiguates each AIChatInputWidget instance from the WidgetManager cache. */
@@ -378,6 +485,7 @@ export class MobileProjectsPanel {
     protected readonly chatService: ChatService | undefined;
     protected readonly chatAgentService: ChatAgentService | undefined;
     protected readonly messageService: MessageService | undefined;
+    protected readonly resolveVerifyChecks: MobileProjectsPanelOptions['resolveVerifyChecks'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -387,6 +495,7 @@ export class MobileProjectsPanel {
     protected chatServiceRefreshHandle: number | undefined;
     /** Open transcript sheet — only one at a time, dismissed on tap-outside or close button. */
     protected transcriptSheet: HTMLElement | undefined;
+    protected transcriptHeaderSubtitle: HTMLElement | undefined;
     protected transcriptSheetDispose: Disposable = Disposable.NULL;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         if (!this.openMenu) {
@@ -411,7 +520,7 @@ export class MobileProjectsPanel {
 
     protected readonly onAuthSessionChanged = (): void => {
         this.updateAccountAvatar();
-        if (this.hubView === 'chats') {
+        if (this.hubView === 'tasks') {
             this.resetInboxPullRequestState();
             void this.refreshInboxPullRequests(undefined, true);
         }
@@ -448,6 +557,7 @@ export class MobileProjectsPanel {
         this.chatService = options.chatService;
         this.chatAgentService = options.chatAgentService;
         this.messageService = options.messageService;
+        this.resolveVerifyChecks = options.resolveVerifyChecks;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -476,14 +586,22 @@ export class MobileProjectsPanel {
         this.headerBackBtn.innerHTML = '<span class="codicon codicon-chevron-left" aria-hidden="true"></span>';
         this.headerBackBtn.addEventListener('click', ev => {
             ev.stopPropagation();
+            if (this.isProjectDiffView()) {
+                this.closeProjectDiffView();
+                return;
+            }
             this.closeProjectDetail();
         });
         this.titleEl = document.createElement('h1');
         this.titleEl.className = 'theia-mobile-projects-title';
         this.titleEl.textContent = nls.localize('qaap/mobileProjects/title', 'Work Hub');
+        this.titleAttentionEl = document.createElement('span');
+        this.titleAttentionEl.className = 'theia-mobile-projects-title-attention';
+        this.titleAttentionEl.hidden = true;
+        this.titleAttentionEl.setAttribute('aria-hidden', 'true');
         this.subtitleEl = document.createElement('div');
         this.subtitleEl.className = this.homeMode ? 'theia-mobile-projects-subtitle' : 'theia-mobile-projects-meta';
-        this.titleRow.append(this.headerBackBtn, this.titleEl);
+        this.titleRow.append(this.headerBackBtn, this.titleEl, this.titleAttentionEl);
         this.titleBlock.append(this.titleRow, this.subtitleEl);
 
         const actions = document.createElement('div');
@@ -595,7 +713,7 @@ export class MobileProjectsPanel {
             scroller: this.scroll,
             host: this.root,
             onRefresh: async () => {
-                if (this.hubView === 'chats') {
+                if (this.hubView === 'review') {
                     await this.refreshInboxPullRequests(undefined, true);
                 }
                 await this.refreshProjects();
@@ -634,12 +752,34 @@ export class MobileProjectsPanel {
         return this.hubView;
     }
 
-    /** Work Hub home: user drilled into a single repository (chats + sticky composer). */
+    /** Persist and apply Chat vs Task for the sticky composer (e.g. when opening the Agent sheet). */
+    preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void {
+        writeStoredComposerSurface(projectCwd, surface);
+        this.stickyComposerSurface = surface;
+        if (surface === 'chat') {
+            this.pinStickyComposerToCoder(projectCwd);
+        }
+        if (this.visible && this.hubView === 'repos') {
+            this.renderStickyComposer();
+        }
+    }
+
+    protected pinStickyComposerToCoder(cwd: string | undefined): void {
+        this.stickyComposerPinnedAgentId = THEIA_CODER_AGENT_ID;
+        writeStoredAgent(cwd, THEIA_CODER_AGENT_ID);
+    }
+
+    /** Work Hub home: user drilled into a single repository (tasks list + sticky composer). */
     isProjectDetailView(): boolean {
         return this.homeMode && this.hubView === 'repos' && this.expandedId !== undefined;
     }
 
-    /** Leave the per-project chats surface and return to the repository list. */
+    /** Diff review opened from the active workspace (sheet), not the cross-project Work Hub tab. */
+    isProjectDiffView(): boolean {
+        return this.hubView === 'diff' && this.diffScopedToProject;
+    }
+
+    /** Leave the per-project tasks surface and return to the repository list. */
     closeProjectDetail(): void {
         if (!this.expandedId) {
             return;
@@ -659,8 +799,27 @@ export class MobileProjectsPanel {
         this.delegate.onProjectsChanged?.();
     }
 
-    /** Work Hub landing: repos list, chats inbox, or diff review (collapses any expanded repo row). */
+    /**
+     * When the unified Work view is enabled, the legacy Home landing redirects to it so every
+     * entry point (nav, deep links, persisted state) lands on `work`. No-op when the flag is off.
+     */
+    protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
+        return isWorkMissionControlEnabled() && view === 'home' ? 'work' : view;
+    }
+
+    /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
     selectHubLandingView(view: MobileProjectsHubView, preferredDiffProjectId?: string): void {
+        view = this.redirectHubView(normalizeWorkHubViewId(view) as MobileProjectsHubView);
+        if (this.hubView === view && view === 'home') {
+            this.refreshHomeHubData(false);
+            return;
+        }
+        if (this.hubView === view && view === 'work') {
+            this.conversations?.start();
+            this.activeTasks?.start();
+            this.render();
+            return;
+        }
         if (this.hubView === view && view === 'repos' && this.expandedId === undefined) {
             return;
         }
@@ -668,7 +827,18 @@ export class MobileProjectsPanel {
             void this.refreshDiffHubView();
             return;
         }
-        if (this.hubView === view && view === 'chats') {
+        if (this.hubView === view && view === 'chat') {
+            this.scheduleChatHubListRefreshAfterSummaries();
+            return;
+        }
+        if (this.hubView === view && view === 'tasks') {
+            this.conversations?.start();
+            this.activeTasks?.start();
+            this.refreshTasksHubApprovals(false);
+            this.render();
+            return;
+        }
+        if (this.hubView === view && view === 'review') {
             this.conversations?.start();
             this.inboxStream?.start();
             this.subscribeToInboxStream();
@@ -688,18 +858,37 @@ export class MobileProjectsPanel {
         this.projectsService.setHubView(view);
         this.expandedId = undefined;
         this.soloExpanded = false;
+        if (view === 'home') {
+            this.refreshHomeHubData(true);
+        }
         if (view === 'routines') {
             void this.refreshWorkHubRoutines(true);
         }
-        if (view === 'chats') {
+        if (view === 'chat') {
+            this.scheduleChatHubListRefreshAfterSummaries();
+        }
+        if (view === 'review') {
             this.inboxLoadGeneration++;
             this.inboxPullRequestsLoaded = false;
             this.inboxStream?.start();
             this.subscribeToInboxStream();
+            this.conversations?.start();
             void this.refreshInboxPullRequests(undefined, true);
+        }
+        if (view === 'tasks') {
+            this.activeTasks?.start();
+            this.conversations?.start();
+            this.refreshTasksHubApprovals(true);
+        }
+        if (view === 'work') {
+            this.activeTasks?.start();
+            this.conversations?.start();
         }
         if (view === 'diff') {
             this.diffPendingPreferredProjectId = preferredDiffProjectId;
+        } else {
+            this.diffScopedToProject = false;
+            this.diffReturnProjectId = undefined;
         }
         this.render();
         this.syncLandingHubListChrome();
@@ -715,7 +904,43 @@ export class MobileProjectsPanel {
         if (!this.visible) {
             await this.show();
         }
+        this.diffScopedToProject = false;
+        this.diffReturnProjectId = undefined;
         this.selectHubLandingView('diff', preferredProjectId);
+    }
+
+    /** Open working-changes review for the active (or preferred) project inside the projects sheet. */
+    async openProjectDiffView(preferredProjectId?: string): Promise<void> {
+        if (!this.visible) {
+            await this.show();
+        }
+        const projectId = preferredProjectId
+            ?? this.projects.find(p => p.isCurrent)?.id;
+        this.diffScopedToProject = true;
+        this.diffReturnProjectId = projectId;
+        this.selectHubLandingView('diff', projectId);
+    }
+
+    /** Leave scoped diff and return to the expanded project task list (or collapse the sheet list). */
+    closeProjectDiffView(): void {
+        if (!this.isProjectDiffView()) {
+            return;
+        }
+        this.diffScopedToProject = false;
+        this.hubView = 'repos';
+        this.projectsService.setHubView('repos');
+        this.diffPendingPreferredProjectId = undefined;
+        this.diffProjectTabs = [];
+        this.diffActiveProjectId = undefined;
+        if (this.diffReturnProjectId) {
+            this.expandedId = this.diffReturnProjectId;
+            this.soloExpanded = true;
+        }
+        this.diffReturnProjectId = undefined;
+        this.detachDiffReviewWidget();
+        this.render();
+        this.syncLandingHubListChrome();
+        this.delegate.onProjectsChanged?.();
     }
 
     protected updateAccountAvatar(): void {
@@ -755,17 +980,33 @@ export class MobileProjectsPanel {
         await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
         await this.refreshChatServiceSessionSummaries();
         this.filter = this.projectsService.getFilter();
-        this.hubView = this.projectsService.getHubView();
+        this.hubView = this.redirectHubView(normalizeWorkHubViewId(this.projectsService.getHubView()) as MobileProjectsHubView);
+        // A view persisted before the unified Work nav was enabled (Chat/Tasks) lands on Work too.
+        if (isWorkMissionControlEnabled() && (this.hubView === 'chat' || this.hubView === 'tasks')) {
+            this.hubView = 'work';
+        }
         this.updateSearchPlaceholder();
         this.render();
         if (this.hubView === 'diff') {
             void this.refreshDiffHubView();
         }
-        if (this.hubView === 'chats') {
+        if (this.hubView === 'work') {
+            this.conversations?.start();
+            this.activeTasks?.start();
+        }
+        if (this.hubView === 'tasks') {
+            this.conversations?.start();
+            this.activeTasks?.start();
+            this.refreshTasksHubApprovals(false);
+        }
+        if (this.hubView === 'review') {
             this.conversations?.start();
             this.inboxStream?.start();
             this.subscribeToInboxStream();
             void this.refreshInboxPullRequests(undefined, true);
+        }
+        if (this.hubView === 'home') {
+            this.refreshHomeHubData(false);
         }
         this.visible = true;
         this.root.hidden = false;
@@ -813,7 +1054,12 @@ export class MobileProjectsPanel {
         this.chatServiceDispose.dispose();
         if (this.activeTasks) {
             this.activeTasksDispose = this.activeTasks.onDidChange(() => {
-                if (this.visible && !this.transcriptSheet) {
+                if (this.visible && this.transcriptSheet && this.transcriptChatHost && this.transcriptLastConv) {
+                    this.ensureOverlayUi().team.renderTeamSection(this.transcriptChatHost, this.transcriptLastConv);
+                }
+                if (this.visible && this.isTasksHubView()) {
+                    this.renderList();
+                } else if (this.visible && !this.transcriptSheet) {
                     void this.applyActiveTasksRefresh();
                 }
             });
@@ -821,7 +1067,9 @@ export class MobileProjectsPanel {
         if (this.conversations) {
             this.conversations.start();
             this.conversationsDispose = this.conversations.onDidChange(() => {
-                if (this.visible && !this.transcriptSheet) {
+                if (this.visible && this.isTasksHubView()) {
+                    this.renderList();
+                } else if (this.visible && !this.transcriptSheet) {
                     void this.applyActiveTasksRefresh();
                 }
             });
@@ -837,7 +1085,7 @@ export class MobileProjectsPanel {
             return;
         }
         this.inboxStreamDispose = this.inboxStream.onDidChange(() => {
-            if (!this.visible || this.hubView !== 'chats' || this.transcriptSheet) {
+            if (!this.visible || this.hubView !== 'review' || this.transcriptSheet) {
                 return;
             }
             this.inboxPullRequests = this.mergeInboxPullRequests(this.inboxPullRequests);
@@ -917,6 +1165,16 @@ export class MobileProjectsPanel {
         }, 120);
     }
 
+    /** Refresh chat session summaries once, then repaint the hub list (never from inside renderList). */
+    protected scheduleChatHubListRefreshAfterSummaries(): void {
+        void this.refreshChatServiceSessionSummaries().then(() => {
+            if (this.hubView === 'chat' && this.visible) {
+                this.renderList();
+                this.renderSubtitle();
+            }
+        });
+    }
+
     protected async applyActiveTasksRefresh(): Promise<void> {
         if (this.transcriptSheet) {
             return;
@@ -940,16 +1198,41 @@ export class MobileProjectsPanel {
 
     protected renderHeader(): void {
         const inProjectDetail = this.isProjectDetailView();
-        this.headerBackBtn.hidden = !inProjectDetail;
-        this.headerBackBtn.setAttribute('aria-hidden', inProjectDetail ? 'false' : 'true');
-        this.titleBlock.classList.toggle('theia-mod-with-back', inProjectDetail);
+        const inProjectDiff = this.isProjectDiffView();
+        this.headerBackBtn.hidden = !(inProjectDetail || inProjectDiff);
+        this.headerBackBtn.setAttribute('aria-hidden', (inProjectDetail || inProjectDiff) ? 'false' : 'true');
+        this.titleBlock.classList.toggle('theia-mod-with-back', inProjectDetail || inProjectDiff);
+        if (inProjectDiff) {
+            this.headerBackBtn.title = nls.localize('qaap/diff/backToProject', 'Back to project');
+            this.headerBackBtn.setAttribute('aria-label', this.headerBackBtn.title);
+        } else {
+            this.headerBackBtn.title = nls.localize('qaap/mobileProjects/backToProjects', 'Back to projects');
+            this.headerBackBtn.setAttribute('aria-label', this.headerBackBtn.title);
+        }
 
         if (this.hubView === 'diff') {
             this.titleEl.textContent = nls.localize('qaap/diff/reviewLabel', 'Working changes');
             return;
         }
-        if (this.hubView === 'chats') {
-            this.titleEl.textContent = nls.localize('qaap/mobileProjects/inboxTitle', 'Inbox');
+        if (this.hubView === 'work') {
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/workHubTitle', 'Work');
+            this.titleAttentionEl.hidden = true;
+            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
+            return;
+        }
+        if (this.hubView === 'chat') {
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/chatTitle', 'Chat');
+            return;
+        }
+        if (this.hubView === 'tasks') {
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/tasksHubTitle', 'Tasks');
+            this.updateTasksAttentionChrome();
+            return;
+        }
+        if (this.hubView === 'review') {
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/reviewHubTitle', 'Review');
+            this.titleAttentionEl.hidden = true;
+            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
             return;
         }
         if (this.hubView === 'workflows') {
@@ -960,9 +1243,19 @@ export class MobileProjectsPanel {
             this.titleEl.textContent = nls.localize('qaap/mobileProjects/routinesTitle', 'Routines');
             return;
         }
+        if (this.homeMode && this.hubView === 'home') {
+            this.titleEl.textContent = this.buildHomeGreeting();
+            this.titleAttentionEl.hidden = true;
+            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
+            return;
+        }
+        this.titleAttentionEl.hidden = true;
         if (inProjectDetail) {
-            const appName = FrontendApplicationConfigProvider.get().applicationName?.trim();
-            this.titleEl.textContent = appName || nls.localize('qaap/mobileProjects/title', 'Work Hub');
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/tasksTitle', 'Tasks');
+            return;
+        }
+        if (this.homeMode && this.hubView === 'repos') {
+            this.titleEl.textContent = nls.localize('qaap/mobileProjects/projectsTitle', 'Projects');
             return;
         }
         if (this.homeMode) {
@@ -976,10 +1269,38 @@ export class MobileProjectsPanel {
     protected renderSubtitle(): void {
         if (this.hubView === 'diff') {
             this.subtitleEl.className = 'theia-mobile-projects-subtitle';
+            if (this.diffScopedToProject) {
+                const tab = this.diffProjectTabs[0];
+                if (!tab || tab.fileCount === 0) {
+                    this.subtitleEl.textContent = this.diffScanning
+                        ? nls.localize('qaap/diff/scanningProjects', 'Scanning projects for changes…')
+                        : nls.localize('qaap/diff/noChanges', 'No changes to review.');
+                } else if (tab.fileCount === 1) {
+                    this.subtitleEl.textContent = nls.localize(
+                        'qaap/diff/oneFileInProject',
+                        '1 file · {0}',
+                        tab.label,
+                    );
+                } else {
+                    this.subtitleEl.textContent = nls.localize(
+                        'qaap/diff/nFilesInProject',
+                        '{0} files · {1}',
+                        String(tab.fileCount),
+                        tab.label,
+                    );
+                }
+                return;
+            }
             const count = this.diffProjectTabs.length;
             this.subtitleEl.textContent = count === 1
                 ? nls.localize('qaap/diff/oneProjectWithChanges', '1 project with changes')
                 : nls.localize('qaap/diff/nProjectsWithChanges', '{0} projects with changes', String(count));
+            return;
+        }
+        if (this.homeMode && this.hubView === 'home') {
+            this.subtitleEl.className = 'theia-mobile-projects-subtitle q-fs-meta';
+            this.subtitleEl.textContent = this.buildHomeSubtitle(this.buildHomeSnapshot());
+            this.subtitleEl.hidden = false;
             return;
         }
         if (this.homeMode && this.hubView === 'workflows') {
@@ -1015,36 +1336,104 @@ export class MobileProjectsPanel {
             }
             return;
         }
-        if (this.homeMode && this.hubView === 'chats') {
+        if (this.homeMode && this.hubView === 'tasks') {
             this.subtitleEl.className = 'theia-mobile-projects-subtitle';
-            const prCount = this.inboxPullRequests.length;
-            const agentCount = this.projects.reduce(
-                (sum, project) => sum + this.conversationsForProject(project).filter(c => c.status === 'streaming').length,
+            const attention = this.countTasksAttention();
+            const streamingCount = this.projects.reduce(
+                (sum, project) => sum + this.vpsTasksForProject(project).filter(c => c.status === 'streaming').length,
                 0,
             );
-            if (this.inboxPullRequestsLoading && !this.inboxPullRequestsLoaded) {
-                this.subtitleEl.textContent = nls.localize('qaap/mobileProjects/inboxLoading', 'Loading inbox…');
-            } else if (this.inboxPullRequestsLoading && this.inboxPullRequestsLoaded) {
-                this.subtitleEl.textContent = nls.localize('qaap/mobileProjects/inboxRefreshing', 'Refreshing pull requests…');
-            } else if (prCount > 0 && agentCount > 0) {
+            if (attention.needsYou > 0) {
                 this.subtitleEl.textContent = nls.localize(
-                    'qaap/mobileProjects/inboxSubtitlePrAndAgents',
-                    '{0} open PRs · {1} agents active',
-                    String(prCount),
-                    String(agentCount),
+                    'qaap/mobileProjects/tasksSubtitleNeedsYou',
+                    '{0} need your attention · {1} agents active on the VPS',
+                    String(attention.needsYou),
+                    String(Math.max(attention.running, streamingCount)),
+                );
+            } else if (attention.running > 0 || streamingCount > 0) {
+                this.subtitleEl.textContent = nls.localize(
+                    'qaap/mobileProjects/tasksSubtitleRunning',
+                    '{0} agents working on the VPS',
+                    String(Math.max(attention.running, streamingCount)),
+                );
+            } else {
+                this.subtitleEl.textContent = nls.localize(
+                    'qaap/mobileProjects/tasksSubtitle',
+                    'VPS agent work — keeps running when you close the app',
+                );
+            }
+            return;
+        }
+        if (this.homeMode && this.hubView === 'review') {
+            this.subtitleEl.className = 'theia-mobile-projects-subtitle';
+            const prCount = this.inboxPullRequests.length;
+            const repoCount = githubRepoKeysForProjects(this.projects).length;
+            if (this.inboxPullRequestsLoading && !this.inboxPullRequestsLoaded) {
+                this.subtitleEl.textContent = nls.localize('qaap/mobileProjects/reviewLoading', 'Loading pull requests…');
+            } else if (this.inboxPullRequestsLoading && this.inboxPullRequestsLoaded) {
+                this.subtitleEl.textContent = nls.localize('qaap/mobileProjects/reviewRefreshing', 'Refreshing pull requests…');
+            } else if (repoCount === 0) {
+                this.subtitleEl.textContent = nls.localize(
+                    'qaap/mobileProjects/reviewSubtitleNoRepos',
+                    'Link a GitHub repository to see open pull requests',
+                );
+            } else if (this.inboxGithubSignedIn === false) {
+                this.subtitleEl.textContent = nls.localize(
+                    'qaap/mobileProjects/reviewSubtitleSignIn',
+                    'Sign in with GitHub to load pull requests',
                 );
             } else if (prCount > 0) {
                 this.subtitleEl.textContent = nls.localize(
-                    'qaap/mobileProjects/inboxSubtitlePrs',
-                    '{0} open pull requests',
+                    'qaap/mobileProjects/reviewSubtitleCount',
+                    '{0} open pull requests · swipe to review',
                     String(prCount),
                 );
             } else {
                 this.subtitleEl.textContent = nls.localize(
-                    'qaap/mobileProjects/inboxSubtitle',
-                    'Pull requests and agent activity',
+                    'qaap/mobileProjects/reviewSubtitle',
+                    'Open pull requests across your linked repositories',
                 );
             }
+            return;
+        }
+        if (this.homeMode && this.hubView === 'chat') {
+            this.subtitleEl.className = 'theia-mobile-projects-subtitle';
+            const chatCount = this.projects.reduce(
+                (sum, project) => sum + this.localChatsForProject(project).length,
+                0,
+            );
+            this.subtitleEl.textContent = chatCount > 0
+                ? nls.localize(
+                    'qaap/mobileProjects/chatSubtitleCount',
+                    '{0} local chat sessions · saved on this device',
+                    String(chatCount),
+                )
+                : nls.localize(
+                    'qaap/mobileProjects/chatSubtitle',
+                    'Interactive workspace chat — persists when you close the app',
+                );
+            return;
+        }
+        if (this.homeMode && this.hubView === 'work') {
+            this.subtitleEl.className = 'theia-mobile-projects-subtitle q-fs-meta';
+            const items = this.buildMissionControlItems();
+            const needsYou = items.filter(item => item.lane === 'needs-you').length;
+            const running = items.filter(item => item.lane === 'running').length;
+            if (needsYou > 0) {
+                this.subtitleEl.textContent = needsYou === 1
+                    ? nls.localize('qaap/mobileProjects/workSubtitleNeedsYouOne', '1 agent needs you')
+                    : nls.localize('qaap/mobileProjects/workSubtitleNeedsYouMany', '{0} agents need you', String(needsYou));
+            } else if (running > 0) {
+                this.subtitleEl.textContent = running === 1
+                    ? nls.localize('qaap/mobileProjects/workSubtitleRunningOne', '1 agent working')
+                    : nls.localize('qaap/mobileProjects/workSubtitleRunningMany', '{0} agents working', String(running));
+            } else {
+                this.subtitleEl.textContent = nls.localize(
+                    'qaap/mobileProjects/workSubtitleAllClear',
+                    'Every agent is idle — delegate a task to get going',
+                );
+            }
+            this.subtitleEl.hidden = false;
             return;
         }
         if (this.isProjectDetailView()) {
@@ -1066,7 +1455,11 @@ export class MobileProjectsPanel {
         }
         if (this.homeMode) {
             this.subtitleEl.className = 'theia-mobile-projects-subtitle';
-            this.subtitleEl.textContent = nls.localize('qaap/mobileProjects/homeSubtitle', 'Projects');
+            this.subtitleEl.textContent = nls.localize(
+                'qaap/mobileProjects/projectsSubtitle',
+                '{0} repositories · search, pin, and open a workspace',
+                String(this.projects.length),
+            );
             return;
         }
         this.subtitleEl.className = 'theia-mobile-projects-meta';
@@ -1110,29 +1503,39 @@ export class MobileProjectsPanel {
     }
 
     protected countRunningTasks(project: MobileProjectEntry): number {
-        return this.conversationsForProject(project).filter(c => c.status === 'streaming').length;
+        return this.vpsTasksForProject(project).filter(c => c.status === 'streaming').length;
+    }
+
+    /** VPS agent conversations/tasks for one project (excludes local Theia chat). */
+    protected vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
+        return filterVpsTaskSummaries(this.conversationsForProject(project));
+    }
+
+    /** Local Theia chat sessions for one project card / Chat hub tab. */
+    protected localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
+        return filterLocalChatSummaries(this.conversationsForProject(project));
     }
 
     protected countDoneTasks(project: MobileProjectEntry): number {
-        return this.conversationsForProject(project).filter(c => c.status === 'idle' && c.messageCount > 0).length;
+        return this.vpsTasksForProject(project).filter(c => c.status === 'idle' && c.messageCount > 0).length;
     }
 
     protected countNeedsInputTasks(project: MobileProjectEntry): number {
-        return this.conversationsForProject(project).filter(c => {
+        return this.vpsTasksForProject(project).filter(c => {
             const session = c.sessionId ? this.chatService?.getSession(c.sessionId) : undefined;
             return !!session && this.isChatSessionWaitingForInput(session);
         }).length;
     }
 
     protected countFailedTasks(project: MobileProjectEntry): number {
-        return this.conversationsForProject(project).filter(c => c.status === 'failed').length;
+        return this.vpsTasksForProject(project).filter(c => c.status === 'failed').length;
     }
 
     protected countUnreadTasks(project: MobileProjectEntry): number {
         if (!this.conversationFlags) {
             return 0;
         }
-        return this.conversationsForProject(project).filter(c => this.isConversationUnread(c)).length;
+        return this.vpsTasksForProject(project).filter(c => this.isConversationUnread(c)).length;
     }
 
     /**
@@ -1163,7 +1566,9 @@ export class MobileProjectsPanel {
         if (list.length === 0) {
             list = this.conversations.findConversationsForProject(project);
         }
-        return this.mergeConversationSummaries(directChatSessions, list);
+        // Parallel-run variants live in a tmpdir worktree but belong to this repo (parallelBaseCwd).
+        const variants = cwd ? this.conversations.getVariantsForBaseCwd(cwd) : [];
+        return this.mergeConversationSummaries(directChatSessions, [...list, ...variants]);
     }
 
     protected async refreshChatServiceSessionSummaries(): Promise<void> {
@@ -1185,7 +1590,7 @@ export class MobileProjectsPanel {
             .filter(session => !session.model.isEmpty())
             .map(session => ({
                 sessionId: session.id,
-                title: session.title ?? nls.localize('qaap/mobileProjects/untitledChat', 'Untitled chat'),
+                title: session.title ?? nls.localize('qaap/mobileProjects/untitledTask', 'Untitled task'),
                 saveDate: session.lastInteraction?.getTime?.() ?? Date.now(),
                 location: session.model.location,
             } satisfies ChatSessionMetadata));
@@ -1451,6 +1856,14 @@ export class MobileProjectsPanel {
             this.openRoutineEditor();
             return;
         }
+        if (this.hubView === 'work') {
+            // Compose: delegate a new task scoped to the active (or most relevant) project.
+            const project = this.resolveHomePinnedProject();
+            if (project) {
+                await this.delegate.onOpenAgentOnTask?.(project);
+            }
+            return;
+        }
         if (!this.openRepoDialog) {
             this.openRepoDialog = new MobileOpenRepositoryDialog(this.projectsService, {
                 onProjectsChanged: nextProjects => {
@@ -1495,8 +1908,14 @@ export class MobileProjectsPanel {
     }
 
     protected render(): void {
+        this.root.classList.toggle('theia-mod-hub-home', this.hubView === 'home');
+        this.root.classList.toggle('theia-mod-hub-work', this.hubView === 'work');
         this.root.classList.toggle('theia-mod-hub-diff', this.hubView === 'diff');
-        this.root.classList.toggle('theia-mod-hub-inbox', this.hubView === 'chats');
+        this.root.classList.toggle('theia-mod-hub-project-diff', this.isProjectDiffView());
+        this.root.classList.toggle('theia-mod-hub-inbox', this.hubView === 'tasks');
+        this.root.classList.toggle('theia-mod-hub-tasks', this.hubView === 'tasks');
+        this.root.classList.toggle('theia-mod-hub-review', this.hubView === 'review');
+        this.root.classList.toggle('theia-mod-hub-chat', this.hubView === 'chat');
         this.root.classList.toggle('theia-mod-hub-workflows', this.hubView === 'workflows');
         this.root.classList.toggle('theia-mod-hub-routines', this.hubView === 'routines');
         this.root.classList.toggle('theia-mod-project-detail', this.isProjectDetailView());
@@ -1509,10 +1928,20 @@ export class MobileProjectsPanel {
     }
 
     protected updateSearchPlaceholder(): void {
-        if (this.hubView === 'chats') {
+        if (this.hubView === 'chat') {
             this.searchInput.placeholder = nls.localize(
-                'qaap/mobileProjects/searchInboxPlaceholder',
-                'Search PRs, agents, and messages',
+                'qaap/mobileProjects/searchChatPlaceholder',
+                'Search local chat sessions',
+            );
+        } else if (this.hubView === 'tasks') {
+            this.searchInput.placeholder = nls.localize(
+                'qaap/mobileProjects/searchTasksPlaceholder',
+                'Search VPS tasks and agents',
+            );
+        } else if (this.hubView === 'review') {
+            this.searchInput.placeholder = nls.localize(
+                'qaap/mobileProjects/searchReviewPlaceholder',
+                'Search pull requests',
             );
         } else if (this.hubView === 'workflows') {
             this.searchInput.placeholder = nls.localize(
@@ -1527,7 +1956,7 @@ export class MobileProjectsPanel {
         } else {
             this.searchInput.placeholder = nls.localize(
                 'qaap/mobileProjects/searchPlaceholder',
-                'Search repositories and chats',
+                'Search repositories and tasks',
             );
         }
     }
@@ -1538,7 +1967,7 @@ export class MobileProjectsPanel {
 
     /** Projects included in the current hub list (inbox ignores Active/Pinned filters). */
     protected projectsForCurrentHubList(): MobileProjectEntry[] {
-        const base = this.hubView === 'chats'
+        const base = (this.hubView === 'tasks' || this.hubView === 'chat' || this.hubView === 'review')
             ? this.projects
             : this.applyFilter(this.projects, this.filter);
         return this.applySearch(base);
@@ -1546,16 +1975,21 @@ export class MobileProjectsPanel {
 
     protected renderFilters(): void {
         const searchWrap = this.searchInput.parentElement;
-        const hideRepoChrome = this.hubView === 'diff'
-            || this.hubView === 'chats'
-            || this.hubView === 'workflows'
-            || this.hubView === 'routines'
+        const hideSearch = this.hubView === 'diff'
+            || this.hubView === 'home'
+            || this.hubView === 'work'
+            || this.hubView === 'tasks'
+            || this.hubView === 'review'
+            || this.hubView === 'chat'
             || this.isProjectDetailView();
+        const hideFilters = hideSearch
+            || this.hubView === 'workflows'
+            || this.hubView === 'routines';
         if (searchWrap) {
-            searchWrap.hidden = hideRepoChrome;
+            searchWrap.hidden = hideSearch;
         }
-        this.filterRow.hidden = hideRepoChrome;
-        if (hideRepoChrome) {
+        this.filterRow.hidden = hideFilters;
+        if (hideFilters) {
             this.filterRow.replaceChildren();
             return;
         }
@@ -1614,8 +2048,24 @@ export class MobileProjectsPanel {
 
             const filtered = this.projectsForCurrentHubList();
 
-            if (this.hubView === 'chats') {
-                this.renderChatsInbox(filtered);
+            if (this.hubView === 'home') {
+                this.renderHomeHubView();
+                return;
+            }
+            if (this.hubView === 'work') {
+                this.renderWorkHubView();
+                return;
+            }
+            if (this.hubView === 'chat') {
+                this.renderChatHubView(filtered);
+                return;
+            }
+            if (this.hubView === 'tasks') {
+                this.renderTasksHubView(filtered);
+                return;
+            }
+            if (this.hubView === 'review') {
+                this.renderReviewHubView(filtered);
                 return;
             }
             if (this.hubView === 'workflows') {
@@ -1681,12 +2131,16 @@ export class MobileProjectsPanel {
         this.root.classList.toggle('theia-mod-repo-expanded', repoExpanded);
         const showRepoFab = this.hubView === 'repos' && !repoExpanded;
         const showRoutineFab = this.hubView === 'routines';
-        const showFab = showRepoFab || showRoutineFab;
+        // Work view (Phase 3): the FAB delegates a new task — needs at least one project to scope to.
+        const showWorkFab = this.hubView === 'work' && this.projects.length > 0;
+        const showFab = showRepoFab || showRoutineFab || showWorkFab;
         this.newFabBtn.hidden = !showFab;
         this.newFabBtn.setAttribute('aria-hidden', showFab ? 'false' : 'true');
         this.newFabBtn.title = showRoutineFab
             ? nls.localize('qaap/mobileProjects/newRoutine', 'New routine')
-            : nls.localize('qaap/mobileProjects/newRepository', 'Add repository');
+            : showWorkFab
+                ? nls.localize('qaap/mobileProjects/newTask', 'New task')
+                : nls.localize('qaap/mobileProjects/newRepository', 'Add repository');
         this.newFabBtn.setAttribute('aria-label', this.newFabBtn.title);
     }
 
@@ -1734,8 +2188,8 @@ export class MobileProjectsPanel {
 
     protected renderDiffProjectTabs(): void {
         this.diffProjectTabsHost.replaceChildren();
-        if (this.diffProjectTabs.length <= 1) {
-            this.diffProjectTabsHost.hidden = this.diffProjectTabs.length === 0;
+        if (this.diffScopedToProject || this.diffProjectTabs.length <= 1) {
+            this.diffProjectTabsHost.hidden = true;
             return;
         }
         this.diffProjectTabsHost.hidden = false;
@@ -1778,20 +2232,62 @@ export class MobileProjectsPanel {
         this.diffScanning = true;
         this.renderDiffHubView();
         try {
-            const tabs = await this.scanProjectsWithChanges();
-            this.diffProjectTabs = tabs;
             const preferred = this.diffPendingPreferredProjectId;
             this.diffPendingPreferredProjectId = undefined;
-            const pick = (preferred && tabs.some(t => t.projectId === preferred))
+            if (this.diffScopedToProject) {
+                const tab = await this.scanSingleProjectWithChanges(preferred);
+                this.diffProjectTabs = tab ? [tab] : [];
+            } else {
+                this.diffProjectTabs = await this.scanProjectsWithChanges();
+            }
+            const pick = (preferred && this.diffProjectTabs.some(t => t.projectId === preferred))
                 ? preferred
-                : tabs.find(t => t.isActiveWorkspace)?.projectId
-                ?? tabs[0]?.projectId;
+                : this.diffProjectTabs.find(t => t.isActiveWorkspace)?.projectId
+                ?? this.diffProjectTabs[0]?.projectId;
             this.diffActiveProjectId = pick;
         } finally {
             this.diffScanning = false;
             this.renderHeader();
             this.renderSubtitle();
             this.renderDiffHubView();
+        }
+    }
+
+    protected async scanSingleProjectWithChanges(preferredProjectId?: string): Promise<QaapDiffProjectTab | undefined> {
+        const projects = this.projects.length > 0 ? this.projects : await this.projectsService.loadProjects();
+        const project = (preferredProjectId
+            ? projects.find(p => p.id === preferredProjectId)
+            : undefined)
+            ?? projects.find(p => p.isCurrent)
+            ?? projects[0];
+        if (!project) {
+            return undefined;
+        }
+        const cwd = this.projectsService.getProjectCwd(project);
+        if (!cwd) {
+            return undefined;
+        }
+        const rootUri = project.uri?.toString() ?? `file://${cwd}`;
+        try {
+            const response = await fetch(
+                `${QAAP_GIT_REVIEW_API_PATH}/changes?root=${encodeURIComponent(cwd)}`,
+                { credentials: 'include' },
+            );
+            if (!response.ok) {
+                return undefined;
+            }
+            const body = await response.json() as { files?: QaapGitChangedFile[] };
+            const files = body.files ?? [];
+            return {
+                projectId: project.id,
+                label: project.name,
+                rootUri,
+                rootFsPath: cwd,
+                isActiveWorkspace: project.isCurrent,
+                fileCount: files.length,
+            };
+        } catch {
+            return undefined;
         }
     }
 
@@ -1851,8 +2347,10 @@ export class MobileProjectsPanel {
         if (!this.diffReviewWidget) {
             this.diffReviewWidget = await this.createDiffReviewWidget();
             this.diffReviewWidget.node.classList.add('theia-mobile-projects-diff-embed');
-            this.diffReviewWidget.enableWorkHubEmbed();
         }
+        this.diffReviewWidget.enableWorkHubEmbed();
+        this.diffReviewWidget.setTranscriptAgentFeedbackHandler(undefined);
+        this.diffReviewWidget.setReviewStatsChangeHandler(undefined);
         if (!this.diffReviewWidget.isAttached) {
             Widget.attach(this.diffReviewWidget, this.diffWidgetHost);
         } else if (this.diffReviewWidget.node.parentElement !== this.diffWidgetHost) {
@@ -1931,9 +2429,16 @@ export class MobileProjectsPanel {
 
         void this.refreshStickyComposerAgents(project);
 
-        const canRunTask = !!project && (!!this.projectsService.getProjectCwd(project) || !!project.github);
-        const pinnedId = this.resolveStickyComposerPinnedAgentId(project);
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
+        this.stickyComposerSurface = readStoredComposerSurface(cwd) ?? 'task';
+        const isChatSurface = this.stickyComposerSurface === 'chat';
+        if (isChatSurface) {
+            this.pinStickyComposerToCoder(cwd);
+        }
+        const canRunTask = !!project && (!!cwd || !!project.github);
+        const canRunChat = !!this.chatService && !!project;
+        const canSubmit = isChatSurface ? canRunChat : canRunTask;
+        const pinnedId = this.resolveStickyComposerPinnedAgentId(project);
         const modes = resolveStickyComposerModes(pinnedId, this.chatAgentService);
         this.stickyComposerModeId = reconcileComposerModeId(
             this.stickyComposerModeId,
@@ -1943,6 +2448,16 @@ export class MobileProjectsPanel {
 
         const column = this.buildStickyComposerColumn({
             project,
+            surface: this.stickyComposerSurface,
+            agentLocked: isChatSurface,
+            onSurfaceChange: surface => {
+                this.stickyComposerSurface = surface;
+                writeStoredComposerSurface(cwd, surface);
+                if (surface === 'chat') {
+                    this.pinStickyComposerToCoder(cwd);
+                }
+                this.renderStickyComposer();
+            },
             getContext: () => this.stickyComposerContext,
             clearContext: () => {
                 this.stickyComposerContext = [];
@@ -1951,20 +2466,25 @@ export class MobileProjectsPanel {
             getDraft: () => this.stickyComposerDraft,
             setDraft: value => { this.stickyComposerDraft = value; },
             resolveAgentLabel: () => this.resolveStickyComposerAgentLabel(),
+            resolveAgentId: () => this.resolveStickyComposerPinnedAgentId(project),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.stickyComposerModeId),
             onOpenModeSheet: modes.length > 1
                 ? () => { this.openStickyComposerModeSheet(project, modes); }
                 : undefined,
-            canSubmit: canRunTask,
+            canSubmit,
             onAttach: () => { void this.onStickyComposerAttach(project); },
-            onOpenAgentSheet: () => { this.openStickyComposerAgentSheet(project); },
+            onOpenAgentSheet: isChatSurface ? () => { /* Chat is Coder-only */ } : () => { this.openStickyComposerAgentSheet(project); },
             onOpenToolsSheet: () => { void this.openStickyComposerToolsSheet(project); },
             onSubmit: draft => {
-                const resolvedPinnedId = this.resolveStickyComposerPinnedAgentId(project);
-                const selectedAgentId = resolveExplicitAgentForSubmit(draft, {
-                    pinnedChatAgentId: resolvedPinnedId,
-                }) ?? resolvedPinnedId;
+                const resolvedPinnedId = isChatSurface
+                    ? THEIA_CODER_AGENT_ID
+                    : this.resolveStickyComposerPinnedAgentId(project);
+                const selectedAgentId = isChatSurface
+                    ? THEIA_CODER_AGENT_ID
+                    : resolveExplicitAgentForSubmit(draft, {
+                        pinnedChatAgentId: resolvedPinnedId,
+                    }) ?? resolvedPinnedId;
                 const widgetVars = this.stickyComposerToolsWidget && !this.stickyComposerToolsWidget.isDisposed
                     ? this.stickyComposerToolsWidget.getAllVariablesForRequest()
                     : [];
@@ -1976,26 +2496,45 @@ export class MobileProjectsPanel {
                 if (this.stickyComposerToolsWidget && !this.stickyComposerToolsWidget.isDisposed) {
                     this.stickyComposerToolsWidget.clearPendingImageAttachments();
                 }
-                void this.submitBackgroundAgentTask(project, draft, {
-                    openConversation: false,
+                const submitOptions = {
+                    openConversation: isChatSurface,
                     selectedAgentId,
                     modeId,
                     capabilityOverrides,
                     genericCapabilitySelections,
                     variables: variables.length > 0 ? variables : undefined,
-                }).finally(() => this.renderStickyComposer());
+                };
+                const done = isChatSurface
+                    ? this.submitLocalChatFromComposer(project, draft, submitOptions)
+                    : this.submitBackgroundAgentTask(project, draft, { ...submitOptions, openConversation: false, forceVps: true });
+                void done.finally(() => this.renderStickyComposer());
             },
             onSubmitBlocked: () => {
+                if (isChatSurface && !this.chatService) {
+                    MobileSnackbar.show(
+                        nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'),
+                        { duration: 2400 },
+                    );
+                    return;
+                }
                 MobileSnackbar.show(
-                    nls.localize('qaap/mobileProjects/stickyComposerNoProject', 'Add or open a repository first.'),
+                    isChatSurface
+                        ? nls.localize('qaap/mobileProjects/stickyComposerNoChat', 'Open this project in the workspace to start a local chat.')
+                        : nls.localize('qaap/mobileProjects/stickyComposerNoProject', 'Add or open a repository first.'),
                     { duration: 2400 },
                 );
             },
             afterInputChange: () => { /* sticky draft persisted in setDraft */ },
-            getMentionOptions: () => this.resolveComposerMentionOptions(this.stickyComposerBackendAgents),
+            getMentionOptions: () => this.resolveComposerMentionOptions(this.stickyComposerBackendAgents, isChatSurface),
             getVariableOptions: this.getComposerVariables
                 ? () => this.resolveComposerVariableOptions()
                 : undefined,
+            inputPlaceholder: isChatSurface
+                ? nls.localize('qaap/mobileProjects/stickyComposerNewChat', 'Message the workspace agent…')
+                : nls.localize('qaap/mobileProjects/stickyComposerNewTask', 'Delegate a VPS task…'),
+            sendLabel: isChatSurface
+                ? nls.localize('qaap/mobileProjects/chatSend', 'Send')
+                : nls.localize('qaap/mobileProjects/taskCreate', 'Create'),
         });
         this.stickyComposerHost.append(column);
         this.updateNewFabVisibility();
@@ -2021,11 +2560,16 @@ export class MobileProjectsPanel {
 
     protected buildStickyComposerColumn(options: {
         project: MobileProjectEntry;
+        surface?: QaapComposerSurface;
+        surfaceLocked?: boolean;
+        agentLocked?: boolean;
+        onSurfaceChange?: (surface: QaapComposerSurface) => void;
         getContext: () => AIVariableResolutionRequest[];
         clearContext: () => void;
         getDraft: () => string;
         setDraft: (value: string) => void;
         resolveAgentLabel: () => string;
+        resolveAgentId: () => string;
         modes?: readonly ChatMode[];
         resolveModeLabel?: () => string;
         onOpenModeSheet?: () => void;
@@ -2037,6 +2581,7 @@ export class MobileProjectsPanel {
         onSubmitBlocked?: () => void;
         afterInputChange?: () => void;
         sendLabel?: string;
+        inputPlaceholder?: string;
         getMentionOptions?: () => readonly StickyComposerTokenOption[];
         getVariableOptions?: () => readonly StickyComposerTokenOption[];
     }): HTMLElement {
@@ -2063,6 +2608,43 @@ export class MobileProjectsPanel {
             });
             contextRow.append(contextLabel, clearContext);
             column.append(contextRow);
+        }
+
+        if (options.surface) {
+            column.classList.add(`theia-mod-surface-${options.surface}`);
+            const surfaceRow = document.createElement('div');
+            surfaceRow.className = 'theia-mobile-projects-sticky-composer-surface';
+            const surfaceField = createSegmentedField<QaapComposerSurface>({
+                segments: [
+                    {
+                        id: 'chat',
+                        label: nls.localize('qaap/composerSurface/chat', 'Chat'),
+                    },
+                    {
+                        id: 'task',
+                        label: nls.localize('qaap/composerSurface/task', 'Task'),
+                    },
+                ],
+                value: options.surface,
+                onChange: value => {
+                    if (options.surfaceLocked) {
+                        return;
+                    }
+                    options.onSurfaceChange?.(value);
+                },
+            });
+            if (options.surfaceLocked) {
+                surfaceField.root.classList.add('theia-mod-locked');
+                for (const btn of surfaceField.root.querySelectorAll('button')) {
+                    (btn as HTMLButtonElement).disabled = true;
+                }
+            }
+            const hint = composerSurfaceHint(options.surface);
+            const hintEl = document.createElement('p');
+            hintEl.className = 'theia-mobile-projects-sticky-composer-surface-hint';
+            hintEl.textContent = nls.localize(hint.key, hint.defaultLabel);
+            surfaceRow.append(surfaceField.root, hintEl);
+            column.append(surfaceRow);
         }
 
         const toolbar = document.createElement('div');
@@ -2092,12 +2674,19 @@ export class MobileProjectsPanel {
         const agentLabel = options.resolveAgentLabel();
         agentBtn.title = nls.localize('qaap/mobileProjects/stickyComposerAgent', 'Agent: {0}', agentLabel);
         agentBtn.setAttribute('aria-label', agentBtn.title);
-        agentBtn.innerHTML = `<span class="theia-mobile-projects-sticky-composer-agent-label">${agentLabel}</span>`
-            + '<span class="codicon codicon-chevron-down" aria-hidden="true"></span>';
-        agentBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            options.onOpenAgentSheet();
+        populateAgentToolbarButton(agentBtn, {
+            agentId: options.resolveAgentId(),
+            label: agentLabel,
         });
+        if (options.agentLocked) {
+            agentBtn.classList.add('theia-mod-locked');
+            agentBtn.disabled = true;
+        } else {
+            agentBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                options.onOpenAgentSheet();
+            });
+        }
 
         const toolbarItems: HTMLElement[] = [agentBtn];
         const modes = options.modes ?? [];
@@ -2139,7 +2728,7 @@ export class MobileProjectsPanel {
         input.type = 'text';
         input.className = 'theia-mobile-projects-sticky-composer-input';
         const placeholderAgent = options.resolveAgentLabel();
-        input.placeholder = nls.localize(
+        input.placeholder = options.inputPlaceholder ?? nls.localize(
             'qaap/mobileProjects/stickyComposerPlaceholder',
             'Message {0} on {1}',
             placeholderAgent,
@@ -2215,10 +2804,11 @@ export class MobileProjectsPanel {
 
     protected resolveComposerMentionOptions(
         backendAgents: readonly QaapAgentTaskAgentOption[],
+        coderOnly = false,
     ): StickyComposerTokenOption[] {
         const coder = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
         return buildStickyComposerMentionOptions(
-            backendAgents,
+            coderOnly ? [] : backendAgents,
             coder ? { name: coder.name } : undefined,
         );
     }
@@ -2228,6 +2818,9 @@ export class MobileProjectsPanel {
     }
 
     protected resolveStickyComposerPinnedAgentId(project: MobileProjectEntry): string {
+        if (this.stickyComposerSurface === 'chat') {
+            return THEIA_CODER_AGENT_ID;
+        }
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
         const pinned = this.stickyComposerPinnedAgentId ?? readStoredAgent(cwd);
         if (pinned) {
@@ -2296,6 +2889,9 @@ export class MobileProjectsPanel {
     }
 
     protected openStickyComposerAgentSheet(project: MobileProjectEntry): void {
+        if (this.stickyComposerSurface === 'chat') {
+            return;
+        }
         this.closeStickyComposerSheets();
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
         const sheet = document.createElement('div');
@@ -2463,17 +3059,12 @@ export class MobileProjectsPanel {
         selectedAgentId: string | undefined,
         onSelect: (agentId: string) => void,
     ): HTMLElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'theia-mobile-sticky-composer-sheet-option';
-        if (isStickyComposerAgentSelected(agentId, selectedAgentId, cwd)) {
-            btn.classList.add('theia-mod-selected');
-        }
-        btn.textContent = label;
-        btn.addEventListener('click', () => {
-            onSelect(agentId);
+        return createAgentSheetOptionButton({
+            agentId,
+            label,
+            selected: isStickyComposerAgentSelected(agentId, selectedAgentId, cwd),
+            onSelect: () => onSelect(agentId),
         });
-        return btn;
     }
 
     protected async openStickyComposerToolsSheet(project: MobileProjectEntry): Promise<void> {
@@ -2680,31 +3271,585 @@ export class MobileProjectsPanel {
         return !!preview && preview.includes(query);
     }
 
-    protected renderChatsInbox(projects: MobileProjectEntry[]): void {
+    protected isReviewHubView(): boolean {
+        return this.hubView === 'review';
+    }
+
+    protected isHomeHubView(): boolean {
+        return this.hubView === 'home';
+    }
+
+    protected isTasksHubView(): boolean {
+        return this.hubView === 'tasks';
+    }
+
+    protected refreshHomeHubData(forceRender: boolean): void {
+        this.conversations?.start();
+        this.activeTasks?.start();
+        this.refreshTasksHubApprovals(forceRender);
+        if (!this.inboxPullRequestsLoaded && !this.inboxPullRequestsLoading) {
+            this.inboxStream?.start();
+            this.subscribeToInboxStream();
+            void this.refreshInboxPullRequests(undefined, false);
+        } else if (forceRender) {
+            this.renderList();
+        }
+    }
+
+    protected buildHomeSnapshot(): WorkHubHomeSnapshot {
+        const members = this.collectTeamMembersForHub();
+        const approvals = this.collectTeamApprovalItems(members);
+        const { needsYou, running } = this.countTasksAttention();
+        const attentionItems: WorkHubHomeAttentionItem[] = approvals.slice(0, 3).map(item => ({
+            id: item.approvalId ?? item.member.id,
+            kind: 'approval' as const,
+            title: this.resolveHomeAgentLabel(item.member.agentId),
+            subtitle: item.summary ?? item.member.title,
+            meta: item.member.projectName,
+        }));
+        if (this.inboxPullRequests.length > 0 && attentionItems.length < 4) {
+            attentionItems.push({
+                id: 'open-pull-requests',
+                kind: 'pull-request',
+                title: nls.localize('qaap/workHubHome/openPullRequestsTitle', 'Open pull requests'),
+                subtitle: nls.localize(
+                    'qaap/workHubHome/openPullRequestsSubtitle',
+                    'Review changes waiting on GitHub',
+                ),
+                meta: this.inboxPullRequests.length === 1
+                    ? nls.localize('qaap/workHubHome/openPullRequestsMetaOne', '1 PR')
+                    : nls.localize(
+                        'qaap/workHubHome/openPullRequestsMetaMany',
+                        '{0} PRs',
+                        String(this.inboxPullRequests.length),
+                    ),
+            });
+        }
+        const recentSources: WorkHubHomeRecentSource[] = [];
+        for (const project of this.projects) {
+            for (const summary of [...this.localChatsForProject(project), ...this.vpsTasksForProject(project)]) {
+                recentSources.push({
+                    id: summary.id,
+                    projectId: project.id,
+                    projectName: project.name,
+                    title: summary.title?.trim()
+                        || nls.localize('qaap/mobileProjects/untitledChat', 'Untitled chat'),
+                    subtitle: isLocalChatSummary(summary)
+                        ? nls.localize('qaap/workHubHome/recentChat', 'Local chat')
+                        : nls.localize('qaap/workHubHome/recentTask', 'VPS task'),
+                    surface: isLocalChatSummary(summary) ? 'chat' : 'task',
+                    updatedAt: summary.updatedAt,
+                });
+            }
+        }
+        return {
+            stats: {
+                projectCount: this.projects.length,
+                runningTasks: running,
+                needsYou,
+                openPullRequests: this.inboxPullRequests.length,
+                localChatCount: this.projects.reduce(
+                    (sum, project) => sum + this.localChatsForProject(project).length,
+                    0,
+                ),
+            },
+            attentionItems,
+            recentItems: buildWorkHubHomeRecentItems(recentSources, 5),
+            pinnedProjectIds: selectWorkHubHomePinnedProjectIds(this.projects, 4),
+        };
+    }
+
+    protected buildHomeGreeting(): string {
+        const user = readQaapAuthUser();
+        const name = user?.name?.trim() || user?.login?.trim();
+        return buildWorkHubHomeGreeting(name);
+    }
+
+    protected formatHomeRelativeTime(updatedAt: number): string {
+        return formatWorkHubRelativeTime(updatedAt, Date.now(), {
+            justNow: nls.localize('qaap/mobileProjects/inboxJustNow', 'just now'),
+            minutesAgo: count => nls.localize('qaap/mobileProjects/inboxMinutesAgo', '{0}m ago', count),
+            hoursAgo: count => nls.localize('qaap/mobileProjects/inboxHoursAgo', '{0}h ago', count),
+            daysAgo: count => nls.localize('qaap/mobileProjects/inboxDaysAgo', '{0}d ago', count),
+        });
+    }
+
+    protected buildHomeWorkspaceActivity(project: MobileProjectEntry): string {
+        const cwd = this.projectsService.getProjectCwd(project);
+        const activeCount = cwd
+            ? (this.activeTasks?.getForCwd(cwd)?.activeCount ?? 0)
+            : this.activeTasks?.findTasksForProject(project).filter(task => task.state === 'running').length ?? 0;
+        const conversations = this.conversationsForProject(project).length;
+        if (activeCount > 0 && conversations > 0) {
+            return activeCount === 1
+                ? nls.localize(
+                    'qaap/workHubHome/workspaceActiveOneChatMany',
+                    '1 agent active · {0} chats',
+                    String(conversations),
+                )
+                : nls.localize(
+                    'qaap/workHubHome/workspaceActiveManyChatMany',
+                    '{0} agents active · {1} chats',
+                    String(activeCount),
+                    String(conversations),
+                );
+        }
+        if (activeCount > 0) {
+            return activeCount === 1
+                ? nls.localize('qaap/workHubHome/workspaceActiveOne', '1 agent active')
+                : nls.localize(
+                    'qaap/workHubHome/workspaceActiveMany',
+                    '{0} agents active',
+                    String(activeCount),
+                );
+        }
+        if (conversations > 0) {
+            return conversations === 1
+                ? nls.localize('qaap/workHubHome/workspaceChatOne', '1 chat')
+                : nls.localize(
+                    'qaap/workHubHome/workspaceChatMany',
+                    '{0} chats',
+                    String(conversations),
+                );
+        }
+        return project.branch || nls.localize('qaap/workHubHome/workspaceIdle', 'Ready to work');
+    }
+
+    protected getHomeWorkspaceStatus(project: MobileProjectEntry): 'idle' | 'running' | 'open' {
+        if (project.isCurrent) {
+            return 'open';
+        }
+        const cwd = this.projectsService.getProjectCwd(project);
+        const activeCount = cwd
+            ? (this.activeTasks?.getForCwd(cwd)?.activeCount ?? 0)
+            : this.activeTasks?.findTasksForProject(project).filter(task => task.state === 'running').length ?? 0;
+        return activeCount > 0 ? 'running' : 'idle';
+    }
+
+    protected buildHomeSubtitle(snapshot: WorkHubHomeSnapshot): string {
+        const { stats } = snapshot;
+        if (stats.needsYou > 0) {
+            return stats.needsYou === 1
+                ? nls.localize('qaap/workHubHome/subtitleNeedsYouOne', '1 item needs your attention')
+                : nls.localize(
+                    'qaap/workHubHome/subtitleNeedsYouMany',
+                    '{0} items need your attention',
+                    String(stats.needsYou),
+                );
+        }
+        if (stats.runningTasks > 0) {
+            return stats.runningTasks === 1
+                ? nls.localize('qaap/workHubHome/subtitleRunningOne', '1 agent working on the VPS')
+                : nls.localize(
+                    'qaap/workHubHome/subtitleRunningMany',
+                    '{0} agents working on the VPS',
+                    String(stats.runningTasks),
+                );
+        }
+        if (stats.openPullRequests > 0) {
+            return stats.openPullRequests === 1
+                ? nls.localize('qaap/workHubHome/subtitlePullRequestsOne', '1 open pull request')
+                : nls.localize(
+                    'qaap/workHubHome/subtitlePullRequestsMany',
+                    '{0} open pull requests',
+                    String(stats.openPullRequests),
+                );
+        }
+        if (stats.projectCount === 0) {
+            return nls.localize('qaap/workHubHome/subtitleNoProjects', 'Add a repository to get started');
+        }
+        return nls.localize('qaap/workHubHome/subtitleAllClear', 'You\'re all caught up');
+    }
+
+    protected resolveHomeAgentLabel(agentId: string): string {
+        const fromList = this.activeTasks?.getAgents().find(agent => agent.id === agentId)?.label;
+        if (fromList) {
+            return fromList.startsWith('@') ? fromList : `@${fromList}`;
+        }
+        return agentId.startsWith('@') ? agentId : `@${agentId}`;
+    }
+
+    protected renderHomeHubView(): void {
+        const snapshot = this.buildHomeSnapshot();
+        const pinnedProjects = snapshot.pinnedProjectIds
+            .map(id => this.projects.find(project => project.id === id))
+            .filter((project): project is MobileProjectEntry => !!project);
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-work-hub-home-host';
+        if (isWorkMissionControlEnabled()) {
+            this.renderMissionControlPreview(host);
+        }
+        this.ensureOverlayUi().home.renderDashboard(host, snapshot, pinnedProjects, this.projects.length);
+        this.scroll.append(host);
+        this.renderSubtitle();
+    }
+
+    /**
+     * Prototype unified "Agents" view: one cross-project, attention-first list built from the same
+     * live streams the Chat/Tasks/Review tabs already consume. Additive — only rendered behind the
+     * {@link isWorkMissionControlEnabled} flag, so the default landing is byte-for-byte unchanged.
+     */
+    protected renderMissionControlPreview(host: HTMLElement): void {
+        this.ensureMissionControl().render(host, this.buildMissionControlItems());
+    }
+
+    protected ensureMissionControl(): MobileWorkMissionControl {
+        if (!this.missionControl) {
+            this.missionControl = new MobileWorkMissionControl({
+                formatRelativeTime: updatedAt => this.formatHomeRelativeTime(updatedAt),
+                onOpenItem: item => { void this.onMissionControlOpen(item); },
+                onShowAll: () => this.selectHubLandingView('work'),
+                onLaneFilter: lane => {
+                    this.workLaneFilter = lane;
+                    this.renderList();
+                    this.renderSubtitle();
+                },
+                onSurfaceFilter: surface => {
+                    this.workSurfaceFilter = surface;
+                    this.renderList();
+                    this.renderSubtitle();
+                },
+            });
+        }
+        return this.missionControl;
+    }
+
+    /**
+     * Full-view "Work" surface (Phase 0 of the mission-control promotion). Same data and view as the
+     * home preview card, rendered as the whole hub body so it can host the lane/surface filters next.
+     * Reachable only via the gated home card's "View all" until the bottom-nav rewire lands.
+     */
+    protected renderWorkHubView(): void {
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-work-hub-home-host theia-mobile-mission-control-host';
+        this.ensureMissionControl().render(host, this.buildMissionControlItems(), {
+            showFilters: true,
+            laneFilter: this.workLaneFilter,
+            surfaceFilter: this.workSurfaceFilter,
+        });
+        this.scroll.append(host);
+    }
+
+    protected buildMissionControlItems(): MissionControlItem[] {
+        const items: MissionControlItem[] = [];
+        for (const project of this.projects) {
+            for (const summary of this.conversationsForProject(project)) {
+                const lane = classifyMissionControlLane(summary, this.isConversationUnread(summary));
+                items.push({
+                    key: `${project.id}:${summary.id}`,
+                    conversationId: summary.id,
+                    projectId: project.id,
+                    projectName: project.name,
+                    projectColor: project.color,
+                    title: summary.title?.trim()
+                        || nls.localize('qaap/mobileProjects/untitledChat', 'Untitled chat'),
+                    preview: summary.lastMessagePreview,
+                    lane,
+                    surface: classifyMissionControlSurface(summary),
+                    agentLabel: summary.agentId ? this.resolveHomeAgentLabel(summary.agentId) : undefined,
+                    updatedAt: summary.updatedAt,
+                    progressCurrent: summary.turnProgressCurrent,
+                    progressTotal: summary.turnProgressTotal,
+                    linesAdded: summary.linesAdded,
+                    linesRemoved: summary.linesRemoved,
+                    hasPullRequest: !!summary.linkedPullRequest?.number,
+                });
+            }
+        }
+        return items;
+    }
+
+    protected async onMissionControlOpen(item: MissionControlItem): Promise<void> {
+        const project = this.projects.find(entry => entry.id === item.projectId);
+        if (!project) {
+            return;
+        }
+        const summary = this.conversationsForProject(project)
+            .find(entry => entry.id === item.conversationId);
+        if (!summary) {
+            return;
+        }
+        await this.openTranscriptSheet(project, summary);
+    }
+
+    protected resolveHomePinnedProject(): MobileProjectEntry | undefined {
+        return this.projects.find(project => project.isCurrent)
+            ?? this.projects.find(project => project.pinned)
+            ?? this.projects[0];
+    }
+
+    protected onHomeNavigate(target: WorkHubHomeNavigateTarget): void {
+        this.selectHubLandingView(target);
+    }
+
+    protected async onHomeOpenProject(project: MobileProjectEntry): Promise<void> {
+        await this.openProjectDetail(project);
+    }
+
+    protected async onHomeOpenRecent(item: WorkHubHomeRecentItem): Promise<void> {
+        const project = this.projects.find(entry => entry.id === item.projectId);
+        if (!project) {
+            return;
+        }
+        const summary = this.conversationsForProject(project).find(entry => entry.id === item.id);
+        if (!summary) {
+            return;
+        }
+        if (item.surface === 'chat') {
+            await this.openTheiaChatTranscriptSheet(project, summary);
+            return;
+        }
+        await this.openTranscriptSheet(project, summary);
+    }
+
+    protected onHomeOpenAttention(item: WorkHubHomeAttentionItem): void {
+        if (item.kind === 'pull-request') {
+            this.selectHubLandingView('review');
+            return;
+        }
+        this.selectHubLandingView('tasks');
+    }
+
+    protected async onHomeQuickAction(action: WorkHubHomeQuickActionId): Promise<void> {
+        switch (action) {
+            case 'all-projects':
+                this.selectHubLandingView('repos');
+                return;
+            case 'open-review':
+                this.selectHubLandingView('review');
+                return;
+            case 'new-chat': {
+                const project = this.resolveHomePinnedProject();
+                if (!project) {
+                    this.selectHubLandingView('repos');
+                    return;
+                }
+                this.preferComposerSurface('chat', this.projectsService.getProjectCwd(project));
+                await this.openProjectDetail(project);
+                return;
+            }
+            case 'delegate-task': {
+                const project = this.resolveHomePinnedProject();
+                if (!project) {
+                    this.selectHubLandingView('repos');
+                    return;
+                }
+                this.preferComposerSurface('task', this.projectsService.getProjectCwd(project));
+                await this.openProjectDetail(project);
+                return;
+            }
+        }
+    }
+
+    protected countTasksAttention(): { needsYou: number; running: number } {
+        const members = this.collectTeamMembersForHub();
+        const approvals = this.collectTeamApprovalItems(members);
+        return {
+            needsYou: approvals.length,
+            running: countRunningTeamMembers(members),
+        };
+    }
+
+    protected updateTasksAttentionChrome(): void {
+        if (!this.homeMode || !this.isTasksHubView()) {
+            this.titleAttentionEl.hidden = true;
+            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
+            return;
+        }
+        const { needsYou } = this.countTasksAttention();
+        if (needsYou <= 0) {
+            this.titleAttentionEl.hidden = true;
+            this.titleAttentionEl.setAttribute('aria-hidden', 'true');
+            return;
+        }
+        this.titleAttentionEl.hidden = false;
+        this.titleAttentionEl.setAttribute('aria-hidden', 'false');
+        this.titleAttentionEl.textContent = String(needsYou);
+        this.titleAttentionEl.title = nls.localize(
+            'qaap/mobileProjects/tasksAttentionTitle',
+            '{0} tasks need your attention',
+            String(needsYou),
+        );
+    }
+
+    protected refreshTasksHubApprovals(forceRender = true): void {
+        const generation = ++this.agentApprovalsFetchGeneration;
+        void fetchAgentApprovals().then(approvals => {
+            if (generation !== this.agentApprovalsFetchGeneration || !this.visible
+                || (!this.isTasksHubView() && !this.isHomeHubView())) {
+                return;
+            }
+            this.cachedAgentApprovals = approvals;
+            if (forceRender) {
+                this.renderList();
+            } else if (this.isHomeHubView()) {
+                this.renderList();
+            } else {
+                this.updateTasksAttentionChrome();
+                this.renderSubtitle();
+            }
+        }).catch(() => {
+            if (generation !== this.agentApprovalsFetchGeneration || !this.visible
+                || (!this.isTasksHubView() && !this.isHomeHubView())) {
+                return;
+            }
+            this.cachedAgentApprovals = [];
+            if (forceRender) {
+                this.renderList();
+            } else if (this.isHomeHubView()) {
+                this.renderList();
+            } else {
+                this.updateTasksAttentionChrome();
+                this.renderSubtitle();
+            }
+        });
+    }
+
+    protected getFilteredTeamHubState(): {
+        members: WorkHubTeamMember[];
+        filteredApprovals: WorkHubApprovalItem[];
+    } {
+        const all = this.collectTeamMembersForHub();
+        const approvals = this.collectTeamApprovalItems(all);
+        const approvalIds = new Set(approvals.map(item => item.member.id));
+        const members = filterTeamMembersForDisplay(
+            all.filter(member => !approvalIds.has(member.id)),
+            this.query,
+        );
+        const filteredApprovals = approvals.filter(item => {
+            if (!this.query.trim()) {
+                return true;
+            }
+            const q = this.query.trim().toLowerCase();
+            return item.member.title.toLowerCase().includes(q)
+                || item.member.projectName.toLowerCase().includes(q)
+                || item.member.agentId.toLowerCase().includes(q)
+                || (item.summary?.toLowerCase().includes(q) ?? false);
+        });
+        return { members, filteredApprovals };
+    }
+
+    protected appendTasksHubTeamSection(container: HTMLElement): boolean {
+        const { members, filteredApprovals } = this.getFilteredTeamHubState();
+        const teamHost = document.createElement('div');
+        teamHost.className = 'theia-mobile-hub-team-root theia-mod-embedded-in-tasks';
+        const rendered = this.ensureOverlayUi().teamHub.renderSections(teamHost, members, {
+            searchQuery: this.query,
+            approvals: filteredApprovals,
+            embedded: true,
+        });
+        if (rendered) {
+            container.append(teamHost);
+        }
+        return rendered;
+    }
+
+    protected renderTasksHubView(projects: MobileProjectEntry[]): void {
+        const groups = this.collectTasksInboxGroups(projects);
+        const root = document.createElement('div');
+        root.className = 'theia-mobile-tasks-hub-root';
+        const teamRendered = this.appendTasksHubTeamSection(root);
+
+        if (groups.length > 0) {
+            const inbox = document.createElement('div');
+            inbox.className = 'theia-mobile-projects-chats-inbox theia-mod-tasks-inbox';
+            if (teamRendered) {
+                const inboxHead = document.createElement('div');
+                inboxHead.className = 'theia-mobile-tasks-inbox-section-head';
+                const inboxLabel = document.createElement('span');
+                inboxLabel.className = 'theia-mobile-tasks-inbox-section-label';
+                inboxLabel.textContent = nls.localize('qaap/mobileProjects/tasksInboxSection', 'By project');
+                inboxHead.append(inboxLabel);
+                inbox.append(inboxHead);
+            }
+            for (const group of groups) {
+                inbox.append(this.createInboxProjectGroup(group.project, group.items));
+            }
+            root.append(inbox);
+        }
+
+        if (!teamRendered && groups.length === 0) {
+            this.scroll.append(this.createTasksEmptyState());
+        } else {
+            this.scroll.append(root);
+        }
+        this.updateTasksAttentionChrome();
+        this.renderSubtitle();
+    }
+
+    protected renderReviewHubView(projects: MobileProjectEntry[]): void {
         if (!this.inboxPullRequestsLoaded && !this.inboxPullRequestsLoading) {
             void this.refreshInboxPullRequests(projects);
         }
-        const groups = this.collectInboxGroups(projects);
+        const groups = this.collectReviewGroups(projects);
         const hasGithubRepos = githubRepoKeysForProjects(projects).length > 0;
-        if (groups.length === 0) {
-            if (!this.inboxPullRequestsLoaded && this.inboxPullRequestsLoading) {
-                this.scroll.append(this.createInboxLoadingState());
-            } else {
-                this.scroll.append(this.createChatsEmptyState());
+        const root = document.createElement('div');
+        root.className = 'theia-mobile-review-hub-root';
+
+        if (groups.length > 0) {
+            const inbox = document.createElement('div');
+            inbox.className = 'theia-mobile-projects-chats-inbox theia-mod-review-inbox';
+            for (const group of groups) {
+                inbox.append(this.createInboxProjectGroup(group.project, group.items));
             }
+            if (hasGithubRepos && this.inboxPullRequestsLoaded && this.inboxGithubSignedIn === false) {
+                inbox.append(this.createInboxGithubSignInHint());
+            }
+            root.append(inbox);
+            this.scroll.append(root);
+        } else if (!this.inboxPullRequestsLoaded && this.inboxPullRequestsLoading) {
+            this.scroll.append(this.createReviewLoadingState());
+        } else if (hasGithubRepos && this.inboxGithubSignedIn === false) {
+            const host = document.createElement('div');
+            host.className = 'theia-mobile-review-hub-root';
+            host.append(this.createInboxGithubSignInHint(), this.createReviewEmptyState());
+            this.scroll.append(host);
+        } else {
+            this.scroll.append(this.createReviewEmptyState());
+        }
+        this.renderSubtitle();
+    }
+
+    protected renderChatHubView(projects: MobileProjectEntry[]): void {
+        const groups = this.collectChatHubGroups(projects);
+        if (groups.length === 0) {
+            this.scroll.append(this.createChatEmptyState());
             this.renderSubtitle();
             return;
         }
-        const inbox = document.createElement('div');
-        inbox.className = 'theia-mobile-projects-chats-inbox';
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-projects-chats-inbox theia-mod-local-chat';
         for (const group of groups) {
-            inbox.append(this.createInboxProjectGroup(group.project, group.items));
+            const items: MobileWorkHubInboxItem[] = group.summaries.map(summary => ({
+                kind: 'conversation',
+                project: group.project,
+                summary,
+                sortAt: summary.updatedAt,
+                priority: 0,
+            }));
+            host.append(this.createInboxProjectGroup(group.project, items));
         }
-        if (hasGithubRepos && this.inboxPullRequestsLoaded && this.inboxGithubSignedIn === false) {
-            inbox.append(this.createInboxGithubSignInHint());
-        }
-        this.scroll.append(inbox);
+        this.scroll.append(host);
         this.renderSubtitle();
+    }
+
+    protected collectChatHubGroups(
+        projects: MobileProjectEntry[],
+    ): Array<{ project: MobileProjectEntry; summaries: QaapAgentConversationSummaryDTO[] }> {
+        const groups: Array<{ project: MobileProjectEntry; summaries: QaapAgentConversationSummaryDTO[] }> = [];
+        const query = this.query.trim().toLowerCase();
+        for (const project of projects) {
+            let summaries = this.localChatsForProject(project);
+            if (query) {
+                summaries = summaries.filter(c => this.conversationMatchesQuery(c, query));
+            }
+            if (summaries.length === 0) {
+                continue;
+            }
+            groups.push({ project, summaries });
+        }
+        groups.sort((a, b) => this.compareChatInboxProjectOrder(a.project, b.project));
+        return groups;
     }
 
     protected renderCatalogHubView(): void {
@@ -2746,6 +3891,184 @@ export class MobileProjectsPanel {
         this.scroll.append(list);
         this.renderSubtitle();
         this.scheduleRoutinesRefreshWhileRunning();
+    }
+
+    protected collectTeamMembersForHub(): WorkHubTeamMember[] {
+        const conversations: Array<{
+            projectId: string;
+            projectName: string;
+            cwd: string;
+            id: string;
+            agentId: string;
+            title: string;
+            status: QaapAgentConversationSummaryDTO['status'];
+            paused?: boolean;
+            activityLabel?: string;
+            turnProgressCurrent?: number;
+            turnProgressTotal?: number;
+            linesAdded?: number;
+            linesRemoved?: number;
+            createdAt: number;
+            updatedAt: number;
+        }> = [];
+        for (const project of this.projects) {
+            for (const summary of this.conversationsForProject(project)) {
+                if (summary.source === 'theia-chat') {
+                    continue;
+                }
+                conversations.push({
+                    projectId: project.id,
+                    projectName: project.name,
+                    cwd: summary.cwd,
+                    id: summary.id,
+                    agentId: summary.agentId,
+                    title: summary.title,
+                    status: summary.status,
+                    paused: summary.paused,
+                    activityLabel: summary.activityLabel,
+                    turnProgressCurrent: summary.turnProgressCurrent,
+                    turnProgressTotal: summary.turnProgressTotal,
+                    linesAdded: summary.linesAdded,
+                    linesRemoved: summary.linesRemoved,
+                    createdAt: summary.createdAt,
+                    updatedAt: summary.updatedAt,
+                });
+            }
+        }
+        return collectAgentMembers({
+            tasks: this.activeTasks?.getAllTasks() ?? [],
+            conversations,
+        }).map(member => ({
+            ...member,
+            projectId: member.projectId ?? this.resolveProjectIdForTeamMember(member),
+        }));
+    }
+
+    protected collectTeamApprovalItems(members: readonly WorkHubTeamMember[]): WorkHubApprovalItem[] {
+        const memberByConversationId = new Map<string, WorkHubTeamMember>();
+        for (const member of members) {
+            if (member.conversationId) {
+                memberByConversationId.set(member.conversationId, member);
+            }
+        }
+        const items: WorkHubApprovalItem[] = [];
+        const seenConversationIds = new Set<string>();
+        for (const approval of this.cachedAgentApprovals) {
+            const member = memberByConversationId.get(approval.conversationId)
+                ?? this.buildApprovalMemberFromRequest(approval, members);
+            if (!member) {
+                continue;
+            }
+            seenConversationIds.add(approval.conversationId);
+            items.push({
+                member,
+                approvalId: approval.id,
+                summary: approval.summary,
+                detail: approval.detail,
+            });
+        }
+        for (const member of members) {
+            if (!member.conversationId || member.kind !== 'conversation' || seenConversationIds.has(member.conversationId)) {
+                continue;
+            }
+            const project = this.resolveProjectForTeamMember(member);
+            const summary = project
+                ? this.conversationsForProject(project).find(c => c.id === member.conversationId)
+                : undefined;
+            if (!summary || summary.source === 'theia-chat' || isConversationAutoApproveEnabled(summary)) {
+                continue;
+            }
+            if (summary.status !== 'streaming' && summary.status !== 'idle') {
+                continue;
+            }
+            items.push({
+                member,
+                hint: summary.status === 'streaming'
+                    ? nls.localize(
+                        'qaap/mobileProjects/teamApprovalHintStreaming',
+                        'Manual tool approval — enable YOLO or approve on the VPS.',
+                    )
+                    : nls.localize(
+                        'qaap/mobileProjects/teamApprovalHintIdle',
+                        'Manual tool approval is on for this task.',
+                    ),
+            });
+        }
+        return items.sort((a, b) => b.member.updatedAt - a.member.updatedAt);
+    }
+
+    protected buildApprovalMemberFromRequest(
+        approval: QaapAgentApprovalRequestDTO,
+        members: readonly WorkHubTeamMember[],
+    ): WorkHubTeamMember | undefined {
+        const existing = members.find(member => member.conversationId === approval.conversationId);
+        if (existing) {
+            return existing;
+        }
+        const project = this.projects.find(p => {
+            const cwd = this.projectsService.getProjectCwd(p);
+            return cwd === approval.cwd;
+        });
+        return {
+            id: `approval:${approval.conversationId}`,
+            cwd: approval.cwd,
+            agentId: approval.agentId,
+            title: approval.conversationTitle,
+            projectName: project?.name ?? approval.cwd.split('/').filter(Boolean).pop() ?? approval.cwd,
+            projectId: project?.id,
+            state: 'streaming',
+            kind: 'conversation',
+            conversationId: approval.conversationId,
+            childCount: 0,
+            createdAt: approval.createdAt,
+            updatedAt: approval.createdAt,
+        };
+    }
+
+    protected resolveProjectIdForTeamMember(member: WorkHubTeamMember): string | undefined {
+        for (const project of this.projects) {
+            const cwd = this.projectsService.getProjectCwd(project);
+            if (cwd === member.cwd || cwdMatchesProject(member.cwd, project)) {
+                return project.id;
+            }
+        }
+        return undefined;
+    }
+
+    protected resolveProjectForTeamMember(member: WorkHubTeamMember): MobileProjectEntry | undefined {
+        if (member.projectId) {
+            return this.projects.find(p => p.id === member.projectId);
+        }
+        return this.projects.find(p => {
+            const cwd = this.projectsService.getProjectCwd(p);
+            return cwd === member.cwd || cwdMatchesProject(member.cwd, p);
+        });
+    }
+
+    protected onTeamMemberClick(member: WorkHubTeamMember): void {
+        if (member.conversationId) {
+            const project = this.resolveProjectForTeamMember(member);
+            const summary = project
+                ? this.conversationsForProject(project).find(c => c.id === member.conversationId)
+                : undefined;
+            if (project && summary) {
+                void this.openTranscriptSheet(project, summary);
+                return;
+            }
+        }
+        if (member.taskId) {
+            const project = this.resolveProjectForTeamMember(member);
+            if (project) {
+                void this.showTaskLog(project, member.taskId);
+                return;
+            }
+        }
+        const project = this.resolveProjectForTeamMember(member);
+        if (project) {
+            this.hubView = 'repos';
+            this.projectsService.setHubView('repos');
+            void this.openProjectDetail(project);
+        }
     }
 
     protected async refreshWorkHubRoutines(force = false): Promise<void> {
@@ -2816,9 +4139,15 @@ export class MobileProjectsPanel {
         main.type = 'button';
         main.className = 'theia-mobile-hub-routine-main';
 
-        const icon = document.createElement('span');
-        icon.className = 'theia-mobile-hub-routine-icon codicon codicon-zap';
-        icon.setAttribute('aria-hidden', 'true');
+        const routineAgentId = routine.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID;
+        const routineAvatar = createAgentRowAvatar({
+            agentId: routineAgentId,
+            state: routine.lastRunState === 'running'
+                ? 'running'
+                : routine.lastRunState === 'failed'
+                    ? 'failed'
+                    : 'idle',
+        });
 
         const body = document.createElement('div');
         body.className = 'theia-mobile-hub-routine-body';
@@ -2828,13 +4157,17 @@ export class MobileProjectsPanel {
         const subtitle = document.createElement('span');
         subtitle.className = 'theia-mobile-hub-routine-subtitle';
         subtitle.textContent = routine.prompt;
-        const meta = document.createElement('span');
+        const meta = document.createElement('div');
         meta.className = 'theia-mobile-hub-routine-meta';
-        const status = this.routineStatusLabel(routine);
-        meta.textContent = `${routineScheduleLabel(routine)} · ${status}`;
+        appendSubtitleMetaPart(meta, routineScheduleLabel(routine));
+        appendSubtitleMetaPart(meta, createAgentMetaBadge(
+            routineAgentId,
+            this.activeTasks?.getAgents().find(a => a.id === routineAgentId)?.label,
+        ));
+        appendSubtitleMetaPart(meta, this.routineStatusLabel(routine));
         body.append(title, subtitle, meta);
 
-        main.append(icon, body);
+        main.append(routineAvatar, body);
         main.addEventListener('click', () => this.openRoutineEditor(routine));
 
         const actions = document.createElement('div');
@@ -2964,44 +4297,97 @@ export class MobileProjectsPanel {
         cwdInput.placeholder = nls.localize('qaap/mobileProjects/routineCwdPlaceholder', 'Working directory (absolute path)');
         cwdInput.value = routine?.cwd ?? this.resolveDefaultRoutineCwd();
 
-        const agentSelect = document.createElement('select');
-        agentSelect.className = 'theia-mobile-routine-field';
+        const agentPicker = createAgentPickerField({
+            label: nls.localize('qaap/mobileProjects/routineAgent', 'Agent'),
+            agents: [],
+            selectedId: routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID,
+        });
         void fetchAgentTaskListAll().then(snapshot => {
-            agentSelect.replaceChildren();
-            for (const agent of snapshot.agents.filter(a => a.available && a.id !== SHELL_AGENT_ID)) {
-                const option = document.createElement('option');
-                option.value = agent.id;
-                option.textContent = agent.label;
-                agentSelect.append(option);
-            }
+            agentPicker.setAgents(snapshot.agents.filter(a => a.available && a.id !== SHELL_AGENT_ID));
             const selected = routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID;
-            agentSelect.value = selected;
+            agentPicker.setSelectedId(selected);
         }).catch(() => {
-            const option = document.createElement('option');
-            option.value = QAIQ_AGENT_ID;
-            option.textContent = 'QAIQ';
-            agentSelect.append(option);
+            agentPicker.setAgents([{ id: QAIQ_AGENT_ID, label: 'QAIQ' }]);
+            agentPicker.setSelectedId(QAIQ_AGENT_ID);
         });
 
-        const triggerSelect = document.createElement('select');
-        triggerSelect.className = 'theia-mobile-routine-field';
-        for (const value of ['manual', 'interval'] as QaapWorkHubRoutineTrigger[]) {
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = value === 'manual'
-                ? nls.localize('qaap/mobileProjects/routineTriggerManual', 'Manual only')
-                : nls.localize('qaap/mobileProjects/routineTriggerInterval', 'On a schedule');
-            triggerSelect.append(option);
-        }
-        triggerSelect.value = routine?.trigger ?? 'manual';
+        const syncScheduleFields = (): void => {
+            const trigger = triggerField.getValue();
+            const isInterval = trigger === 'interval';
+            const isCron = trigger === 'cron';
+            intervalInput.hidden = !isInterval;
+            for (const el of [cronPresetSelect, cronCustomInput, timezoneInput, oneShotLabel]) {
+                (el as HTMLElement).hidden = !isCron;
+            }
+        };
+        const triggerField = createSegmentedField<QaapWorkHubRoutineTrigger>({
+            label: nls.localize('qaap/mobileProjects/routineTrigger', 'Schedule'),
+            segments: [
+                { id: 'manual', label: nls.localize('qaap/mobileProjects/routineTriggerManualShort', 'Manual') },
+                { id: 'interval', label: nls.localize('qaap/mobileProjects/routineTriggerIntervalShort', 'Interval') },
+                { id: 'cron', label: nls.localize('qaap/mobileProjects/routineTriggerCronShort', 'Cron') },
+            ],
+            value: routine?.trigger ?? 'manual',
+            onChange: () => syncScheduleFields(),
+        });
 
         const intervalInput = document.createElement('input');
         intervalInput.type = 'number';
         intervalInput.min = '1';
         intervalInput.max = '168';
-        intervalInput.className = 'theia-mobile-routine-field';
+        intervalInput.className = 'theia-mobile-routine-field theia-mod-interval-field';
         intervalInput.placeholder = nls.localize('qaap/mobileProjects/routineIntervalHours', 'Interval (hours)');
         intervalInput.value = String(routine?.intervalHours ?? 24);
+
+        const cronPresetSelect = document.createElement('select');
+        cronPresetSelect.className = 'theia-mobile-routine-field theia-mod-cron-field';
+        for (const preset of QAAP_ROUTINE_CRON_PRESETS) {
+            const option = document.createElement('option');
+            option.value = preset.expression;
+            option.textContent = preset.label;
+            cronPresetSelect.append(option);
+        }
+        const initialCron = routine?.cronExpression ?? QAAP_ROUTINE_CRON_PRESETS[0].expression;
+        cronPresetSelect.value = QAAP_ROUTINE_CRON_PRESETS.some(p => p.expression === initialCron)
+            ? initialCron
+            : QAAP_ROUTINE_CRON_PRESETS[0].expression;
+
+        const cronCustomInput = document.createElement('input');
+        cronCustomInput.type = 'text';
+        cronCustomInput.className = 'theia-mobile-routine-field theia-mod-cron-field';
+        cronCustomInput.placeholder = nls.localize('qaap/mobileProjects/routineCronExpression', 'Cron expression (min hour dom month dow)');
+        cronCustomInput.value = initialCron;
+
+        const timezoneInput = document.createElement('input');
+        timezoneInput.type = 'text';
+        timezoneInput.className = 'theia-mobile-routine-field theia-mod-cron-field';
+        timezoneInput.placeholder = nls.localize('qaap/mobileProjects/routineTimezone', 'Timezone (IANA, e.g. Europe/Madrid)');
+        timezoneInput.value = routine?.timezone
+            ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+            ?? 'UTC';
+
+        const runModeField = createSegmentedField<QaapWorkHubRoutineRunMode>({
+            label: nls.localize('qaap/mobileProjects/routineRunMode', 'Session'),
+            segments: [
+                { id: 'fresh', label: nls.localize('qaap/mobileProjects/routineRunModeFreshShort', 'Fresh') },
+                { id: 'continue', label: nls.localize('qaap/mobileProjects/routineRunModeContinueShort', 'Continue') },
+            ],
+            value: routine?.runMode ?? 'fresh',
+        });
+
+        const oneShotLabel = document.createElement('label');
+        oneShotLabel.className = 'theia-mobile-routine-enabled theia-mod-cron-field';
+        const oneShotInput = document.createElement('input');
+        oneShotInput.type = 'checkbox';
+        oneShotInput.checked = routine?.oneShot ?? false;
+        oneShotLabel.append(oneShotInput, document.createTextNode(
+            nls.localize('qaap/mobileProjects/routineOneShot', 'Run once then disable'),
+        ));
+
+        cronPresetSelect.addEventListener('change', () => {
+            cronCustomInput.value = cronPresetSelect.value;
+        });
+        syncScheduleFields();
 
         const enabledLabel = document.createElement('label');
         enabledLabel.className = 'theia-mobile-routine-enabled';
@@ -3012,7 +4398,40 @@ export class MobileProjectsPanel {
             nls.localize('qaap/mobileProjects/routineEnabled', 'Enabled'),
         ));
 
-        form.append(titleInput, promptInput, cwdInput, agentSelect, triggerSelect, intervalInput, enabledLabel);
+        const autoApproveLabel = document.createElement('label');
+        autoApproveLabel.className = 'theia-mobile-routine-enabled';
+        const autoApproveInput = document.createElement('input');
+        autoApproveInput.type = 'checkbox';
+        autoApproveInput.checked = routine?.autoApprove !== false;
+        autoApproveLabel.append(autoApproveInput, document.createTextNode(
+            nls.localize('qaap/mobileProjects/routineAutoApprove', 'Auto-approve tools (YOLO)'),
+        ));
+        const autoApproveHint = document.createElement('p');
+        autoApproveHint.className = 'theia-mobile-routine-field-hint';
+        autoApproveHint.textContent = nls.localize(
+            'qaap/mobileProjects/routineAutoApproveHint',
+            'Keep on for scheduled runs. Turn off only if you will watch the VPS and approve tool calls manually.',
+        );
+
+        form.append(
+            createFormFieldLabel(nls.localize('qaap/mobileProjects/routineTitle', 'Title')),
+            titleInput,
+            createFormFieldLabel(nls.localize('qaap/mobileProjects/routinePrompt', 'Prompt')),
+            promptInput,
+            createFormFieldLabel(nls.localize('qaap/mobileProjects/routineCwd', 'Working directory')),
+            cwdInput,
+            agentPicker.root,
+            triggerField.root,
+            intervalInput,
+            cronPresetSelect,
+            cronCustomInput,
+            timezoneInput,
+            runModeField.root,
+            oneShotLabel,
+            enabledLabel,
+            autoApproveLabel,
+            autoApproveHint,
+        );
 
         const footer = document.createElement('footer');
         footer.className = 'theia-mobile-routine-sheet-footer';
@@ -3029,15 +4448,21 @@ export class MobileProjectsPanel {
         saveBtn.className = 'theia-mobile-routine-btn theia-mod-primary';
         saveBtn.textContent = nls.localize('qaap/mobileProjects/routineSave', 'Save');
         saveBtn.addEventListener('click', () => {
+            const trigger = triggerField.getValue();
             void this.saveRoutineFromEditor({
                 id: routine?.id,
                 title: titleInput.value,
                 prompt: promptInput.value,
                 cwd: cwdInput.value,
-                agent: agentSelect.value,
-                trigger: triggerSelect.value as QaapWorkHubRoutineTrigger,
+                agent: agentPicker.getSelectedId(),
+                trigger,
                 intervalHours: Number(intervalInput.value),
+                cronExpression: cronCustomInput.value.trim() || cronPresetSelect.value,
+                timezone: timezoneInput.value.trim(),
+                oneShot: oneShotInput.checked,
+                runMode: runModeField.getValue(),
                 enabled: enabledInput.checked,
+                autoApprove: autoApproveInput.checked,
             });
         });
         footer.append(saveBtn);
@@ -3062,13 +4487,34 @@ export class MobileProjectsPanel {
         agent: string;
         trigger: QaapWorkHubRoutineTrigger;
         intervalHours: number;
+        cronExpression: string;
+        timezone: string;
+        oneShot: boolean;
+        runMode: QaapWorkHubRoutineRunMode;
         enabled: boolean;
+        autoApprove: boolean;
     }): Promise<void> {
         try {
+            const payload = {
+                title: fields.title,
+                prompt: fields.prompt,
+                cwd: fields.cwd,
+                agent: fields.agent,
+                trigger: fields.trigger,
+                intervalHours: fields.intervalHours,
+                ...(fields.trigger === 'cron' ? {
+                    cronExpression: fields.cronExpression,
+                    timezone: fields.timezone,
+                    oneShot: fields.oneShot,
+                } : {}),
+                runMode: fields.runMode,
+                enabled: fields.enabled,
+                autoApprove: fields.autoApprove,
+            };
             if (fields.id) {
-                await updateWorkHubRoutine(fields.id, fields);
+                await updateWorkHubRoutine(fields.id, payload);
             } else {
-                await createWorkHubRoutine(fields);
+                await createWorkHubRoutine(payload);
             }
             this.closeRoutineEditor();
             await this.refreshWorkHubRoutines(true);
@@ -3219,7 +4665,7 @@ export class MobileProjectsPanel {
         }
         this.inboxPullRequestsLoaded = true;
         this.inboxPullRequestsLoading = false;
-        if (this.visible && this.hubView === 'chats') {
+        if (this.visible && (this.hubView === 'review' || this.hubView === 'home')) {
             this.renderList();
         }
     }
@@ -3308,44 +4754,47 @@ export class MobileProjectsPanel {
         return hint;
     }
 
-    protected createInboxLoadingState(): HTMLElement {
-        const loading = document.createElement('div');
-        loading.className = 'theia-mobile-projects-empty theia-mod-inbox-loading';
-        const icon = document.createElement('span');
-        icon.className = 'codicon codicon-loading codicon-mod-spin';
-        const title = document.createElement('strong');
-        title.textContent = nls.localize('qaap/mobileProjects/inboxLoading', 'Loading inbox…');
-        const body = document.createElement('span');
-        body.textContent = nls.localize(
-            'qaap/mobileProjects/inboxLoadingBody',
-            'Fetching open pull requests and agent threads.',
-        );
-        loading.append(icon, title, body);
-        return loading;
-    }
-
-    protected collectInboxGroups(
+    protected collectTasksInboxGroups(
         projects: MobileProjectEntry[],
     ): Array<{ project: MobileProjectEntry; items: MobileWorkHubInboxItem[] }> {
         const groups: Array<{ project: MobileProjectEntry; items: MobileWorkHubInboxItem[] }> = [];
         const query = this.query.trim().toLowerCase();
         for (const project of projects) {
             let conversations = this.conversations
-                ? this.conversationsForProject(project)
+                ? this.vpsTasksForProject(project)
                 : [];
             if (query) {
                 conversations = conversations.filter(c => this.conversationMatchesQuery(c, query));
             }
+            const items = buildWorkHubInboxItems(project, conversations);
+            if (items.length === 0) {
+                continue;
+            }
+            groups.push({ project, items });
+        }
+        groups.sort((a, b) => this.compareChatInboxProjectOrder(a.project, b.project));
+        return groups;
+    }
+
+    protected collectReviewGroups(
+        projects: MobileProjectEntry[],
+    ): Array<{ project: MobileProjectEntry; items: MobileWorkHubInboxItem[] }> {
+        const groups: Array<{ project: MobileProjectEntry; items: MobileWorkHubInboxItem[] }> = [];
+        const query = this.query.trim().toLowerCase();
+        for (const project of projects) {
             let pullRequests = this.inboxPullRequests.filter(pr => {
                 if (query) {
                     return pullRequestMatchesQuery(pr, query);
                 }
                 return true;
             });
-            const items = buildWorkHubInboxItems(
+            const conversations = this.conversations
+                ? this.vpsTasksForProject(project)
+                : [];
+            const items = buildReviewHubPullRequestItems(
                 project,
-                conversations,
                 pullRequests,
+                conversations,
                 this.activeAgentBranchForProject(project),
             );
             if (items.length === 0) {
@@ -3359,7 +4808,7 @@ export class MobileProjectsPanel {
 
     protected activeAgentBranchForProject(project: MobileProjectEntry): string | undefined {
         const streaming = this.conversations
-            ? this.conversationsForProject(project).some(c => c.status === 'streaming')
+            ? this.vpsTasksForProject(project).some(c => c.status === 'streaming')
             : false;
         return streaming && project.branch ? project.branch : undefined;
     }
@@ -3421,7 +4870,17 @@ export class MobileProjectsPanel {
         const list = document.createElement('div');
         list.className = 'theia-mobile-projects-chats-list';
         const activeInfo = this.activeInfoForProject(project);
+
+        // Split out parallel-run variants so they render in their own grouped sub-section.
+        const variantRuns = new Map<string, QaapAgentConversationSummaryDTO[]>();
         for (const item of items) {
+            if (item.kind === 'conversation' && item.summary.parallelRunId) {
+                const runId = item.summary.parallelRunId;
+                const bucket = variantRuns.get(runId) ?? [];
+                bucket.push(item.summary);
+                variantRuns.set(runId, bucket);
+                continue;
+            }
             if (item.kind === 'conversation') {
                 const task = this.summaryToTaskView(item.summary);
                 list.append(this.createTaskItem(project, task, activeInfo, item.summary, parentIds));
@@ -3431,6 +4890,9 @@ export class MobileProjectsPanel {
         }
 
         section.append(head, list);
+        for (const [runId, summaries] of variantRuns) {
+            section.append(this.ensureOverlayUi().parallel.createVariantRunSection(project, runId, summaries, activeInfo, parentIds));
+        }
         return section;
     }
 
@@ -3524,27 +4986,93 @@ export class MobileProjectsPanel {
         return nls.localize('qaap/mobileProjects/inboxDaysAgo', '{0}d ago', String(days));
     }
 
-    protected createChatsEmptyState(): HTMLElement {
+    protected createTasksEmptyState(): HTMLElement {
         const empty = document.createElement('div');
         empty.className = 'theia-mobile-projects-empty';
         const icon = document.createElement('span');
-        icon.className = 'codicon codicon-inbox';
+        icon.className = 'codicon codicon-server-process';
         const title = document.createElement('strong');
         title.textContent = this.query
-            ? nls.localize('qaap/mobileProjects/noInboxSearchResults', 'No matching inbox items')
-            : nls.localize('qaap/mobileProjects/noInbox', 'Inbox is empty');
+            ? nls.localize('qaap/mobileProjects/noTasksSearchResults', 'No matching tasks')
+            : nls.localize('qaap/mobileProjects/noTasks', 'No VPS tasks yet');
         const body = document.createElement('span');
         body.textContent = this.query
             ? nls.localize(
-                'qaap/mobileProjects/noInboxSearchResultsBody',
-                'Try a pull request title, author, branch, or agent message.',
+                'qaap/mobileProjects/noTasksSearchResultsBody',
+                'Try a task title, agent name, or branch.',
             )
             : nls.localize(
-                'qaap/mobileProjects/noInboxBody',
-                'Open pull requests and agent threads from your connected repositories will show up here.',
+                'qaap/mobileProjects/noTasksBody',
+                'Delegate work from a project — it keeps running on the server when you close the app.',
             );
         empty.append(icon, title, body);
         return empty;
+    }
+
+    protected createReviewEmptyState(): HTMLElement {
+        const empty = document.createElement('div');
+        empty.className = 'theia-mobile-projects-empty';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-git-pull-request';
+        const title = document.createElement('strong');
+        title.textContent = this.query
+            ? nls.localize('qaap/mobileProjects/noReviewSearchResults', 'No matching pull requests')
+            : nls.localize('qaap/mobileProjects/noReview', 'No open pull requests');
+        const body = document.createElement('span');
+        body.textContent = this.query
+            ? nls.localize(
+                'qaap/mobileProjects/noReviewSearchResultsBody',
+                'Try a title, author, branch, or PR number.',
+            )
+            : nls.localize(
+                'qaap/mobileProjects/noReviewBody',
+                'When agents open PRs on your linked repos, they show up here for swipe review.',
+            );
+        empty.append(icon, title, body);
+        return empty;
+    }
+
+    protected createReviewLoadingState(): HTMLElement {
+        const loading = document.createElement('div');
+        loading.className = 'theia-mobile-projects-empty theia-mod-inbox-loading';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-loading codicon-mod-spin';
+        const title = document.createElement('strong');
+        title.textContent = nls.localize('qaap/mobileProjects/reviewLoading', 'Loading pull requests…');
+        const body = document.createElement('span');
+        body.textContent = nls.localize(
+            'qaap/mobileProjects/reviewLoadingBody',
+            'Fetching open pull requests from GitHub.',
+        );
+        loading.append(icon, title, body);
+        return loading;
+    }
+
+    protected createChatEmptyState(): HTMLElement {
+        const empty = document.createElement('div');
+        empty.className = 'theia-mobile-projects-empty';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-comment-discussion';
+        const title = document.createElement('strong');
+        title.textContent = this.query
+            ? nls.localize('qaap/mobileProjects/noChatSearchResults', 'No matching chats')
+            : nls.localize('qaap/mobileProjects/noChat', 'No local chats yet');
+        const body = document.createElement('span');
+        body.textContent = this.query
+            ? nls.localize(
+                'qaap/mobileProjects/noChatSearchResultsBody',
+                'Try another title or message preview.',
+            )
+            : nls.localize(
+                'qaap/mobileProjects/noChatBody',
+                'Open a project and use Agent for interactive chat — sessions persist on this device.',
+            );
+        empty.append(icon, title, body);
+        return empty;
+    }
+
+    protected createChatsEmptyState(): HTMLElement {
+        return this.createTasksEmptyState();
     }
 
     protected createEmptyState(): HTMLElement {
@@ -3618,7 +5146,7 @@ export class MobileProjectsPanel {
             glyph.title = nls.localize('qaap/mobileProjects/glyphNeedsInput', 'Waiting for your input');
         } else if (failed) {
             glyph.classList.add('theia-mod-failed');
-            glyph.title = nls.localize('qaap/mobileProjects/glyphFailed', 'A chat failed — review and retry');
+            glyph.title = nls.localize('qaap/mobileProjects/glyphFailed', 'A task failed — review and retry');
         } else if (running) {
             glyph.classList.add('theia-mod-running');
             glyph.title = nls.localize('qaap/mobileProjects/glyphRunning', 'Agent is working');
@@ -3626,7 +5154,7 @@ export class MobileProjectsPanel {
             glyph.classList.add('theia-mod-unread');
             glyph.title = unreadCount === 1
                 ? nls.localize('qaap/mobileProjects/glyphUnreadOne', 'New agent reply since you last opened this project')
-                : nls.localize('qaap/mobileProjects/glyphUnreadMany', '{0} chats with new agent replies', String(unreadCount));
+                : nls.localize('qaap/mobileProjects/glyphUnreadMany', '{0} tasks with new agent replies', String(unreadCount));
         } else if (doneCount > 0) {
             glyph.classList.add('theia-mod-done');
         }
@@ -3743,8 +5271,8 @@ export class MobileProjectsPanel {
                 const done = document.createElement('span');
                 done.className = 'theia-mobile-projects-row-meta-done';
                 done.textContent = doneCount === 1
-                    ? nls.localize('qaap/mobileProjects/rowChat', '1 chat')
-                    : nls.localize('qaap/mobileProjects/rowChatsMany', '{0} chats', String(doneCount));
+                    ? nls.localize('qaap/mobileProjects/rowTask', '1 task')
+                    : nls.localize('qaap/mobileProjects/rowTasksMany', '{0} tasks', String(doneCount));
                 cluster.append(done);
             }
             if (project.isCurrent && !this.homeMode) {
@@ -3830,6 +5358,10 @@ export class MobileProjectsPanel {
 
     protected async openProjectDetail(project: MobileProjectEntry): Promise<void> {
         this.closeCardMenu();
+        if (this.hubView !== 'repos') {
+            this.hubView = 'repos';
+            this.projectsService.setHubView('repos');
+        }
         if (this.expandedId === project.id) {
             return;
         }
@@ -3992,11 +5524,11 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         const block = document.createElement('div');
         block.className = 'theia-mobile-projects-tasks-block';
-        const allConversations = this.conversationsForProject(project);
+        const allConversations = this.vpsTasksForProject(project);
         const head = document.createElement('div');
         head.className = 'theia-mobile-projects-tasks-head';
         const headLabel = document.createElement('span');
-        headLabel.textContent = nls.localize('qaap/mobileProjects/conversationsHeading', 'Recent chats');
+        headLabel.textContent = nls.localize('qaap/mobileProjects/tasksHeading', 'Tasks');
         head.append(headLabel);
 
         if (allConversations.length > 0) {
@@ -4013,7 +5545,7 @@ export class MobileProjectsPanel {
                 const empty = document.createElement('div');
                 empty.className = 'theia-mobile-projects-tasks-empty';
                 empty.textContent = nls.localize(
-                    'qaap/mobileProjects/conversationsEmpty', 'No recent chats yet. Start one below.'
+                    'qaap/mobileProjects/tasksEmpty', 'No tasks yet. Create one below.'
                 );
                 block.append(empty);
                 return block;
@@ -4079,7 +5611,7 @@ export class MobileProjectsPanel {
             moreBtn.append(
                 icon,
                 document.createTextNode(
-                    nls.localize('qaap/mobileProjects/conversationsMore', 'More ({0})', String(hiddenCount)),
+                    nls.localize('qaap/mobileProjects/tasksMore', 'More tasks ({0})', String(hiddenCount)),
                 ),
             );
             moreBtn.addEventListener('click', ev => {
@@ -4126,22 +5658,22 @@ export class MobileProjectsPanel {
         const ordered: ConversationGroup[] = [
             {
                 id: 'working',
-                label: nls.localize('qaap/mobileProjects/conversationGroupWorking', 'Working'),
+                label: nls.localize('qaap/mobileProjects/taskGroupWorking', 'Working'),
                 tasks: groups.working,
             },
             {
                 id: 'needs-you',
-                label: nls.localize('qaap/mobileProjects/conversationGroupNeedsYou', 'Needs you'),
+                label: nls.localize('qaap/mobileProjects/taskGroupNeedsYou', 'Needs you'),
                 tasks: groups.needsYou,
             },
             {
                 id: 'recent',
-                label: nls.localize('qaap/mobileProjects/conversationGroupRecent', 'Recent'),
+                label: nls.localize('qaap/mobileProjects/taskGroupRecent', 'Recent'),
                 tasks: groups.recent,
             },
             {
                 id: 'done',
-                label: nls.localize('qaap/mobileProjects/conversationGroupDone', 'Done'),
+                label: nls.localize('qaap/mobileProjects/taskGroupDone', 'Done'),
                 tasks: groups.done,
             },
         ];
@@ -4215,10 +5747,10 @@ export class MobileProjectsPanel {
             taskDot.className = `theia-mobile-projects-task-lineage theia-mod-${lineage} codicon ${iconClass}`;
             taskDot.setAttribute('aria-hidden', 'true');
             const lineageLabel = lineage === 'parent'
-                ? nls.localize('qaap/mobileProjects/lineageParent', 'Forked into other chats')
+                ? nls.localize('qaap/mobileProjects/lineageParent', 'Forked into other tasks')
                 : lineage === 'child'
-                    ? nls.localize('qaap/mobileProjects/lineageChild', 'Forked from another chat')
-                    : nls.localize('qaap/mobileProjects/lineageBoth', 'Forked from another chat and into others');
+                    ? nls.localize('qaap/mobileProjects/lineageChild', 'Forked from another task')
+                    : nls.localize('qaap/mobileProjects/lineageBoth', 'Forked from another task and into others');
             taskDot.title = lineageLabel;
         }
 
@@ -4254,10 +5786,14 @@ export class MobileProjectsPanel {
         const footRow = document.createElement('div');
         footRow.className = 'theia-mobile-projects-task-foot';
         const agentLabel = this.resolveConversationAgentLabel(summary);
-        const agentChip = document.createElement('span');
-        agentChip.className = 'theia-mobile-projects-task-agent';
-        agentChip.style.color = stateColor;
-        agentChip.textContent = agentLabel;
+        const agentId = summary?.agentId?.trim()
+            || this.activeTasks?.getDefaultAgent()
+            || SHELL_AGENT_ID;
+        const agentChip = createAgentTaskBadge({
+            agentId,
+            label: agentLabel,
+            labelColor: stateColor,
+        });
         footRow.append(agentChip);
         if (summary?.linkedPullRequest?.number) {
             const prChip = document.createElement('span');
@@ -4326,11 +5862,20 @@ export class MobileProjectsPanel {
                 pause.title = pause.getAttribute('aria-label')!;
                 taskTitleRow.insertBefore(pause, taskTitleRow.firstChild);
             }
+            if (summary.source !== 'theia-chat' && !isConversationAutoApproveEnabled(summary)) {
+                row.classList.add('theia-mod-manual-approval');
+                const shield = document.createElement('span');
+                shield.className = 'codicon codicon-shield theia-mobile-projects-conversation-manual-badge';
+                const manualLabel = nls.localize('qaap/mobileProjects/manualApprovalBadge', 'Manual tool approval');
+                shield.setAttribute('aria-label', manualLabel);
+                shield.title = manualLabel;
+                taskTitleRow.insertBefore(shield, taskTitleRow.firstChild);
+            }
             if (isFailed && summary.source !== 'theia-chat') {
                 const retryBtn = document.createElement('button');
                 retryBtn.type = 'button';
                 retryBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-retry-btn';
-                const retryLabel = nls.localize('qaap/mobileProjects/retryChat', 'Retry last message');
+                const retryLabel = nls.localize('qaap/mobileProjects/retryTask', 'Retry task');
                 retryBtn.setAttribute('aria-label', retryLabel);
                 retryBtn.title = retryLabel;
                 const retryIcon = document.createElement('span');
@@ -4347,7 +5892,7 @@ export class MobileProjectsPanel {
             const menuBtn = document.createElement('button');
             menuBtn.type = 'button';
             menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-menu-btn';
-            menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/conversationMenu', 'Chat options'));
+            menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/taskMenu', 'Task options'));
             menuBtn.setAttribute('aria-haspopup', 'menu');
             menuBtn.setAttribute('aria-expanded', 'false');
             const icon = document.createElement('span');
@@ -4583,7 +6128,7 @@ export class MobileProjectsPanel {
             case 'needs-input':
                 return nls.localize('qaap/mobileProjects/taskStateNeedsInput', 'needs you');
             case 'completed':
-                return nls.localize('qaap/mobileProjects/taskStateChat', 'chat');
+                return nls.localize('qaap/mobileProjects/taskStateIdle', 'idle');
             case 'failed':
             case 'interrupted':
                 return nls.localize('qaap/mobileProjects/taskStateFailed', 'failed');
@@ -4659,12 +6204,12 @@ export class MobileProjectsPanel {
 
         const conversations = this.conversationsForProject(project);
         this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/clearAllChats', 'Clear all chats'),
+            label: nls.localize('qaap/mobileProjects/clearAllTasks', 'Clear all tasks'),
             iconClass: 'codicon-clear-all',
             danger: true,
             disabled: conversations.length === 0,
             title: conversations.length === 0
-                ? nls.localize('qaap/mobileProjects/clearAllChatsDisabled', 'No chats to clear')
+                ? nls.localize('qaap/mobileProjects/clearAllTasksDisabled', 'No tasks to clear')
                 : undefined,
             onSelect: () => { void this.onClearProjectChats(project); },
         });
@@ -4775,7 +6320,7 @@ export class MobileProjectsPanel {
 
         if (summary.status === 'failed' && summary.source !== 'theia-chat') {
             this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/retryChat', 'Retry last message'),
+                label: nls.localize('qaap/mobileProjects/retryTask', 'Retry task'),
                 iconClass: 'codicon-debug-restart',
                 onSelect: () => { void this.onRetryConversation(project, summary); },
             });
@@ -4798,23 +6343,23 @@ export class MobileProjectsPanel {
             ? !!summary.sessionId && !!this.chatService && !!this.conversations
             : true;
         this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/forkChat', 'Fork chat'),
+            label: nls.localize('qaap/mobileProjects/forkTask', 'Fork task'),
             iconClass: 'codicon-git-branch',
             disabled: !canFork,
             title: canFork
-                ? nls.localize('qaap/mobileProjects/forkChatTitle', 'Duplicate this chat to try another strategy.')
-                : nls.localize('qaap/mobileProjects/forkChatUnavailable', 'Only saved workspace chats can be forked here.'),
+                ? nls.localize('qaap/mobileProjects/forkTaskTitle', 'Duplicate this task to try another strategy.')
+                : nls.localize('qaap/mobileProjects/forkTaskUnavailable', 'Only saved workspace tasks can be forked here.'),
             onSelect: () => { void this.onForkConversation(project, summary); },
         });
 
         const canRename = isTheiaChat ? !!summary.sessionId && !!this.chatService : true;
         this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/renameChat', 'Rename chat'),
+            label: nls.localize('qaap/mobileProjects/renameTask', 'Rename task'),
             iconClass: 'codicon-edit',
             disabled: !canRename,
             title: canRename
-                ? nls.localize('qaap/mobileProjects/renameChatTitle', 'Change this chat name.')
-                : nls.localize('qaap/mobileProjects/renameChatUnavailable', 'This chat cannot be renamed.'),
+                ? nls.localize('qaap/mobileProjects/renameTaskTitle', 'Change this task name.')
+                : nls.localize('qaap/mobileProjects/renameTaskUnavailable', 'This task cannot be renamed.'),
             onSelect: () => { void this.onRenameConversation(project, summary); },
         });
 
@@ -4827,24 +6372,43 @@ export class MobileProjectsPanel {
             iconClass: flags.priority ? 'codicon-star-full' : 'codicon-star-empty',
             disabled: !canFlag,
             title: flags.priority
-                ? nls.localize('qaap/mobileProjects/removePriorityTitle', 'Stop pinning this chat at the top.')
-                : nls.localize('qaap/mobileProjects/markPriorityTitle', 'Pin this chat at the top of the project list.'),
+                ? nls.localize('qaap/mobileProjects/removePriorityTitle', 'Stop pinning this task at the top.')
+                : nls.localize('qaap/mobileProjects/markPriorityTitle', 'Pin this task at the top of the project list.'),
             onSelect: () => { void this.onSetConversationPriority(summary, !flags.priority); },
         });
         this.appendCardMenuItem(menu, {
             label: flags.paused
-                ? nls.localize('qaap/mobileProjects/resumeChat', 'Resume chat')
-                : nls.localize('qaap/mobileProjects/pauseChat', 'Pause chat'),
+                ? nls.localize('qaap/mobileProjects/resumeTask', 'Resume task')
+                : nls.localize('qaap/mobileProjects/pauseTask', 'Pause task'),
             iconClass: flags.paused ? 'codicon-debug-start' : 'codicon-debug-pause',
             disabled: !canFlag,
             title: flags.paused
-                ? nls.localize('qaap/mobileProjects/resumeChatTitle', 'Move this chat back to the active list.')
+                ? nls.localize('qaap/mobileProjects/resumeTaskTitle', 'Move this task back to the active list.')
                 : nls.localize(
-                    'qaap/mobileProjects/pauseChatTitle',
-                    'Stop any active turn and push this chat to the bottom of the list.'
+                    'qaap/mobileProjects/pauseTaskTitle',
+                    'Stop any active turn and push this task to the bottom of the list.'
                 ),
             onSelect: () => { void this.onSetConversationPaused(project, summary, !flags.paused); },
         });
+        if (!isTheiaChat) {
+            const yoloOn = isConversationAutoApproveEnabled(summary);
+            this.appendCardMenuItem(menu, {
+                label: yoloOn
+                    ? nls.localize('qaap/mobileProjects/taskAutoApproveOff', 'Disable auto-approve (YOLO)')
+                    : nls.localize('qaap/mobileProjects/taskAutoApproveOn', 'Enable auto-approve (YOLO)'),
+                iconClass: yoloOn ? 'codicon-zap' : 'codicon-shield',
+                title: yoloOn
+                    ? nls.localize(
+                        'qaap/mobileProjects/taskAutoApproveOffTitle',
+                        'Require manual approval for tool calls on future turns.',
+                    )
+                    : nls.localize(
+                        'qaap/mobileProjects/taskAutoApproveOnTitle',
+                        'Let the VPS agent run tools without prompting (recommended for background work).',
+                    ),
+                onSelect: () => { void this.toggleConversationAutoApproveById(summary.id); },
+            });
+        }
 
         if (summary.status === 'streaming') {
             const separator = document.createElement('div');
@@ -4853,7 +6417,7 @@ export class MobileProjectsPanel {
             menu.append(separator);
 
             this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/cancelConversation', 'Cancel run'),
+                label: nls.localize('qaap/mobileProjects/cancelTaskRun', 'Cancel run'),
                 iconClass: 'codicon-debug-stop',
                 danger: true,
                 onSelect: () => { void this.onCancelConversation(project, summary); },
@@ -4866,7 +6430,7 @@ export class MobileProjectsPanel {
         menu.append(separator);
 
         this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/deleteChat', 'Delete chat'),
+            label: nls.localize('qaap/mobileProjects/deleteTask', 'Delete task'),
             iconClass: 'codicon-trash',
             danger: true,
             disabled: summary.source === 'theia-chat' && !summary.sessionId,
@@ -5108,8 +6672,8 @@ export class MobileProjectsPanel {
             const session = await this.forkTheiaConversation(project, summary);
             if (!session) {
                 this.messageService?.error(nls.localize(
-                    'qaap/mobileProjects/forkChatFailedUnavailable',
-                    'Could not fork this chat because its saved transcript is unavailable.'
+                    'qaap/mobileProjects/forkTaskFailedUnavailable',
+                    'Could not fork this task because its saved transcript is unavailable.'
                 ));
                 return;
             }
@@ -5117,7 +6681,7 @@ export class MobileProjectsPanel {
             this.trackChatServiceSessionModels();
             await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
             this.renderList();
-            this.messageService?.info(nls.localize('qaap/mobileProjects/forkChatCreated', 'Forked chat created'));
+            this.messageService?.info(nls.localize('qaap/mobileProjects/forkTaskCreated', 'Forked task created'));
             await this.openTheiaChatTranscriptSheet(project, {
                 ...summary,
                 id: `theia-chat:fork:${session.id}`,
@@ -5128,8 +6692,8 @@ export class MobileProjectsPanel {
             });
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/forkChatFailed',
-                'Could not fork chat: {0}',
+                'qaap/mobileProjects/forkTaskFailed',
+                'Could not fork task: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
@@ -5144,12 +6708,12 @@ export class MobileProjectsPanel {
             return;
         }
         const dialog = new SingleTextInputDialog({
-            title: nls.localize('qaap/mobileProjects/renameChatDialog', 'Rename chat'),
+            title: nls.localize('qaap/mobileProjects/renameTaskDialog', 'Rename task'),
             initialValue: summary.title,
-            placeholder: nls.localize('qaap/mobileProjects/renameChatPlaceholder', 'Chat name'),
+            placeholder: nls.localize('qaap/mobileProjects/renameTaskPlaceholder', 'Task name'),
             validate: (value, mode) => {
                 if (mode !== 'preview' && !value.trim()) {
-                    return nls.localize('qaap/mobileProjects/renameChatRequired', 'Enter a chat name');
+                    return nls.localize('qaap/mobileProjects/renameTaskRequired', 'Enter a task name');
                 }
                 return true;
             },
@@ -5171,8 +6735,8 @@ export class MobileProjectsPanel {
             this.renderList();
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/renameChatFailed',
-                'Could not rename chat: {0}',
+                'qaap/mobileProjects/renameTaskFailed',
+                'Could not rename task: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
@@ -5198,7 +6762,7 @@ export class MobileProjectsPanel {
         } catch (error) {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/priorityFailed',
-                'Could not update chat priority: {0}',
+                'Could not update task priority: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
@@ -5230,10 +6794,78 @@ export class MobileProjectsPanel {
         } catch (error) {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/pauseFailed',
-                'Could not change chat pause state: {0}',
+                'Could not change task pause state: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
+    }
+
+    protected resolveConversationSummary(summary: QaapAgentConversationSummaryDTO): QaapAgentConversationSummaryDTO {
+        return this.conversations?.findSummaryById(summary.id) ?? summary;
+    }
+
+    protected async toggleConversationAutoApproveById(conversationId: string): Promise<void> {
+        const summary = this.conversations?.findSummaryById(conversationId);
+        if (!summary || summary.source === 'theia-chat') {
+            return;
+        }
+        await this.onSetConversationAutoApprove(summary, !isConversationAutoApproveEnabled(summary));
+    }
+
+    protected async onSetConversationAutoApprove(
+        summary: QaapAgentConversationSummaryDTO,
+        autoApprove: boolean,
+    ): Promise<void> {
+        if (this.transcriptAutoApproveBusy) {
+            return;
+        }
+        this.closeCardMenu();
+        this.transcriptAutoApproveBusy = true;
+        this.setTranscriptYoloBusy(true);
+        try {
+            const full = await updateConversation(summary.id, { autoApprove });
+            const next = conversationToSummary(full);
+            this.conversations?.recordSnapshot(next);
+            this.syncTranscriptYoloButton();
+            this.renderList();
+            MobileSnackbar.show(
+                autoApprove
+                    ? nls.localize('qaap/mobileProjects/taskAutoApproveEnabled', 'Auto-approve enabled for this task')
+                    : nls.localize('qaap/mobileProjects/taskAutoApproveDisabled', 'Auto-approve disabled — tool calls may wait for approval'),
+                { kind: 'success', duration: 2200 },
+            );
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/taskAutoApproveFailed',
+                'Could not update auto-approve: {0}',
+                error instanceof Error ? error.message : String(error),
+            ));
+        } finally {
+            this.transcriptAutoApproveBusy = false;
+            this.setTranscriptYoloBusy(false);
+        }
+    }
+
+    protected syncTranscriptYoloButton(): void {
+        if (!this.transcriptSheet || !this.transcriptOpenSummaryId) {
+            return;
+        }
+        const header = this.transcriptSheet.querySelector('.theia-mobile-agent-log-header') as (HTMLElement & {
+            syncYoloButton?: () => void;
+        }) | null;
+        header?.syncYoloButton?.();
+    }
+
+    protected setTranscriptYoloBusy(busy: boolean): void {
+        if (!this.transcriptSheet) {
+            return;
+        }
+        const btn = this.transcriptSheet.querySelector<HTMLButtonElement>('.theia-mobile-agent-log-yolo');
+        if (!btn) {
+            return;
+        }
+        btn.classList.toggle('theia-mod-busy', busy);
+        btn.disabled = busy;
     }
 
     protected async onCancelConversation(
@@ -5255,7 +6887,7 @@ export class MobileProjectsPanel {
             }
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/cancelChatFailed',
+                'qaap/mobileProjects/cancelTaskFailed',
                 'Could not cancel run: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
@@ -5271,7 +6903,7 @@ export class MobileProjectsPanel {
             await retryConversation(summary.id);
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/retryChatFailed',
+                'qaap/mobileProjects/retryTaskFailed',
                 'Could not retry: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
@@ -5281,8 +6913,8 @@ export class MobileProjectsPanel {
     protected async onDeleteConversation(summary: QaapAgentConversationSummaryDTO): Promise<void> {
         this.closeCardMenu();
         const confirmed = await new ConfirmDialog({
-            title: nls.localize('qaap/mobileProjects/deleteChat', 'Delete chat'),
-            msg: nls.localize('qaap/mobileProjects/deleteChatConfirm', 'Delete this chat? This cannot be undone.'),
+            title: nls.localize('qaap/mobileProjects/deleteTask', 'Delete task'),
+            msg: nls.localize('qaap/mobileProjects/deleteTaskConfirm', 'Delete this task? This cannot be undone.'),
         }).open();
         if (!confirmed) {
             return;
@@ -5303,8 +6935,8 @@ export class MobileProjectsPanel {
             this.renderList();
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/deleteChatFailed',
-                'Could not delete chat: {0}',
+                'qaap/mobileProjects/deleteTaskFailed',
+                'Could not delete task: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
@@ -5317,10 +6949,10 @@ export class MobileProjectsPanel {
             return;
         }
         const confirmed = await new ConfirmDialog({
-            title: nls.localize('qaap/mobileProjects/clearAllChats', 'Clear all chats'),
+            title: nls.localize('qaap/mobileProjects/clearAllTasks', 'Clear all tasks'),
             msg: nls.localize(
-                'qaap/mobileProjects/clearAllChatsConfirm',
-                'Clear all chats for this project? This cannot be undone.'
+                'qaap/mobileProjects/clearAllTasksConfirm',
+                'Clear all tasks for this project? This cannot be undone.'
             ),
         }).open();
         if (!confirmed) {
@@ -5344,8 +6976,8 @@ export class MobileProjectsPanel {
             this.renderList();
         } catch (error) {
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/clearAllChatsFailed',
-                'Could not clear chats: {0}',
+                'qaap/mobileProjects/clearAllTasksFailed',
+                'Could not clear tasks: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }
@@ -5364,6 +6996,8 @@ export class MobileProjectsPanel {
 
     protected async openAgentComposer(project: MobileProjectEntry, draft?: string): Promise<void> {
         this.closeCardMenu();
+        const cwd = this.projectsService.getProjectCwd(project);
+        this.preferComposerSurface('task', cwd);
         this.stickyComposerDraft = draft ?? this.stickyComposerDraft;
         if (this.homeMode) {
             await this.openProjectDetail(project);
@@ -5406,6 +7040,7 @@ export class MobileProjectsPanel {
         draft: string,
         options: {
             openConversation?: boolean;
+            forceVps?: boolean;
             selectedAgentId?: string;
             modeId?: string;
             capabilityOverrides?: Record<string, boolean>;
@@ -5421,7 +7056,7 @@ export class MobileProjectsPanel {
             const summary = await this.createProjectChatSession(project, cwd, draft, options);
             this.applyTaskStartedToProject(cwd, draft, summary.id);
             MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/conversationStarted', 'Conversation started'),
+                nls.localize('qaap/mobileProjects/taskStarted', 'Task started'),
                 { kind: 'success', duration: 1400 }
             );
             if (options.openConversation ?? true) {
@@ -5434,9 +7069,57 @@ export class MobileProjectsPanel {
         } catch (error) {
             const detail = error instanceof Error ? error.message : String(error);
             this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/conversationStartFailed',
-                'Could not start conversation: {0}',
+                'qaap/mobileProjects/taskStartFailed',
+                'Could not start task: {0}',
                 detail
+            ));
+        }
+    }
+
+    protected async submitLocalChatFromComposer(
+        project: MobileProjectEntry,
+        draft: string,
+        options: {
+            openConversation?: boolean;
+            selectedAgentId?: string;
+            modeId?: string;
+            capabilityOverrides?: Record<string, boolean>;
+            genericCapabilitySelections?: GenericCapabilitySelections;
+            variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+        } = {},
+    ): Promise<void> {
+        if (!this.chatService) {
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'),
+                { duration: 2400 },
+            );
+            return;
+        }
+        const cwd = this.projectsService.getProjectCwd(project)
+            ?? this.preparedCwdByProjectId.get(project.id)
+            ?? project.name;
+        try {
+            const summary = await this.createProjectTheiaChatSession(
+                project,
+                cwd,
+                stripNonCoderAgentMention(draft),
+                options,
+            );
+            this.stickyComposerDraft = '';
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/chatStarted', 'Chat started'),
+                { kind: 'success', duration: 1400 },
+            );
+            await this.refreshChatServiceSessionSummaries();
+            if (options.openConversation ?? true) {
+                void this.openTheiaChatTranscriptSheet(project, summary);
+            }
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/chatStartFailed',
+                'Could not start chat: {0}',
+                detail,
             ));
         }
     }
@@ -5446,6 +7129,7 @@ export class MobileProjectsPanel {
         cwd: string,
         draft: string,
         options: {
+            forceVps?: boolean;
             selectedAgentId?: string;
             modeId?: string;
             capabilityOverrides?: Record<string, boolean>;
@@ -5453,7 +7137,7 @@ export class MobileProjectsPanel {
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
         },
     ): Promise<QaapAgentConversationSummaryDTO> {
-        if (this.shouldUseTheiaCoder(draft, options.selectedAgentId)) {
+        if (!options.forceVps && this.shouldUseTheiaCoder(draft, options.selectedAgentId)) {
             return this.createProjectTheiaChatSession(project, cwd, draft, options);
         }
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId);
@@ -5728,7 +7412,12 @@ export class MobileProjectsPanel {
         close.className = 'theia-mobile-agent-log-close codicon codicon-close';
         close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
         close.setAttribute('aria-label', close.title);
-        header.append(title, close);
+        this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, close, project, summary);
+        const subtitle = document.createElement('div');
+        subtitle.className = 'theia-mobile-agent-log-subtitle';
+        header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
+        this.transcriptHeaderSubtitle = subtitle;
+        this.updateTranscriptHeaderForTab('messages', project, summary);
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
@@ -5740,21 +7429,33 @@ export class MobileProjectsPanel {
         // Verify tab: an additive sibling. The chat host + composer are only hidden (never
         // disposed) when Verify is active, so the existing chat keeps streaming underneath.
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
+        const planHost = document.createElement('div');
+        planHost.className = 'theia-mobile-transcript-plan';
+        planHost.hidden = true;
+        const reviewHost = document.createElement('div');
+        reviewHost.className = 'theia-mobile-transcript-review';
+        reviewHost.hidden = true;
         const verifyHost = document.createElement('div');
         verifyHost.className = 'theia-mobile-transcript-verify';
         verifyHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, verifyHost, chatInputHost);
+        sheet.append(header, tabStrip, chatHost, planHost, reviewHost, verifyHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
         this.transcriptChatHost = chatHost;
         this.transcriptChatInputHost = chatInputHost;
         this.transcriptTabStrip = tabStrip;
+        this.transcriptPlanHost = planHost;
+        this.transcriptReviewHost = reviewHost;
         this.transcriptVerifyHost = verifyHost;
         this.transcriptActiveTab = 'messages';
+        this.transcriptPlanSteps = [];
         this.verifyResults = [];
+        this.verifyChecksCwd = undefined;
+        this.verifyChecksLoading = false;
         this.verifyRunning = false;
+        this.verifyAutoAttempts = 0;
         this.transcriptLastStatus = summary.status;
         this.transcriptOpenSummaryId = summary.id;
         this.transcriptLastFingerprint = undefined;
@@ -5774,12 +7475,17 @@ export class MobileProjectsPanel {
                 if (!this.transcriptSheet || this.transcriptOpenSummaryId !== summary.id || !chatHost.isConnected) {
                     return;
                 }
+                this.syncTranscriptYoloButton();
                 const fingerprint = this.conversationTranscriptFingerprint(full);
                 if (fingerprint === this.transcriptLastFingerprint) {
                     return;
                 }
                 this.transcriptLastFingerprint = fingerprint;
                 this.renderTranscriptMessages(chatHost, full);
+                this.transcriptPlanSteps = this.parsePlanSteps(full);
+                if (this.transcriptActiveTab === 'plan' && this.transcriptOpenSummaryId === summary.id) {
+                    this.renderPlanTab();
+                }
                 this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
                 if (full.status === 'streaming' && this.conversations) {
                     this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
@@ -5834,10 +7540,110 @@ export class MobileProjectsPanel {
     // ========================================================================
 
     /** Default checks run by the Verify tab. Single "Build" for now; structured for Test/Lint later. */
-    protected defaultVerifyChecks(): VerifyCheck[] {
-        return [
-            { label: nls.localize('qaap/mobileProjects/verifyBuild', 'Build'), command: 'npm run compile' },
-        ];
+    protected async loadVerifyChecks(
+        cwd: string,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<VerifyCheck[]> {
+        if (this.verifyChecksCwd === cwd && !this.verifyChecksLoading && this.verifyResults.length > 0) {
+            return this.verifyResults.map(result => result.check);
+        }
+        if (this.verifyChecksCwd === cwd && this.verifyChecksLoading) {
+            return this.verifyResults.map(result => result.check);
+        }
+
+        this.verifyChecksCwd = cwd;
+        this.verifyChecksLoading = true;
+        this.verifyResults = [];
+        this.refreshTranscriptChecksViews(project, summary);
+
+        let checks: VerifyCheck[] = [];
+        if (this.resolveVerifyChecks) {
+            try {
+                checks = await this.resolveVerifyChecks(cwd);
+            } catch {
+                checks = [];
+            }
+        }
+
+        this.verifyResults = checks.map(check => ({ check, state: 'idle' as const }));
+        this.verifyChecksLoading = false;
+        if (this.transcriptOpenSummaryId === summary.id) {
+            this.refreshTranscriptChecksViews(project, summary);
+        }
+        return checks;
+    }
+
+    /** Extract the agent's plan from the latest todo/plan tool segment (e.g. `todoWrite`). */
+    protected parsePlanSteps(full: QaapAgentConversationDTO): PlanStep[] {
+        let latest: PlanStep[] | undefined;
+        for (const message of full.messages) {
+            for (const segment of message.segments ?? []) {
+                if (segment.type !== 'tool' || !/todo/i.test(segment.name)) {
+                    continue;
+                }
+                try {
+                    const parsed = JSON.parse(segment.args) as { todos?: Array<{ content?: string; status?: string }> };
+                    const todos = parsed.todos;
+                    if (Array.isArray(todos) && todos.length > 0) {
+                        latest = todos.map(t => ({
+                            label: (t.content ?? '').trim() || nls.localize('qaap/mobileProjects/planStep', 'Step'),
+                            status: t.status === 'completed' ? 'done' : t.status === 'in_progress' ? 'current' : 'pending',
+                        } satisfies PlanStep));
+                    }
+                } catch {
+                    /* malformed args — skip this segment */
+                }
+            }
+        }
+        return latest ?? [];
+    }
+
+    protected renderPlanTab(): void {
+        const host = this.transcriptPlanHost;
+        if (!host) {
+            return;
+        }
+        host.replaceChildren();
+        const steps = this.transcriptPlanSteps;
+        if (steps.length === 0) {
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-plan-note';
+            note.textContent = nls.localize('qaap/mobileProjects/planEmpty', 'No plan yet — the agent has not created a task list.');
+            host.append(note);
+            return;
+        }
+        const done = steps.filter(s => s.status === 'done').length;
+
+        const head = document.createElement('div');
+        head.className = 'theia-mobile-transcript-plan-head';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-transcript-plan-label';
+        label.textContent = nls.localize('qaap/mobileProjects/planProgress', 'Plan · {0}/{1}', String(done), String(steps.length));
+        head.append(label);
+        host.append(head);
+
+        const bar = document.createElement('div');
+        bar.className = 'theia-mobile-transcript-plan-prog';
+        const fill = document.createElement('i');
+        fill.style.width = `${Math.round((done / steps.length) * 100)}%`;
+        bar.append(fill);
+        host.append(bar);
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-transcript-plan-list';
+        for (const step of steps) {
+            const row = document.createElement('div');
+            row.className = `theia-mobile-transcript-plan-step theia-mod-${step.status}`;
+            const dot = document.createElement('span');
+            dot.className = `theia-mobile-transcript-plan-dot theia-mod-${step.status}`;
+            const text = document.createElement('span');
+            text.className = 'theia-mobile-transcript-plan-text';
+            text.textContent = step.label;
+            row.append(dot, text);
+            list.append(row);
+        }
+        host.append(list);
     }
 
     protected verifyAutoStorageKey(cwd: string | undefined): string {
@@ -5860,14 +7666,16 @@ export class MobileProjectsPanel {
         }
     }
 
-    /** Messages · Verify tab strip. Messages mirrors the existing chat exactly. */
+    /** Messages · Plan · Review · Verify tab strip. Messages mirrors the existing chat exactly. */
     protected buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement {
         const strip = document.createElement('div');
         strip.className = 'theia-mobile-transcript-tabs';
         strip.setAttribute('role', 'tablist');
         const tabs: Array<{ id: TranscriptTab; label: string }> = [
             { id: 'messages', label: nls.localize('qaap/mobileProjects/tabMessages', 'Messages') },
-            { id: 'verify', label: nls.localize('qaap/mobileProjects/tabVerify', 'Verify') },
+            { id: 'plan', label: nls.localize('qaap/mobileProjects/tabPlan', 'Plan') },
+            { id: 'review', label: nls.localize('qaap/mobileProjects/tabReview', 'Review') },
+            { id: 'verify', label: nls.localize('qaap/mobileProjects/tabChecks', 'Checks') },
         ];
         for (const tab of tabs) {
             const btn = document.createElement('button');
@@ -5897,20 +7705,364 @@ export class MobileProjectsPanel {
                 btn.setAttribute('aria-selected', active ? 'true' : 'false');
             }
         }
-        const showVerify = tab === 'verify';
+        const showMessages = tab === 'messages';
         // Hide (never dispose) the chat + composer so live updates keep running underneath.
         if (this.transcriptChatHost) {
-            this.transcriptChatHost.hidden = showVerify;
+            this.transcriptChatHost.hidden = !showMessages;
         }
         if (this.transcriptChatInputHost) {
-            this.transcriptChatInputHost.hidden = showVerify;
+            this.transcriptChatInputHost.hidden = !showMessages;
+        }
+        if (this.transcriptPlanHost) {
+            this.transcriptPlanHost.hidden = tab !== 'plan';
+        }
+        if (this.transcriptReviewHost) {
+            this.transcriptReviewHost.hidden = tab !== 'review';
         }
         if (this.transcriptVerifyHost) {
-            this.transcriptVerifyHost.hidden = !showVerify;
+            this.transcriptVerifyHost.hidden = tab !== 'verify';
         }
-        if (showVerify) {
+        if (tab === 'plan') {
+            this.renderPlanTab();
+        } else if (tab === 'review') {
+            void this.mountTranscriptReviewWidget(project, summary);
+        } else if (tab === 'verify') {
             this.renderVerifyTab(project, summary);
         }
+        this.updateTranscriptHeaderForTab(tab, project, summary);
+    }
+
+    protected transcriptConversationMeta(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): string {
+        const agentLabel = summary.agentId ? `@${summary.agentId.replace(/^@/, '')}` : '';
+        return agentLabel ? `${project.name} · ${agentLabel}` : project.name;
+    }
+
+    protected updateTranscriptHeaderForTab(
+        tab: TranscriptTab,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        reviewStats?: { fileCount: number; adds: number; dels: number },
+    ): void {
+        const titleEl = this.transcriptSheet?.querySelector('.theia-mobile-agent-log-header h2');
+        const subtitle = this.transcriptHeaderSubtitle;
+        if (!titleEl || !subtitle) {
+            return;
+        }
+        switch (tab) {
+            case 'plan':
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabPlan', 'Plan');
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
+            case 'review': {
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabReview', 'Review');
+                if (reviewStats && reviewStats.fileCount > 0) {
+                    subtitle.textContent = reviewStats.fileCount === 1
+                        ? nls.localize(
+                            'qaap/mobileProjects/reviewHeaderOne',
+                            '1 file · +{0} −{1}',
+                            String(reviewStats.adds),
+                            String(reviewStats.dels),
+                        )
+                        : nls.localize(
+                            'qaap/mobileProjects/reviewHeaderMany',
+                            '{0} files · +{1} −{2}',
+                            String(reviewStats.fileCount),
+                            String(reviewStats.adds),
+                            String(reviewStats.dels),
+                        );
+                } else {
+                    subtitle.textContent = nls.localize('qaap/diff/noChanges', 'No changes to review.');
+                }
+                break;
+            }
+            case 'verify':
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
+            default:
+                titleEl.textContent = summary.title || project.name;
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
+        }
+    }
+
+    /** Review tab: inline working-tree diff for the conversation workspace. */
+    protected async mountTranscriptReviewWidget(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        const host = this.transcriptReviewHost;
+        if (!host || !this.createDiffReviewWidget) {
+            return;
+        }
+        const cwd = summary.cwd ?? this.projectsService.getProjectCwd(project);
+        if (!cwd) {
+            host.replaceChildren();
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-review-note';
+            note.textContent = nls.localize(
+                'qaap/mobileProjects/reviewUnavailable',
+                'Review is unavailable for this conversation (no workspace path).',
+            );
+            host.append(note);
+            return;
+        }
+        host.replaceChildren();
+        const scroll = document.createElement('div');
+        scroll.className = 'theia-mobile-transcript-review-scroll';
+        const diffHost = document.createElement('div');
+        diffHost.className = 'theia-mobile-transcript-review-diff-host';
+        const checksHost = document.createElement('div');
+        checksHost.className = 'theia-mobile-transcript-review-checks';
+        const composerHost = document.createElement('div');
+        composerHost.className = 'theia-mobile-transcript-review-composer-host';
+        scroll.append(diffHost, checksHost);
+        host.append(scroll, composerHost);
+        this.transcriptReviewDiffHost = diffHost;
+        this.transcriptReviewChecksHost = checksHost;
+        this.transcriptReviewComposerHost = composerHost;
+
+        const rootUri = project.uri?.toString() ?? `file://${cwd}`;
+        if (!this.diffReviewWidget) {
+            this.diffReviewWidget = await this.createDiffReviewWidget();
+        }
+        this.diffReviewWidget.enableTranscriptEmbed({ externalChrome: true });
+        this.diffReviewWidget.node.classList.add('theia-mobile-transcript-diff-embed');
+        this.diffReviewWidget.setTranscriptAgentFeedbackHandler(async message => {
+            await this.submitTranscriptReviewFeedback(project, summary, message);
+        });
+        this.diffReviewWidget.setReviewStatsChangeHandler(stats => {
+            if (this.transcriptActiveTab === 'review') {
+                this.updateTranscriptHeaderForTab('review', project, summary, stats);
+            }
+        });
+        if (this.diffReviewWidget.isAttached && this.diffReviewWidget.node.parentElement !== diffHost) {
+            Widget.detach(this.diffReviewWidget);
+        }
+        if (!this.diffReviewWidget.isAttached) {
+            Widget.attach(this.diffReviewWidget, diffHost);
+        }
+        this.diffReviewWidget.setRepositoryContext({
+            rootUri,
+            rootFsPath: cwd,
+            isActiveWorkspace: project.isCurrent,
+        });
+        this.renderChecksSection(checksHost, project, summary, { embedded: true });
+        this.mountTranscriptReviewComposer(composerHost, project, summary);
+    }
+
+    protected async submitTranscriptReviewFeedback(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        message: string,
+    ): Promise<void> {
+        const chatHost = this.transcriptChatHost;
+        if (!chatHost) {
+            return;
+        }
+        try {
+            if (summary.source === 'theia-chat') {
+                await this.submitTranscriptViaTheiaChat(project, summary, message, chatHost);
+            } else {
+                await this.submitTranscriptViaBackendConversation(project, summary, message, {
+                    selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
+                    modeId: this.transcriptComposerModeId,
+                });
+            }
+            this.transcriptReviewComposerDraft = '';
+            this.mountTranscriptReviewComposer(this.transcriptReviewComposerHost, project, summary);
+            this.selectTranscriptTab('messages', project, summary);
+        } catch (error) {
+            this.messageService?.error(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    protected mountTranscriptReviewComposer(
+        host: HTMLElement | undefined,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        if (!host) {
+            return;
+        }
+        host.replaceChildren();
+        const form = document.createElement('form');
+        form.className = 'qaap-transcript-review-composer';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'qaap-transcript-review-composer-input';
+        input.value = this.transcriptReviewComposerDraft;
+        input.placeholder = nls.localize('qaap/mobileProjects/reviewAskAgent', 'Ask the agent for changes…');
+        input.addEventListener('input', () => {
+            this.transcriptReviewComposerDraft = input.value;
+        });
+        const send = document.createElement('button');
+        send.type = 'submit';
+        send.className = 'qaap-transcript-review-composer-send codicon codicon-send';
+        send.title = nls.localize('qaap/mobileProjects/transcriptSend', 'Send');
+        send.setAttribute('aria-label', send.title);
+        send.disabled = !this.transcriptReviewComposerDraft.trim();
+        input.addEventListener('input', () => {
+            send.disabled = !input.value.trim();
+        });
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const message = input.value.trim();
+            if (!message) {
+                return;
+            }
+            void this.submitTranscriptReviewFeedback(project, summary, message);
+        });
+        form.append(input, send);
+        host.append(form);
+    }
+
+    protected refreshTranscriptChecksViews(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        if (this.transcriptActiveTab === 'verify') {
+            this.renderVerifyTab(project, summary);
+        }
+        if (this.transcriptReviewChecksHost) {
+            this.renderChecksSection(this.transcriptReviewChecksHost, project, summary, { embedded: true });
+        }
+    }
+
+    protected renderChecksSection(
+        host: HTMLElement,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        options: { embedded?: boolean } = {},
+    ): void {
+        host.replaceChildren();
+        if (!summary.cwd) {
+            return;
+        }
+        if (this.verifyChecksCwd !== summary.cwd && !this.verifyChecksLoading) {
+            void this.loadVerifyChecks(summary.cwd, project, summary);
+        }
+        const failed = this.verifyResults.filter(r => r.state === 'fail').length;
+        const checksReady = this.verifyChecksCwd === summary.cwd && !this.verifyChecksLoading;
+        const checksAvailable = checksReady && this.verifyResults.length > 0;
+
+        if (options.embedded) {
+            const sep = document.createElement('div');
+            sep.className = 'theia-mobile-transcript-review-sep';
+            host.append(sep);
+            const between = document.createElement('div');
+            between.className = 'theia-mobile-transcript-review-checks-between';
+            const checksLabel = document.createElement('span');
+            checksLabel.className = 'theia-mobile-transcript-review-checks-title';
+            checksLabel.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
+            const checksStat = document.createElement('span');
+            checksStat.className = 'theia-mobile-transcript-review-checks-stat';
+            if (this.verifyRunning) {
+                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…');
+            } else if (this.verifyChecksLoading) {
+                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyLoadingChecks', 'Loading checks…');
+            } else if (failed > 0) {
+                checksStat.classList.add('theia-mod-fail');
+                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed));
+            } else {
+                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
+            }
+            between.append(checksLabel, checksStat);
+            host.append(between);
+        } else {
+            const head = document.createElement('div');
+            head.className = 'theia-mobile-transcript-verify-head';
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-transcript-verify-label';
+            label.textContent = this.verifyRunning
+                ? nls.localize('qaap/mobileProjects/verifyRunning', 'Running…')
+                : this.verifyChecksLoading
+                    ? nls.localize('qaap/mobileProjects/verifyLoadingChecks', 'Loading checks…')
+                    : failed > 0
+                        ? nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed))
+                        : nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
+            const runBtn = document.createElement('button');
+            runBtn.type = 'button';
+            runBtn.className = 'theia-mobile-transcript-verify-run';
+            runBtn.disabled = this.verifyRunning || this.verifyChecksLoading || !checksAvailable;
+            runBtn.textContent = this.verifyRunning
+                ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
+                : nls.localize('qaap/mobileProjects/verifyRun', 'Run');
+            runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
+            head.append(label, runBtn);
+            host.append(head);
+        }
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-transcript-verify-list';
+        for (const result of this.verifyResults) {
+            list.append(this.createVerifyCheckRow(result));
+        }
+        host.append(list);
+
+        if (checksReady && !checksAvailable) {
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-verify-note';
+            note.textContent = nls.localize(
+                'qaap/mobileProjects/verifyNoScripts',
+                'No compile, build, test, typecheck, or lint script found in package.json.',
+            );
+            host.append(note);
+        }
+
+        const runRow = document.createElement('div');
+        runRow.className = 'theia-mobile-transcript-review-checks-run-row';
+        if (options.embedded) {
+            const runBtn = document.createElement('button');
+            runBtn.type = 'button';
+            runBtn.className = 'theia-mobile-transcript-verify-run theia-mod-embedded';
+            runBtn.disabled = this.verifyRunning || this.verifyChecksLoading || !checksAvailable;
+            runBtn.textContent = this.verifyRunning
+                ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
+                : nls.localize('qaap/mobileProjects/verifyRun', 'Run checks');
+            runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
+            runRow.append(runBtn);
+            host.append(runRow);
+        }
+
+        if (failed > 0 && !this.verifyRunning) {
+            const sendBtn = document.createElement('button');
+            sendBtn.type = 'button';
+            sendBtn.className = 'theia-mobile-transcript-verify-send theia-mod-embedded';
+            sendBtn.textContent = nls.localize('qaap/mobileProjects/verifySendFailure', 'Send failure to agent');
+            sendBtn.addEventListener('click', () => { void this.sendVerifyFailureToAgent(project, summary); });
+            host.append(sendBtn);
+        }
+
+        const toggle = document.createElement('label');
+        toggle.className = 'theia-mobile-transcript-verify-toggle';
+        const toggleText = document.createElement('span');
+        toggleText.textContent = nls.localize('qaap/mobileProjects/verifyAutoFix', 'Auto-verify & fix after each turn');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = this.isAutoVerifyEnabled(summary.cwd);
+        cb.addEventListener('change', () => this.setAutoVerifyEnabled(summary.cwd, cb.checked));
+        toggle.append(toggleText, cb);
+        host.append(toggle);
+    }
+
+    protected detachTranscriptReviewWidget(): void {
+        if (!this.diffReviewWidget?.isAttached || !this.transcriptReviewDiffHost) {
+            return;
+        }
+        if (this.transcriptReviewDiffHost.contains(this.diffReviewWidget.node)) {
+            Widget.detach(this.diffReviewWidget);
+            this.diffReviewWidget.node.classList.remove('theia-mobile-transcript-diff-embed');
+            this.diffReviewWidget.setTranscriptAgentFeedbackHandler(undefined);
+            this.diffReviewWidget.setReviewStatsChangeHandler(undefined);
+        }
+        this.transcriptReviewDiffHost = undefined;
+        this.transcriptReviewChecksHost = undefined;
+        this.transcriptReviewComposerHost = undefined;
+        this.transcriptReviewComposerDraft = '';
     }
 
     protected renderVerifyTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
@@ -5928,71 +8080,7 @@ export class MobileProjectsPanel {
             return;
         }
 
-        if (this.verifyResults.length === 0) {
-            this.verifyResults = this.defaultVerifyChecks().map(check => ({ check, state: 'idle' as const }));
-        }
-
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-transcript-verify-head';
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-transcript-verify-label';
-        const failed = this.verifyResults.filter(r => r.state === 'fail').length;
-        label.textContent = this.verifyRunning
-            ? nls.localize('qaap/mobileProjects/verifyRunning', 'Running…')
-            : failed > 0
-                ? nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed))
-                : nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
-        const runBtn = document.createElement('button');
-        runBtn.type = 'button';
-        runBtn.className = 'theia-mobile-transcript-verify-run';
-        runBtn.disabled = this.verifyRunning;
-        runBtn.textContent = this.verifyRunning
-            ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
-            : nls.localize('qaap/mobileProjects/verifyRun', 'Run');
-        runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
-        head.append(label, runBtn);
-        host.append(head);
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-transcript-verify-list';
-        for (const result of this.verifyResults) {
-            list.append(this.createVerifyCheckRow(result));
-        }
-        host.append(list);
-
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-transcript-verify-actions';
-
-        if (failed > 0 && !this.verifyRunning) {
-            const sendBtn = document.createElement('button');
-            sendBtn.type = 'button';
-            sendBtn.className = 'theia-mobile-transcript-verify-send';
-            sendBtn.textContent = nls.localize('qaap/mobileProjects/verifySendFailure', 'Send failure to agent');
-            sendBtn.addEventListener('click', () => { void this.sendVerifyFailureToAgent(project, summary); });
-            actions.append(sendBtn);
-        }
-
-        const diffBtn = document.createElement('button');
-        diffBtn.type = 'button';
-        diffBtn.className = 'theia-mobile-transcript-verify-diff';
-        diffBtn.textContent = nls.localize('qaap/mobileProjects/verifyViewChanges', 'View changes');
-        diffBtn.addEventListener('click', () => {
-            // Reuse the existing mobile diff-review widget (WORKBENCH_OPEN_DIFF).
-            void this.commands.executeCommand('qaap.diff.openReview');
-        });
-        actions.append(diffBtn);
-        host.append(actions);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'theia-mobile-transcript-verify-toggle';
-        const toggleText = document.createElement('span');
-        toggleText.textContent = nls.localize('qaap/mobileProjects/verifyAuto', 'Auto-verify after each turn');
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = this.isAutoVerifyEnabled(summary.cwd);
-        cb.addEventListener('change', () => this.setAutoVerifyEnabled(summary.cwd, cb.checked));
-        toggle.append(toggleText, cb);
-        host.append(toggle);
+        this.renderChecksSection(host, project, summary);
     }
 
     protected createVerifyCheckRow(result: VerifyCheckResult): HTMLElement {
@@ -6023,20 +8111,28 @@ export class MobileProjectsPanel {
     }
 
     /** Run the checks sequentially via the agent-task backend (no new dependency). */
-    protected async runVerifyChecks(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void> {
+    protected async runVerifyChecks(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, auto = false): Promise<void> {
         if (this.verifyRunning || !summary.cwd) {
             return;
         }
+        const checks = await this.loadVerifyChecks(summary.cwd, project, summary);
+        if (checks.length === 0) {
+            return;
+        }
+        if (!auto) {
+            // A manual Run starts a fresh closed-loop budget.
+            this.verifyAutoAttempts = 0;
+        }
         this.verifyRunning = true;
-        this.verifyResults = this.defaultVerifyChecks().map(check => ({ check, state: 'idle' as const }));
-        this.renderVerifyTab(project, summary);
+        this.verifyResults = checks.map(check => ({ check, state: 'idle' as const }));
+        this.refreshTranscriptChecksViews(project, summary);
 
         for (const result of this.verifyResults) {
             if (this.transcriptOpenSummaryId !== summary.id) {
                 break; // sheet closed mid-run
             }
             result.state = 'running';
-            this.renderVerifyTab(project, summary);
+            this.refreshTranscriptChecksViews(project, summary);
             try {
                 const created = await createAgentTask({ command: result.check.command, cwd: summary.cwd });
                 const detail = await this.pollVerifyTask(created.id, summary.id);
@@ -6051,12 +8147,45 @@ export class MobileProjectsPanel {
                 result.state = 'fail';
                 result.logTail = error instanceof Error ? error.message : String(error);
             }
-            this.renderVerifyTab(project, summary);
+            this.refreshTranscriptChecksViews(project, summary);
         }
 
         this.verifyRunning = false;
-        if (this.transcriptOpenSummaryId === summary.id && this.transcriptActiveTab === 'verify') {
-            this.renderVerifyTab(project, summary);
+        if (this.transcriptOpenSummaryId === summary.id) {
+            this.refreshTranscriptChecksViews(project, summary);
+        }
+
+        if (this.transcriptOpenSummaryId !== summary.id) {
+            return;
+        }
+        const failedCount = this.verifyResults.filter(r => r.state === 'fail').length;
+        if (failedCount === 0) {
+            // Green build ends the loop.
+            this.verifyAutoAttempts = 0;
+            return;
+        }
+        // Closed loop: in auto mode, feed the failure back to the agent until it passes or the budget runs out.
+        // The agent's next turn flips status streaming→idle, which re-triggers this run via
+        // handleTranscriptStatusForAutoVerify — so we don't recurse here directly.
+        if (auto && summary.source !== 'theia-chat') {
+            if (this.verifyAutoAttempts < MobileProjectsPanel.VERIFY_AUTO_MAX_ATTEMPTS) {
+                this.verifyAutoAttempts++;
+                MobileSnackbar.show(
+                    nls.localize(
+                        'qaap/mobileProjects/verifyAutoFixing',
+                        'Verify failed — asking the agent to fix ({0}/{1})',
+                        String(this.verifyAutoAttempts),
+                        String(MobileProjectsPanel.VERIFY_AUTO_MAX_ATTEMPTS),
+                    ),
+                    { kind: 'warning', duration: 2000 },
+                );
+                void this.sendVerifyFailureToAgent(project, summary, true);
+            } else {
+                MobileSnackbar.show(
+                    nls.localize('qaap/mobileProjects/verifyAutoGaveUp', 'Auto-verify gave up after {0} attempts — fix needed manually', String(MobileProjectsPanel.VERIFY_AUTO_MAX_ATTEMPTS)),
+                    { kind: 'warning', duration: 2600 },
+                );
+            }
         }
     }
 
@@ -6084,7 +8213,7 @@ export class MobileProjectsPanel {
     }
 
     /** Compose a failure report and push it back into the agent conversation. */
-    protected async sendVerifyFailureToAgent(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void> {
+    protected async sendVerifyFailureToAgent(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, auto = false): Promise<void> {
         const failed = this.verifyResults.filter(r => r.state === 'fail');
         if (failed.length === 0) {
             return;
@@ -6099,8 +8228,11 @@ export class MobileProjectsPanel {
         if (summary.source !== 'theia-chat') {
             try {
                 await postConversationMessage(summary.id, report);
-                this.selectTranscriptTab('messages', project, summary);
-                MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifySent', 'Failure sent to agent'), { kind: 'success', duration: 1600 });
+                if (!auto) {
+                    // Manual send: jump to Messages so the user watches the agent react.
+                    this.selectTranscriptTab('messages', project, summary);
+                    MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifySent', 'Failure sent to agent'), { kind: 'success', duration: 1600 });
+                }
             } catch (error) {
                 MobileSnackbar.show(error instanceof Error ? error.message : String(error), { kind: 'warning' });
             }
@@ -6128,8 +8260,111 @@ export class MobileProjectsPanel {
             && !this.verifyRunning
             && this.transcriptOpenSummaryId === summary.id
             && this.isAutoVerifyEnabled(summary.cwd)) {
-            void this.runVerifyChecks(project, summary);
+            void this.runVerifyChecks(project, summary, true);
         }
+    }
+
+    protected ensureOverlayUi(): {
+        parallel: MobileProjectsParallelUi;
+        timeline: MobileProjectsTimelineUi;
+        team: MobileProjectsTeamUi;
+        teamHub: MobileProjectsTeamHubUi;
+        home: MobileProjectsHomeUi;
+    } {
+        if (this.overlayUi) {
+            return this.overlayUi;
+        }
+        const parallel = new MobileProjectsParallelUi({
+            getAgents: () => this.activeTasks?.getAgents() ?? [],
+            onRunsChanged: () => {
+                if (this.visible) {
+                    void this.applyActiveTasksRefresh();
+                }
+            },
+            openTimeline: (project, summary) => {
+                this.overlayUi!.timeline.openTimelineSheet(project, summary);
+            },
+            buildVariantTaskRow: (project, summary, activeInfo, parentIds) => {
+                const task = this.summaryToTaskView(summary);
+                return this.createTaskItem(project, task, activeInfo, summary, parentIds);
+            },
+            onToggleAutoApprove: (_project, summary) => {
+                void this.toggleConversationAutoApproveById(summary.id);
+            },
+            resolveConversationSummary: summary => this.resolveConversationSummary(summary),
+        });
+        const timeline = new MobileProjectsTimelineUi(parallel);
+        const team = new MobileProjectsTeamUi({
+            getChildTasks: parentId => this.activeTasks?.getChildTasksForParent(parentId) ?? [],
+            onSubtaskClick: taskId => {
+                const project = this.transcriptComposerProject ?? this.resolveSelectedProject();
+                if (project) {
+                    void this.showTaskLog(project, taskId);
+                }
+            },
+        });
+        const teamHub = new MobileProjectsTeamHubUi({
+            resolveAgentLabel: agentId => {
+                const fromList = this.activeTasks?.getAgents().find(a => a.id === agentId)?.label;
+                if (fromList) {
+                    return fromList.startsWith('@') ? fromList : `@${fromList}`;
+                }
+                return agentId.startsWith('@') ? agentId : `@${agentId}`;
+            },
+            onMemberClick: member => this.onTeamMemberClick(member),
+            onOpenWorkflows: () => this.selectHubLandingView('workflows'),
+            onEnableAutoApprove: member => {
+                if (!member.conversationId) {
+                    return;
+                }
+                void this.toggleConversationAutoApproveById(member.conversationId);
+            },
+            onApproveRequest: (approvalId, _member) => {
+                void approveAgentRequest(approvalId).then(result => {
+                    if (!result.ok) {
+                        this.messageService?.error(result.error ?? nls.localize(
+                            'qaap/mobileProjects/teamApprovalApproveFailed',
+                            'Could not approve this action.',
+                        ));
+                        return;
+                    }
+                    this.renderList();
+                }).catch(error => {
+                    this.messageService?.error(error instanceof Error ? error.message : String(error));
+                });
+            },
+            onRejectRequest: (approvalId, _member) => {
+                void rejectAgentRequest(approvalId).then(result => {
+                    if (!result.ok) {
+                        this.messageService?.error(result.error ?? nls.localize(
+                            'qaap/mobileProjects/teamApprovalRejectFailed',
+                            'Could not reject this action.',
+                        ));
+                        return;
+                    }
+                    this.renderList();
+                }).catch(error => {
+                    this.messageService?.error(error instanceof Error ? error.message : String(error));
+                });
+            },
+        });
+        this.overlayUi = {
+            parallel,
+            timeline,
+            team,
+            teamHub,
+            home: new MobileProjectsHomeUi({
+                getWorkspaceActivity: project => this.buildHomeWorkspaceActivity(project),
+                getWorkspaceStatus: project => this.getHomeWorkspaceStatus(project),
+                formatRelativeTime: updatedAt => this.formatHomeRelativeTime(updatedAt),
+                onNavigate: target => this.onHomeNavigate(target),
+                onOpenProject: project => { void this.onHomeOpenProject(project); },
+                onOpenRecent: item => { void this.onHomeOpenRecent(item); },
+                onOpenAttention: item => this.onHomeOpenAttention(item),
+                onQuickAction: action => { void this.onHomeQuickAction(action); },
+            }),
+        };
+        return this.overlayUi;
     }
 
     protected bindTranscriptSheetDismiss(close: HTMLButtonElement, backdrop: HTMLElement): void {
@@ -6169,6 +8404,10 @@ export class MobileProjectsPanel {
         host.replaceChildren();
         const shell = document.createElement('div');
         shell.className = 'theia-mobile-projects-sticky-composer';
+        const isTheiaChat = summary.source === 'theia-chat';
+        if (isTheiaChat) {
+            this.transcriptComposerPinnedAgentId = THEIA_CODER_AGENT_ID;
+        }
         const pinnedId = this.resolveTranscriptComposerPinnedAgentId(project, summary);
         const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
         const modes = resolveStickyComposerModes(pinnedId, this.chatAgentService);
@@ -6179,6 +8418,9 @@ export class MobileProjectsPanel {
         );
         const column = this.buildStickyComposerColumn({
             project,
+            surface: isTheiaChat ? 'chat' : 'task',
+            surfaceLocked: true,
+            agentLocked: isTheiaChat,
             getContext: () => this.transcriptComposerContext,
             clearContext: () => {
                 this.transcriptComposerContext = [];
@@ -6187,6 +8429,7 @@ export class MobileProjectsPanel {
             getDraft: () => this.transcriptComposerDraft,
             setDraft: value => { this.transcriptComposerDraft = value; },
             resolveAgentLabel: () => this.resolveTranscriptComposerAgentLabel(),
+            resolveAgentId: () => this.resolveTranscriptComposerPinnedAgentId(project, summary),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.transcriptComposerModeId),
             onOpenModeSheet: modes.length > 1
@@ -6194,14 +8437,21 @@ export class MobileProjectsPanel {
                 : undefined,
             canSubmit: true,
             onAttach: () => { void this.onTranscriptComposerAttach(project); },
-            onOpenAgentSheet: () => { this.openTranscriptComposerAgentSheet(project, summary); },
+            onOpenAgentSheet: isTheiaChat
+                ? () => { /* Chat is Coder-only */ }
+                : () => { this.openTranscriptComposerAgentSheet(project, summary); },
             onOpenToolsSheet: () => { void this.openTranscriptComposerToolsSheet(project, summary); },
             sendLabel: nls.localize('qaap/mobileProjects/transcriptSend', 'Send'),
             onSubmit: draft => {
-                const resolvedPinnedId = this.resolveTranscriptComposerPinnedAgentId(project, summary);
-                const selectedAgentId = resolveExplicitAgentForSubmit(draft, {
-                    pinnedChatAgentId: resolvedPinnedId,
-                }) ?? resolvedPinnedId;
+                const resolvedPinnedId = isTheiaChat
+                    ? THEIA_CODER_AGENT_ID
+                    : this.resolveTranscriptComposerPinnedAgentId(project, summary);
+                const selectedAgentId = isTheiaChat
+                    ? THEIA_CODER_AGENT_ID
+                    : resolveExplicitAgentForSubmit(draft, {
+                        pinnedChatAgentId: resolvedPinnedId,
+                    }) ?? resolvedPinnedId;
+                const outboundDraft = isTheiaChat ? stripNonCoderAgentMention(draft) : draft;
                 const widgetVars = this.transcriptComposerToolsWidget && !this.transcriptComposerToolsWidget.isDisposed
                     ? this.transcriptComposerToolsWidget.getAllVariablesForRequest()
                     : [];
@@ -6219,7 +8469,7 @@ export class MobileProjectsPanel {
                             await this.submitTranscriptViaTheiaChat(
                                 project,
                                 summary,
-                                draft,
+                                outboundDraft,
                                 chatHost,
                                 modeId,
                                 capabilityOverrides,
@@ -6244,10 +8494,13 @@ export class MobileProjectsPanel {
                     }
                 })();
             },
-            getMentionOptions: () => this.resolveComposerMentionOptions(this.transcriptComposerBackendAgents),
+            getMentionOptions: () => this.resolveComposerMentionOptions(this.transcriptComposerBackendAgents, isTheiaChat),
             getVariableOptions: this.getComposerVariables
                 ? () => this.resolveComposerVariableOptions()
                 : undefined,
+            inputPlaceholder: summary.source === 'theia-chat'
+                ? nls.localize('qaap/mobileProjects/transcriptChatPlaceholder', 'Reply in local chat…')
+                : nls.localize('qaap/mobileProjects/transcriptTaskPlaceholder', 'Follow up on this VPS task…'),
         });
         shell.append(column);
         host.append(shell);
@@ -6268,6 +8521,9 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): string {
+        if (summary.source === 'theia-chat') {
+            return THEIA_CODER_AGENT_ID;
+        }
         const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
         const pinned = this.transcriptComposerPinnedAgentId
             ?? migrateLegacyBackendAgentId(summary.agentId)
@@ -6331,6 +8587,9 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void {
+        if (summary.source === 'theia-chat') {
+            return;
+        }
         this.closeTranscriptComposerSheets();
         const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
         const sheet = document.createElement('div');
@@ -6766,6 +9025,9 @@ export class MobileProjectsPanel {
         session?: ChatSession,
         messages?: ReadonlyArray<{ readonly content?: string }>,
     ): string | undefined {
+        if (summary.source === 'theia-chat') {
+            return THEIA_CODER_AGENT_ID;
+        }
         if (session) {
             const fromSession = this.inferBackendAgentIdFromChatSession(session);
             if (fromSession) {
@@ -6815,14 +9077,13 @@ export class MobileProjectsPanel {
         return agent;
     }
 
-    /** Ensure the outgoing Theia chat request targets the pinned or stored agent, not always Coder. */
-    protected formatTheiaChatRequestText(content: string, pinnedAgentId?: string): string {
-        if (extractBackendAgentMention(content) || isTheiaCoderMention(content)) {
-            return content;
+    /** Local chat always routes to Coder — strip VPS @mentions and ensure a Coder prefix. */
+    protected formatTheiaChatRequestText(content: string, _pinnedAgentId?: string): string {
+        const cleaned = stripNonCoderAgentMention(content);
+        if (isTheiaCoderMention(cleaned)) {
+            return cleaned;
         }
-        const agentId = migrateLegacyBackendAgentId(pinnedAgentId?.trim())
-            ?? THEIA_CODER_AGENT_ID;
-        return `@${agentId} ${content}`;
+        return `@${THEIA_CODER_AGENT_ID} ${cleaned}`;
     }
 
     protected async submitTranscriptViaBackendConversation(
@@ -6893,15 +9154,18 @@ export class MobileProjectsPanel {
         const coderAgent = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
         const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: false }, coderAgent);
         this.rememberChatSessionProject(session.id, project);
+        if (cwd) {
+            writeStoredAgent(cwd, THEIA_CODER_AGENT_ID);
+        }
         this.trackChatServiceSessionModels();
         const summary = this.chatServiceSessionToSummary(session, project, cwd, draft, 'streaming');
         this.upsertProjectChatServiceSummary(project.id, summary);
         if (previousActiveSessionId && this.chatService.getSession(previousActiveSessionId)) {
             this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
         }
-        const pinnedId = readStoredAgent(cwd);
+        const pinnedId = THEIA_CODER_AGENT_ID;
         const invocation = await this.chatService.sendRequest(session.id, {
-            text: this.formatTheiaChatRequestText(draft, pinnedId),
+            text: this.formatTheiaChatRequestText(stripNonCoderAgentMention(draft), pinnedId),
             modeId: options.modeId,
             capabilityOverrides: options.capabilityOverrides,
             genericCapabilitySelections: options.genericCapabilitySelections,
@@ -6956,7 +9220,7 @@ export class MobileProjectsPanel {
             messages: [...base.messages, userMessage],
         });
         const invocation = await this.chatService.sendRequest(session.id, {
-            text: this.formatTheiaChatRequestText(content, widget?.pinnedAgent?.id ?? session.pinnedAgent?.id),
+            text: this.formatTheiaChatRequestText(stripNonCoderAgentMention(content)),
             modeId,
             capabilityOverrides,
             genericCapabilitySelections,
@@ -7050,7 +9314,7 @@ export class MobileProjectsPanel {
         close.className = 'theia-mobile-agent-log-close codicon codicon-close';
         close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
         close.setAttribute('aria-label', close.title);
-        header.append(title, close);
+        this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, close, project, summary);
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
@@ -7159,7 +9423,7 @@ export class MobileProjectsPanel {
         await service.restoreSessionData?.(model, serializedModel);
 
         const title = nls.localize(
-            'qaap/mobileProjects/forkedChatTitle',
+            'qaap/mobileProjects/forkedTaskTitle',
             '{0} fork',
             baseData.title ?? summary.title ?? project.name
         );
@@ -7357,6 +9621,7 @@ export class MobileProjectsPanel {
     }
 
     protected renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
+        this.transcriptLastConv = conv;
         const messageHost = this.resolveTranscriptMessageHost(host);
         messageHost.replaceChildren();
         if (conv.messages.length === 0 && conv.status !== 'streaming') {
@@ -7387,6 +9652,7 @@ export class MobileProjectsPanel {
             }
         }
         messageHost.scrollTop = messageHost.scrollHeight;
+        this.ensureOverlayUi().team.renderTeamSection(host, conv);
     }
 
     protected createTranscriptAgentSegmentsRow(
@@ -7484,7 +9750,7 @@ export class MobileProjectsPanel {
         const segmentCount = last?.segments?.length ?? 0;
         const lastSegment = last?.segments?.[segmentCount - 1];
         const segmentTail = lastSegment && 'content' in lastSegment ? lastSegment.content.length : 0;
-        return `${conv.status}|${conv.updatedAt}|${conv.messages.length}|${last?.id ?? ''}|${last?.content?.length ?? 0}|${segmentCount}|${segmentTail}`;
+        return `${conv.autoApprove === false ? '0' : '1'}|${conv.status}|${conv.updatedAt}|${conv.messages.length}|${last?.id ?? ''}|${last?.content?.length ?? 0}|${segmentCount}|${segmentTail}`;
     }
 
     protected shouldRefreshOpenTranscript(project: MobileProjectEntry, conversationId: string): boolean {
@@ -7496,6 +9762,7 @@ export class MobileProjectsPanel {
     }
 
     protected closeTranscriptSheet(): void {
+        this.ensureOverlayUi().parallel.closeSheet();
         this.closeTranscriptComposerSheets();
         this.disposeTranscriptComposerTools();
         this.transcriptComposerHost = undefined;
@@ -7510,13 +9777,22 @@ export class MobileProjectsPanel {
         this.transcriptSheet = undefined;
         this.transcriptOpenSummaryId = undefined;
         this.transcriptLastFingerprint = undefined;
+        this.transcriptLastConv = undefined;
         this.transcriptChatHost = undefined;
         this.transcriptChatInputHost = undefined;
         this.transcriptTabStrip = undefined;
+        this.transcriptHeaderSubtitle = undefined;
+        this.transcriptPlanHost = undefined;
+        this.transcriptPlanSteps = [];
+        this.detachTranscriptReviewWidget();
+        this.transcriptReviewHost = undefined;
         this.transcriptVerifyHost = undefined;
         this.transcriptActiveTab = 'messages';
         this.verifyResults = [];
+        this.verifyChecksCwd = undefined;
+        this.verifyChecksLoading = false;
         this.verifyRunning = false;
+        this.verifyAutoAttempts = 0;
         this.transcriptLastStatus = undefined;
         if (this.visible) {
             this.renderList();

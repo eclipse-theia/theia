@@ -14,6 +14,7 @@ import {
     type QaapAgentTaskAgentOption,
     type QaapAgentTaskCreated,
 } from '../common/qaap-agent-task-client';
+import { createAgentSelectField } from './qaap-agent-ui';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileSnackbar } from './mobile-snackbar';
@@ -34,7 +35,7 @@ export class MobileAgentTaskComposer {
     readonly node: HTMLElement;
     protected readonly titleEl: HTMLElement;
     protected readonly banner: HTMLElement;
-    protected readonly agentSelect: HTMLSelectElement;
+    protected readonly agentField: ReturnType<typeof createAgentSelectField>;
     protected readonly input: HTMLInputElement;
     protected readonly runBtn: HTMLButtonElement;
     protected readonly errorEl: HTMLElement;
@@ -94,13 +95,14 @@ export class MobileAgentTaskComposer {
 
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-composer-row';
-        this.agentSelect = document.createElement('select');
-        this.agentSelect.className = 'theia-mobile-agent-composer-agent';
-        this.agentSelect.setAttribute('aria-label', nls.localize('qaap/mobileAgentComposer/agent', 'Agent'));
-        this.agentSelect.addEventListener('change', () => {
-            this.selectedAgent = this.agentSelect.value;
-            writeStoredAgent(this.cwd, this.agentSelect.value);
-            this.renderState();
+        this.agentField = createAgentSelectField({
+            className: 'theia-mobile-agent-composer-agent',
+            ariaLabel: nls.localize('qaap/mobileAgentComposer/agent', 'Agent'),
+            onChange: agentId => {
+                this.selectedAgent = agentId;
+                writeStoredAgent(this.cwd, agentId);
+                this.renderState();
+            },
         });
         this.input = document.createElement('input');
         this.input.type = 'text';
@@ -116,7 +118,7 @@ export class MobileAgentTaskComposer {
         this.runBtn.className = 'theia-mobile-agent-composer-run';
         this.runBtn.textContent = nls.localize('qaap/mobileAgentComposer/run', 'Run');
         this.runBtn.addEventListener('click', () => { void this.submit(); });
-        row.append(this.agentSelect, this.input, this.runBtn);
+        row.append(this.agentField.root, this.input, this.runBtn);
 
         this.errorEl = document.createElement('p');
         this.errorEl.className = 'theia-mobile-agent-composer-error';
@@ -182,16 +184,9 @@ export class MobileAgentTaskComposer {
         const projectName = this.project?.name ?? nls.localize('qaap/mobileAgentComposer/projectFallback', 'Project');
         this.titleEl.textContent = nls.localize('qaap/mobileAgentComposer/title', 'Run task in {0}', projectName);
 
-        this.agentSelect.replaceChildren();
-        for (const agent of this.agents) {
-            const option = document.createElement('option');
-            option.value = agent.id;
-            option.textContent = agent.label;
-            this.agentSelect.append(option);
-        }
-        this.agentSelect.value = this.selectedAgent ?? this.agents[0]?.id ?? SHELL_AGENT_ID;
-        this.agentSelect.hidden = this.agents.length <= 1;
-        this.agentSelect.disabled = this.busy || this.agents.length <= 1;
+        this.agentField.setAgents(this.agents, this.selectedAgent ?? this.agents[0]?.id ?? SHELL_AGENT_ID);
+        this.selectedAgent = this.agentField.getSelectedId();
+        this.agentField.select.disabled = this.busy || this.agents.length <= 1;
 
         const usingShell = this.selectedAgent === SHELL_AGENT_ID;
         this.input.placeholder = usingShell

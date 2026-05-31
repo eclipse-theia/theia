@@ -28,9 +28,13 @@ export function installMobileVerticalTouchScroll(element: HTMLElement): Disposab
     }
     element.dataset.theiaMobileScrollY = 'true';
 
+    let startX = 0;
     let startY = 0;
     let scrollTop = 0;
     let tracking = false;
+    let axisLocked = false;
+    let lockToVertical = false;
+    const threshold = 6;
 
     const canScroll = (): boolean => element.scrollHeight > element.clientHeight + 1;
 
@@ -40,25 +44,44 @@ export function installMobileVerticalTouchScroll(element: HTMLElement): Disposab
             return;
         }
         tracking = true;
+        startX = event.touches[0].pageX;
         startY = event.touches[0].pageY;
         scrollTop = element.scrollTop;
+        axisLocked = false;
+        lockToVertical = false;
     };
 
     const onTouchMove = (event: TouchEvent): void => {
-        if (!tracking || event.touches.length !== 1) {
+        if (!tracking || event.touches.length !== 1 || !canScroll()) {
             return;
         }
+        const dx = event.touches[0].pageX - startX;
         const dy = event.touches[0].pageY - startY;
+        if (!axisLocked) {
+            if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
+                return;
+            }
+            axisLocked = true;
+            lockToVertical = Math.abs(dy) >= Math.abs(dx);
+        }
+        if (!lockToVertical) {
+            return;
+        }
+        if (event.cancelable) {
+            event.preventDefault();
+        }
         const max = element.scrollHeight - element.clientHeight;
         element.scrollTop = Math.max(0, Math.min(max, scrollTop - dy));
     };
 
     const stop = (): void => {
         tracking = false;
+        axisLocked = false;
+        lockToVertical = false;
     };
 
     element.addEventListener('touchstart', onTouchStart, { passive: true });
-    element.addEventListener('touchmove', onTouchMove, { passive: true });
+    element.addEventListener('touchmove', onTouchMove, { passive: false });
     element.addEventListener('touchend', stop, { passive: true });
     element.addEventListener('touchcancel', stop, { passive: true });
 
@@ -86,6 +109,11 @@ export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
     '.theia-mobile-pr-stack',
     '.theia-mobile-pr-picker',
     '.theia-mobile-open-repo-list',
+    '.theia-mobile-agent-transcript',
+    '.theia-mobile-agent-log-output',
+    '.theia-mobile-transcript-plan',
+    '.theia-mobile-transcript-review-scroll',
+    '.theia-mobile-transcript-verify',
     '.gs-container',
     '.monaco-editor .overflow-guard',
 ].join(',');

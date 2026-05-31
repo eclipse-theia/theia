@@ -34,6 +34,12 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         app.get(`${QAAP_GIT_REVIEW_API_PATH}/diff`, (req, res) => {
             void this.handleDiff(req, res);
         });
+        app.post(`${QAAP_GIT_REVIEW_API_PATH}/stage`, (req, res) => {
+            void this.handleStage(req, res);
+        });
+        app.post(`${QAAP_GIT_REVIEW_API_PATH}/discard`, (req, res) => {
+            void this.handleDiscard(req, res);
+        });
     }
 
     protected async handleChanges(req: Request, res: Response): Promise<void> {
@@ -47,6 +53,79 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         } catch (error) {
             res.status(500).json({ error: this.errorMessage(error) });
         }
+    }
+
+    protected async handleStage(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepositoryBody(req, res);
+        if (!root) {
+            return;
+        }
+        const file = this.sanitizeRelativePath(req.body?.file);
+        if (!file) {
+            res.status(400).json({ error: 'Missing or invalid "file" in request body.' });
+            return;
+        }
+        try {
+            await this.git(root, ['add', '--', file]);
+            res.json({ ok: true });
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
+    protected async handleDiscard(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepositoryBody(req, res);
+        if (!root) {
+            return;
+        }
+        const file = this.sanitizeRelativePath(req.body?.file);
+        if (!file) {
+            res.status(400).json({ error: 'Missing or invalid "file" in request body.' });
+            return;
+        }
+        const absolute = path.join(root, file);
+        try {
+            if (fs.existsSync(absolute)) {
+                const status = await this.git(root, ['status', '--porcelain=v1', '--', file]);
+                if (status.startsWith('??')) {
+                    await fs.promises.unlink(absolute);
+                } else {
+                    await this.git(root, ['checkout', '--', file]);
+                }
+            }
+            res.json({ ok: true });
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
+    protected async resolveRepositoryBody(req: Request, res: Response): Promise<string | undefined> {
+        const raw = typeof req.body?.root === 'string' ? req.body.root : '';
+        return this.resolveRepositoryRoot(raw, res);
+    }
+
+    /** Validate the client-supplied repository root and confirm it is a git work tree. */
+    protected async resolveRepository(req: Request, res: Response): Promise<string | undefined> {
+        const raw = typeof req.query.root === 'string' ? req.query.root : '';
+        return this.resolveRepositoryRoot(raw, res);
+    }
+
+    protected async resolveRepositoryRoot(raw: string, res: Response): Promise<string | undefined> {
+        const root = raw ? path.resolve(raw) : '';
+        if (!root || !path.isAbsolute(root) || !this.isExistingDirectory(root)) {
+            res.status(400).json({ error: 'Missing or invalid "root" query parameter.' });
+            return undefined;
+        }
+        try {
+            const inside = (await this.git(root, ['rev-parse', '--is-inside-work-tree'])).trim();
+            if (inside !== 'true') {
+                throw new Error('not a work tree');
+            }
+        } catch {
+            res.status(400).json({ error: 'The given root is not a git repository.' });
+            return undefined;
+        }
+        return root;
     }
 
     protected async handleDiff(req: Request, res: Response): Promise<void> {
@@ -69,26 +148,6 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         } catch (error) {
             res.status(500).json({ error: this.errorMessage(error) });
         }
-    }
-
-    /** Validate the client-supplied repository root and confirm it is a git work tree. */
-    protected async resolveRepository(req: Request, res: Response): Promise<string | undefined> {
-        const raw = typeof req.query.root === 'string' ? req.query.root : '';
-        const root = raw ? path.resolve(raw) : '';
-        if (!root || !path.isAbsolute(root) || !this.isExistingDirectory(root)) {
-            res.status(400).json({ error: 'Missing or invalid "root" query parameter.' });
-            return undefined;
-        }
-        try {
-            const inside = (await this.git(root, ['rev-parse', '--is-inside-work-tree'])).trim();
-            if (inside !== 'true') {
-                throw new Error('not a work tree');
-            }
-        } catch {
-            res.status(400).json({ error: 'The given root is not a git repository.' });
-            return undefined;
-        }
-        return root;
     }
 
     protected async collectChangedFiles(root: string): Promise<QaapGitChangedFile[]> {

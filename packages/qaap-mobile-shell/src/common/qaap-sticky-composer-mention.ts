@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import type { AIVariable } from '@theia/ai-core';
+import { appendAgentBrandIcon } from './qaap-agent-branding';
 import { QaapAgentTaskAgentOption, THEIA_CODER_AGENT_ID } from './qaap-agent-task-client';
 
 export type StickyComposerTriggerChar = '@' | '#';
@@ -257,13 +258,19 @@ export function attachStickyComposerMentionUi(options: {
             btn.setAttribute('role', 'option');
             btn.dataset.tokenId = token.id;
             btn.dataset.tokenTrigger = token.trigger;
+            const main = document.createElement('span');
+            main.className = 'theia-mobile-projects-sticky-composer-mention-option-main';
+            if (token.trigger === '@') {
+                appendAgentBrandIcon(main, token.id, 'sm');
+            }
             const label = document.createElement('span');
             label.className = 'theia-mobile-projects-sticky-composer-mention-option-label';
             label.textContent = token.label;
+            main.append(label);
             const hint = document.createElement('span');
             hint.className = 'theia-mobile-projects-sticky-composer-mention-option-hint';
             hint.textContent = token.description?.trim() || `${token.trigger}${token.insertBody.trimEnd()}`;
-            btn.append(label, hint);
+            btn.append(main, hint);
             btn.addEventListener('mousedown', ev => {
                 ev.preventDefault();
                 pickingFromPopover = true;

@@ -72,6 +72,11 @@
   .theia-mobile-onboarding-body,
   .theia-mobile-bottom-actionsheet,
   .theia-mobile-open-repo-list,
+  .theia-mobile-agent-transcript,
+  .theia-mobile-agent-log-output,
+  .theia-mobile-transcript-plan,
+  .theia-mobile-transcript-review-scroll,
+  .theia-mobile-transcript-verify,
   .qaap-project-bootstrap-picker {
     overflow-y: auto !important;
     overflow-x: hidden;

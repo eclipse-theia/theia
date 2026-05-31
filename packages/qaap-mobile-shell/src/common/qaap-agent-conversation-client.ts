@@ -30,8 +30,13 @@ export interface QaapAgentConversationSummaryDTO {
     readonly priority?: boolean;
     /** User-flagged "paused" — sinks to the bottom and renders dimmed. */
     readonly paused?: boolean;
+    /** When `false`, tool calls need manual CLI approval on the VPS. */
+    readonly autoApprove?: boolean;
     /** Id of the parent conversation when this one was created via fork. */
     readonly forkedFromId?: string;
+    /** Set on parallel-run variant conversations — groups them under {@link parallelBaseCwd}. */
+    readonly parallelRunId?: string;
+    readonly parallelBaseCwd?: string;
     readonly activityLabel?: string;
     readonly linesAdded?: number;
     readonly linesRemoved?: number;
@@ -66,6 +71,18 @@ export interface QaapAgentMessageDTO {
     readonly error?: string;
 }
 
+/** A per-turn working-tree snapshot (Timeline / rollback). Mirrors the backend checkpoint. */
+export interface QaapConversationCheckpointDTO {
+    readonly id: string;
+    readonly messageId: string;
+    readonly label: string;
+    readonly commit: string;
+    readonly ref: string;
+    readonly capturedAt: number;
+    readonly added?: number;
+    readonly removed?: number;
+}
+
 /**
  * Full conversation document as returned by the GET/POST detail endpoints. It carries the live
  * message list but not the summary's denormalized preview/messageCount — call
@@ -82,7 +99,11 @@ export interface QaapAgentConversationDTO {
     readonly messages: QaapAgentMessageDTO[];
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly autoApprove?: boolean;
     readonly forkedFromId?: string;
+    readonly parallelRunId?: string;
+    readonly parallelBaseCwd?: string;
+    readonly checkpoints?: QaapConversationCheckpointDTO[];
     readonly linkedPullRequest?: QaapLinkedPullRequest;
 }
 
@@ -109,7 +130,10 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         lastMessageRole: last?.role,
         priority: conv.priority,
         paused: conv.paused,
+        autoApprove: conv.autoApprove === false ? false : undefined,
         forkedFromId: conv.forkedFromId,
+        parallelRunId: conv.parallelRunId,
+        parallelBaseCwd: conv.parallelBaseCwd,
         linkedPullRequest: conv.linkedPullRequest,
         ...metrics,
         hasGitOperation,
@@ -157,6 +181,17 @@ export async function getConversation(id: string): Promise<QaapAgentConversation
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
+export async function restoreConversationCheckpoint(id: string, checkpointId: string): Promise<QaapAgentConversationDTO> {
+    const response = await fetch(
+        `${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/checkpoints/${encodeURIComponent(checkpointId)}/restore`,
+        { method: 'POST', credentials: 'include' },
+    );
+    if (!response.ok) {
+        throw new Error((await response.text()) || response.statusText);
+    }
+    return response.json() as Promise<QaapAgentConversationDTO>;
+}
+
 export async function createConversation(body: QaapCreateConversationBody): Promise<QaapAgentConversationDTO> {
     const response = await fetch(QAAP_AGENT_CONVERSATION_API_PATH, {
         method: 'POST',
@@ -195,7 +230,13 @@ export interface QaapUpdateConversationBody {
     readonly title?: string;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly autoApprove?: boolean;
     readonly linkedPullRequest?: QaapLinkedPullRequest | null;
+}
+
+/** True when YOLO / auto-approve is enabled for a VPS agent conversation. */
+export function isConversationAutoApproveEnabled(summary: { readonly autoApprove?: boolean }): boolean {
+    return summary.autoApprove !== false;
 }
 
 export async function updateConversation(id: string, patch: QaapUpdateConversationBody): Promise<QaapAgentConversationDTO> {

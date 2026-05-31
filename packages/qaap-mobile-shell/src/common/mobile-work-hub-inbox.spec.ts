@@ -5,6 +5,7 @@
 
 import { expect } from 'chai';
 import {
+    buildReviewHubPullRequestItems,
     buildWorkHubInboxItems,
     compareWorkHubInboxItems,
     conversationQualifiesForWorkHubInbox,
@@ -84,21 +85,27 @@ describe('mobile-work-hub-inbox', () => {
         const items = buildWorkHubInboxItems(
             project(),
             [conversation({ updatedAt: 100 })],
-            [pull({ updatedAt: '2026-05-02T00:00:00.000Z' })],
         );
-        expect(items).to.have.length(1);
-        expect(items[0].kind).to.equal('pullRequest');
+        expect(items).to.have.length(0);
     });
 
-    it('buildWorkHubInboxItems includes git-linked conversations and PRs', () => {
+    it('buildWorkHubInboxItems includes git-linked conversations only', () => {
         const items = buildWorkHubInboxItems(
             project(),
             [conversation({ updatedAt: 100, hasGitOperation: true })],
-            [pull({ updatedAt: '2026-05-02T00:00:00.000Z' })],
         );
-        expect(items).to.have.length(2);
-        expect(items.some(i => i.kind === 'pullRequest')).to.equal(true);
-        expect(items.some(i => i.kind === 'conversation')).to.equal(true);
+        expect(items).to.have.length(1);
+        expect(items[0].kind).to.equal('conversation');
+    });
+
+    it('buildReviewHubPullRequestItems lists open PRs for the repo', () => {
+        const items = buildReviewHubPullRequestItems(
+            project(),
+            [pull({ updatedAt: '2026-05-02T00:00:00.000Z' })],
+            [],
+        );
+        expect(items).to.have.length(1);
+        expect(items[0].kind).to.equal('pullRequest');
     });
 
     it('conversationQualifiesForWorkHubInbox accepts git flag or linked PR', () => {
@@ -109,13 +116,17 @@ describe('mobile-work-hub-inbox', () => {
         })).to.equal(true);
     });
 
-    it('streaming conversations sort above idle PRs', () => {
-        const items = buildWorkHubInboxItems(
+    it('streaming conversations sort above idle PRs in mixed compare', () => {
+        const conv = buildWorkHubInboxItems(
             project(),
             [conversation({ status: 'streaming', updatedAt: 1, hasGitOperation: true })],
+        )[0];
+        const pr = buildReviewHubPullRequestItems(
+            project(),
             [pull({ updatedAt: '2099-01-01T00:00:00.000Z' })],
-        );
-        expect(items[0].kind).to.equal('conversation');
+            [],
+        )[0];
+        expect(compareWorkHubInboxItems(conv, pr)).to.be.lessThan(0);
     });
 
     it('pullRequestBelongsToProject matches case-insensitively', () => {
@@ -124,20 +135,16 @@ describe('mobile-work-hub-inbox', () => {
     });
 
     it('skips standalone PR rows when a conversation is already linked', () => {
-        const items = buildWorkHubInboxItems(
-            project(),
-            [conversation({
-                linkedPullRequest: { owner: 'acme', repo: 'qaap', number: 42, branch: 'feat/inbox' },
-            })],
-            [pull()],
-        );
+        const linked = [conversation({
+            linkedPullRequest: { owner: 'acme', repo: 'qaap', number: 42, branch: 'feat/inbox' },
+        })];
+        const items = buildReviewHubPullRequestItems(project(), [pull()], linked);
         expect(items.filter(i => i.kind === 'pullRequest')).to.have.length(0);
-        expect(items.filter(i => i.kind === 'conversation')).to.have.length(1);
     });
 
     it('compareWorkHubInboxItems is transitive on priority', () => {
-        const a = buildWorkHubInboxItems(project(), [conversation({ status: 'streaming', updatedAt: 1, hasGitOperation: true })], [])[0];
-        const b = buildWorkHubInboxItems(project(), [], [pull()])[0];
+        const a = buildWorkHubInboxItems(project(), [conversation({ status: 'streaming', updatedAt: 1, hasGitOperation: true })])[0];
+        const b = buildReviewHubPullRequestItems(project(), [pull()], [])[0];
         expect(compareWorkHubInboxItems(a, b)).to.be.lessThan(0);
     });
 });

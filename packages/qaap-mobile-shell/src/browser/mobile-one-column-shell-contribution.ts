@@ -54,6 +54,9 @@ import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
+import { isWorkMissionControlEnabled } from './mobile-work-mission-control';
+import { resolveAgentVerifyChecksForCwd } from './qaap-agent-verify-checks-resolver';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
@@ -79,6 +82,7 @@ import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
 import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
+import { writeStoredComposerSurface } from '../common/qaap-composer-surface';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -120,8 +124,13 @@ type MobileBottomButtonId =
     | 'pr'
     | 'terminal'
     | 'hub-home'
-    | 'hub-chats'
-    | 'hub-workflows'
+    | 'hub-work'
+    | 'hub-projects'
+    | 'hub-chat'
+    | 'hub-tasks'
+    | 'hub-review'
+    | 'hub-inbox'
+    | 'hub-team'
     | 'hub-automations';
 
 interface MobileBottomButton {
@@ -204,6 +213,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
@@ -343,9 +355,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.toDispose.push(shell.onDidAddWidget(widget => {
             if (this.mobileActive && shell.getAreaFor(widget) === 'bottom') {
                 this.scheduleSnapAndUiRefresh();
-                if (this.shell.isExpanded('bottom')) {
-                    void this.applyMobileBottomPanelMaximizedSize();
-                }
+                void this.applyMobileBottomPanelMaximizedSize();
             }
         }));
         this.toDispose.push(shell.onDidRemoveWidget(widget => {
@@ -378,15 +388,18 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 || event.commandId === CommonCommands.TOGGLE_BOTTOM_PANEL.id
                 || event.commandId === 'terminal:new') {
                 this.scheduleSnapAndUiRefresh();
-                if (this.shell.isExpanded('bottom')) {
-                    void this.applyMobileBottomPanelMaximizedSize();
-                }
+                void this.applyMobileBottomPanelMaximizedSize();
             }
         }));
     }
 
     /** Bottom panel is visible with at least one widget (matches Projects “open” semantics for the bar). */
     protected isTerminalBottomPanelOpen(): boolean {
+        return this.isMobileBottomTerminalVisible();
+    }
+
+    /** Bottom terminal area is shown (may still be mid expand animation). */
+    protected isMobileBottomTerminalVisible(): boolean {
         const bottom = this.shell.bottomPanel;
         return !bottom.isHidden && !bottom.isEmpty;
     }
@@ -524,13 +537,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
      * overlay so the terminal fills the workspace above the bottom activity bar.
      */
     protected async applyMobileBottomPanelMaximizedSize(): Promise<void> {
-        if (!this.mobileActive || !this.shell.isExpanded('bottom') || this.suppressMobileBottomAutoMaximize) {
+        if (!this.mobileActive || this.suppressMobileBottomAutoMaximize) {
             return;
         }
         await this.getBottomPanelPendingUpdate();
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         const bottomPanel = this.shell.bottomPanel;
-        if (!this.shell.isExpanded('bottom') || bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+        if (!this.isMobileBottomTerminalVisible() || bottomPanel.hasClass(MAXIMIZED_CLASS)) {
             return;
         }
         bottomPanel.toggleMaximized();
@@ -559,6 +572,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.clearMobileMaximizedOverlayInsets();
             return;
         }
+        const topRect = this.shell.topPanel.node.getBoundingClientRect();
+        overlay.style.top = `${topRect.bottom}px`;
         overlay.style.bottom = [
             'calc(',
             'var(--theia-mobile-bottom-bar-height, 56px)',
@@ -570,7 +585,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected clearMobileMaximizedOverlayInsets(): void {
-        this.getMaximizedOverlayElement()?.style.removeProperty('bottom');
+        const overlay = this.getMaximizedOverlayElement();
+        overlay?.style.removeProperty('bottom');
+        overlay?.style.removeProperty('top');
     }
 
     protected updateMobileShellStateClasses(): void {
@@ -853,6 +870,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 pickContextVariable: () => this.contextVariablePicker.pickContextVariable(),
                 getComposerVariables: () => this.variableService.getVariables(),
                 createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
+                resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -1371,21 +1389,56 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Icon-only hub tabs (reference mock) while the project list is visible. */
     protected getWorkHubLandingBottomButtons(): MobileBottomButton[] {
+        if (isWorkMissionControlEnabled()) {
+            // Unified 4-tab nav: Work (mission-control) replaces Home/Chat/Tasks; Inbox absorbs Review.
+            return [
+                {
+                    id: 'hub-work',
+                    label: nls.localize('qaap/mobileBottomBar/hubWork', 'Work'),
+                    icon: 'codicon-inbox',
+                },
+                {
+                    id: 'hub-projects',
+                    label: nls.localize('qaap/mobileBottomBar/hubProjects', 'Projects'),
+                    icon: 'codicon-folder',
+                },
+                {
+                    id: 'hub-inbox',
+                    label: nls.localize('qaap/mobileBottomBar/hubInbox', 'Inbox'),
+                    icon: 'codicon-git-pull-request',
+                },
+                {
+                    id: 'hub-automations',
+                    label: nls.localize('qaap/mobileBottomBar/hubRoutines', 'Routines'),
+                    icon: 'codicon-zap',
+                },
+            ];
+        }
         return [
             {
                 id: 'hub-home',
-                label: nls.localize('qaap/mobileBottomBar/hubHome', 'Projects'),
+                label: nls.localize('qaap/mobileBottomBar/hubHome', 'Home'),
                 icon: 'codicon-home',
             },
             {
-                id: 'hub-chats',
-                label: nls.localize('qaap/mobileBottomBar/hubInbox', 'Inbox'),
-                icon: 'codicon-inbox',
+                id: 'hub-projects',
+                label: nls.localize('qaap/mobileBottomBar/hubProjects', 'Projects'),
+                icon: 'codicon-folder',
             },
             {
-                id: 'hub-workflows',
-                label: nls.localize('qaap/mobileBottomBar/hubWorkflows', 'Workflows'),
-                icon: 'codicon-type-hierarchy',
+                id: 'hub-chat',
+                label: nls.localize('qaap/mobileBottomBar/hubChat', 'Chat'),
+                icon: 'codicon-comment-discussion',
+            },
+            {
+                id: 'hub-tasks',
+                label: nls.localize('qaap/mobileBottomBar/hubTasks', 'Tasks'),
+                icon: 'codicon-server-process',
+            },
+            {
+                id: 'hub-review',
+                label: nls.localize('qaap/mobileBottomBar/hubReview', 'Review'),
+                icon: 'codicon-git-pull-request',
             },
             {
                 id: 'hub-automations',
@@ -1404,16 +1457,44 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.shell.activateWidget(widget.id);
             return;
         }
-        const inHubLanding = this.projectsPanel?.isHomeMode() === true
+        const onHubLanding = this.projectsPanel?.isHomeMode() === true
             && this.projectsPanel.isVisible()
-            && document.body.classList.contains('theia-mobile-mod-landing');
-        if (!inHubLanding) {
-            await this.showMobileProjectsHome();
-        } else {
+            && document.body.classList.contains('theia-mobile-mod-landing')
+            && !this.landingLeftThisSession;
+        if (onHubLanding) {
             this.applyLandingChrome();
+            await this.projectsPanel?.openDiffView(projectId);
+            this.refreshBottomBar();
+            return;
         }
-        await this.projectsPanel?.openDiffView(projectId);
+        await this.openProjectScopedDiffView(projectId);
+    }
+
+    /** Working-changes review inside the active workspace sheet (not the cross-project Work Hub tab). */
+    protected async openProjectScopedDiffView(projectId?: string): Promise<void> {
+        this.hidePullRequestPanel();
+        await this.dismissSheetsAsync();
+        if (this.shell.isExpanded('bottom')) {
+            await this.shell.collapsePanel('bottom');
+        }
+        if (this.projectsPanel?.isHomeMode()) {
+            this.projectsPanel.hide();
+            this.projectsPanel.dispose();
+            this.projectsPanel.node.parentElement?.removeChild(this.projectsPanel.node);
+            this.projectsPanel = undefined;
+        }
+        this.ensureProjectsPanel(false);
+        const panel = this.projectsPanel;
+        if (!panel) {
+            return;
+        }
+        document.body.classList.remove('theia-mobile-mod-landing');
+        await panel.show();
+        const resolvedProjectId = projectId ?? (await this.projectsService.loadProjects())
+            .find(project => project.isCurrent)?.id;
+        await panel.openProjectDiffView(resolvedProjectId);
         this.refreshBottomBar();
+        this.refreshWorkbenchTopBar();
     }
 
     /** Primary workspace views. Projects is isolated in the top-bar return action. */
@@ -1434,15 +1515,36 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         switch (id) {
             case 'hub-home':
                 return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'home'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-work':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'work'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-inbox':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'review'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-projects':
+                return this.projectsPanel?.isVisible() === true
                     && this.projectsPanel.getHubView() === 'repos'
-                    && this.projectsPanel.isHomeMode();
-            case 'hub-chats':
+                    && this.projectsPanel.isHomeMode()
+                    && !this.projectsPanel.isProjectDetailView();
+            case 'hub-chat':
                 return this.projectsPanel?.isVisible() === true
-                    && this.projectsPanel.getHubView() === 'chats'
+                    && this.projectsPanel.getHubView() === 'chat'
                     && this.projectsPanel.isHomeMode();
-            case 'hub-workflows':
+            case 'hub-tasks':
                 return this.projectsPanel?.isVisible() === true
-                    && this.projectsPanel.getHubView() === 'workflows'
+                    && this.projectsPanel.getHubView() === 'tasks'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-review':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'review'
+                    && this.projectsPanel.isHomeMode();
+            case 'hub-team':
+                return this.projectsPanel?.isVisible() === true
+                    && this.projectsPanel.getHubView() === 'tasks'
                     && this.projectsPanel.isHomeMode();
             case 'hub-automations':
                 return this.projectsPanel?.isVisible() === true
@@ -1479,9 +1581,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     /** Show or hide the bottom terminal panel (same behavior as the workbench top-bar terminal control). */
     protected async toggleTerminalBottomPanel(): Promise<void> {
         if (this.isTerminalBottomPanelOpen()) {
+            if (this.shell.bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+                this.suppressMobileBottomAutoMaximize = false;
+                this.restoreMobileBottomPanelFromMaximized();
+                await this.shell.collapsePanel('bottom');
+                this.scheduleSnapAndUiRefresh();
+                return;
+            }
             this.suppressMobileBottomAutoMaximize = false;
-            this.restoreMobileBottomPanelFromMaximized();
-            await this.shell.collapsePanel('bottom');
+            await this.applyMobileBottomPanelMaximizedSize();
             this.scheduleSnapAndUiRefresh();
             return;
         }
@@ -1699,7 +1807,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async getBottomBarSecondaryItems(def: MobileBottomButton): Promise<BottomBarSecondaryItem[]> {
-        if (def.id === 'hub-home' || def.id === 'hub-chats' || def.id === 'hub-workflows' || def.id === 'hub-automations') {
+        if (def.id === 'hub-home' || def.id === 'hub-projects' || def.id === 'hub-chat' || def.id === 'hub-tasks' || def.id === 'hub-review' || def.id === 'hub-team' || def.id === 'hub-automations') {
             return [];
         }
         switch (def.id) {
@@ -1900,15 +2008,35 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         MobileHaptics.fire(MobileHaptics.LIGHT);
         if (def.id === 'hub-home') {
             dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
             if (this.projectsPanel?.isProjectDetailView()) {
                 this.projectsPanel.closeProjectDetail();
-            } else {
-                this.projectsPanel?.selectHubLandingView('repos');
             }
+            this.projectsPanel?.selectHubLandingView('home');
             this.refreshBottomBar();
             return;
         }
-        if (def.id === 'hub-chats') {
+        if (def.id === 'hub-work') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            if (this.projectsPanel?.isProjectDetailView()) {
+                this.projectsPanel.closeProjectDetail();
+            }
+            this.conversations.start();
+            this.activeTasks.start();
+            this.projectsPanel?.selectHubLandingView('work');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-inbox') {
             dismissQaapAccountMenu();
             this.ensureProjectsPanel();
             if (!this.projectsPanel?.isVisible()) {
@@ -1917,18 +2045,73 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
             this.conversations.start();
             this.inboxStream.start();
-            this.projectsPanel?.selectHubLandingView('chats');
+            this.projectsPanel?.selectHubLandingView('review');
             this.refreshBottomBar();
             return;
         }
-        if (def.id === 'hub-workflows') {
+        if (def.id === 'hub-projects') {
             dismissQaapAccountMenu();
             this.ensureProjectsPanel();
             if (!this.projectsPanel?.isVisible()) {
                 await this.projectsPanel?.show();
                 this.applyLandingChrome();
             }
-            this.projectsPanel?.selectHubLandingView('workflows');
+            if (this.projectsPanel?.isProjectDetailView()) {
+                this.projectsPanel.closeProjectDetail();
+            }
+            this.projectsPanel?.selectHubLandingView('repos');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-chat') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.projectsPanel?.preferComposerSurface('chat');
+            this.projectsPanel?.selectHubLandingView('chat');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-tasks') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.projectsPanel?.preferComposerSurface('task');
+            this.conversations.start();
+            this.activeTasks.start();
+            this.projectsPanel?.selectHubLandingView('tasks');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-review') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.conversations.start();
+            this.inboxStream.start();
+            this.projectsPanel?.selectHubLandingView('review');
+            this.refreshBottomBar();
+            return;
+        }
+        if (def.id === 'hub-team') {
+            dismissQaapAccountMenu();
+            this.ensureProjectsPanel();
+            if (!this.projectsPanel?.isVisible()) {
+                await this.projectsPanel?.show();
+                this.applyLandingChrome();
+            }
+            this.activeTasks.start();
+            this.conversations.start();
+            this.projectsPanel?.selectHubLandingView('tasks');
             this.refreshBottomBar();
             return;
         }
@@ -1999,6 +2182,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.collapseMobileSidePanels();
             this.scheduleSnapAndUiRefresh();
             return;
+        }
+        const project = await this.resolveCurrentProjectForAgent();
+        if (project) {
+            const cwd = this.projectsService.getProjectCwd(project);
+            writeStoredComposerSurface(cwd, 'chat');
+            this.projectsPanel?.preferComposerSurface('chat', cwd);
         }
         // Mobile "Agent" opens Theia AI Chat in the right sheet.
         await this.openMobileSideSheet('right', WORKBENCH_CHAT_VIEW_WIDGET_ID);

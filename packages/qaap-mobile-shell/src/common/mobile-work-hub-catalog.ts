@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export type WorkHubCatalogHubTarget = 'repos' | 'chats' | 'diff';
+export type WorkHubCatalogHubTarget = 'home' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff';
 
 export type WorkHubCatalogAction =
     | { readonly type: 'command'; readonly commandId: string }
@@ -43,8 +43,8 @@ export const QAAP_WORK_HUB_GETTING_STARTED: WorkHubCatalogSection = {
             meta: '3 steps · ~4 min',
             progress: 0.33,
             iconClass: 'codicon-home',
-            action: { type: 'hub-view', view: 'repos' },
-            searchText: 'work hub projects repositories',
+            action: { type: 'hub-view', view: 'home' },
+            searchText: 'work hub home dashboard projects repositories',
         },
         {
             id: 'workflow-github',
@@ -53,7 +53,7 @@ export const QAAP_WORK_HUB_GETTING_STARTED: WorkHubCatalogSection = {
             subtitle: 'Sign in to load pull requests and sync your repos.',
             meta: '1 step',
             iconClass: 'codicon-github',
-            action: { type: 'hub-view', view: 'chats' },
+            action: { type: 'hub-view', view: 'tasks' },
             searchText: 'github sign in pull requests inbox',
         },
         {
@@ -81,7 +81,7 @@ export const QAAP_WORK_HUB_WORKFLOWS: readonly WorkHubCatalogSection[] = [
                 subtitle: 'See open PRs and streaming agent threads across every project.',
                 meta: 'Inbox tab',
                 iconClass: 'codicon-inbox',
-                action: { type: 'hub-view', view: 'chats' },
+                action: { type: 'hub-view', view: 'tasks' },
                 searchText: 'inbox chats pull requests agents',
             },
             {
@@ -93,6 +93,26 @@ export const QAAP_WORK_HUB_WORKFLOWS: readonly WorkHubCatalogSection[] = [
                 iconClass: 'codicon-diff',
                 action: { type: 'hub-view', view: 'diff' },
                 searchText: 'diff review changes accept reject',
+            },
+            {
+                id: 'workflow-review-prs',
+                sectionId: 'agentic',
+                title: 'Review pull requests',
+                subtitle: 'Browse open PRs across linked repos and swipe through file diffs.',
+                meta: 'Review tab',
+                iconClass: 'codicon-git-pull-request',
+                action: { type: 'hub-view', view: 'review' },
+                searchText: 'pull request pr review github merge',
+            },
+            {
+                id: 'workflow-team',
+                sectionId: 'agentic',
+                title: 'Team dashboard',
+                subtitle: 'See leaders and subtasks spawned via qaap-task across every project.',
+                meta: 'Team tab',
+                iconClass: 'codicon-organization',
+                action: { type: 'hub-view', view: 'tasks' },
+                searchText: 'team agents dashboard subtasks qaap-task leader',
             },
             {
                 id: 'workflow-agents',

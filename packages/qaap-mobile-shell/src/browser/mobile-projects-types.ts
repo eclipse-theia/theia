@@ -41,8 +41,12 @@ export interface MobileProjectEntry {
 
 export type MobileProjectFilter = 'all' | 'active' | 'pinned';
 
-/** Work Hub primary list: repositories, inbox, diff, learn catalog, or routines catalog. */
-export type MobileProjectsHubView = 'repos' | 'chats' | 'diff' | 'workflows' | 'routines';
+/**
+ * Work Hub primary surfaces.
+ * - `chat` — local Theia sessions (persist in workspace metadata).
+ * - `tasks` — VPS agent work (conversations + background tasks).
+ */
+export type MobileProjectsHubView = 'home' | 'work' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff' | 'workflows' | 'routines' | 'team';
 
 /** Persisted clone of a project card (URI optional). */
 export interface StoredMobileProject {

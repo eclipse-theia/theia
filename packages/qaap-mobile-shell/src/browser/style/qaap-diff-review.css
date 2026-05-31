@@ -672,3 +672,329 @@
     font-size: 12px;
     line-height: 1.4;
 }
+
+/* --- transcript Review tab (execution view mockup) --- */
+
+.qaap-diff-review--transcript.qaap-mod-external-chrome {
+    height: auto;
+}
+
+.qaap-diff-review--transcript.qaap-mod-external-chrome .qaap-diff-review-body,
+.qaap-diff-review--transcript.qaap-mod-external-chrome .qaap-transcript-review-layout {
+    height: auto;
+    min-height: 0;
+}
+
+.qaap-diff-review--transcript.qaap-mod-external-chrome .qaap-transcript-review-hunks {
+    flex: 0 1 auto;
+    max-height: min(40vh, 320px);
+    min-height: 120px;
+}
+
+.qaap-diff-review--transcript.qaap-mod-external-chrome .qaap-transcript-review-file-list {
+    max-height: min(22vh, 160px);
+}
+
+.qaap-diff-review--transcript .qaap-diff-review-body {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+}
+
+.qaap-transcript-review-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 10px 16px 0;
+    gap: 10px;
+}
+
+.qaap-transcript-review-chips {
+    display: flex;
+    gap: 16px;
+    flex: 0 0 auto;
+}
+
+.qaap-transcript-review-chip {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-chip.qaap-mod-active {
+    color: var(--theia-foreground);
+    font-weight: 600;
+}
+
+.qaap-transcript-review-chip.qaap-mod-active::after {
+    content: '';
+    display: block;
+    height: 2px;
+    margin-top: 4px;
+    border-radius: 2px;
+    background: var(--q-accent, var(--qaap-accent, #E58E40));
+}
+
+.qaap-transcript-review-summary {
+    flex: 0 0 auto;
+    font-family: var(--monaco-monospace-font, monospace);
+    font-size: 11px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-transcript-review-file-list {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 34%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.16));
+    padding-bottom: 8px;
+}
+
+.qaap-transcript-review-file-list.qaap-mod-sized {
+    max-height: none;
+    min-height: 72px;
+}
+
+.qaap-transcript-review-resize-handle {
+    flex: 0 0 auto;
+    height: 12px;
+    margin: -2px 0;
+    cursor: row-resize;
+    touch-action: none;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-resize-handle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -6px;
+    bottom: -6px;
+}
+
+.qaap-transcript-review-resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 1px;
+    background: var(--theia-panel-border, rgba(128, 128, 128, 0.28));
+    pointer-events: none;
+}
+
+.qaap-transcript-review-diff-pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.qaap-transcript-review-layout.qaap-mod-hunks-collapsed .qaap-transcript-review-diff-pane {
+    flex: 0 0 auto;
+}
+
+.qaap-transcript-review-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 4px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--theia-foreground);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-file.qaap-mod-active {
+    background: color-mix(in srgb, var(--q-accent, var(--qaap-accent, #E58E40)) 14%, transparent);
+}
+
+.qaap-transcript-review-file.qaap-mod-reviewed .qaap-transcript-review-file-base {
+    opacity: 0.72;
+}
+
+.qaap-transcript-review-file > i {
+    flex: 0 0 auto;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.qaap-transcript-review-file-ident {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.qaap-transcript-review-file-base {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaap-transcript-review-file-dir {
+    font-size: 11px;
+    color: var(--theia-descriptionForeground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaap-transcript-review-filehdr {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--monaco-monospace-font, monospace);
+    font-size: 11px;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-filehdr:focus-visible {
+    outline: 1px solid var(--theia-focusBorder, var(--q-accent, var(--qaap-accent, #E58E40)));
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.qaap-transcript-review-filehdr-chevron {
+    flex: 0 0 auto;
+    font-size: 14px;
+    opacity: 0.75;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-transcript-review-filehdr-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--theia-foreground);
+    font-weight: 600;
+}
+
+.qaap-transcript-review-hunk-label {
+    flex: 0 0 auto;
+    font-size: 10px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-transcript-review-filehdr-acts {
+    flex: 0 0 auto;
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.qaap-transcript-review-act {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-act.qaap-mod-accept {
+    color: var(--theia-testing-iconPassed, #6cbf94);
+}
+
+.qaap-transcript-review-act.qaap-mod-reject {
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-transcript-review-act:disabled {
+    opacity: var(--theia-mod-disabled-opacity, 0.4);
+    cursor: default;
+}
+
+.qaap-transcript-review-hunks {
+    flex: 1 1 auto;
+    min-height: 88px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    font-family: var(--monaco-monospace-font, monospace);
+    font-size: 11px;
+    line-height: 1.55;
+    border-radius: 8px;
+    background: var(--theia-editor-background);
+}
+
+.qaap-transcript-review-diff-pane .qaap-transcript-review-hunks {
+    min-height: 0;
+}
+
+.qaap-transcript-review-hunks .qaap-diff-review-hunk-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.qaap-transcript-review-composer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -16px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.2));
+    background: var(--theia-editor-background);
+}
+
+.qaap-transcript-review-composer-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.28));
+    border-radius: 12px;
+    background: var(--theia-input-background, var(--theia-editor-background));
+    color: var(--theia-foreground);
+    font-size: 14px;
+    padding: 10px 12px;
+}
+
+.qaap-transcript-review-composer-send {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: var(--q-accent, var(--qaap-accent, #E58E40));
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-transcript-review-composer-send:disabled {
+    opacity: var(--theia-mod-disabled-opacity, 0.4);
+    cursor: default;
+}

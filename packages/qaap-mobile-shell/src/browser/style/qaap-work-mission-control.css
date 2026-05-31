@@ -1,0 +1,134 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * ***************************************************************************** */
+
+/* Prototype mission-control card. Reuses the work-hub-home row primitives; only adds the
+ * lane grouping chrome and the running/needs-you accents. */
+
+.theia-mobile-mission-control {
+  padding: 12px 14px 6px;
+}
+
+/* Full-view "Work" host (Phase 0): the mission-control card is the whole hub body. */
+.theia-mobile-mission-control-host {
+  padding-top: 8px;
+}
+
+.theia-mobile-mission-control-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.theia-mobile-mission-control-head .theia-mobile-work-hub-home-section-action {
+  margin-left: auto;
+}
+
+.theia-mobile-mission-control-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--theia-badge-foreground, #fff);
+  background: var(--theia-errorForeground, #d9534f);
+}
+
+.theia-mobile-mission-control-empty {
+  margin: 4px 0 10px;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+/* Lane + surface filter bars (full Work view). */
+.theia-mobile-mission-control-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.theia-mobile-mission-control-filter-row {
+  margin: 0;
+}
+
+.theia-mobile-mission-control-filter-row.theia-mod-surface .theia-mobile-projects-filter-tab {
+  opacity: 0.92;
+}
+
+.theia-mobile-mission-control-lane {
+  margin-top: 6px;
+}
+
+.theia-mobile-mission-control-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px 4px;
+}
+
+.theia-mobile-mission-control-lane-label {
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-mission-control-lane-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+/* Lane accents on the leading edge of each row. */
+.theia-mobile-mission-control-row {
+  position: relative;
+}
+
+.theia-mobile-mission-control-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+}
+
+.theia-mobile-mission-control-row.theia-mod-needs-you::before {
+  background: var(--theia-errorForeground, #d9534f);
+}
+
+.theia-mobile-mission-control-row.theia-mod-running::before {
+  background: var(--theia-successBackground, #28663f);
+}
+
+.theia-mobile-mission-control-row.theia-mod-done {
+  opacity: 0.72;
+}
+
+.theia-mobile-mission-control-progress {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--theia-successForeground, #28663f);
+  background: color-mix(in srgb, var(--theia-successForeground, #28663f) 14%, transparent);
+  white-space: nowrap;
+}
+
+.theia-mobile-mission-control-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

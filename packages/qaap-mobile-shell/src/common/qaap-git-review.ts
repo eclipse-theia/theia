@@ -49,6 +49,13 @@ export interface QaapGitFileDiffResponse {
     hunks: QaapGitHunk[];
 }
 
+export interface QaapGitFileActionRequest {
+    /** Absolute filesystem path of the repository root. */
+    root: string;
+    /** Repository-relative POSIX path. */
+    file: string;
+}
+
 /** Parse the body of a `git diff` unified patch into structured hunks. */
 export function parseUnifiedDiff(patch: string): QaapGitHunk[] {
     const hunks: QaapGitHunk[] = [];

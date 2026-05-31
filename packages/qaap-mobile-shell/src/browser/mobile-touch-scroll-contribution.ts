@@ -71,8 +71,9 @@ export class MobileTouchScrollContribution implements FrontendApplicationContrib
         }
         this.active = true;
         this.scrollPatches = new DisposableCollection();
-        const root = document.getElementById('theia-app-shell') ?? document.body;
-        this.patchExisting(root);
+        // Observe `document.body` so overlays appended outside `#theia-app-shell`
+        // (agent transcript sheets, parallel-run dialogs, …) receive the touch fallback.
+        this.patchExisting(document.body);
         this.observer = new MutationObserver(mutations => {
             for (const mutation of mutations) {
                 for (const node of mutation.addedNodes) {
@@ -82,7 +83,7 @@ export class MobileTouchScrollContribution implements FrontendApplicationContrib
                 }
             }
         });
-        this.observer.observe(root, { childList: true, subtree: true });
+        this.observer.observe(document.body, { childList: true, subtree: true });
     }
 
     protected deactivate(): void {

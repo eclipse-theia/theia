@@ -35,6 +35,7 @@ import {
     mobileProjectInitials,
     StoredMobileProject,
 } from './mobile-projects-types';
+import { normalizeWorkHubViewId } from '../common/qaap-work-hub-surfaces';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import {
     clearMobileProjectReadmeOpenRequest,
@@ -74,7 +75,7 @@ export class MobileProjectsService {
     protected readonly activeTasks: MobileProjectsActiveTasks;
 
     protected filter: MobileProjectFilter = 'all';
-    protected hubView: MobileProjectsHubView = 'repos';
+    protected hubView: MobileProjectsHubView = 'home';
 
     protected readHiddenProjectIds(): Set<string> {
         if (typeof localStorage === 'undefined') {
@@ -614,11 +615,12 @@ export class MobileProjectsService {
     }
 
     getHubView(): MobileProjectsHubView {
-        return this.hubView;
+        return normalizeWorkHubViewId(this.hubView) as MobileProjectsHubView;
     }
 
     setHubView(view: MobileProjectsHubView): void {
-        this.hubView = view;
+        const normalized = normalizeWorkHubViewId(view) as MobileProjectsHubView;
+        this.hubView = normalized;
     }
 
     async loadProjects(): Promise<MobileProjectEntry[]> {

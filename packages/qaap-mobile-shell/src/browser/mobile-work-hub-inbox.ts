@@ -93,8 +93,6 @@ export function conversationInboxPriority(summary: QaapAgentConversationSummaryD
 export function buildWorkHubInboxItems(
     project: MobileProjectEntry,
     conversations: readonly QaapAgentConversationSummaryDTO[],
-    pullRequests: readonly QaapGithubPullRequestSummary[],
-    activeAgentBranch?: string,
 ): MobileWorkHubInboxItem[] {
     const items: MobileWorkHubInboxItem[] = [];
     for (const summary of conversations) {
@@ -109,6 +107,17 @@ export function buildWorkHubInboxItems(
             priority: conversationInboxPriority(summary),
         });
     }
+    items.sort(compareWorkHubInboxItems);
+    return items;
+}
+
+/** Review hub — open pull requests grouped by linked GitHub repo (Tasks no longer lists PRs). */
+export function buildReviewHubPullRequestItems(
+    project: MobileProjectEntry,
+    pullRequests: readonly QaapGithubPullRequestSummary[],
+    conversations: readonly QaapAgentConversationSummaryDTO[],
+    activeAgentBranch?: string,
+): MobileWorkHubInboxItem[] {
     const linkedPrKeys = new Set(
         conversations
             .map(c => c.linkedPullRequest)
@@ -116,6 +125,8 @@ export function buildWorkHubInboxItems(
             .map(link => linkedPullRequestKey(link))
             .filter((key): key is string => !!key),
     );
+    const streamingOnRepo = conversations.some(c => c.status === 'streaming');
+    const items: MobileWorkHubInboxItem[] = [];
     for (const pullRequest of pullRequests) {
         if (!pullRequestBelongsToProject(pullRequest, project)) {
             continue;
@@ -125,7 +136,6 @@ export function buildWorkHubInboxItems(
         }
         const branchMatch = activeAgentBranch
             && pullRequest.branch.toLowerCase() === activeAgentBranch.toLowerCase();
-        const streamingOnRepo = conversations.some(c => c.status === 'streaming');
         items.push({
             kind: 'pullRequest',
             project,

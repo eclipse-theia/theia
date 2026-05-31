@@ -11,6 +11,7 @@ import '../../src/browser/style/qaap-project-bootstrap.css';
 import '../../src/browser/style/qaap-chat-mic.css';
 import '../../src/browser/style/qaap-chat-select-dropdown.css';
 import '../../src/browser/style/qaap-diff-review.css';
+import '../../src/browser/style/qaap-work-mission-control.css';
 import '@theia/ai-claude-code/src/browser/style/claude-code-tool-renderers.css';
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
@@ -71,7 +72,6 @@ import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-l
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
-
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
     bind(MobileProjectsConversations).toSelf().inSingletonScope();

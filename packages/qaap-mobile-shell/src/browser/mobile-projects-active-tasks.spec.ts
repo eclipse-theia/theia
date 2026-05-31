@@ -99,6 +99,11 @@ describe('toTaskView', () => {
         expect(view.title.length).to.equal(80);
     });
 
+    it('preserves parentId when provided', () => {
+        const view = toTaskView({ id: 'x', cwd: '/a', state: 'running', parentId: 'leader', createdAt: 1000 });
+        expect(view.parentId).to.equal('leader');
+    });
+
     it('normalizes cwd in the returned view', () => {
         const view = toTaskView({ id: 'x', cwd: '/a/b/', state: 'running', createdAt: 1000 });
         expect(view.cwd).to.equal('/a/b');

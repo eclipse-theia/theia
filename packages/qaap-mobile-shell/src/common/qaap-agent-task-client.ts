@@ -7,6 +7,10 @@
  * Shared HTTP + persistence helpers for background agent tasks.
  * Keep {@link QAAP_AGENT_TASK_API_PATH} in sync with `@theia/qaap-cloud-workspace`.
  */
+import {
+    resolveQaapBuiltinAgentMentionId,
+} from './qaap-builtin-agents';
+
 export const QAAP_AGENT_TASK_API_PATH = '/qaap/api/agent-tasks';
 
 export const SHELL_AGENT_ID = 'shell';
@@ -15,14 +19,6 @@ export const QAIQ_AGENT_ID = 'qaiq';
 
 /** UI/storage id before the QAIQ rename; still accepted when resolving selection. */
 export const LEGACY_OPENCLAUDE_AGENT_ID = 'openclaude';
-
-const BUILTIN_BACKEND_AGENT_IDS = new Set([
-    'codex',
-    'claude',
-    QAIQ_AGENT_ID,
-    'aider',
-    SHELL_AGENT_ID,
-]);
 
 /** Normalize a mention token (lowercase); does not validate availability. */
 export function resolveQaapAgentMentionToken(token: string): string {
@@ -192,7 +188,14 @@ export function normalizeBackendAgentId(agentId: string | undefined): string | u
         return undefined;
     }
     const id = resolveQaapAgentMentionToken(normalized);
-    return BUILTIN_BACKEND_AGENT_IDS.has(id) ? id : undefined;
+    const builtin = resolveQaapBuiltinAgentMentionId(id);
+    if (builtin) {
+        return builtin;
+    }
+    if (id === QAIQ_AGENT_ID) {
+        return QAIQ_AGENT_ID;
+    }
+    return id === SHELL_AGENT_ID ? SHELL_AGENT_ID : undefined;
 }
 
 export function isTheiaCoderAgent(agentId: string | undefined): boolean {
@@ -201,6 +204,17 @@ export function isTheiaCoderAgent(agentId: string | undefined): boolean {
 
 export function isTheiaCoderMention(content: string): boolean {
     return /^@coder\b/i.test(content.trim());
+}
+
+/** Chat composer always routes to Coder — strip a leading VPS @mention from the draft. */
+export function stripNonCoderAgentMention(content: string): string {
+    const trimmed = content.trim();
+    const mentioned = extractBackendAgentMention(trimmed);
+    if (!mentioned || isTheiaCoderAgent(mentioned)) {
+        return trimmed;
+    }
+    const escaped = mentioned.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return trimmed.replace(new RegExp(`^@${escaped}\\b\\s*`, 'i'), '').trim();
 }
 
 export function isQaiqAgent(agentId: string | undefined): boolean {

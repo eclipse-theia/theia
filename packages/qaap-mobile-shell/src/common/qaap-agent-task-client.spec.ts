@@ -11,6 +11,7 @@ import {
     isQaiqAgent,
     isStickyComposerAgentSelected,
     isTheiaCoderMention,
+    stripNonCoderAgentMention,
     normalizeBackendAgentId,
     migrateLegacyBackendAgentId,
     QAIQ_AGENT_ID,
@@ -31,16 +32,26 @@ describe('qaap-agent-task-client', () => {
         expect(resolveQaapAgentMentionToken('QAIQ')).to.equal('qaiq');
     });
 
-    it('normalizeBackendAgentId recognizes qaiq only as built-in coding agent', () => {
+    it('normalizeBackendAgentId recognizes expanded built-in coding agents', () => {
         expect(normalizeBackendAgentId('qaiq')).to.equal('qaiq');
-        expect(normalizeBackendAgentId('opencode')).to.equal(undefined);
+        expect(normalizeBackendAgentId('opencode')).to.equal('opencode');
+        expect(normalizeBackendAgentId('goose')).to.equal('goose');
+        expect(normalizeBackendAgentId('hermes')).to.equal('hermes');
+        expect(normalizeBackendAgentId('openclaw')).to.equal('openclaw');
+        expect(normalizeBackendAgentId('cursor')).to.equal('cursor');
+        expect(normalizeBackendAgentId('cursor-agent')).to.equal('cursor');
+        expect(normalizeBackendAgentId('gemini')).to.equal('gemini');
+        expect(normalizeBackendAgentId('copilot')).to.equal('copilot');
+        expect(normalizeBackendAgentId('qwen')).to.equal('qwen');
+        expect(normalizeBackendAgentId('kimi')).to.equal('kimi');
         expect(normalizeBackendAgentId('openclaude')).to.equal(undefined);
         expect(normalizeBackendAgentId('claude')).to.equal('claude');
     });
 
     it('extractBackendAgentMention prefers the last recognized @agent', () => {
         expect(extractBackendAgentMention('@codex hola @qaiq adiós')).to.equal(QAIQ_AGENT_ID);
-        expect(extractBackendAgentMention('@opencode revisa la app')).to.equal(undefined);
+        expect(extractBackendAgentMention('@opencode revisa la app')).to.equal('opencode');
+        expect(extractBackendAgentMention('@cursor-agent fix tests')).to.equal('cursor');
     });
 
     it('migrateLegacyBackendAgentId maps openclaude storage to qaiq', () => {
@@ -106,6 +117,12 @@ describe('qaap-agent-task-client', () => {
         expect(isTheiaCoderMention('@coder')).to.be.true;
         expect(isTheiaCoderMention('please fix this @coder')).to.be.false;
         expect(isTheiaCoderMention('@qaiq do something')).to.be.false;
+    });
+
+    it('stripNonCoderAgentMention removes VPS mentions for chat-only Coder', () => {
+        expect(stripNonCoderAgentMention('@codex fix tests')).to.equal('fix tests');
+        expect(stripNonCoderAgentMention('@Coder keep me')).to.equal('@Coder keep me');
+        expect(stripNonCoderAgentMention('plain prompt')).to.equal('plain prompt');
     });
 
     it('hashString produces stable non-negative base-36 output', () => {

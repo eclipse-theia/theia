@@ -11,6 +11,7 @@ import {
     routineScheduleLabel,
     type QaapWorkHubRoutine,
 } from './qaap-work-hub-routine';
+import { isConversationAutoApproveEnabled } from './qaap-agent-conversation-client';
 
 function sampleRoutine(overrides: Partial<QaapWorkHubRoutine> = {}): QaapWorkHubRoutine {
     return {
@@ -49,6 +50,26 @@ describe('qaap-work-hub-routine', () => {
         expect(routineIsDue(sampleRoutine({ lastRunAt: now - 60 * 60 * 1000 }), now)).to.equal(false);
     });
 
+    it('routineIsDue evaluates cron trigger', () => {
+        const slot = Date.parse('2026-05-30T06:00:00.000Z');
+        const routine = sampleRoutine({
+            trigger: 'cron',
+            cronExpression: '0 6 * * *',
+            timezone: 'UTC',
+            enabled: true,
+        });
+        expect(routineIsDue(routine, slot + 60_000)).to.equal(true);
+        expect(routineIsDue({ ...routine, lastRunAt: slot }, slot + 60_000)).to.equal(false);
+    });
+
+    it('routineScheduleLabel formats cron schedules', () => {
+        expect(routineScheduleLabel(sampleRoutine({
+            trigger: 'cron',
+            cronExpression: '0 8 * * 1-5',
+            timezone: 'Europe/Madrid',
+        }))).to.equal('Weekdays at 8:00 (Europe/Madrid)');
+    });
+
     it('filterRoutinesByQuery matches title and cwd', () => {
         const routines = [
             sampleRoutine({ id: 'a', title: 'Drift check' }),
@@ -56,5 +77,11 @@ describe('qaap-work-hub-routine', () => {
         ];
         expect(filterRoutinesByQuery(routines, 'drift')).to.have.lengthOf(1);
         expect(filterRoutinesByQuery(routines, '/tmp/other')).to.have.lengthOf(1);
+    });
+
+    it('isConversationAutoApproveEnabled defaults to true unless explicitly false', () => {
+        expect(isConversationAutoApproveEnabled({})).to.equal(true);
+        expect(isConversationAutoApproveEnabled({ autoApprove: undefined })).to.equal(true);
+        expect(isConversationAutoApproveEnabled({ autoApprove: false })).to.equal(false);
     });
 });
