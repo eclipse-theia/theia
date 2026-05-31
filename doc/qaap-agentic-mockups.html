@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>qaap · Vistas agénticas (mockup)</title>
+<style>
+  :root {
+    --bg: #16130f;
+    --screen: #1b1714;
+    --raise: rgba(255,255,255,0.035);
+    --raise-2: rgba(255,255,255,0.06);
+    --hair: rgba(255,255,255,0.07);
+    --fg: #efe9e0;
+    --muted: #8f877b;
+    --faint: #5d574d;
+    --accent: #d9805e;
+    --accent-dim: rgba(217,128,94,0.14);
+    --green: #6cbf94;
+    --warn: #d6b75a;
+    --red: #e07a63;
+    --green-dim: rgba(108,191,148,0.14);
+    --warn-dim: rgba(214,183,90,0.14);
+    --red-dim: rgba(224,122,99,0.12);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(120% 90% at 50% 0%, #1d1813 0%, var(--bg) 60%); color: var(--fg);
+    font-family: var(--font); -webkit-font-smoothing: antialiased; padding: 48px 28px 96px; }
+  h1.board-title { font-size: 21px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .board-sub { color: var(--muted); font-size: 13px; margin: 0 0 8px; max-width: 720px; line-height: 1.6; }
+  .flow-label { font-size: 10px; font-weight: 600; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin: 52px 0 4px; }
+  .flow-crumb { font-size: 10px; letter-spacing: 0.1em; color: var(--faint); text-transform: uppercase; margin: 0 0 22px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+
+  .phone { width: 300px; flex: 0 0 auto; }
+  .phone-cap { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 12px; font-weight: 500; letter-spacing: 0.01em; }
+  .frame { position: relative; height: 648px; border-radius: 44px; background: #0c0a08;
+    padding: 8px; box-shadow: 0 30px 70px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.05); }
+  .screen { position: relative; height: 100%; border-radius: 36px; overflow: hidden; background: var(--screen); display: flex; flex-direction: column; }
+  .island { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 84px; height: 22px; background: #000; border-radius: 14px; z-index: 30; }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; padding: 13px 24px 6px; font-size: 12px; font-weight: 600; z-index: 20; }
+  .statusbar .ic { font-size: 10px; opacity: 0.8; letter-spacing: 1px; }
+
+  .appbar { padding: 10px 18px 14px; display: flex; align-items: center; gap: 12px; }
+  .appbar .back { color: var(--muted); font-size: 20px; line-height: 1; font-weight: 300; }
+  .appbar .titles { flex: 1; min-width: 0; }
+  .appbar .t1 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+  .appbar .t2 { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .body { flex: 1; overflow: hidden; padding: 4px 18px 14px; display: flex; flex-direction: column; gap: 14px; }
+  .sep { height: 1px; background: var(--hair); margin: 2px 0; }
+
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .ava { width: 24px; height: 24px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #16130f; }
+  .bubble { font-size: 13px; line-height: 1.5; flex: 1; color: var(--fg); }
+  .bubble.user { background: var(--accent-dim); border-radius: 14px; padding: 10px 12px; }
+  .ev { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; padding-left: 2px; }
+  .ev .d { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex:0 0 auto; }
+
+  .label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--faint); text-transform: uppercase; }
+  .between { display:flex; justify-content: space-between; align-items: center; }
+  .stat { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .plus { color: var(--green); } .minus { color: var(--red); }
+
+  .steps { display: flex; flex-direction: column; }
+  .step { display: flex; gap: 11px; align-items: center; padding: 9px 0; font-size: 13px; }
+  .step + .step { border-top: 1px solid var(--hair); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex:0 0 auto; background: var(--faint); }
+  .dot.done { background: var(--green); }
+  .dot.cur { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .step .stxt { flex: 1; line-height: 1.4; }
+  .step.done .stxt { color: var(--muted); }
+  .prog { height: 3px; border-radius: 3px; background: var(--raise-2); overflow: hidden; }
+  .prog > i { display: block; height: 100%; background: var(--accent); }
+
+  .seg { display: flex; background: var(--raise); border-radius: 11px; padding: 3px; gap: 2px; }
+  .seg span { flex:1; text-align:center; font-size: 11px; padding: 6px 4px; border-radius: 8px; color: var(--muted); white-space: nowrap; }
+  .seg span.on { background: var(--raise-2); color: var(--fg); font-weight: 600; }
+  .seg.mini { display:inline-flex; padding:2px; }
+  .seg.mini span { flex:0 0 auto; font-size: 10px; padding: 4px 8px; }
+
+  .chips { display: flex; gap: 8px; }
+  .chip { font-size: 11px; color: var(--muted); }
+  .chip.on { color: var(--fg); font-weight: 600; }
+  .chip.on::after { content:""; display:block; height:2px; background:var(--accent); border-radius:2px; margin-top:4px; }
+
+  .diff { font-family: var(--mono); font-size: 10.5px; line-height: 1.65; }
+  .diff .dl { padding: 0 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .diff .add { color: #93d3ad; } .diff .del { color: #eaa493; } .diff .ctx { color: var(--faint); }
+  .filehdr { display:flex; justify-content: space-between; align-items:center; font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+  .acts { display: flex; gap: 12px; }
+  .acts .ok { color: var(--green); } .acts .no { color: var(--faint); }
+
+  .check { display: flex; align-items: center; gap: 11px; padding: 10px 0; font-size: 13px; }
+  .check + .check { border-top: 1px solid var(--hair); }
+  .tick { width: 16px; flex:0 0 auto; text-align:center; font-size: 12px; }
+  .tick.ok { color: var(--green); } .tick.no { color: var(--red); } .tick.run { color: var(--accent); }
+  .check .cn { flex: 1; }
+  .check .cd { font-family: var(--mono); font-size: 10px; color: var(--faint); }
+  .log { font-family: var(--mono); font-size: 9.5px; line-height: 1.55; color: #eaa493; padding: 0 0 0 27px; white-space: pre-wrap; }
+
+  .btn { display: flex; align-items:center; justify-content:center; gap:7px; width: 100%; padding: 12px; border-radius: 13px; font-size: 13px; font-weight: 600; border: none; }
+  .btn.primary { background: var(--accent); color: #1a1310; }
+  .btn.soft { background: var(--raise); color: var(--fg); }
+  .btn.danger { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1px var(--red-dim); }
+  .toggle { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .sw { width: 34px; height: 20px; border-radius: 11px; background: var(--accent); position: relative; flex:0 0 auto; }
+  .sw::after { content:""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background:#fff; top: 2px; right: 2px; }
+  .sw.off { background: var(--raise-2); } .sw.off::after { right: auto; left: 2px; background: var(--faint); }
+
+  .composer { margin: 0 14px 4px; padding: 12px 14px; border-radius: 16px; background: var(--raise); display: flex; align-items: center; gap: 8px; color: var(--faint); font-size: 12.5px; }
+  .composer .mic { margin-left: auto; color: var(--muted); font-size: 14px; }
+
+  .tabs { display: flex; padding: 6px 10px 16px; }
+  .tabs .tab { flex: 1; text-align: center; font-size: 11px; color: var(--faint); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .tabs .tab .ti { font-size: 15px; opacity: 0.7; }
+  .tabs .tab.on { color: var(--accent); }
+  .tabs .tab.on .ti { opacity: 1; }
+
+  .variant { padding: 12px 0; display:flex; gap:11px; align-items:center; }
+  .variant + .variant { border-top: 1px solid var(--hair); }
+  .variant.sel .vn { color: var(--accent); }
+  .variant .vt { flex:1; } .variant .vn { font-size: 13px; font-weight: 600; } .variant .vm { font-size: 11px; color: var(--muted); margin-top:3px; }
+
+  .tl { position: relative; padding-left: 24px; }
+  .tl::before { content:""; position:absolute; left:5px; top:10px; bottom:10px; width:1.5px; background: var(--hair); }
+  .tlnode { position: relative; padding: 11px 0; }
+  .tlnode::before { content:""; position:absolute; left:-22px; top:15px; width:9px; height:9px; border-radius:50%; background: var(--screen); box-shadow: 0 0 0 1.5px var(--faint); }
+  .tlnode.ok::before { background: var(--green); box-shadow:none; }
+  .tlnode.no::before { background: var(--red); box-shadow:none; }
+  .tlnode.sel::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .tlnode .tlt { font-size: 13px; font-weight: 600; }
+  .tlnode .tlm { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .appr { padding: 12px 0; }
+  .appr + .appr { border-top: 1px solid var(--hair); }
+  .appr .ah { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; }
+  .appr .ad { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin: 7px 0 10px; padding-left: 32px; }
+  .appr .ad.warn { color: var(--red); }
+  .appr .aacts { display:flex; gap:10px; padding-left:32px; }
+  .mini { font-size: 12px; font-weight: 600; }
+  .mini.ok { color: var(--green); } .mini.no { color: var(--muted); }
+
+  .secth { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--faint); text-transform: uppercase; display:flex; gap:7px; align-items:center; }
+  .secth .n { color: var(--accent); }
+  .act { display:flex; gap:11px; align-items:center; padding: 11px 0; }
+  .act + .act { border-top: 1px solid var(--hair); }
+  .act .at { flex:1; } .act .an { font-size: 13px; font-weight: 600; } .act .am { font-size: 11px; color: var(--muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<h1 class="board-title">qaap · Vistas agénticas</h1>
+<p class="board-sub">Minimalista y nativo de qaap. El <b>Work Hub</b> y el <b>panel de conversación</b> actuales no se tocan: la vista de ejecución solo añade las tabs <b>Plan</b> y <b>Verify</b> junto a <b>Messages</b>. La terminal sigue en el IDE (no es una tab). <b>Estado:</b> Verify ya implementado (Fase 1); el resto es roadmap.</p>
+
+<div class="flow-label">Flujo A — Vista de ejecución</div>
+<div class="flow-crumb">Work Hub › Chats › qaap-mobile-shell › Execution</div>
+<div class="row">
+
+  <!-- 1. MESSAGES -->
+  <div class="phone">
+    <div class="phone-cap">1 · Messages</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Add agents dashboard</div><div class="t2">qaap-mobile-shell · @qiq</div></div>
+        <div class="seg mini"><span class="on">✋</span></div>
+      </div>
+      <div class="body">
+        <div class="msg" style="flex-direction:row-reverse"><div class="ava" style="background:var(--accent)">JC</div><div class="bubble user">Añade una vista Team al Work Hub con los agentes activos y su progreso.</div></div>
+        <div class="ev"><span class="d"></span> @qiq empezó · worktree wt/qiq</div>
+        <div class="msg"><div class="ava" style="background:var(--green)">qi</div><div class="bubble">Preparé un plan de 8 pasos y empecé por el modelo de datos. Voy por 4 de 8.</div></div>
+        <div>
+          <div class="between" style="margin-bottom:10px;"><span class="label">Plan</span><span class="stat">4/8</span></div>
+          <div class="steps">
+            <div class="step done"><span class="dot done"></span><span class="stxt">Extender MobileProjectsHubView</span></div>
+            <div class="step done"><span class="dot done"></span><span class="stxt">collectAgentMembers()</span></div>
+            <div class="step"><span class="dot cur"></span><span class="stxt">renderAgentsDashboard()</span></div>
+          </div>
+          <div class="prog" style="margin-top:10px;"><i style="width:50%"></i></div>
+        </div>
+      </div>
+      <div class="composer">Mensaje a @qiq…<span class="mic">🎙</span></div>
+      <div class="tabs">
+        <div class="tab on"><span class="ti">💬</span>Messages</div>
+        <div class="tab"><span class="ti">☑</span>Plan</div>
+        <div class="tab"><span class="ti">◑</span>Verify</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 2. PLAN -->
+  <div class="phone">
+    <div class="phone-cap">2 · Plan (roadmap · Fase 2)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Add agents dashboard</div><div class="t2">qaap-mobile-shell · @qiq</div></div>
+      </div>
+      <div class="body">
+        <div class="seg"><span>🔒 Lectura</span><span class="on">✋ Aprobar</span><span>⚡ Auto</span></div>
+        <div class="between"><span class="label">Plan · 4 de 8</span><span class="stat">50%</span></div>
+        <div class="prog"><i style="width:50%"></i></div>
+        <div class="steps">
+          <div class="step done"><span class="dot done"></span><span class="stxt">Extender MobileProjectsHubView</span></div>
+          <div class="step done"><span class="dot done"></span><span class="stxt">collectAgentMembers() + sort</span></div>
+          <div class="step done"><span class="dot done"></span><span class="stxt">createAgentMemberChip()</span></div>
+          <div class="step done"><span class="dot done"></span><span class="stxt">createAgentTasksSection()</span></div>
+          <div class="step"><span class="dot cur"></span><span class="stxt">renderAgentsDashboard()</span></div>
+          <div class="step"><span class="dot"></span><span class="stxt">CSS del dashboard</span></div>
+          <div class="step"><span class="dot"></span><span class="stxt">Cablear botón hub-team</span></div>
+          <div class="step"><span class="dot"></span><span class="stxt">compile + build:browser</span></div>
+        </div>
+      </div>
+      <div class="composer">Corrige el plan o da instrucciones…<span class="mic">🎙</span></div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">💬</span>Messages</div>
+        <div class="tab on"><span class="ti">☑</span>Plan</div>
+        <div class="tab"><span class="ti">◑</span>Verify</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 3. VERIFY -->
+  <div class="phone">
+    <div class="phone-cap">3 · Verify ★ (IMPLEMENTADO)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Verify</div><div class="t2">8 archivos · <span class="plus">+340</span> <span class="minus">−96</span></div></div>
+      </div>
+      <div class="body">
+        <div class="chips"><span class="chip on">Diff</span><span class="chip">Sin revisar 3</span></div>
+        <div>
+          <div class="filehdr"><span>mobile-projects-panel.ts</span><span class="acts"><span class="ok">✓ aceptar</span><span class="no">✗</span></span></div>
+          <div class="diff">
+            <div class="dl ctx">  protected renderList(): void {</div>
+            <div class="dl add">+   if (this.hubView === 'agents') {</div>
+            <div class="dl add">+     this.renderAgentsDashboard(filtered);</div>
+            <div class="dl add">+     return;</div>
+            <div class="dl add">+   }</div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="between"><span class="label">Checks</span><span class="stat" style="color:var(--red)">2 fallando</span></div>
+        <div class="check"><span class="tick ok">✓</span><span class="cn">Build</span><span class="cd">3.1s</span></div>
+        <div class="check"><span class="tick no">✗</span><span class="cn">Tests</span><span class="cd">8.4s</span></div>
+        <div class="log">expected 0.5 received NaN
+  conversationTurnProgressRatio (…:57)</div>
+        <div class="check"><span class="tick ok">✓</span><span class="cn">Lint</span><span class="cd">2.0s</span></div>
+        <div class="check"><span class="tick ok">✓</span><span class="cn">Preview</span><span class="cd">:3000</span></div>
+        <button class="btn danger" style="margin-top:auto;">⟲ Enviar fallo al agente</button>
+        <div class="toggle">Auto-verificar tras cada turno<span class="sw"></span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">💬</span>Messages</div>
+        <div class="tab"><span class="ti">☑</span>Plan</div>
+        <div class="tab on"><span class="ti">◑</span>Verify</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="flow-label">Flujo B — Pantallas propias (roadmap)</div>
+<div class="flow-crumb">Lanzadas desde un task o desde la barra global</div>
+<div class="row">
+
+  <!-- 4. PARALLEL RUNS -->
+  <div class="phone">
+    <div class="phone-cap">4 · Parallel Runs (Fase 3)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Variantes</div><div class="t2">Refactor touch-scroll a un hook</div></div>
+        <div class="seg mini"><span class="on">3 ▾</span></div>
+      </div>
+      <div class="body">
+        <div class="variant sel"><span class="ava" style="background:var(--green)">qi</span><div class="vt"><div class="vn">@qiq</div><div class="vm">listo · <span class="plus">+120</span> <span class="minus">−18</span> · 6 files</div></div><span class="tick ok">✓</span></div>
+        <div class="variant"><span class="ava" style="background:#AFA0C8">cl</span><div class="vt"><div class="vn">@claude</div><div class="vm">listo · <span class="plus">+86</span> <span class="minus">−40</span> · 4 files</div></div><span class="tick ok">✓</span></div>
+        <div class="variant"><span class="ava" style="background:var(--accent)">cx</span><div class="vt"><div class="vn">@codex</div><div class="vm">corriendo · 3/8</div></div><span class="tick run">●</span></div>
+        <div class="sep"></div>
+        <div class="label">Diff · variante @qiq</div>
+        <div class="diff">
+          <div class="dl del">−  this.bindVertical(); this.bindHoriz();</div>
+          <div class="dl add">+  useTouchScroll(node, opts);</div>
+        </div>
+        <button class="btn primary" style="margin-top:auto;">✓ Elegir esta</button>
+        <button class="btn soft">Descartar las otras 2</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 5. TIMELINE -->
+  <div class="phone">
+    <div class="phone-cap">5 · Timeline (Fase 4)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Línea de tiempo</div><div class="t2">Add agents dashboard · 5 turnos</div></div>
+      </div>
+      <div class="body">
+        <div class="tl">
+          <div class="tlnode ok"><div class="tlt">Plan creado</div><div class="tlm">9:12 · 8 pasos</div></div>
+          <div class="tlnode ok"><div class="tlt">Editó 3 archivos</div><div class="tlm">9:18 · build ✓</div></div>
+          <div class="tlnode no"><div class="tlt">Editó panel.ts</div><div class="tlm">9:25 · 2 tests ✗</div></div>
+          <div class="tlnode sel"><div class="tlt">Arregló progress ratio</div><div class="tlm">9:31 · tests ✓ · actual</div></div>
+          <div class="tlnode"><div class="tlt">⑂ Variantes CSS</div><div class="tlm">9:36 · 2 forks abiertos</div></div>
+        </div>
+        <div style="margin-top:auto; display:flex; gap:10px;">
+          <button class="btn primary" style="flex:1;">↩ Restaurar aquí</button>
+          <button class="btn soft" style="flex:1;">Ver diff</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 6. APPROVALS -->
+  <div class="phone">
+    <div class="phone-cap">6 · Approvals (Fase 5)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Aprobaciones</div><div class="t2">3 acciones esperan tu OK</div></div>
+      </div>
+      <div class="body">
+        <div class="appr">
+          <div class="ah"><span class="ava" style="background:var(--green); width:20px;height:20px;font-size:9px;">qi</span> @qiq · escribir archivo</div>
+          <div class="ad">+ …/use-touch-scroll.ts</div>
+          <div class="aacts"><span class="mini ok">Aprobar</span><span class="mini no">Rechazar</span></div>
+        </div>
+        <div class="appr">
+          <div class="ah"><span class="tick no" style="width:20px;">!</span> @codex · comando shell</div>
+          <div class="ad warn">$ rm -rf dist/</div>
+          <div class="aacts"><span class="mini ok">Aprobar</span><span class="mini no">Rechazar</span></div>
+        </div>
+        <div class="appr">
+          <div class="ah"><span class="ava" style="background:#AFA0C8; width:20px;height:20px;font-size:9px;">cl</span> @claude · git push</div>
+          <div class="ad">origin fix/touch-scroll-hook</div>
+          <div class="aacts"><span class="mini ok">Aprobar</span><span class="mini no">Rechazar</span></div>
+        </div>
+        <button class="btn soft" style="margin-top:auto;">Aprobar todo de @qiq</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 7. ACTIVITY -->
+  <div class="phone">
+    <div class="phone-cap">7 · Activity (Fase 6)</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Actividad</div><div class="t2">3 agentes trabajando</div></div>
+        <div class="seg mini"><span class="on">🔔</span></div>
+      </div>
+      <div class="body">
+        <div class="secth">Te necesitan <span class="n">1</span></div>
+        <div class="act"><span class="tick" style="color:var(--warn)">?</span><div class="at"><div class="an">api rate limiting</div><div class="am">qaap-cloud-workspace · @qiq</div></div><span class="back">›</span></div>
+        <div class="sep"></div>
+        <div class="secth">En curso <span class="n">2</span></div>
+        <div class="act"><div class="at"><div class="between"><span class="an">Refactor touch-scroll</span><span class="stat">5/8</span></div><div class="prog" style="margin-top:7px;"><i style="width:62%"></i></div><div class="am" style="margin-top:5px;">qaap-mobile-shell · @codex</div></div></div>
+        <div class="act"><div class="at"><div class="between"><span class="an">Drift cleanup · core</span><span class="stat">2/6</span></div><div class="prog" style="margin-top:7px;"><i style="width:33%"></i></div><div class="am" style="margin-top:5px;">packages/core · @claude</div></div></div>
+        <div class="sep" style="margin-top:auto;"></div>
+        <div class="toggle">Avisar cuando termina<span class="sw"></span></div>
+        <div class="toggle">Cuando necesita input<span class="sw"></span></div>
+        <div class="toggle">Cuando falla un check<span class="sw off"></span></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+</body>
+</html>

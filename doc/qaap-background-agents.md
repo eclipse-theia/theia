@@ -9,6 +9,15 @@ browser tab is closed. The server auto-detects these CLIs on `PATH`:
   (stream-json is parsed live in chat/transcript UIs: thinking blocks, tool calls, and assistant text)
   (`{qaiq_flags}` is filled from your Settings API keys: Gemini, OpenRouter, Ollama, …)
 - `aider` -> `aider --yes-always --message {prompt}`
+- `opencode` -> `opencode run --dangerously-skip-permissions {prompt}`
+- `goose` -> `goose run --no-session -t {prompt}`
+- `hermes` -> `hermes chat -q {prompt}`
+- `openclaw` -> `openclaw agent --local --message {prompt}`
+- `cursor` (`cursor-agent` on PATH) -> `cursor-agent -p --force {prompt}`
+- `gemini` -> `gemini -p --approval-mode=yolo {prompt}`
+- `copilot` -> `copilot --autopilot --yolo --max-autopilot-continues 20 -p {prompt}`
+- `qwen` -> `qwen -p --approval-mode yolo {prompt}`
+- `kimi` -> `kimi -p {prompt}` (prompt mode auto-approves tool calls)
 
 The Docker runtime image builds and installs **[QAIQ](https://github.com/juancristobalgd1/qaiq)**
 (QAAP's fork of the OpenClaude coding-agent CLI) and Aider. Codex and Claude Code still need
