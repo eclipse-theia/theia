@@ -246,7 +246,7 @@
     position: fixed;
     bottom: 36px;
     right: 16px;
-    z-index: 1110;
+    z-index: 9400;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -268,12 +268,17 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Narrow viewport: pin the floater inside the safe area above the mobile bottom bar. */
+/* Narrow viewport: pin the floater above the full mobile bottom chrome. */
 @media (max-width: 767px) {
     .qaap-project-bootstrap-ports.qaap-mod-floating {
         right: 12px;
         left: 12px;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+        bottom: calc(
+            var(--theia-mobile-bottom-bar-height, 56px)
+            + var(--theia-mobile-status-chrome-height, 34px)
+            + var(--theia-mobile-keyboard-inset, 0px)
+            + 12px
+        );
         max-width: none;
         justify-content: flex-start;
     }

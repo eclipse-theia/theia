@@ -8,7 +8,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { ConfirmDialog } from '@theia/core/lib/browser';
+import { ConfirmDialog, UnsafeWidgetUtilities } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
@@ -40,7 +40,11 @@ import {
 import { MobileProjectsTimelineUi } from './mobile-projects-timeline-ui';
 import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
 import { MobileProjectsService } from './mobile-projects-service';
-import { conversationTurnProgressRatio, formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
+import {
+    buildConversationListMetrics,
+    conversationTurnProgressRatio,
+    formatToolActivityLabel,
+} from '../common/qaap-agent-conversation-list-metrics';
 import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
@@ -193,7 +197,6 @@ import {
 } from './mobile-work-hub-inbox';
 import { MobileOnboardingTutorialContribution } from './mobile-onboarding-tutorial-contribution';
 import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
-import { Widget } from '@lumino/widgets';
 import {
     QAAP_GIT_REVIEW_API_PATH,
     type QaapGitChangedFile,
@@ -202,6 +205,7 @@ import {
     QaapDiffReviewWidget,
     type QaapDiffReviewRepositoryContext,
 } from './qaap-diff-review-widget';
+import { toDevPreviewUrl } from './qaap-dev-preview-client';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -281,7 +285,7 @@ interface QaapDiffProjectTab {
 }
 
 /** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
-type TranscriptTab = 'messages' | 'plan' | 'review' | 'verify';
+type TranscriptTab = 'messages' | 'plan' | 'review' | 'verify' | 'preview';
 
 /** A step of the agent's plan, parsed from the latest `todoWrite` tool segment. */
 interface PlanStep {
@@ -395,6 +399,7 @@ export class MobileProjectsPanel {
     protected transcriptChatInputWidget: AIChatInputWidget | undefined;
     protected transcriptChatViewWidget: MobileProjectChatViewWidget | undefined;
     protected transcriptRefreshTimer: number | undefined;
+    protected transcriptScheduleRefresh: (() => void) | undefined;
     protected transcriptChatHost: HTMLElement | undefined;
     protected transcriptChatInputHost: HTMLElement | undefined;
     /** Execution-view tabs: strip + per-tab content hosts. */
@@ -405,6 +410,9 @@ export class MobileProjectsPanel {
     protected transcriptReviewComposerHost: HTMLElement | undefined;
     protected transcriptReviewComposerDraft = '';
     protected transcriptVerifyHost: HTMLElement | undefined;
+    protected transcriptPreviewHost: HTMLElement | undefined;
+    protected transcriptPreviewRequestRunning = false;
+    protected transcriptPreviewRequestPending = false;
     protected transcriptPlanHost: HTMLElement | undefined;
     protected transcriptPlanSteps: PlanStep[] = [];
     protected transcriptActiveTab: TranscriptTab = 'messages';
@@ -2297,11 +2305,7 @@ export class MobileProjectsPanel {
         this.diffReviewWidget.enableWorkHubEmbed();
         this.diffReviewWidget.setTranscriptAgentFeedbackHandler(undefined);
         this.diffReviewWidget.setReviewStatsChangeHandler(undefined);
-        if (!this.diffReviewWidget.isAttached) {
-            Widget.attach(this.diffReviewWidget, this.diffWidgetHost);
-        } else if (this.diffReviewWidget.node.parentElement !== this.diffWidgetHost) {
-            this.diffWidgetHost.appendChild(this.diffReviewWidget.node);
-        }
+        this.attachDiffReviewWidget(this.diffWidgetHost);
         await this.applyDiffTabToWidget(tab);
     }
 
@@ -2318,8 +2322,29 @@ export class MobileProjectsPanel {
     }
 
     protected detachDiffReviewWidget(): void {
-        if (this.diffReviewWidget?.isAttached) {
-            Widget.detach(this.diffReviewWidget);
+        this.detachDiffReviewWidgetFromHost();
+    }
+
+    protected attachDiffReviewWidget(host: HTMLElement): void {
+        const widget = this.diffReviewWidget;
+        if (!widget || !host.isConnected) {
+            return;
+        }
+        if (!widget.isAttached) {
+            UnsafeWidgetUtilities.attach(widget, host);
+        } else if (widget.node.parentElement !== host) {
+            host.appendChild(widget.node);
+        }
+    }
+
+    protected detachDiffReviewWidgetFromHost(): void {
+        const widget = this.diffReviewWidget;
+        if (!widget?.isAttached) {
+            widget?.node.remove();
+            return;
+        }
+        if (widget.node.parentElement) {
+            UnsafeWidgetUtilities.detach(widget);
         }
     }
 
@@ -7350,8 +7375,11 @@ export class MobileProjectsPanel {
         const verifyHost = document.createElement('div');
         verifyHost.className = 'theia-mobile-transcript-verify';
         verifyHost.hidden = true;
+        const previewHost = document.createElement('div');
+        previewHost.className = 'theia-mobile-transcript-preview';
+        previewHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, planHost, reviewHost, verifyHost, chatInputHost);
+        sheet.append(header, tabStrip, chatHost, planHost, reviewHost, verifyHost, previewHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
@@ -7361,6 +7389,7 @@ export class MobileProjectsPanel {
         this.transcriptPlanHost = planHost;
         this.transcriptReviewHost = reviewHost;
         this.transcriptVerifyHost = verifyHost;
+        this.transcriptPreviewHost = previewHost;
         this.transcriptActiveTab = 'messages';
         this.transcriptPlanSteps = [];
         this.verifyResults = [];
@@ -7389,6 +7418,8 @@ export class MobileProjectsPanel {
                 }
                 this.syncTranscriptYoloButton();
                 const fingerprint = this.conversationTranscriptFingerprint(full);
+                this.transcriptLastConv = full;
+                await this.syncTranscriptPreviewFromConversation(project, summary, full);
                 if (fingerprint === this.transcriptLastFingerprint) {
                     return;
                 }
@@ -7399,7 +7430,7 @@ export class MobileProjectsPanel {
                     this.renderPlanTab();
                 }
                 this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
-                if (full.status === 'streaming' && this.conversations) {
+                if ((full.status === 'streaming' || this.transcriptPreviewRequestPending) && this.conversations) {
                     this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
                         if (this.shouldRefreshOpenTranscript(project, summary.id)) {
                             scheduleRefresh();
@@ -7434,6 +7465,7 @@ export class MobileProjectsPanel {
                 void refresh();
             }, 450);
         };
+        this.transcriptScheduleRefresh = scheduleRefresh;
         void refresh();
 
         this.transcriptComposerPinnedAgentId = migrateLegacyBackendAgentId(summary.agentId)
@@ -7588,6 +7620,7 @@ export class MobileProjectsPanel {
             { id: 'plan', label: nls.localize('qaap/mobileProjects/tabPlan', 'Plan') },
             { id: 'review', label: nls.localize('qaap/mobileProjects/tabReview', 'Review') },
             { id: 'verify', label: nls.localize('qaap/mobileProjects/tabChecks', 'Checks') },
+            { id: 'preview', label: nls.localize('qaap/mobileProjects/tabPreview', 'Preview') },
         ];
         for (const tab of tabs) {
             const btn = document.createElement('button');
@@ -7634,12 +7667,17 @@ export class MobileProjectsPanel {
         if (this.transcriptVerifyHost) {
             this.transcriptVerifyHost.hidden = tab !== 'verify';
         }
+        if (this.transcriptPreviewHost) {
+            this.transcriptPreviewHost.hidden = tab !== 'preview';
+        }
         if (tab === 'plan') {
             this.renderPlanTab();
         } else if (tab === 'review') {
             void this.mountTranscriptReviewWidget(project, summary);
         } else if (tab === 'verify') {
             this.renderVerifyTab(project, summary);
+        } else if (tab === 'preview') {
+            this.renderPreviewTab(project, summary);
         }
         this.updateTranscriptHeaderForTab(tab, project, summary);
     }
@@ -7694,6 +7732,10 @@ export class MobileProjectsPanel {
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
                 subtitle.textContent = this.transcriptConversationMeta(project, summary);
                 break;
+            case 'preview':
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
             default:
                 titleEl.textContent = summary.title || project.name;
                 subtitle.textContent = this.transcriptConversationMeta(project, summary);
@@ -7741,6 +7783,9 @@ export class MobileProjectsPanel {
         if (!this.diffReviewWidget) {
             this.diffReviewWidget = await this.createDiffReviewWidget();
         }
+        if (this.transcriptReviewHost !== host || !diffHost.isConnected) {
+            return;
+        }
         this.diffReviewWidget.enableTranscriptEmbed({ externalChrome: true });
         this.diffReviewWidget.node.classList.add('theia-mobile-transcript-diff-embed');
         this.diffReviewWidget.setTranscriptAgentFeedbackHandler(async message => {
@@ -7751,12 +7796,7 @@ export class MobileProjectsPanel {
                 this.updateTranscriptHeaderForTab('review', project, summary, stats);
             }
         });
-        if (this.diffReviewWidget.isAttached && this.diffReviewWidget.node.parentElement !== diffHost) {
-            Widget.detach(this.diffReviewWidget);
-        }
-        if (!this.diffReviewWidget.isAttached) {
-            Widget.attach(this.diffReviewWidget, diffHost);
-        }
+        this.attachDiffReviewWidget(diffHost);
         this.diffReviewWidget.setRepositoryContext({
             rootUri,
             rootFsPath: cwd,
@@ -7966,7 +8006,7 @@ export class MobileProjectsPanel {
             return;
         }
         if (this.transcriptReviewDiffHost.contains(this.diffReviewWidget.node)) {
-            Widget.detach(this.diffReviewWidget);
+            this.detachDiffReviewWidgetFromHost();
             this.diffReviewWidget.node.classList.remove('theia-mobile-transcript-diff-embed');
             this.diffReviewWidget.setTranscriptAgentFeedbackHandler(undefined);
             this.diffReviewWidget.setReviewStatsChangeHandler(undefined);
@@ -7993,6 +8033,233 @@ export class MobileProjectsPanel {
         }
 
         this.renderChecksSection(host, project, summary);
+    }
+
+    protected renderPreviewTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+        const host = this.transcriptPreviewHost;
+        if (!host) {
+            return;
+        }
+        host.replaceChildren();
+
+        const conv = this.transcriptLastConv;
+        const latestProject = this.projects.find(candidate => candidate.id === project.id) ?? project;
+        const previewUrl = this.resolveTranscriptPreviewUrl(latestProject, conv);
+        if (previewUrl) {
+            this.transcriptPreviewRequestPending = false;
+            this.transcriptPreviewRequestRunning = false;
+            const frame = document.createElement('iframe');
+            frame.className = 'theia-mobile-transcript-preview-frame';
+            frame.src = previewUrl;
+            frame.title = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
+            host.append(frame);
+            return;
+        }
+
+        if (this.transcriptPreviewRequestRunning || this.transcriptPreviewRequestPending || conv?.status === 'streaming') {
+            host.append(this.createTranscriptPreviewLoading(conv));
+            return;
+        }
+
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-transcript-preview-empty';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theia-mobile-transcript-preview-run';
+        btn.disabled = this.transcriptPreviewRequestRunning;
+        btn.textContent = this.transcriptPreviewRequestRunning
+            ? nls.localize('qaap/mobileProjects/previewStarting', 'Starting…')
+            : nls.localize('qaap/mobileProjects/previewButton', 'Vista previa');
+        btn.addEventListener('click', () => { void this.requestTranscriptPreview(project, summary); });
+        wrap.append(btn);
+        host.append(wrap);
+    }
+
+    protected createTranscriptPreviewLoading(conv: QaapAgentConversationDTO | undefined): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-transcript-preview-loading';
+
+        const pulse = document.createElement('span');
+        pulse.className = 'theia-mobile-agent-activity-pulse';
+        pulse.setAttribute('aria-hidden', 'true');
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-transcript-preview-loading-body';
+        const title = document.createElement('div');
+        title.className = 'theia-mobile-transcript-preview-loading-title';
+        const detail = document.createElement('div');
+        detail.className = 'theia-mobile-transcript-preview-loading-detail';
+
+        if (conv?.status === 'streaming') {
+            const state = this.resolveTranscriptStreamingActivity(conv);
+            title.textContent = state.title;
+            detail.textContent = state.detail;
+            body.append(title, detail, this.createTranscriptStreamingSteps(state.kind));
+        } else {
+            title.textContent = nls.localize('qaap/mobileProjects/previewStarting', 'Starting…');
+            detail.textContent = nls.localize(
+                'qaap/mobileProjects/previewWaitingForAgent',
+                'Waiting for the agent to start the dev server.',
+            );
+            body.append(title, detail);
+        }
+
+        const progress = this.createTranscriptPreviewProgress(conv);
+        if (progress) {
+            body.append(progress);
+        }
+        wrap.append(pulse, body);
+        return wrap;
+    }
+
+    protected createTranscriptPreviewProgress(conv: QaapAgentConversationDTO | undefined): HTMLElement | undefined {
+        if (!conv || conv.status !== 'streaming') {
+            return undefined;
+        }
+        const metrics = buildConversationListMetrics({
+            status: conv.status,
+            messages: conv.messages,
+        });
+        const current = metrics.turnProgressCurrent;
+        const total = metrics.turnProgressTotal;
+        if (current === undefined || total === undefined || total <= 0) {
+            return undefined;
+        }
+        const percent = Math.round(conversationTurnProgressRatio(current, total) * 100);
+        const progress = document.createElement('div');
+        progress.className = 'theia-mobile-transcript-preview-progress';
+        progress.setAttribute('role', 'progressbar');
+        progress.setAttribute('aria-valuemin', '0');
+        progress.setAttribute('aria-valuemax', '100');
+        progress.setAttribute('aria-valuenow', String(percent));
+        progress.setAttribute('aria-label', nls.localize(
+            'qaap/mobileProjects/previewProgress',
+            'Preview startup progress {0}%',
+            String(percent),
+        ));
+        const fill = document.createElement('span');
+        fill.className = 'theia-mobile-transcript-preview-progress-fill';
+        fill.style.width = `${percent}%`;
+        progress.append(fill);
+        return progress;
+    }
+
+    protected async syncTranscriptPreviewFromConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        conv: QaapAgentConversationDTO,
+    ): Promise<void> {
+        if (this.transcriptActiveTab !== 'preview' && !this.transcriptPreviewRequestPending) {
+            return;
+        }
+        const latestProject = await this.refreshTranscriptPreviewProject(project);
+        if (this.resolveTranscriptPreviewUrl(latestProject, conv) || conv.status !== 'streaming') {
+            this.transcriptPreviewRequestPending = false;
+        }
+        if (this.transcriptActiveTab === 'preview' && this.transcriptOpenSummaryId === summary.id) {
+            this.renderPreviewTab(latestProject, summary);
+        }
+    }
+
+    protected async refreshTranscriptPreviewProject(project: MobileProjectEntry): Promise<MobileProjectEntry> {
+        try {
+            this.projects = await this.projectsService.loadProjects();
+            return this.projects.find(candidate => candidate.id === project.id) ?? project;
+        } catch {
+            return project;
+        }
+    }
+
+    protected resolveTranscriptPreviewUrl(
+        project: MobileProjectEntry,
+        conv: QaapAgentConversationDTO | undefined,
+    ): string | undefined {
+        if (project.previewUrl) {
+            return project.previewUrl;
+        }
+        if (!conv) {
+            return undefined;
+        }
+        for (const message of [...conv.messages].reverse()) {
+            const fromContent = this.extractDevPreviewUrlFromText(message.content);
+            if (fromContent) {
+                return fromContent;
+            }
+            for (const segment of [...(message.segments ?? [])].reverse()) {
+                const text = segment.type === 'tool'
+                    ? `${segment.args}\n${segment.result ?? ''}`
+                    : segment.content;
+                const fromSegment = this.extractDevPreviewUrlFromText(text);
+                if (fromSegment) {
+                    return fromSegment;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    protected extractDevPreviewUrlFromText(text: string | undefined): string | undefined {
+        if (!text?.trim()) {
+            return undefined;
+        }
+        const directUrl = text.match(/https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):(\d{2,5})(?:\/[^\s`*)\]]*)?/i);
+        const port = directUrl?.[1] ?? text.match(/\bport(?:o|)\s+(\d{2,5})\b/i)?.[1] ?? text.match(/\bpuerto\s+(\d{2,5})\b/i)?.[1];
+        if (!port) {
+            return undefined;
+        }
+        const parsed = Number(port);
+        if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+            return undefined;
+        }
+        return toDevPreviewUrl(parsed);
+    }
+
+    protected async requestTranscriptPreview(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        if (this.transcriptPreviewRequestRunning) {
+            return;
+        }
+        const latestProject = this.projects.find(candidate => candidate.id === project.id) ?? project;
+        if (latestProject.previewUrl && this.delegate.onResumePreview) {
+            await this.delegate.onResumePreview(latestProject);
+            return;
+        }
+
+        const message = nls.localize(
+            'qaap/mobileProjects/previewAgentRequest',
+            'Levanta esta app para vista previa. Instala dependencias si hace falta, ejecuta el servidor de desarrollo, expón el puerto disponible y avísame cuando la preview esté lista.',
+        );
+        this.transcriptPreviewRequestRunning = true;
+        this.transcriptPreviewRequestPending = true;
+        this.renderPreviewTab(project, summary);
+        try {
+            if (summary.source === 'theia-chat') {
+                if (!this.transcriptChatHost) {
+                    throw new Error(nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.'));
+                }
+                await this.submitTranscriptViaTheiaChat(project, summary, message, this.transcriptChatHost, this.transcriptComposerModeId);
+            } else {
+                await this.submitTranscriptViaBackendConversation(project, summary, message, {
+                    selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
+                    modeId: this.transcriptComposerModeId,
+                });
+            }
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/previewRequestSent', 'Preview request sent to agent'),
+                { kind: 'success', duration: 1600 },
+            );
+            this.transcriptScheduleRefresh?.();
+        } catch (error) {
+            this.transcriptPreviewRequestPending = false;
+            MobileSnackbar.show(error instanceof Error ? error.message : String(error), { kind: 'warning' });
+        } finally {
+            this.transcriptPreviewRequestRunning = false;
+            if (this.transcriptOpenSummaryId === summary.id) {
+                this.renderPreviewTab(project, summary);
+            }
+        }
     }
 
     protected createVerifyCheckRow(result: VerifyCheckResult): HTMLElement {
@@ -8193,13 +8460,6 @@ export class MobileProjectsPanel {
                     void this.applyActiveTasksRefresh();
                 }
             },
-            onOpenDiff: project => {
-                void this.openProjectDiffView(project.id);
-            },
-            onOpenPreview: project => {
-                void this.delegate.onResumePreview?.(project);
-            },
-            canOpenPreview: project => !!this.delegate.onResumePreview && (!!project.previewUrl || project.isCurrent),
             openTimeline: (project, summary) => {
                 this.overlayUi!.timeline.openTimelineSheet(project, summary);
             },
@@ -9811,7 +10071,7 @@ export class MobileProjectsPanel {
             return false;
         }
         const latest = this.conversationsForProject(project).find(c => c.id === conversationId);
-        return latest?.status === 'streaming';
+        return latest?.status === 'streaming' || (!!latest && this.transcriptPreviewRequestPending);
     }
 
     protected closeTranscriptSheet(): void {
@@ -9840,6 +10100,9 @@ export class MobileProjectsPanel {
         this.detachTranscriptReviewWidget();
         this.transcriptReviewHost = undefined;
         this.transcriptVerifyHost = undefined;
+        this.transcriptPreviewHost = undefined;
+        this.transcriptPreviewRequestRunning = false;
+        this.transcriptPreviewRequestPending = false;
         this.transcriptActiveTab = 'messages';
         this.verifyResults = [];
         this.verifyChecksCwd = undefined;
@@ -9855,6 +10118,7 @@ export class MobileProjectsPanel {
             window.clearTimeout(this.transcriptRefreshTimer);
             this.transcriptRefreshTimer = undefined;
         }
+        this.transcriptScheduleRefresh = undefined;
         this.setTranscriptLiveUpdates(Disposable.NULL);
         this.transcriptSheetDispose.dispose();
         this.transcriptSheetDispose = Disposable.NULL;

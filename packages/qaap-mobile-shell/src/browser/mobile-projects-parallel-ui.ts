@@ -29,9 +29,6 @@ const VARIANT_STATS_POLL_MS = 5000;
 export interface MobileProjectsParallelUiDeps {
     getAgents(): QaapAgentTaskAgentOption[];
     onRunsChanged(): void;
-    onOpenDiff(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    onOpenPreview(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    canOpenPreview(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): boolean;
     openTimeline(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     buildVariantTaskRow(
         project: MobileProjectEntry,
@@ -78,29 +75,11 @@ export class MobileProjectsParallelUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void {
-        const diffBtn = this.createHeaderActionButton(
-            'codicon-diff-multiple',
-            nls.localize('qaap/mobileProjects/viewDiff', 'View changes'),
-            () => this.deps.onOpenDiff(project, summary),
-            'theia-mod-diff',
-        );
-        const previewBtn = this.createHeaderActionButton(
-            'codicon-preview',
-            nls.localize('qaap/mobileProjects/openLivePreview', 'Open live preview'),
-            () => this.deps.onOpenPreview(project, summary),
-            'theia-mod-preview',
-        );
-        previewBtn.disabled = !this.deps.canOpenPreview(project, summary);
-        if (previewBtn.disabled) {
-            previewBtn.title = nls.localize('qaap/mobileProjects/openLivePreviewUnavailable', 'No live preview is available yet');
-            previewBtn.setAttribute('aria-label', previewBtn.title);
-        }
-
         if (!this.supportsQaapAgentWorkflow(summary)) {
             const titleWrap = document.createElement('div');
             titleWrap.className = 'theia-mobile-agent-log-title-wrap';
             titleWrap.append(title);
-            header.append(titleWrap, diffBtn, previewBtn, close);
+            header.append(titleWrap, close);
             return;
         }
         const timelineBtn = document.createElement('button');
@@ -138,29 +117,9 @@ export class MobileProjectsParallelUi {
         const titleWrap = document.createElement('div');
         titleWrap.className = 'theia-mobile-agent-log-title-wrap';
         titleWrap.append(title);
-        header.append(titleWrap, diffBtn, previewBtn, timelineBtn, variantsBtn, yoloBtn, close);
+        header.append(titleWrap, timelineBtn, variantsBtn, yoloBtn, close);
         // Expose sync for the panel after PATCH / SSE refresh.
         (header as HTMLElement & { syncYoloButton?: () => void }).syncYoloButton = syncYoloButton;
-    }
-
-    protected createHeaderActionButton(
-        iconClass: string,
-        label: string,
-        onClick: () => void,
-        modifier?: string,
-    ): HTMLButtonElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `theia-mobile-agent-log-action ${modifier ?? ''} codicon ${iconClass}`.trim();
-        btn.title = label;
-        btn.setAttribute('aria-label', label);
-        btn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            if (!btn.disabled) {
-                onClick();
-            }
-        });
-        return btn;
     }
 
     createVariantRunSection(
