@@ -8880,29 +8880,52 @@ button.theia-mobile-transcript-team-row:focus-visible {
   color: var(--theia-descriptionForeground);
 }
 
-/* Transcript header "Run variants" icon button. */
-.theia-mobile-agent-log-variants,
-.theia-mobile-agent-log-yolo {
+.theia-mobile-agent-log-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  border: none;
-  background: transparent;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theia-editorWidget-background) 72%, transparent);
   color: var(--theia-descriptionForeground);
   font-size: 16px;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 0;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
-.theia-mobile-agent-log-variants:hover {
+.theia-mobile-agent-log-action:hover:not(:disabled),
+.theia-mobile-agent-log-action:focus-visible {
   color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-toolbar-hoverBackground) 72%, transparent);
+  border-color: color-mix(in srgb, var(--theia-focusBorder) 34%, transparent);
+  outline: none;
+}
+
+.theia-mobile-agent-log-action:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.theia-mobile-agent-log-action:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.theia-mobile-agent-log-action.theia-mod-diff,
+.theia-mobile-agent-log-action.theia-mod-preview {
+  color: color-mix(in srgb, var(--theia-foreground) 82%, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-agent-log-action.theia-mod-preview:not(:disabled) {
+  color: var(--qaap-accent, var(--theia-focusBorder));
 }
 
 .theia-mobile-agent-log-yolo.theia-mod-on {
   color: var(--qaap-accent, var(--theia-focusBorder));
-}
-
-.theia-mobile-agent-log-yolo:hover {
-  color: var(--theia-foreground);
 }
 
 .theia-mobile-agent-log-yolo.theia-mod-busy {

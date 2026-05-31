@@ -8193,6 +8193,13 @@ export class MobileProjectsPanel {
                     void this.applyActiveTasksRefresh();
                 }
             },
+            onOpenDiff: project => {
+                void this.openProjectDiffView(project.id);
+            },
+            onOpenPreview: project => {
+                void this.delegate.onResumePreview?.(project);
+            },
+            canOpenPreview: project => !!this.delegate.onResumePreview && (!!project.previewUrl || project.isCurrent),
             openTimeline: (project, summary) => {
                 this.overlayUi!.timeline.openTimelineSheet(project, summary);
             },
