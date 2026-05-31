@@ -10,7 +10,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {
+    normalizeRoutineCronExpression,
+    normalizeRoutineTimezone,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-work-hub-cron';
+import {
     normalizeRoutineIntervalHours,
+    normalizeRoutineRunMode,
     type QaapCreateWorkHubRoutineBody,
     type QaapUpdateWorkHubRoutineBody,
     type QaapWorkHubRoutine,
@@ -49,8 +54,11 @@ function seedRoutines(cwd: string): QaapWorkHubRoutine[] {
             prompt: 'List open pull requests for this repository and draft a short review comment for each that needs attention.',
             cwd,
             agent: 'qaiq',
-            trigger: 'interval',
+            trigger: 'cron',
             intervalHours: 24,
+            cronExpression: '0 8 * * 1-5',
+            timezone: 'UTC',
+            runMode: 'continue',
             enabled: false,
         }),
         base({
@@ -65,12 +73,28 @@ function seedRoutines(cwd: string): QaapWorkHubRoutine[] {
         }),
         base({
             id: randomUUID(),
-            title: 'Weekly drift check',
+            title: 'Daily drift check',
             prompt: 'Run the qaap drift check script and summarize files that differ from upstream outside packages/qaap-*.',
             cwd,
             agent: 'qaiq',
-            trigger: 'interval',
+            trigger: 'cron',
+            intervalHours: 24,
+            cronExpression: '0 6 * * *',
+            timezone: 'UTC',
+            runMode: 'fresh',
+            enabled: false,
+        }),
+        base({
+            id: randomUUID(),
+            title: 'Weekly workspace backup',
+            prompt: 'Archive ~/.qaap and the workspace git state; report archive path and size.',
+            cwd,
+            agent: 'qaiq',
+            trigger: 'cron',
             intervalHours: 168,
+            cronExpression: '0 3 * * 0',
+            timezone: 'UTC',
+            runMode: 'fresh',
             enabled: false,
         }),
         base({
@@ -108,15 +132,23 @@ export class QaapWorkHubRoutineStore {
 
     create(body: QaapCreateWorkHubRoutineBody): QaapWorkHubRoutine {
         const now = Date.now();
+        const trigger = body.trigger ?? 'manual';
         const routine: QaapWorkHubRoutine = {
             id: randomUUID(),
             title: body.title.trim(),
             prompt: body.prompt.trim(),
             cwd: body.cwd.trim(),
             agent: body.agent?.trim() || undefined,
-            trigger: body.trigger ?? 'manual',
+            trigger,
             intervalHours: normalizeRoutineIntervalHours(body.intervalHours),
+            ...(trigger === 'cron' ? {
+                cronExpression: normalizeRoutineCronExpression(body.cronExpression),
+                timezone: normalizeRoutineTimezone(body.timezone),
+                oneShot: body.oneShot === true,
+            } : {}),
+            runMode: normalizeRoutineRunMode(body.runMode),
             enabled: body.enabled === true,
+            autoApprove: body.autoApprove !== false,
             createdAt: now,
             updatedAt: now,
         };
@@ -131,17 +163,35 @@ export class QaapWorkHubRoutineStore {
         if (!existing) {
             return undefined;
         }
+        const trigger = patch.trigger ?? existing.trigger;
         const next: QaapWorkHubRoutine = {
             ...existing,
             title: patch.title !== undefined ? patch.title.trim() : existing.title,
             prompt: patch.prompt !== undefined ? patch.prompt.trim() : existing.prompt,
             cwd: patch.cwd !== undefined ? patch.cwd.trim() : existing.cwd,
             agent: patch.agent !== undefined ? (patch.agent.trim() || undefined) : existing.agent,
-            trigger: patch.trigger ?? existing.trigger,
+            trigger,
             intervalHours: patch.intervalHours !== undefined
                 ? normalizeRoutineIntervalHours(patch.intervalHours)
                 : existing.intervalHours,
+            ...(trigger === 'cron' ? {
+                cronExpression: patch.cronExpression !== undefined
+                    ? normalizeRoutineCronExpression(patch.cronExpression)
+                    : normalizeRoutineCronExpression(existing.cronExpression),
+                timezone: patch.timezone !== undefined
+                    ? normalizeRoutineTimezone(patch.timezone)
+                    : normalizeRoutineTimezone(existing.timezone),
+                oneShot: patch.oneShot !== undefined ? patch.oneShot === true : existing.oneShot === true,
+            } : {
+                cronExpression: undefined,
+                timezone: undefined,
+                oneShot: undefined,
+            }),
+            runMode: patch.runMode !== undefined
+                ? normalizeRoutineRunMode(patch.runMode)
+                : normalizeRoutineRunMode(existing.runMode),
             enabled: patch.enabled !== undefined ? patch.enabled : existing.enabled,
+            autoApprove: patch.autoApprove !== undefined ? patch.autoApprove !== false : existing.autoApprove !== false,
             updatedAt: Date.now(),
         };
         this.routines.set(id, next);
@@ -159,7 +209,7 @@ export class QaapWorkHubRoutineStore {
         return removed;
     }
 
-    markRunStarted(id: string, taskId: string): QaapWorkHubRoutine | undefined {
+    markRunStarted(id: string, taskId: string, conversationId?: string): QaapWorkHubRoutine | undefined {
         const existing = this.routines.get(id);
         if (!existing) {
             return undefined;
@@ -168,6 +218,7 @@ export class QaapWorkHubRoutineStore {
             ...existing,
             lastRunAt: Date.now(),
             lastRunTaskId: taskId,
+            lastRunConversationId: conversationId ?? existing.lastRunConversationId,
             lastRunState: 'running',
             updatedAt: Date.now(),
         };
@@ -185,6 +236,7 @@ export class QaapWorkHubRoutineStore {
         const next: QaapWorkHubRoutine = {
             ...existing,
             lastRunState: state,
+            ...(existing.oneShot ? { enabled: false } : {}),
             updatedAt: Date.now(),
         };
         this.routines.set(id, next);
@@ -202,7 +254,7 @@ export class QaapWorkHubRoutineStore {
             const parsed = JSON.parse(raw) as PersistedRoutines;
             for (const routine of parsed.routines ?? []) {
                 if (routine?.id && routine.title && routine.prompt && routine.cwd) {
-                    this.routines.set(routine.id, routine);
+                    this.routines.set(routine.id, this.normalizeLoadedRoutine(routine));
                 }
             }
             if (this.routines.size === 0) {
@@ -212,6 +264,21 @@ export class QaapWorkHubRoutineStore {
             console.warn('[qaap-work-hub-routines] failed to load store:', error);
             this.seedIfEmpty();
         }
+    }
+
+    protected normalizeLoadedRoutine(routine: QaapWorkHubRoutine): QaapWorkHubRoutine {
+        const trigger = routine.trigger ?? 'manual';
+        return {
+            ...routine,
+            trigger,
+            intervalHours: normalizeRoutineIntervalHours(routine.intervalHours),
+            runMode: normalizeRoutineRunMode(routine.runMode),
+            ...(trigger === 'cron' ? {
+                cronExpression: normalizeRoutineCronExpression(routine.cronExpression),
+                timezone: normalizeRoutineTimezone(routine.timezone),
+                oneShot: routine.oneShot === true,
+            } : {}),
+        };
     }
 
     protected seedIfEmpty(): void {

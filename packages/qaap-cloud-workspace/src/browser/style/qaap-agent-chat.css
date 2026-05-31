@@ -1,0 +1,95 @@
+.qaap-agent-chat {
+    overflow: hidden;
+}
+
+.qaap-agent-chat-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--theia-editor-background);
+    color: var(--theia-foreground);
+}
+
+.qaap-agent-chat-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+    flex: none;
+}
+
+.qaap-agent-chat-subtitle {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-chat-new {
+    flex: none;
+    height: 34px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--theia-button-background);
+    color: var(--theia-button-foreground);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.qaap-agent-chat-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.qaap-agent-chat-empty {
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-chat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.qaap-agent-chat-row:hover,
+.qaap-agent-chat-row.qaap-mod-active {
+    background: var(--theia-list-hoverBackground);
+}
+
+.qaap-agent-chat-row-icon {
+    flex: none;
+    font-size: 16px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-chat-row-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaap-agent-chat-row-since {
+    flex: none;
+    font-size: 11px;
+    color: var(--theia-descriptionForeground);
+}

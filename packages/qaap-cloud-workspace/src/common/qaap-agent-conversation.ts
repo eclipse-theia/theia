@@ -46,6 +46,21 @@ export interface QaapAgentMessage {
     readonly error?: string;
 }
 
+/** A working-tree snapshot anchored to a conversation turn (Timeline / rollback). */
+export interface QaapConversationCheckpoint {
+    readonly id: string;
+    /** The user message id whose turn produced this snapshot. */
+    readonly messageId: string;
+    readonly label: string;
+    /** Git commit object that captures the full working tree at capture time. */
+    readonly commit: string;
+    /** Ref keeping {@link commit} alive against GC (`refs/qaap/checkpoints/...`). */
+    readonly ref: string;
+    readonly capturedAt: number;
+    readonly added?: number;
+    readonly removed?: number;
+}
+
 /** A persistent multi-turn thread with an agent, tied to a working directory. */
 export interface QaapAgentConversation {
     readonly id: string;
@@ -63,8 +78,19 @@ export interface QaapAgentConversation {
     readonly priority?: boolean;
     /** User-flagged "paused" — sinks to the bottom; active turn is cancelled when paused. */
     readonly paused?: boolean;
+    /**
+     * When `false`, agent turns require manual CLI approval (will hang unattended).
+     * Omitted/`true` enables YOLO / auto-approve for background runs.
+     */
+    readonly autoApprove?: boolean;
     /** Set on conversations created via {@link fork} — points at the parent's id. */
     readonly forkedFromId?: string;
+    /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
+    readonly parallelRunId?: string;
+    /** Base repository root a parallel-run variant was derived from (its own cwd is a worktree). */
+    readonly parallelBaseCwd?: string;
+    /** Working-tree snapshots captured per turn — the Timeline / rollback feature. */
+    readonly checkpoints?: QaapConversationCheckpoint[];
     /**
      * Ground-truth git diff stats computed via `git diff --numstat` at turn completion.
      * These take priority over the text-parsed estimates in {@link buildConversationListMetrics}.
@@ -91,7 +117,13 @@ export interface QaapAgentConversationSummary {
     readonly lastMessageRole?: QaapAgentMessageRole;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    /** Present and `false` when the user disabled YOLO for this thread. */
+    readonly autoApprove?: boolean;
     readonly forkedFromId?: string;
+    /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
+    readonly parallelRunId?: string;
+    /** Base repository root a parallel-run variant was derived from. */
+    readonly parallelBaseCwd?: string;
     /** In-flight tool/status label while {@link status} is `'streaming'`. */
     readonly activityLabel?: string;
     readonly linesAdded?: number;
@@ -129,6 +161,9 @@ export interface QaapCreateAgentConversationRequest {
     readonly title?: string;
     /** Optional first user message; when present, the agent turn fires right after creation. */
     readonly message?: string;
+    /** Marks this conversation as a parallel-run variant (grouped under {@link parallelBaseCwd}). */
+    readonly parallelRunId?: string;
+    readonly parallelBaseCwd?: string;
 }
 
 export interface QaapPostAgentMessageRequest {
@@ -146,6 +181,8 @@ export interface QaapUpdateAgentConversationRequest {
     readonly title?: string;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    /** `true` clears an explicit opt-out; `false` requires manual tool approval on future turns. */
+    readonly autoApprove?: boolean;
     readonly linkedPullRequest?: QaapLinkedPullRequest | null;
 }
 
@@ -179,7 +216,10 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         lastMessageRole: last?.role,
         priority: conv.priority || undefined,
         paused: conv.paused || undefined,
+        autoApprove: conv.autoApprove === false ? false : undefined,
         forkedFromId: conv.forkedFromId,
+        parallelRunId: conv.parallelRunId,
+        parallelBaseCwd: conv.parallelBaseCwd,
         linkedPullRequest: conv.linkedPullRequest,
     };
     const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });

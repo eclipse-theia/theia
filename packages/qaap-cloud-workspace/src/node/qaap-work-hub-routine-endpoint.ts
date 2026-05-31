@@ -68,7 +68,12 @@ export class QaapWorkHubRoutineEndpoint implements BackendApplicationContributio
                 agent: body.agent,
                 trigger: body.trigger,
                 intervalHours: body.intervalHours,
+                cronExpression: body.cronExpression,
+                timezone: body.timezone,
+                oneShot: body.oneShot,
+                runMode: body.runMode,
                 enabled: body.enabled,
+                autoApprove: body.autoApprove,
             });
             res.status(201).json(routine);
         } catch (error) {

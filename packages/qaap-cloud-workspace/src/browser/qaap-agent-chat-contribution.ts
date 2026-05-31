@@ -7,16 +7,16 @@ import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { QaapAgentTasksWidget } from './qaap-agent-tasks-widget';
+import { QaapAgentChatWidget } from './qaap-agent-chat-widget';
 
-/** Opens the VPS Tasks surface (conversations + background commands). */
-export const QAAP_OPEN_AGENT_TASKS: Command = {
-    id: 'qaap.agentTasks.open',
-    label: nls.localize('qaap/agentTasks/open', 'Tasks'),
+/** Opens the local Chat sessions surface (desktop Work Hub parity). */
+export const QAAP_OPEN_AGENT_CHAT: Command = {
+    id: 'qaap.agentChat.open',
+    label: nls.localize('qaap/agentChat/open', 'Chat'),
 };
 
 @injectable()
-export class QaapAgentTasksContribution implements CommandContribution {
+export class QaapAgentChatContribution implements CommandContribution {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -25,13 +25,13 @@ export class QaapAgentTasksContribution implements CommandContribution {
     protected readonly shell: ApplicationShell;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(QAAP_OPEN_AGENT_TASKS, {
+        commands.registerCommand(QAAP_OPEN_AGENT_CHAT, {
             execute: () => this.open(),
         });
     }
 
     protected async open(): Promise<void> {
-        const widget = await this.widgetManager.getOrCreateWidget(QaapAgentTasksWidget.ID);
+        const widget = await this.widgetManager.getOrCreateWidget(QaapAgentChatWidget.ID);
         if (!widget.isAttached) {
             this.shell.addWidget(widget, { area: 'main' });
         }

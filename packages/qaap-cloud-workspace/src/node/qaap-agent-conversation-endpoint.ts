@@ -81,6 +81,20 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 res.status(status).json({ error: message });
             }
         });
+        app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/checkpoints/:checkpointId/restore`, (req, res) => {
+            void (async () => {
+                try {
+                    const conv = await this.store.restoreCheckpoint(req.params.id, req.params.checkpointId);
+                    if (!conv) {
+                        res.status(404).json({ error: 'Conversation not found.' });
+                        return;
+                    }
+                    res.json(conv);
+                } catch (error) {
+                    res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+                }
+            })();
+        });
         app.delete(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
             const ok = this.store.delete(req.params.id);
             res.status(ok ? 204 : 404).end();
@@ -139,6 +153,9 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         }
         if (typeof body.paused === 'boolean') {
             patch.paused = body.paused;
+        }
+        if (typeof body.autoApprove === 'boolean') {
+            patch.autoApprove = body.autoApprove;
         }
         if (Object.keys(patch).length === 0) {
             res.status(400).json({ error: 'No mutable fields supplied.' });

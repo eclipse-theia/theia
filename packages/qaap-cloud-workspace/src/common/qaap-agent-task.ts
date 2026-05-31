@@ -35,6 +35,8 @@ export interface QaapAgentTask {
      * Lets the UI render sub-tasks under their parent.
      */
     readonly parentId?: string;
+    /** Whether skip-permission flags were applied when the CLI was spawned. */
+    readonly autoApprove?: boolean;
 }
 
 /** A task plus its captured stdout/stderr log. */
@@ -54,6 +56,7 @@ export interface QaapCreateAgentTaskRequest {
     readonly prompt?: string;
     /**
      * Id of an agent returned by the list endpoint, e.g. `'claude'`, `'codex'`, `'aider'`,
+     * `'opencode'`, `'goose'`, `'hermes'`, `'openclaw'`, `'cursor'`, `'gemini'`, `'copilot'`, `'qwen'`, `'kimi'`,
      * or a custom id configured through `QAAP_AGENT_COMMANDS`. Use the special value `'shell'`
      * to bypass any agent and run the prompt verbatim as a command.
      */
@@ -61,6 +64,11 @@ export interface QaapCreateAgentTaskRequest {
     readonly cwd: string;
     /** Forwarded by the `qaap-task` helper so spawned tasks attribute to their parent. */
     readonly parentId?: string;
+    /**
+     * YOLO / full-auto mode — inject skip-permission flags into the agent CLI. Defaults to on
+     * for background tasks; set `false` to require manual CLI approval (will hang if unattended).
+     */
+    readonly autoApprove?: boolean;
 }
 
 /** A coding agent the runner knows how to invoke. */

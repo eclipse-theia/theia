@@ -22,7 +22,16 @@ import {
     type QaapAgentTaskState,
     type QaapCreateAgentTaskRequest,
 } from '../common/qaap-agent-task';
+import {
+    QAAP_BUILTIN_AGENT_DEFINITIONS,
+    QAAP_BUILTIN_AGENT_IDS,
+    resolveQaapBuiltinAgentMentionId,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import {
+    applyAutoApproveToCommand,
+    resolveAgentAutoApprove,
+} from '../common/qaap-agent-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import {
     applyQaapQaiqCredentialEnv,
@@ -46,11 +55,7 @@ interface AgentCandidate {
 /** Built-in QAAP coding agent (fork of OpenClaude): https://github.com/juancristobalgd1/qaiq */
 export const QAIQ_AGENT_ID = 'qaiq';
 
-const AGENT_CANDIDATES: readonly AgentCandidate[] = [
-    { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {prompt}' },
-    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude -p {prompt}' },
-    { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always --message {prompt}' },
-];
+const AGENT_CANDIDATES: readonly AgentCandidate[] = QAAP_BUILTIN_AGENT_DEFINITIONS;
 
 /**
  * Optional JSON env var for server-side agent backends beyond the built-ins. Example:
@@ -144,6 +149,7 @@ const payload = JSON.stringify({
     cwd: process.cwd(),
     parentId: process.env.QAAP_TASK_PARENT_ID || undefined,
     agent,
+    autoApprove: process.env.QAAP_TASK_AUTO_APPROVE === '1' ? true : undefined,
 });
 const target = new URL(apiUrl);
 const transport = target.protocol === 'https:' ? https : http;
@@ -196,6 +202,8 @@ export class QaapAgentTaskRunner {
 
     protected readonly tasks = new Map<string, QaapAgentTask>();
     protected readonly processes = new Map<string, ChildProcess>();
+    /** Tasks spawned with stdin piped for manual approval mode. */
+    protected readonly stdinInteractiveTasks = new Set<string>();
     /** Agents whose CLI was found on PATH at startup, keyed by id. */
     protected readonly detectedAgents = new Map<string, AgentCandidate>();
     /** Random token shared with spawned agents so they can call back via `qaap-task`. */
@@ -542,6 +550,10 @@ export class QaapAgentTaskRunner {
         if (this.detectedAgents.has(canonical)) {
             return canonical;
         }
+        const builtin = resolveQaapBuiltinAgentMentionId(canonical);
+        if (builtin && this.detectedAgents.has(builtin)) {
+            return builtin;
+        }
         return undefined;
     }
 
@@ -566,6 +578,10 @@ export class QaapAgentTaskRunner {
         }
         const id = randomUUID();
         const parentId = request.parentId && this.tasks.has(request.parentId) ? request.parentId : undefined;
+        const parentTask = parentId ? this.tasks.get(parentId) : undefined;
+        const autoApprove = resolveAgentAutoApprove(
+            request.autoApprove ?? (parentTask?.autoApprove !== false ? undefined : false),
+        );
         const task: QaapAgentTask = {
             id,
             title: (request.title ?? '').trim() || prompt || rawCommand,
@@ -574,6 +590,7 @@ export class QaapAgentTaskRunner {
             state: 'running',
             createdAt: Date.now(),
             parentId,
+            autoApprove,
         };
         this.tasks.set(id, task);
         void this.spawnProcessWhenReady(task, request);
@@ -593,7 +610,7 @@ export class QaapAgentTaskRunner {
      * A template's `{prompt}` placeholder is replaced with a POSIX shell-quoted prompt;
      * without a placeholder the prompt is appended.
      */
-    protected buildAgentCommand(prompt: string, agentId: string | undefined): string {
+    protected buildAgentCommand(prompt: string, agentId: string | undefined, autoApprove: boolean): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
         if (id === SHELL_AGENT_ID) {
@@ -601,14 +618,21 @@ export class QaapAgentTaskRunner {
         }
         this.assertQaiqConfigured(id);
         const detected = this.detectedAgents.get(id);
+        let command: string;
         if (detected) {
-            return this.applyTemplate(detected.template, runnerPrompt, this.buildTemplateVars(id));
+            command = this.applyTemplate(detected.template, runnerPrompt, this.buildTemplateVars(id));
+        } else {
+            const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
+            if (envTemplate) {
+                command = this.applyTemplate(envTemplate, runnerPrompt, this.buildTemplateVars(id));
+            } else {
+                command = runnerPrompt;
+            }
         }
-        const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
-        if (envTemplate) {
-            return this.applyTemplate(envTemplate, runnerPrompt, this.buildTemplateVars(id));
+        if (autoApprove) {
+            command = applyAutoApproveToCommand(command, id);
         }
-        return runnerPrompt;
+        return command;
     }
 
     protected resolveAgentId(prompt: string, agentId: string | undefined): string {
@@ -650,8 +674,14 @@ export class QaapAgentTaskRunner {
         let match: RegExpExecArray | null;
         while ((match = regex.exec(prompt)) !== null) {
             const token = resolveQaapAgentMentionToken(match[1]);
-            if (token === 'codex' || token === 'claude' || token === QAIQ_AGENT_ID || token === 'aider' || token === 'shell' || this.detectedAgents.has(token)) {
-                last = token;
+            if (
+                token === QAIQ_AGENT_ID
+                || token === SHELL_AGENT_ID
+                || QAAP_BUILTIN_AGENT_IDS.has(token)
+                || resolveQaapBuiltinAgentMentionId(token)
+                || this.detectedAgents.has(token)
+            ) {
+                last = resolveQaapBuiltinAgentMentionId(token) ?? token;
             }
         }
         return last;
@@ -769,6 +799,24 @@ export class QaapAgentTaskRunner {
         return task;
     }
 
+    /**
+     * Best-effort reply to a CLI permission prompt for a manual-approval task.
+     * Requires the task to have been spawned with stdin piped (`autoApprove === false`).
+     */
+    respondToApprovalPrompt(taskId: string, action: 'approve' | 'reject'): boolean {
+        const child = this.processes.get(taskId);
+        if (!child?.stdin || !this.stdinInteractiveTasks.has(taskId)) {
+            return false;
+        }
+        const payload = action === 'approve' ? 'y\n' : 'n\n';
+        try {
+            child.stdin.write(payload);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     protected async spawnProcessWhenReady(task: QaapAgentTask, request: QaapCreateAgentTaskRequest): Promise<void> {
         if (this.preferenceService) {
             await this.preferenceService.ready;
@@ -776,7 +824,8 @@ export class QaapAgentTaskRunner {
         const prompt = (request.prompt ?? '').trim();
         if (prompt) {
             try {
-                const command = this.buildAgentCommand(prompt, request.agent);
+                const autoApprove = task.autoApprove !== false;
+                const command = this.buildAgentCommand(prompt, request.agent, autoApprove);
                 const next = { ...task, command };
                 this.tasks.set(task.id, next);
                 void this.persist();
@@ -796,13 +845,14 @@ export class QaapAgentTaskRunner {
     protected spawnProcess(task: QaapAgentTask): void {
         fs.mkdirSync(STORE_DIR, { recursive: true });
         const logStream = fs.createWriteStream(this.logPath(task.id), { flags: 'w' });
+        const stdinInteractive = task.autoApprove === false;
         let child: ChildProcess;
         try {
             child = spawn(task.command, {
                 cwd: task.cwd,
                 shell: true,
                 env: this.buildChildEnv(task),
-                stdio: ['ignore', 'pipe', 'pipe'],
+                stdio: stdinInteractive ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
             });
         } catch (error) {
             logStream.end(`Failed to start: ${error instanceof Error ? error.message : String(error)}\n`);
@@ -810,6 +860,9 @@ export class QaapAgentTaskRunner {
             return;
         }
         this.processes.set(task.id, child);
+        if (stdinInteractive) {
+            this.stdinInteractiveTasks.add(task.id);
+        }
         let idleTimer: NodeJS.Timeout | undefined;
         const clearIdleTimer = (): void => {
             if (idleTimer) {
@@ -846,6 +899,7 @@ export class QaapAgentTaskRunner {
             clearIdleTimer();
             logStream.end();
             this.processes.delete(task.id);
+            this.stdinInteractiveTasks.delete(task.id);
             // A SIGTERM-killed task is already marked 'cancelled' by cancel().
             if (this.tasks.get(task.id)?.state !== 'running') {
                 return;
@@ -888,7 +942,7 @@ export class QaapAgentTaskRunner {
                 env.IS_SANDBOX = '1';
             }
         }
-        this.applyHelperEnv(env, task.id);
+        this.applyHelperEnv(env, task.id, task.autoApprove);
         return env;
     }
 
@@ -972,7 +1026,7 @@ export class QaapAgentTaskRunner {
      * Callers can use this to expose `qaap-task` to any spawned process — agent tasks, interactive
      * terminals, etc.
      */
-    applyHelperEnv(env: NodeJS.ProcessEnv, parentTaskId?: string): boolean {
+    applyHelperEnv(env: NodeJS.ProcessEnv, parentTaskId?: string, autoApprove?: boolean): boolean {
         if (!this.helperToken || !this.helperApiUrl) {
             return false;
         }
@@ -980,6 +1034,9 @@ export class QaapAgentTaskRunner {
         env.QAAP_TASK_API_URL = this.helperApiUrl;
         if (parentTaskId) {
             env.QAAP_TASK_PARENT_ID = parentTaskId;
+        }
+        if (autoApprove !== false) {
+            env.QAAP_TASK_AUTO_APPROVE = '1';
         }
         env.PATH = `${HELPER_BIN_DIR}${path.delimiter}${env.PATH ?? ''}`;
         return true;

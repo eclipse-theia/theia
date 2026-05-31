@@ -18,6 +18,7 @@ import {
     QaapAgentConversationEvent,
     QaapAgentConversationSummary,
     QaapAgentMessage,
+    QaapConversationCheckpoint,
     QaapCreateAgentConversationRequest,
     QaapLinkConversationsByBranchRequest,
     QaapRenameAgentConversationRequest,
@@ -27,6 +28,15 @@ import {
 import { isQaiqAgent, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
+import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
+import {
+    areAllSubtasksSettled,
+    buildTeamSynthesisUserMessage,
+    collectSubtasksForLeader,
+    countFailedSubtasks,
+    formatSubtaskMailboxMessage,
+    isTeamSynthesisUserMessage,
+} from '../common/qaap-team-mailbox';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
 
@@ -48,16 +58,28 @@ export class QaapAgentConversationStore {
     protected readonly conversations = new Map<string, QaapAgentConversation>();
     /** Reverse index: task id → conversation turn metadata so we can route output/completion. */
     protected readonly taskToConversation = new Map<string, { conversationId: string; userMessageId: string; agentMessageId?: string; startSha?: string }>();
+    /** Subtask ids whose completion was already appended to a leader conversation (passive mailbox). */
+    protected readonly subtaskMailboxDelivered = new Set<string>();
+    /** Leader turn task ids for which an auto-synthesis user message was already posted. */
+    protected readonly teamSynthesisTriggeredForLeader = new Set<string>();
+    /** Leader turns waiting for the in-flight agent reply before auto-synthesis can run. */
+    protected readonly pendingTeamSynthesisForLeader = new Set<string>();
     /** Per-task parsers for QAIQ stream-json stdout. */
     protected readonly qaiqStreamByTaskId = new Map<string, QaapQaiqStreamAccumulator>();
 
     protected readonly onDidChangeEmitter = new Emitter<QaapAgentConversationEvent>();
     readonly onDidChange: Event<QaapAgentConversationEvent> = this.onDidChangeEmitter.event;
+    /** Resolves once {@link restoreFromDisk} finishes — consumers that reconcile against conversations should await this. */
+    protected restoreReady!: Promise<void>;
 
     @postConstruct()
     protected init(): void {
-        void this.restoreFromDisk();
+        this.restoreReady = this.restoreFromDisk();
         this.taskRunner.onDidChangeTask(event => this.onTaskChanged(event));
+    }
+
+    whenReady(): Promise<void> {
+        return this.restoreReady;
     }
 
     list(cwd: string | undefined): QaapAgentConversationSummary[] {
@@ -96,6 +118,16 @@ export class QaapAgentConversationStore {
         return this.conversations.get(id);
     }
 
+    /** Running turn task id for a conversation, if any. */
+    getActiveTaskIdForConversation(conversationId: string): string | undefined {
+        for (const [taskId, ref] of this.taskToConversation) {
+            if (ref.conversationId === conversationId) {
+                return taskId;
+            }
+        }
+        return undefined;
+    }
+
     create(request: QaapCreateAgentConversationRequest): QaapAgentConversation {
         const cwd = path.resolve(request.cwd ?? '');
         if (!path.isAbsolute(cwd) || !this.isDirectory(cwd)) {
@@ -118,6 +150,8 @@ export class QaapAgentConversationStore {
             createdAt: now,
             updatedAt: now,
             messages: [],
+            ...(request.parallelRunId ? { parallelRunId: request.parallelRunId } : {}),
+            ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
         };
         this.conversations.set(id, conversation);
         this.fire({ type: 'created', conversation: toConversationSummary(conversation) });
@@ -302,6 +336,9 @@ export class QaapAgentConversationStore {
                 patch.status = 'idle';
             }
         }
+        if (request.autoApprove !== undefined) {
+            patch.autoApprove = request.autoApprove ? undefined : false;
+        }
         if (request.linkedPullRequest !== undefined) {
             patch.linkedPullRequest = request.linkedPullRequest ?? undefined;
         }
@@ -364,19 +401,148 @@ export class QaapAgentConversationStore {
      */
     protected onTaskChanged(event: QaapAgentTaskEvent): void {
         const ref = this.taskToConversation.get(event.task.id);
-        if (!ref) {
+        if (ref) {
+            if (event.type === 'output') {
+                this.applyTaskOutput(event.task.id, ref, event.chunk);
+                return;
+            }
+            const task = event.task;
+            if (task.state === 'running') {
+                return; // only react when the turn settles
+            }
+            this.taskToConversation.delete(task.id);
+            void this.applyTaskOutcome(ref.conversationId, ref.userMessageId, ref.agentMessageId, task, ref.startSha);
             return;
         }
-        if (event.type === 'output') {
-            this.applyTaskOutput(event.task.id, ref, event.chunk);
+        if (event.type === 'output' || event.type === 'created') {
             return;
         }
         const task = event.task;
-        if (task.state === 'running') {
-            return; // only react when the turn settles
+        if (!task.parentId || task.state === 'running') {
+            return;
         }
-        this.taskToConversation.delete(task.id);
-        void this.applyTaskOutcome(ref.conversationId, ref.userMessageId, ref.agentMessageId, task, ref.startSha);
+        void this.deliverSubtaskMailbox(task);
+    }
+
+    /**
+     * When a delegated subtask (qaap-task with parentId) finishes, append its log to the leader
+     * conversation so the next turn can synthesize results without polling task ids manually.
+     */
+    protected async deliverSubtaskMailbox(task: QaapAgentTask): Promise<void> {
+        if (this.subtaskMailboxDelivered.has(task.id)) {
+            return;
+        }
+        const leaderTaskId = this.resolveLeaderTaskId(task);
+        const conversationId = leaderTaskId ? this.findConversationIdForLeaderTask(leaderTaskId) : undefined;
+        if (!conversationId) {
+            return;
+        }
+        const conv = this.conversations.get(conversationId);
+        if (!conv) {
+            return;
+        }
+        this.subtaskMailboxDelivered.add(task.id);
+        const detail = await this.taskRunner.detail(task.id);
+        const log = this.filterAgentLogChunk((detail?.log ?? '').trim());
+        const message: QaapAgentMessage = {
+            id: randomUUID(),
+            role: 'agent',
+            content: formatSubtaskMailboxMessage(task, log),
+            createdAt: Date.now(),
+        };
+        const next: QaapAgentConversation = {
+            ...conv,
+            messages: [...conv.messages, message],
+            updatedAt: Date.now(),
+        };
+        this.conversations.set(conversationId, next);
+        this.fire({ type: 'message', conversationId, cwd: next.cwd, message });
+        this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+        void this.persist();
+        if (leaderTaskId) {
+            this.maybeTriggerTeamSynthesis(leaderTaskId, conversationId);
+        }
+    }
+
+    /** Walk parentId links until the leader turn task spawned for a user message. */
+    protected resolveLeaderTaskId(task: QaapAgentTask): string | undefined {
+        let leaderId = task.parentId;
+        if (!leaderId) {
+            return undefined;
+        }
+        const visited = new Set<string>();
+        while (leaderId && !visited.has(leaderId)) {
+            visited.add(leaderId);
+            const parent = this.findTaskById(leaderId);
+            if (parent?.parentId) {
+                leaderId = parent.parentId;
+            } else {
+                return leaderId;
+            }
+        }
+        return undefined;
+    }
+
+    protected findConversationIdForLeaderTask(leaderTaskId: string): string | undefined {
+        const active = this.taskToConversation.get(leaderTaskId);
+        if (active) {
+            return active.conversationId;
+        }
+        for (const conv of this.conversations.values()) {
+            if (conv.messages.some(message => message.role === 'user' && message.taskId === leaderTaskId)) {
+                return conv.id;
+            }
+        }
+        return undefined;
+    }
+
+    protected findTaskById(id: string): QaapAgentTask | undefined {
+        return this.taskRunner.list().find(candidate => candidate.id === id);
+    }
+
+    /**
+     * When every delegated subtask for a leader turn has settled (and mailbox entries were
+     * appended), post an auto-synthesis user turn so the leader integrates results.
+     */
+    protected maybeTriggerTeamSynthesis(leaderTaskId: string, conversationId: string): void {
+        if (this.teamSynthesisTriggeredForLeader.has(leaderTaskId)) {
+            return;
+        }
+        const conv = this.conversations.get(conversationId);
+        if (!conv || conv.paused) {
+            return;
+        }
+        const subtasks = collectSubtasksForLeader(leaderTaskId, this.taskRunner.list());
+        if (!areAllSubtasksSettled(subtasks)) {
+            return;
+        }
+        if (!subtasks.every(subtask => this.subtaskMailboxDelivered.has(subtask.id))) {
+            return;
+        }
+        if (conv.status === 'streaming') {
+            this.pendingTeamSynthesisForLeader.add(leaderTaskId);
+            return;
+        }
+        this.pendingTeamSynthesisForLeader.delete(leaderTaskId);
+        this.teamSynthesisTriggeredForLeader.add(leaderTaskId);
+        const synthesisMessage = buildTeamSynthesisUserMessage(subtasks.length, countFailedSubtasks(subtasks));
+        try {
+            this.postUserMessage(conversationId, synthesisMessage);
+        } catch {
+            this.teamSynthesisTriggeredForLeader.delete(leaderTaskId);
+        }
+    }
+
+    protected finishLeaderTurnAndMaybeSynthesize(
+        conversationId: string,
+        leaderTaskId: string,
+        next: QaapAgentConversation,
+    ): void {
+        this.conversations.set(conversationId, next);
+        this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+        void this.persist();
+        this.pendingTeamSynthesisForLeader.delete(leaderTaskId);
+        this.maybeTriggerTeamSynthesis(leaderTaskId, conversationId);
     }
 
     protected applyTaskOutput(
@@ -471,9 +637,7 @@ export class QaapAgentConversationStore {
         }
         if (task.state === 'cancelled') {
             const next: QaapAgentConversation = { ...conv, status: 'idle', updatedAt: Date.now() };
-            this.conversations.set(conversationId, next);
-            this.fire({ type: 'updated', conversation: toConversationSummary(next) });
-            void this.persist();
+            this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, next);
             return;
         }
         const detail = await this.taskRunner.detail(task.id);
@@ -487,9 +651,7 @@ export class QaapAgentConversationStore {
             const withReply = log && !agentMessageId
                 ? this.appendAgentReply(errored, log)
                 : errored;
-            this.conversations.set(conversationId, withReply);
-            this.fire({ type: 'updated', conversation: toConversationSummary(withReply) });
-            void this.persist();
+            this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
             return;
         }
         let withReply: QaapAgentConversation;
@@ -524,13 +686,23 @@ export class QaapAgentConversationStore {
         if (gitStats) {
             withReply = { ...withReply, gitDiffAdded: gitStats.added, gitDiffRemoved: gitStats.removed };
         }
+        const userMessage = withReply.messages.find(m => m.id === userMessageId);
+        const checkpoint = this.captureCheckpoint(
+            withReply.cwd,
+            conversationId,
+            userMessageId,
+            userMessage ? this.checkpointLabel(userMessage.content) : 'Turn',
+            gitStats,
+        );
+        if (checkpoint) {
+            withReply = { ...withReply, checkpoints: [...(withReply.checkpoints ?? []), checkpoint] };
+        }
         this.conversations.set(conversationId, withReply);
         const agentMessage = withReply.messages[withReply.messages.length - 1];
         if (agentMessage) {
             this.fire({ type: 'message', conversationId, cwd: withReply.cwd, message: agentMessage });
         }
-        this.fire({ type: 'updated', conversation: toConversationSummary(withReply) });
-        void this.persist();
+        this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
     }
 
     protected appendAgentReply(conv: QaapAgentConversation, content: string): QaapAgentConversation {
@@ -603,6 +775,7 @@ export class QaapAgentConversationStore {
             agent: turnAgentId,
             cwd: conv.cwd,
             title: conv.title,
+            ...(conv.autoApprove === false ? { autoApprove: false } : {}),
         };
     }
 
@@ -622,9 +795,11 @@ export class QaapAgentConversationStore {
      */
     protected buildPrompt(conv: QaapAgentConversation): string {
         const lastUser = conv.messages[conv.messages.length - 1];
+        const skipDelegation = isTeamSynthesisUserMessage(lastUser.content);
         const history = conv.messages.slice(0, -1);
         if (history.length === 0) {
-            return this.stripLeadingAgentMention(lastUser.content);
+            const seed = this.stripLeadingAgentMention(lastUser.content);
+            return skipDelegation ? seed : this.appendTeamDelegation(seed, conv.agentId);
         }
         const lines: string[] = [
             'You are continuing an ongoing conversation. The transcript so far:',
@@ -637,7 +812,14 @@ export class QaapAgentConversationStore {
         lines.push('Now respond to the latest user message:');
         lines.push('');
         lines.push(`USER: ${this.stripLeadingAgentMention(lastUser.content)}`);
-        return lines.join('\n');
+        const transcript = lines.join('\n');
+        return skipDelegation ? transcript : this.appendTeamDelegation(transcript, conv.agentId);
+    }
+
+    /** Inject lightweight team-delegation instructions so the leader can spawn sub-tasks via `qaap-task`. */
+    protected appendTeamDelegation(prompt: string, turnAgentId: string): string {
+        const agentIds = this.taskRunner.listAgents().map(agent => agent.id);
+        return appendTeamDelegationToPrompt(prompt, turnAgentId, agentIds);
     }
 
     /** Drop repetitive QAIQ/OpenClaude metadata noise from chat transcripts (still kept in task logs). */
@@ -779,6 +961,89 @@ export class QaapAgentConversationStore {
         } catch {
             return undefined;
         }
+    }
+
+    /**
+     * Capture a snapshot of the full working tree as a git commit object, kept alive by a ref under
+     * `refs/qaap/checkpoints/*`. Uses a throwaway `GIT_INDEX_FILE` so the user's index/branch/HEAD
+     * are never touched. Returns undefined when not a git repo or git plumbing fails.
+     */
+    protected captureCheckpoint(
+        cwd: string,
+        conversationId: string,
+        messageId: string,
+        label: string,
+        stats?: { added: number; removed: number },
+    ): QaapConversationCheckpoint | undefined {
+        const tmpIndex = path.join(os.tmpdir(), `qaap-ckpt-${randomUUID()}.index`);
+        const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
+        try {
+            // Seed the throwaway index from HEAD when a commit exists (best-effort; empty repo is fine).
+            spawnSync('git', ['read-tree', 'HEAD'], { cwd, env, encoding: 'utf8' });
+            if (spawnSync('git', ['add', '-A'], { cwd, env, encoding: 'utf8' }).status !== 0) {
+                return undefined;
+            }
+            const tree = spawnSync('git', ['write-tree'], { cwd, env, encoding: 'utf8' });
+            const treeId = tree.status === 0 ? tree.stdout.trim() : '';
+            if (!treeId) {
+                return undefined;
+            }
+            const commitRes = spawnSync(
+                'git',
+                ['-c', 'user.email=qaap@local', '-c', 'user.name=qaap', 'commit-tree', treeId, '-m', `qaap checkpoint: ${label}`],
+                { cwd, env, encoding: 'utf8' },
+            );
+            const commit = commitRes.status === 0 ? commitRes.stdout.trim() : '';
+            if (!commit) {
+                return undefined;
+            }
+            const ref = `refs/qaap/checkpoints/${conversationId}/${messageId}-${Date.now()}`;
+            spawnSync('git', ['update-ref', ref, commit], { cwd, encoding: 'utf8' });
+            return { id: randomUUID(), messageId, label, commit, ref, capturedAt: Date.now(), added: stats?.added, removed: stats?.removed };
+        } catch {
+            return undefined;
+        } finally {
+            try {
+                fs.rmSync(tmpIndex, { force: true });
+            } catch { /* ignore */ }
+        }
+    }
+
+    protected checkpointLabel(content: string): string {
+        const clean = content.replace(/\s+/g, ' ').trim();
+        return clean.length > 60 ? `${clean.slice(0, 57)}…` : (clean || 'Turn');
+    }
+
+    /**
+     * Restore the working tree to a checkpoint's snapshot. Captures an "undo" checkpoint of the
+     * current state first, so the restore is reversible. Only touches the working tree (never the
+     * index, branch or commit history). Files created AFTER the checkpoint are left as-is.
+     */
+    async restoreCheckpoint(conversationId: string, checkpointId: string): Promise<QaapAgentConversation | undefined> {
+        const conv = this.conversations.get(conversationId);
+        if (!conv) {
+            return undefined;
+        }
+        const checkpoint = conv.checkpoints?.find(c => c.id === checkpointId);
+        if (!checkpoint) {
+            throw new Error('Checkpoint not found.');
+        }
+        if (spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: conv.cwd, encoding: 'utf8' }).status !== 0) {
+            throw new Error('The conversation workspace is not a git repository.');
+        }
+        const undo = this.captureCheckpoint(conv.cwd, conversationId, checkpoint.messageId, 'Before restore');
+        const restore = spawnSync('git', ['restore', '--source', checkpoint.commit, '--worktree', '--', '.'], { cwd: conv.cwd, encoding: 'utf8' });
+        if (restore.status !== 0) {
+            throw new Error(`Restore failed: ${(restore.stderr || '').trim() || 'git restore error'}`);
+        }
+        let next = conv;
+        if (undo) {
+            next = { ...conv, checkpoints: [...(conv.checkpoints ?? []), undo], updatedAt: Date.now() };
+            this.conversations.set(conversationId, next);
+            this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+            void this.persist();
+        }
+        return next;
     }
 
     protected isDirectory(target: string): boolean {

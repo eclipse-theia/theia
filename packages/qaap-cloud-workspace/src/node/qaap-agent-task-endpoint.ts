@@ -95,6 +95,7 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
                 cwd: body.cwd,
                 title: body.title,
                 parentId,
+                autoApprove: body.autoApprove,
             });
             res.status(201).json(task);
         } catch (error) {

@@ -1,4 +1,4 @@
-/* Background-tasks surface — launch and monitor VPS tasks from mobile. */
+/* VPS Tasks surface — agent conversations + background commands (desktop Work Hub parity). */
 
 .qaap-agent-tasks {
     overflow: hidden;
@@ -115,9 +115,15 @@
     color: var(--theia-badge-foreground);
 }
 
-.qaap-agent-tasks-state--running {
+.qaap-agent-tasks-state--running,
+.qaap-agent-tasks-state--streaming {
     background: var(--theia-progressBar-background, var(--theia-focusBorder));
     color: var(--theia-editor-background);
+}
+
+.qaap-agent-tasks-state--idle {
+    background: var(--theia-badge-background);
+    color: var(--theia-badge-foreground);
 }
 
 .qaap-agent-tasks-state--completed {
@@ -177,4 +183,36 @@
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--theia-foreground);
+}
+
+.qaap-agent-tasks-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-top: 1px solid var(--theia-editorWidget-border);
+}
+
+.qaap-agent-tasks-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px 6px;
+}
+
+.qaap-agent-tasks-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-tasks-section-count {
+    font-size: 11px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-tasks-section .qaap-agent-tasks-list {
+    max-height: 45vh;
 }
