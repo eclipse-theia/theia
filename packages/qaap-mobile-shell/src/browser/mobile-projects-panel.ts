@@ -10278,6 +10278,51 @@ export class MobileProjectsPanel {
         return block;
     }
 
+    /**
+     * Render preformatted output that clamps to a few preview lines when long, with an inline
+     * expand/collapse toggle — used for tool results and terminal output so the transcript stays
+     * compact but every line is one tap away.
+     */
+    protected createTranscriptClampedPre(text: string, className: string): HTMLElement {
+        const previewLines = 4;
+        const pre = document.createElement('pre');
+        pre.className = className;
+        pre.textContent = text;
+        const lineCount = text.split('\n').length;
+        if (lineCount <= previewLines) {
+            return pre;
+        }
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-agent-clamp';
+        wrap.style.setProperty('--qaap-clamp-lines', String(previewLines));
+        wrap.append(pre);
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'theia-mobile-agent-clamp-toggle';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-clamp-chevron codicon codicon-chevron-down';
+        chevron.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        const hiddenLines = lineCount - previewLines;
+        const syncToggle = () => {
+            const expanded = wrap.classList.contains('theia-mod-expanded');
+            label.textContent = expanded
+                ? nls.localize('qaap/mobileProjects/transcriptShowLess', 'Show less')
+                : nls.localize('qaap/mobileProjects/transcriptShowMoreLines', 'Show {0} more lines', String(hiddenLines));
+            chevron.classList.toggle('codicon-chevron-down', !expanded);
+            chevron.classList.toggle('codicon-chevron-up', expanded);
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        };
+        syncToggle();
+        toggle.append(chevron, label);
+        toggle.addEventListener('click', () => {
+            wrap.classList.toggle('theia-mod-expanded');
+            syncToggle();
+        });
+        wrap.append(toggle);
+        return wrap;
+    }
+
     protected createTranscriptToolWindow(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
         const kind = this.resolveTranscriptToolKind(segment.name);
         const target = this.extractTranscriptToolPath(segment.args)
@@ -10319,10 +10364,10 @@ export class MobileProjectsPanel {
         if (hasResult) {
             const body = document.createElement('div');
             body.className = 'theia-mobile-agent-tool-body';
-            const result = document.createElement('pre');
-            result.className = 'theia-mobile-agent-tool-result';
-            result.textContent = this.formatTranscriptToolResult(segment.result!);
-            body.append(result);
+            body.append(this.createTranscriptClampedPre(
+                this.formatTranscriptToolResult(segment.result!),
+                'theia-mobile-agent-tool-result',
+            ));
             details.append(body);
         }
         return details;
@@ -10393,10 +10438,10 @@ export class MobileProjectsPanel {
         commandLine.append(prompt, commandText);
         body.append(commandLine);
         if (segment.result?.trim()) {
-            const output = document.createElement('pre');
-            output.className = 'theia-mobile-agent-shell-output';
-            output.textContent = this.cleanTranscriptDisplayText(segment.result);
-            body.append(output);
+            body.append(this.createTranscriptClampedPre(
+                this.cleanTranscriptDisplayText(segment.result),
+                'theia-mobile-agent-shell-output',
+            ));
         }
         details.append(summary, body);
         return details;
@@ -10580,10 +10625,7 @@ export class MobileProjectsPanel {
         summary.append(icon, label, state);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
-        const output = document.createElement('pre');
-        output.className = 'theia-mobile-agent-shell-output';
-        output.textContent = content;
-        body.append(output);
+        body.append(this.createTranscriptClampedPre(content, 'theia-mobile-agent-shell-output'));
         details.append(summary, body);
         return details;
     }

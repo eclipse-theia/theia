@@ -10340,6 +10340,42 @@ button.theia-mobile-transcript-team-row:focus-visible {
   color: var(--theia-foreground);
 }
 
+/* Clamp long output (tool results, terminal output) to a few preview lines with expand/collapse. */
+.theia-mobile-agent-clamp {
+  position: relative;
+}
+
+.theia-mobile-agent-clamp:not(.theia-mod-expanded) > pre {
+  max-height: calc(var(--qaap-clamp-lines, 4) * 1.45em + 0.25em);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 64%, transparent);
+  mask-image: linear-gradient(180deg, #000 64%, transparent);
+}
+
+.theia-mobile-agent-clamp-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.3)) 80%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 6%, transparent);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--qaap-tr-fs-meta, 11px);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-agent-clamp-toggle:active {
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 13%, transparent);
+}
+
+.theia-mobile-agent-clamp-chevron {
+  font-size: 13px;
+}
+
 .theia-mobile-agent-shell-window {
   overflow: hidden;
   border-radius: 10px;
