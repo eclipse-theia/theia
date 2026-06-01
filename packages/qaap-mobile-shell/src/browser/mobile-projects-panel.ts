@@ -47,6 +47,7 @@ import {
     buildConversationListMetrics,
     conversationTurnProgressRatio,
     formatToolActivityLabel,
+    parseDiffStatsFromText,
 } from '../common/qaap-agent-conversation-list-metrics';
 import {
     QaapAgentConversationDTO,
@@ -9776,6 +9777,10 @@ export class MobileProjectsPanel {
         if (activity) {
             body.append(activity);
         }
+        const diffSummary = this.createTranscriptDiffSummaryCard(segments);
+        if (diffSummary) {
+            body.append(diffSummary);
+        }
         const changedFiles = this.createTranscriptChangedFilesCard(segments);
         if (changedFiles) {
             body.append(changedFiles);
@@ -9784,8 +9789,12 @@ export class MobileProjectsPanel {
         if (verification) {
             body.append(verification);
         }
-        for (const segment of segments) {
+        for (const segment of segments.filter(segment => segment.type === 'text')) {
             body.append(this.createTranscriptSegmentDetails(segment));
+        }
+        const technicalDetails = this.createTranscriptTechnicalDetailsCard(segments);
+        if (technicalDetails) {
+            body.append(technicalDetails);
         }
         row.append(body);
         if (error) {
@@ -9824,6 +9833,29 @@ export class MobileProjectsPanel {
         }
         timeline.append(list);
         return timeline;
+    }
+
+    protected createTranscriptDiffSummaryCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
+        const stats = this.resolveTranscriptDiffStats(segments);
+        if (!stats || (stats.added === 0 && stats.removed === 0)) {
+            return undefined;
+        }
+        const card = document.createElement('section');
+        card.className = 'theia-mobile-agent-premium-card theia-mobile-agent-diff-summary';
+        const head = document.createElement('div');
+        head.className = 'theia-mobile-agent-premium-head';
+        head.textContent = nls.localize('qaap/mobileProjects/transcriptDiffSummary', 'Change summary');
+        const statsRow = document.createElement('div');
+        statsRow.className = 'theia-mobile-agent-diff-stats';
+        const added = document.createElement('span');
+        added.className = 'theia-mobile-agent-diff-stat theia-mod-added';
+        added.textContent = `+${stats.added}`;
+        const removed = document.createElement('span');
+        removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
+        removed.textContent = `-${stats.removed}`;
+        statsRow.append(added, removed);
+        card.append(head, statsRow);
+        return card;
     }
 
     protected createTranscriptChangedFilesCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
@@ -9898,6 +9930,29 @@ export class MobileProjectsPanel {
         return card;
     }
 
+    protected createTranscriptTechnicalDetailsCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
+        const technical = segments.filter(segment => segment.type !== 'text');
+        if (technical.length === 0) {
+            return undefined;
+        }
+        const details = document.createElement('details');
+        details.className = 'theia-mobile-agent-technical-details';
+        const summary = document.createElement('summary');
+        summary.textContent = nls.localize(
+            'qaap/mobileProjects/transcriptTechnicalDetails',
+            'Technical details ({0})',
+            String(technical.length),
+        );
+        details.append(summary);
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-technical-details-body';
+        for (const segment of technical) {
+            body.append(this.createTranscriptSegmentDetails(segment));
+        }
+        details.append(body);
+        return details;
+    }
+
     protected resolveTranscriptActivityItems(
         segments: QaapAgentMessageSegmentDTO[],
     ): Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }> {
@@ -9963,6 +10018,28 @@ export class MobileProjectsPanel {
             });
         }
         return checks;
+    }
+
+    protected resolveTranscriptDiffStats(
+        segments: QaapAgentMessageSegmentDTO[],
+    ): { readonly added: number; readonly removed: number } | undefined {
+        let added = 0;
+        let removed = 0;
+        let found = false;
+        for (const segment of segments) {
+            const texts = segment.type === 'tool'
+                ? [segment.args, segment.result ?? '']
+                : [segment.content];
+            for (const text of texts) {
+                const parsed = parseDiffStatsFromText(this.cleanTranscriptDisplayText(text));
+                if (parsed) {
+                    added += parsed.added;
+                    removed += parsed.removed;
+                    found = true;
+                }
+            }
+        }
+        return found ? { added, removed } : undefined;
     }
 
     protected resolveTranscriptFileChangeKind(toolName: string): 'edited' | 'created' | undefined {
