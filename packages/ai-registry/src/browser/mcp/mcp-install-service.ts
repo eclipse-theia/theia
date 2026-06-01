@@ -199,7 +199,7 @@ export class MCPInstallServiceImpl implements MCPInstallService {
         if (!matchingEntry) {
             return { kind: 'installed-user-added' };
         }
-        // Unlinked + same slug: always offer Link, regardless of config drift. Drift is only
+        // Unlinked + same key: always offer Link, regardless of config drift. Drift is only
         // considered actionable (fix-config) once the user has opted in by linking.
         return { kind: 'installed-manually' };
     }
@@ -223,7 +223,7 @@ export class MCPInstallServiceImpl implements MCPInstallService {
         if (linkedId && !registryEntries.some(e => e.serverId === linkedId)) {
             return { kind: 'installed-link-stale' };
         }
-        // Same slug but not linked (no registryMetadata, or pointing to a different valid
+        // Same key but not linked (no registryMetadata, or pointing to a different valid
         // id): offer Link before surfacing any drift - drift handling is a post-link concern.
         return { kind: 'installed-manually' };
     }

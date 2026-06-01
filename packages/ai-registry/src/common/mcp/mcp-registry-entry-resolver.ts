@@ -43,17 +43,17 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
         const installConfig = approval.installConfigs.find(c => !c.tool || c.tool === toolName || toolName === 'all')
             ?? approval.installConfigs[0];
         const servers = installConfig?.config?.servers ?? {};
-        const slugs = Object.keys(servers);
-        if (slugs.length === 0) {
+        const serverKeys = Object.keys(servers);
+        if (serverKeys.length === 0) {
             return undefined;
         }
-        if (slugs.length > 1) {
+        if (serverKeys.length > 1) {
             // Multi-server install configs aren't a Theia concept - we install one server
             // per registry entry. Warn so the registry maintainer is aware their payload
             // exposed more than we use, and pick the first slug deterministically.
-            console.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${slugs[0]}.`);
+            console.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${serverKeys[0]}.`);
         }
-        const localName = slugs[0];
+        const localName = serverKeys[0];
         return {
             serverId: raw.serverId,
             name: raw.name,

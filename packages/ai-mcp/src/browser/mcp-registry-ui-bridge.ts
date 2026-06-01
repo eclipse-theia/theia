@@ -40,7 +40,7 @@ export interface MCPRegistryUiBridge {
     hasServer(serverId: string): boolean;
     /**
      * Resolve the registry entry for `serverId` into a self-contained install payload
-     * (slug, config, version, configHash, display metadata). Returns `undefined` when
+     * (key, config, version, configHash, display metadata). Returns `undefined` when
      * the registry has no approval for the given id. Used by the `install-mcp` URL
      * handler to drive the install flow purely from the registry.
      */

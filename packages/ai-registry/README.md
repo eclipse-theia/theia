@@ -17,7 +17,7 @@ The AI Registry package integrates Theia with a remote AI artifact registry (suc
 ### Features
 
 - Contributes registry-approved MCP servers to the Extensions view alongside Open VSX extensions.
-- Detects whether a server is installed from the registry, manually with a matching slug, or has drifted from the registry config — and surfaces Install / Link / Update / Fix config / Uninstall accordingly.
+- Detects whether a server is installed from the registry, manually with a matching key, or has drifted from the registry config — and surfaces Install / Link / Update / Fix config / Uninstall accordingly.
 - Installs servers by writing the registry's published config snippet to the existing `ai-features.mcp.mcpServers` preference.
 
 ### Product configuration

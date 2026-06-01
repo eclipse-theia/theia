@@ -63,8 +63,8 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
     protected init(): void {
         this.handlers = {
             install: entry => this.confirmAndInstall(entry),
-            uninstall: slug => this.installService.uninstall(slug),
-            unlink: slug => this.installService.unlink(slug),
+            uninstall: serverKey => this.installService.uninstall(serverKey),
+            unlink: serverKey => this.installService.unlink(serverKey),
             update: entry => this.installService.update(entry),
             link: entry => this.installService.link(entry),
             fixConfig: entry => this.installService.fixConfig(entry)

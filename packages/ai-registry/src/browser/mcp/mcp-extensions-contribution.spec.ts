@@ -154,9 +154,9 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
         expect(entries[0].state).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
-    it('shows installed-link-stale (Unlink + Uninstall) when the local is linked to a missing id, even if the slug still matches a registry entry', async () => {
+    it('shows installed-link-stale (Unlink + Uninstall) when the local is linked to a missing id, even if the key still matches a registry entry', async () => {
         // PR scenario: user installs from the registry, then manually rewrites
-        // `registryMetadata.serverId` to a value that no longer exists. The local slug
+        // `registryMetadata.serverId` to a value that no longer exists. The local key
         // still matches a registry `localName`, but the broken id linkage must take
         // precedence - the entry has to surface as link-stale so the user sees the
         // Unlink + Uninstall affordances and the warning, not Link (which would suggest
@@ -250,7 +250,7 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         expect(githubResult.searchableText).to.contain(githubEntry.description);
     });
 
-    it('classifies a registry entry as installed-link-stale when the matching-slug local is linked to a server id missing from the registry', async () => {
+    it('classifies a registry entry as installed-link-stale when the matching-key local is linked to a server id missing from the registry', async () => {
         // PR scenario: user installed `example` from the registry, then manually pointed
         // its `registryMetadata.serverId` at an id not in the registry. In Search results
         // the matching registry entry must show the **Unlink / Uninstall** affordances -

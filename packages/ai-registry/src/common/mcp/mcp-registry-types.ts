@@ -18,7 +18,7 @@ import { MCPInstallEntryConfig } from '@theia/ai-mcp/lib/common/mcp-server-manag
 
 /**
  * Shape of `installConfigs[].config` for Theia: a `servers` map keyed by the local
- * MCP server slug chosen by the registry maintainer. Server entries use the canonical
+ * MCP server key chosen by the registry maintainer. Server entries use the canonical
  * {@link MCPInstallEntryConfig} type from `@theia/ai-mcp` so the registry and the
  * install path can never drift in shape.
  */
@@ -71,7 +71,7 @@ export interface RegistryMCPServer {
 
 /**
  * A registry MCP entry after resolving the (potentially multiple) approvals and install configs
- * down to the single (slug, config, version) tuple the install service operates on.
+ * down to the single (key, config, version) tuple the install service operates on.
  *
  * Resolution lives in the fetch layer; the install service expects this normalised shape.
  */
@@ -106,7 +106,7 @@ export interface ResolvedRegistryEntry {
  * - `installed-user-added` is only produced by `classifyLocalServer`.
  * - `installed-link-stale` is produced by both classifiers - `classifyLocalServer`
  *   when a linked local points to an unknown id, and `classifyRegistryEntry` when the
- *   slug-matching local does so. The Installed and Search views show the same Unlink
+ *   key-matching local does so. The Installed and Search views show the same Unlink
  *   and Uninstall affordances in either case.
  * - `installed-from-registry`, `installed-manually`, and `fix-config` are common.
  */

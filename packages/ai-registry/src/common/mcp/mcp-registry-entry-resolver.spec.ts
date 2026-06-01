@@ -211,7 +211,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         expect(allResolver.resolve(raw)?.config).to.deep.equal({ command: 'other-cmd' });
     });
 
-    it('warns and picks the first slug deterministically when the install config exposes multiple servers', () => {
+    it('warns and picks the first key deterministically when the install config exposes multiple servers', () => {
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/multi-server',
             name: 'Multi Server',

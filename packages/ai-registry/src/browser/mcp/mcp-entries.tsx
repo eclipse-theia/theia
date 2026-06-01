@@ -31,8 +31,8 @@ import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mc
  */
 export interface MCPEntryHandlers {
     install(entry: ResolvedRegistryEntry): Promise<void>;
-    uninstall(slug: string): Promise<void>;
-    unlink(slug: string): Promise<void>;
+    uninstall(serverKey: string): Promise<void>;
+    unlink(serverKey: string): Promise<void>;
     update(entry: ResolvedRegistryEntry): Promise<void>;
     link(entry: ResolvedRegistryEntry): Promise<void>;
     fixConfig(entry: ResolvedRegistryEntry): Promise<void>;
