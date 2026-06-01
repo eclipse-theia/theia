@@ -9827,10 +9827,10 @@ export class MobileProjectsPanel {
         }
         const timeline = document.createElement('section');
         timeline.className = 'theia-mobile-agent-premium-card theia-mobile-agent-activity-timeline';
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-agent-premium-head';
-        head.textContent = nls.localize('qaap/mobileProjects/transcriptActivityTimeline', 'Agent activity');
-        timeline.append(head);
+        timeline.append(this.createTranscriptPremiumHead(
+            'codicon-pulse',
+            nls.localize('qaap/mobileProjects/transcriptActivityTimeline', 'Agent activity'),
+        ));
         const list = document.createElement('ol');
         list.className = 'theia-mobile-agent-activity-list';
         for (const item of items.slice(-8)) {
@@ -9849,6 +9849,20 @@ export class MobileProjectsPanel {
         return timeline;
     }
 
+    /** Consistent card header: a muted leading codicon plus a label, shared by the premium cards. */
+    protected createTranscriptPremiumHead(iconClass: string, label: string): HTMLElement {
+        const head = document.createElement('div');
+        head.className = 'theia-mobile-agent-premium-head';
+        const icon = document.createElement('span');
+        icon.className = `theia-mobile-agent-premium-head-icon codicon ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'theia-mobile-agent-premium-head-label';
+        text.textContent = label;
+        head.append(icon, text);
+        return head;
+    }
+
     protected createTranscriptDiffSummaryCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
         const stats = this.resolveTranscriptDiffStats(segments);
         if (!stats || (stats.added === 0 && stats.removed === 0)) {
@@ -9856,9 +9870,10 @@ export class MobileProjectsPanel {
         }
         const card = document.createElement('section');
         card.className = 'theia-mobile-agent-premium-card theia-mobile-agent-diff-summary';
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-agent-premium-head';
-        head.textContent = nls.localize('qaap/mobileProjects/transcriptDiffSummary', 'Change summary');
+        card.append(this.createTranscriptPremiumHead(
+            'codicon-diff',
+            nls.localize('qaap/mobileProjects/transcriptDiffSummary', 'Change summary'),
+        ));
         const statsRow = document.createElement('div');
         statsRow.className = 'theia-mobile-agent-diff-stats';
         const added = document.createElement('span');
@@ -9868,7 +9883,7 @@ export class MobileProjectsPanel {
         removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
         removed.textContent = `-${stats.removed}`;
         statsRow.append(added, removed);
-        card.append(head, statsRow);
+        card.append(statsRow);
         return card;
     }
 
@@ -10015,10 +10030,10 @@ export class MobileProjectsPanel {
         }
         const card = document.createElement('section');
         card.className = 'theia-mobile-agent-premium-card theia-mobile-agent-verification';
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-agent-premium-head';
-        head.textContent = nls.localize('qaap/mobileProjects/transcriptVerification', 'Verification');
-        card.append(head);
+        card.append(this.createTranscriptPremiumHead(
+            'codicon-check-all',
+            nls.localize('qaap/mobileProjects/transcriptVerification', 'Verification'),
+        ));
         const list = document.createElement('div');
         list.className = 'theia-mobile-agent-verification-list';
         for (const check of checks.slice(-4)) {
@@ -10255,44 +10270,75 @@ export class MobileProjectsPanel {
     }
 
     protected createTranscriptToolWindow(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
+        const kind = this.resolveTranscriptToolKind(segment.name);
+        const target = this.extractTranscriptToolPath(segment.args)
+            ?? this.extractTranscriptToolShortArg(segment.args);
+        const hasResult = !!segment.result?.trim();
+
         const details = document.createElement('details');
-        details.className = 'theia-mobile-agent-tool-window';
-        details.open = !segment.finished || this.isTranscriptReadLikeTool(segment.name);
-        if (segment.finished) {
-            details.classList.add('theia-mod-done');
-        } else {
-            details.classList.add('theia-mod-running');
-        }
+        details.className = `theia-mobile-agent-tool-window theia-mod-${kind}`;
+        // Read-like results carry useful inline context, so expand them; actions stay collapsed
+        // since their change is reflected in the Changed files / Review surfaces.
+        details.open = !segment.finished || (this.isTranscriptReadLikeTool(segment.name) && hasResult);
+        details.classList.add(segment.finished ? 'theia-mod-done' : 'theia-mod-running');
 
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-tool-head';
-        const caret = document.createElement('span');
-        caret.className = 'theia-mobile-agent-tool-caret';
-        caret.textContent = '▾';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-tool-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const icon = document.createElement('span');
+        icon.className = `theia-mobile-agent-tool-icon codicon ${this.transcriptToolIconClass(kind)}`;
+        icon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('span');
         title.className = 'theia-mobile-agent-tool-title';
-        title.textContent = `Tool: ${segment.name}`;
-        const meta = document.createElement('span');
-        meta.className = 'theia-mobile-agent-tool-meta';
-        meta.textContent = this.extractTranscriptToolPath(segment.args)
-            ?? this.extractTranscriptToolShortArg(segment.args)
-            ?? '';
-        summary.append(caret, title, meta);
+        title.textContent = this.transcriptToolVerb(kind, segment.name);
+        summary.append(chevron, icon, title);
+        if (target) {
+            const chip = document.createElement('span');
+            chip.className = 'theia-mobile-agent-tool-target';
+            chip.textContent = target;
+            summary.append(chip);
+        }
+        const state = document.createElement('span');
+        state.className = 'theia-mobile-agent-tool-state';
+        state.setAttribute('aria-hidden', 'true');
+        summary.append(state);
 
-        const body = document.createElement('div');
-        body.className = 'theia-mobile-agent-tool-body';
-        const args = document.createElement('pre');
-        args.className = 'theia-mobile-agent-tool-args';
-        args.textContent = this.cleanTranscriptDisplayText(segment.args);
-        body.append(args);
-        if (segment.result?.trim()) {
+        details.append(summary);
+        // Only the human-readable result is shown inline; raw JSON arguments are intentionally hidden.
+        if (hasResult) {
+            const body = document.createElement('div');
+            body.className = 'theia-mobile-agent-tool-body';
             const result = document.createElement('pre');
             result.className = 'theia-mobile-agent-tool-result';
-            result.textContent = this.formatTranscriptToolResult(segment.result);
+            result.textContent = this.formatTranscriptToolResult(segment.result!);
             body.append(result);
+            details.append(body);
         }
-        details.append(summary, body);
         return details;
+    }
+
+    /** Codicon for a tool window header, by resolved tool kind. */
+    protected transcriptToolIconClass(kind: string): string {
+        switch (kind) {
+            case 'reading': return 'codicon-file';
+            case 'searching': return 'codicon-search';
+            case 'editing': return 'codicon-edit';
+            case 'terminal': return 'codicon-terminal';
+            default: return 'codicon-tools';
+        }
+    }
+
+    /** Human verb for a finished/running tool, e.g. "Read", "Edited", "Searched". */
+    protected transcriptToolVerb(kind: string, toolName: string): string {
+        switch (kind) {
+            case 'reading': return nls.localize('qaap/mobileProjects/transcriptToolRead', 'Read');
+            case 'searching': return nls.localize('qaap/mobileProjects/transcriptToolSearched', 'Searched');
+            case 'editing': return nls.localize('qaap/mobileProjects/transcriptToolEdited', 'Edited');
+            case 'terminal': return nls.localize('qaap/mobileProjects/transcriptToolRan', 'Ran');
+            default: return toolName.replace(/_/g, ' ');
+        }
     }
 
     protected createTranscriptShellDetails(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
@@ -10350,33 +10396,20 @@ export class MobileProjectsPanel {
     protected createTranscriptStreamingActivityRow(conv: QaapAgentConversationDTO): HTMLElement {
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent theia-mod-streaming theia-mobile-agent-activity';
-        const roleEl = document.createElement('div');
-        roleEl.className = 'theia-mobile-agent-transcript-role';
-        roleEl.textContent = nls.localize('qaap/mobileProjects/transcriptAgent', 'Agent');
-
-        const body = document.createElement('div');
-        body.className = 'theia-mobile-agent-activity-body';
-
-        const pulse = document.createElement('span');
-        pulse.className = 'theia-mobile-agent-activity-pulse';
-        pulse.setAttribute('aria-hidden', 'true');
-
-        const copy = document.createElement('div');
-        copy.className = 'theia-mobile-agent-activity-copy';
         const state = this.resolveTranscriptStreamingActivity(conv);
-        const title = document.createElement('div');
-        title.className = 'theia-mobile-agent-activity-title';
-        title.textContent = state.title;
-        const detail = document.createElement('div');
-        detail.className = 'theia-mobile-agent-activity-detail';
-        detail.textContent = state.detail;
-        copy.append(title, detail);
 
-        body.append(pulse, copy);
-        row.append(roleEl, body);
-
-        const steps = this.createTranscriptStreamingSteps(state.kind);
-        row.append(steps);
+        // A single, live "thinking/acting" line — minimalist, with an animated dot and a shimmering
+        // label that reflects what the agent is doing right now.
+        const line = document.createElement('div');
+        line.className = `theia-mobile-agent-stream-line theia-mod-${state.kind}`;
+        const dot = document.createElement('span');
+        dot.className = 'theia-mobile-agent-stream-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-stream-label';
+        label.textContent = `${state.title}…`;
+        line.append(dot, label);
+        row.append(line);
         return row;
     }
 
