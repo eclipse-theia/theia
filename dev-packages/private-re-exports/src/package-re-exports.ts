@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import cp = require('child_process');
 import fs = require('fs');
 import path = require('path');
 import { PackageJson, parseModule, ReExportJson } from './utility';
@@ -23,9 +22,19 @@ export async function readJson<T = unknown>(jsonPath: string): Promise<T> {
     return JSON.parse(await fs.promises.readFile(jsonPath, 'utf8')) as T;
 }
 
+export function readJsonSync<T = unknown>(jsonPath: string): T {
+    return JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as T;
+}
+
 export async function readPackageJson(packageName: string, options?: { paths?: string[] }): Promise<[string, PackageJson]> {
     const packageJsonPath = require.resolve(`${packageName}/package.json`, options);
     const packageJson = await readJson<PackageJson>(packageJsonPath);
+    return [packageJsonPath, packageJson];
+}
+
+export function readPackageJsonSync(packageName: string, options?: { paths?: string[] }): [string, PackageJson] {
+    const packageJsonPath = require.resolve(`${packageName}/package.json`, options);
+    const packageJson = readJsonSync<PackageJson>(packageJsonPath);
     return [packageJsonPath, packageJson];
 }
 
@@ -37,6 +46,18 @@ export async function parsePackageReExports(packageJsonPath: string, packageJson
     }
     const reExportsByExportDir: ReExport[][] = await Promise.all(Object.entries(theiaReExports).map(
         async ([reExportDir, reExportJson]) => resolveTheiaReExports(packageJsonPath, packageJson, reExportDir, reExportJson))
+    );
+    return [packageRoot, ([] as ReExport[]).concat(...reExportsByExportDir)];
+}
+
+export function parsePackageReExportsSync(packageJsonPath: string, packageJson: PackageJson): [string, ReExport[]] {
+    const packageRoot = path.dirname(packageJsonPath);
+    const { theiaReExports } = packageJson;
+    if (!theiaReExports) {
+        return [packageRoot, []];
+    }
+    const reExportsByExportDir: ReExport[][] = Object.entries(theiaReExports).map(
+        ([reExportDir, reExportJson]) => resolveTheiaReExportsSync(packageJsonPath, packageJson, reExportDir, reExportJson)
     );
     return [packageRoot, ([] as ReExport[]).concat(...reExportsByExportDir)];
 }
@@ -61,6 +82,33 @@ export async function resolveTheiaReExports(
             return reExport;
         });
     }
+    return buildReExportsFromJson(packageJson, reExportDir, reExportJson);
+}
+
+export function resolveTheiaReExportsSync(
+    packageJsonPath: string,
+    packageJson: PackageJson,
+    reExportDir: string,
+    reExportJson: ReExportJson
+): ReExport[] {
+    if (reExportJson.copy) {
+        const [packageName, dir] = reExportJson.copy.split('#', 2);
+        const [subPackageJsonPath, subPackageJson] = readPackageJsonSync(packageName, { paths: [path.dirname(packageJsonPath)] });
+        if (!subPackageJson.theiaReExports) {
+            return [];
+        }
+        const reExports = resolveTheiaReExportsSync(subPackageJsonPath, subPackageJson, dir, subPackageJson.theiaReExports[dir]);
+        return reExports.map(reExport => {
+            reExport.reExportDir = reExportDir;
+            reExport.internalImport = reExport.externalImport;
+            reExport.externalImport = `${packageJson.name}/${reExportDir}/${reExport.moduleName}`;
+            return reExport;
+        });
+    }
+    return buildReExportsFromJson(packageJson, reExportDir, reExportJson);
+}
+
+function buildReExportsFromJson(packageJson: PackageJson, reExportDir: string, reExportJson: ReExportJson): ReExport[] {
     const reExportsStar = reExportJson['export *'] || [];
     const reExportsEqual = reExportJson['export ='] || [];
     return [
@@ -168,19 +216,10 @@ export class PackageReExports {
     }
 
     static FromPackageSync(packageName: string): PackageReExports {
-        // Some tools (e.g. eslint) don't support async operations.
-        // To get around this, we can spawn a sub NodeJS process that will run the asynchronous
-        // logic and then synchronously wait for the serialized result on the standard output.
-        const scriptPath = require.resolve('./bin-package-re-exports-from-package.js');
-        const { stdout } = cp.spawnSync(process.platform === 'win32' ? `"${process.argv[0]}"` : process.argv[0], [...process.execArgv, scriptPath, packageName], {
-            env: {
-                ELECTRON_RUN_AS_NODE: '1'
-            },
-            encoding: 'utf8',
-            stdio: ['ignore', 'pipe', 'inherit'],
-            shell: true
-        });
-        const [packageRoot, reExports] = JSON.parse(stdout) as [string, ReExport[]];
+        // Some tools (e.g. eslint) don't support async operations, so we run the resolution
+        // synchronously.
+        const [packageJsonPath, packageJson] = readPackageJsonSync(packageName);
+        const [packageRoot, reExports] = parsePackageReExportsSync(packageJsonPath, packageJson);
         return new PackageReExports(packageName, packageRoot, reExports);
     }
 
