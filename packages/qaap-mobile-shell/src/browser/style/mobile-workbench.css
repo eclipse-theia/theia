@@ -4661,6 +4661,12 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.22));
   overflow: hidden;
   overflow: clip;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.theia-mobile-projects-sticky-composer-input-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--q-accent, #E58E40) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-accent, #E58E40) 14%, transparent);
 }
 
 .theia-mobile-projects-sticky-composer-input-wrap > .theia-mobile-projects-sticky-composer-attach,
@@ -9469,10 +9475,31 @@ button.theia-mobile-transcript-team-row:focus-visible {
 }
 
 .theia-mobile-agent-transcript-empty {
-  padding: 18px 4px;
-  font-size: 13px;
-  color: var(--theia-descriptionForeground);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px;
   text-align: center;
+}
+
+.theia-mobile-agent-transcript-empty-icon {
+  font-size: 26px;
+  margin-bottom: 4px;
+  color: color-mix(in srgb, var(--q-accent, #E58E40) 80%, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-agent-transcript-empty-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-transcript-empty-hint {
+  max-width: 240px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-mobile-agent-transcript-msg {
@@ -9489,10 +9516,12 @@ button.theia-mobile-transcript-team-row:focus-visible {
 
 .theia-mobile-agent-transcript-msg.theia-mod-user {
   align-self: flex-end;
-  max-width: 88%;
-  background: var(--theia-button-background, #0a66c2);
-  border-color: transparent;
-  color: var(--theia-button-foreground, #fff);
+  max-width: 86%;
+  padding: 9px 13px;
+  border-radius: 16px 16px 5px 16px;
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 16%, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)));
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 26%, transparent);
+  color: var(--theia-foreground);
 }
 
 .theia-mobile-agent-transcript-msg.theia-mod-agent {
