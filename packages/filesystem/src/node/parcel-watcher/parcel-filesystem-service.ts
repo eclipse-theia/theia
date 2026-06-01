@@ -27,7 +27,15 @@ import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared
 import { isOSX, isWindows } from '@theia/core';
 
 export interface ParcelWatcherOptions {
+    /** Compiled exclude patterns, used to filter events after they arrive. */
     ignored: Minimatch[]
+    /**
+     * Raw exclude patterns, passed to the native parcel `ignore` option so that excluded
+     * directories are never crawled or watched in the first place (rather than only having
+     * their events filtered out afterwards). This is what actually keeps the number of OS
+     * file watches (e.g. inotify watches on Linux) bounded on large workspaces.
+     */
+    ignorePatterns: string[]
 }
 
 export const ParcelFileSystemWatcherServerOptions = Symbol('ParcelFileSystemWatcherServerOptions');
@@ -260,7 +268,14 @@ export class ParcelWatcher {
             }
         }, {
             backend: ParcelWatcher.PARCEL_WATCHER_BACKEND,
-            ...this.parcelFileSystemWatchServerOptions.parcelOptions
+            ...this.parcelFileSystemWatchServerOptions.parcelOptions,
+            // Pass the excludes to parcel's native `ignore` so excluded directories are pruned
+            // from the watch tree (no OS watch is placed), not merely filtered out of the event
+            // stream. Mirrors VS Code's parcel watcher (`ignore: <request excludes>`).
+            ignore: [
+                ...(this.parcelFileSystemWatchServerOptions.parcelOptions.ignore ?? []),
+                ...this.watcherOptions.ignorePatterns
+            ]
         });
     }
 
@@ -435,6 +450,7 @@ export class ParcelFileSystemWatcherService implements FileSystemWatcherService 
         const watcherOptions: ParcelWatcherOptions = {
             ignored: options.ignored
                 .map(pattern => new Minimatch(pattern, { dot: true })),
+            ignorePatterns: options.ignored,
         };
         return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
     }
