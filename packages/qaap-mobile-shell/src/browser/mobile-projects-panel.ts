@@ -323,7 +323,7 @@ export class MobileProjectsPanel {
     /** Max automatic verify→fix loops before the closed loop gives up (avoids runaway turns/cost). */
     protected static readonly VERIFY_AUTO_MAX_ATTEMPTS = 3;
 
-    protected readonly transcriptMarkdownIt = markdownit({ linkify: true }).use(markdownitemoji.full);
+    protected readonly transcriptMarkdownIt = markdownit({ linkify: false }).use(markdownitemoji.full);
 
     protected readonly root: HTMLElement;
     protected readonly scroll: HTMLElement;
@@ -9780,6 +9780,10 @@ export class MobileProjectsPanel {
         if (changedFiles) {
             body.append(changedFiles);
         }
+        const verification = this.createTranscriptVerificationCard(segments);
+        if (verification) {
+            body.append(verification);
+        }
         for (const segment of segments) {
             body.append(this.createTranscriptSegmentDetails(segment));
         }
@@ -9861,6 +9865,39 @@ export class MobileProjectsPanel {
         return card;
     }
 
+    protected createTranscriptVerificationCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
+        const checks = this.resolveTranscriptVerificationChecks(segments);
+        if (checks.length === 0) {
+            return undefined;
+        }
+        const card = document.createElement('section');
+        card.className = 'theia-mobile-agent-premium-card theia-mobile-agent-verification';
+        const head = document.createElement('div');
+        head.className = 'theia-mobile-agent-premium-head';
+        head.textContent = nls.localize('qaap/mobileProjects/transcriptVerification', 'Verification');
+        card.append(head);
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-agent-verification-list';
+        for (const check of checks.slice(-4)) {
+            const row = document.createElement('div');
+            row.className = `theia-mobile-agent-verification-row theia-mod-${check.state}`;
+            const state = document.createElement('span');
+            state.className = 'theia-mobile-agent-verification-state';
+            state.textContent = check.state === 'passed'
+                ? nls.localize('qaap/mobileProjects/transcriptVerificationPassed', 'OK')
+                : check.state === 'failed'
+                    ? nls.localize('qaap/mobileProjects/transcriptVerificationFailed', 'Fail')
+                    : nls.localize('qaap/mobileProjects/transcriptVerificationRunning', 'Run');
+            const command = document.createElement('span');
+            command.className = 'theia-mobile-agent-verification-command';
+            command.textContent = check.command;
+            row.append(state, command);
+            list.append(row);
+        }
+        card.append(list);
+        return card;
+    }
+
     protected resolveTranscriptActivityItems(
         segments: QaapAgentMessageSegmentDTO[],
     ): Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }> {
@@ -9908,6 +9945,26 @@ export class MobileProjectsPanel {
         return [...byPath.entries()].map(([path, kind]) => ({ path, kind }));
     }
 
+    protected resolveTranscriptVerificationChecks(
+        segments: QaapAgentMessageSegmentDTO[],
+    ): Array<{ readonly command: string; readonly state: 'passed' | 'failed' | 'running' }> {
+        const checks: Array<{ readonly command: string; readonly state: 'passed' | 'failed' | 'running' }> = [];
+        for (const segment of segments) {
+            if (segment.type !== 'tool' || !this.isTranscriptShellTool(segment.name)) {
+                continue;
+            }
+            const command = this.extractTranscriptToolCommand(segment.args);
+            if (!command || !this.isTranscriptVerificationCommand(command)) {
+                continue;
+            }
+            checks.push({
+                command: this.compactTranscriptCommand(command),
+                state: !segment.finished ? 'running' : this.transcriptToolResultFailed(segment.result) ? 'failed' : 'passed',
+            });
+        }
+        return checks;
+    }
+
     protected resolveTranscriptFileChangeKind(toolName: string): 'edited' | 'created' | undefined {
         const name = toolName.toLowerCase();
         if (name.includes('write') || name.includes('create')) {
@@ -9935,6 +9992,37 @@ export class MobileProjectsPanel {
         }
     }
 
+    protected extractTranscriptToolCommand(argsJson: string): string | undefined {
+        try {
+            const args = JSON.parse(argsJson) as Record<string, unknown>;
+            return typeof args.command === 'string' && args.command.trim() ? args.command.trim() : undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
+    protected isTranscriptShellTool(toolName: string): boolean {
+        const name = toolName.toLowerCase();
+        return name.includes('bash') || name.includes('shell') || name.includes('terminal') || name.includes('run_');
+    }
+
+    protected isTranscriptVerificationCommand(command: string): boolean {
+        return /\b(test|spec|check|lint|compile|build|typecheck|tsc|vitest|jest|mocha|playwright|pytest|cargo test|go test)\b/i.test(command);
+    }
+
+    protected transcriptToolResultFailed(result: string | undefined): boolean {
+        if (!result?.trim()) {
+            return false;
+        }
+        return /\b(error|failed|failure|exit\s+[1-9]\d*|code\s+[1-9]\d*)\b/i.test(result)
+            && !/\b0\s+failed\b/i.test(result);
+    }
+
+    protected compactTranscriptCommand(command: string): string {
+        const clean = command.replace(/\s+/g, ' ').trim();
+        return clean.length > 72 ? `${clean.slice(0, 69)}…` : clean;
+    }
+
     protected compactTranscriptPath(path: string): string {
         const clean = path.replace(/\\/g, '/').replace(/^\.?\//, '');
         const parts = clean.split('/').filter(Boolean);
@@ -9948,7 +10036,7 @@ export class MobileProjectsPanel {
             const summary = document.createElement('summary');
             summary.textContent = nls.localize('qaap/mobileProjects/transcriptThinking', 'Thinking');
             const pre = document.createElement('pre');
-            pre.textContent = segment.content;
+            pre.textContent = this.cleanTranscriptDisplayText(segment.content);
             details.append(summary, pre);
             return details;
         }
@@ -9961,12 +10049,12 @@ export class MobileProjectsPanel {
                 : nls.localize('qaap/mobileProjects/transcriptToolRunning', 'Tool (running)');
             summary.textContent = `${status}: ${segment.name}`;
             const args = document.createElement('pre');
-            args.textContent = segment.args;
+            args.textContent = this.cleanTranscriptDisplayText(segment.args);
             details.append(summary, args);
             if (segment.result) {
                 const result = document.createElement('pre');
                 result.className = 'theia-mobile-agent-transcript-tool-result';
-                result.textContent = segment.result;
+                result.textContent = this.cleanTranscriptDisplayText(segment.result);
                 details.append(result);
             }
             return details;
@@ -10141,7 +10229,7 @@ export class MobileProjectsPanel {
     }
 
     protected renderTranscriptMarkdown(host: HTMLElement, content: string): void {
-        const html = this.transcriptMarkdownIt.render(content);
+        const html = this.transcriptMarkdownIt.render(this.cleanTranscriptDisplayText(content));
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true,
         });
@@ -10160,6 +10248,12 @@ export class MobileProjectsPanel {
             window.open(href, '_blank', 'noopener');
             event.preventDefault();
         });
+    }
+
+    protected cleanTranscriptDisplayText(content: string): string {
+        return content
+            .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+            .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '');
     }
 
     protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
