@@ -273,7 +273,7 @@ export async function cancelConversation(id: string): Promise<void> {
     }
 }
 
-export async function retryConversation(id: string): Promise<void> {
+export async function retryConversation(id: string): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/retry`, {
         method: 'POST',
         credentials: 'include',
@@ -281,6 +281,7 @@ export async function retryConversation(id: string): Promise<void> {
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);
     }
+    return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
 export async function deleteConversation(id: string): Promise<void> {

@@ -137,6 +137,16 @@ export function setMobileLandingHubListChrome(visible: boolean): void {
     window.dispatchEvent(new CustomEvent(QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT, { detail: { visible } }));
 }
 
+/** Tasks/Chat hub header with composer surface toggle — hide duplicate account control in top bars. */
+export const QAAP_MOBILE_WORKHUB_COMPOSER_HEADER_BODY_CLASS = 'theia-mobile-mod-workhub-composer-header';
+
+export function setMobileWorkHubComposerHeaderChrome(visible: boolean): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.body.classList.toggle(QAAP_MOBILE_WORKHUB_COMPOSER_HEADER_BODY_CLASS, visible);
+}
+
 export function markMobileProjectReadmeForOpen(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_OPEN_README_KEY, '1');

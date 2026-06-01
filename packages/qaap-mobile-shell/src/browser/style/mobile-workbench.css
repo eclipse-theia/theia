@@ -1729,6 +1729,42 @@
   gap: 8px;
 }
 
+.theia-mobile-projects-header-surface-picker {
+  flex-shrink: 0;
+}
+
+.theia-mobile-projects-header-surface-picker .theia-qaap-segmented-field.theia-mod-header-surface {
+  gap: 0;
+}
+
+.theia-mobile-projects-header-surface-picker .theia-qaap-segmented-bar.theia-mod-icon-only {
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+}
+
+.theia-mobile-projects-header-surface-picker .theia-qaap-segmented-bar.theia-mod-icon-only .theia-qaap-segmented-option {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theia-mobile-projects-header-surface-picker .theia-qaap-segmented-bar.theia-mod-icon-only .theia-qaap-segmented-option .codicon {
+  font-size: 16px;
+}
+
+/* Chat/Task hub: composer surface toggle replaces the header account affordance. */
+body.theia-mobile-mod-workhub-composer-header .theia-mobile-projects-header-actions .theia-workbench-account-btn,
+body.theia-mobile-mod-workhub-composer-header .theia-workbench-right-controls .theia-workbench-account-btn {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 .theia-mobile-projects-icon-btn,
 .theia-mobile-projects-clone-btn {
   flex-shrink: 0;
@@ -4381,6 +4417,10 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 .theia-qaap-segmented-option.theia-mod-selected {
   background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
   color: var(--theia-foreground);
+}
+
+.theia-qaap-segmented-bar.theia-mod-icon-only .theia-qaap-segmented-option {
+  flex: 0 0 auto;
 }
 
 .theia-qaap-diff-stats {

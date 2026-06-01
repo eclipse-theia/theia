@@ -71,6 +71,7 @@ import {
     markMobileProjectReadmeForOpen,
     markMobileProjectsPanelDismiss,
     setMobileLandingHubListChrome,
+    setMobileWorkHubComposerHeaderChrome,
 } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
@@ -119,7 +120,7 @@ import {
     createAgentTaskBadge,
     populateAgentToolbarButton,
 } from './qaap-agent-ui';
-import { createFormFieldLabel, createSegmentedField } from './qaap-mobile-form-ui';
+import { createFormFieldLabel, createSegmentedField, type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import {
     createMobileSheetGrabber,
     installMobilePullToRefresh,
@@ -157,7 +158,6 @@ import {
     type WorkHubHomeSnapshot,
 } from '../common/qaap-work-hub-home';
 import {
-    composerSurfaceHint,
     readStoredComposerSurface,
     writeStoredComposerSurface,
     type QaapComposerSurface,
@@ -285,13 +285,7 @@ interface QaapDiffProjectTab {
 }
 
 /** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
-type TranscriptTab = 'messages' | 'plan' | 'review' | 'verify' | 'preview';
-
-/** A step of the agent's plan, parsed from the latest `todoWrite` tool segment. */
-interface PlanStep {
-    readonly label: string;
-    readonly status: 'done' | 'current' | 'pending';
-}
+type TranscriptTab = 'messages' | 'review' | 'verify' | 'preview';
 
 /** A single verification step run on the project (build/test/lint). */
 interface VerifyCheck {
@@ -339,6 +333,8 @@ export class MobileProjectsPanel {
     protected readonly titleAttentionEl: HTMLSpanElement;
     protected readonly headerBackBtn: HTMLButtonElement;
     protected readonly newFabBtn: HTMLButtonElement;
+    protected readonly headerSurfacePickerHost: HTMLElement;
+    protected headerSurfacePicker?: QaapSegmentedFieldController<QaapComposerSurface>;
     protected filter: MobileProjectFilter = 'all';
     protected hubView: MobileProjectsHubView = 'home';
     protected query = '';
@@ -413,8 +409,6 @@ export class MobileProjectsPanel {
     protected transcriptPreviewHost: HTMLElement | undefined;
     protected transcriptPreviewRequestRunning = false;
     protected transcriptPreviewRequestPending = false;
-    protected transcriptPlanHost: HTMLElement | undefined;
-    protected transcriptPlanSteps: PlanStep[] = [];
     protected transcriptActiveTab: TranscriptTab = 'messages';
     protected verifyRunning = false;
     protected verifyResults: VerifyCheckResult[] = [];
@@ -613,7 +607,10 @@ export class MobileProjectsPanel {
         this.accountAvatar.setAttribute('aria-hidden', 'true');
         this.accountBtn.appendChild(this.accountAvatar);
         this.accountBtn.addEventListener('click', this.onAccountClick);
-        actions.append(this.accountBtn);
+        this.headerSurfacePickerHost = document.createElement('div');
+        this.headerSurfacePickerHost.className = 'theia-mobile-projects-header-surface-picker';
+        this.headerSurfacePickerHost.hidden = true;
+        actions.append(this.headerSurfacePickerHost, this.accountBtn);
         header.append(this.titleBlock, actions);
 
         this.newFabBtn = document.createElement('button');
@@ -958,6 +955,7 @@ export class MobileProjectsPanel {
         this.stickyComposerFabLiftObserver = undefined;
         this.detachDiffReviewWidget();
         setMobileLandingHubListChrome(false);
+        setMobileWorkHubComposerHeaderChrome(false);
     }
 
     async show(): Promise<void> {
@@ -1020,6 +1018,7 @@ export class MobileProjectsPanel {
         this.root.setAttribute('aria-hidden', 'true');
         this.root.classList.remove('theia-mod-visible');
         this.syncLandingHubListChrome();
+        setMobileWorkHubComposerHeaderChrome(false);
     }
 
     /**
@@ -1879,6 +1878,7 @@ export class MobileProjectsPanel {
         this.root.classList.toggle('theia-mod-project-detail', this.isProjectDetailView());
         this.renderHeader();
         this.renderSubtitle();
+        this.syncHeaderComposerSurfacePicker();
         this.syncHubViewAvailability();
         this.renderFilters();
         this.updateSearchPlaceholder();
@@ -2420,14 +2420,6 @@ export class MobileProjectsPanel {
             project,
             surface: this.stickyComposerSurface,
             agentLocked: isChatSurface,
-            onSurfaceChange: surface => {
-                this.stickyComposerSurface = surface;
-                writeStoredComposerSurface(cwd, surface);
-                if (surface === 'chat') {
-                    this.pinStickyComposerToCoder(cwd);
-                }
-                this.renderList();
-            },
             getContext: () => this.stickyComposerContext,
             clearContext: () => {
                 this.stickyComposerContext = [];
@@ -2507,8 +2499,91 @@ export class MobileProjectsPanel {
                 : nls.localize('qaap/mobileProjects/taskCreate', 'Create'),
         });
         this.stickyComposerHost.append(column);
+        this.syncHeaderComposerSurfacePicker();
         this.updateNewFabVisibility();
         window.requestAnimationFrame(() => this.updateStickyComposerFabLift());
+    }
+
+    protected composerSurfaceSegmentOptions(): Array<{ id: QaapComposerSurface; label: string; iconClass: string }> {
+        return [
+            {
+                id: 'chat',
+                label: nls.localize('qaap/composerSurface/chat', 'Chat'),
+                iconClass: 'codicon-comment-discussion',
+            },
+            {
+                id: 'task',
+                label: nls.localize('qaap/composerSurface/task', 'Task'),
+                iconClass: 'codicon-server-process',
+            },
+        ];
+    }
+
+    protected shouldShowHeaderComposerSurfacePicker(): boolean {
+        if (!this.homeMode || this.transcriptComposerHost) {
+            return false;
+        }
+        if (this.isTasksHubView()) {
+            return true;
+        }
+        return this.isProjectDetailView();
+    }
+
+    protected syncHeaderComposerSurfacePicker(): void {
+        const show = this.shouldShowHeaderComposerSurfacePicker();
+        setMobileWorkHubComposerHeaderChrome(show);
+        this.accountBtn.hidden = show;
+        this.accountBtn.style.display = show ? 'none' : '';
+        this.accountBtn.setAttribute('aria-hidden', show ? 'true' : 'false');
+        if (show) {
+            dismissQaapAccountMenu();
+        }
+        this.headerSurfacePickerHost.hidden = !show;
+        if (!show) {
+            this.headerSurfacePickerHost.replaceChildren();
+            this.headerSurfacePicker = undefined;
+            return;
+        }
+        const sticky = this.isProjectDetailView();
+        const value = sticky ? this.stickyComposerSurface : this.tasksHubSurface;
+        if (!this.headerSurfacePicker) {
+            const field = createSegmentedField<QaapComposerSurface>({
+                segments: this.composerSurfaceSegmentOptions(),
+                value,
+                iconOnly: true,
+                onChange: surface => { this.onHeaderComposerSurfaceChange(surface); },
+            });
+            field.root.classList.add('theia-mod-header-surface');
+            this.headerSurfacePicker = field;
+            this.headerSurfacePickerHost.append(field.root);
+        } else {
+            this.headerSurfacePicker.setValue(value);
+        }
+    }
+
+    protected onHeaderComposerSurfaceChange(surface: QaapComposerSurface): void {
+        if (this.isProjectDetailView()) {
+            const filtered = this.applySearch(this.applyFilter(this.projects, this.filter));
+            const project = this.resolveStickyComposerProject(filtered);
+            const cwd = project
+                ? (this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id))
+                : undefined;
+            this.stickyComposerSurface = surface;
+            writeStoredComposerSurface(cwd, surface);
+            if (surface === 'chat') {
+                this.pinStickyComposerToCoder(cwd);
+            }
+            this.renderStickyComposer();
+            this.renderList();
+            return;
+        }
+        if (this.isTasksHubView()) {
+            this.tasksHubSurface = surface;
+            writeStoredComposerSurface(undefined, surface);
+            this.renderList();
+            this.renderSubtitle();
+            this.syncHeaderComposerSurfacePicker();
+        }
     }
 
     protected updateStickyComposerFabLift(): void {
@@ -2531,9 +2606,7 @@ export class MobileProjectsPanel {
     protected buildStickyComposerColumn(options: {
         project: MobileProjectEntry;
         surface?: QaapComposerSurface;
-        surfaceLocked?: boolean;
         agentLocked?: boolean;
-        onSurfaceChange?: (surface: QaapComposerSurface) => void;
         getContext: () => AIVariableResolutionRequest[];
         clearContext: () => void;
         getDraft: () => string;
@@ -2582,39 +2655,6 @@ export class MobileProjectsPanel {
 
         if (options.surface) {
             column.classList.add(`theia-mod-surface-${options.surface}`);
-            const surfaceRow = document.createElement('div');
-            surfaceRow.className = 'theia-mobile-projects-sticky-composer-surface';
-            const surfaceField = createSegmentedField<QaapComposerSurface>({
-                segments: [
-                    {
-                        id: 'chat',
-                        label: nls.localize('qaap/composerSurface/chat', 'Chat'),
-                    },
-                    {
-                        id: 'task',
-                        label: nls.localize('qaap/composerSurface/task', 'Task'),
-                    },
-                ],
-                value: options.surface,
-                onChange: value => {
-                    if (options.surfaceLocked) {
-                        return;
-                    }
-                    options.onSurfaceChange?.(value);
-                },
-            });
-            if (options.surfaceLocked) {
-                surfaceField.root.classList.add('theia-mod-locked');
-                for (const btn of surfaceField.root.querySelectorAll('button')) {
-                    (btn as HTMLButtonElement).disabled = true;
-                }
-            }
-            const hint = composerSurfaceHint(options.surface);
-            const hintEl = document.createElement('p');
-            hintEl.className = 'theia-mobile-projects-sticky-composer-surface-hint';
-            hintEl.textContent = nls.localize(hint.key, hint.defaultLabel);
-            surfaceRow.append(surfaceField.root, hintEl);
-            column.append(surfaceRow);
         }
 
         const toolbar = document.createElement('div');
@@ -3626,8 +3666,6 @@ export class MobileProjectsPanel {
     protected renderTasksHubView(projects: MobileProjectEntry[]): void {
         const root = document.createElement('div');
         root.className = 'theia-mobile-tasks-hub-root';
-        root.append(this.createTasksHubSurfacePicker());
-
         if (this.tasksHubSurface === 'chat') {
             const groups = this.collectChatHubGroups(projects);
             if (groups.length === 0) {
@@ -3680,31 +3718,6 @@ export class MobileProjectsPanel {
         this.scroll.append(root);
         this.updateTasksAttentionChrome();
         this.renderSubtitle();
-    }
-
-    protected createTasksHubSurfacePicker(): HTMLElement {
-        const wrap = document.createElement('div');
-        wrap.className = 'theia-mobile-projects-history-surface';
-        const field = createSegmentedField<QaapComposerSurface>({
-            segments: [
-                {
-                    id: 'chat',
-                    label: nls.localize('qaap/composerSurface/chat', 'Chat'),
-                },
-                {
-                    id: 'task',
-                    label: nls.localize('qaap/composerSurface/task', 'Task'),
-                },
-            ],
-            value: this.tasksHubSurface,
-            onChange: surface => {
-                this.tasksHubSurface = surface;
-                writeStoredComposerSurface(undefined, surface);
-                this.renderList();
-            },
-        });
-        wrap.append(field.root);
-        return wrap;
     }
 
     protected renderReviewHubView(projects: MobileProjectEntry[]): void {
@@ -6831,12 +6844,20 @@ export class MobileProjectsPanel {
     }
 
     protected async onRetryConversation(
-        _project: MobileProjectEntry,
+        project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
         this.closeCardMenu();
         try {
-            await retryConversation(summary.id);
+            const retried = await retryConversation(summary.id);
+            this.conversations?.recordSnapshot(conversationToSummary(retried));
+            const retriedTurn = [...retried.messages].reverse().find(message => message.role === 'user');
+            this.applyTaskStartedToProject(retried.cwd, retriedTurn?.content ?? retried.title, retried.id);
+            this.watchOpenTranscriptUntilIdle(project, summary.id);
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/taskRetried', 'Task restarted'),
+                { kind: 'success', duration: 1400 }
+            );
         } catch (error) {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/retryTaskFailed',
@@ -7365,9 +7386,6 @@ export class MobileProjectsPanel {
         // Verify tab: an additive sibling. The chat host + composer are only hidden (never
         // disposed) when Verify is active, so the existing chat keeps streaming underneath.
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
-        const planHost = document.createElement('div');
-        planHost.className = 'theia-mobile-transcript-plan';
-        planHost.hidden = true;
         const reviewHost = document.createElement('div');
         reviewHost.className = 'theia-mobile-transcript-review';
         reviewHost.hidden = true;
@@ -7378,19 +7396,17 @@ export class MobileProjectsPanel {
         previewHost.className = 'theia-mobile-transcript-preview';
         previewHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, planHost, reviewHost, verifyHost, previewHost, chatInputHost);
+        sheet.append(header, tabStrip, chatHost, reviewHost, verifyHost, previewHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
         this.transcriptChatHost = chatHost;
         this.transcriptChatInputHost = chatInputHost;
         this.transcriptTabStrip = tabStrip;
-        this.transcriptPlanHost = planHost;
         this.transcriptReviewHost = reviewHost;
         this.transcriptVerifyHost = verifyHost;
         this.transcriptPreviewHost = previewHost;
         this.transcriptActiveTab = 'messages';
-        this.transcriptPlanSteps = [];
         this.verifyResults = [];
         this.verifyChecksCwd = undefined;
         this.verifyChecksLoading = false;
@@ -7424,17 +7440,9 @@ export class MobileProjectsPanel {
                 }
                 this.transcriptLastFingerprint = fingerprint;
                 this.renderTranscriptMessages(chatHost, full);
-                this.transcriptPlanSteps = this.parsePlanSteps(full);
-                if (this.transcriptActiveTab === 'plan' && this.transcriptOpenSummaryId === summary.id) {
-                    this.renderPlanTab();
-                }
                 this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
-                if ((full.status === 'streaming' || this.transcriptPreviewRequestPending) && this.conversations) {
-                    this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
-                        if (this.shouldRefreshOpenTranscript(project, summary.id)) {
-                            scheduleRefresh();
-                        }
-                    }));
+                if (full.status === 'streaming' || this.transcriptPreviewRequestPending) {
+                    this.watchOpenTranscriptUntilIdle(project, summary.id);
                 } else {
                     this.setTranscriptLiveUpdates(Disposable.NULL);
                 }
@@ -7517,78 +7525,6 @@ export class MobileProjectsPanel {
         return checks;
     }
 
-    /** Extract the agent's plan from the latest todo/plan tool segment (e.g. `todoWrite`). */
-    protected parsePlanSteps(full: QaapAgentConversationDTO): PlanStep[] {
-        let latest: PlanStep[] | undefined;
-        for (const message of full.messages) {
-            for (const segment of message.segments ?? []) {
-                if (segment.type !== 'tool' || !/todo/i.test(segment.name)) {
-                    continue;
-                }
-                try {
-                    const parsed = JSON.parse(segment.args) as { todos?: Array<{ content?: string; status?: string }> };
-                    const todos = parsed.todos;
-                    if (Array.isArray(todos) && todos.length > 0) {
-                        latest = todos.map(t => ({
-                            label: (t.content ?? '').trim() || nls.localize('qaap/mobileProjects/planStep', 'Step'),
-                            status: t.status === 'completed' ? 'done' : t.status === 'in_progress' ? 'current' : 'pending',
-                        } satisfies PlanStep));
-                    }
-                } catch {
-                    /* malformed args — skip this segment */
-                }
-            }
-        }
-        return latest ?? [];
-    }
-
-    protected renderPlanTab(): void {
-        const host = this.transcriptPlanHost;
-        if (!host) {
-            return;
-        }
-        host.replaceChildren();
-        const steps = this.transcriptPlanSteps;
-        if (steps.length === 0) {
-            const note = document.createElement('div');
-            note.className = 'theia-mobile-transcript-plan-note';
-            note.textContent = nls.localize('qaap/mobileProjects/planEmpty', 'No plan yet — the agent has not created a task list.');
-            host.append(note);
-            return;
-        }
-        const done = steps.filter(s => s.status === 'done').length;
-
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-transcript-plan-head';
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-transcript-plan-label';
-        label.textContent = nls.localize('qaap/mobileProjects/planProgress', 'Plan · {0}/{1}', String(done), String(steps.length));
-        head.append(label);
-        host.append(head);
-
-        const bar = document.createElement('div');
-        bar.className = 'theia-mobile-transcript-plan-prog';
-        const fill = document.createElement('i');
-        fill.style.width = `${Math.round((done / steps.length) * 100)}%`;
-        bar.append(fill);
-        host.append(bar);
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-transcript-plan-list';
-        for (const step of steps) {
-            const row = document.createElement('div');
-            row.className = `theia-mobile-transcript-plan-step theia-mod-${step.status}`;
-            const dot = document.createElement('span');
-            dot.className = `theia-mobile-transcript-plan-dot theia-mod-${step.status}`;
-            const text = document.createElement('span');
-            text.className = 'theia-mobile-transcript-plan-text';
-            text.textContent = step.label;
-            row.append(dot, text);
-            list.append(row);
-        }
-        host.append(list);
-    }
-
     protected verifyAutoStorageKey(cwd: string | undefined): string {
         return `qaap.verify.auto:${cwd ?? ''}`;
     }
@@ -7609,14 +7545,13 @@ export class MobileProjectsPanel {
         }
     }
 
-    /** Messages · Plan · Review · Verify tab strip. Messages mirrors the existing chat exactly. */
+    /** Messages · Review · Verify · Preview tab strip. Messages mirrors the existing chat exactly. */
     protected buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement {
         const strip = document.createElement('div');
         strip.className = 'theia-mobile-transcript-tabs';
         strip.setAttribute('role', 'tablist');
         const tabs: Array<{ id: TranscriptTab; label: string }> = [
             { id: 'messages', label: nls.localize('qaap/mobileProjects/tabMessages', 'Messages') },
-            { id: 'plan', label: nls.localize('qaap/mobileProjects/tabPlan', 'Plan') },
             { id: 'review', label: nls.localize('qaap/mobileProjects/tabReview', 'Review') },
             { id: 'verify', label: nls.localize('qaap/mobileProjects/tabChecks', 'Checks') },
             { id: 'preview', label: nls.localize('qaap/mobileProjects/tabPreview', 'Preview') },
@@ -7657,9 +7592,6 @@ export class MobileProjectsPanel {
         if (this.transcriptChatInputHost) {
             this.transcriptChatInputHost.hidden = !showMessages;
         }
-        if (this.transcriptPlanHost) {
-            this.transcriptPlanHost.hidden = tab !== 'plan';
-        }
         if (this.transcriptReviewHost) {
             this.transcriptReviewHost.hidden = tab !== 'review';
         }
@@ -7669,9 +7601,7 @@ export class MobileProjectsPanel {
         if (this.transcriptPreviewHost) {
             this.transcriptPreviewHost.hidden = tab !== 'preview';
         }
-        if (tab === 'plan') {
-            this.renderPlanTab();
-        } else if (tab === 'review') {
+        if (tab === 'review') {
             void this.mountTranscriptReviewWidget(project, summary);
         } else if (tab === 'verify') {
             this.renderVerifyTab(project, summary);
@@ -7701,10 +7631,6 @@ export class MobileProjectsPanel {
             return;
         }
         switch (tab) {
-            case 'plan':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabPlan', 'Plan');
-                subtitle.textContent = this.transcriptConversationMeta(project, summary);
-                break;
             case 'review': {
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabReview', 'Review');
                 if (reviewStats && reviewStats.fileCount > 0) {
@@ -8597,7 +8523,6 @@ export class MobileProjectsPanel {
         const column = this.buildStickyComposerColumn({
             project,
             surface: isTheiaChat ? 'chat' : 'task',
-            surfaceLocked: true,
             agentLocked: isTheiaChat,
             getContext: () => this.transcriptComposerContext,
             clearContext: () => {
@@ -9305,6 +9230,7 @@ export class MobileProjectsPanel {
                 this.renderTranscriptMessages(this.transcriptChatHost, updated);
             }
             this.applyTaskStartedToProject(summary.cwd, content, summary.id);
+            this.watchOpenTranscriptUntilIdle(project, summary.id);
         } catch (error) {
             if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
                 this.transcriptLastFingerprint = undefined;
@@ -10073,6 +9999,20 @@ export class MobileProjectsPanel {
         return latest?.status === 'streaming' || (!!latest && this.transcriptPreviewRequestPending);
     }
 
+    protected watchOpenTranscriptUntilIdle(project: MobileProjectEntry, conversationId: string): void {
+        if (!this.conversations || !this.transcriptScheduleRefresh || this.transcriptOpenSummaryId !== conversationId) {
+            return;
+        }
+        this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
+            if (this.shouldRefreshOpenTranscript(project, conversationId)) {
+                this.transcriptScheduleRefresh?.();
+            } else {
+                this.setTranscriptLiveUpdates(Disposable.NULL);
+            }
+        }));
+        this.transcriptScheduleRefresh();
+    }
+
     protected closeTranscriptSheet(): void {
         this.ensureOverlayUi().parallel.closeSheet();
         this.closeTranscriptComposerSheets();
@@ -10094,8 +10034,6 @@ export class MobileProjectsPanel {
         this.transcriptChatInputHost = undefined;
         this.transcriptTabStrip = undefined;
         this.transcriptHeaderSubtitle = undefined;
-        this.transcriptPlanHost = undefined;
-        this.transcriptPlanSteps = [];
         this.detachTranscriptReviewWidget();
         this.transcriptReviewHost = undefined;
         this.transcriptVerifyHost = undefined;

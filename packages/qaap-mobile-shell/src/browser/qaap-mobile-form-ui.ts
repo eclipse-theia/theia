@@ -6,6 +6,8 @@
 export interface QaapSegmentedOption<T extends string = string> {
     readonly id: T;
     readonly label: string;
+    /** Codicon name without the `codicon` prefix (e.g. `comment-discussion`). */
+    readonly iconClass?: string;
 }
 
 export interface QaapSegmentedFieldController<T extends string = string> {
@@ -21,6 +23,8 @@ export function createSegmentedField<T extends string>(options: {
     readonly segments: readonly QaapSegmentedOption<T>[];
     readonly value: T;
     readonly onChange?: (value: T) => void;
+    /** Render segment labels as icons only (labels become `title` / `aria-label`). */
+    readonly iconOnly?: boolean;
 }): QaapSegmentedFieldController<T> {
     const root = document.createElement('div');
     root.className = 'theia-qaap-segmented-field';
@@ -34,6 +38,9 @@ export function createSegmentedField<T extends string>(options: {
 
     const bar = document.createElement('div');
     bar.className = 'theia-qaap-segmented-bar';
+    if (options.iconOnly) {
+        bar.classList.add('theia-mod-icon-only');
+    }
     bar.setAttribute('role', 'tablist');
 
     const hiddenInput = document.createElement('input');
@@ -57,8 +64,23 @@ export function createSegmentedField<T extends string>(options: {
         btn.type = 'button';
         btn.className = 'theia-qaap-segmented-option';
         btn.dataset.segmentId = segment.id;
-        btn.textContent = segment.label;
+        btn.title = segment.label;
+        btn.setAttribute('aria-label', segment.label);
         btn.setAttribute('role', 'tab');
+        if (segment.iconClass) {
+            const icon = document.createElement('span');
+            icon.className = `codicon ${segment.iconClass}`;
+            icon.setAttribute('aria-hidden', 'true');
+            btn.append(icon);
+            if (!options.iconOnly) {
+                const text = document.createElement('span');
+                text.className = 'theia-qaap-segmented-option-label';
+                text.textContent = segment.label;
+                btn.append(text);
+            }
+        } else {
+            btn.textContent = segment.label;
+        }
         btn.addEventListener('click', () => {
             if (current === segment.id) {
                 return;
