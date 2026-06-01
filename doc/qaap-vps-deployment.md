@@ -34,6 +34,9 @@ Edit `.env`:
 | `QAAP_GITHUB_CLIENT_ID` / `SECRET` | from GitHub OAuth app | Login (or `QAAP_SKIP_AUTH=true` for private labs) |
 | `OPENROUTER_API_KEY` | `sk-or-…` | Powers `@qaiq` when no model is set in Settings |
 | `QAAP_DEFAULT_AGENT` | `qaiq` | Default agent (already the image default) |
+| `CODEX_CLI_VERSION` | `latest` | Codex CLI version installed during Docker build |
+| `CLAUDE_CODE_VERSION` | `latest` | Claude Code CLI version installed during Docker build |
+| `GEMINI_CLI_VERSION` | `latest` | Gemini CLI version installed during Docker build |
 
 Open the firewall port (example with UFW):
 
@@ -56,6 +59,9 @@ Open `http://<your-vps-ip>:4873`.
 The runtime stage of `Dockerfile` installs:
 
 - **QAIQ** → `/usr/local/bin/qaiq` (built from `github.com/juancristobalgd1/qaiq`)
+- **Codex CLI** → `codex` (`@openai/codex`)
+- **Claude Code** → `claude` (`@anthropic-ai/claude-code`)
+- **Gemini CLI** → `gemini` (`@google/gemini-cli`)
 - **Aider** → `~/.local/bin/aider`
 - `git`, `curl`, `bun`, `pnpm`, `yarn`, `build-essential`, `ripgrep` for agent shell work
 
@@ -118,11 +124,14 @@ extra_hosts:
   - "host.docker.internal:host-gateway"
 ```
 
-## Verify QAIQ inside the running container
+## Verify agent CLIs inside the running container
 
 ```bash
 docker compose exec theia qaiq --version
-docker compose exec theia which qaiq aider
+docker compose exec theia codex --version
+docker compose exec theia claude --version
+docker compose exec theia gemini --version
+docker compose exec theia which qaiq aider codex claude gemini
 docker compose logs theia 2>&1 | grep 'qaap-agent-tasks'
 ```
 
@@ -132,6 +141,23 @@ Pin the QAIQ fork revision:
 
 ```bash
 docker compose build --build-arg QAIQ_REF=v0.15.0-qaap.1
+```
+
+Pin agent CLI versions, or leave them as `latest` in `.env` to resolve current releases on a
+fresh VPS build:
+
+```bash
+CODEX_CLI_VERSION=0.135.0
+CLAUDE_CODE_VERSION=2.1.159
+GEMINI_CLI_VERSION=0.44.1
+```
+
+If you are rebuilding an existing VPS image and want Docker to re-resolve `latest`, rebuild
+without cache:
+
+```bash
+docker compose build --no-cache theia
+docker compose up -d
 ```
 
 ## HTTPS (recommended for production)
