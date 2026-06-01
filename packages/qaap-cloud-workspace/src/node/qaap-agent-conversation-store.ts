@@ -268,8 +268,13 @@ export class QaapAgentConversationStore {
         if (conv.status === 'streaming') {
             throw new Error('A turn is already in progress for this conversation.');
         }
-        // Find the last user message that failed (has an error annotation)
-        const failedIndex = conv.messages.reduce<number>((last, m, i) => m.role === 'user' && m.error ? i : last, -1);
+        // Prefer the last user message explicitly marked as failed. Older persisted conversations
+        // can have status `failed` without the per-message error annotation, so fall back to the
+        // last user turn when the conversation itself is failed.
+        let failedIndex = conv.messages.reduce<number>((last, m, i) => m.role === 'user' && m.error ? i : last, -1);
+        if (failedIndex < 0 && conv.status === 'failed') {
+            failedIndex = conv.messages.reduce<number>((last, m, i) => m.role === 'user' ? i : last, -1);
+        }
         if (failedIndex < 0) {
             throw new Error('No failed message to retry.');
         }
