@@ -1224,7 +1224,9 @@ export class MobileProjectsPanel {
         }
         this.titleAttentionEl.hidden = true;
         if (inProjectDetail) {
-            this.titleEl.textContent = nls.localize('qaap/mobileProjects/tasksTitle', 'Tasks');
+            const project = this.resolveSelectedProject();
+            this.titleEl.textContent = project?.name
+                ?? nls.localize('qaap/mobileProjects/tasksTitle', 'Tasks');
             return;
         }
         if (this.homeMode && this.hubView === 'repos') {
@@ -1411,12 +1413,9 @@ export class MobileProjectsPanel {
                 this.subtitleEl.textContent = '';
                 return;
             }
-            const parts: string[] = [project.name, project.branch];
+            const parts: string[] = [project.branch];
             if (project.lastActive && project.lastActive !== '—') {
                 parts.push(project.lastActive);
-            }
-            if (project.isCurrent) {
-                parts.push(nls.localize('qaap/mobileProjects/ideOpen', 'IDE open'));
             }
             this.subtitleEl.textContent = parts.join(' · ');
             return;
