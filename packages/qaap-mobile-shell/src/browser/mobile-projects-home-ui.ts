@@ -40,12 +40,6 @@ export class MobileProjectsHomeUi {
 
     protected static readonly SHORTCUTS: readonly HomeShortcutSpec[] = [
         {
-            action: 'new-chat',
-            icon: 'codicon-comment-discussion',
-            label: 'Capture',
-            hint: 'Start from a task',
-        },
-        {
             action: 'delegate-task',
             icon: 'codicon-server-process',
             label: 'Delegate',
