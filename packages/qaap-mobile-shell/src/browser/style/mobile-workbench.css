@@ -10014,6 +10014,17 @@ button.theia-mobile-transcript-team-row:focus-visible {
   display: none;
 }
 
+.theia-mobile-agent-tool-head:focus,
+.theia-mobile-agent-shell-head:focus {
+  outline: none;
+}
+
+.theia-mobile-agent-tool-head:focus-visible,
+.theia-mobile-agent-shell-head:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theia-focusBorder, #4c9aff) 54%, transparent);
+}
+
 .theia-mobile-agent-tool-caret {
   color: var(--theia-descriptionForeground);
   font-size: 12px;
