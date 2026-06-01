@@ -1,0 +1,107 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Shared styles for MCP Server dialogs (add/edit, install). Loaded by @theia/ai-mcp
+   so both the configuration view and the registry install flow render consistently. */
+
+.mcp-dialog-form {
+  min-width: 400px;
+}
+
+.mcp-dialog-form .mcp-form-field {
+  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
+}
+
+.mcp-dialog-form .mcp-form-field label {
+  display: block;
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  font-weight: 500;
+  color: var(--theia-foreground);
+}
+
+.mcp-dialog-form .mcp-form-field .theia-input,
+.mcp-dialog-form .mcp-form-field .theia-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mcp-dialog-form .mcp-form-field textarea.theia-input {
+  resize: vertical;
+  min-height: 60px;
+  font-family: var(--monaco-monospace-font);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.mcp-dialog-form .mcp-form-checkbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.mcp-dialog-form .mcp-form-static-value {
+  display: block;
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding));
+  background: var(--theia-editorWidget-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 2px;
+  font-family: var(--monaco-monospace-font);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-descriptionForeground);
+}
+
+/* Trust banner rendered at the top of the install dialog when an MCPServerInstallTrust
+   is supplied. Three variants reflect the three registry states. */
+.mcp-install-trust-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding));
+  padding: calc(var(--theia-ui-padding)) calc(var(--theia-ui-padding) * 1.5);
+  border-radius: 3px;
+  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
+  font-size: var(--theia-ui-font-size1);
+  line-height: 1.4;
+}
+
+.mcp-install-trust-banner .codicon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mcp-install-trust-banner--verified {
+  background-color: var(--theia-inputValidation-infoBackground);
+  color: var(--theia-inputValidation-infoForeground);
+}
+
+.mcp-install-trust-banner--verified .codicon {
+  color: var(--theia-extensionIcon-verifiedForeground, var(--theia-textLink-foreground));
+}
+
+.mcp-install-trust-banner--unverified {
+  background-color: var(--theia-inputValidation-warningBackground);
+  color: var(--theia-inputValidation-warningForeground);
+}
+
+.mcp-install-trust-banner--unverified .codicon {
+  color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+}
+
+.mcp-install-trust-banner--unknown {
+  background-color: var(--theia-editorWidget-background);
+  color: var(--theia-descriptionForeground);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}

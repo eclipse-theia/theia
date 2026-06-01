@@ -114,6 +114,54 @@ export interface BaseMCPServerDescription {
      * @returns A promise that resolves to the processed server description
      */
     resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
+
+    /**
+     * If set, provenance metadata for a server installed from an AI registry.
+     * Written by `@theia/ai-registry` on install / link / fix / update; not user-editable.
+     */
+    registryMetadata?: MCPRegistryMetadata;
+}
+
+/**
+ * Provenance metadata for an MCP server linked to an AI registry approval. Grouped
+ * under a single `registryMetadata` block in {@link BaseMCPServerDescription} and in
+ * the `ai-features.mcp.mcpServers` preference so registry-link data stays visually
+ * separated from the server configuration the user edits.
+ */
+export interface MCPRegistryMetadata {
+    /** Identifies the AI registry entry this server was installed from. */
+    serverId: string;
+
+    /**
+     * Registry-published version recorded at install / link / fix / update time.
+     * Kept purely for display in the UI; the registry may publish a different version
+     * later, but we don't want to lose the version the user actually installed.
+     * Update detection uses {@link configHash} instead.
+     */
+    version?: string;
+
+    /**
+     * Content hash of the registry approval that produced this entry. Used to detect
+     * when the registry has published a new approval for this server. Do not use
+     * {@link version} for update checks - it is display-only.
+     */
+    configHash?: string;
+}
+
+/**
+ * Subset of an MCP server's persisted configuration that an install flow may carry:
+ * either set by a registry entry or hand-crafted in an install URL. Lives in `common`
+ * so `@theia/ai-registry` (which resolves registry entries in `common`) can reference
+ * the same canonical shape the browser-side install path writes.
+ */
+export interface MCPInstallEntryConfig {
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
+    serverUrl?: string;
+    serverAuthToken?: string;
+    serverAuthTokenHeader?: string;
+    headers?: Record<string, string>;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {

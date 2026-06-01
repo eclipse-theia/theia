@@ -76,7 +76,6 @@ import { ContextFilesVariableContribution } from '../common/context-files-variab
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
-import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
@@ -294,13 +293,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
 
-    bind(AIMCPConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIMCPConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
-        }))
-        .inSingletonScope();
     // Register the token usage configuration widget
     bind(AITokenUsageConfigurationWidget).toSelf();
     bind(WidgetFactory)
