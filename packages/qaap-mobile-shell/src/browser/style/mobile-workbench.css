@@ -9474,6 +9474,16 @@ button.theia-mobile-transcript-team-row:focus-visible {
   display: none !important;
 }
 
+/* Transcript type scale — one place to keep sizes consistent across cards, tools, and messages. */
+.theia-mobile-agent-transcript-msg,
+.theia-mobile-agent-transcript-empty {
+  --qaap-tr-fs-body: 13px;
+  --qaap-tr-fs-title: 13px;
+  --qaap-tr-fs-meta: 11px;
+  --qaap-tr-fs-micro: 10px;
+  --qaap-tr-fs-head: 11px;
+}
+
 .theia-mobile-agent-transcript-empty {
   display: flex;
   flex-direction: column;
@@ -9601,7 +9611,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
 
 .theia-mobile-agent-stream-label {
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--qaap-tr-fs-body, 13px);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -9849,7 +9859,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
   align-items: center;
   gap: 7px;
   margin-bottom: 9px;
-  font-size: 11px;
+  font-size: var(--qaap-tr-fs-head, 11px);
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -10053,7 +10063,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
 
 .theia-mobile-agent-changed-file-name {
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--qaap-tr-fs-body, 13px);
   font-weight: 600;
   color: var(--theia-foreground);
   text-overflow: ellipsis;
@@ -10063,7 +10073,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
 .theia-mobile-agent-changed-file-dir {
   overflow: hidden;
   font-family: var(--theia-code-font-family, monospace);
-  font-size: 10px;
+  font-size: var(--qaap-tr-fs-micro, 10px);
   color: var(--theia-descriptionForeground);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10073,7 +10083,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
   flex: none;
   border-radius: 999px;
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: var(--qaap-tr-fs-micro, 10px);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--theia-descriptionForeground);
@@ -10282,7 +10292,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
 .theia-mobile-agent-tool-title {
   flex: none;
   color: var(--theia-foreground);
-  font-size: 12.5px;
+  font-size: var(--qaap-tr-fs-title, 13px);
   font-weight: 600;
 }
 
@@ -10291,7 +10301,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
   min-width: 0;
   overflow: hidden;
   font-family: var(--theia-code-font-family, monospace);
-  font-size: 11px;
+  font-size: var(--qaap-tr-fs-meta, 11px);
   color: var(--theia-descriptionForeground);
   text-overflow: ellipsis;
   white-space: nowrap;
