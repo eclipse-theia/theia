@@ -9747,7 +9747,16 @@ export class MobileProjectsPanel {
         if (conv.messages.length === 0 && conv.status !== 'streaming') {
             const empty = document.createElement('div');
             empty.className = 'theia-mobile-agent-transcript-empty';
-            empty.textContent = nls.localize('qaap/mobileProjects/transcriptEmpty', 'No messages yet.');
+            const icon = document.createElement('span');
+            icon.className = 'theia-mobile-agent-transcript-empty-icon codicon codicon-sparkle';
+            icon.setAttribute('aria-hidden', 'true');
+            const title = document.createElement('div');
+            title.className = 'theia-mobile-agent-transcript-empty-title';
+            title.textContent = nls.localize('qaap/mobileProjects/transcriptEmptyTitle', 'Ready when you are');
+            const hint = document.createElement('div');
+            hint.className = 'theia-mobile-agent-transcript-empty-hint';
+            hint.textContent = nls.localize('qaap/mobileProjects/transcriptEmptyHint', 'Send a task and the agent will work on it here.');
+            empty.append(icon, title, hint);
             messageHost.append(empty);
             return;
         }
@@ -10525,15 +10534,11 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = `theia-mobile-agent-transcript-msg theia-mod-${role}`;
-        const roleEl = role === 'user' ? document.createElement('div') : undefined;
-        if (roleEl) {
-            roleEl.className = 'theia-mobile-agent-transcript-role';
-            roleEl.textContent = nls.localize('qaap/mobileProjects/transcriptYou', 'You');
-        }
+        // Ownership is conveyed by alignment and the bubble surface, so no redundant "You" label.
         const contentEl = document.createElement('div');
         contentEl.className = 'theia-mobile-agent-transcript-content';
         this.renderTranscriptRichContent(contentEl, normalizeAgentMessageContentForDisplay(content));
-        row.append(...(roleEl ? [roleEl] : []), contentEl);
+        row.append(contentEl);
         if (error) {
             const err = document.createElement('div');
             err.className = 'theia-mobile-agent-transcript-error';
