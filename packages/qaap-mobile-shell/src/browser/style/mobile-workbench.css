@@ -9829,40 +9829,144 @@ button.theia-mobile-transcript-team-row:focus-visible {
   white-space: nowrap;
 }
 
+/* Collapsible changed-files card (details/summary). */
+.theia-mobile-agent-changed-files {
+  padding: 0;
+  overflow: hidden;
+}
+
+.theia-mobile-agent-changed-files-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-agent-changed-files-summary::-webkit-details-marker {
+  display: none;
+}
+
+.theia-mobile-agent-changed-files-chevron {
+  flex: none;
+  font-size: 14px;
+  color: var(--theia-descriptionForeground);
+  transition: transform 0.15s ease;
+}
+
+.theia-mobile-agent-changed-files[open] .theia-mobile-agent-changed-files-chevron {
+  transform: rotate(90deg);
+}
+
+.theia-mobile-agent-changed-files-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--theia-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-mobile-agent-changed-files-stats {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.theia-mobile-agent-changed-files-summary .theia-mobile-agent-diff-stat {
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.theia-mobile-agent-changed-files-review {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.3)) 90%, transparent);
+  border-radius: 7px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 6%, transparent);
+  cursor: pointer;
+}
+
+.theia-mobile-agent-changed-files-review .codicon {
+  font-size: 13px;
+}
+
+.theia-mobile-agent-changed-files-review:active {
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 14%, transparent);
+}
+
 .theia-mobile-agent-changed-files-list {
   display: grid;
-  gap: 6px;
+  gap: 0;
+  padding: 0 11px 6px;
 }
 
 .theia-mobile-agent-changed-file {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 26px;
-  padding: 4px 0;
+  gap: 9px;
+  min-height: 34px;
+  padding: 5px 0;
 }
 
 .theia-mobile-agent-changed-file + .theia-mobile-agent-changed-file {
   border-top: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 70%, transparent);
 }
 
-.theia-mobile-agent-changed-file-path {
+.theia-mobile-agent-changed-file-icon {
+  font-size: 15px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-changed-file.theia-mod-created .theia-mobile-agent-changed-file-icon {
+  color: var(--theia-charts-green, #4caf7c);
+}
+
+.theia-mobile-agent-changed-file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.theia-mobile-agent-changed-file-name {
   overflow: hidden;
-  font-family: var(--theia-code-font-family, monospace);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--theia-foreground);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.theia-mobile-agent-changed-file-dir {
+  overflow: hidden;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 10px;
+  color: var(--theia-descriptionForeground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .theia-mobile-agent-changed-file-badge {
+  flex: none;
   border-radius: 999px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--theia-descriptionForeground);
-  background: color-mix(in srgb, var(--theia-editor-background, #111) 76%, var(--theia-foreground, #fff));
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 12%, transparent);
 }
 
 .theia-mobile-agent-changed-file-badge.theia-mod-created {
@@ -9871,7 +9975,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
 }
 
 .theia-mobile-agent-changed-files-more {
-  padding-top: 2px;
+  padding: 6px 0 2px;
   font-size: 11px;
   color: var(--theia-descriptionForeground);
 }

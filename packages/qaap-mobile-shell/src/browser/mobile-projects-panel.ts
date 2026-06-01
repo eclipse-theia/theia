@@ -9777,13 +9777,16 @@ export class MobileProjectsPanel {
         if (activity) {
             body.append(activity);
         }
-        const diffSummary = this.createTranscriptDiffSummaryCard(segments);
-        if (diffSummary) {
-            body.append(diffSummary);
-        }
         const changedFiles = this.createTranscriptChangedFilesCard(segments);
         if (changedFiles) {
+            // The unified changed-files card carries the aggregate +/- stats in its header, so the
+            // standalone diff-summary card is only shown when there is no recognized file list.
             body.append(changedFiles);
+        } else {
+            const diffSummary = this.createTranscriptDiffSummaryCard(segments);
+            if (diffSummary) {
+                body.append(diffSummary);
+            }
         }
         const verification = this.createTranscriptVerificationCard(segments);
         if (verification) {
@@ -9865,38 +9868,135 @@ export class MobileProjectsPanel {
         if (files.length === 0) {
             return undefined;
         }
-        const card = document.createElement('section');
+        const stats = this.resolveTranscriptDiffStats(segments);
+
+        // Collapsible, GitHub-style card: a compact header (count + aggregate +/- stats) that
+        // expands to the per-file list.
+        const card = document.createElement('details');
         card.className = 'theia-mobile-agent-premium-card theia-mobile-agent-changed-files';
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-agent-premium-head';
-        head.textContent = nls.localize('qaap/mobileProjects/transcriptChangedFiles', 'Changed files');
-        card.append(head);
+
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-changed-files-summary';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-changed-files-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const title = document.createElement('span');
+        title.className = 'theia-mobile-agent-changed-files-title';
+        title.textContent = files.length === 1
+            ? nls.localize('qaap/mobileProjects/transcriptChangedFilesOne', '{0} file changed', '1')
+            : nls.localize('qaap/mobileProjects/transcriptChangedFilesCount', '{0} files changed', String(files.length));
+        summary.append(chevron, title);
+        if (stats && (stats.added > 0 || stats.removed > 0)) {
+            const statsRow = document.createElement('span');
+            statsRow.className = 'theia-mobile-agent-changed-files-stats';
+            const added = document.createElement('span');
+            added.className = 'theia-mobile-agent-diff-stat theia-mod-added';
+            added.textContent = `+${stats.added}`;
+            const removed = document.createElement('span');
+            removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
+            removed.textContent = `-${stats.removed}`;
+            statsRow.append(added, removed);
+            summary.append(statsRow);
+        }
+        summary.append(this.createTranscriptChangedFilesReviewButton());
+        card.append(summary);
+
         const list = document.createElement('div');
         list.className = 'theia-mobile-agent-changed-files-list';
-        for (const file of files.slice(0, 8)) {
-            const row = document.createElement('div');
-            row.className = 'theia-mobile-agent-changed-file';
-            const path = document.createElement('span');
-            path.className = 'theia-mobile-agent-changed-file-path';
-            path.textContent = file.path;
-            const badge = document.createElement('span');
-            badge.className = `theia-mobile-agent-changed-file-badge theia-mod-${file.kind}`;
-            badge.textContent = file.kind;
-            row.append(path, badge);
-            list.append(row);
+        for (const file of files.slice(0, 12)) {
+            list.append(this.createTranscriptChangedFileRow(file));
         }
-        if (files.length > 8) {
+        if (files.length > 12) {
             const more = document.createElement('div');
             more.className = 'theia-mobile-agent-changed-files-more';
             more.textContent = nls.localize(
                 'qaap/mobileProjects/transcriptChangedFilesMore',
                 '+{0} more',
-                String(files.length - 8),
+                String(files.length - 12),
             );
             list.append(more);
         }
         card.append(list);
         return card;
+    }
+
+    /** "Review" button in the changed-files header — jumps to the transcript's diff Review tab. */
+    protected createTranscriptChangedFilesReviewButton(): HTMLButtonElement {
+        const review = document.createElement('button');
+        review.type = 'button';
+        review.className = 'theia-mobile-agent-changed-files-review';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-git-compare';
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.textContent = nls.localize('qaap/mobileProjects/transcriptChangedFilesReview', 'Review');
+        review.append(icon, label);
+        review.addEventListener('click', event => {
+            // Inside <summary>: stop the click from toggling the collapsible card.
+            event.preventDefault();
+            event.stopPropagation();
+            const project = this.transcriptComposerProject;
+            const convSummary = this.transcriptComposerSummary;
+            if (project && convSummary) {
+                this.selectTranscriptTab('review', project, convSummary);
+            }
+        });
+        return review;
+    }
+
+    protected createTranscriptChangedFileRow(
+        file: { readonly path: string; readonly kind: 'edited' | 'created' },
+    ): HTMLElement {
+        const row = document.createElement('div');
+        row.className = `theia-mobile-agent-changed-file theia-mod-${file.kind}`;
+
+        const icon = document.createElement('span');
+        icon.className = `theia-mobile-agent-changed-file-icon codicon ${this.transcriptFileIconClass(file.path)}`;
+        icon.setAttribute('aria-hidden', 'true');
+
+        const info = document.createElement('span');
+        info.className = 'theia-mobile-agent-changed-file-info';
+        const slash = file.path.lastIndexOf('/');
+        const name = document.createElement('span');
+        name.className = 'theia-mobile-agent-changed-file-name';
+        name.textContent = slash >= 0 ? file.path.slice(slash + 1) : file.path;
+        info.append(name);
+        if (slash > 0) {
+            const dir = document.createElement('span');
+            dir.className = 'theia-mobile-agent-changed-file-dir';
+            dir.textContent = file.path.slice(0, slash);
+            info.append(dir);
+        }
+
+        const badge = document.createElement('span');
+        badge.className = `theia-mobile-agent-changed-file-badge theia-mod-${file.kind}`;
+        badge.textContent = file.kind === 'created'
+            ? nls.localize('qaap/mobileProjects/transcriptChangedFileNew', 'New')
+            : nls.localize('qaap/mobileProjects/transcriptChangedFileEdited', 'Edited');
+
+        row.append(icon, info, badge);
+        return row;
+    }
+
+    /** Codicon for a changed-file row, derived from the file extension. */
+    protected transcriptFileIconClass(path: string): string {
+        const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+        if (['js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'sh'].includes(ext)) {
+            return 'codicon-file-code';
+        }
+        if (['json', 'yaml', 'yml', 'toml', 'xml', 'ini', 'env'].includes(ext)) {
+            return 'codicon-settings-gear';
+        }
+        if (['md', 'mdx', 'txt', 'rst'].includes(ext)) {
+            return 'codicon-markdown';
+        }
+        if (['css', 'scss', 'less', 'html', 'svg'].includes(ext)) {
+            return 'codicon-symbol-color';
+        }
+        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico'].includes(ext)) {
+            return 'codicon-file-media';
+        }
+        return 'codicon-file';
     }
 
     protected createTranscriptVerificationCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
