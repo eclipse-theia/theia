@@ -8,6 +8,9 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
+import * as markdownit from '@theia/core/shared/markdown-it';
+import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { ConfirmDialog, UnsafeWidgetUtilities } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
@@ -319,6 +322,8 @@ export class MobileProjectsPanel {
 
     /** Max automatic verify→fix loops before the closed loop gives up (avoids runaway turns/cost). */
     protected static readonly VERIFY_AUTO_MAX_ATTEMPTS = 3;
+
+    protected readonly transcriptMarkdownIt = markdownit({ linkify: true }).use(markdownitemoji.full);
 
     protected readonly root: HTMLElement;
     protected readonly scroll: HTMLElement;
@@ -9765,10 +9770,6 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent';
-        const roleEl = document.createElement('div');
-        roleEl.className = 'theia-mobile-agent-transcript-role';
-        roleEl.textContent = nls.localize('qaap/mobileProjects/transcriptAgent', 'Agent');
-        row.append(roleEl);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-transcript-segments';
         for (const segment of segments) {
@@ -9815,8 +9816,8 @@ export class MobileProjectsPanel {
             return details;
         }
         const block = document.createElement('div');
-        block.className = 'theia-mobile-agent-transcript-content';
-        block.textContent = segment.content;
+        block.className = 'theia-mobile-agent-transcript-content theia-mod-markdown';
+        this.renderTranscriptMarkdown(block, segment.content);
         return block;
     }
 
@@ -9965,15 +9966,15 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = `theia-mobile-agent-transcript-msg theia-mod-${role}`;
-        const roleEl = document.createElement('div');
-        roleEl.className = 'theia-mobile-agent-transcript-role';
-        roleEl.textContent = role === 'user'
-            ? nls.localize('qaap/mobileProjects/transcriptYou', 'You')
-            : nls.localize('qaap/mobileProjects/transcriptAgent', 'Agent');
+        const roleEl = role === 'user' ? document.createElement('div') : undefined;
+        if (roleEl) {
+            roleEl.className = 'theia-mobile-agent-transcript-role';
+            roleEl.textContent = nls.localize('qaap/mobileProjects/transcriptYou', 'You');
+        }
         const contentEl = document.createElement('div');
-        contentEl.className = 'theia-mobile-agent-transcript-content';
-        contentEl.textContent = normalizeAgentMessageContentForDisplay(content);
-        row.append(roleEl, contentEl);
+        contentEl.className = 'theia-mobile-agent-transcript-content theia-mod-markdown';
+        this.renderTranscriptMarkdown(contentEl, normalizeAgentMessageContentForDisplay(content));
+        row.append(...(roleEl ? [roleEl] : []), contentEl);
         if (error) {
             const err = document.createElement('div');
             err.className = 'theia-mobile-agent-transcript-error';
@@ -9981,6 +9982,28 @@ export class MobileProjectsPanel {
             row.append(err);
         }
         return row;
+    }
+
+    protected renderTranscriptMarkdown(host: HTMLElement, content: string): void {
+        const html = this.transcriptMarkdownIt.render(content);
+        host.innerHTML = DOMPurify.sanitize(html, {
+            ALLOW_UNKNOWN_PROTOCOLS: true,
+        });
+        host.addEventListener('click', event => {
+            let target = event.target as HTMLElement | null;
+            while (target && target.tagName !== 'A') {
+                target = target.parentElement;
+            }
+            if (!target) {
+                return;
+            }
+            const href = target.getAttribute('href');
+            if (!href) {
+                return;
+            }
+            window.open(href, '_blank', 'noopener');
+            event.preventDefault();
+        });
     }
 
     protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
