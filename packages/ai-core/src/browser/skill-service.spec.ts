@@ -585,7 +585,7 @@ Test skill content`
             const skill = service.getSkill('dup-skill');
             expect(skill, 'dup-skill should be discovered').to.not.be.undefined;
             expect(skill!.description).to.equal('from prompts');
-            expect(skill!.location).to.equal(`${promptsSkillDir}/dup-skill/SKILL.md`);
+            expect(skill!.location).to.equal(new Path(`${promptsSkillDir}/dup-skill/SKILL.md`).fsPath());
             // The second occurrence is reported (not silently swallowed) via a warning.
             expect(loggerWarnSpy.calledWith(
                 sinon.match(/Duplicate skill found.*dup-skill/)
