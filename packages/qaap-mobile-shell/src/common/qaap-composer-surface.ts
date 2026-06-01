@@ -14,15 +14,10 @@ export function scopedComposerSurfaceStorageKey(cwd: string | undefined): string
 }
 
 export function readStoredComposerSurface(cwd: string | undefined): QaapComposerSurface | undefined {
-    try {
-        const raw = typeof window !== 'undefined'
-            ? window.localStorage.getItem(scopedComposerSurfaceStorageKey(cwd))
-                ?? window.localStorage.getItem(COMPOSER_SURFACE_STORAGE_KEY)
-            : undefined;
-        return raw === 'chat' || raw === 'task' ? raw : undefined;
-    } catch {
-        return undefined;
-    }
+    // The mobile shell only exposes the agentic Task surface; the local Chat surface was removed,
+    // so legacy stored 'chat' values are ignored and callers fall back to 'task'.
+    void cwd;
+    return undefined;
 }
 
 export function writeStoredComposerSurface(cwd: string | undefined, surface: QaapComposerSurface): void {

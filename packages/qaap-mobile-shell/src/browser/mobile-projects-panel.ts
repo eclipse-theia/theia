@@ -147,7 +147,6 @@ import {
 import { clearQaapAuthSession, readQaapAuthUser, readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
-    filterLocalChatSummaries,
     filterVpsTaskSummaries,
     isLocalChatSummary,
     normalizeWorkHubViewId,
@@ -752,13 +751,11 @@ export class MobileProjectsPanel {
         return this.hubView;
     }
 
-    /** Persist and apply Chat vs Task for the sticky composer (e.g. when opening the Agent sheet). */
+    /** Apply the composer surface. The local Chat surface was removed, so this always resolves to Task. */
     preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void {
-        writeStoredComposerSurface(projectCwd, surface);
-        this.stickyComposerSurface = surface;
-        if (surface === 'chat') {
-            this.pinStickyComposerToCoder(projectCwd);
-        }
+        void surface;
+        writeStoredComposerSurface(projectCwd, 'task');
+        this.stickyComposerSurface = 'task';
         if (this.visible && this.hubView === 'repos') {
             this.renderStickyComposer();
         }
@@ -767,6 +764,16 @@ export class MobileProjectsPanel {
     protected pinStickyComposerToCoder(cwd: string | undefined): void {
         this.stickyComposerPinnedAgentId = THEIA_CODER_AGENT_ID;
         writeStoredAgent(cwd, THEIA_CODER_AGENT_ID);
+    }
+
+    /**
+     * The local Theia Coder agent runs in the browser tab and stops when the mobile app is closed,
+     * so it is not agentic. It is no longer offered or defaulted to in the mobile agent pickers —
+     * only VPS-backed agents (QAIQ, Codex, …) are selectable. Returns `undefined` so every
+     * offer/default site falls back to a real background agent.
+     */
+    protected getOfferableCoderAgent(): ChatAgent | undefined {
+        return undefined;
     }
 
     /** Work Hub home: user drilled into a single repository (tasks list + sticky composer). */
@@ -806,7 +813,8 @@ export class MobileProjectsPanel {
     /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
     selectHubLandingView(view: MobileProjectsHubView, preferredDiffProjectId?: string): void {
         if (view === 'chat' || view === 'tasks') {
-            this.tasksHubSurface = view === 'chat' ? 'chat' : 'task';
+            // Chat surface removed — both legacy entry points land on the agentic Task surface.
+            this.tasksHubSurface = 'task';
         }
         view = this.redirectHubView(view);
         if (this.hubView === view && view === 'home') {
@@ -971,7 +979,8 @@ export class MobileProjectsPanel {
         await this.refreshChatServiceSessionSummaries();
         this.filter = this.projectsService.getFilter();
         const storedHubView = this.projectsService.getHubView();
-        this.tasksHubSurface = storedHubView === 'chat' ? 'chat' : 'task';
+        // Chat surface removed — the hub always opens on the agentic Task surface.
+        this.tasksHubSurface = 'task';
         this.hubView = this.redirectHubView(storedHubView);
         this.updateSearchPlaceholder();
         this.render();
@@ -1484,9 +1493,13 @@ export class MobileProjectsPanel {
         return filterVpsTaskSummaries(this.conversationsForProject(project));
     }
 
-    /** Local Theia chat sessions for one project card / Chat hub tab. */
+    /**
+     * Local Theia chat sessions. The Chat surface was removed from the mobile shell, so these are
+     * hidden from every list, counter, and recents row — only agentic VPS tasks are surfaced.
+     */
     protected localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
-        return filterLocalChatSummaries(this.conversationsForProject(project));
+        void project;
+        return [];
     }
 
     protected countDoneTasks(project: MobileProjectEntry): number {
@@ -2527,13 +2540,9 @@ export class MobileProjectsPanel {
     }
 
     protected shouldShowHeaderComposerSurfacePicker(): boolean {
-        if (!this.homeMode || this.transcriptComposerHost) {
-            return false;
-        }
-        if (this.isTasksHubView()) {
-            return true;
-        }
-        return this.isProjectDetailView();
+        // The local Chat surface was removed; only the agentic Task surface remains, so the
+        // Chat/Task segmented picker is never shown.
+        return false;
     }
 
     protected syncHeaderComposerSurfacePicker(): void {
@@ -2823,7 +2832,7 @@ export class MobileProjectsPanel {
         backendAgents: readonly QaapAgentTaskAgentOption[],
         coderOnly = false,
     ): StickyComposerTokenOption[] {
-        const coder = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
+        const coder = this.getOfferableCoderAgent();
         return buildStickyComposerMentionOptions(
             coderOnly ? [] : backendAgents,
             coder ? { name: coder.name } : undefined,
@@ -2843,7 +2852,7 @@ export class MobileProjectsPanel {
         if (pinned) {
             return pinned;
         }
-        return this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID)
+        return this.getOfferableCoderAgent()
             ? THEIA_CODER_AGENT_ID
             : (this.stickyComposerBackendAgents[0]?.id ?? QAIQ_AGENT_ID);
     }
@@ -2874,7 +2883,7 @@ export class MobileProjectsPanel {
             agents,
             defaultAgent,
             cwd,
-            !!this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID),
+            !!this.getOfferableCoderAgent(),
         );
     }
 
@@ -2938,7 +2947,7 @@ export class MobileProjectsPanel {
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
 
-        const coder = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
+        const coder = this.getOfferableCoderAgent();
         if (coder) {
             list.append(this.createStickyAgentSheetOption(
                 coder.name,
@@ -8641,7 +8650,7 @@ export class MobileProjectsPanel {
         if (pinned) {
             return pinned;
         }
-        return this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID)
+        return this.getOfferableCoderAgent()
             ? THEIA_CODER_AGENT_ID
             : (this.transcriptComposerBackendAgents[0]?.id ?? QAIQ_AGENT_ID);
     }
@@ -8729,7 +8738,7 @@ export class MobileProjectsPanel {
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
 
-        const coder = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
+        const coder = this.getOfferableCoderAgent();
         if (coder) {
             list.append(this.createAgentSheetOption(
                 coder.name,

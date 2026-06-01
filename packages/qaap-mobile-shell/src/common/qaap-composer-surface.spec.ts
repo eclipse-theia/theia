@@ -28,12 +28,18 @@ describe('qaap-composer-surface', () => {
         } as unknown as Window;
     });
 
-    it('persists surface per cwd scope', () => {
+    it('scopes the storage key per cwd', () => {
+        expect(scopedComposerSurfaceStorageKey('/repo/a')).to.contain('/repo/a');
+        expect(scopedComposerSurfaceStorageKey('/repo/a')).to.not.equal(scopedComposerSurfaceStorageKey('/repo/b'));
+    });
+
+    it('never resolves to the removed Chat surface', () => {
+        // The mobile shell only exposes the agentic Task surface; legacy 'chat' values are ignored
+        // so callers fall back to 'task'.
         writeStoredComposerSurface('/repo/a', 'chat');
         writeStoredComposerSurface('/repo/b', 'task');
-        expect(readStoredComposerSurface('/repo/a')).to.equal('chat');
-        expect(readStoredComposerSurface('/repo/b')).to.equal('task');
-        expect(scopedComposerSurfaceStorageKey('/repo/a')).to.contain('/repo/a');
+        expect(readStoredComposerSurface('/repo/a')).to.equal(undefined);
+        expect(readStoredComposerSurface('/repo/b')).to.equal(undefined);
     });
 
 });
