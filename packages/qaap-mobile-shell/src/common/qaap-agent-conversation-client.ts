@@ -5,6 +5,7 @@
 
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import { buildConversationListMetrics } from './qaap-agent-conversation-list-metrics';
+import { normalizeAgentMessageContentForDisplay } from './qaap-agent-message-content';
 
 /**
  * HTTP helpers for the persistent VPS agent-conversation API.
@@ -109,7 +110,9 @@ export interface QaapAgentConversationDTO {
 
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {
     const last = conv.messages[conv.messages.length - 1];
-    const clean = last?.content?.replace(/\s+/g, ' ').trim();
+    const clean = last
+        ? normalizeAgentMessageContentForDisplay(last.content).replace(/\s+/g, ' ').trim()
+        : undefined;
     const preview = clean === undefined
         ? undefined
         : clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;

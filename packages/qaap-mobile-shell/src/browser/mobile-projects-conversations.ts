@@ -17,6 +17,7 @@ import {
     listAllConversationGroups,
 } from '../common/qaap-agent-conversation-client';
 import { buildConversationListMetrics } from '../common/qaap-agent-conversation-list-metrics';
+import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
 const STREAM_URL = `${QAAP_AGENT_CONVERSATION_API_PATH}/stream`;
@@ -391,7 +392,7 @@ export class MobileProjectsConversations {
                 messageCount: payload.message.role === existing.lastMessageRole
                     ? existing.messageCount
                     : existing.messageCount + 1,
-                lastMessagePreview: excerpt(payload.message.content),
+                lastMessagePreview: excerpt(normalizeAgentMessageContentForDisplay(payload.message.content)),
                 lastMessageRole: payload.message.role,
             };
             this.upsert(updated);
@@ -555,7 +556,7 @@ function theiaMessagesToConversationMessages(data: TheiaSerializedChatData): Qaa
     const messages: QaapAgentMessageDTO[] = [];
     let offset = 0;
     for (const request of data.model.requests ?? []) {
-        const userText = request.text?.trim();
+        const userText = request.text ? normalizeAgentMessageContentForDisplay(request.text).trim() : '';
         if (userText) {
             messages.push({
                 id: `${request.id}:user`,
@@ -564,7 +565,7 @@ function theiaMessagesToConversationMessages(data: TheiaSerializedChatData): Qaa
                 createdAt: data.saveDate + offset++,
             });
         }
-        const responseText = responseToText(responsesByRequestId.get(request.id)).trim();
+        const responseText = normalizeAgentMessageContentForDisplay(responseToText(responsesByRequestId.get(request.id))).trim();
         if (responseText) {
             messages.push({
                 id: `${request.id}:agent`,

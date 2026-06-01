@@ -61,6 +61,7 @@ import {
     retryConversation,
     updateConversation,
 } from '../common/qaap-agent-conversation-client';
+import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import {
     approveAgentRequest,
     fetchAgentApprovals,
@@ -9739,7 +9740,11 @@ export class MobileProjectsPanel {
             if (msg.role === 'agent' && msg.segments && msg.segments.length > 0) {
                 messageHost.append(this.createTranscriptAgentSegmentsRow(msg.segments, msg.error));
             } else {
-                messageHost.append(this.createTranscriptMessageRow(msg.role, msg.content, msg.error));
+                messageHost.append(this.createTranscriptMessageRow(
+                    msg.role,
+                    normalizeAgentMessageContentForDisplay(msg.content),
+                    msg.error,
+                ));
             }
         }
         const last = conv.messages[conv.messages.length - 1];
@@ -9967,7 +9972,7 @@ export class MobileProjectsPanel {
             : nls.localize('qaap/mobileProjects/transcriptAgent', 'Agent');
         const contentEl = document.createElement('div');
         contentEl.className = 'theia-mobile-agent-transcript-content';
-        contentEl.textContent = content;
+        contentEl.textContent = normalizeAgentMessageContentForDisplay(content);
         row.append(roleEl, contentEl);
         if (error) {
             const err = document.createElement('div');

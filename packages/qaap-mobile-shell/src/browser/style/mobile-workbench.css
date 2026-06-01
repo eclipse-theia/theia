@@ -9496,8 +9496,10 @@ button.theia-mobile-transcript-team-row:focus-visible {
 }
 
 .theia-mobile-agent-transcript-msg.theia-mod-agent {
-  align-self: flex-start;
-  max-width: 92%;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .theia-mobile-agent-transcript-msg.theia-mod-streaming {

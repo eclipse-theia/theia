@@ -6,6 +6,7 @@
 import { MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common/chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from '@theia/ai-chat/lib/common/parsed-chat-request';
 import type { QaapAgentConversationDTO, QaapAgentMessageDTO } from '../common/qaap-agent-conversation-client';
+import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { qaiqSegmentsToChatContents, syncAgentResponseContents } from './qaap-qaiq-chat-contents';
 
 interface MessagePair {
@@ -83,7 +84,7 @@ function isStreamingAgentTurn(conversation: QaapAgentConversationDTO, agentMessa
 }
 
 function parsePlainChatRequest(text: string): ParsedChatRequest {
-    const trimmed = text.trim();
+    const trimmed = normalizeAgentMessageContentForDisplay(text).trim();
     return {
         request: { text: trimmed },
         parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: trimmed.length }, trimmed)],
@@ -97,7 +98,10 @@ function applyAgentMessageToRequest(
     message: QaapAgentMessageDTO,
     streaming: boolean,
 ): void {
-    const contents = qaiqSegmentsToChatContents(message.segments, message.content);
+    const contents = qaiqSegmentsToChatContents(
+        message.segments,
+        normalizeAgentMessageContentForDisplay(message.content),
+    );
     const response = request.response.response;
     if (response.content.length === 0 && contents.length > 0) {
         response.addContents(contents);
