@@ -38,7 +38,7 @@
     "is-electron": "^2.2.2",
     "nano": "^10.1.4",
     "resolve-package-path": "^4.0.3",
-    "semver": "^7.7.4",
+    "semver": "^7.8.1",
     "tslib": "^2.8.1",
     "write-json-file": "^2.3.0"
   },
