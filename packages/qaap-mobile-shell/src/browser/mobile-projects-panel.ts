@@ -3405,19 +3405,19 @@ export class MobileProjectsPanel {
         const activeCount = cwd
             ? (this.activeTasks?.getForCwd(cwd)?.activeCount ?? 0)
             : this.activeTasks?.findTasksForProject(project).filter(task => task.state === 'running').length ?? 0;
-        const conversations = this.conversationsForProject(project).length;
-        if (activeCount > 0 && conversations > 0) {
+        const tasks = this.vpsTasksForProject(project).length;
+        if (activeCount > 0 && tasks > 0) {
             return activeCount === 1
                 ? nls.localize(
-                    'qaap/workHubHome/workspaceActiveOneChatMany',
-                    '1 agent active · {0} chats',
-                    String(conversations),
+                    'qaap/workHubHome/workspaceActiveOneTaskMany',
+                    '1 agent active · {0} tasks',
+                    String(tasks),
                 )
                 : nls.localize(
-                    'qaap/workHubHome/workspaceActiveManyChatMany',
-                    '{0} agents active · {1} chats',
+                    'qaap/workHubHome/workspaceActiveManyTaskMany',
+                    '{0} agents active · {1} tasks',
                     String(activeCount),
-                    String(conversations),
+                    String(tasks),
                 );
         }
         if (activeCount > 0) {
@@ -3429,13 +3429,13 @@ export class MobileProjectsPanel {
                     String(activeCount),
                 );
         }
-        if (conversations > 0) {
-            return conversations === 1
-                ? nls.localize('qaap/workHubHome/workspaceChatOne', '1 chat')
+        if (tasks > 0) {
+            return tasks === 1
+                ? nls.localize('qaap/workHubHome/workspaceTaskOne', '1 task')
                 : nls.localize(
-                    'qaap/workHubHome/workspaceChatMany',
-                    '{0} chats',
-                    String(conversations),
+                    'qaap/workHubHome/workspaceTaskMany',
+                    '{0} tasks',
+                    String(tasks),
                 );
         }
         return project.branch || nls.localize('qaap/workHubHome/workspaceIdle', 'Ready to work');
