@@ -9789,8 +9789,10 @@ export class MobileProjectsPanel {
         if (verification) {
             body.append(verification);
         }
-        for (const segment of segments.filter(segment => segment.type === 'text')) {
-            body.append(this.createTranscriptSegmentDetails(segment));
+        for (const segment of segments) {
+            if (segment.type === 'text' || segment.type === 'tool') {
+                body.append(this.createTranscriptSegmentDetails(segment));
+            }
         }
         const technicalDetails = this.createTranscriptTechnicalDetailsCard(segments);
         if (technicalDetails) {
@@ -9931,7 +9933,7 @@ export class MobileProjectsPanel {
     }
 
     protected createTranscriptTechnicalDetailsCard(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
-        const technical = segments.filter(segment => segment.type !== 'text');
+        const technical = segments.filter(segment => segment.type === 'thinking');
         if (technical.length === 0) {
             return undefined;
         }
@@ -10083,6 +10085,11 @@ export class MobileProjectsPanel {
         return name.includes('bash') || name.includes('shell') || name.includes('terminal') || name.includes('run_');
     }
 
+    protected isTranscriptReadLikeTool(toolName: string): boolean {
+        const name = toolName.toLowerCase();
+        return name.includes('read') || name.includes('grep') || name.includes('glob') || name.includes('search') || name.includes('list');
+    }
+
     protected isTranscriptVerificationCommand(command: string): boolean {
         return /\b(test|spec|check|lint|compile|build|typecheck|tsc|vitest|jest|mocha|playwright|pytest|cargo test|go test)\b/i.test(command);
     }
@@ -10098,6 +10105,15 @@ export class MobileProjectsPanel {
     protected compactTranscriptCommand(command: string): string {
         const clean = command.replace(/\s+/g, ' ').trim();
         return clean.length > 72 ? `${clean.slice(0, 69)}…` : clean;
+    }
+
+    protected formatTranscriptToolResult(result: string): string {
+        const clean = this.cleanTranscriptDisplayText(result);
+        const lines = clean.split('\n');
+        if (lines.length < 4 || lines.some(line => /^\s*\d+[→:|]/.test(line))) {
+            return clean;
+        }
+        return lines.map((line, index) => `${index + 1}→${line}`).join('\n');
     }
 
     protected compactTranscriptPath(path: string): string {
@@ -10118,28 +10134,108 @@ export class MobileProjectsPanel {
             return details;
         }
         if (segment.type === 'tool') {
-            const details = document.createElement('details');
-            details.className = 'theia-mobile-agent-transcript-details theia-mod-tool';
-            const summary = document.createElement('summary');
-            const status = segment.finished
-                ? nls.localize('qaap/mobileProjects/transcriptToolDone', 'Tool')
-                : nls.localize('qaap/mobileProjects/transcriptToolRunning', 'Tool (running)');
-            summary.textContent = `${status}: ${segment.name}`;
-            const args = document.createElement('pre');
-            args.textContent = this.cleanTranscriptDisplayText(segment.args);
-            details.append(summary, args);
-            if (segment.result) {
-                const result = document.createElement('pre');
-                result.className = 'theia-mobile-agent-transcript-tool-result';
-                result.textContent = this.cleanTranscriptDisplayText(segment.result);
-                details.append(result);
+            if (this.isTranscriptShellTool(segment.name)) {
+                return this.createTranscriptShellDetails(segment);
             }
-            return details;
+            return this.createTranscriptToolWindow(segment);
         }
         const block = document.createElement('div');
-        block.className = 'theia-mobile-agent-transcript-content theia-mod-markdown';
-        this.renderTranscriptMarkdown(block, segment.content);
+        block.className = 'theia-mobile-agent-transcript-content';
+        this.renderTranscriptRichContent(block, segment.content);
         return block;
+    }
+
+    protected createTranscriptToolWindow(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
+        const details = document.createElement('details');
+        details.className = 'theia-mobile-agent-tool-window';
+        details.open = !segment.finished || this.isTranscriptReadLikeTool(segment.name);
+        if (segment.finished) {
+            details.classList.add('theia-mod-done');
+        } else {
+            details.classList.add('theia-mod-running');
+        }
+
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-tool-head';
+        const caret = document.createElement('span');
+        caret.className = 'theia-mobile-agent-tool-caret';
+        caret.textContent = '▾';
+        const title = document.createElement('span');
+        title.className = 'theia-mobile-agent-tool-title';
+        title.textContent = `Tool: ${segment.name}`;
+        const meta = document.createElement('span');
+        meta.className = 'theia-mobile-agent-tool-meta';
+        meta.textContent = this.extractTranscriptToolPath(segment.args)
+            ?? this.extractTranscriptToolShortArg(segment.args)
+            ?? '';
+        summary.append(caret, title, meta);
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-tool-body';
+        const args = document.createElement('pre');
+        args.className = 'theia-mobile-agent-tool-args';
+        args.textContent = this.cleanTranscriptDisplayText(segment.args);
+        body.append(args);
+        if (segment.result?.trim()) {
+            const result = document.createElement('pre');
+            result.className = 'theia-mobile-agent-tool-result';
+            result.textContent = this.formatTranscriptToolResult(segment.result);
+            body.append(result);
+        }
+        details.append(summary, body);
+        return details;
+    }
+
+    protected createTranscriptShellDetails(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
+        const details = document.createElement('details');
+        details.className = 'theia-mobile-agent-shell-window';
+        details.open = true;
+        if (segment.finished) {
+            details.classList.add(this.transcriptToolResultFailed(segment.result) ? 'theia-mod-failed' : 'theia-mod-done');
+        } else {
+            details.classList.add('theia-mod-running');
+        }
+
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-shell-head';
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-agent-shell-icon';
+        icon.textContent = '>_';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-shell-title';
+        const command = this.extractTranscriptToolCommand(segment.args)
+            ?? this.cleanTranscriptDisplayText(segment.args);
+        label.textContent = command && command !== '{}'
+            ? this.compactTranscriptCommand(command)
+            : nls.localize('qaap/mobileProjects/transcriptShell', 'Shell');
+        const state = document.createElement('span');
+        state.className = 'theia-mobile-agent-shell-state';
+        state.textContent = segment.finished
+            ? this.transcriptToolResultFailed(segment.result)
+                ? nls.localize('qaap/mobileProjects/transcriptShellFailed', 'failed')
+                : nls.localize('qaap/mobileProjects/transcriptShellDone', 'done')
+            : nls.localize('qaap/mobileProjects/transcriptShellRunning', 'running');
+        summary.append(icon, label, state);
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-shell-body';
+        const commandLine = document.createElement('div');
+        commandLine.className = 'theia-mobile-agent-shell-command';
+        const prompt = document.createElement('span');
+        prompt.className = 'theia-mobile-agent-shell-prompt';
+        prompt.textContent = '$';
+        const commandText = document.createElement('code');
+        commandText.textContent = command;
+        commandLine.append(prompt, commandText);
+        body.append(commandLine);
+        if (segment.result?.trim()) {
+            const output = document.createElement('pre');
+            output.className = 'theia-mobile-agent-shell-output';
+            output.textContent = this.cleanTranscriptDisplayText(segment.result);
+            body.append(output);
+        }
+        details.append(summary, body);
+        return details;
     }
 
     protected createTranscriptStreamingActivityRow(conv: QaapAgentConversationDTO): HTMLElement {
@@ -10293,8 +10389,8 @@ export class MobileProjectsPanel {
             roleEl.textContent = nls.localize('qaap/mobileProjects/transcriptYou', 'You');
         }
         const contentEl = document.createElement('div');
-        contentEl.className = 'theia-mobile-agent-transcript-content theia-mod-markdown';
-        this.renderTranscriptMarkdown(contentEl, normalizeAgentMessageContentForDisplay(content));
+        contentEl.className = 'theia-mobile-agent-transcript-content';
+        this.renderTranscriptRichContent(contentEl, normalizeAgentMessageContentForDisplay(content));
         row.append(...(roleEl ? [roleEl] : []), contentEl);
         if (error) {
             const err = document.createElement('div');
@@ -10303,6 +10399,46 @@ export class MobileProjectsPanel {
             row.append(err);
         }
         return row;
+    }
+
+    protected renderTranscriptRichContent(host: HTMLElement, content: string): void {
+        const clean = this.cleanTranscriptDisplayText(content).trim();
+        if (this.isTranscriptTerminalOutputText(clean)) {
+            host.append(this.createTranscriptTextTerminalWindow(clean));
+            return;
+        }
+        host.classList.add('theia-mod-markdown');
+        this.renderTranscriptMarkdown(host, clean);
+    }
+
+    protected createTranscriptTextTerminalWindow(content: string): HTMLElement {
+        const details = document.createElement('details');
+        details.className = `theia-mobile-agent-shell-window ${this.isTranscriptErrorOutput(content) ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
+        details.open = true;
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-shell-head';
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-agent-shell-icon';
+        icon.textContent = '>_';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-shell-title';
+        label.textContent = this.isTranscriptErrorOutput(content)
+            ? nls.localize('qaap/mobileProjects/transcriptErrorOutput', 'Error output')
+            : nls.localize('qaap/mobileProjects/transcriptTerminalOutput', 'Terminal output');
+        const state = document.createElement('span');
+        state.className = 'theia-mobile-agent-shell-state';
+        state.textContent = this.isTranscriptErrorOutput(content)
+            ? nls.localize('qaap/mobileProjects/transcriptShellFailed', 'failed')
+            : nls.localize('qaap/mobileProjects/transcriptShellDone', 'done');
+        summary.append(icon, label, state);
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-shell-body';
+        const output = document.createElement('pre');
+        output.className = 'theia-mobile-agent-shell-output';
+        output.textContent = content;
+        body.append(output);
+        details.append(summary, body);
+        return details;
     }
 
     protected renderTranscriptMarkdown(host: HTMLElement, content: string): void {
@@ -10331,6 +10467,21 @@ export class MobileProjectsPanel {
         return content
             .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
             .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '');
+    }
+
+    protected isTranscriptTerminalOutputText(content: string): boolean {
+        const lines = content.split('\n').filter(line => line.trim());
+        if (lines.length < 4) {
+            return false;
+        }
+        const signals = lines.filter(line =>
+            /file:\/\/\/|node_modules|^\s*at\s+\S+|\b(?:Error|Exception|Traceback|stack)\b|The above error occurred|React will try to recreate/i.test(line)
+        ).length;
+        return signals >= 2;
+    }
+
+    protected isTranscriptErrorOutput(content: string): boolean {
+        return /\b(?:Error|Exception|Traceback|failed|failure)\b|The above error occurred|React will try to recreate/i.test(content);
     }
 
     protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
