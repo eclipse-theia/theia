@@ -829,7 +829,7 @@ export function mountTranscriptFilesView(
         const parent = resolveNewItemParentPath();
         prepareCreateInParent(parent);
         closeNewMenu();
-        void services.createNewFile(parent);
+        services.createNewFile(parent);
     };
 
     const runCreateNewFolder = (): void => {
@@ -839,7 +839,13 @@ export function mountTranscriptFilesView(
         const parent = resolveNewItemParentPath();
         prepareCreateInParent(parent);
         closeNewMenu();
-        void services.createNewFolder(parent);
+        services.createNewFolder(parent);
+    };
+
+    const onNewMenuItemActivate = (event: Event, run: () => void): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        run();
     };
 
     const onNewPointerDown = (event: PointerEvent): void => {
@@ -847,14 +853,20 @@ export function mountTranscriptFilesView(
         event.stopPropagation();
         openNewMenu();
     };
+    const onNewFileItemPointerDown = (event: PointerEvent): void => {
+        onNewMenuItemActivate(event, runCreateNewFile);
+    };
+    const onNewFolderItemPointerDown = (event: PointerEvent): void => {
+        onNewMenuItemActivate(event, runCreateNewFolder);
+    };
     newFileBtn.addEventListener('pointerdown', onNewPointerDown);
     disposables.push(Disposable.create(() => newFileBtn.removeEventListener('pointerdown', onNewPointerDown)));
 
-    newFileItem.addEventListener('click', runCreateNewFile);
-    disposables.push(Disposable.create(() => newFileItem.removeEventListener('click', runCreateNewFile)));
+    newFileItem.addEventListener('pointerdown', onNewFileItemPointerDown);
+    disposables.push(Disposable.create(() => newFileItem.removeEventListener('pointerdown', onNewFileItemPointerDown)));
 
-    newFolderItem.addEventListener('click', runCreateNewFolder);
-    disposables.push(Disposable.create(() => newFolderItem.removeEventListener('click', runCreateNewFolder)));
+    newFolderItem.addEventListener('pointerdown', onNewFolderItemPointerDown);
+    disposables.push(Disposable.create(() => newFolderItem.removeEventListener('pointerdown', onNewFolderItemPointerDown)));
 
     let splitDragSession: {
         readonly stacked: boolean;

@@ -126,12 +126,12 @@ function executeTranscriptNewFileCommand(
     parentResourcePath?: string,
 ): void {
     if (parentResourcePath) {
-        void commands.executeCommand('file.newFile', undefined, new URI(parentResourcePath));
+        void commands.executeCommand('file.newFile', new URI(parentResourcePath));
         return;
     }
     const root = resolveTranscriptWorkspaceRootUri('', workspaceService);
     if (root) {
-        void commands.executeCommand('file.newFile', undefined, root);
+        void commands.executeCommand('file.newFile', root);
         return;
     }
     void commands.executeCommand('file.newFile');

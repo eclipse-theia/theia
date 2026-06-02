@@ -11223,3 +11223,8 @@ button.theia-mobile-transcript-team-row:focus-visible {
 .theia-mobile-sticky-composer-sheet.theia-mod-transcript-overlay {
   z-index: 2147483002 !important;
 }
+
+/* WorkspaceInputDialog / SingleTextInputDialog must sit above the full-screen transcript sheet. */
+body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .lm-Widget.dialogOverlay {
+  z-index: 2147483015 !important;
+}
