@@ -58,7 +58,9 @@ import { resolveAgentVerifyChecksForCwd } from './qaap-agent-verify-checks-resol
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
-import { openTranscriptWorkspaceFile } from './qaap-transcript-file-open';
+import { openTranscriptWorkspaceFile, createTranscriptFilesViewServices } from './qaap-transcript-file-open';
+import * as markdownit from '@theia/core/shared/markdown-it';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
@@ -877,6 +879,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     filePath,
                     this.workspaceService,
                     this.editorManager,
+                ),
+                createTranscriptFilesViewServices: () => createTranscriptFilesViewServices(
+                    this.workspaceService,
+                    this.fileService,
+                    this.commands,
+                    markdown => DOMPurify.sanitize(
+                        markdownit({ linkify: true }).render(markdown),
+                        { ALLOW_UNKNOWN_PROTOCOLS: true },
+                    ),
                 ),
             }
         );

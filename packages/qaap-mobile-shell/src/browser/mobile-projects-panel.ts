@@ -215,6 +215,10 @@ import {
     createTranscriptCodeView,
     resolveTranscriptCodeLanguage,
 } from './qaap-transcript-code-view';
+import {
+    mountTranscriptFilesView,
+    type TranscriptFilesViewServices,
+} from './qaap-transcript-files-view';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -273,6 +277,8 @@ export interface MobileProjectsPanelOptions {
     resolveVerifyChecks?: (cwd: string) => Promise<Array<{ readonly label: string; readonly command: string }>>;
     /** Opens a workspace file when the user taps a transcript read chip. */
     openTranscriptFile?: (filePath: string) => void | Promise<void>;
+    /** Codex-style workspace browser for the transcript Files tab. */
+    createTranscriptFilesViewServices?: () => TranscriptFilesViewServices | undefined;
 }
 
 interface RestorableTheiaChatData {
@@ -296,7 +302,7 @@ interface QaapDiffProjectTab {
 }
 
 /** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
-type TranscriptTab = 'messages' | 'review' | 'verify' | 'preview';
+type TranscriptTab = 'messages' | 'review' | 'verify' | 'preview' | 'files';
 
 /** A single verification step run on the project (build/test/lint). */
 interface VerifyCheck {
@@ -420,6 +426,8 @@ export class MobileProjectsPanel {
     protected transcriptReviewComposerDraft = '';
     protected transcriptVerifyHost: HTMLElement | undefined;
     protected transcriptPreviewHost: HTMLElement | undefined;
+    protected transcriptFilesHost: HTMLElement | undefined;
+    protected transcriptFilesDispose: Disposable = Disposable.NULL;
     protected transcriptPreviewRequestRunning = false;
     protected transcriptPreviewRequestPending = false;
     protected transcriptActiveTab: TranscriptTab = 'messages';
@@ -490,6 +498,7 @@ export class MobileProjectsPanel {
     protected readonly messageService: MessageService | undefined;
     protected readonly resolveVerifyChecks: MobileProjectsPanelOptions['resolveVerifyChecks'];
     protected readonly openTranscriptFile: MobileProjectsPanelOptions['openTranscriptFile'];
+    protected readonly createTranscriptFilesViewServices: MobileProjectsPanelOptions['createTranscriptFilesViewServices'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -563,6 +572,7 @@ export class MobileProjectsPanel {
         this.messageService = options.messageService;
         this.resolveVerifyChecks = options.resolveVerifyChecks;
         this.openTranscriptFile = options.openTranscriptFile;
+        this.createTranscriptFilesViewServices = options.createTranscriptFilesViewServices;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -7420,8 +7430,11 @@ export class MobileProjectsPanel {
         const previewHost = document.createElement('div');
         previewHost.className = 'theia-mobile-transcript-preview';
         previewHost.hidden = true;
+        const filesHost = document.createElement('div');
+        filesHost.className = 'theia-mobile-transcript-files-host';
+        filesHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, reviewHost, verifyHost, previewHost, chatInputHost);
+        sheet.append(header, tabStrip, chatHost, reviewHost, verifyHost, previewHost, filesHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
@@ -7431,6 +7444,7 @@ export class MobileProjectsPanel {
         this.transcriptReviewHost = reviewHost;
         this.transcriptVerifyHost = verifyHost;
         this.transcriptPreviewHost = previewHost;
+        this.transcriptFilesHost = filesHost;
         this.transcriptActiveTab = 'messages';
         this.verifyResults = [];
         this.verifyChecksCwd = undefined;
@@ -7580,6 +7594,7 @@ export class MobileProjectsPanel {
             { id: 'review', label: nls.localize('qaap/mobileProjects/tabReview', 'Review') },
             { id: 'verify', label: nls.localize('qaap/mobileProjects/tabChecks', 'Checks') },
             { id: 'preview', label: nls.localize('qaap/mobileProjects/tabPreview', 'Preview') },
+            { id: 'files', label: nls.localize('qaap/mobileProjects/tabFiles', 'Files') },
         ];
         for (const tab of tabs) {
             const btn = document.createElement('button');
@@ -7626,12 +7641,17 @@ export class MobileProjectsPanel {
         if (this.transcriptPreviewHost) {
             this.transcriptPreviewHost.hidden = tab !== 'preview';
         }
+        if (this.transcriptFilesHost) {
+            this.transcriptFilesHost.hidden = tab !== 'files';
+        }
         if (tab === 'review') {
             void this.mountTranscriptReviewWidget(project, summary);
         } else if (tab === 'verify') {
             this.renderVerifyTab(project, summary);
         } else if (tab === 'preview') {
             this.renderPreviewTab(project, summary);
+        } else if (tab === 'files') {
+            this.renderFilesTab(project, summary);
         }
         this.updateTranscriptHeaderForTab(tab, project, summary);
     }
@@ -7684,6 +7704,10 @@ export class MobileProjectsPanel {
                 break;
             case 'preview':
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
+            case 'files':
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabFiles', 'Files');
                 subtitle.textContent = this.transcriptConversationMeta(project, summary);
                 break;
             default:
@@ -8023,6 +8047,35 @@ export class MobileProjectsPanel {
         btn.addEventListener('click', () => { void this.requestTranscriptPreview(project, summary); });
         wrap.append(btn);
         host.append(wrap);
+    }
+
+    protected renderFilesTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+        const host = this.transcriptFilesHost;
+        if (!host) {
+            return;
+        }
+        this.transcriptFilesDispose.dispose();
+        this.transcriptFilesDispose = Disposable.NULL;
+        const cwd = summary.cwd ?? this.projectsService.getProjectCwd(project);
+        const services = this.createTranscriptFilesViewServices?.();
+        if (!cwd || !services) {
+            host.replaceChildren();
+            host.hidden = false;
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-files-note';
+            note.textContent = nls.localize(
+                'qaap/mobileProjects/filesUnavailable',
+                'Files are unavailable for this conversation (no workspace path).',
+            );
+            host.append(note);
+            return;
+        }
+        this.transcriptFilesDispose = mountTranscriptFilesView(host, cwd, {
+            ...services,
+            renderMarkdown: services.renderMarkdown
+                ? markdown => services.renderMarkdown!(this.cleanTranscriptDisplayText(markdown))
+                : undefined,
+        });
     }
 
     protected createTranscriptPreviewLoading(conv: QaapAgentConversationDTO | undefined): HTMLElement {
@@ -10916,6 +10969,9 @@ export class MobileProjectsPanel {
         this.transcriptReviewHost = undefined;
         this.transcriptVerifyHost = undefined;
         this.transcriptPreviewHost = undefined;
+        this.transcriptFilesDispose.dispose();
+        this.transcriptFilesDispose = Disposable.NULL;
+        this.transcriptFilesHost = undefined;
         this.transcriptPreviewRequestRunning = false;
         this.transcriptPreviewRequestPending = false;
         this.transcriptActiveTab = 'messages';

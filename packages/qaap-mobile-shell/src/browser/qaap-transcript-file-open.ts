@@ -5,8 +5,16 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
+import { nls } from '@theia/core/lib/common/nls';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import {
+    type TranscriptFileTreeEntry,
+    type TranscriptFilesViewServices,
+} from './qaap-transcript-files-view';
 
 export async function openTranscriptWorkspaceFile(
     filePath: string,
@@ -40,4 +48,108 @@ export function resolveTranscriptWorkspaceFileUri(filePath: string, workspaceSer
     return trimmed.startsWith('/')
         ? FileUri.create(trimmed)
         : new URI(trimmed);
+}
+
+export function resolveTranscriptWorkspaceRootUri(cwd: string, workspaceService: WorkspaceService): URI | undefined {
+    const trimmed = cwd.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+    const cwdUri = trimmed.startsWith('/') ? FileUri.create(trimmed) : new URI(trimmed);
+    for (const root of workspaceService.tryGetRoots()) {
+        const relative = root.resource.relative(cwdUri);
+        if (relative !== undefined && !relative.toString().startsWith('..')) {
+            return cwdUri;
+        }
+    }
+    const roots = workspaceService.tryGetRoots();
+    if (roots.length > 0) {
+        return roots[0].resource;
+    }
+    return cwdUri;
+}
+
+export function resolveTranscriptWorkspaceRootLabel(cwd: string, workspaceService: WorkspaceService): string {
+    const root = resolveTranscriptWorkspaceRootUri(cwd, workspaceService);
+    if (!root) {
+        return cwd.split('/').filter(Boolean).pop() ?? cwd;
+    }
+    return (root.path.base || root.path.name || cwd.split('/').filter(Boolean).pop()) ?? 'workspace';
+}
+
+export function createTranscriptFilesViewServices(
+    workspaceService: WorkspaceService,
+    fileService: FileService,
+    commands: CommandRegistry,
+    renderMarkdown?: (markdown: string) => string,
+): TranscriptFilesViewServices {
+    return {
+        resolveRootUri: cwd => resolveTranscriptWorkspaceRootUri(cwd, workspaceService)?.toString(),
+        resolveRootLabel: cwd => resolveTranscriptWorkspaceRootLabel(cwd, workspaceService),
+        listDirectory: async resourcePath => {
+            const stat = await fileService.resolve(new URI(resourcePath));
+            return (stat.children ?? []).map(child => ({
+                name: child.name,
+                resourcePath: child.resource.toString(),
+                relativePath: child.name,
+                isDirectory: child.isDirectory,
+            } satisfies TranscriptFileTreeEntry));
+        },
+        relativePathForResource: (resourcePath, rootUri) => {
+            const relative = new URI(rootUri).relative(new URI(resourcePath));
+            return relative?.toString() ?? new URI(resourcePath).path.base;
+        },
+        readFile: async resourcePath => {
+            const content = await fileService.readFile(new URI(resourcePath));
+            return content.value.toString();
+        },
+        renderMarkdown,
+        createNewFile: parentResourcePath => {
+            void executeTranscriptNewFileCommand(commands, workspaceService, parentResourcePath);
+        },
+        createNewFolder: parentResourcePath => {
+            void executeTranscriptNewFolderCommand(commands, workspaceService, parentResourcePath);
+        },
+        watchFileTreeChanges: onChange => {
+            const subscription = fileService.onDidFilesChange(() => {
+                onChange();
+            });
+            return Disposable.create(() => subscription.dispose());
+        },
+        localize: (key, defaultValue, ...args) => nls.localize(key, defaultValue, ...args),
+    };
+}
+
+function executeTranscriptNewFileCommand(
+    commands: CommandRegistry,
+    workspaceService: WorkspaceService,
+    parentResourcePath?: string,
+): void {
+    if (parentResourcePath) {
+        void commands.executeCommand('file.newFile', undefined, new URI(parentResourcePath));
+        return;
+    }
+    const root = resolveTranscriptWorkspaceRootUri('', workspaceService);
+    if (root) {
+        void commands.executeCommand('file.newFile', undefined, root);
+        return;
+    }
+    void commands.executeCommand('file.newFile');
+}
+
+function executeTranscriptNewFolderCommand(
+    commands: CommandRegistry,
+    workspaceService: WorkspaceService,
+    parentResourcePath?: string,
+): void {
+    if (parentResourcePath) {
+        void commands.executeCommand('file.newFolder', new URI(parentResourcePath));
+        return;
+    }
+    const root = resolveTranscriptWorkspaceRootUri('', workspaceService);
+    if (root) {
+        void commands.executeCommand('file.newFolder', root);
+        return;
+    }
+    void commands.executeCommand('file.newFolder');
 }
