@@ -46,6 +46,7 @@ import { MobileProjectsService } from './mobile-projects-service';
 import {
     buildConversationListMetrics,
     conversationTurnProgressRatio,
+    formatReadToolDetailFromArgs,
     formatToolActivityLabel,
     parseDiffStatsFromText,
 } from '../common/qaap-agent-conversation-list-metrics';
@@ -210,6 +211,10 @@ import {
     type QaapDiffReviewRepositoryContext,
 } from './qaap-diff-review-widget';
 import { toDevPreviewUrl } from './qaap-dev-preview-client';
+import {
+    createTranscriptCodeView,
+    resolveTranscriptCodeLanguage,
+} from './qaap-transcript-code-view';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -266,6 +271,8 @@ export interface MobileProjectsPanelOptions {
     messageService?: MessageService;
     /** Picks compile/build/test verification commands from the conversation workspace. */
     resolveVerifyChecks?: (cwd: string) => Promise<Array<{ readonly label: string; readonly command: string }>>;
+    /** Opens a workspace file when the user taps a transcript read chip. */
+    openTranscriptFile?: (filePath: string) => void | Promise<void>;
 }
 
 interface RestorableTheiaChatData {
@@ -482,6 +489,7 @@ export class MobileProjectsPanel {
     protected readonly chatAgentService: ChatAgentService | undefined;
     protected readonly messageService: MessageService | undefined;
     protected readonly resolveVerifyChecks: MobileProjectsPanelOptions['resolveVerifyChecks'];
+    protected readonly openTranscriptFile: MobileProjectsPanelOptions['openTranscriptFile'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -554,6 +562,7 @@ export class MobileProjectsPanel {
         this.chatAgentService = options.chatAgentService;
         this.messageService = options.messageService;
         this.resolveVerifyChecks = options.resolveVerifyChecks;
+        this.openTranscriptFile = options.openTranscriptFile;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -10241,12 +10250,64 @@ export class MobileProjectsPanel {
     }
 
     protected formatTranscriptToolResult(result: string): string {
-        const clean = this.cleanTranscriptDisplayText(result);
-        const lines = clean.split('\n');
-        if (lines.length < 4 || lines.some(line => /^\s*\d+[→:|]/.test(line))) {
-            return clean;
+        return this.stripTranscriptLineNumberPrefixes(this.cleanTranscriptDisplayText(result));
+    }
+
+    protected stripTranscriptLineNumberPrefixes(text: string): string {
+        const lines = text.split('\n');
+        const stripped = lines.map(line => line.replace(/^\s*\d+[→:|]\s?/, ''));
+        return stripped.some((line, index) => line !== lines[index]) ? stripped.join('\n') : text;
+    }
+
+    protected isTranscriptPureReadTool(toolName: string): boolean {
+        const name = toolName.toLowerCase();
+        if (name.includes('grep') || name.includes('search') || name.includes('glob')
+            || name.includes('list') || name.includes('ls')) {
+            return false;
         }
-        return lines.map((line, index) => `${index + 1}→${line}`).join('\n');
+        return name === 'read' || name.endsWith('_read') || /\bread\b/.test(name);
+    }
+
+    protected extractTranscriptToolFullPath(argsJson: string): string | undefined {
+        try {
+            const args = JSON.parse(argsJson) as Record<string, unknown>;
+            const path = typeof args.path === 'string'
+                ? args.path
+                : typeof args.file_path === 'string'
+                    ? args.file_path
+                    : typeof args.filename === 'string'
+                        ? args.filename
+                        : undefined;
+            return path?.trim() || undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
+    protected splitTranscriptFilePath(path: string): { fileName: string; dirPath: string } {
+        const clean = path.replace(/\\/g, '/').replace(/^\.?\//, '');
+        const parts = clean.split('/').filter(Boolean);
+        const fileName = parts.pop() ?? clean;
+        const dirParts = parts.length > 3 ? parts.slice(-2) : parts;
+        return { fileName, dirPath: dirParts.join('/') };
+    }
+
+    protected countTranscriptResultLines(result: string): number {
+        const clean = this.stripTranscriptLineNumberPrefixes(this.cleanTranscriptDisplayText(result));
+        return clean ? clean.split('\n').length : 0;
+    }
+
+    protected shouldShowTranscriptToolResultBody(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        kind: string,
+    ): boolean {
+        if (!segment.result?.trim()) {
+            return false;
+        }
+        if (this.isTranscriptPureReadTool(segment.name)) {
+            return false;
+        }
+        return kind === 'searching' || kind === 'editing' || kind === 'tool';
     }
 
     protected compactTranscriptPath(path: string): string {
@@ -10284,18 +10345,20 @@ export class MobileProjectsPanel {
      * compact but every line is one tap away.
      */
     protected createTranscriptClampedPre(text: string, className: string): HTMLElement {
-        const previewLines = 4;
         const pre = document.createElement('pre');
         pre.className = className;
         pre.textContent = text;
-        const lineCount = text.split('\n').length;
+        return this.createTranscriptClampedBlock(pre, text.split('\n').length);
+    }
+
+    protected createTranscriptClampedBlock(content: HTMLElement, lineCount: number, previewLines = 4): HTMLElement {
         if (lineCount <= previewLines) {
-            return pre;
+            return content;
         }
         const wrap = document.createElement('div');
         wrap.className = 'theia-mobile-agent-clamp';
         wrap.style.setProperty('--qaap-clamp-lines', String(previewLines));
-        wrap.append(pre);
+        wrap.append(content);
         const toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'theia-mobile-agent-clamp-toggle';
@@ -10323,54 +10386,174 @@ export class MobileProjectsPanel {
         return wrap;
     }
 
+    /** Minimal one-line read status: `Read file.ts L2505-2554`. */
+    protected createTranscriptReadLine(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
+        const fullPath = this.extractTranscriptToolFullPath(segment.args);
+        const line = document.createElement('div');
+        line.className = 'theia-mobile-agent-read-line';
+        if (!segment.finished) {
+            line.classList.add('theia-mod-running');
+        }
+        const verb = document.createElement('span');
+        verb.className = 'theia-mobile-agent-read-line-verb';
+        verb.textContent = nls.localize('qaap/mobileProjects/transcriptToolRead', 'Read');
+        const detail = document.createElement('span');
+        detail.className = 'theia-mobile-agent-read-line-detail';
+        detail.textContent = formatReadToolDetailFromArgs(segment.args)
+            ?? (fullPath ? this.splitTranscriptFilePath(fullPath).fileName : '');
+        line.append(verb, detail);
+        if (fullPath) {
+            this.attachTranscriptFileOpenAction(line, fullPath);
+        }
+        return line;
+    }
+
     protected createTranscriptToolWindow(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
         const kind = this.resolveTranscriptToolKind(segment.name);
-        const target = this.extractTranscriptToolPath(segment.args)
-            ?? this.extractTranscriptToolShortArg(segment.args);
+        const fullPath = this.extractTranscriptToolFullPath(segment.args);
+        const target = fullPath ? this.compactTranscriptPath(fullPath)
+            : this.extractTranscriptToolShortArg(segment.args);
         const hasResult = !!segment.result?.trim();
+        const showResultBody = this.shouldShowTranscriptToolResultBody(segment, kind);
+        const pureRead = this.isTranscriptPureReadTool(segment.name);
+
+        if (pureRead && !showResultBody) {
+            return this.createTranscriptReadLine(segment);
+        }
+
+        const head = this.createTranscriptToolHead({
+            kind,
+            toolName: segment.name,
+            fullPath,
+            target,
+            hasResult,
+            showResultBody,
+            pureRead,
+            result: segment.result,
+            finished: segment.finished,
+        });
 
         const details = document.createElement('details');
         details.className = `theia-mobile-agent-tool-window theia-mod-${kind}`;
-        // Read-like results carry useful inline context, so expand them; actions stay collapsed
-        // since their change is reflected in the Changed files / Review surfaces.
-        details.open = !segment.finished || (this.isTranscriptReadLikeTool(segment.name) && hasResult);
+        details.open = !segment.finished;
         details.classList.add(segment.finished ? 'theia-mod-done' : 'theia-mod-running');
+        details.append(head);
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-tool-body';
+        body.append(this.createTranscriptToolResultBody(segment, kind));
+        details.append(body);
+        return details;
+    }
 
-        const summary = document.createElement('summary');
-        summary.className = 'theia-mobile-agent-tool-head';
+    protected createTranscriptToolResultBody(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        _kind: string,
+    ): HTMLElement {
+        const text = this.formatTranscriptToolResult(segment.result!);
+        const fullPath = this.extractTranscriptToolFullPath(segment.args);
+        const language = resolveTranscriptCodeLanguage(fullPath, text);
+        const view = createTranscriptCodeView(text, language);
+        return this.createTranscriptClampedBlock(view, text.split('\n').length);
+    }
+
+    protected handleTranscriptFileOpen(filePath: string): void {
+        if (!this.openTranscriptFile) {
+            return;
+        }
+        void Promise.resolve(this.openTranscriptFile(filePath)).catch(error => {
+            console.warn('[qaap-mobile-shell] Failed to open transcript file:', error);
+            this.messageService?.error(
+                nls.localize('qaap/mobileProjects/transcriptOpenFileFailed', 'Could not open {0}', filePath),
+            );
+        });
+    }
+
+    protected attachTranscriptFileOpenAction(head: HTMLElement, filePath: string): void {
+        if (!this.openTranscriptFile) {
+            return;
+        }
+        head.classList.add('theia-mod-clickable');
+        head.title = nls.localize('qaap/mobileProjects/transcriptOpenFile', 'Open in editor');
+        head.addEventListener('click', event => {
+            event.stopPropagation();
+            event.preventDefault();
+            this.handleTranscriptFileOpen(filePath);
+        });
+    }
+
+    protected createTranscriptToolHead(options: {
+        kind: string;
+        toolName: string;
+        fullPath?: string;
+        target?: string;
+        hasResult: boolean;
+        showResultBody: boolean;
+        pureRead: boolean;
+        result?: string;
+        finished: boolean;
+    }): HTMLElement {
+        const head = document.createElement(options.showResultBody ? 'summary' : 'div');
+        head.className = 'theia-mobile-agent-tool-head';
         const chevron = document.createElement('span');
         chevron.className = 'theia-mobile-agent-tool-chevron codicon codicon-chevron-right';
         chevron.setAttribute('aria-hidden', 'true');
+        if (!options.showResultBody) {
+            chevron.hidden = true;
+        }
         const icon = document.createElement('span');
-        icon.className = `theia-mobile-agent-tool-icon codicon ${this.transcriptToolIconClass(kind)}`;
+        icon.className = `theia-mobile-agent-tool-icon codicon ${this.transcriptToolIconClass(options.kind)}`;
         icon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('span');
         title.className = 'theia-mobile-agent-tool-title';
-        title.textContent = this.transcriptToolVerb(kind, segment.name);
-        summary.append(chevron, icon, title);
-        if (target) {
+        title.textContent = this.transcriptToolVerb(options.kind, options.toolName);
+        head.append(chevron, icon, title);
+        if (options.fullPath && options.kind === 'reading') {
+            const { fileName, dirPath } = this.splitTranscriptFilePath(options.fullPath);
+            const fileNameEl = document.createElement('span');
+            fileNameEl.className = 'theia-mobile-agent-tool-file-name';
+            fileNameEl.textContent = fileName;
+            head.append(fileNameEl);
+            if (dirPath) {
+                const dirEl = document.createElement('span');
+                dirEl.className = 'theia-mobile-agent-tool-file-dir';
+                dirEl.textContent = dirPath;
+                head.append(dirEl);
+            }
+            if (!options.showResultBody) {
+                this.attachTranscriptFileOpenAction(head, options.fullPath);
+            }
+        } else if (options.target) {
             const chip = document.createElement('span');
             chip.className = 'theia-mobile-agent-tool-target';
-            chip.textContent = target;
-            summary.append(chip);
+            chip.textContent = options.target;
+            head.append(chip);
+        }
+        if (options.hasResult && options.pureRead && options.result) {
+            const lineCount = this.countTranscriptResultLines(options.result);
+            if (lineCount > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'theia-mobile-agent-tool-badge';
+                badge.textContent = lineCount === 1
+                    ? nls.localize('qaap/mobileProjects/transcriptToolLineCountOne', '1 line')
+                    : nls.localize('qaap/mobileProjects/transcriptToolLineCount', '{0} lines', String(lineCount));
+                head.append(badge);
+            }
+        } else if (options.hasResult && options.kind === 'searching' && options.result) {
+            const matchLines = this.countTranscriptResultLines(options.result);
+            if (matchLines > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'theia-mobile-agent-tool-badge theia-mod-muted';
+                badge.textContent = matchLines === 1
+                    ? nls.localize('qaap/mobileProjects/transcriptToolMatchCountOne', '1 match')
+                    : nls.localize('qaap/mobileProjects/transcriptToolMatchCount', '{0} matches', String(matchLines));
+                head.append(badge);
+            }
         }
         const state = document.createElement('span');
         state.className = 'theia-mobile-agent-tool-state';
         state.setAttribute('aria-hidden', 'true');
-        summary.append(state);
-
-        details.append(summary);
-        // Only the human-readable result is shown inline; raw JSON arguments are intentionally hidden.
-        if (hasResult) {
-            const body = document.createElement('div');
-            body.className = 'theia-mobile-agent-tool-body';
-            body.append(this.createTranscriptClampedPre(
-                this.formatTranscriptToolResult(segment.result!),
-                'theia-mobile-agent-tool-result',
-            ));
-            details.append(body);
-        }
-        return details;
+        head.append(state);
+        return head;
     }
 
     /** Codicon for a tool window header, by resolved tool kind. */

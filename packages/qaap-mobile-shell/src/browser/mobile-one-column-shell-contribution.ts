@@ -56,7 +56,9 @@ import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { resolveAgentVerifyChecksForCwd } from './qaap-agent-verify-checks-resolver';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { EditorManager } from '@theia/editor/lib/browser';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
+import { openTranscriptWorkspaceFile } from './qaap-transcript-file-open';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
@@ -213,6 +215,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(FileService)
     protected readonly fileService: FileService;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
@@ -868,6 +873,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 getComposerVariables: () => this.variableService.getVariables(),
                 createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
                 resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),
+                openTranscriptFile: filePath => openTranscriptWorkspaceFile(
+                    filePath,
+                    this.workspaceService,
+                    this.editorManager,
+                ),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

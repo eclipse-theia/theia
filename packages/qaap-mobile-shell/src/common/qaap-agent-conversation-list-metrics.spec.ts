@@ -99,8 +99,8 @@ describe('formatToolActivityLabel', () => {
         expect(formatToolActivityLabel('Glob')).to.equal('Searching');
     });
 
-    it('maps read/list tools to Reading files', () => {
-        expect(formatToolActivityLabel('Read')).to.equal('Reading files');
+    it('maps pure Read tools to a minimal Read label', () => {
+        expect(formatToolActivityLabel('Read')).to.equal('Read');
         expect(formatToolActivityLabel('list_dir')).to.equal('Reading files');
     });
 
@@ -140,8 +140,10 @@ describe('formatToolActivityLabel', () => {
         expect(formatToolActivityLabel('Grep', '{"pattern":"findIndex"}')).to.equal('Searching: findIndex');
     });
 
-    it('enriches read label with file path from JSON args', () => {
-        expect(formatToolActivityLabel('Read', '{"file_path":"src/index.ts"}')).to.equal('Reading src/index.ts');
+    it('enriches read label with basename and line range from JSON args', () => {
+        expect(formatToolActivityLabel('Read', '{"file_path":"src/index.ts"}')).to.equal('Read index.ts');
+        expect(formatToolActivityLabel('Read', '{"file_path":"mobile-projects-panel.ts","offset":2505,"limit":50}'))
+            .to.equal('Read mobile-projects-panel.ts L2505-2554');
     });
 
     it('falls back to generic label when args is not valid JSON', () => {

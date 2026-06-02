@@ -124,6 +124,69 @@ export function parseDiffStatsFromText(text: string): { readonly added: number; 
     return undefined;
 }
 
+function parseToolArgNumber(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = parseInt(value, 10);
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+}
+
+/** True for file `Read` tools — not grep/glob/list. */
+export function isPureReadToolName(toolName: string): boolean {
+    const name = toolName.trim().toLowerCase();
+    if (name.includes('grep') || name.includes('search') || name.includes('glob')
+        || name.includes('list') || name === 'ls') {
+        return false;
+    }
+    return name === 'read' || name.endsWith('_read') || /\bread\b/.test(name);
+}
+
+/** `L2505-2554` from Read-tool args (`offset` + `limit`, 1-based lines). */
+export function formatReadToolLineRange(args: Record<string, unknown>): string | undefined {
+    const offset = parseToolArgNumber(args.offset);
+    const limit = parseToolArgNumber(args.limit);
+    if (offset !== undefined && limit !== undefined && limit > 0) {
+        return `L${offset}-${offset + limit - 1}`;
+    }
+    if (offset !== undefined) {
+        return `L${offset}`;
+    }
+    if (limit !== undefined && limit > 0) {
+        return `L1-${limit}`;
+    }
+    return undefined;
+}
+
+/** Basename + optional line range, e.g. `mobile-projects-panel.ts L2505-2554`. */
+export function formatReadToolDetailFromArgs(argsJson?: string): string | undefined {
+    if (!argsJson) {
+        return undefined;
+    }
+    try {
+        const args = JSON.parse(argsJson) as Record<string, unknown>;
+        const filePath = (typeof args.path === 'string' && args.path)
+            ? args.path
+            : (typeof args.file_path === 'string' && args.file_path)
+                ? args.file_path
+                : (typeof args.filename === 'string' && args.filename)
+                    ? args.filename
+                    : undefined;
+        if (!filePath) {
+            return undefined;
+        }
+        const parts = filePath.replace(/\\/g, '/').split('/').filter(Boolean);
+        const fileName = parts.pop() ?? filePath;
+        const range = formatReadToolLineRange(args);
+        return range ? `${fileName} ${range}` : fileName;
+    } catch {
+        return undefined;
+    }
+}
+
 export function formatToolActivityLabel(toolName: string, argsJson?: string): string {
     const name = toolName.trim().toLowerCase();
 
@@ -159,7 +222,11 @@ export function formatToolActivityLabel(toolName: string, argsJson?: string): st
     if (name.includes('grep') || name.includes('search') || name.includes('glob') || name.includes('web_search')) {
         return detail ? `Searching: ${detail}` : 'Searching';
     }
-    if (name.includes('read') || name.includes('list') || name.includes('ls')) {
+    if (isPureReadToolName(name)) {
+        const readDetail = formatReadToolDetailFromArgs(argsJson);
+        return readDetail ? `Read ${readDetail}` : 'Read';
+    }
+    if (name.includes('list') || name.includes('ls')) {
         return detail ? `Reading ${detail}` : 'Reading files';
     }
     if (name.includes('bash') || name.includes('shell') || name.includes('terminal') || name.includes('run_')) {
