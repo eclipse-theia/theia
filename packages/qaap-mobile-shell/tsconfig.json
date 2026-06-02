@@ -40,6 +40,9 @@
       "path": "../qaap-adapters"
     },
     {
+      "path": "../qaap-element-inspector"
+    },
+    {
       "path": "../qaap-shell"
     },
     {

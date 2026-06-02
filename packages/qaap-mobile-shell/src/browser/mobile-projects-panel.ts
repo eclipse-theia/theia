@@ -50,6 +50,17 @@ import {
     parseDiffStatsFromText,
 } from '../common/qaap-agent-conversation-list-metrics';
 import {
+    excerptTranscriptThought,
+    hasTranscriptActivityStats,
+    hasTranscriptActivityTimeline,
+    isTranscriptThoughtExcerptTruncated,
+    resolveTranscriptActivityStats,
+    resolveTranscriptThinkingContent,
+    shouldOpenTranscriptToolDetails,
+    shouldRenderTranscriptToolSegmentInline,
+    type QaapTranscriptActivityStats,
+} from '../common/qaap-agent-transcript-segments';
+import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
     QaapAgentMessageSegmentDTO,
@@ -151,6 +162,7 @@ import {
 } from '@theia/qaap-adapters/lib/browser/qaap-agent-preview-chrome';
 import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
 import type { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
+import type { QaapPreviewInspectorDeps } from '@theia/qaap-adapters/lib/browser/qaap-preview-inline-inspector';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     filterVpsTaskSummaries,
@@ -301,6 +313,8 @@ export interface MobileProjectsPanelOptions {
     createTranscriptTerminalViewServices?: () => TranscriptTerminalViewServices | undefined;
     /** Shared preview surfaces (element picker + inspector) for the transcript Preview tab. */
     previewSurfaceRegistry?: QaapPreviewSurfaceRegistry;
+    /** Element Inspector service + commands for inline Design/CSS editing in Preview. */
+    previewInspectorDeps?: QaapPreviewInspectorDeps;
 }
 
 interface RestorableTheiaChatData {
@@ -525,6 +539,7 @@ export class MobileProjectsPanel {
     protected readonly createTranscriptFilesViewServices: MobileProjectsPanelOptions['createTranscriptFilesViewServices'];
     protected readonly createTranscriptTerminalViewServices: MobileProjectsPanelOptions['createTranscriptTerminalViewServices'];
     protected readonly previewSurfaceRegistry: MobileProjectsPanelOptions['previewSurfaceRegistry'];
+    protected readonly previewInspectorDeps: MobileProjectsPanelOptions['previewInspectorDeps'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -601,6 +616,7 @@ export class MobileProjectsPanel {
         this.createTranscriptFilesViewServices = options.createTranscriptFilesViewServices;
         this.createTranscriptTerminalViewServices = options.createTranscriptTerminalViewServices;
         this.previewSurfaceRegistry = options.previewSurfaceRegistry;
+        this.previewInspectorDeps = options.previewInspectorDeps;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -1369,7 +1385,7 @@ export class MobileProjectsPanel {
             } else {
                 this.subtitleEl.textContent = nls.localize(
                     'qaap/mobileProjects/routinesSubtitle',
-                    '{0} VPS routines · tap Run or enable a schedule',
+                    '{0} automations on your VPS',
                     String(visible.length),
                 );
             }
@@ -3706,14 +3722,65 @@ export class MobileProjectsPanel {
             this.renderSubtitle();
             return;
         }
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-hub-routines';
-        for (const routine of routines) {
-            list.append(this.createRoutineRow(routine));
+        const running = routines.filter(r => r.lastRunState === 'running');
+        const scheduled = routines.filter(r => r.enabled && r.lastRunState !== 'running');
+        const paused = routines.filter(r => !r.enabled);
+        const sections: Array<{ readonly label: string; readonly items: QaapWorkHubRoutine[] }> = [];
+        if (running.length > 0) {
+            sections.push({
+                label: nls.localize('qaap/mobileProjects/routinesSectionRunning', 'Running'),
+                items: running,
+            });
         }
-        this.scroll.append(list);
+        if (scheduled.length > 0) {
+            sections.push({
+                label: nls.localize('qaap/mobileProjects/routinesSectionScheduled', 'Scheduled'),
+                items: scheduled,
+            });
+        }
+        if (paused.length > 0) {
+            sections.push({
+                label: nls.localize('qaap/mobileProjects/routinesSectionPaused', 'Paused'),
+                items: paused,
+            });
+        }
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-hub-routines';
+        const showSectionHeads = sections.length > 1;
+        for (const section of sections) {
+            host.append(this.createRoutineSection(section.label, section.items, showSectionHeads));
+        }
+        this.scroll.append(host);
         this.renderSubtitle();
         this.scheduleRoutinesRefreshWhileRunning();
+    }
+
+    protected createRoutineSection(
+        label: string,
+        routines: readonly QaapWorkHubRoutine[],
+        showHead: boolean,
+    ): HTMLElement {
+        const section = document.createElement('section');
+        section.className = 'theia-mobile-hub-routines-section';
+        if (showHead) {
+            const head = document.createElement('div');
+            head.className = 'theia-mobile-hub-routines-section-head';
+            const title = document.createElement('span');
+            title.className = 'theia-mobile-hub-routines-section-label q-overline';
+            title.textContent = label;
+            const count = document.createElement('span');
+            count.className = 'theia-mobile-hub-routines-section-count';
+            count.textContent = String(routines.length);
+            head.append(title, count);
+            section.append(head);
+        }
+        const group = document.createElement('div');
+        group.className = 'theia-mobile-hub-routines-group';
+        for (const routine of routines) {
+            group.append(this.createRoutineRow(routine));
+        }
+        section.append(group);
+        return section;
     }
 
     protected collectTeamMembersForHub(): WorkHubTeamMember[] {
@@ -3929,9 +3996,9 @@ export class MobileProjectsPanel {
 
     protected createRoutinesLoadingState(): HTMLElement {
         const loading = document.createElement('div');
-        loading.className = 'theia-mobile-projects-empty theia-mod-inbox-loading';
+        loading.className = 'theia-mobile-projects-empty theia-mod-routines-loading';
         const icon = document.createElement('span');
-        icon.className = 'codicon codicon-loading codicon-mod-spin';
+        icon.className = 'codicon codicon-loading codicon-mod-spin theia-mobile-hub-routines-empty-icon';
         const title = document.createElement('strong');
         title.textContent = nls.localize('qaap/mobileProjects/routinesLoading', 'Loading routines…');
         loading.append(icon, title);
@@ -3941,22 +4008,38 @@ export class MobileProjectsPanel {
     protected createRoutinesEmptyState(): HTMLElement {
         const empty = document.createElement('div');
         empty.className = 'theia-mobile-projects-empty theia-mod-routines-empty';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-sync theia-mobile-hub-routines-empty-icon';
+        icon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('strong');
         title.textContent = this.query
             ? nls.localize('qaap/mobileProjects/routinesEmpty', 'No routines match your search')
-            : nls.localize('qaap/mobileProjects/routinesEmptyAll', 'No routines yet');
+            : nls.localize('qaap/mobileProjects/routinesEmptyAll', 'Automate your VPS');
         const body = document.createElement('span');
-        body.textContent = nls.localize(
-            'qaap/mobileProjects/routinesEmptyBody',
-            'Tap + to create a VPS routine or enable a suggested template.',
-        );
-        empty.append(title, body);
+        body.textContent = this.query
+            ? nls.localize(
+                'qaap/mobileProjects/routinesEmptySearchBody',
+                'Try another keyword or clear the search.',
+            )
+            : nls.localize(
+                'qaap/mobileProjects/routinesEmptyBody',
+                'Schedule agents to run on your server — even when the app is closed.',
+            );
+        empty.append(icon, title, body);
         return empty;
     }
 
     protected createRoutineRow(routine: QaapWorkHubRoutine): HTMLElement {
         const row = document.createElement('article');
-        row.className = 'theia-mobile-hub-routine-row';
+        row.className = 'theia-mobile-hub-routine-row q-row';
+        if (routine.lastRunState === 'running') {
+            row.classList.add('theia-mod-running');
+        } else if (routine.lastRunState === 'failed') {
+            row.classList.add('theia-mod-failed');
+        }
+        if (!routine.enabled) {
+            row.classList.add('theia-mod-paused');
+        }
 
         const main = document.createElement('button');
         main.type = 'button';
@@ -3974,12 +4057,20 @@ export class MobileProjectsPanel {
 
         const body = document.createElement('div');
         body.className = 'theia-mobile-hub-routine-body';
+        const titleRow = document.createElement('div');
+        titleRow.className = 'theia-mobile-hub-routine-title-row';
+        if (routine.lastRunState === 'running' || routine.lastRunState === 'failed') {
+            const dot = document.createElement('span');
+            dot.className = `q-dot theia-mobile-hub-routine-dot ${
+                routine.lastRunState === 'running' ? 'q-success' : 'q-danger'
+            }`;
+            dot.setAttribute('aria-hidden', 'true');
+            titleRow.append(dot);
+        }
         const title = document.createElement('span');
         title.className = 'theia-mobile-hub-routine-title';
         title.textContent = routine.title;
-        const subtitle = document.createElement('span');
-        subtitle.className = 'theia-mobile-hub-routine-subtitle';
-        subtitle.textContent = routine.prompt;
+        titleRow.append(title);
         const meta = document.createElement('div');
         meta.className = 'theia-mobile-hub-routine-meta';
         appendSubtitleMetaPart(meta, routineScheduleLabel(routine));
@@ -3987,14 +4078,27 @@ export class MobileProjectsPanel {
             routineAgentId,
             this.activeTasks?.getAgents().find(a => a.id === routineAgentId)?.label,
         ));
-        appendSubtitleMetaPart(meta, this.routineStatusLabel(routine));
-        body.append(title, subtitle, meta);
+        const promptPreview = document.createElement('span');
+        promptPreview.className = 'theia-mobile-hub-routine-prompt theia-mod-secondary';
+        promptPreview.textContent = routine.prompt;
+        body.append(titleRow, meta, promptPreview);
 
         main.append(routineAvatar, body);
         main.addEventListener('click', () => this.openRoutineEditor(routine));
 
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-hub-routine-actions';
+        const trailing = document.createElement('div');
+        trailing.className = 'theia-mobile-hub-routine-trailing';
+
+        const run = document.createElement('button');
+        run.type = 'button';
+        run.className = 'theia-mobile-hub-routine-run q-icon-button codicon codicon-debug-start';
+        run.title = nls.localize('qaap/mobileProjects/routineRun', 'Run');
+        run.setAttribute('aria-label', run.title);
+        run.disabled = routine.lastRunState === 'running';
+        run.addEventListener('click', ev => {
+            ev.stopPropagation();
+            void this.runRoutineNow(routine);
+        });
 
         const toggle = document.createElement('button');
         toggle.type = 'button';
@@ -4004,38 +4108,16 @@ export class MobileProjectsPanel {
         toggle.title = routine.enabled
             ? nls.localize('qaap/mobileProjects/routineDisable', 'Disable routine')
             : nls.localize('qaap/mobileProjects/routineEnable', 'Enable routine');
+        toggle.setAttribute('aria-label', toggle.title);
         toggle.classList.toggle('theia-mod-on', routine.enabled);
         toggle.addEventListener('click', ev => {
             ev.stopPropagation();
             void this.toggleRoutineEnabled(routine);
         });
 
-        const run = document.createElement('button');
-        run.type = 'button';
-        run.className = 'theia-mobile-hub-routine-run';
-        run.textContent = nls.localize('qaap/mobileProjects/routineRun', 'Run');
-        run.disabled = routine.lastRunState === 'running';
-        run.addEventListener('click', ev => {
-            ev.stopPropagation();
-            void this.runRoutineNow(routine);
-        });
-
-        actions.append(toggle, run);
-        row.append(main, actions);
+        trailing.append(run, toggle);
+        row.append(main, trailing);
         return row;
-    }
-
-    protected routineStatusLabel(routine: QaapWorkHubRoutine): string {
-        if (routine.lastRunState === 'running') {
-            return nls.localize('qaap/mobileProjects/routineStatusRunning', 'Running');
-        }
-        if (routine.lastRunState === 'completed') {
-            return nls.localize('qaap/mobileProjects/routineStatusDone', 'Last run OK');
-        }
-        if (routine.lastRunState === 'failed') {
-            return nls.localize('qaap/mobileProjects/routineStatusFailed', 'Last run failed');
-        }
-        return nls.localize('qaap/mobileProjects/routineStatusIdle', 'Not run yet');
     }
 
     protected async toggleRoutineEnabled(routine: QaapWorkHubRoutine): Promise<void> {
@@ -4086,7 +4168,11 @@ export class MobileProjectsPanel {
         backdrop.addEventListener('click', () => this.closeRoutineEditor());
 
         const panel = document.createElement('section');
-        panel.className = 'theia-mobile-routine-sheet-panel';
+        panel.className = 'theia-mobile-routine-sheet-panel q-sheet';
+
+        const handle = document.createElement('div');
+        handle.className = 'theia-mobile-routine-sheet-handle';
+        handle.setAttribute('aria-hidden', 'true');
 
         const header = document.createElement('header');
         header.className = 'theia-mobile-routine-sheet-header';
@@ -4096,7 +4182,7 @@ export class MobileProjectsPanel {
             : nls.localize('qaap/mobileProjects/routineNew', 'New routine');
         const close = document.createElement('button');
         close.type = 'button';
-        close.className = 'theia-mobile-routine-sheet-close codicon codicon-close';
+        close.className = 'theia-mobile-routine-sheet-close q-icon-button codicon codicon-close';
         close.addEventListener('click', () => this.closeRoutineEditor());
         header.append(heading, close);
 
@@ -4268,7 +4354,7 @@ export class MobileProjectsPanel {
         }
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
-        saveBtn.className = 'theia-mobile-routine-btn theia-mod-primary';
+        saveBtn.className = 'theia-mobile-routine-btn theia-mod-primary q-button-primary';
         saveBtn.textContent = nls.localize('qaap/mobileProjects/routineSave', 'Save');
         saveBtn.addEventListener('click', () => {
             const trigger = triggerField.getValue();
@@ -4290,7 +4376,7 @@ export class MobileProjectsPanel {
         });
         footer.append(saveBtn);
 
-        panel.append(header, form, footer);
+        panel.append(handle, header, form, footer);
         sheet.append(backdrop, panel);
         document.body.append(sheet);
         this.routineSheet = sheet;
@@ -7895,6 +7981,7 @@ export class MobileProjectsPanel {
             url: previewUrl,
             messageService: this.messageService,
             previewSurfaces: this.previewSurfaceRegistry,
+            inspectorDeps: this.previewInspectorDeps,
             openExternal: target => {
                 window.open(target, '_blank', 'noopener,noreferrer');
             },
@@ -9702,34 +9789,63 @@ export class MobileProjectsPanel {
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent';
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-transcript-segments';
-        const activity = this.createTranscriptActivityTimeline(segments);
+
+        const thoughtBrief = this.createTranscriptThoughtBriefBlock(segments);
+        if (thoughtBrief) {
+            body.append(thoughtBrief);
+        }
+
+        // Hero content first — Cursor-style: intent/thought, then the visible answer, then artifacts.
+        for (const segment of segments) {
+            if (segment.type === 'text' && segment.content.trim()) {
+                body.append(this.createTranscriptSegmentDetails(segment));
+            }
+        }
+
+        const artifacts = document.createElement('div');
+        artifacts.className = 'theia-mobile-agent-transcript-artifacts';
+        const activity = this.createTranscriptActivityTimeline(segments, !thoughtBrief);
         if (activity) {
-            body.append(activity);
+            artifacts.append(activity);
         }
         const changedFiles = this.createTranscriptChangedFilesCard(segments);
         if (changedFiles) {
-            // The unified changed-files card carries the aggregate +/- stats in its header, so the
-            // standalone diff-summary card is only shown when there is no recognized file list.
-            body.append(changedFiles);
+            artifacts.append(changedFiles);
         } else {
             const diffSummary = this.createTranscriptDiffSummaryCard(segments);
             if (diffSummary) {
-                body.append(diffSummary);
+                artifacts.append(diffSummary);
             }
         }
         const verification = this.createTranscriptVerificationCard(segments);
         if (verification) {
-            body.append(verification);
+            artifacts.append(verification);
         }
+        const activityTimelineShown = hasTranscriptActivityTimeline(segments);
         for (const segment of segments) {
-            if (segment.type === 'text' || segment.type === 'tool') {
-                body.append(this.createTranscriptSegmentDetails(segment));
+            if (segment.type !== 'tool') {
+                continue;
+            }
+            if (!shouldRenderTranscriptToolSegmentInline({
+                activityTimelineShown,
+                finished: segment.finished,
+                resultFailed: this.transcriptToolResultFailed(segment.result),
+            })) {
+                continue;
+            }
+            artifacts.append(this.createTranscriptSegmentDetails(segment));
+        }
+        if (artifacts.childElementCount > 0) {
+            body.append(artifacts);
+        }
+
+        if (!thoughtBrief) {
+            const technicalDetails = this.createTranscriptTechnicalDetailsCard(segments);
+            if (technicalDetails) {
+                body.append(technicalDetails);
             }
         }
-        const technicalDetails = this.createTranscriptTechnicalDetailsCard(segments);
-        if (technicalDetails) {
-            body.append(technicalDetails);
-        }
+
         row.append(body);
         if (error) {
             const err = document.createElement('div');
@@ -9740,8 +9856,89 @@ export class MobileProjectsPanel {
         return row;
     }
 
-    protected createTranscriptActivityTimeline(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
-        const items = this.resolveTranscriptActivityItems(segments);
+    protected createTranscriptThoughtBriefBlock(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
+        const thinking = resolveTranscriptThinkingContent(segments);
+        const stats = resolveTranscriptActivityStats(segments);
+        const hasStats = hasTranscriptActivityStats(stats);
+        if (!thinking && !hasStats) {
+            return undefined;
+        }
+
+        const block = document.createElement('section');
+        block.className = 'theia-mobile-agent-thought-brief';
+
+        const title = document.createElement('div');
+        title.className = 'theia-mobile-agent-thought-brief-title';
+        title.textContent = thinking
+            ? nls.localize('qaap/mobileProjects/transcriptThoughtBriefly', 'Thought briefly')
+            : nls.localize('qaap/mobileProjects/transcriptExploredWorkspace', 'Explored the workspace');
+        block.append(title);
+
+        if (hasStats) {
+            const meta = document.createElement('div');
+            meta.className = 'theia-mobile-agent-thought-brief-meta';
+            meta.textContent = this.formatTranscriptActivityMeta(stats);
+            block.append(meta);
+        }
+
+        if (thinking) {
+            const preview = excerptTranscriptThought(thinking);
+            const body = document.createElement('p');
+            body.className = 'theia-mobile-agent-thought-brief-body';
+            body.textContent = preview;
+            block.append(body);
+
+            if (isTranscriptThoughtExcerptTruncated(thinking)) {
+                const details = document.createElement('details');
+                details.className = 'theia-mobile-agent-thought-brief-more';
+                const summary = document.createElement('summary');
+                summary.textContent = nls.localize('qaap/mobileProjects/transcriptThoughtFull', 'Show full reasoning');
+                const full = document.createElement('pre');
+                full.className = 'theia-mobile-agent-thought-brief-more-body';
+                full.textContent = this.cleanTranscriptDisplayText(thinking);
+                details.append(summary, full);
+                block.append(details);
+            }
+        }
+
+        return block;
+    }
+
+    protected formatTranscriptActivityMeta(stats: QaapTranscriptActivityStats): string {
+        const parts: string[] = [];
+        if (stats.fileReads > 0) {
+            parts.push(stats.fileReads === 1
+                ? nls.localize('qaap/mobileProjects/transcriptMetaOneFile', '1 file')
+                : nls.localize('qaap/mobileProjects/transcriptMetaFiles', '{0} files', String(stats.fileReads)));
+        }
+        if (stats.searches > 0) {
+            parts.push(stats.searches === 1
+                ? nls.localize('qaap/mobileProjects/transcriptMetaOneSearch', '1 search')
+                : nls.localize('qaap/mobileProjects/transcriptMetaSearches', '{0} searches', String(stats.searches)));
+        }
+        if (stats.shells > 0) {
+            parts.push(stats.shells === 1
+                ? nls.localize('qaap/mobileProjects/transcriptMetaOneCommand', '1 command')
+                : nls.localize('qaap/mobileProjects/transcriptMetaCommands', '{0} commands', String(stats.shells)));
+        }
+        if (stats.edits > 0) {
+            parts.push(stats.edits === 1
+                ? nls.localize('qaap/mobileProjects/transcriptMetaOneEdit', '1 edit')
+                : nls.localize('qaap/mobileProjects/transcriptMetaEdits', '{0} edits', String(stats.edits)));
+        }
+        if (stats.otherTools > 0) {
+            parts.push(stats.otherTools === 1
+                ? nls.localize('qaap/mobileProjects/transcriptMetaOneTool', '1 tool')
+                : nls.localize('qaap/mobileProjects/transcriptMetaTools', '{0} tools', String(stats.otherTools)));
+        }
+        return nls.localize('qaap/mobileProjects/transcriptThoughtMeta', 'Explored {0}', parts.join(', '));
+    }
+
+    protected createTranscriptActivityTimeline(
+        segments: QaapAgentMessageSegmentDTO[],
+        includeThinkingSteps = true,
+    ): HTMLElement | undefined {
+        const items = this.resolveTranscriptActivityItems(segments, includeThinkingSteps);
         if (items.length === 0) {
             return undefined;
         }
@@ -10045,14 +10242,17 @@ export class MobileProjectsPanel {
 
     protected resolveTranscriptActivityItems(
         segments: QaapAgentMessageSegmentDTO[],
+        includeThinkingSteps = true,
     ): Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }> {
         const items: Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }> = [];
         for (const segment of segments) {
             if (segment.type === 'thinking' && segment.content.trim()) {
-                items.push({
-                    label: nls.localize('qaap/mobileProjects/transcriptActivityPlanning', 'Planning next steps'),
-                    state: 'thinking',
-                });
+                if (includeThinkingSteps) {
+                    items.push({
+                        label: nls.localize('qaap/mobileProjects/transcriptActivityPlanning', 'Planning next steps'),
+                        state: 'thinking',
+                    });
+                }
             } else if (segment.type === 'tool') {
                 items.push({
                     label: this.localizeActivityLabel(formatToolActivityLabel(segment.name, segment.args)),
@@ -10188,6 +10388,13 @@ export class MobileProjectsPanel {
         }
         return /\b(error|failed|failure|exit\s+[1-9]\d*|code\s+[1-9]\d*)\b/i.test(result)
             && !/\b0\s+failed\b/i.test(result);
+    }
+
+    protected shouldOpenTranscriptToolDetails(segment: { readonly finished: boolean; readonly result?: string }): boolean {
+        return shouldOpenTranscriptToolDetails({
+            finished: segment.finished,
+            resultFailed: this.transcriptToolResultFailed(segment.result),
+        });
     }
 
     protected compactTranscriptCommand(command: string): string {
@@ -10381,7 +10588,7 @@ export class MobileProjectsPanel {
 
         const details = document.createElement('details');
         details.className = `theia-mobile-agent-tool-window theia-mod-${kind}`;
-        details.open = !segment.finished;
+        details.open = this.shouldOpenTranscriptToolDetails(segment);
         details.classList.add(segment.finished ? 'theia-mod-done' : 'theia-mod-running');
         details.append(head);
         const body = document.createElement('div');
@@ -10627,8 +10834,8 @@ export class MobileProjectsPanel {
     protected createTranscriptShellDetails(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
         const details = document.createElement('details');
         details.className = 'theia-mobile-agent-shell-window';
-        details.open = true;
         const failed = this.transcriptToolResultFailed(segment.result);
+        details.open = this.shouldOpenTranscriptToolDetails(segment);
         if (segment.finished) {
             details.classList.add(failed ? 'theia-mod-failed' : 'theia-mod-done');
         } else {
@@ -10637,6 +10844,9 @@ export class MobileProjectsPanel {
 
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-shell-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
         const icon = document.createElement('span');
         icon.className = 'theia-mobile-agent-shell-icon';
         icon.textContent = '>_';
@@ -10647,7 +10857,7 @@ export class MobileProjectsPanel {
         label.textContent = command && command !== '{}'
             ? this.compactTranscriptCommand(command)
             : nls.localize('qaap/mobileProjects/transcriptShell', 'Shell');
-        summary.append(icon, label);
+        summary.append(chevron, icon, label);
 
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
@@ -10815,10 +11025,13 @@ export class MobileProjectsPanel {
         const details = document.createElement('details');
         const failed = this.isTranscriptErrorOutput(content);
         details.className = `theia-mobile-agent-shell-window ${failed ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
-        details.open = true;
+        details.open = shouldOpenTranscriptToolDetails({ finished: true, resultFailed: failed });
         const cleanContent = this.cleanTranscriptDisplayText(content);
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-shell-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
         const icon = document.createElement('span');
         icon.className = 'theia-mobile-agent-shell-icon';
         icon.textContent = '>_';
@@ -10827,7 +11040,7 @@ export class MobileProjectsPanel {
         label.textContent = failed
             ? nls.localize('qaap/mobileProjects/transcriptErrorOutput', 'Error output')
             : nls.localize('qaap/mobileProjects/transcriptTerminalOutput', 'Terminal output');
-        summary.append(icon, label);
+        summary.append(chevron, icon, label);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
         body.append(this.createTranscriptClampedPre(cleanContent, 'theia-mobile-agent-shell-output'));

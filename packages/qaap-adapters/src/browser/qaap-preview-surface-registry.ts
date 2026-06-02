@@ -85,7 +85,7 @@ export class QaapPreviewSurfaceRegistry {
     async toggleElementInspector(): Promise<void> {
         const surface = this.getActiveSurface();
         if (surface) {
-            await surface.picker.toggleElementInspector();
+            await surface.picker.openElementInspector();
         }
     }
 

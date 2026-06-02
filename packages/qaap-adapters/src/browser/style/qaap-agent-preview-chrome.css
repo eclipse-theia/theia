@@ -205,29 +205,46 @@ body.qaap-mod-history-resizing * {
 }
 
 .qaap-agent-preview-toolbar-history,
-.qaap-agent-preview-toolbar-overflow {
+.qaap-agent-preview-toolbar-overflow,
+.qaap-agent-preview-toolbar-refresh {
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 28px;
   height: 28px;
   margin: 0 2px;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   color: var(--theia-icon-foreground);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .qaap-agent-preview-toolbar-history:hover,
-.qaap-agent-preview-toolbar-overflow:hover {
+.qaap-agent-preview-toolbar-overflow:hover,
+.qaap-agent-preview-toolbar-refresh:hover {
   background: var(--theia-toolbar-hoverBackground);
+  color: var(--theia-foreground);
+}
+
+.qaap-agent-preview-toolbar-history:focus-visible,
+.qaap-agent-preview-toolbar-overflow:focus-visible,
+.qaap-agent-preview-toolbar-refresh:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
 }
 
 .qaap-agent-preview-toolbar-history::before,
-.qaap-agent-preview-toolbar-overflow::before {
+.qaap-agent-preview-toolbar-overflow::before,
+.qaap-agent-preview-toolbar-refresh::before {
   font-size: 16px;
+  pointer-events: none;
 }
 
 .qaap-agent-preview-overflow-menu {
@@ -299,10 +316,160 @@ body.qaap-mod-history-resizing * {
   min-height: 0;
 }
 
+/* Preview + inline Element Inspector split (same UX as desktop editor). */
+.qaap-preview-content-area,
+.qaap-agent-preview-embedded-body.qaap-preview-content-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.qaap-preview-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.qaap-preview-frame-slot {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.qaap-preview-frame-slot iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.qaap-preview-inspector-slot {
+  position: relative;
+  flex: 0 0 320px;
+  width: 320px;
+  max-width: 88%;
+  min-height: 0;
+  min-width: 240px;
+  border-left: 1px solid var(--theia-panel-border);
+  background: var(--theia-sideBar-background);
+  overflow: hidden;
+}
+
+.qaap-preview-inspector-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-preview-inspector-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 4px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+  transition: background 120ms ease;
+}
+
+.qaap-preview-inspector-resize-handle:hover::after,
+.qaap-preview-inspector-resize-handle:focus-visible::after {
+  background: color-mix(in srgb, var(--q-accent, var(--qaap-accent, #e58e40)) 70%, transparent);
+}
+
+body.qaap-mod-inspector-resizing,
+body.qaap-mod-inspector-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical,
+body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
+  cursor: row-resize !important;
+}
+
+.qaap-preview-inspector-slot[hidden] {
+  display: none !important;
+}
+
+.qaap-preview-inline-inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.qaap-preview-inline-inspector.theia-mini-browser-inspector__root,
+.qaap-preview-inline-inspector .theia-mini-browser-inspector__root {
+  height: 100%;
+}
+
+.theia-mini-browser-workbench-button--active {
+  background: var(--theia-toolbar-activeBackground, var(--theia-list-activeSelectionBackground));
+  color: var(--theia-foreground);
+}
+
+@media (max-width: 767px) {
+  .qaap-preview-split.qaap-preview-split--inspector-open {
+    flex-direction: column;
+  }
+
+  .qaap-preview-inspector-slot {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 160px;
+    border-left: none;
+    border-top: 1px solid var(--theia-panel-border);
+  }
+
+  .qaap-preview-inspector-resize-handle {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: 10px;
+    cursor: row-resize;
+  }
+
+  .qaap-preview-inspector-resize-handle::after {
+    top: 4px;
+    left: 8px;
+    right: 8px;
+    bottom: auto;
+    width: auto;
+    height: 2px;
+  }
+}
+
 @media (max-width: 767px) {
   .qaap-agent-preview-toolbar-history,
-  .qaap-agent-preview-toolbar-overflow {
+  .qaap-agent-preview-toolbar-overflow,
+  .qaap-agent-preview-toolbar-refresh {
     width: 32px;
     height: 32px;
+  }
+
+  .qaap-agent-preview-toolbar-history::before,
+  .qaap-agent-preview-toolbar-overflow::before,
+  .qaap-agent-preview-toolbar-refresh::before {
+    font-size: 18px;
   }
 }

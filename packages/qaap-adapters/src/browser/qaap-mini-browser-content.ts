@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { Message } from '@theia/core/shared/@lumino/messaging';
@@ -18,14 +19,18 @@ import { QaapMiniBrowserContentStyle } from './qaap-mini-browser-content-style';
 import { isMiniBrowserPreviewPlaceholderUrl, QAAP_DEFAULT_PREVIEW_INPUT_URL } from './qaap-mini-browser-defaults';
 import {
     QaapAgentPreviewChromeController,
+    createQaapPreviewToolbarIconButton,
     type QaapAgentPreviewChromeHost,
 } from './qaap-agent-preview-chrome';
+import { QaapAgentPreviewChromeStyle } from './qaap-agent-preview-chrome-style';
 import {
     QaapPreviewSurfaceHandle,
     QaapPreviewSurfaceRegistry,
 } from './qaap-preview-surface-registry';
 import { QaapPreviewFramePicker, QaapPreviewFramePickerFactory } from './qaap-preview-frame-picker';
+import { QaapPreviewInlineInspector, wirePreviewInspectorResize } from './qaap-preview-inline-inspector';
 import { normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
+import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
 /**
  * Qaap mini-browser preview: element inspector, workbench toolbar, read-only URL editing.
  */
@@ -44,11 +49,21 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     @inject(QaapPreviewFramePickerFactory)
     protected readonly pickerFactory: QaapPreviewFramePickerFactory;
 
+    @inject(ElementInspectorService)
+    protected readonly elementInspectorService: ElementInspectorService;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     protected previewChrome: QaapAgentPreviewChromeController | undefined;
 
     protected surfaceHandle: QaapPreviewSurfaceHandle | undefined;
 
     protected framePicker: QaapPreviewFramePicker | undefined;
+
+    protected inlineInspector: QaapPreviewInlineInspector | undefined;
+
+    protected inspectorToggleButton: HTMLButtonElement | undefined;
 
     get previewFrame(): HTMLIFrameElement {
         return this.frame;
@@ -83,8 +98,61 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     protected ensureFramePicker(): QaapPreviewFramePicker {
         if (!this.framePicker) {
             this.framePicker = this.pickerFactory.create(this.frame, this.toDispose);
+            if (this.inlineInspector) {
+                this.framePicker.connectInlineInspector(this.inlineInspector);
+            }
         }
         return this.framePicker;
+    }
+
+    protected ensureInlineInspector(inspectorSlot: HTMLElement): void {
+        if (this.inlineInspector) {
+            return;
+        }
+        this.inlineInspector = new QaapPreviewInlineInspector(inspectorSlot, {
+            service: this.elementInspectorService,
+            commands: this.commandRegistry,
+            messageService: this.messageService,
+            toDispose: this.toDispose,
+        });
+        if (this.inspectorToggleButton) {
+            this.inlineInspector.bindToggleButton(this.inspectorToggleButton);
+        }
+        this.ensureFramePicker().connectInlineInspector(this.inlineInspector);
+    }
+
+    protected override createContentArea(parent: HTMLElement): HTMLElement & Readonly<{
+        frame: HTMLIFrameElement;
+        loadIndicator: HTMLElement;
+        errorBar: HTMLElement & Readonly<{ message: HTMLElement }>;
+        pdfContainer: HTMLElement;
+        transparentOverlay: HTMLElement;
+    }> {
+        const contentArea = super.createContentArea(parent);
+        contentArea.classList.add('qaap-preview-content-area');
+
+        const split = document.createElement('div');
+        split.className = 'qaap-preview-split';
+
+        const frameSlot = document.createElement('div');
+        frameSlot.className = 'qaap-preview-frame-slot';
+
+        const inspectorSlot = document.createElement('aside');
+        inspectorSlot.className = 'qaap-preview-inspector-slot';
+
+        contentArea.insertBefore(split, this.frame);
+        frameSlot.append(this.frame);
+        if (this.transparentOverlay.parentElement === contentArea) {
+            frameSlot.append(this.transparentOverlay);
+        }
+        const loadIndicator = contentArea.querySelector(`.${MiniBrowserContentStyle.PRE_LOAD}`);
+        if (loadIndicator instanceof HTMLElement && loadIndicator.parentElement === contentArea) {
+            frameSlot.insertBefore(loadIndicator, this.frame);
+        }
+        split.append(frameSlot, inspectorSlot);
+        wirePreviewInspectorResize(split, inspectorSlot, this.toDispose);
+        this.ensureInlineInspector(inspectorSlot);
+        return contentArea;
     }
 
     protected override go(location: string, options?: Parameters<MiniBrowserContent['go']>[1]): Promise<void> {
@@ -157,6 +225,16 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     protected override onUrlBarNavigateFailed(message: string): void {
         super.onUrlBarNavigateFailed(message);
         this.messageService.warn(message);
+    }
+
+    protected override createRefresh(parent: HTMLElement): HTMLElement {
+        const button = createQaapPreviewToolbarIconButton(
+            nls.localize('theia/mini-browser/reload', 'Reload'),
+            'refresh',
+            QaapAgentPreviewChromeStyle.TOOLBAR_REFRESH,
+        );
+        parent.appendChild(button);
+        return this.onClick(button, this.refreshEmitter);
     }
 
     protected override createToolbar(parent: HTMLElement): HTMLDivElement & Readonly<{ input: HTMLInputElement }> {
@@ -239,7 +317,7 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
                 }
             },
             onPickElement: () => this.startElementPicker(),
-            onToggleInspector: () => { void this.toggleElementInspector(); },
+            onToggleInspector: () => { void this.openElementInspector(); },
         };
     }
 
@@ -254,8 +332,13 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         this.ensureFramePicker().startElementPicker();
     }
 
+    openElementInspector(): Promise<void> {
+        return this.ensureFramePicker().openElementInspector();
+    }
+
+    /** @deprecated Use {@link openElementInspector}. */
     toggleElementInspector(): Promise<void> {
-        return this.ensureFramePicker().toggleElementInspector();
+        return this.openElementInspector();
     }
 
     protected override handleOpen(): void {
@@ -294,11 +377,13 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             parent,
             nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
             'layout-panel'
-        );
+        ) as HTMLButtonElement;
+        this.inspectorToggleButton = button;
+        this.inlineInspector?.bindToggleButton(button);
         this.toDispose.push(addEventListener(button, 'click', (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            void this.toggleElementInspector();
+            void this.openElementInspector();
         }));
         return button;
     }

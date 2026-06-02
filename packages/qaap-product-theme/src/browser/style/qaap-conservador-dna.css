@@ -84,7 +84,8 @@ body.qaap-theme-dark .theia-mobile-projects-section-title,
 body.qaap-theme-dark .theia-mobile-projects-section-label,
 body.qaap-theme-dark .theia-mobile-pr-repo,
 body.qaap-theme-dark .theia-mobile-open-repo-section-title,
-body.qaap-theme-dark .theia-mobile-open-repo-section-label {
+body.qaap-theme-dark .theia-mobile-open-repo-section-label,
+body.qaap-theme-dark .theia-mobile-hub-routines-section-label {
   color: var(--q-muted);
   font-family: var(--q-font-sans);
   font-size: 11px;

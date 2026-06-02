@@ -539,6 +539,67 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
     box-shadow: var(--qaap-shadow-md);
     color: var(--qaap-ink);
   }
+
+  body.qaap-theme-light .theia-mobile-hub-routines-group,
+  body.qaap-theme-dark .theia-mobile-hub-routines-group {
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-xl);
+    background: var(--qaap-surface);
+    box-shadow: none;
+  }
+
+  body.qaap-theme-light .theia-mobile-hub-routine-row,
+  body.qaap-theme-dark .theia-mobile-hub-routine-row {
+    border-bottom-color: var(--qaap-line-soft);
+  }
+
+  body.qaap-theme-light .theia-mobile-hub-routine-toggle,
+  body.qaap-theme-dark .theia-mobile-hub-routine-toggle {
+    border-color: var(--qaap-line);
+    background: var(--qaap-line-soft);
+  }
+
+  body.qaap-theme-light .theia-mobile-hub-routine-toggle.theia-mod-on,
+  body.qaap-theme-dark .theia-mobile-hub-routine-toggle.theia-mod-on {
+    background: var(--qaap-accent);
+    border-color: transparent;
+  }
+
+  body.qaap-theme-light .theia-mobile-routine-sheet-panel,
+  body.qaap-theme-dark .theia-mobile-routine-sheet-panel {
+    background: var(--qaap-surface);
+    border-color: var(--qaap-line);
+    box-shadow: var(--qaap-shadow-lg);
+  }
+
+  body.qaap-theme-light .theia-mobile-routine-field,
+  body.qaap-theme-dark .theia-mobile-routine-field {
+    background: var(--qaap-bg);
+    border-color: var(--qaap-line);
+    color: var(--qaap-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-routine-field:focus,
+  body.qaap-theme-dark .theia-mobile-routine-field:focus {
+    border-color: var(--qaap-accent);
+    box-shadow: var(--qaap-shadow-accent);
+  }
+
+  body.qaap-theme-light .theia-mobile-routine-btn.theia-mod-primary,
+  body.qaap-theme-dark .theia-mobile-routine-btn.theia-mod-primary {
+    background: var(--qaap-accent);
+    color: var(--qaap-bg);
+    box-shadow: none;
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-empty.theia-mod-routines-empty,
+  body.qaap-theme-dark .theia-mobile-projects-empty.theia-mod-routines-empty,
+  body.qaap-theme-light .theia-mobile-projects-empty.theia-mod-routines-loading,
+  body.qaap-theme-dark .theia-mobile-projects-empty.theia-mod-routines-loading {
+    border-color: var(--qaap-line);
+    background: var(--qaap-surface);
+    border-radius: var(--qaap-radius-xl);
+  }
 }
 
 /*-----------------------------------------------------------------------------

@@ -70,6 +70,7 @@ import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
+import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
 import { MobileSnackbar } from './mobile-snackbar';
 import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
 import {
@@ -237,6 +238,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(QaapPreviewSurfaceRegistry)
     protected readonly previewSurfaceRegistry: QaapPreviewSurfaceRegistry;
+
+    @inject(ElementInspectorService)
+    protected readonly elementInspectorService: ElementInspectorService;
 
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
@@ -918,6 +922,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     this.workspaceService,
                 ),
                 previewSurfaceRegistry: this.previewSurfaceRegistry,
+                previewInspectorDeps: {
+                    service: this.elementInspectorService,
+                    commands: this.commands,
+                },
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

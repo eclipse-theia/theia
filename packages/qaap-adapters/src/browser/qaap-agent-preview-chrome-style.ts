@@ -32,4 +32,5 @@ export namespace QaapAgentPreviewChromeStyle {
 
     export const TOOLBAR_HISTORY = 'qaap-agent-preview-toolbar-history';
     export const TOOLBAR_OVERFLOW = 'qaap-agent-preview-toolbar-overflow';
+    export const TOOLBAR_REFRESH = 'qaap-agent-preview-toolbar-refresh';
 }

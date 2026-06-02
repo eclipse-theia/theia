@@ -12,6 +12,7 @@ import { MiniBrowserProps } from '@theia/mini-browser/lib/browser/mini-browser-c
 import { normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
 import { QaapAgentPreviewChromeStyle as Style } from './qaap-agent-preview-chrome-style';
 import { normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
+import { QaapPreviewInlineInspector, type QaapPreviewInspectorDeps, wirePreviewInspectorResize } from './qaap-preview-inline-inspector';
 import {
     QaapPreviewSurfaceHandle,
     QaapPreviewSurfaceRegistry,
@@ -578,13 +579,20 @@ export class QaapAgentPreviewChromeController implements Disposable {
     }
 
     protected createToolbarIconButton(title: string, icon: string, className: string): HTMLButtonElement {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.title = title;
-        button.classList.add(className, ...codiconArray(icon));
-        return button;
+        return createQaapPreviewToolbarIconButton(title, icon, className);
     }
 }
+
+/** Icon toolbar control matching Qaap preview chrome (codicon, hover pill). */
+export function createQaapPreviewToolbarIconButton(title: string, icon: string, className: string): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = title;
+    button.classList.add(className, ...codiconArray(icon));
+    return button;
+}
+
+export type { QaapPreviewInspectorDeps } from './qaap-preview-inline-inspector';
 
 export interface EmbeddedAgentPreviewChromeOptions extends QaapAgentPreviewChromeOptions {
     readonly url: string;
@@ -592,6 +600,7 @@ export interface EmbeddedAgentPreviewChromeOptions extends QaapAgentPreviewChrom
     readonly onNavigate?: (url: string) => void;
     readonly openExternal?: (url: string) => void;
     readonly previewSurfaces?: QaapPreviewSurfaceRegistry;
+    readonly inspectorDeps?: QaapPreviewInspectorDeps;
     readonly onPickElement?: () => void;
     readonly onToggleInspector?: () => void;
 }
@@ -618,10 +627,11 @@ export function mountEmbeddedAgentPreviewChrome(
     const toolbar = document.createElement('div');
     toolbar.className = 'qaap-agent-preview-embedded-toolbar theia-mini-browser-toolbar';
 
-    const refreshBtn = document.createElement('button');
-    refreshBtn.type = 'button';
-    refreshBtn.title = nls.localize('theia/mini-browser/reload', 'Reload');
-    refreshBtn.classList.add('theia-mini-browser-button', 'theia-mini-browser-refresh', ...codiconArray('refresh'));
+    const refreshBtn = createQaapPreviewToolbarIconButton(
+        nls.localize('theia/mini-browser/reload', 'Reload'),
+        'refresh',
+        Style.TOOLBAR_REFRESH,
+    );
     toolbar.append(refreshBtn);
 
     const urlField = document.createElement('div');
@@ -642,12 +652,24 @@ export function mountEmbeddedAgentPreviewChrome(
     }
 
     const body = document.createElement('div');
-    body.className = 'theia-mini-browser-content-area qaap-agent-preview-embedded-body';
+    body.className = 'theia-mini-browser-content-area qaap-agent-preview-embedded-body qaap-preview-content-area';
+
+    const split = document.createElement('div');
+    split.className = 'qaap-preview-split';
+
+    const frameSlot = document.createElement('div');
+    frameSlot.className = 'qaap-preview-frame-slot';
+
+    const inspectorSlot = document.createElement('aside');
+    inspectorSlot.className = 'qaap-preview-inspector-slot';
 
     const frame = document.createElement('iframe');
     const sandbox = (MiniBrowserProps.SandboxOptions.DEFAULT).map(name => MiniBrowserProps.SandboxOptions[name]);
     frame.sandbox.add(...sandbox);
-    body.append(frame);
+    frameSlot.append(frame);
+    split.append(frameSlot, inspectorSlot);
+    body.append(split);
+    wirePreviewInspectorResize(split, inspectorSlot, disposables);
 
     let surfaceHandle: QaapPreviewSurfaceHandle | undefined;
     if (options.previewSurfaces) {
@@ -671,11 +693,22 @@ export function mountEmbeddedAgentPreviewChrome(
     };
     const inspectorHandler = (): void => {
         if (surfaceHandle) {
-            void surfaceHandle.picker.toggleElementInspector();
+            void surfaceHandle.picker.openElementInspector();
             return;
         }
         options.onToggleInspector?.();
     };
+
+    let inlineInspector: QaapPreviewInlineInspector | undefined;
+    if (options.inspectorDeps) {
+        inlineInspector = new QaapPreviewInlineInspector(inspectorSlot, {
+            service: options.inspectorDeps.service,
+            commands: options.inspectorDeps.commands,
+            messageService: options.messageService,
+            toDispose: disposables,
+        });
+        surfaceHandle?.picker.connectInlineInspector(inlineInspector);
+    }
 
     const pickBtn = document.createElement('button');
     pickBtn.type = 'button';
@@ -692,6 +725,7 @@ export function mountEmbeddedAgentPreviewChrome(
     inspectorBtn.type = 'button';
     inspectorBtn.title = nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector');
     inspectorBtn.classList.add('theia-mini-browser-workbench-button', ...codiconArray('layout-panel'));
+    inlineInspector?.bindToggleButton(inspectorBtn);
     disposables.push(addEventListener(inspectorBtn, 'click', (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();

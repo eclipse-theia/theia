@@ -19,8 +19,8 @@ import {
 import { buildElementBridgeScript, buildElementPickerScript } from '@theia/qaap-element-inspector/lib/browser/element-picker-script';
 import {
     ELEMENT_INSPECTOR_REVEAL_COMMAND_ID,
-    ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
 } from '@theia/qaap-element-inspector/lib/browser/element-inspector-contribution';
+import type { QaapPreviewInlineInspector } from './qaap-preview-inline-inspector';
 
 /** DOM picker + inspector bridge for a single preview iframe (mini-browser or embedded). */
 @injectable()
@@ -53,6 +53,7 @@ export class QaapPreviewFramePickerFactory {
 export class QaapPreviewFramePicker {
 
     protected pickerListenerInstalled = false;
+    protected inlineInspector: QaapPreviewInlineInspector | undefined;
 
     constructor(
         protected readonly frame: HTMLIFrameElement,
@@ -65,6 +66,10 @@ export class QaapPreviewFramePicker {
         toDispose.push(Disposable.create(() => {
             this.pickerListenerInstalled = false;
         }));
+    }
+
+    connectInlineInspector(inspector: QaapPreviewInlineInspector): void {
+        this.inlineInspector = inspector;
     }
 
     bindInspectorWindow(): void {
@@ -121,18 +126,13 @@ export class QaapPreviewFramePicker {
         }
     }
 
-    async toggleElementInspector(): Promise<void> {
+    async openElementInspector(): Promise<void> {
         this.bindInspectorWindow();
-        const toggleId = ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID;
-        const revealId = ELEMENT_INSPECTOR_REVEAL_COMMAND_ID;
-        if (this.commands.getCommand(toggleId)) {
-            try {
-                await this.commands.executeCommand(toggleId);
-                return;
-            } catch {
-                /* try reveal */
-            }
+        if (this.inlineInspector) {
+            this.inlineInspector.toggle();
+            return;
         }
+        const revealId = ELEMENT_INSPECTOR_REVEAL_COMMAND_ID;
         if (this.commands.getCommand(revealId)) {
             try {
                 await this.commands.executeCommand(revealId);
@@ -145,6 +145,11 @@ export class QaapPreviewFramePicker {
             'qaap/preview/inspectorUnavailable',
             'Element Inspector is not available. Open a same-origin preview and try again.',
         ));
+    }
+
+    /** @deprecated Use {@link openElementInspector} — kept for callers that still say toggle. */
+    async toggleElementInspector(): Promise<void> {
+        return this.openElementInspector();
     }
 
     protected notifyPickerUnavailable(): void {
@@ -188,12 +193,20 @@ export class QaapPreviewFramePicker {
         } catch {
             /* clipboard denied */
         }
-        await this.revealInspector();
+        await this.openInlineInspector();
         this.messageService.info(nls.localize(
             'theia/mini-browser/elementCaptured',
             'Captured {0}. Details opened in the Element Inspector and copied to the clipboard.',
             element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : ''),
         ));
+    }
+
+    protected async openInlineInspector(): Promise<void> {
+        if (this.inlineInspector) {
+            this.inlineInspector.open();
+            return;
+        }
+        await this.revealInspector();
     }
 
     protected async revealInspector(): Promise<void> {
