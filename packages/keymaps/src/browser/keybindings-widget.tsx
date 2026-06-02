@@ -898,6 +898,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
     // Tracks resources that need to be disposed of when the dialog closes.
     protected readonly keystrokeDisposable = new DisposableCollection();
+
+    protected chordPrefix: string | undefined;
+    protected chordTimeout: number | undefined;
+
     constructor(
         @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
@@ -959,7 +963,30 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         }
 
         const inputField = target as HTMLInputElement;
-        inputField.value = keyCode.toString();
+        const keyString = keyCode.toString();
+
+        // Clear any existing timeout since a new key was pressed
+        if (this.chordTimeout !== undefined) {
+            window.clearTimeout(this.chordTimeout);
+            this.chordTimeout = undefined;
+        }
+
+        if (this.chordPrefix) {
+            // This is the second keystroke of a chord
+            inputField.value = `${this.chordPrefix} ${keyString}`;
+            this.chordPrefix = undefined; // Reset for the next full capture
+        } else {
+            // This is the first keystroke
+            inputField.value = keyString;
+            this.chordPrefix = keyString;
+
+            // Wait 2 seconds for a potential second keystroke to form a chord
+            this.chordTimeout = window.setTimeout(() => {
+                this.chordPrefix = undefined;
+                this.chordTimeout = undefined;
+            }, 2000);
+        }
+
         inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
     };
 
