@@ -250,7 +250,8 @@ class PluginImpl implements Plugin {
                 }
             }
             return {
-                path: join(resolveModulePath(name), 'watcher.node')
+                path: join(resolveModulePath(name), 'watcher.node'),
+                namespace: 'node-file'
             };
         });
         build.onLoad({ filter: /bindings[\\\/]bindings\.js$/ }, async () => ({
