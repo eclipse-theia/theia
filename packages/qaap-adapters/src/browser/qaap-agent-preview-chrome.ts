@@ -31,6 +31,11 @@ import {
     clampPreviewHistoryPanelWidth,
     type QaapPreviewHistoryEntry,
 } from './qaap-preview-browsing-history';
+import {
+    buildPreviewOverflowMenuItems,
+    runPreviewOverflowAction,
+    type QaapPreviewOverflowActionId,
+} from './qaap-preview-overflow-actions';
 
 export interface QaapAgentPreviewChromeHost {
     getRoot(): HTMLElement;
@@ -408,74 +413,54 @@ export class QaapAgentPreviewChromeController implements Disposable {
         const menu = document.createElement('div');
         menu.className = Style.OVERFLOW_MENU;
         menu.setAttribute('role', 'menu');
-        const items: Array<{ label: string; run: () => void | Promise<void>; toggle?: boolean; checked?: boolean }> = [
-            {
-                label: nls.localize('qaap/preview/takeScreenshot', 'Take Screenshot'),
-                run: () => this.runTakeScreenshot(),
-            },
-            {
-                label: nls.localize('qaap/preview/hardReload', 'Hard Reload'),
-                run: () => this.host.hardReload(),
-            },
-            {
-                label: nls.localize('qaap/preview/copyUrl', 'Copy Current URL'),
-                run: () => this.host.copyCurrentUrl(),
-            },
-            {
-                label: nls.localize('qaap/preview/showBookmarkBar', 'Show Bookmark Bar'),
-                run: () => this.toggleBookmarkBar(),
-                toggle: true,
-                checked: this.bookmarkBarVisible,
-            },
-            {
-                label: nls.localize('qaap/preview/clearHistory', 'Clear Browsing History'),
-                run: () => this.clearHistory(),
-            },
-            {
-                label: nls.localize('qaap/preview/clearCookies', 'Clear Cookies'),
-                run: () => this.clearCookies(),
-            },
-            {
-                label: nls.localize('qaap/preview/clearCache', 'Clear Cache'),
-                run: () => this.host.hardReload(),
-            },
-        ];
-        if (this.host.onPickElement) {
-            items.splice(1, 0, {
-                label: nls.localize('theia/mini-browser/pickElement', 'Pick an element to send to chat'),
-                run: () => this.host.onPickElement?.(),
-            });
-        }
-        if (this.host.onToggleInspector) {
-            items.splice(2, 0, {
-                label: nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
-                run: () => this.host.onToggleInspector?.(),
-            });
-        }
+
+        const items = buildPreviewOverflowMenuItems({
+            bookmarkBarVisible: () => this.bookmarkBarVisible,
+        });
+
         for (const item of items) {
             const row = document.createElement('button');
             row.type = 'button';
             row.className = Style.OVERFLOW_ITEM;
             row.setAttribute('role', 'menuitem');
+            row.setAttribute('data-action', item.id);
             if (item.toggle) {
                 row.classList.add(Style.OVERFLOW_TOGGLE);
                 row.setAttribute('aria-checked', item.checked ? 'true' : 'false');
+                const label = document.createElement('span');
+                label.className = Style.OVERFLOW_ITEM_LABEL;
+                label.textContent = item.label;
+                const toggle = document.createElement('span');
+                toggle.className = Style.OVERFLOW_TOGGLE_SWITCH;
+                toggle.setAttribute('aria-hidden', 'true');
+                row.append(label, toggle);
+            } else {
+                row.textContent = item.label;
             }
-            row.textContent = item.label;
-            this.toDispose.push(addEventListener(row, 'click', (e: MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void item.run();
-                this.closeOverflowMenu();
-            }));
             menu.append(row);
         }
+
+        menu.addEventListener('click', (e: MouseEvent) => {
+            const target = (e.target as HTMLElement).closest(`[data-action]`);
+            if (!(target instanceof HTMLElement) || !menu.contains(target)) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            const actionId = target.getAttribute('data-action') as QaapPreviewOverflowActionId | null;
+            if (actionId) {
+                void runPreviewOverflowAction(actionId, this.createOverflowActionContext());
+            }
+            this.closeOverflowMenu();
+        });
+
+        const root = this.host.getRoot();
         const rect = anchor.getBoundingClientRect();
         menu.style.position = 'fixed';
         menu.style.top = `${rect.bottom + 4}px`;
         menu.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
         menu.style.zIndex = '12000';
-        document.body.append(menu);
+        (root.isConnected ? root : document.body).append(menu);
         this.overflowMenu = menu;
         menu.addEventListener('pointerdown', e => e.stopPropagation());
         const closeOnOutside = (e: Event): void => {
@@ -487,6 +472,22 @@ export class QaapAgentPreviewChromeController implements Disposable {
             document.removeEventListener('pointerdown', closeOnOutside, true);
         };
         setTimeout(() => document.addEventListener('pointerdown', closeOnOutside, true), 0);
+    }
+
+    protected createOverflowActionContext() {
+        return {
+            getFrame: () => this.host.getFrame(),
+            getCurrentUrl: () => this.host.getCurrentUrl(),
+            reload: () => this.host.reload(),
+            hardReload: () => this.host.hardReload(),
+            openExternal: () => this.host.openExternal(),
+            copyCurrentUrl: () => this.host.copyCurrentUrl(),
+            clipboard: this.options.clipboard,
+            messageService: this.options.messageService,
+            bookmarkBarVisible: () => this.bookmarkBarVisible,
+            toggleBookmarkBar: () => this.toggleBookmarkBar(),
+            clearHistory: () => this.clearHistory(),
+        };
     }
 
     protected closeOverflowMenu(): void {
@@ -513,69 +514,6 @@ export class QaapAgentPreviewChromeController implements Disposable {
         this.renderHistoryList();
         this.refreshBookmarkBar();
         this.options.messageService?.info(nls.localize('qaap/preview/historyCleared', 'Browsing history cleared'));
-    }
-
-    protected clearCookies(): void {
-        try {
-            const frame = this.host.getFrame();
-            const doc = frame?.contentDocument;
-            if (!doc) {
-                throw new Error('cross-origin');
-            }
-            doc.cookie.split(';').forEach(chunk => {
-                const name = chunk.split('=')[0]?.trim();
-                if (name) {
-                    doc.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-                }
-            });
-            this.options.messageService?.info(nls.localize('qaap/preview/cookiesCleared', 'Preview cookies cleared'));
-            this.host.reload();
-        } catch {
-            this.options.messageService?.warn(nls.localize(
-                'qaap/preview/cookiesUnavailable',
-                'Cookies cannot be cleared for cross-origin previews.',
-            ));
-        }
-    }
-
-    protected async runTakeScreenshot(): Promise<void> {
-        if (this.host.takeScreenshot) {
-            await this.host.takeScreenshot();
-            return;
-        }
-        const frame = this.host.getFrame();
-        const doc = frame?.contentDocument;
-        if (!frame || !doc?.body) {
-            this.options.messageService?.warn(nls.localize(
-                'qaap/preview/screenshotUnavailable',
-                'Screenshots only work for same-origin previews. Open in browser to capture cross-origin pages.',
-            ));
-            return;
-        }
-        try {
-            const blob = await captureSameOriginPreview(doc, frame);
-            if (!blob) {
-                throw new Error('capture failed');
-            }
-            const clipboard = this.options.clipboard;
-            if (clipboard && typeof ClipboardItem !== 'undefined') {
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                this.options.messageService?.info(nls.localize('qaap/preview/screenshotCopied', 'Screenshot copied to clipboard'));
-                return;
-            }
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'preview-screenshot.png';
-            link.click();
-            URL.revokeObjectURL(url);
-            this.options.messageService?.info(nls.localize('qaap/preview/screenshotDownloaded', 'Screenshot downloaded'));
-        } catch {
-            this.options.messageService?.warn(nls.localize(
-                'qaap/preview/screenshotFailed',
-                'Could not capture a screenshot for this page.',
-            ));
-        }
     }
 
     protected createToolbarIconButton(title: string, icon: string, className: string): HTMLButtonElement {
@@ -852,35 +790,6 @@ export function mountEmbeddedAgentPreviewChrome(
 function normalizePreviewNavigateUrl(url: string): string {
     const opened = normalizeMiniBrowserOpenUrl(url) || url;
     return normalizePreviewUrlForSameOrigin(opened);
-}
-
-async function captureSameOriginPreview(doc: Document, frame: HTMLIFrameElement): Promise<Blob | undefined> {
-    const width = Math.max(doc.documentElement.scrollWidth, frame.clientWidth);
-    const height = Math.max(doc.documentElement.scrollHeight, frame.clientHeight);
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        return undefined;
-    }
-    const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-  <foreignObject width="100%" height="100%">
-    ${new XMLSerializer().serializeToString(doc.documentElement)}
-  </foreignObject>
-</svg>`;
-    const img = new Image();
-    const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('svg render failed'));
-        img.src = url;
-    });
-    ctx.drawImage(img, 0, 0);
-    return new Promise<Blob | undefined>(resolve => {
-        canvas.toBlob(blob => resolve(blob ?? undefined), 'image/png');
-    });
 }
 
 export function attachAgentPreviewChromeToMiniBrowserContent(

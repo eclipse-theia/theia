@@ -183,6 +183,31 @@ export function isTranscriptPreviewableTextFile(path: string): boolean {
     return TEXT_EXTENSIONS.has(ext);
 }
 
+export const TRANSCRIPT_README_CANDIDATE_NAMES = [
+    'README.md',
+    'readme.md',
+    'Readme.md',
+    'README.MD',
+    'README',
+    'readme.markdown',
+    'README.markdown',
+] as const;
+
+/** Picks a README from workspace-root entries (same precedence as MobileProjectsReadmeContribution). */
+export function findTranscriptReadmeEntry(
+    entries: readonly TranscriptFileTreeEntry[],
+): TranscriptFileTreeEntry | undefined {
+    for (const name of TRANSCRIPT_README_CANDIDATE_NAMES) {
+        const match = entries.find(entry => !entry.isDirectory && entry.name === name);
+        if (match) {
+            return match;
+        }
+    }
+    const files = entries.filter(entry => !entry.isDirectory);
+    return files.find(entry => entry.name.toLowerCase() === 'readme.md')
+        ?? files.find(entry => entry.name.toLowerCase().startsWith('readme'));
+}
+
 export interface TranscriptFilesMount {
     readonly root: HTMLElement;
     readonly dispose: Disposable;
@@ -1428,7 +1453,15 @@ export function mountTranscriptFilesView(
     disposables.push(Disposable.create(() => window.removeEventListener('resize', onWindowResize)));
 
     renderEmptyPreview();
-    void ensureChildren(state.rootUri).then(() => renderTree());
+    void ensureChildren(state.rootUri).then(async children => {
+        await renderTree();
+        if (!state.selected) {
+            const readme = findTranscriptReadmeEntry(children);
+            if (readme) {
+                await loadPreview(readme);
+            }
+        }
+    });
 
     disposables.push(Disposable.create(() => {
         clearPreviewSaveTimer();

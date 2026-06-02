@@ -20,6 +20,7 @@ import { MessageLoop } from '@lumino/messaging';
 import { BoxLayout, BoxPanel, Panel, SplitPanel, Widget as LuminoWidget } from '@lumino/widgets';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
@@ -172,6 +173,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
@@ -926,6 +930,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     service: this.elementInspectorService,
                     commands: this.commands,
                 },
+                clipboard: this.clipboardService,
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

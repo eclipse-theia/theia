@@ -250,6 +250,9 @@ body.qaap-mod-history-resizing * {
 .qaap-agent-preview-overflow-menu {
   z-index: 12000;
   min-width: 220px;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 6px;
   border-radius: 10px;
   background: var(--theia-menu-background, #252526);
@@ -258,7 +261,10 @@ body.qaap-mod-history-resizing * {
 }
 
 .qaap-agent-preview-overflow-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
   padding: 8px 12px;
   border: none;
@@ -274,9 +280,40 @@ body.qaap-mod-history-resizing * {
   background: var(--theia-menu-selectionBackground);
 }
 
-.qaap-agent-preview-overflow-item.qaap-agent-preview-overflow-toggle[aria-checked="true"]::after {
-  content: " ✓";
-  opacity: 0.85;
+.qaap-agent-preview-overflow-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qaap-agent-preview-overflow-toggle-switch {
+  position: relative;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--theia-input-background, rgba(255, 255, 255, 0.12));
+  transition: background 120ms ease;
+}
+
+.qaap-agent-preview-overflow-toggle-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--theia-foreground, #ccc);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.qaap-agent-preview-overflow-item.qaap-agent-preview-overflow-toggle[aria-checked="true"] .qaap-agent-preview-overflow-toggle-switch {
+  background: var(--theia-focusBorder, #007fd4);
+}
+
+.qaap-agent-preview-overflow-item.qaap-agent-preview-overflow-toggle[aria-checked="true"] .qaap-agent-preview-overflow-toggle-switch::after {
+  transform: translateX(16px);
+  background: #fff;
 }
 
 /* Embedded transcript preview (mobile agent sheet). */

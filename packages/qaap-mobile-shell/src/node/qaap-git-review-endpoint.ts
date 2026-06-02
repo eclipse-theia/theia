@@ -14,6 +14,7 @@ import {
     parseUnifiedDiff,
     type QaapGitChangedFile,
     type QaapGitChangesResponse,
+    type QaapGitCommitWorkflowAction,
     type QaapGitFileDiffResponse,
 } from '../common/qaap-git-review';
 
@@ -39,6 +40,9 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         });
         app.post(`${QAAP_GIT_REVIEW_API_PATH}/discard`, (req, res) => {
             void this.handleDiscard(req, res);
+        });
+        app.post(`${QAAP_GIT_REVIEW_API_PATH}/commit-workflow`, (req, res) => {
+            void this.handleCommitWorkflow(req, res);
         });
     }
 
@@ -100,6 +104,80 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         } catch (error) {
             res.status(500).json({ error: this.errorMessage(error) });
         }
+    }
+
+    protected async handleCommitWorkflow(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepositoryBody(req, res);
+        if (!root) {
+            return;
+        }
+        const action = req.body?.action as QaapGitCommitWorkflowAction | undefined;
+        const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+        const branchName = this.sanitizeBranchName(req.body?.branchName);
+        if (!action || !this.isCommitWorkflowAction(action)) {
+            res.status(400).json({ error: 'Missing or invalid "action" in request body.' });
+            return;
+        }
+        if (!message) {
+            res.status(400).json({ error: 'Missing or invalid "message" in request body.' });
+            return;
+        }
+        if (this.requiresNewBranch(action) && !branchName) {
+            res.status(400).json({ error: 'Missing or invalid "branchName" for this action.' });
+            return;
+        }
+        try {
+            if (branchName) {
+                await this.git(root, ['checkout', '-b', branchName]);
+            }
+            await this.git(root, ['add', '-A']);
+            await this.git(root, ['commit', '-m', message]);
+            if (this.shouldPush(action)) {
+                await this.pushCurrentBranch(root);
+            }
+            res.json({ ok: true, action, branch: branchName ?? await this.readCurrentBranch(root) });
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
+    protected isCommitWorkflowAction(value: string): value is QaapGitCommitWorkflowAction {
+        return value === 'create-branch-commit'
+            || value === 'create-branch-commit-push'
+            || value === 'commit-push'
+            || value === 'commit'
+            || value === 'commit-create-pr';
+    }
+
+    protected requiresNewBranch(action: QaapGitCommitWorkflowAction): boolean {
+        return action === 'create-branch-commit' || action === 'create-branch-commit-push';
+    }
+
+    protected shouldPush(action: QaapGitCommitWorkflowAction): boolean {
+        return action === 'create-branch-commit-push'
+            || action === 'commit-push'
+            || action === 'commit-create-pr';
+    }
+
+    protected async pushCurrentBranch(root: string): Promise<void> {
+        try {
+            await this.git(root, ['rev-parse', '--abbrev-ref', '@{u}']);
+            await this.git(root, ['push']);
+        } catch {
+            const branch = (await this.git(root, ['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+            await this.git(root, ['push', '-u', 'origin', branch]);
+        }
+    }
+
+    protected sanitizeBranchName(value: unknown): string | undefined {
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.includes('..') || /[\s~^:?*[\]\\]/.test(trimmed)) {
+            return undefined;
+        }
+        return trimmed;
     }
 
     protected async resolveRepositoryBody(req: Request, res: Response): Promise<string | undefined> {

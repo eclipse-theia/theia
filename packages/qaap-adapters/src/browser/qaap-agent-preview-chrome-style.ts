@@ -28,7 +28,9 @@ export namespace QaapAgentPreviewChromeStyle {
 
     export const OVERFLOW_MENU = 'qaap-agent-preview-overflow-menu';
     export const OVERFLOW_ITEM = 'qaap-agent-preview-overflow-item';
+    export const OVERFLOW_ITEM_LABEL = 'qaap-agent-preview-overflow-item-label';
     export const OVERFLOW_TOGGLE = 'qaap-agent-preview-overflow-toggle';
+    export const OVERFLOW_TOGGLE_SWITCH = 'qaap-agent-preview-overflow-toggle-switch';
 
     export const TOOLBAR_HISTORY = 'qaap-agent-preview-toolbar-history';
     export const TOOLBAR_OVERFLOW = 'qaap-agent-preview-toolbar-overflow';

@@ -7,6 +7,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
@@ -128,9 +129,6 @@ import {
     type StickyComposerTokenOption,
 } from '../common/qaap-sticky-composer-mention';
 import {
-    appendSubtitleMetaPart,
-    createAgentMetaBadge,
-    createAgentRowAvatar,
     createAgentPickerField,
     createAgentSheetOptionButton,
     createAgentTaskBadge,
@@ -315,6 +313,8 @@ export interface MobileProjectsPanelOptions {
     previewSurfaceRegistry?: QaapPreviewSurfaceRegistry;
     /** Element Inspector service + commands for inline Design/CSS editing in Preview. */
     previewInspectorDeps?: QaapPreviewInspectorDeps;
+    /** Clipboard for preview overflow actions (screenshot, copy URL). */
+    clipboard?: ClipboardService;
 }
 
 interface RestorableTheiaChatData {
@@ -512,6 +512,7 @@ export class MobileProjectsPanel {
     protected routineSheet: HTMLElement | undefined;
     protected editingRoutineId: string | undefined;
     protected routinesRefreshTimer: number | undefined;
+    protected routineInteractionLock = false;
     protected readonly chatServiceSessionSummariesByProjectId = new Map<string, QaapAgentConversationSummaryDTO[]>();
     protected openMenu: HTMLElement | undefined;
     protected openMenuAnchor: HTMLElement | undefined;
@@ -540,6 +541,7 @@ export class MobileProjectsPanel {
     protected readonly createTranscriptTerminalViewServices: MobileProjectsPanelOptions['createTranscriptTerminalViewServices'];
     protected readonly previewSurfaceRegistry: MobileProjectsPanelOptions['previewSurfaceRegistry'];
     protected readonly previewInspectorDeps: MobileProjectsPanelOptions['previewInspectorDeps'];
+    protected readonly previewClipboard: MobileProjectsPanelOptions['clipboard'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -617,6 +619,7 @@ export class MobileProjectsPanel {
         this.createTranscriptTerminalViewServices = options.createTranscriptTerminalViewServices;
         this.previewSurfaceRegistry = options.previewSurfaceRegistry;
         this.previewInspectorDeps = options.previewInspectorDeps;
+        this.previewClipboard = options.clipboard;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -1383,11 +1386,13 @@ export class MobileProjectsPanel {
                     String(running),
                 );
             } else {
-                this.subtitleEl.textContent = nls.localize(
-                    'qaap/mobileProjects/routinesSubtitle',
-                    '{0} automations on your VPS',
-                    String(visible.length),
-                );
+                this.subtitleEl.textContent = visible.length > 0
+                    ? nls.localize(
+                        'qaap/mobileProjects/routinesSubtitle',
+                        '{0} on your VPS',
+                        String(visible.length),
+                    )
+                    : '';
             }
             return;
         }
@@ -3711,7 +3716,7 @@ export class MobileProjectsPanel {
         if (!this.workHubRoutinesLoaded && !this.workHubRoutinesLoading) {
             void this.refreshWorkHubRoutines();
         }
-        const routines = filterRoutinesByQuery(this.workHubRoutines, this.query);
+        const routines = this.sortRoutinesForDisplay(filterRoutinesByQuery(this.workHubRoutines, this.query));
         if (!this.workHubRoutinesLoaded && this.workHubRoutinesLoading) {
             this.scroll.append(this.createRoutinesLoadingState());
             this.renderSubtitle();
@@ -3722,65 +3727,42 @@ export class MobileProjectsPanel {
             this.renderSubtitle();
             return;
         }
-        const running = routines.filter(r => r.lastRunState === 'running');
-        const scheduled = routines.filter(r => r.enabled && r.lastRunState !== 'running');
-        const paused = routines.filter(r => !r.enabled);
-        const sections: Array<{ readonly label: string; readonly items: QaapWorkHubRoutine[] }> = [];
-        if (running.length > 0) {
-            sections.push({
-                label: nls.localize('qaap/mobileProjects/routinesSectionRunning', 'Running'),
-                items: running,
-            });
-        }
-        if (scheduled.length > 0) {
-            sections.push({
-                label: nls.localize('qaap/mobileProjects/routinesSectionScheduled', 'Scheduled'),
-                items: scheduled,
-            });
-        }
-        if (paused.length > 0) {
-            sections.push({
-                label: nls.localize('qaap/mobileProjects/routinesSectionPaused', 'Paused'),
-                items: paused,
-            });
-        }
         const host = document.createElement('div');
         host.className = 'theia-mobile-hub-routines';
-        const showSectionHeads = sections.length > 1;
-        for (const section of sections) {
-            host.append(this.createRoutineSection(section.label, section.items, showSectionHeads));
-        }
-        this.scroll.append(host);
-        this.renderSubtitle();
-        this.scheduleRoutinesRefreshWhileRunning();
-    }
-
-    protected createRoutineSection(
-        label: string,
-        routines: readonly QaapWorkHubRoutine[],
-        showHead: boolean,
-    ): HTMLElement {
-        const section = document.createElement('section');
-        section.className = 'theia-mobile-hub-routines-section';
-        if (showHead) {
-            const head = document.createElement('div');
-            head.className = 'theia-mobile-hub-routines-section-head';
-            const title = document.createElement('span');
-            title.className = 'theia-mobile-hub-routines-section-label q-overline';
-            title.textContent = label;
-            const count = document.createElement('span');
-            count.className = 'theia-mobile-hub-routines-section-count';
-            count.textContent = String(routines.length);
-            head.append(title, count);
-            section.append(head);
-        }
         const group = document.createElement('div');
         group.className = 'theia-mobile-hub-routines-group';
         for (const routine of routines) {
             group.append(this.createRoutineRow(routine));
         }
-        section.append(group);
-        return section;
+        host.append(group);
+        this.scroll.append(host);
+        this.renderSubtitle();
+        this.scheduleRoutinesRefreshWhileRunning();
+    }
+
+    protected sortRoutinesForDisplay(routines: readonly QaapWorkHubRoutine[]): QaapWorkHubRoutine[] {
+        const rank = (routine: QaapWorkHubRoutine): number => {
+            if (routine.lastRunState === 'running') {
+                return 0;
+            }
+            if (routine.enabled) {
+                return 1;
+            }
+            return 2;
+        };
+        return [...routines].sort((a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title));
+    }
+
+    protected patchRoutineLocally(
+        id: string,
+        patch: Partial<Pick<QaapWorkHubRoutine, 'enabled' | 'lastRunState'>>,
+    ): void {
+        this.workHubRoutines = this.workHubRoutines.map(routine =>
+            routine.id === id ? { ...routine, ...patch } : routine,
+        );
+        if (this.visible && this.hubView === 'routines' && !this.routineSheet) {
+            this.renderList();
+        }
     }
 
     protected collectTeamMembersForHub(): WorkHubTeamMember[] {
@@ -3985,6 +3967,9 @@ export class MobileProjectsPanel {
 
     protected scheduleRoutinesRefreshWhileRunning(): void {
         window.clearTimeout(this.routinesRefreshTimer);
+        if (this.routineInteractionLock || this.routineSheet) {
+            return;
+        }
         const hasRunning = this.workHubRoutines.some(r => r.lastRunState === 'running');
         if (!hasRunning || this.hubView !== 'routines' || !this.visible) {
             return;
@@ -3997,24 +3982,19 @@ export class MobileProjectsPanel {
     protected createRoutinesLoadingState(): HTMLElement {
         const loading = document.createElement('div');
         loading.className = 'theia-mobile-projects-empty theia-mod-routines-loading';
-        const icon = document.createElement('span');
-        icon.className = 'codicon codicon-loading codicon-mod-spin theia-mobile-hub-routines-empty-icon';
         const title = document.createElement('strong');
         title.textContent = nls.localize('qaap/mobileProjects/routinesLoading', 'Loading routines…');
-        loading.append(icon, title);
+        loading.append(title);
         return loading;
     }
 
     protected createRoutinesEmptyState(): HTMLElement {
         const empty = document.createElement('div');
         empty.className = 'theia-mobile-projects-empty theia-mod-routines-empty';
-        const icon = document.createElement('span');
-        icon.className = 'codicon codicon-sync theia-mobile-hub-routines-empty-icon';
-        icon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('strong');
         title.textContent = this.query
             ? nls.localize('qaap/mobileProjects/routinesEmpty', 'No routines match your search')
-            : nls.localize('qaap/mobileProjects/routinesEmptyAll', 'Automate your VPS');
+            : nls.localize('qaap/mobileProjects/routinesEmptyAll', 'No routines yet');
         const body = document.createElement('span');
         body.textContent = this.query
             ? nls.localize(
@@ -4023,71 +4003,61 @@ export class MobileProjectsPanel {
             )
             : nls.localize(
                 'qaap/mobileProjects/routinesEmptyBody',
-                'Schedule agents to run on your server — even when the app is closed.',
+                'Tap + to schedule an agent on your VPS.',
             );
-        empty.append(icon, title, body);
+        empty.append(title, body);
         return empty;
+    }
+
+    protected routineRowSubtitle(routine: QaapWorkHubRoutine): string {
+        if (routine.lastRunState === 'running') {
+            return nls.localize('qaap/mobileProjects/routineStatusRunning', 'Running');
+        }
+        if (routine.lastRunState === 'failed') {
+            return nls.localize('qaap/mobileProjects/routineStatusFailed', 'Failed');
+        }
+        if (!routine.enabled) {
+            return nls.localize('qaap/mobileProjects/routinesSectionPaused', 'Paused');
+        }
+        return routineScheduleLabel(routine);
     }
 
     protected createRoutineRow(routine: QaapWorkHubRoutine): HTMLElement {
         const row = document.createElement('article');
-        row.className = 'theia-mobile-hub-routine-row q-row';
+        row.className = 'theia-mobile-hub-routine-row';
         if (routine.lastRunState === 'running') {
             row.classList.add('theia-mod-running');
-        } else if (routine.lastRunState === 'failed') {
-            row.classList.add('theia-mod-failed');
         }
         if (!routine.enabled) {
             row.classList.add('theia-mod-paused');
         }
 
-        const main = document.createElement('button');
-        main.type = 'button';
+        const main = document.createElement('div');
         main.className = 'theia-mobile-hub-routine-main';
+        main.setAttribute('role', 'button');
+        main.tabIndex = 0;
 
-        const routineAgentId = routine.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID;
-        const routineAvatar = createAgentRowAvatar({
-            agentId: routineAgentId,
-            state: routine.lastRunState === 'running'
-                ? 'running'
-                : routine.lastRunState === 'failed'
-                    ? 'failed'
-                    : 'idle',
-        });
-
-        const body = document.createElement('div');
-        body.className = 'theia-mobile-hub-routine-body';
-        const titleRow = document.createElement('div');
-        titleRow.className = 'theia-mobile-hub-routine-title-row';
-        if (routine.lastRunState === 'running' || routine.lastRunState === 'failed') {
-            const dot = document.createElement('span');
-            dot.className = `q-dot theia-mobile-hub-routine-dot ${
-                routine.lastRunState === 'running' ? 'q-success' : 'q-danger'
-            }`;
-            dot.setAttribute('aria-hidden', 'true');
-            titleRow.append(dot);
-        }
         const title = document.createElement('span');
         title.className = 'theia-mobile-hub-routine-title';
         title.textContent = routine.title;
-        titleRow.append(title);
-        const meta = document.createElement('div');
+        const meta = document.createElement('span');
         meta.className = 'theia-mobile-hub-routine-meta';
-        appendSubtitleMetaPart(meta, routineScheduleLabel(routine));
-        appendSubtitleMetaPart(meta, createAgentMetaBadge(
-            routineAgentId,
-            this.activeTasks?.getAgents().find(a => a.id === routineAgentId)?.label,
-        ));
-        const promptPreview = document.createElement('span');
-        promptPreview.className = 'theia-mobile-hub-routine-prompt theia-mod-secondary';
-        promptPreview.textContent = routine.prompt;
-        body.append(titleRow, meta, promptPreview);
+        meta.textContent = this.routineRowSubtitle(routine);
+        main.append(title, meta);
 
-        main.append(routineAvatar, body);
-        main.addEventListener('click', () => this.openRoutineEditor(routine));
+        const openEditor = (): void => this.openRoutineEditor(routine);
+        main.addEventListener('click', openEditor);
+        main.addEventListener('keydown', (ev: KeyboardEvent) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                openEditor();
+            }
+        });
 
         const trailing = document.createElement('div');
         trailing.className = 'theia-mobile-hub-routine-trailing';
+        trailing.addEventListener('click', ev => ev.stopPropagation());
+        trailing.addEventListener('pointerdown', ev => ev.stopPropagation());
 
         const run = document.createElement('button');
         run.type = 'button';
@@ -4096,6 +4066,7 @@ export class MobileProjectsPanel {
         run.setAttribute('aria-label', run.title);
         run.disabled = routine.lastRunState === 'running';
         run.addEventListener('click', ev => {
+            ev.preventDefault();
             ev.stopPropagation();
             void this.runRoutineNow(routine);
         });
@@ -4111,6 +4082,7 @@ export class MobileProjectsPanel {
         toggle.setAttribute('aria-label', toggle.title);
         toggle.classList.toggle('theia-mod-on', routine.enabled);
         toggle.addEventListener('click', ev => {
+            ev.preventDefault();
             ev.stopPropagation();
             void this.toggleRoutineEnabled(routine);
         });
@@ -4121,24 +4093,35 @@ export class MobileProjectsPanel {
     }
 
     protected async toggleRoutineEnabled(routine: QaapWorkHubRoutine): Promise<void> {
+        const previousEnabled = routine.enabled;
+        const nextEnabled = !previousEnabled;
+        this.routineInteractionLock = true;
+        this.patchRoutineLocally(routine.id, { enabled: nextEnabled });
         try {
-            await updateWorkHubRoutine(routine.id, { enabled: !routine.enabled });
-            await this.refreshWorkHubRoutines(true);
+            await updateWorkHubRoutine(routine.id, { enabled: nextEnabled });
         } catch (error) {
+            this.patchRoutineLocally(routine.id, { enabled: previousEnabled });
             this.messageService?.error(error instanceof Error ? error.message : String(error));
+        } finally {
+            this.routineInteractionLock = false;
+            await this.refreshWorkHubRoutines(true);
         }
     }
 
     protected async runRoutineNow(routine: QaapWorkHubRoutine): Promise<void> {
+        this.routineInteractionLock = true;
+        this.patchRoutineLocally(routine.id, { lastRunState: 'running' });
         try {
             await runWorkHubRoutineNow(routine.id);
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/routineStarted', 'Routine started on the VPS'),
                 { kind: 'success', duration: 1800 },
             );
-            await this.refreshWorkHubRoutines(true);
         } catch (error) {
             this.messageService?.error(error instanceof Error ? error.message : String(error));
+        } finally {
+            this.routineInteractionLock = false;
+            await this.refreshWorkHubRoutines(true);
         }
     }
 
@@ -4169,6 +4152,8 @@ export class MobileProjectsPanel {
 
         const panel = document.createElement('section');
         panel.className = 'theia-mobile-routine-sheet-panel q-sheet';
+        panel.addEventListener('click', ev => ev.stopPropagation());
+        panel.addEventListener('pointerdown', ev => ev.stopPropagation());
 
         const handle = document.createElement('div');
         handle.className = 'theia-mobile-routine-sheet-handle';
@@ -7980,6 +7965,7 @@ export class MobileProjectsPanel {
         this.transcriptEmbeddedPreview = mountEmbeddedAgentPreviewChrome(host, {
             url: previewUrl,
             messageService: this.messageService,
+            clipboard: this.previewClipboard,
             previewSurfaces: this.previewSurfaceRegistry,
             inspectorDeps: this.previewInspectorDeps,
             openExternal: target => {

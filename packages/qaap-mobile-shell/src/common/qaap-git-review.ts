@@ -58,6 +58,23 @@ export interface QaapGitFileActionRequest {
     file: string;
 }
 
+export type QaapGitCommitWorkflowAction =
+    | 'create-branch-commit'
+    | 'create-branch-commit-push'
+    | 'commit-push'
+    | 'commit'
+    | 'commit-create-pr';
+
+export interface QaapGitCommitWorkflowRequest {
+    /** Absolute filesystem path of the repository root. */
+    root: string;
+    action: QaapGitCommitWorkflowAction;
+    /** Required for create-branch-* actions. */
+    branchName?: string;
+    /** Commit message (required for commit actions). */
+    message: string;
+}
+
 /** Parse the body of a `git diff` unified patch into structured hunks. */
 export function parseUnifiedDiff(patch: string): QaapGitHunk[] {
     const hunks: QaapGitHunk[] = [];

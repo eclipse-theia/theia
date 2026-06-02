@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import {
     defaultTranscriptFilesTreePosition,
     filterTranscriptFileTreeEntries,
+    findTranscriptReadmeEntry,
     isTranscriptFilesTreeStacked,
     isTranscriptPreviewableTextFile,
     resolveTranscriptFilesTreeVisible,
@@ -61,5 +62,27 @@ describe('qaap-transcript-files-view', () => {
 
     it('defaults file tree to visible', () => {
         expect(resolveTranscriptFilesTreeVisible()).to.be.true;
+    });
+
+    it('finds README at workspace root by known names', () => {
+        const entries = [
+            entry('package.json', 'package.json'),
+            entry('README.md', 'README.md'),
+            entry('src', 'src', true),
+        ];
+        expect(findTranscriptReadmeEntry(entries)?.name).to.equal('README.md');
+    });
+
+    it('falls back to readme* files when no exact candidate matches', () => {
+        const entries = [
+            entry('readme.txt', 'readme.txt'),
+            entry('index.ts', 'index.ts'),
+        ];
+        expect(findTranscriptReadmeEntry(entries)?.name).to.equal('readme.txt');
+    });
+
+    it('ignores directories when searching for README', () => {
+        const entries = [entry('readme', 'readme', true)];
+        expect(findTranscriptReadmeEntry(entries)).to.be.undefined;
     });
 });

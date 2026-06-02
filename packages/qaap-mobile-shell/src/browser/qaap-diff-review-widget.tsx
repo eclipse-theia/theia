@@ -4,8 +4,9 @@
 // *****************************************************************************
 
 import { codicon, LabelProvider, Message, open, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common/quick-pick-service';
 import { CommandService } from '@theia/core/lib/common/command';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -15,6 +16,7 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import {
     QAAP_GIT_REVIEW_API_PATH,
     type QaapGitChangedFile,
+    type QaapGitCommitWorkflowAction,
     type QaapGitFileDiffResponse,
     type QaapGitHunkLine,
 } from '../common/qaap-git-review';
@@ -23,6 +25,33 @@ import { middleTruncatePath, splitRepoRelativePath } from './qaap-diff-review-pa
 /** Git extension commands used by the bulk review actions. */
 const GIT_STAGE_ALL = 'git.stageAll';
 const GIT_CLEAN_ALL = 'git.cleanAll';
+const GIT_COMMIT = 'git.commit';
+const PR_CREATE = 'pr.create';
+const PR_PUSH_AND_CREATE = 'pr.pushAndCreate';
+
+interface QaapGitCommitMenuOption {
+    action: QaapGitCommitWorkflowAction;
+    label: string;
+}
+
+const GIT_COMMIT_MENU_OPTIONS: QaapGitCommitMenuOption[] = [
+    {
+        action: 'create-branch-commit-push',
+        label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
+    },
+    {
+        action: 'commit-push',
+        label: nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push'),
+    },
+    {
+        action: 'commit',
+        label: nls.localize('qaap/mobileProjects/commit', 'Commit'),
+    },
+    {
+        action: 'commit-create-pr',
+        label: nls.localize('qaap/mobileProjects/commitCreatePr', 'Commit & Create PR'),
+    },
+];
 
 /** Context lines above this count collapse into an expandable bar (Cursor agent diff style). */
 const CONTEXT_COLLAPSE_THRESHOLD = 4;
@@ -59,6 +88,9 @@ export class QaapDiffReviewWidget extends ReactWidget {
     @inject(CommandService)
     protected readonly commands: CommandService;
 
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
     protected readonly toDisposeOnRepository = new DisposableCollection();
 
     /** When set (Work Hub embed), overrides the SCM-selected repository. */
@@ -84,6 +116,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected reviewComposerDraft = '';
     protected runningFileAction = false;
     protected branchName: string | undefined;
+    protected commitMenuOpen = false;
     protected readonly agentFileDiffs = new Map<string, QaapGitFileDiffResponse>();
     protected loadingAgentDiffs = false;
     protected readonly expandedContextBlocks = new Set<string>();
@@ -153,6 +186,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
 
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.trackRepository()));
         this.toDispose.push(this.toDisposeOnRepository);
+        this.toDispose.push(Disposable.create(() => this.detachCommitMenuListener()));
         this.trackRepository();
     }
 
@@ -370,6 +404,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
         const summaryLabel = count === 1
             ? nls.localize('qaap/mobileProjects/uncommittedChangeOne', '1 Uncommitted Change')
             : nls.localize('qaap/mobileProjects/uncommittedChangeMany', '{0} Uncommitted Changes', String(count));
+        const bulkDisabled = !this.bulkActionsEnabled || this.runningBulkAction || count === 0;
         return (
             <header className='qaap-agent-changes-toolbar'>
                 <div className='qaap-agent-changes-toolbar-primary'>
@@ -380,30 +415,238 @@ export class QaapDiffReviewWidget extends ReactWidget {
                         <i className={codicon('git-branch')} aria-hidden='true' />
                         <span>{branch}</span>
                     </span>
+                    <span className='qaap-agent-changes-toolbar-spacer' />
+                    {this.bulkActionsEnabled && this.renderAgentCommitControls(bulkDisabled)}
                 </div>
                 <div className='qaap-agent-changes-toolbar-secondary'>
-                    <span className='qaap-agent-changes-summary-label'>{summaryLabel}</span>
-                    <span className='qaap-agent-changes-stat-pill qaap-mod-add'>+{totals.adds}</span>
-                    <span className='qaap-agent-changes-stat-pill qaap-mod-del'>−{totals.dels}</span>
-                    <button
-                        type='button'
-                        className='qaap-diff-review-icon-btn qaap-agent-changes-refresh'
-                        title={nls.localize('qaap/diff/refresh', 'Refresh')}
-                        aria-label={nls.localize('qaap/diff/refresh', 'Refresh')}
-                        onClick={this.onRefresh}
-                    >
-                        <i className={codicon('refresh')} />
-                    </button>
+                    <span className='qaap-agent-changes-summary'>
+                        <i className={`${codicon('folder')} qaap-agent-changes-summary-icon`} aria-hidden='true' />
+                        <span className='qaap-agent-changes-summary-label'>{summaryLabel}</span>
+                        <span className='qaap-agent-changes-summary-stats'>
+                            <span className='qaap-diff-add'>+{totals.adds}</span>
+                            <span className='qaap-diff-del'>−{totals.dels}</span>
+                        </span>
+                    </span>
+                    {this.renderAgentBulkActions(bulkDisabled)}
                 </div>
             </header>
+        );
+    }
+
+    protected renderAgentCommitControls(disabled: boolean): React.ReactNode {
+        return (
+            <div className='qaap-agent-changes-commit-group'>
+                <button
+                    type='button'
+                    className='qaap-agent-changes-commit-btn'
+                    disabled={disabled}
+                    onClick={() => { void this.runCommitAction('create-branch-commit'); }}
+                >
+                    {nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit')}
+                </button>
+                <div className='qaap-agent-changes-commit-menu-wrap'>
+                    <button
+                        type='button'
+                        className={`qaap-agent-changes-commit-menu${this.commitMenuOpen ? ' qaap-mod-open' : ''}`}
+                        disabled={disabled}
+                        title={nls.localize('qaap/mobileProjects/commitOptions', 'Commit options')}
+                        aria-label={nls.localize('qaap/mobileProjects/commitOptions', 'Commit options')}
+                        aria-expanded={this.commitMenuOpen}
+                        aria-haspopup='menu'
+                        onClick={this.onToggleCommitMenu}
+                    >
+                        <i className={codicon('chevron-down')} aria-hidden='true' />
+                    </button>
+                    {this.commitMenuOpen && (
+                        <div className='qaap-agent-changes-commit-dropdown' role='menu'>
+                            {GIT_COMMIT_MENU_OPTIONS.map(option => (
+                                <button
+                                    key={option.action}
+                                    type='button'
+                                    role='menuitem'
+                                    className='qaap-agent-changes-commit-dropdown-item'
+                                    onClick={() => { void this.runCommitAction(option.action); }}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    protected readonly onToggleCommitMenu = (event: React.MouseEvent): void => {
+        event.stopPropagation();
+        if (this.commitMenuOpen) {
+            this.closeCommitMenu();
+        } else {
+            this.openCommitMenu();
+        }
+    };
+
+    protected openCommitMenu(): void {
+        this.commitMenuOpen = true;
+        this.attachCommitMenuListener();
+        this.update();
+    }
+
+    protected closeCommitMenu(): void {
+        if (!this.commitMenuOpen) {
+            return;
+        }
+        this.commitMenuOpen = false;
+        this.detachCommitMenuListener();
+        this.update();
+    }
+
+    protected commitMenuListener: ((event: MouseEvent) => void) | undefined;
+
+    protected attachCommitMenuListener(): void {
+        this.detachCommitMenuListener();
+        this.commitMenuListener = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Node)) {
+                return;
+            }
+            if (this.node.contains(target)) {
+                return;
+            }
+            this.closeCommitMenu();
+        };
+        window.setTimeout(() => {
+            if (this.commitMenuListener) {
+                document.addEventListener('mousedown', this.commitMenuListener);
+            }
+        }, 0);
+    }
+
+    protected detachCommitMenuListener(): void {
+        if (this.commitMenuListener) {
+            document.removeEventListener('mousedown', this.commitMenuListener);
+            this.commitMenuListener = undefined;
+        }
+    }
+
+    protected async runCommitAction(action: QaapGitCommitWorkflowAction): Promise<void> {
+        this.closeCommitMenu();
+        if (this.runningBulkAction || !this.bulkActionsEnabled || this.files.length === 0 || !this.rootFsPath) {
+            return;
+        }
+        const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
+        let branchName: string | undefined;
+        if (needsBranch) {
+            branchName = await this.quickInputService.input({
+                title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
+                placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
+                prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
+            });
+            if (!branchName?.trim()) {
+                return;
+            }
+            branchName = branchName.trim();
+        }
+        let message: string | undefined;
+        if (action !== 'commit') {
+            message = await this.quickInputService.input({
+                title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
+                placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
+                prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
+            });
+            if (!message?.trim()) {
+                return;
+            }
+        }
+        this.runningBulkAction = true;
+        this.error = undefined;
+        this.update();
+        try {
+            if (action === 'commit') {
+                await this.commands.executeCommand(GIT_STAGE_ALL);
+                await this.commands.executeCommand(GIT_COMMIT);
+            } else {
+                const response = await fetch(`${QAAP_GIT_REVIEW_API_PATH}/commit-workflow`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        root: this.rootFsPath,
+                        action,
+                        branchName,
+                        message: message!.trim(),
+                    }),
+                });
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({})) as { error?: string };
+                    throw new Error(body.error ?? `commit workflow failed (${response.status})`);
+                }
+                if (action === 'commit-create-pr') {
+                    await this.openCreatePullRequest();
+                }
+            }
+            await this.refresh();
+        } catch (error) {
+            this.error = error instanceof Error ? error.message : String(error);
+            this.update();
+        } finally {
+            this.runningBulkAction = false;
+            this.update();
+        }
+    }
+
+    protected async openCreatePullRequest(): Promise<void> {
+        const repoPath = this.rootFsPath;
+        if (!repoPath) {
+            return;
+        }
+        try {
+            await this.commands.executeCommand(PR_PUSH_AND_CREATE, { repoPath });
+        } catch {
+            await this.commands.executeCommand(PR_CREATE, { repoPath });
+        }
+    }
+
+    protected renderAgentBulkActions(disabled: boolean): React.ReactNode {
+        if (!this.bulkActionsEnabled) {
+            return undefined;
+        }
+        return (
+            <span className='qaap-agent-changes-bulk-actions'>
+                <button
+                    type='button'
+                    className='qaap-diff-review-icon-btn'
+                    title={nls.localize('qaap/diff/discardAll', 'Discard all')}
+                    aria-label={nls.localize('qaap/diff/discardAll', 'Discard all')}
+                    disabled={disabled}
+                    onClick={this.onDiscardAll}
+                >
+                    <i className={codicon('discard')} />
+                </button>
+                <button
+                    type='button'
+                    className='qaap-diff-review-icon-btn qaap-mod-accept'
+                    title={nls.localize('qaap/diff/acceptAll', 'Accept all hunks')}
+                    aria-label={nls.localize('qaap/diff/acceptAll', 'Accept all hunks')}
+                    disabled={disabled}
+                    onClick={this.onAcceptAll}
+                >
+                    <i className={codicon('check')} />
+                </button>
+            </span>
         );
     }
 
     protected renderAgentFileSection(file: QaapGitChangedFile): React.ReactNode {
         const diff = this.agentFileDiffs.get(file.path);
         const displayPath = middleTruncatePath(file.path);
+        const isNew = isUntrackedFile(file);
+        const fileClass = [
+            'qaap-agent-changes-file',
+            isNew ? 'qaap-agent-changes-file--new' : '',
+        ].filter(Boolean).join(' ');
         return (
-            <section key={file.path} className='qaap-agent-changes-file'>
+            <section key={file.path} className={fileClass}>
                 <div className='qaap-agent-changes-filehdr'>
                     <button
                         type='button'
@@ -413,6 +656,11 @@ export class QaapDiffReviewWidget extends ReactWidget {
                     >
                         <i className={this.iconFor(file.path)} aria-hidden='true' />
                         <span className='qaap-agent-changes-path'>{displayPath}</span>
+                        {isNew && (
+                            <span className='qaap-agent-changes-new-badge'>
+                                {nls.localize('qaap/diff/newFile', 'New')}
+                            </span>
+                        )}
                     </button>
                     <span className='qaap-agent-changes-filehdr-stats'>
                         <span className='qaap-diff-add'>+{file.adds}</span>
@@ -420,16 +668,28 @@ export class QaapDiffReviewWidget extends ReactWidget {
                     </span>
                     <span className='qaap-agent-changes-filehdr-actions'>
                         {this.bulkActionsEnabled && (
-                            <button
-                                type='button'
-                                className='qaap-diff-review-icon-btn'
-                                title={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
-                                aria-label={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
-                                disabled={this.runningFileAction}
-                                onClick={() => { void this.rejectFile(file.path); }}
-                            >
-                                <i className={codicon('discard')} />
-                            </button>
+                            <>
+                                <button
+                                    type='button'
+                                    className='qaap-diff-review-icon-btn'
+                                    title={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
+                                    aria-label={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
+                                    disabled={this.runningFileAction}
+                                    onClick={() => { void this.rejectFile(file.path); }}
+                                >
+                                    <i className={codicon('discard')} />
+                                </button>
+                                <button
+                                    type='button'
+                                    className='qaap-diff-review-icon-btn qaap-mod-accept'
+                                    title={nls.localize('qaap/diff/acceptFile', 'Accept file changes')}
+                                    aria-label={nls.localize('qaap/diff/acceptFile', 'Accept file changes')}
+                                    disabled={this.runningFileAction}
+                                    onClick={() => { void this.acceptFile(file.path); }}
+                                >
+                                    <i className={codicon('check')} />
+                                </button>
+                            </>
                         )}
                     </span>
                 </div>
@@ -454,8 +714,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
             return <div className='qaap-diff-review-note'>{nls.localize('qaap/diff/noHunks', 'No textual changes.')}</div>;
         }
         return diff.hunks.map((hunk, hunkIndex) => (
-            <div key={hunkIndex} className='qaap-diff-review-hunk'>
-                <div className='qaap-diff-review-hunk-header'>{hunk.header}</div>
+            <div key={hunkIndex} className='qaap-diff-review-hunk qaap-diff-review-hunk--agent'>
                 {this.renderCollapsedHunkLines(path, hunkIndex, hunk.lines)}
             </div>
         ));
@@ -468,7 +727,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
                 return (
                     <React.Fragment key={`lines-${hunkIndex}-${segmentIndex}`}>
                         {segment.lines.map((line, lineIndex) => (
-                            <DiffLine key={lineIndex} line={line} />
+                            <DiffLine key={lineIndex} line={line} agentStyle={true} />
                         ))}
                     </React.Fragment>
                 );
@@ -484,7 +743,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
                             onToggle={() => this.onToggleContextBlock(blockId)}
                         />
                         {segment.lines.map((line, lineIndex) => (
-                            <DiffLine key={lineIndex} line={line} />
+                            <DiffLine key={lineIndex} line={line} agentStyle={true} />
                         ))}
                     </React.Fragment>
                 );
@@ -1018,14 +1277,23 @@ function CollapsedContextBar(props: { count: number; expanded: boolean; onToggle
     );
 }
 
-function DiffLine(props: { line: QaapGitHunkLine }): React.ReactElement {
-    const { line } = props;
+function isUntrackedFile(file: QaapGitChangedFile): boolean {
+    return file.status === 'U' || file.status === '?';
+}
+
+function DiffLine(props: { line: QaapGitHunkLine; agentStyle?: boolean }): React.ReactElement {
+    const { line, agentStyle } = props;
     const sign = line.type === 'add' ? '+' : line.type === 'del' ? '−' : ' ';
     const number = line.type === 'del' ? line.oldNumber : line.newNumber;
+    const lineClass = [
+        'qaap-diff-review-line',
+        `qaap-diff-review-line--${line.type}`,
+        agentStyle ? 'qaap-diff-review-line--agent' : '',
+    ].filter(Boolean).join(' ');
     return (
-        <div className={`qaap-diff-review-line qaap-diff-review-line--${line.type}`}>
+        <div className={lineClass}>
             <span className='qaap-diff-review-gutter'>{number ?? ''}</span>
-            <span className='qaap-diff-review-sign'>{sign}</span>
+            {!agentStyle && <span className='qaap-diff-review-sign'>{sign}</span>}
             <span className='qaap-diff-review-code'>{line.text}</span>
         </div>
     );
