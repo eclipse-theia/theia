@@ -13,6 +13,7 @@
     "@theia/core": "1.71.0",
     "@theia/filesystem": "1.71.0",
     "@theia/mini-browser": "1.71.0",
+    "@theia/monaco": "1.71.0",
     "@theia/preview": "1.71.0",
     "@theia/qaap-adapters": "1.71.0",
     "@theia/qaap-shell": "1.71.0",

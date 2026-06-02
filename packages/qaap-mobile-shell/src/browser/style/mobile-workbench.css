@@ -1622,6 +1622,8 @@
     .monaco-editor .find-widget input,
     /* SCM commit message textarea. */
     .theia-scm-input-message-container textarea,
+    /* Transcript Files tab Monaco editor. */
+    .theia-mobile-transcript-files-monaco-host .monaco-editor textarea.inputarea,
     /* Search across files / replace inputs. */
     .t-siw-search-container input,
     .t-siw-search-container textarea,
@@ -9127,6 +9129,10 @@ button.theia-mobile-transcript-team-row:focus-visible {
   font-size: 16px;
 }
 
+.theia-mobile-transcript-files-edit-toggle.theia-mod-active {
+  color: var(--q-accent, #E58E40);
+}
+
 .theia-mobile-transcript-files-action:hover {
   background: color-mix(in srgb, var(--theia-foreground, #fff) 6%, transparent);
 }
@@ -9196,6 +9202,12 @@ button.theia-mobile-transcript-team-row:focus-visible {
   background: color-mix(in srgb, var(--theia-foreground, #fff) 6%, transparent);
 }
 
+.theia-mobile-transcript-files-menu-item:disabled {
+  opacity: var(--theia-mod-disabled-opacity, 0.45);
+  cursor: default;
+  pointer-events: none;
+}
+
 .theia-mobile-transcript-files-menu-item.theia-mod-checked {
   font-weight: 600;
 }
@@ -9219,6 +9231,24 @@ button.theia-mobile-transcript-team-row:focus-visible {
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   overscroll-behavior-y: contain;
+}
+
+.theia-mobile-transcript-files-preview-body.theia-mod-editing {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.theia-mobile-transcript-files-monaco-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.theia-mobile-transcript-files-monaco-host .monaco-editor,
+.theia-mobile-transcript-files-monaco-host .monaco-editor .overflow-guard {
+  min-height: 100%;
 }
 
 .theia-mobile-transcript-files-preview-body .theia-mobile-agent-code-view {

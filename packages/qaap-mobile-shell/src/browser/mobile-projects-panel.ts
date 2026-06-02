@@ -8072,8 +8072,11 @@ export class MobileProjectsPanel {
         }
         this.transcriptFilesDispose = mountTranscriptFilesView(host, cwd, {
             ...services,
-            renderMarkdown: services.renderMarkdown
-                ? markdown => services.renderMarkdown!(this.cleanTranscriptDisplayText(markdown))
+            renderMarkdownPreview: services.renderMarkdownPreview
+                ? (resourcePath, markdown) => services.renderMarkdownPreview!(
+                    resourcePath,
+                    this.cleanTranscriptDisplayText(markdown),
+                )
                 : undefined,
         });
     }

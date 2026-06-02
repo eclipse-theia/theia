@@ -8,6 +8,10 @@ import {
     createTranscriptCodeView,
     resolveTranscriptCodeLanguage,
 } from './qaap-transcript-code-view';
+import {
+    type TranscriptPreviewMonacoEditor,
+    type TranscriptPreviewMonacoEditorOptions,
+} from './qaap-transcript-monaco-editor';
 
 export interface TranscriptFileTreeEntry {
     readonly name: string;
@@ -22,9 +26,17 @@ export interface TranscriptFilesViewServices {
     listDirectory(resourcePath: string): Promise<readonly TranscriptFileTreeEntry[]>;
     relativePathForResource(resourcePath: string, rootUri: string): string;
     readFile(resourcePath: string): Promise<string>;
-    renderMarkdown?(markdown: string): string;
+    resolveFileIcon?(resourcePath: string, isDirectory: boolean): string;
+    renderMarkdownPreview?(resourcePath: string, markdown: string): HTMLElement;
     createNewFile?(parentResourcePath?: string): void | Promise<void>;
     createNewFolder?(parentResourcePath?: string): void | Promise<void>;
+    openInEditor?(relativePath: string): void | Promise<void>;
+    writeFile?(resourcePath: string, content: string): Promise<void>;
+    createMonacoPreviewEditor?(
+        host: HTMLElement,
+        resourcePath: string,
+        options?: TranscriptPreviewMonacoEditorOptions,
+    ): Promise<TranscriptPreviewMonacoEditor | undefined>;
     watchFileTreeChanges?(onChange: () => void): Disposable;
     localize(key: string, defaultValue: string, ...args: string[]): string;
 }
@@ -208,6 +220,12 @@ export function mountTranscriptFilesView(
         treeVisible: resolveTranscriptFilesTreeVisible(),
         treePaneWidthPx: undefined as number | undefined,
         treePaneHeightPx: undefined as number | undefined,
+        previewEditable: false,
+        previewText: undefined as string | undefined,
+        previewDirty: false,
+        previewSaveTimer: undefined as number | undefined,
+        previewMonacoEditor: undefined as TranscriptPreviewMonacoEditor | undefined,
+        previewEditorRequestId: 0,
     };
 
     const layout = document.createElement('div');
@@ -221,6 +239,13 @@ export function mountTranscriptFilesView(
     breadcrumb.className = 'theia-mobile-transcript-files-breadcrumb';
     const previewActions = document.createElement('div');
     previewActions.className = 'theia-mobile-transcript-files-preview-actions';
+    const editToggleBtn = document.createElement('button');
+    editToggleBtn.type = 'button';
+    editToggleBtn.className = 'theia-mobile-transcript-files-action theia-mobile-transcript-files-edit-toggle codicon codicon-lock';
+    editToggleBtn.title = services.localize('qaap/mobileProjects/transcriptEditFile', 'Edit file');
+    editToggleBtn.setAttribute('aria-label', editToggleBtn.title);
+    editToggleBtn.setAttribute('aria-pressed', 'false');
+    editToggleBtn.disabled = true;
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
     moreBtn.className = 'theia-mobile-transcript-files-action codicon codicon-ellipsis';
@@ -228,7 +253,7 @@ export function mountTranscriptFilesView(
     moreBtn.setAttribute('aria-label', moreBtn.title);
     moreBtn.setAttribute('aria-haspopup', 'menu');
     moreBtn.setAttribute('aria-expanded', 'false');
-    previewActions.append(moreBtn);
+    previewActions.append(editToggleBtn, moreBtn);
     previewHeader.append(breadcrumb, previewActions);
     const previewBody = document.createElement('div');
     previewBody.className = 'theia-mobile-transcript-files-preview-body';
@@ -267,6 +292,17 @@ export function mountTranscriptFilesView(
     moreMenu.className = 'theia-mobile-transcript-files-menu';
     moreMenu.setAttribute('role', 'menu');
     moreMenu.hidden = true;
+    const editFileBtn = document.createElement('button');
+    editFileBtn.type = 'button';
+    editFileBtn.className = 'theia-mobile-transcript-files-menu-item';
+    editFileBtn.setAttribute('role', 'menuitemcheckbox');
+    editFileBtn.setAttribute('aria-checked', 'false');
+    editFileBtn.disabled = true;
+    editFileBtn.innerHTML = '<span class="codicon codicon-lock" aria-hidden="true"></span>'
+        + `<span>${services.localize('qaap/mobileProjects/transcriptEditFile', 'Edit file')}</span>`;
+    const previewActionsSep = document.createElement('div');
+    previewActionsSep.className = 'theia-mobile-transcript-files-menu-separator';
+    previewActionsSep.setAttribute('role', 'separator');
     const moreMenuLabel = document.createElement('div');
     moreMenuLabel.className = 'theia-mobile-transcript-files-menu-label';
     moreMenuLabel.textContent = services.localize(
@@ -294,7 +330,7 @@ export function mountTranscriptFilesView(
     treeShowBtn.setAttribute('role', 'menuitemcheckbox');
     treeShowBtn.innerHTML = '<span class="codicon codicon-list-tree" aria-hidden="true"></span>'
         + `<span>${services.localize('qaap/mobileProjects/filesTreeShow', 'Show file tree')}</span>`;
-    moreMenu.append(moreMenuLabel, treeSideBtn, treeBottomBtn, treeVisibilitySep, treeShowBtn);
+    moreMenu.append(editFileBtn, previewActionsSep, moreMenuLabel, treeSideBtn, treeBottomBtn, treeVisibilitySep, treeShowBtn);
 
     const newMenu = document.createElement('div');
     newMenu.className = 'theia-mobile-transcript-files-menu theia-mod-create';
@@ -348,6 +384,31 @@ export function mountTranscriptFilesView(
         layout.style.removeProperty('--qaap-files-tree-height');
     };
 
+    const syncPreviewEditUi = (): void => {
+        const canEdit = Boolean(
+            state.selected
+            && !state.selected.isDirectory
+            && isTranscriptPreviewableTextFile(state.selected.relativePath)
+            && services.writeFile
+            && services.createMonacoPreviewEditor,
+        );
+        const active = state.previewEditable;
+        editFileBtn.disabled = !canEdit;
+        editToggleBtn.disabled = !canEdit;
+        editFileBtn.classList.toggle('theia-mod-checked', active);
+        editFileBtn.setAttribute('aria-checked', String(active));
+        editFileBtn.innerHTML = '<span class="codicon codicon-lock" aria-hidden="true"></span>'
+            + `<span>${services.localize('qaap/mobileProjects/transcriptEditFile', 'Edit file')}</span>`;
+        editToggleBtn.classList.toggle('theia-mod-active', active);
+        editToggleBtn.classList.toggle('codicon-lock', !active);
+        editToggleBtn.classList.toggle('codicon-unlock', active);
+        editToggleBtn.setAttribute('aria-pressed', String(active));
+        editToggleBtn.title = active
+            ? services.localize('qaap/mobileProjects/transcriptEditingFile', 'Editing file')
+            : services.localize('qaap/mobileProjects/transcriptEditFile', 'Edit file');
+        editToggleBtn.setAttribute('aria-label', editToggleBtn.title);
+    };
+
     const syncTreeLayout = (): void => {
         layout.classList.toggle('theia-mod-tree-side', state.treePosition === 'side');
         layout.classList.toggle('theia-mod-tree-bottom', state.treePosition === 'bottom');
@@ -359,6 +420,7 @@ export function mountTranscriptFilesView(
         treeShowBtn.classList.toggle('theia-mod-checked', state.treeVisible);
         treeShowBtn.setAttribute('aria-checked', String(state.treeVisible));
         splitHandle.hidden = !state.treeVisible;
+        syncPreviewEditUi();
         updateSplitHandleAria();
         applyTreePaneSize();
     };
@@ -484,6 +546,7 @@ export function mountTranscriptFilesView(
         }
         closeNewMenu();
         moreMenuOpen = true;
+        syncTreeLayout();
         resolveMenuPortal().appendChild(moreMenu);
         moreMenu.hidden = false;
         moreBtn.setAttribute('aria-expanded', 'true');
@@ -590,24 +653,210 @@ export function mountTranscriptFilesView(
         previewBody.append(error);
     };
 
-    const renderPreviewContent = (entry: TranscriptFileTreeEntry, text: string): void => {
-        previewBody.replaceChildren();
-        const ext = entry.name.slice(entry.name.lastIndexOf('.') + 1).toLowerCase();
-        if (['md', 'mdx', 'markdown'].includes(ext) && services.renderMarkdown) {
-            const markdownHost = document.createElement('div');
-            markdownHost.className = 'theia-mobile-agent-transcript-content theia-mod-markdown';
-            markdownHost.innerHTML = services.renderMarkdown(text);
-            previewBody.append(markdownHost);
+    const clearPreviewSaveTimer = (): void => {
+        if (state.previewSaveTimer !== undefined) {
+            window.clearTimeout(state.previewSaveTimer);
+            state.previewSaveTimer = undefined;
+        }
+    };
+
+    const savePreviewText = async (): Promise<void> => {
+        clearPreviewSaveTimer();
+        syncPreviewTextFromEditor();
+        if (!state.previewDirty || !state.selected) {
             return;
         }
+        if (state.previewMonacoEditor && !state.previewMonacoEditor.readOnly) {
+            try {
+                await state.previewMonacoEditor.save();
+                state.previewDirty = false;
+            } catch {
+                renderPreviewError(services.localize(
+                    'qaap/mobileProjects/filesWriteFailed',
+                    'Could not save {0}',
+                    state.selected.relativePath,
+                ));
+            }
+            return;
+        }
+        if (!services.writeFile || state.previewText === undefined) {
+            return;
+        }
+        try {
+            await services.writeFile(state.selected.resourcePath, state.previewText);
+            state.previewDirty = false;
+        } catch {
+            renderPreviewError(services.localize(
+                'qaap/mobileProjects/filesWriteFailed',
+                'Could not save {0}',
+                state.selected.relativePath,
+            ));
+        }
+    };
+
+    const schedulePreviewSave = (): void => {
+        clearPreviewSaveTimer();
+        state.previewSaveTimer = window.setTimeout(() => {
+            state.previewSaveTimer = undefined;
+            void savePreviewText();
+        }, 500);
+    };
+
+    const syncPreviewTextFromEditor = (): void => {
+        const text = state.previewMonacoEditor?.getText();
+        if (text !== undefined) {
+            state.previewText = text;
+        }
+    };
+
+    const disposePreviewMonacoEditor = (): string | undefined => {
+        syncPreviewTextFromEditor();
+        const text = state.previewText;
+        if (state.previewMonacoEditor) {
+            state.previewMonacoEditor.dispose();
+            state.previewMonacoEditor = undefined;
+        }
+        return text;
+    };
+
+    const isMarkdownPreviewFile = (path: string): boolean => {
+        const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+        return ['md', 'mdx', 'markdown'].includes(ext);
+    };
+
+    const renderPreviewReadOnlyFallback = (entry: TranscriptFileTreeEntry, text: string): void => {
         const language = resolveTranscriptCodeLanguage(entry.relativePath, text);
         previewBody.append(createTranscriptCodeView(text, language));
     };
 
+    const attachPreviewMonacoEditor = (
+        entry: TranscriptFileTreeEntry,
+        editor: TranscriptPreviewMonacoEditor,
+        requestId: number,
+    ): void => {
+        state.previewMonacoEditor = editor;
+        state.previewText = editor.getText();
+        disposables.push(Disposable.create(() => {
+            if (state.previewMonacoEditor === editor) {
+                disposePreviewMonacoEditor();
+            } else {
+                editor.dispose();
+            }
+        }));
+        if (!editor.readOnly) {
+            disposables.push(editor.onDidChangeContent(() => {
+                if (requestId !== state.previewEditorRequestId) {
+                    return;
+                }
+                syncPreviewTextFromEditor();
+                state.previewDirty = true;
+                schedulePreviewSave();
+            }));
+        }
+        window.requestAnimationFrame(() => editor.layout());
+    };
+
+    const renderPreviewMonaco = async (
+        entry: TranscriptFileTreeEntry,
+        text: string,
+        options: TranscriptPreviewMonacoEditorOptions,
+    ): Promise<void> => {
+        if (!services.createMonacoPreviewEditor) {
+            previewBody.replaceChildren();
+            renderPreviewReadOnlyFallback(entry, text);
+            return;
+        }
+        const requestId = ++state.previewEditorRequestId;
+        disposePreviewMonacoEditor();
+        previewBody.classList.toggle('theia-mod-editing', !options.readOnly);
+        previewBody.replaceChildren();
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-transcript-files-monaco-host';
+        previewBody.append(host);
+        try {
+            const editor = await services.createMonacoPreviewEditor(host, entry.resourcePath, {
+                ...options,
+                initialText: text,
+            });
+            if (!editor || requestId !== state.previewEditorRequestId) {
+                editor?.dispose();
+                return;
+            }
+            if (options.readOnly !== editor.readOnly) {
+                editor.dispose();
+                return;
+            }
+            if (!options.readOnly && !state.previewEditable) {
+                editor.dispose();
+                return;
+            }
+            if (options.readOnly && state.previewEditable) {
+                editor.dispose();
+                return;
+            }
+            attachPreviewMonacoEditor(entry, editor, requestId);
+        } catch {
+            if (requestId !== state.previewEditorRequestId) {
+                return;
+            }
+            if (!options.readOnly) {
+                state.previewEditable = false;
+                renderPreviewError(services.localize(
+                    'qaap/mobileProjects/filesEditorFailed',
+                    'Could not open editor for {0}',
+                    entry.relativePath,
+                ));
+                syncTreeLayout();
+                return;
+            }
+            previewBody.classList.remove('theia-mod-editing');
+            previewBody.replaceChildren();
+            renderPreviewReadOnlyFallback(entry, text);
+        }
+    };
+
+    const renderPreviewReadOnly = (entry: TranscriptFileTreeEntry, text: string): void => {
+        disposePreviewMonacoEditor();
+        previewBody.classList.remove('theia-mod-editing');
+        previewBody.replaceChildren();
+        if (isMarkdownPreviewFile(entry.relativePath) && services.renderMarkdownPreview) {
+            const markdownHost = services.renderMarkdownPreview(entry.resourcePath, text);
+            markdownHost.classList.add('theia-mobile-agent-transcript-content', 'theia-mod-markdown');
+            previewBody.append(markdownHost);
+            return;
+        }
+        void renderPreviewMonaco(entry, text, { readOnly: true });
+    };
+
+    const renderPreviewMonacoEditor = async (
+        entry: TranscriptFileTreeEntry,
+        text: string,
+        shouldFocus = false,
+    ): Promise<void> => {
+        await renderPreviewMonaco(entry, text, { readOnly: false, focus: shouldFocus });
+    };
+
+    const renderPreviewContent = (entry: TranscriptFileTreeEntry, text: string, shouldFocusEditor = false): void => {
+        state.previewText = text;
+        if (state.previewEditable) {
+            void renderPreviewMonacoEditor(entry, text, shouldFocusEditor);
+        } else {
+            renderPreviewReadOnly(entry, text);
+        }
+    };
+
     const loadPreview = async (entry: TranscriptFileTreeEntry): Promise<void> => {
+        if (state.previewEditable || state.previewDirty) {
+            await savePreviewText();
+        }
+        disposePreviewMonacoEditor();
+        state.previewEditable = false;
+        state.previewText = undefined;
+        state.previewDirty = false;
         const requestId = ++state.previewRequestId;
         state.selected = entry;
         renderPreviewHeader(entry);
+        syncPreviewEditUi();
         if (!isTranscriptPreviewableTextFile(entry.relativePath)) {
             previewBody.replaceChildren();
             const note = document.createElement('div');
@@ -618,6 +867,7 @@ export function mountTranscriptFilesView(
             );
             previewBody.append(note);
             renderTree();
+            syncTreeLayout();
             return;
         }
         renderPreviewLoading();
@@ -638,6 +888,7 @@ export function mountTranscriptFilesView(
             ));
         }
         renderTree();
+        syncTreeLayout();
     };
 
     const ensureChildren = async (resourcePath: string): Promise<readonly TranscriptFileTreeEntry[]> => {
@@ -740,8 +991,17 @@ export function mountTranscriptFilesView(
             : 'theia-mobile-transcript-files-chevron';
         chevron.setAttribute('aria-hidden', 'true');
         const icon = document.createElement('span');
-        icon.className = `theia-mobile-transcript-files-icon codicon ${entry.isDirectory ? 'codicon-folder' : transcriptFileIconClass(entry.relativePath)}`;
+        icon.className = 'theia-mobile-transcript-files-icon';
         icon.setAttribute('aria-hidden', 'true');
+        if (services.resolveFileIcon) {
+            for (const iconClass of services.resolveFileIcon(entry.resourcePath, entry.isDirectory).split(/\s+/)) {
+                if (iconClass) {
+                    icon.classList.add(iconClass);
+                }
+            }
+        } else {
+            icon.classList.add('codicon', entry.isDirectory ? 'codicon-folder' : transcriptFileIconClass(entry.relativePath));
+        }
         const label = document.createElement('span');
         label.className = 'theia-mobile-transcript-files-label';
         label.textContent = entry.name;
@@ -1045,25 +1305,95 @@ export function mountTranscriptFilesView(
     moreBtn.addEventListener('pointerdown', onMorePointerDown);
     disposables.push(Disposable.create(() => moreBtn.removeEventListener('pointerdown', onMorePointerDown)));
 
-    const onTreeSideClick = (): void => {
-        setTreePosition('side');
-        closeMoreMenu();
+    const setPreviewEditable = (editable: boolean): void => {
+        if (!state.selected || state.selected.isDirectory || !services.writeFile || !services.createMonacoPreviewEditor) {
+            return;
+        }
+        if (state.previewEditable === editable) {
+            return;
+        }
+        const entry = state.selected;
+        if (!editable) {
+            const text = disposePreviewMonacoEditor() ?? state.previewText;
+            state.previewEditable = false;
+            syncTreeLayout();
+            if (text !== undefined) {
+                state.previewText = text;
+                renderPreviewReadOnly(entry, text);
+            }
+            void savePreviewText();
+            return;
+        }
+        state.previewEditable = true;
+        syncTreeLayout();
+        const cachedText = state.previewText;
+        if (cachedText !== undefined) {
+            renderPreviewContent(entry, cachedText, true);
+            return;
+        }
+        renderPreviewLoading();
+        void services.readFile(entry.resourcePath).then(text => {
+            if (!state.previewEditable || state.selected?.resourcePath !== entry.resourcePath) {
+                return;
+            }
+            renderPreviewContent(entry, text, true);
+        }).catch(() => {
+            if (!state.previewEditable || state.selected?.resourcePath !== entry.resourcePath) {
+                return;
+            }
+            state.previewEditable = false;
+            renderPreviewError(services.localize(
+                'qaap/mobileProjects/filesReadFailed',
+                'Could not read {0}',
+                entry.relativePath,
+            ));
+            syncTreeLayout();
+        });
     };
-    treeSideBtn.addEventListener('click', onTreeSideClick);
-    disposables.push(Disposable.create(() => treeSideBtn.removeEventListener('click', onTreeSideClick)));
 
-    const onTreeBottomClick = (): void => {
-        setTreePosition('bottom');
-        closeMoreMenu();
+    const onMenuItemActivate = (event: Event, run: () => void): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        run();
     };
-    treeBottomBtn.addEventListener('click', onTreeBottomClick);
-    disposables.push(Disposable.create(() => treeBottomBtn.removeEventListener('click', onTreeBottomClick)));
 
-    const onTreeShowClick = (): void => {
-        setTreeVisible(!state.treeVisible);
+    const onPreviewEditActivate = (event: Event): void => {
+        if (editFileBtn.disabled) {
+            return;
+        }
+        onMenuItemActivate(event, () => setPreviewEditable(!state.previewEditable));
     };
-    treeShowBtn.addEventListener('click', onTreeShowClick);
-    disposables.push(Disposable.create(() => treeShowBtn.removeEventListener('click', onTreeShowClick)));
+
+    editToggleBtn.addEventListener('pointerdown', onPreviewEditActivate);
+    editFileBtn.addEventListener('pointerdown', onPreviewEditActivate);
+    disposables.push(Disposable.create(() => {
+        editToggleBtn.removeEventListener('pointerdown', onPreviewEditActivate);
+        editFileBtn.removeEventListener('pointerdown', onPreviewEditActivate);
+    }));
+
+    const onTreeSidePointerDown = (event: PointerEvent): void => {
+        onMenuItemActivate(event, () => {
+            setTreePosition('side');
+            closeMoreMenu();
+        });
+    };
+    treeSideBtn.addEventListener('pointerdown', onTreeSidePointerDown);
+    disposables.push(Disposable.create(() => treeSideBtn.removeEventListener('pointerdown', onTreeSidePointerDown)));
+
+    const onTreeBottomPointerDown = (event: PointerEvent): void => {
+        onMenuItemActivate(event, () => {
+            setTreePosition('bottom');
+            closeMoreMenu();
+        });
+    };
+    treeBottomBtn.addEventListener('pointerdown', onTreeBottomPointerDown);
+    disposables.push(Disposable.create(() => treeBottomBtn.removeEventListener('pointerdown', onTreeBottomPointerDown)));
+
+    const onTreeShowPointerDown = (event: PointerEvent): void => {
+        onMenuItemActivate(event, () => setTreeVisible(!state.treeVisible));
+    };
+    treeShowBtn.addEventListener('pointerdown', onTreeShowPointerDown);
+    disposables.push(Disposable.create(() => treeShowBtn.removeEventListener('pointerdown', onTreeShowPointerDown)));
 
     disposables.push(Disposable.create(() => {
         closeAllMenus();
@@ -1085,6 +1415,7 @@ export function mountTranscriptFilesView(
         }
         updateSplitHandleAria();
         applyTreePaneSize();
+        state.previewMonacoEditor?.layout();
     };
     window.addEventListener('resize', onWindowResize);
     disposables.push(Disposable.create(() => window.removeEventListener('resize', onWindowResize)));
@@ -1093,6 +1424,9 @@ export function mountTranscriptFilesView(
     void ensureChildren(state.rootUri).then(() => renderTree());
 
     disposables.push(Disposable.create(() => {
+        clearPreviewSaveTimer();
+        void savePreviewText();
+        disposePreviewMonacoEditor();
         state.previewRequestId++;
         host.replaceChildren();
     }));

@@ -8,13 +8,17 @@ import { FileUri } from '@theia/core/lib/common/file-uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
+import { LabelProvider, URIIconReference } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { MarkdownPreviewHandler } from '@theia/preview/lib/browser/markdown/markdown-preview-handler';
 import {
     type TranscriptFileTreeEntry,
     type TranscriptFilesViewServices,
 } from './qaap-transcript-files-view';
+import { createTranscriptPreviewMonacoEditor } from './qaap-transcript-monaco-editor';
 
 export async function openTranscriptWorkspaceFile(
     filePath: string,
@@ -77,11 +81,22 @@ export function resolveTranscriptWorkspaceRootLabel(cwd: string, workspaceServic
     return (root.path.base || root.path.name || cwd.split('/').filter(Boolean).pop()) ?? 'workspace';
 }
 
+/**
+ * Wires transcript Files tab to the same IDE services as the workbench:
+ * - {@link FileService} for list/read/write and file-change events
+ * - {@link MonacoEditorProvider} for inline editor (TextMate, same model URI as main editor)
+ * - {@link MarkdownPreviewHandler} for markdown preview (same as Preview view)
+ * - {@link LabelProvider} for file/folder icons (same as Explorer)
+ * - `file.newFile` / `file.newFolder` commands and {@link EditorManager} for open-in-workbench
+ */
 export function createTranscriptFilesViewServices(
     workspaceService: WorkspaceService,
     fileService: FileService,
+    editorManager: EditorManager,
     commands: CommandRegistry,
-    renderMarkdown?: (markdown: string) => string,
+    editorProvider?: MonacoEditorProvider,
+    labelProvider?: LabelProvider,
+    markdownPreviewHandler?: MarkdownPreviewHandler,
 ): TranscriptFilesViewServices {
     return {
         resolveRootUri: cwd => resolveTranscriptWorkspaceRootUri(cwd, workspaceService)?.toString(),
@@ -103,13 +118,40 @@ export function createTranscriptFilesViewServices(
             const content = await fileService.readFile(new URI(resourcePath));
             return content.value.toString();
         },
-        renderMarkdown,
+        resolveFileIcon: labelProvider
+            ? (resourcePath, isDirectory) => {
+                if (isDirectory) {
+                    return labelProvider.getIcon(URIIconReference.create('folder'));
+                }
+                return labelProvider.getIcon(new URI(resourcePath));
+            }
+            : undefined,
+        renderMarkdownPreview: markdownPreviewHandler
+            ? (resourcePath, markdown) => markdownPreviewHandler.renderContent({
+                content: markdown,
+                originUri: new URI(resourcePath),
+            })
+            : undefined,
         createNewFile: parentResourcePath => {
             void executeTranscriptNewFileCommand(commands, workspaceService, parentResourcePath);
         },
         createNewFolder: parentResourcePath => {
             void executeTranscriptNewFolderCommand(commands, workspaceService, parentResourcePath);
         },
+        openInEditor: relativePath => {
+            void openTranscriptWorkspaceFile(relativePath, workspaceService, editorManager);
+        },
+        writeFile: async (resourcePath, content) => {
+            await fileService.write(new URI(resourcePath), content);
+        },
+        createMonacoPreviewEditor: editorProvider
+            ? (host, resourcePath, options) => createTranscriptPreviewMonacoEditor(
+                host,
+                resourcePath,
+                editorProvider,
+                options,
+            )
+            : undefined,
         watchFileTreeChanges: onChange => {
             const subscription = fileService.onDidFilesChange(() => {
                 onChange();
