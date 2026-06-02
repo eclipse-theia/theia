@@ -19,21 +19,26 @@ export interface QaapBuiltinAgentDefinition {
  * Niche or ACP-only CLIs (Snow, Kiro, Nanobot, vibe-acp, …) stay in `QAAP_AGENT_COMMANDS`.
  */
 export const QAAP_BUILTIN_AGENT_DEFINITIONS: readonly QaapBuiltinAgentDefinition[] = [
-    { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {prompt}' },
-    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude -p {prompt}' },
-    { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always --message {prompt}' },
-    { id: 'opencode', label: 'OpenCode', bin: 'opencode', template: 'opencode run --format json --dangerously-skip-permissions {prompt}' },
+    { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {model_flags} {prompt}' },
+    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude {model_flags} -p {prompt}' },
+    { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always {model_flags} --message {prompt}' },
+    { id: 'opencode', label: 'OpenCode', bin: 'opencode', template: 'opencode run --format json --dangerously-skip-permissions {model_flags} {prompt}' },
     { id: 'goose', label: 'Goose', bin: 'goose', template: 'goose run --no-session -t {prompt}' },
     { id: 'hermes', label: 'Hermes', bin: 'hermes', template: 'hermes chat -q {prompt}' },
     { id: 'openclaw', label: 'OpenClaw', bin: 'openclaw', template: 'openclaw agent --local --message {prompt}' },
     { id: 'cursor', label: 'Cursor Agent', bin: 'cursor-agent', template: 'cursor-agent -p --force {prompt}' },
     { id: 'antigravity', label: 'Antigravity CLI', bin: 'antigravity', template: 'antigravity -p {prompt}' },
     { id: 'copilot', label: 'Copilot CLI', bin: 'copilot', template: 'copilot --autopilot --yolo --max-autopilot-continues 20 -p {prompt}' },
-    { id: 'qwen', label: 'Qwen Code', bin: 'qwen', template: 'qwen -p --approval-mode yolo {prompt}' },
+    { id: 'qwen', label: 'Qwen Code', bin: 'qwen', template: 'qwen -p --approval-mode yolo {model_flags} {prompt}' },
     { id: 'kimi', label: 'Kimi CLI', bin: 'kimi', template: 'kimi -p {prompt}' },
 ];
 
 export const QAAP_BUILTIN_AGENT_IDS = new Set(QAAP_BUILTIN_AGENT_DEFINITIONS.map(definition => definition.id));
+
+export const CURSOR_AGENT_ID = 'cursor';
+
+/** VPS agents whose CLI model list is not API-selectable in headless runs (no `{model_flags}`). */
+export const NATIVE_MODEL_CATALOG_EXCLUDED_AGENT_IDS = new Set([CURSOR_AGENT_ID]);
 
 /**
  * OpenAI Codex CLI changed its headless entrypoint over time:
@@ -45,8 +50,8 @@ export const QAAP_BUILTIN_AGENT_IDS = new Set(QAAP_BUILTIN_AGENT_DEFINITIONS.map
  */
 export function resolveQaapCodexTemplate(helpText: string): string {
     return /\bcodex\s+exec\b/.test(helpText) || /^\s+exec\b/m.test(helpText)
-        ? 'codex exec {prompt}'
-        : 'codex -q {prompt}';
+        ? 'codex exec {model_flags} {prompt}'
+        : 'codex -q {model_flags} {prompt}';
 }
 
 /** Mention / storage alias for {@link QAAP_BUILTIN_AGENT_DEFINITIONS} ids. */

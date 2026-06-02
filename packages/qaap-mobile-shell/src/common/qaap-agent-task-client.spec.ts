@@ -24,7 +24,8 @@ import {
     resolveBackendAgentForTurn,
     resolveExplicitAgentForSubmit,
     resolveQaapAgentMentionToken,
-    resolveStoredQaiqModelForAgent,
+    resolveStoredAgentModelForSubmit,
+    writeStoredAgentModel,
     SHELL_AGENT_ID,
     shellAgentFallback,
     THEIA_CODER_AGENT_ID,
@@ -128,7 +129,7 @@ describe('qaap-agent-task-client', () => {
             } as unknown as Window;
         });
 
-        it('buildCreateAgentTaskBody attaches stored QAIQ model for qaiq agent', () => {
+        it('buildCreateAgentTaskBody attaches stored model per agent', () => {
             const cwd = '/tmp/qaap-qaiq-model-test';
             const model = toQaapCreateAgentTaskQaiqModel({
                 provider: 'openai',
@@ -140,9 +141,12 @@ describe('qaap-agent-task-client', () => {
                 prompt: 'fix tests',
                 agent: QAIQ_AGENT_ID,
                 cwd,
+                agentModel: model,
                 qaiqModel: model,
             });
-            expect(resolveStoredQaiqModelForAgent('codex', cwd)).to.be.undefined;
+            expect(resolveStoredAgentModelForSubmit('codex', cwd)).to.be.undefined;
+            writeStoredAgentModel(cwd, 'aider', model);
+            expect(resolveStoredAgentModelForSubmit('aider', cwd)).to.deep.equal(model);
             expect(readStoredQaiqModel(cwd)).to.deep.equal(model);
         });
     });

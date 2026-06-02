@@ -10,6 +10,21 @@
 import {
     resolveQaapBuiltinAgentMentionId,
 } from './qaap-builtin-agents';
+import {
+    readStoredAgentModel,
+    resolveStoredAgentModelForSubmit,
+    writeStoredAgentModel,
+} from './qaap-agent-model-selection';
+
+export {
+    agentSupportsModelPicker,
+    agentUsesNativeModelCatalog,
+    agentUsesSettingsModelCatalog,
+    isSameAgentModel,
+    readStoredAgentModel,
+    resolveStoredAgentModelForSubmit,
+    writeStoredAgentModel,
+} from './qaap-agent-model-selection';
 
 export const QAAP_AGENT_TASK_API_PATH = '/qaap/api/agent-tasks';
 
@@ -82,7 +97,14 @@ export function isAgentTaskFinished(state: string): boolean {
 
 export type QaapCreateAgentTaskBody =
     | { readonly command: string; readonly cwd: string }
-    | { readonly prompt: string; readonly agent: string; readonly cwd: string; readonly qaiqModel?: QaapCreateAgentTaskQaiqModel };
+    | {
+        readonly prompt: string;
+        readonly agent: string;
+        readonly cwd: string;
+        readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+        /** @deprecated Use {@link agentModel}. */
+        readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    };
 
 export function scopedAgentStorageKey(cwd: string): string {
     return `${SELECTED_AGENT_STORAGE_KEY}.${hashString(cwd)}`;
@@ -122,25 +144,7 @@ export function writeStoredAgent(cwd: string | undefined, agentId: string): void
 }
 
 export function readStoredQaiqModel(cwd: string | undefined): QaapCreateAgentTaskQaiqModel | undefined {
-    try {
-        const raw = cwd
-            ? window.localStorage.getItem(scopedQaiqModelStorageKey(cwd)) ?? window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY) ?? undefined
-            : window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY) ?? undefined;
-        if (!raw) {
-            return undefined;
-        }
-        const parsed = JSON.parse(raw) as Partial<QaapCreateAgentTaskQaiqModel>;
-        if (!parsed || typeof parsed.provider !== 'string' || typeof parsed.modelId !== 'string') {
-            return undefined;
-        }
-        return {
-            provider: parsed.provider as QaapCreateAgentTaskQaiqModel['provider'],
-            vendor: typeof parsed.vendor === 'string' ? parsed.vendor : 'unknown',
-            modelId: parsed.modelId,
-        };
-    } catch {
-        return undefined;
-    }
+    return readStoredAgentModel(cwd, QAIQ_AGENT_ID);
 }
 
 export function toQaapCreateAgentTaskQaiqModel(model: {
@@ -155,28 +159,19 @@ export function toQaapCreateAgentTaskQaiqModel(model: {
     };
 }
 
-/** Stored QAIQ model for the given agent id (undefined when the agent is not QAIQ). */
+/** @deprecated Use {@link resolveStoredAgentModelForSubmit}. */
 export function resolveStoredQaiqModelForAgent(
     agentId: string | undefined,
     cwd: string | undefined,
 ): QaapCreateAgentTaskQaiqModel | undefined {
-    return isQaiqAgent(agentId) ? readStoredQaiqModel(cwd) : undefined;
+    return resolveStoredAgentModelForSubmit(agentId, cwd);
 }
 
 export function writeStoredQaiqModel(
     cwd: string | undefined,
     model: QaapCreateAgentTaskQaiqModel | QaapQaiqModelOption,
 ): void {
-    const payload = toQaapCreateAgentTaskQaiqModel(model);
-    try {
-        const serialized = JSON.stringify(payload);
-        if (cwd) {
-            window.localStorage.setItem(scopedQaiqModelStorageKey(cwd), serialized);
-        }
-        window.localStorage.setItem(SELECTED_QAIQ_MODEL_STORAGE_KEY, serialized);
-    } catch {
-        /* localStorage unavailable — selection is session-only */
-    }
+    writeStoredAgentModel(cwd, QAIQ_AGENT_ID, model);
 }
 
 /**
@@ -252,8 +247,8 @@ export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: stri
         return { command: draft, cwd };
     }
     const base: QaapCreateAgentTaskBody = { prompt: draft, agent, cwd };
-    const qaiqModel = resolveStoredQaiqModelForAgent(agent, cwd);
-    return qaiqModel ? { ...base, qaiqModel } : base;
+    const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
+    return agentModel ? { ...base, agentModel, qaiqModel: agentModel } : base;
 }
 
 export function shellAgentFallback(): QaapAgentTaskAgentOption {
@@ -399,6 +394,18 @@ export async function fetchAgentTaskListAll(): Promise<QaapAgentTaskListSnapshot
         throw new Error(response.statusText);
     }
     return parseAgentTaskListBody(await response.json());
+}
+
+export async function fetchAgentModelsForAgent(agentId: string): Promise<QaapQaiqModelOption[]> {
+    const response = await fetch(
+        `${QAAP_AGENT_TASK_API_PATH}/agent-models?agent=${encodeURIComponent(agentId)}`,
+        { credentials: 'include' },
+    );
+    if (!response.ok) {
+        throw new Error(response.statusText);
+    }
+    const body = await response.json() as { models?: QaapQaiqModelOption[] };
+    return body.models ?? [];
 }
 
 export async function fetchAgentTaskList(cwd?: string): Promise<QaapAgentTaskListSnapshot> {

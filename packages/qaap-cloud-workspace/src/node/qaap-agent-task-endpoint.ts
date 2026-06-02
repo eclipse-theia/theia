@@ -30,6 +30,14 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
     protected readonly runner: QaapAgentTaskRunner;
 
     configure(app: Application): void {
+        app.get(`${QAAP_AGENT_TASK_API_PATH}/agent-models`, (req, res) => {
+            const agent = typeof req.query.agent === 'string' ? req.query.agent.trim() : '';
+            if (!agent) {
+                res.status(400).json({ error: '"agent" query parameter is required.' });
+                return;
+            }
+            res.json({ agent, models: this.runner.listModelsForAgent(agent) });
+        });
         app.get(QAAP_AGENT_TASK_API_PATH, (req, res) => {
             const cwd = typeof req.query.cwd === 'string' ? req.query.cwd : undefined;
             res.json({
@@ -94,7 +102,8 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
                 command: body.command,
                 prompt: body.prompt,
                 agent: body.agent,
-                qaiqModel: body.qaiqModel,
+                agentModel: body.agentModel ?? body.qaiqModel,
+                qaiqModel: body.agentModel ?? body.qaiqModel,
                 cwd: body.cwd,
                 title: body.title,
                 parentId,

@@ -31,12 +31,15 @@ import {
     resolveQaapCodexTemplate,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { agentUsesSettingsModelCatalog } from '../common/qaap-agent-native-model-catalog';
+import { listNativeAgentModels } from './qaap-agent-native-models';
 import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
 import {
     applyAutoApproveToCommand,
     resolveAgentAutoApprove,
 } from '../common/qaap-agent-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
+import { formatModelFlagsForAgent } from '../common/qaap-agent-model-flags';
 import {
     applyQaapQaiqCredentialEnv,
     applyQaapQaiqModelEnv,
@@ -45,6 +48,7 @@ import {
     resolveQaapQaiqModelBinding,
     type QaapQaiqModelBinding,
 } from '../common/qaap-qaiq-model-binding';
+import { resolveRequestAgentModel, resolveTaskAgentModel } from '../common/qaap-agent-task';
 import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
 import { QaapWebPushService } from './qaap-web-push-service';
 
@@ -576,6 +580,15 @@ export class QaapAgentTaskRunner {
         return listQaiqModelsFromPreferences(key => this.preferenceService!.get(key));
     }
 
+    /** Model options for the mobile agent picker (native CLI catalog, or Settings on the browser for Qwen). */
+    listModelsForAgent(agentId: string | undefined): QaapQaiqModelOption[] {
+        const normalized = this.normalizeAgentId(agentId ?? '');
+        if (!normalized || agentUsesSettingsModelCatalog(normalized)) {
+            return [];
+        }
+        return listNativeAgentModels(normalized);
+    }
+
     /** Id picked when a create request omits one — first detected agent, env template, or shell. */
     defaultAgent(): string {
         const configured = this.normalizeAgentId(process.env.QAAP_DEFAULT_AGENT);
@@ -658,7 +671,10 @@ export class QaapAgentTaskRunner {
             createdAt: Date.now(),
             parentId,
             autoApprove,
-            ...(request.qaiqModel ? { qaiqModel: request.qaiqModel } : {}),
+            ...(() => {
+                const agentModel = resolveRequestAgentModel(request);
+                return agentModel ? { agentModel, qaiqModel: agentModel } : {};
+            })(),
         };
         this.tasks.set(id, task);
         void this.spawnProcessWhenReady(task, request);
@@ -682,7 +698,7 @@ export class QaapAgentTaskRunner {
         prompt: string,
         agentId: string | undefined,
         autoApprove: boolean,
-        qaiqModel?: QaapCreateAgentTaskQaiqModel,
+        agentModel?: QaapCreateAgentTaskQaiqModel,
     ): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
@@ -694,11 +710,11 @@ export class QaapAgentTaskRunner {
         const detected = this.detectedAgents.get(id);
         let command: string;
         if (detected) {
-            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, qaiqModel));
+            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, agentModel));
         } else {
             const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
             if (envTemplate) {
-                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id, qaiqModel));
+                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id, agentModel));
             } else {
                 command = agentPrompt;
             }
@@ -774,16 +790,20 @@ export class QaapAgentTaskRunner {
         return prompt.trim();
     }
 
-    protected buildTemplateVars(agentId: string, qaiqModel?: QaapCreateAgentTaskQaiqModel): Record<string, string> {
-        if (agentId !== QAIQ_AGENT_ID) {
-            return {};
+    protected buildTemplateVars(agentId: string, agentModel?: QaapCreateAgentTaskQaiqModel): Record<string, string> {
+        const empty = { qaiq_flags: '', model_flags: '' };
+        if (agentModel?.provider && agentModel.modelId?.trim()) {
+            const binding = bindingFromQaiqModelSelection(agentModel);
+            const flags = formatModelFlagsForAgent(agentId, binding);
+            if (agentId === QAIQ_AGENT_ID) {
+                return { qaiq_flags: flags, model_flags: '' };
+            }
+            return { qaiq_flags: '', model_flags: flags };
         }
-        if (qaiqModel?.provider && qaiqModel.modelId?.trim()) {
-            return {
-                qaiq_flags: formatQaiqProviderFlags(bindingFromQaiqModelSelection(qaiqModel)),
-            };
+        if (agentId === QAIQ_AGENT_ID) {
+            return { qaiq_flags: this.resolveQaiqProviderFlags(), model_flags: '' };
         }
-        return { qaiq_flags: this.resolveQaiqProviderFlags() };
+        return empty;
     }
 
     /**
@@ -806,12 +826,15 @@ export class QaapAgentTaskRunner {
     }
 
     /** Prefer the model the user picked in the composer; fall back to Settings aliases. */
-    protected resolveQaiqBindingForTask(task: QaapAgentTask): QaapQaiqModelBinding | undefined {
-        const selected = task.qaiqModel;
+    protected resolveAgentBindingForTask(task: QaapAgentTask): QaapQaiqModelBinding | undefined {
+        const selected = resolveTaskAgentModel(task);
         if (selected?.provider && selected.modelId?.trim()) {
             return bindingFromQaiqModelSelection(selected);
         }
-        return this.resolveQaapQaiqBinding();
+        if (this.isQaiqRunner(undefined, task.command)) {
+            return this.resolveQaapQaiqBinding();
+        }
+        return undefined;
     }
 
     protected previewProviderEnv(): NodeJS.ProcessEnv {
@@ -913,11 +936,12 @@ export class QaapAgentTaskRunner {
         if (prompt) {
             try {
                 const autoApprove = task.autoApprove !== false;
-                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, request.qaiqModel);
+                const agentModel = resolveRequestAgentModel(request);
+                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, agentModel);
                 const next: QaapAgentTask = {
                     ...task,
                     command,
-                    ...(request.qaiqModel ? { qaiqModel: request.qaiqModel } : {}),
+                    ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
                 };
                 this.tasks.set(task.id, next);
                 void this.persist();
@@ -1018,14 +1042,14 @@ export class QaapAgentTaskRunner {
         const env: NodeJS.ProcessEnv = { ...process.env };
         env.PWD = task.cwd;
         this.applyProviderPreferenceEnv(env);
-        const binding = this.isQaiqRunner(undefined, task.command)
-            ? this.resolveQaiqBindingForTask(task)
-            : undefined;
+        const binding = this.resolveAgentBindingForTask(task);
         if (binding) {
             applyQaapQaiqModelEnv(env, binding);
             applyQaapQaiqCredentialEnv(env, binding, key => this.preferenceService?.get(key));
         }
-        this.applyQaiqProviderEnv(env, task.command, binding);
+        if (this.isQaiqRunner(undefined, task.command)) {
+            this.applyQaiqProviderEnv(env, task.command, binding);
+        }
         if (this.isQaiqRunner(undefined, task.command)) {
             env.QAAP_HOSTED_AGENT = '1';
             // The hosted backend runs as root inside its container, where qaiq refuses

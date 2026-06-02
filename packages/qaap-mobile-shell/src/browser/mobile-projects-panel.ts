@@ -103,9 +103,13 @@ import {
     isTheiaCoderMention,
     migrateLegacyBackendAgentId,
     normalizeBackendAgentId,
+    agentSupportsModelPicker,
+    agentUsesSettingsModelCatalog,
+    fetchAgentModelsForAgent,
+    isSameAgentModel,
     readStoredAgent,
-    readStoredQaiqModel,
-    resolveStoredQaiqModelForAgent,
+    readStoredAgentModel,
+    resolveStoredAgentModelForSubmit,
     isOpencodeAgent,
     isQaiqAgent,
     isStickyComposerAgentSelected,
@@ -117,7 +121,7 @@ import {
     SHELL_AGENT_ID,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
-    writeStoredQaiqModel,
+    writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
     type QaapQaiqModelOption,
     type QaapAgentTaskDetailDTO,
@@ -382,7 +386,7 @@ interface VerifyCheckResult {
     logTail?: string;
 }
 
-type ComposerAgentPickerView = 'agents' | 'qaiq-models';
+type ComposerAgentPickerView = 'agents' | 'models';
 
 interface ComposerAgentPickerChrome {
     readonly sheet: HTMLElement;
@@ -390,16 +394,6 @@ interface ComposerAgentPickerChrome {
     readonly title: HTMLElement;
     readonly backBtn: HTMLButtonElement;
     readonly list: HTMLElement;
-}
-
-function isSameQaiqModel(
-    stored: { readonly provider: string; readonly vendor: string; readonly modelId: string } | undefined,
-    model: QaapQaiqModelOption,
-): boolean {
-    return !!stored
-        && stored.provider === model.provider
-        && stored.vendor === model.vendor
-        && stored.modelId === model.modelId;
 }
 
 function isRestorableTheiaChatData(candidate: unknown): candidate is RestorableTheiaChatData {
@@ -2986,11 +2980,14 @@ export class MobileProjectsPanel {
         if (fromList && !isQaiqAgent(pinned)) {
             return fromList;
         }
+        const cwd = project
+            ? (this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id))
+            : undefined;
+        const model = agentSupportsModelPicker(pinned) ? readStoredAgentModel(cwd, pinned) : undefined;
+        if (fromList && model?.modelId) {
+            return `${fromList} · ${model.modelId}`;
+        }
         if (isQaiqAgent(pinned)) {
-            const cwd = project
-                ? (this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id))
-                : undefined;
-            const model = readStoredQaiqModel(cwd);
             return model?.modelId ? `QAIQ · ${model.modelId}` : 'QAIQ';
         }
         return fromList ?? this.resolveConversationAgentLabel(undefined);
@@ -3064,7 +3061,7 @@ export class MobileProjectsPanel {
                 if (cwd) {
                     writeStoredAgent(cwd, agentId);
                     if (model) {
-                        writeStoredQaiqModel(cwd, model);
+                        writeStoredAgentModel(cwd, agentId, model);
                     }
                 }
                 const modes = resolveStickyComposerModes(agentId, this.chatAgentService);
@@ -3163,19 +3160,16 @@ export class MobileProjectsPanel {
         });
     }
 
-    protected async resolveQaiqModelsForPicker(): Promise<QaapQaiqModelOption[]> {
-        const fromSettings = this.readPreference
-            ? listQaiqModelsFromPreferences(this.readPreference)
-            : [];
+    protected async resolveModelsForAgentPicker(agentId: string): Promise<QaapQaiqModelOption[]> {
+        if (agentUsesSettingsModelCatalog(agentId)) {
+            return this.readPreference
+                ? listQaiqModelsFromPreferences(this.readPreference)
+                : [];
+        }
         try {
-            const remote = (await fetchAgentTaskListAll()).qaiqModels;
-            const merged = new Map<string, QaapQaiqModelOption>();
-            for (const model of [...fromSettings, ...remote]) {
-                merged.set(`${model.provider}|${model.vendor}|${model.modelId}`, model);
-            }
-            return [...merged.values()];
+            return await fetchAgentModelsForAgent(agentId);
         } catch {
-            return fromSettings;
+            return [];
         }
     }
 
@@ -3231,6 +3225,7 @@ export class MobileProjectsPanel {
         chrome: ComposerAgentPickerChrome,
         options: {
             readonly view: ComposerAgentPickerView;
+            readonly modelPickerAgentId?: string;
             readonly cwd: string | undefined;
             readonly agents: readonly QaapAgentTaskAgentOption[];
             readonly selectedAgentId: string | undefined;
@@ -3238,21 +3233,19 @@ export class MobileProjectsPanel {
             readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
         },
     ): Promise<void> {
-        const qaiqModels = await this.resolveQaiqModelsForPicker();
-        this.stickyComposerQaiqModels = qaiqModels;
-        this.transcriptComposerQaiqModels = qaiqModels;
-        const storedModel = readStoredQaiqModel(options.cwd);
-
         chrome.list.replaceChildren();
-        if (options.view === 'qaiq-models') {
+        if (options.view === 'models' && options.modelPickerAgentId) {
+            const modelAgentId = options.modelPickerAgentId;
+            const pickerModels = await this.resolveModelsForAgentPicker(modelAgentId);
+            const storedModel = readStoredAgentModel(options.cwd, modelAgentId);
             chrome.header.classList.add('theia-mod-drilldown');
             chrome.backBtn.hidden = false;
             chrome.title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickModel', 'Choose model');
             chrome.backBtn.onclick = () => {
-                void this.renderComposerAgentPicker(chrome, { ...options, view: 'agents' });
+                void this.renderComposerAgentPicker(chrome, { ...options, view: 'agents', modelPickerAgentId: undefined });
             };
-            this.appendQaiqModelPickerList(chrome.list, qaiqModels, storedModel, model => {
-                options.onSelectAgent(QAIQ_AGENT_ID, model);
+            this.appendAgentModelPickerList(chrome.list, modelAgentId, pickerModels, storedModel, model => {
+                options.onSelectAgent(modelAgentId, model);
             });
             return;
         }
@@ -3263,11 +3256,11 @@ export class MobileProjectsPanel {
         chrome.title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickAgent', 'Choose agent');
 
         const appendAgent = (agentId: string, label: string): void => {
-            const isQaiq = agentId === QAIQ_AGENT_ID;
-            const hasModels = isQaiq && qaiqModels.length > 0;
+            const hasModels = agentSupportsModelPicker(agentId);
             const agentSelected = isStickyComposerAgentSelected(agentId, options.selectedAgentId, options.cwd);
+            const storedModel = readStoredAgentModel(options.cwd, agentId);
             let displayLabel = label;
-            if (isQaiq && storedModel && agentSelected) {
+            if (storedModel?.modelId && agentSelected) {
                 displayLabel = `${label} · ${storedModel.modelId}`;
             }
             chrome.list.append(createAgentSheetOptionButton({
@@ -3275,23 +3268,19 @@ export class MobileProjectsPanel {
                 label: displayLabel,
                 selected: agentSelected,
                 submenuChevron: hasModels ? 'forward' : undefined,
-                onSelect: () => {
-                    if (hasModels) {
-                        void this.renderComposerAgentPicker(chrome, { ...options, view: 'qaiq-models' });
+                onSelect: async () => {
+                    const models = await this.resolveModelsForAgentPicker(agentId);
+                    if (models.length > 0) {
+                        void this.renderComposerAgentPicker(chrome, {
+                            ...options,
+                            view: 'models',
+                            modelPickerAgentId: agentId,
+                        });
                         return;
                     }
                     options.onSelectAgent(agentId);
                 },
             }));
-            if (isQaiq && !hasModels) {
-                const hint = document.createElement('p');
-                hint.className = 'theia-qaap-agent-sheet-empty-models';
-                hint.textContent = nls.localize(
-                    'qaap/mobileProjects/stickyComposerNoQaiqModels',
-                    'Add an API key in Settings → AI Features to choose a model.',
-                );
-                chrome.list.append(hint);
-            }
         };
 
         if (options.includeCoder) {
@@ -3305,19 +3294,25 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected appendQaiqModelPickerList(
+    protected appendAgentModelPickerList(
         list: HTMLElement,
+        agentId: string,
         models: readonly QaapQaiqModelOption[],
-        storedModel: ReturnType<typeof readStoredQaiqModel>,
+        storedModel: ReturnType<typeof readStoredAgentModel>,
         onSelect: (model: QaapQaiqModelOption) => void,
     ): void {
         if (models.length === 0) {
             const hint = document.createElement('p');
             hint.className = 'theia-qaap-agent-sheet-empty-models';
-            hint.textContent = nls.localize(
-                'qaap/mobileProjects/stickyComposerNoQaiqModels',
-                'Add an API key in Settings → AI Features to choose a model.',
-            );
+            hint.textContent = agentUsesSettingsModelCatalog(agentId)
+                ? nls.localize(
+                    'qaap/mobileProjects/stickyComposerNoQaiqModels',
+                    'Add an API key in Settings → AI Features to choose a model.',
+                )
+                : nls.localize(
+                    'qaap/mobileProjects/stickyComposerNoAgentModels',
+                    'No models are available for this agent on the workspace.',
+                );
             list.append(hint);
             return;
         }
@@ -3331,7 +3326,7 @@ export class MobileProjectsPanel {
             for (const model of providerModels) {
                 section.append(createPickerSheetOptionButton({
                     label: model.label || model.modelId,
-                    selected: isSameQaiqModel(storedModel, model),
+                    selected: isSameAgentModel(storedModel, model),
                     onSelect: () => onSelect(model),
                 }));
             }
@@ -7261,13 +7256,13 @@ export class MobileProjectsPanel {
         }
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
-        const qaiqModel = resolveStoredQaiqModelForAgent(agent, cwd);
+        const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
         const conversation = await createConversation({
             cwd,
             agent,
             title: draft,
             message,
-            ...(qaiqModel ? { qaiqModel } : {}),
+            ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
         });
         const summary = conversationToSummary(conversation);
         this.conversations?.recordSnapshot(summary);
@@ -8884,8 +8879,8 @@ export class MobileProjectsPanel {
         // VPS-backed conversations accept a follow-up message that triggers the next agent turn.
         if (summary.source !== 'theia-chat') {
             try {
-                const qaiqModel = resolveStoredQaiqModelForAgent(summary.agentId, summary.cwd);
-                await postConversationMessage(summary.id, report, undefined, qaiqModel);
+                const agentModel = resolveStoredAgentModelForSubmit(summary.agentId, summary.cwd);
+                await postConversationMessage(summary.id, report, undefined, agentModel);
                 if (!auto) {
                     // Manual send: jump to Chat so the user watches the agent react.
                     this.selectTranscriptTab('messages', project, summary);
@@ -9270,7 +9265,7 @@ export class MobileProjectsPanel {
                 if (cwd) {
                     writeStoredAgent(cwd, agentId);
                     if (model) {
-                        writeStoredQaiqModel(cwd, model);
+                        writeStoredAgentModel(cwd, agentId, model);
                     }
                 }
                 const modes = resolveStickyComposerModes(agentId, this.chatAgentService);
@@ -9570,8 +9565,8 @@ export class MobileProjectsPanel {
             this.renderTranscriptMessages(this.transcriptChatHost, optimistic);
         }
         try {
-            const qaiqModel = resolveStoredQaiqModelForAgent(agent, summary.cwd);
-            const updated = await postConversationMessage(summary.id, outbound, agent, qaiqModel);
+            const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
+            const updated = await postConversationMessage(summary.id, outbound, agent, agentModel);
             const nextSummary = conversationToSummary(updated);
             this.conversations?.recordSnapshot(nextSummary);
             if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {

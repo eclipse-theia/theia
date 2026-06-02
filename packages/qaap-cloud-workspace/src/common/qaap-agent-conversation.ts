@@ -69,7 +69,9 @@ export interface QaapAgentConversation {
     readonly cwd: string;
     /** Agent id (e.g. `'claude'`, `'codex'`, `'shell'`). */
     readonly agentId: string;
-    /** Explicit QAIQ model for this thread (user picker), not the global Settings alias. */
+    /** Explicit model for this thread (user picker), not the global Settings alias. */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     /** Best-effort title, derived from the first user message. */
     readonly title: string;
@@ -164,7 +166,8 @@ export interface QaapCreateAgentConversationRequest {
     readonly title?: string;
     /** Optional first user message; when present, the agent turn fires right after creation. */
     readonly message?: string;
-    /** QAIQ model selected in the composer picker for this thread. */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     /** Marks this conversation as a parallel-run variant (grouped under {@link parallelBaseCwd}). */
     readonly parallelRunId?: string;
@@ -175,7 +178,8 @@ export interface QaapPostAgentMessageRequest {
     readonly content: string;
     /** When set, overrides the conversation's stored agent for this turn (and updates it). */
     readonly agent?: string;
-    /** Updates the thread's QAIQ model when the user changes the picker before sending. */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 

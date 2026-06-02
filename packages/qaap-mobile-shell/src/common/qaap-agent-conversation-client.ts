@@ -156,6 +156,8 @@ export interface QaapCreateConversationBody {
     readonly agent?: string;
     readonly title?: string;
     readonly message?: string;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 
@@ -214,13 +216,13 @@ export async function postConversationMessage(
     id: string,
     content: string,
     agent?: string,
-    qaiqModel?: QaapCreateAgentTaskQaiqModel,
+    agentModel?: QaapCreateAgentTaskQaiqModel,
 ): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, agent, qaiqModel }),
+        body: JSON.stringify({ content, agent, agentModel, qaiqModel: agentModel }),
     });
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);

@@ -37,13 +37,30 @@ export interface QaapAgentTask {
     readonly parentId?: string;
     /** Whether skip-permission flags were applied when the CLI was spawned. */
     readonly autoApprove?: boolean;
-    /** QAIQ model the user picked in the mobile agent sheet (provider + vendor + modelId). */
+    /** Model the user picked in the mobile agent sheet (provider + vendor + modelId). */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. Kept for persisted tasks and older clients. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 
 /** A task plus its captured stdout/stderr log. */
 export interface QaapAgentTaskDetail extends QaapAgentTask {
     readonly log: string;
+}
+
+/** Picker selection on create-task / create-conversation requests (accepts legacy `qaiqModel`). */
+export function resolveRequestAgentModel(request: {
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+}): QaapCreateAgentTaskQaiqModel | undefined {
+    return request.agentModel ?? request.qaiqModel;
+}
+
+export function resolveTaskAgentModel(task: {
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+}): QaapCreateAgentTaskQaiqModel | undefined {
+    return task.agentModel ?? task.qaiqModel;
 }
 
 export interface QaapCreateAgentTaskRequest {
@@ -63,7 +80,9 @@ export interface QaapCreateAgentTaskRequest {
      * to bypass any agent and run the prompt verbatim as a command.
      */
     readonly agent?: string;
-    /** Optional QAIQ model selected from the frontend picker submenu. */
+    /** Optional model selected from the frontend picker (any VPS agent). */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     readonly cwd: string;
     /** Forwarded by the `qaap-task` helper so spawned tasks attribute to their parent. */

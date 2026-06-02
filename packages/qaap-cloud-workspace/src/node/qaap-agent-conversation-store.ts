@@ -26,6 +26,7 @@ import {
     toConversationSummary,
 } from '../common/qaap-agent-conversation';
 import {
+    agentSupportsModelPicker,
     isOpencodeAgent,
     isQaiqAgent,
     resolveQaapAgentMentionToken,
@@ -159,7 +160,12 @@ export class QaapAgentConversationStore {
             messages: [],
             ...(request.parallelRunId ? { parallelRunId: request.parallelRunId } : {}),
             ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
-            ...(request.qaiqModel && isQaiqAgent(agentId) ? { qaiqModel: request.qaiqModel } : {}),
+            ...(() => {
+                const agentModel = request.agentModel ?? request.qaiqModel;
+                return agentModel && agentSupportsModelPicker(agentId)
+                    ? { agentModel, qaiqModel: agentModel }
+                    : {};
+            })(),
         };
         this.conversations.set(id, conversation);
         this.fire({ type: 'created', conversation: toConversationSummary(conversation) });
@@ -170,7 +176,12 @@ export class QaapAgentConversationStore {
         return this.conversations.get(id)!;
     }
 
-    postUserMessage(id: string, content: string, agentOverride?: string, qaiqModelOverride?: QaapCreateAgentTaskRequest['qaiqModel']): QaapAgentConversation {
+    postUserMessage(
+        id: string,
+        content: string,
+        agentOverride?: string,
+        agentModelOverride?: QaapCreateAgentTaskRequest['agentModel'],
+    ): QaapAgentConversation {
         const conv = this.conversations.get(id);
         if (!conv) {
             throw new Error('Conversation not found.');
@@ -195,7 +206,9 @@ export class QaapAgentConversationStore {
             messages,
             // Posting a new turn implicitly resumes a paused chat.
             paused: undefined,
-            ...(qaiqModelOverride && isQaiqAgent(turnAgentId) ? { qaiqModel: qaiqModelOverride } : {}),
+            ...(agentModelOverride && agentSupportsModelPicker(turnAgentId)
+                ? { agentModel: agentModelOverride, qaiqModel: agentModelOverride }
+                : {}),
         };
         this.conversations.set(id, next);
         this.fire({ type: 'message', conversationId: id, cwd: next.cwd, message: userMessage });
@@ -820,7 +833,12 @@ export class QaapAgentConversationStore {
             cwd: conv.cwd,
             title: conv.title,
             ...(conv.autoApprove === false ? { autoApprove: false } : {}),
-            ...(isQaiqAgent(turnAgentId) && conv.qaiqModel ? { qaiqModel: conv.qaiqModel } : {}),
+            ...(() => {
+                const agentModel = conv.agentModel ?? conv.qaiqModel;
+                return agentSupportsModelPicker(turnAgentId) && agentModel
+                    ? { agentModel, qaiqModel: agentModel }
+                    : {};
+            })(),
         };
     }
 
