@@ -8,7 +8,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
@@ -80,7 +80,7 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
 
     onDidInitializeLayout(): void {
         // On mobile the shell defers bootstrap until the projects landing is dismissed.
-        if (matchesMobileNarrowViewport()) {
+        if (matchesMobileOneColumnLayout()) {
             return;
         }
         void this.bootstrap.refreshFromCurrentWorkspace();

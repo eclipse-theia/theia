@@ -38,8 +38,8 @@ import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { pickMobileContextVariable } from './qaap-mobile-context-attach-menu';
 import { resolveStickyComposerContextChip } from './qaap-sticky-composer-context-ui';
 import {
-    matchesMobileNarrowViewport,
-    MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
+    matchesMobileOneColumnLayout,
+    MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY,
     MOBILE_ONE_COLUMN_LAYOUT_CLASS,
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
@@ -109,7 +109,7 @@ class MobileBottomBarWidget extends LuminoWidget {
 /**
  * Commands referenced for active-state and click-through; declared as strings so `@theia/core` stays free of
  * optional dependencies (`@theia/ai-chat-ui`, `@theia/terminal`, `@theia/mini-browser`, …).
- * Breakpoint for the shell matches {@link mobile-workbench.css} / {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY}.
+ * Breakpoint for the shell matches {@link mobile-workbench.css} / {@link MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY}.
  */
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
@@ -256,7 +256,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY) : undefined;
 
     protected bottomChromeHost: HTMLElement | undefined;
     protected bottomChromeTouchScrollDispose = Disposable.NULL;
@@ -1078,7 +1078,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         registry.registerCommand(QaapMobileProjectsDashboardCommands.TOGGLE, {
             execute: () => this.toggleProjectsPanel(),
             isEnabled: () => this.mobileActive && this.workspaceService.opened,
-            isVisible: () => matchesMobileNarrowViewport() && this.workspaceService.opened,
+            isVisible: () => matchesMobileOneColumnLayout() && this.workspaceService.opened,
         });
         // Project card "Open agent" button. Submits to the backend agent-task runner so the work
         // is a detached child process, not a tab-bound chat; the agent keeps going after the

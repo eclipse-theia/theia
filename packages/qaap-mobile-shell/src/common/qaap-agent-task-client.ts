@@ -8,6 +8,7 @@
  * Keep {@link QAAP_AGENT_TASK_API_PATH} in sync with `@theia/qaap-cloud-workspace`.
  */
 import {
+    isUiHiddenVpsAgent,
     resolveQaapBuiltinAgentMentionId,
 } from './qaap-builtin-agents';
 import {
@@ -183,7 +184,8 @@ export function reconcileSelectedAgent(
     defaultAgent: string | undefined,
     cwd: string | undefined,
 ): string {
-    const ids = new Set(agents.map(agent => agent.id));
+    const selectable = filterUiSelectableVpsAgents(agents);
+    const ids = new Set(selectable.map(agent => agent.id));
     const normalizedCurrent = migrateLegacyBackendAgentId(current);
     if (normalizedCurrent && ids.has(normalizedCurrent)) {
         return normalizedCurrent;
@@ -192,10 +194,11 @@ export function reconcileSelectedAgent(
     if (stored && ids.has(stored)) {
         return stored;
     }
-    if (defaultAgent && ids.has(defaultAgent)) {
-        return defaultAgent;
+    const normalizedDefault = migrateLegacyBackendAgentId(defaultAgent);
+    if (normalizedDefault && ids.has(normalizedDefault)) {
+        return normalizedDefault;
     }
-    return agents[0]?.id ?? SHELL_AGENT_ID;
+    return selectable[0]?.id ?? SHELL_AGENT_ID;
 }
 
 /**
@@ -253,6 +256,13 @@ export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: stri
 
 export function shellAgentFallback(): QaapAgentTaskAgentOption {
     return { id: SHELL_AGENT_ID, label: 'Shell', available: true };
+}
+
+/** Agents offered in mobile/desktop pickers (excludes shell and UI-hidden VPS agents). */
+export function filterUiSelectableVpsAgents(
+    agents: readonly QaapAgentTaskAgentOption[],
+): QaapAgentTaskAgentOption[] {
+    return agents.filter(agent => agent.id !== SHELL_AGENT_ID && !isUiHiddenVpsAgent(agent.id));
 }
 
 /** Map UI / mention tokens to a built-in backend runner agent id, when recognized. */

@@ -10,7 +10,7 @@ import { FrontendApplication, ViewContainer } from '@theia/core/lib/browser';
 import { OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     MOBILE_ONE_COLUMN_LAYOUT_CLASS,
-    matchesMobileNarrowViewport,
+    matchesMobileOneColumnLayout,
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser/navigator-widget-factory';
@@ -31,7 +31,7 @@ export class QaapFileNavigatorContribution extends FileNavigatorContribution {
     onDidInitializeLayout(_app: FrontendApplication): void {
         const activate = this.shouldActivateExplorerOnStartup();
         void (async () => {
-            if (!matchesMobileNarrowViewport()) {
+            if (!matchesMobileOneColumnLayout()) {
                 await Promise.race([
                     this.shell.pendingUpdates,
                     new Promise<void>(resolve => window.setTimeout(resolve, 4000)),
@@ -43,7 +43,7 @@ export class QaapFileNavigatorContribution extends FileNavigatorContribution {
 
     /** Register the explorer tab without expanding the mobile side sheet on startup / reload. */
     protected shouldActivateExplorerOnStartup(): boolean {
-        return !matchesMobileNarrowViewport()
+        return !matchesMobileOneColumnLayout()
             && !this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
     }
 

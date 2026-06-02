@@ -177,7 +177,7 @@
 | and grow tap targets so the page is usable in portrait without zooming.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .gs-container {
     background: var(--theia-editor-background);
   }

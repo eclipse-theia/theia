@@ -31,7 +31,7 @@
   max-width: 100%;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   /*
    * `QuickInputController#updateLayout` runs in `show()` *after* `onShow` and assigns pixel
    * `top` / `left` / `width` to `.quick-input-widget` for the desktop centered picker. Reset

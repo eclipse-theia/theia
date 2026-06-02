@@ -27,6 +27,7 @@ import {
 import {
     QAAP_BUILTIN_AGENT_DEFINITIONS,
     QAAP_BUILTIN_AGENT_IDS,
+    isUiHiddenVpsAgent,
     resolveQaapBuiltinAgentMentionId,
     resolveQaapCodexTemplate,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
@@ -50,6 +51,10 @@ import {
 } from '../common/qaap-qaiq-model-binding';
 import { resolveRequestAgentModel, resolveTaskAgentModel } from '../common/qaap-agent-task';
 import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
+import {
+    applyAntigravityModelSetting,
+    isAntigravityCliCommand,
+} from './qaap-antigravity-settings';
 import { QaapWebPushService } from './qaap-web-push-service';
 
 /** Built-in coding agents the runner can auto-detect on the server's PATH. */
@@ -330,10 +335,12 @@ export class QaapAgentTaskRunner {
     }
 
     /**
-     * Prefer the new `antigravity` binary; keep legacy `gemini` binary compatibility on local
-     * machines until users migrate.
+     * Prefer the Google Antigravity CLI (`agy`), then community `antigravity`, then legacy `gemini`.
      */
     protected resolveAntigravityBin(): string | undefined {
+        if (this.isOnPath('agy')) {
+            return 'agy';
+        }
         if (this.isOnPath('antigravity')) {
             return 'antigravity';
         }
@@ -348,9 +355,9 @@ export class QaapAgentTaskRunner {
         if (!bin) {
             return;
         }
-        const template = bin === 'antigravity'
-            ? 'antigravity -p {prompt}'
-            : 'gemini --approval-mode=yolo -p {prompt}';
+        const template = bin === 'gemini'
+            ? 'gemini --approval-mode=yolo -p {prompt}'
+            : `${bin} -p {prompt}`;
         this.detectedAgents.set('antigravity', {
             id: 'antigravity',
             label: 'Antigravity CLI',
@@ -570,7 +577,7 @@ export class QaapAgentTaskRunner {
             result.push({ id: ENV_AGENT_ID, label: 'Custom (QAAP_AGENT_COMMAND)', available: true });
         }
         result.push({ id: SHELL_AGENT_ID, label: 'Shell command', available: true });
-        return result;
+        return result.filter(agent => !isUiHiddenVpsAgent(agent.id));
     }
 
     listQaiqModels(): QaapQaiqModelOption[] {
@@ -592,16 +599,19 @@ export class QaapAgentTaskRunner {
     /** Id picked when a create request omits one — first detected agent, env template, or shell. */
     defaultAgent(): string {
         const configured = this.normalizeAgentId(process.env.QAAP_DEFAULT_AGENT);
-        if (configured && this.detectedAgents.has(configured)) {
+        if (configured && this.detectedAgents.has(configured) && !isUiHiddenVpsAgent(configured)) {
             return configured;
         }
         for (const id of DEFAULT_AGENT_PREFERENCE) {
-            if (this.detectedAgents.has(id)) {
+            if (this.detectedAgents.has(id) && !isUiHiddenVpsAgent(id)) {
                 return id;
             }
         }
         for (const candidate of [...this.detectedAgents.values()]) {
-            if (!AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id)) {
+            if (
+                !AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id)
+                && !isUiHiddenVpsAgent(candidate.id)
+            ) {
                 return candidate.id;
             }
         }
@@ -962,6 +972,14 @@ export class QaapAgentTaskRunner {
         fs.mkdirSync(STORE_DIR, { recursive: true });
         const logStream = fs.createWriteStream(this.logPath(task.id), { flags: 'w' });
         const stdinInteractive = task.autoApprove === false;
+        const agentModel = resolveTaskAgentModel(task);
+        const restoreAntigravitySettings = agentModel?.modelId?.trim()
+            && isAntigravityCliCommand(task.command)
+            ? applyAntigravityModelSetting(agentModel.modelId)?.restore
+            : undefined;
+        const finishAntigravitySettings = (): void => {
+            restoreAntigravitySettings?.();
+        };
         let child: ChildProcess;
         try {
             child = spawn(task.command, {
@@ -971,6 +989,7 @@ export class QaapAgentTaskRunner {
                 stdio: stdinInteractive ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
             });
         } catch (error) {
+            finishAntigravitySettings();
             logStream.end(`Failed to start: ${error instanceof Error ? error.message : String(error)}\n`);
             this.finishTask(task.id, 'failed', undefined);
             return;
@@ -1013,6 +1032,7 @@ export class QaapAgentTaskRunner {
         });
         child.on('close', code => {
             clearIdleTimer();
+            finishAntigravitySettings();
             logStream.end();
             this.processes.delete(task.id);
             this.stdinInteractiveTasks.delete(task.id);

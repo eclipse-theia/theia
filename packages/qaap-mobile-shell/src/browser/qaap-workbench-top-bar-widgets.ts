@@ -7,7 +7,7 @@
 import { CommandRegistry, DisposableCollection, nls } from '@theia/core/lib/common';
 import { ApplicationShell, CommonCommands, Widget } from '@theia/core/lib/browser';
 import { Message } from '@theia/core/lib/browser/widgets/widget';
-import { collapseLeftPanelIfMobileOneColumn, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { collapseLeftPanelIfMobileOneColumn, matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { renderQaapAccountAvatarVisual } from './qaap-account-avatar-visual';
@@ -186,7 +186,7 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
     }
 
     protected updateEnabledStates(): void {
-        const narrow = matchesMobileNarrowViewport();
+        const narrow = matchesMobileOneColumnLayout();
         const showDashboard = narrow && this.workspaceService.opened;
         this.dashboardBtn.hidden = !showDashboard;
         this.dashboardBtn.style.display = showDashboard ? '' : 'none';
@@ -260,7 +260,7 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         }
     };
     protected readonly onAiChatClick = (): void => {
-        if (matchesMobileNarrowViewport()) {
+        if (matchesMobileOneColumnLayout()) {
             collapseLeftPanelIfMobileOneColumn(this.shell);
         }
         this.runIfEnabled(WORKBENCH_AI_CHAT_TOGGLE);
@@ -329,7 +329,7 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
     }
 
     protected updateAiChatSwitchVisual(): void {
-        const narrow = matchesMobileNarrowViewport();
+        const narrow = matchesMobileOneColumnLayout();
         if (!narrow) {
             this.aiChatBtn.classList.remove('theia-mod-toggled');
             this.aiChatBtn.title = nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat');

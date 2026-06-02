@@ -5,12 +5,12 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Mobile / narrow viewport (max-width: 767px). Same breakpoint as
-| `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` in `mobile-layout-state.ts`.
+| Mobile / narrow viewport / touch: `(max-width: 767px), (pointer: coarse)`.
+| Same breakpoint as `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY`.
 | Moved from core `dialog.css` for Qaap product layering.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .lm-Widget.dialogOverlay {
     z-index: 10100;
     padding: 0;
@@ -100,7 +100,7 @@
 /* Coarse pointer (real touch devices): enforce a full 48 px target for both
    the close glyph and the action buttons. Narrow desktop windows with a mouse
    keep the 36/44 px targets above. */
-@media (max-width: 767px) and (pointer: coarse) {
+@media (pointer: coarse) {
   .lm-Widget.dialogOverlay .dialogTitle i.closeButton {
     min-width: 44px;
     min-height: 44px;

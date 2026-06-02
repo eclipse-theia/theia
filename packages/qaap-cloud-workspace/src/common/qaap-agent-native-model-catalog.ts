@@ -39,6 +39,29 @@ function nativeOption(
     };
 }
 
+/**
+ * Models exposed by the Antigravity CLI `/model` menu (Google API labels).
+ * Keep in sync with the TUI strings — agy stores and resolves them verbatim in settings.
+ */
+export const ANTIGRAVITY_API_MODELS: readonly {
+    readonly label: string;
+    readonly provider: QaapQaiqModelOption['provider'];
+}[] = [
+    { label: 'Gemini 3.5 Flash (Medium)', provider: 'gemini' },
+    { label: 'Gemini 3.5 Flash (High)', provider: 'gemini' },
+    { label: 'Gemini 3.5 Flash (Low)', provider: 'gemini' },
+    { label: 'Gemini 3.1 Pro (Low)', provider: 'gemini' },
+    { label: 'Gemini 3.1 Pro (High)', provider: 'gemini' },
+    { label: 'Claude Sonnet 4.6 (Thinking)', provider: 'anthropic' },
+    { label: 'Claude Opus 4.6 (Thinking)', provider: 'anthropic' },
+    { label: 'GPT-OSS 120B (Medium)', provider: 'openai' },
+];
+
+export function listStaticAntigravityModels(agentId: string): QaapQaiqModelOption[] {
+    const id = agentId.trim().toLowerCase();
+    return ANTIGRAVITY_API_MODELS.map(entry => nativeOption(id, entry.label, entry.label, entry.provider));
+}
+
 /** Curated fallback when a CLI is missing on the VPS or its list command fails. */
 export function listStaticNativeAgentModels(agentId: string): QaapQaiqModelOption[] {
     const id = agentId.trim().toLowerCase();
@@ -73,11 +96,7 @@ export function listStaticNativeAgentModels(agentId: string): QaapQaiqModelOptio
             ];
         case 'antigravity':
         case 'gemini':
-            return [
-                nativeOption(id, 'gemini-2.5-flash', 'Gemini 2.5 Flash', 'gemini'),
-                nativeOption(id, 'gemini-2.5-pro', 'Gemini 2.5 Pro', 'gemini'),
-                nativeOption(id, 'gemini-3.1-pro-preview', 'Gemini 3.1 Pro', 'gemini'),
-            ];
+            return listStaticAntigravityModels(id);
         case 'opencode':
             return [
                 nativeOption(id, 'opencode/claude-sonnet-4-6', 'Claude Sonnet 4.6'),

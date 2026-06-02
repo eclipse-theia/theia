@@ -5,12 +5,12 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Narrow viewport (max-width: 767px): hide collapsed right panel strip.
-| Same breakpoint as `menus.css` / `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`.
+| Narrow viewport / touch: `(max-width: 767px), (pointer: coarse)`.
+| Same breakpoint as `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY`.
 | Moved from core `sidepanel.css` for Qaap product layering.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   #theia-right-content-panel.theia-mod-collapsed {
     min-width: 0 !important;
     max-width: 0 !important;

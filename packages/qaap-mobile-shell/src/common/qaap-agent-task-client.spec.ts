@@ -18,6 +18,7 @@ import {
     migrateLegacyBackendAgentId,
     QAIQ_AGENT_ID,
     readStoredQaiqModel,
+    filterUiSelectableVpsAgents,
     reconcileSelectedAgent,
     reconcileStickyComposerAgent,
     resolveAgentOptionId,
@@ -73,6 +74,36 @@ describe('qaap-agent-task-client', () => {
             shellAgentFallback(),
         ];
         expect(reconcileSelectedAgent('openclaude', agents, 'qaiq', undefined)).to.equal('qaiq');
+    });
+
+    it('filterUiSelectableVpsAgents hides shell and Cursor Agent', () => {
+        const agents = [
+            { id: 'codex', label: 'Codex', available: true },
+            { id: 'cursor', label: 'Cursor Agent', available: true },
+            shellAgentFallback(),
+        ];
+        expect(filterUiSelectableVpsAgents(agents).map(agent => agent.id)).to.deep.equal(['codex']);
+    });
+
+    it('reconcileSelectedAgent skips a stored Cursor Agent pick', () => {
+        const storage = new Map<string, string>();
+        (global as unknown as { window: Window }).window = {
+            localStorage: {
+                getItem: (key: string) => storage.get(key) ?? null,
+                setItem: (key: string, value: string) => { storage.set(key, value); },
+                removeItem: (key: string) => { storage.delete(key); },
+                clear: () => { storage.clear(); },
+                key: () => null,
+                length: 0,
+            },
+        } as unknown as Window;
+        storage.set(`qaap.agentTasks.selectedAgent.${hashString('/repo')}`, 'cursor');
+        const agents = [
+            { id: 'codex', label: 'Codex', available: true },
+            { id: 'cursor', label: 'Cursor Agent', available: true },
+            shellAgentFallback(),
+        ];
+        expect(reconcileSelectedAgent(undefined, agents, 'cursor', '/repo')).to.equal('codex');
     });
 
     it('resolveExplicitAgentForSubmit prefers @mention over pinned chat agent', () => {

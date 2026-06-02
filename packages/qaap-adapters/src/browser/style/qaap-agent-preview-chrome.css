@@ -498,13 +498,13 @@ body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
   height: 2px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .qaap-preview-split:not(.qaap-preview-split--inspector-side) {
     flex-direction: column;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .qaap-agent-preview-toolbar-history,
   .qaap-agent-preview-toolbar-overflow,
   .qaap-agent-preview-toolbar-refresh {

@@ -45,4 +45,13 @@ describe('formatModelFlagsForAgent', () => {
         expect(formatModelFlagsForAgent('codex', binding)).to.equal('-m o4-mini');
         expect(formatModelFlagsForAgent('opencode', binding)).to.equal('--model o4-mini');
     });
+
+    it('leaves antigravity model flags empty (settings.json override instead)', () => {
+        const binding = bindingFromQaiqModelSelection({
+            provider: 'anthropic',
+            vendor: 'antigravity',
+            modelId: 'Claude Opus 4.6 (Thinking)',
+        });
+        expect(formatModelFlagsForAgent('antigravity', binding)).to.equal('');
+    });
 });

@@ -106,6 +106,7 @@ import {
     agentSupportsModelPicker,
     agentUsesSettingsModelCatalog,
     fetchAgentModelsForAgent,
+    filterUiSelectableVpsAgents,
     isSameAgentModel,
     readStoredAgent,
     readStoredAgentModel,
@@ -2791,7 +2792,7 @@ export class MobileProjectsPanel {
         const attachLabel = nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context');
         attachBtn.title = attachLabel;
         attachBtn.setAttribute('aria-label', attachLabel);
-        attachBtn.innerHTML = '<span class="codicon codicon-attach" aria-hidden="true"></span>';
+        attachBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span>';
         attachBtn.setAttribute('aria-haspopup', 'menu');
         attachBtn.setAttribute('aria-expanded', 'false');
         if (contextItems.length > 0) {
@@ -2845,9 +2846,9 @@ export class MobileProjectsPanel {
         const inputWrap = document.createElement('div');
         inputWrap.className = 'theia-mobile-projects-sticky-composer-input-wrap';
 
-        const input = document.createElement('input');
-        input.type = 'text';
+        const input = document.createElement('textarea');
         input.className = 'theia-mobile-projects-sticky-composer-input';
+        input.rows = 1;
         const placeholderAgent = options.resolveAgentLabel();
         input.placeholder = options.inputPlaceholder ?? nls.localize(
             'qaap/mobileProjects/stickyComposerPlaceholder',
@@ -2907,7 +2908,7 @@ export class MobileProjectsPanel {
             options.onSubmit(draft);
         };
         input.addEventListener('keydown', ev => {
-            if (ev.key === 'Enter' && !ev.defaultPrevented) {
+            if (ev.key === 'Enter' && !ev.shiftKey && !ev.defaultPrevented) {
                 ev.preventDefault();
                 submit();
             }
@@ -2917,10 +2918,27 @@ export class MobileProjectsPanel {
             submit();
         });
 
-        inputWrap.append(attachBtn, input, sendBtn);
+        const inputBody = document.createElement('div');
+        inputBody.className = 'theia-mobile-projects-sticky-composer-input-body';
+
+        const controlsRow = document.createElement('div');
+        controlsRow.className = 'theia-mobile-projects-sticky-composer-controls-row';
+
+        const controlsLeft = document.createElement('div');
+        controlsLeft.className = 'theia-mobile-projects-sticky-composer-controls-left';
+
+        const controlsRight = document.createElement('div');
+        controlsRight.className = 'theia-mobile-projects-sticky-composer-controls-right';
+
+        inputWrap.classList.add('theia-mod-codex');
+        inputBody.append(input);
+        controlsLeft.append(attachBtn);
+        controlsRight.append(sendBtn);
+        controlsRow.append(controlsLeft, controlsRight);
+        inputWrap.append(inputBody, controlsRow);
 
         const card = document.createElement('div');
-        card.className = 'theia-mobile-projects-sticky-composer-card';
+        card.className = 'theia-mobile-projects-sticky-composer-card theia-mod-codex';
         if (contextItems.length > 0) {
             card.classList.add('theia-mod-has-context');
             card.append(renderStickyComposerContextStrip({
@@ -2932,9 +2950,10 @@ export class MobileProjectsPanel {
                 onFilesExpandedChange: options.onFilesExpandedChange,
             }));
         }
-        card.append(inputWrap);
+        toolbar.classList.add('qaap-codex-context-tray');
+        card.append(inputWrap, toolbar);
         wrap.append(card);
-        column.append(toolbar, wrap);
+        column.append(wrap);
         return column;
     }
 
@@ -3011,7 +3030,7 @@ export class MobileProjectsPanel {
     protected filterSelectableComposerAgents(
         agents: readonly QaapAgentTaskAgentOption[],
     ): QaapAgentTaskAgentOption[] {
-        return agents.filter(agent => agent.id !== SHELL_AGENT_ID);
+        return filterUiSelectableVpsAgents(agents);
     }
 
     protected async refreshStickyComposerAgents(project: MobileProjectEntry): Promise<void> {
@@ -4401,7 +4420,7 @@ export class MobileProjectsPanel {
             selectedId: routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID,
         });
         void fetchAgentTaskListAll().then(snapshot => {
-            agentPicker.setAgents(snapshot.agents.filter(a => a.available && a.id !== SHELL_AGENT_ID));
+            agentPicker.setAgents(filterUiSelectableVpsAgents(snapshot.agents).filter(a => a.available));
             const selected = routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID;
             agentPicker.setSelectedId(selected);
         }).catch(() => {

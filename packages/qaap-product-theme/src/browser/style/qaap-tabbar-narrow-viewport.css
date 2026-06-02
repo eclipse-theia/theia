@@ -5,15 +5,11 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Narrow viewport (max-width: 767px): make Lumino DockPanel tab bars horizontally
-| swipeable so users can reach tabs that don't fit on screen (e.g. the AI
-| Configuration view with Agents / Variables / MCP Servers / Token Usage /
-| Prompt Fragments / Tools / Skills / Model Aliases).
-|
-| Same breakpoint as `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` (767px).
+| Narrow viewport / touch: `(max-width: 767px), (pointer: coarse)`. Same as
+| `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY` in `mobile-layout-state.ts`.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
     /* Lumino sets `contain: strict` inline, which preserves overflow scrolling
        but the default `.lm-TabBar-content` is flex with shrinking tabs. We let
        the row grow to its natural width and pan the tab bar itself. */

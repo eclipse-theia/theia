@@ -6,7 +6,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { SidePanel } from '@theia/core/lib/browser/shell/side-panel-handler';
 
@@ -20,7 +20,7 @@ const MIN_DESKTOP_SIDE_PANEL_SIZE = 280;
 export class QaapShellLayoutRestoreContribution implements ShellLayoutTransformer {
 
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
-        if (matchesMobileNarrowViewport()) {
+        if (matchesMobileOneColumnLayout()) {
             return;
         }
         this.fixSidePanelLayout(layoutData.leftPanel);

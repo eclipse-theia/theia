@@ -52,7 +52,7 @@
 | Nav buttons + URL field + workbench controls share one line to save height.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .theia-mini-browser {
     min-height: 0;
   }

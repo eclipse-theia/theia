@@ -354,7 +354,7 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
 || `body.qaap-theme-*` so they only activate for the branded themes.
 ||----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   body.qaap-theme-light .theia-mobile-projects-card,
   body.qaap-theme-dark .theia-mobile-projects-card,
   body.qaap-theme-light .theia-mobile-pr-card,

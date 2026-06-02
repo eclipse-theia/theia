@@ -9,6 +9,7 @@ import '../../src/browser/style/qaap-tokens.css';
 import '../../src/browser/style/qaap-conservador-dna.css';
 import '../../src/browser/style/qaap-workbench-top-bar.css';
 import '../../src/browser/style/qaap-ai-chat-mobile.css';
+import '../../src/browser/style/qaap-agent-input-codex.css';
 import '../../src/browser/style/qaap-chat-scroll-edges.css';
 import '../../src/browser/style/qaap-vsx-registry.css';
 import '../../src/browser/style/qaap-menus-narrow-viewport.css';

@@ -5,7 +5,7 @@
 
 
 /*-----------------------------------------------------------------------------
-| Mobile / narrow viewport (max-width: 767px).
+| Mobile / narrow viewport / touch: `(max-width: 767px), (pointer: coarse)`.
 |
 | The desktop layout positions every row item with `position: absolute` and
 | fixed pixel offsets (NavBack/Forward/Home/Up at 0/23/45/67 px, LocationListPanel
@@ -22,7 +22,7 @@
 | - bump every interactive element to a 36 / 44 px touch target.
 |-----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .dialogContent .theia-FileDialog,
   .dialogContent .theia-SaveFileDialog,
   .dialogContent .theia-ResponsiveFileDialog {
@@ -146,7 +146,7 @@
   }
 }
 
-@media (max-width: 767px) and (pointer: coarse) {
+@media (pointer: coarse) {
   .dialogContent .theia-NavigationPanel span {
     width: 44px;
     height: 44px;

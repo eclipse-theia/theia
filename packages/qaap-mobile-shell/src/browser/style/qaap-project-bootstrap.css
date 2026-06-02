@@ -269,7 +269,7 @@
 }
 
 /* Narrow viewport: pin the floater above the full mobile bottom chrome. */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
     .qaap-project-bootstrap-ports.qaap-mod-floating {
         right: 12px;
         left: 12px;

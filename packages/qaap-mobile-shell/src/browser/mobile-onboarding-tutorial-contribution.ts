@@ -21,10 +21,10 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
 
-// Breakpoint matches `mobile-workbench.css` and {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY} in core.
+// Breakpoint matches `mobile-workbench.css` and {@link MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY} in core.
 
 type StepPlacement = 'top' | 'bottom' | 'center';
 type StepDemo = 'swipe-right' | 'tap';
@@ -74,7 +74,7 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY) : undefined;
 
     protected overlay: HTMLElement | undefined;
     protected backdrop: HTMLElement | undefined;

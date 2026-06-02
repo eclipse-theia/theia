@@ -12,7 +12,7 @@ import { ElementExt } from '@lumino/domutils';
 import { Signal } from '@lumino/signaling';
 import { Drag } from '@lumino/dragdrop';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import {
     TabBarRenderer,
     ScrollableRenderData,
@@ -62,7 +62,7 @@ export class QaapScrollableTabBar extends TabBar<Widget> {
 
     /** Matches `mobile-workbench.css` breakpoint; horizontal tabs use native overflow (like the bottom nav). */
     protected readonly narrowViewportMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY) : undefined;
 
     protected readonly handleNarrowViewportMqChange = (): void => {
         this.syncPerfectScrollbarWithViewport();

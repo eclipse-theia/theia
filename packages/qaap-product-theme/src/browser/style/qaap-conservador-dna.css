@@ -324,7 +324,7 @@ body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-secondary:hover {
   color: var(--q-text);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   body.qaap-theme-dark {
     background: var(--q-bg);
     color: var(--q-text);

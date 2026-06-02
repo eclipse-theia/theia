@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
+
 /** Set before navigating to a workspace from the mobile Projects panel. */
 export const QAAP_MOBILE_PROJECTS_OPEN_README_KEY = 'qaap.mobileProjects.openReadmeOnReady';
 
@@ -109,8 +111,7 @@ function installMobileWorkHubBootGuard(): void {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
         return;
     }
-    const mobile = typeof window.matchMedia === 'function'
-        && window.matchMedia('(max-width: 767px)').matches;
+    const mobile = matchesMobileOneColumnLayout();
     const hasPendingHubAction = typeof sessionStorage !== 'undefined'
         && sessionStorage.getItem('qaap.hub.pendingAction') !== null;
     if (mobile && !shouldSkipMobileProjectsLanding() && !hasPendingHubAction) {

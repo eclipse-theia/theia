@@ -5,11 +5,11 @@
 // *****************************************************************************
 
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 
-/** Same breakpoint as `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` / product theme CSS. */
+/** Same breakpoint as {@link MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY} / product mobile shell CSS. */
 export function isQaapNarrowMobileWorkbench(): boolean {
-    return matchesMobileNarrowViewport();
+    return matchesMobileOneColumnLayout();
 }
 
 /**

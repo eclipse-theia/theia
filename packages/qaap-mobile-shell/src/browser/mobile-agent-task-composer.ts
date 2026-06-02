@@ -8,6 +8,7 @@ import {
     buildCreateAgentTaskBody,
     createAgentTask,
     fetchAgentTaskListAll,
+    filterUiSelectableVpsAgents,
     reconcileSelectedAgent,
     SHELL_AGENT_ID,
     writeStoredAgent,
@@ -161,7 +162,7 @@ export class MobileAgentTaskComposer {
         try {
             const snapshot = await fetchAgentTaskListAll();
             this.agentConfigured = snapshot.agentConfigured;
-            this.agents = snapshot.agents;
+            this.agents = filterUiSelectableVpsAgents(snapshot.agents);
             this.selectedAgent = reconcileSelectedAgent(
                 this.selectedAgent,
                 this.agents,
@@ -170,7 +171,7 @@ export class MobileAgentTaskComposer {
             );
         } catch {
             this.agentConfigured = this.activeTasks?.isAgentConfigured() ?? false;
-            this.agents = this.activeTasks?.getAgents() ?? [];
+            this.agents = filterUiSelectableVpsAgents(this.activeTasks?.getAgents() ?? []);
             this.selectedAgent = reconcileSelectedAgent(
                 this.selectedAgent,
                 this.agents,

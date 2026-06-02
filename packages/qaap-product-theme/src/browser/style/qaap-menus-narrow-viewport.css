@@ -5,12 +5,12 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Narrow viewport (max-width: 767px): same breakpoint as
-| `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` in `mobile-layout-state.ts`.
+| Narrow viewport / touch devices: `(max-width: 767px), (pointer: coarse)` — same as
+| `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY` in `mobile-layout-state.ts`.
 | Moved from core `menus.css` for Qaap product layering.
 |----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   /* Lumino uses `.lm-MenuBar`; menubar also has `id="theia:menubar"` (see BrowserMainMenuFactory). */
   #theia-top-panel .lm-MenuBar,
   #theia-top-panel [id='theia:menubar'] {

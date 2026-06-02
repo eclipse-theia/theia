@@ -65,7 +65,7 @@
 |
 | Higher z-index keeps notifications above shell content / bottom bar paint order.
 |-----------------------------------------------------------------------------*/
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .theia-notifications-container.theia-notification-center {
     z-index: 9800;
     bottom: calc(
@@ -150,7 +150,7 @@
 }
 
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
-  @media (max-width: 767px) {
+  @media (max-width: 767px), (pointer: coarse) {
     .theia-notifications-container.theia-notification-toasts
       .theia-notification-list-item {
       background: color-mix(

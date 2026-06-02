@@ -1,0 +1,271 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Codex-minimal agent input (flat card, text zone, sparse toolbar).
+| Applied via QaapChatInputCodexLayoutContribution on .theia-ChatInput-Editor-Box.
+|-----------------------------------------------------------------------------*/
+
+:root {
+  --qaap-codex-input-radius: 26px;
+  --qaap-codex-input-bg: color-mix(in srgb, var(--theia-editor-background) 94%, var(--theia-foreground) 6%);
+  --qaap-codex-tray-bg: color-mix(in srgb, var(--theia-editor-background) 98%, #000 2%);
+  --qaap-codex-line: color-mix(in srgb, var(--theia-foreground) 6%, transparent);
+  --qaap-codex-line-strong: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+  --qaap-codex-muted: color-mix(in srgb, var(--theia-descriptionForeground) 65%, transparent);
+  --qaap-codex-send-ready-bg: color-mix(in srgb, var(--theia-foreground) 92%, #fff);
+  --qaap-codex-send-ready-fg: color-mix(in srgb, var(--theia-editor-background) 92%, #000);
+  --qaap-codex-shield: var(--q-accent, var(--qaap-accent, #e58e40));
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell {
+  margin: 0;
+  padding: 0;
+  border-radius: var(--qaap-codex-input-radius);
+  border: 1px solid var(--qaap-codex-line-strong);
+  background: var(--qaap-codex-input-bg);
+  box-shadow: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 140ms ease;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell:has(.monaco-editor.focused) {
+  border-color: color-mix(in srgb, var(--theia-foreground) 14%, transparent);
+  box-shadow: none;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-CapabilitiesPanel,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-capabilities-collapsed-bar {
+  order: 0;
+  margin: 0;
+  padding: 12px 16px 8px;
+  border-bottom: none;
+  background: transparent;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-Editor {
+  order: 1;
+  min-height: 56px;
+  background: transparent;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-Editor-Placeholder {
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  color: var(--qaap-codex-muted);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-Editor .monaco-editor .margin,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-Editor .monaco-editor .monaco-editor-background,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-Editor .monaco-editor .inputarea.ime-input {
+  padding-left: 14px !important;
+  padding-top: 10px !important;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions {
+  order: 2;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  margin: 0;
+  padding: 2px 12px 12px;
+  border-top: none;
+  background: transparent;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-left,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-right {
+  gap: 2px;
+  align-items: center;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-left {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-left::-webkit-scrollbar {
+  display: none;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-right {
+  flex-shrink: 0;
+  margin-right: 0;
+  gap: 2px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option {
+  flex-shrink: 0;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--qaap-codex-muted);
+  font-size: 12px;
+  font-weight: 500;
+  justify-content: center;
+  opacity: 0.55;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option .codicon {
+  font-size: 18px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option:hover,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option:focus-visible {
+  opacity: 0.9;
+  color: var(--theia-foreground);
+  background: transparent;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option.toggled:has(.codicon-shield),
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option.toggled:has(.codicon-tools) {
+  opacity: 1;
+  color: var(--qaap-codex-shield);
+  background: transparent;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ModeSelector.theia-select-component,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ReasoningSelector.theia-select-component {
+  flex-shrink: 0;
+  min-width: max-content;
+  width: auto;
+  max-width: min(9rem, 40vw);
+  min-height: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--theia-foreground) 68%, var(--theia-descriptionForeground));
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ModeSelector.theia-select-component:hover,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ReasoningSelector.theia-select-component:hover {
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground) 5%, transparent);
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option:not(.disabled):has(.codicon-send) {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--theia-foreground) 40%, transparent);
+  border-color: transparent;
+  opacity: 0.45;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option:not(.disabled):has(.codicon-send) .codicon {
+  font-size: 16px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option:not(.disabled):has(.codicon-send):hover {
+  background: var(--qaap-codex-send-ready-bg);
+  color: var(--qaap-codex-send-ready-fg);
+  opacity: 1;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option:not(.disabled):has(.codicon-send) {
+  opacity: 1;
+  background: var(--qaap-codex-send-ready-bg);
+  color: var(--qaap-codex-send-ready-fg);
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option.disabled:has(.codicon-send) {
+  opacity: 0.45;
+  background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--theia-foreground) 40%, transparent);
+  pointer-events: none;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .option:not(.disabled):has(.codicon-stop-circle) {
+  opacity: 1;
+  color: var(--theia-errorForeground);
+  background: transparent;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ChatContext {
+  order: 3;
+  background: var(--qaap-codex-tray-bg);
+  border-top: 1px solid var(--qaap-codex-line);
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ChatContext ul {
+  padding: 8px 14px 10px;
+  gap: 4px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ChatContext-Element {
+  border-radius: 6px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--theia-foreground) 4%, transparent);
+}
+
+.chat-view-widget .chat-input-widget {
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: transparent;
+}
+
+.chat-view-widget .theia-ChatInput {
+  width: min(100%, 920px);
+  margin: 8px auto 0;
+}
+
+.chat-view-widget .theia-ChatInput-ChangeSet-Box {
+  width: min(100%, 920px);
+  margin: 0 auto -1px;
+  border-radius: var(--qaap-codex-input-radius) var(--qaap-codex-input-radius) 0 0;
+  border-color: var(--qaap-codex-line-strong);
+  background: var(--qaap-codex-input-bg);
+  box-shadow: none;
+}
+
+.chat-view-widget .chat-agent-suggestions {
+  width: min(100%, 920px);
+  margin: 0 auto;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .qaap-chat-mic-btn {
+  flex-shrink: 0;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  color: var(--qaap-codex-muted);
+  opacity: 0.55;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .qaap-chat-mic-btn .codicon {
+  font-size: 18px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .qaap-chat-mic-btn:hover,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions-right .qaap-chat-mic-btn:focus-visible {
+  opacity: 0.9;
+  color: var(--theia-foreground);
+  background: transparent;
+}

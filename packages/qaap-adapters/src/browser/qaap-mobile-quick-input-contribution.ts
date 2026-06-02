@@ -8,7 +8,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { MOBILE_ONE_COLUMN_LAYOUT_CLASS, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { MOBILE_ONE_COLUMN_LAYOUT_CLASS, matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MonacoQuickInputImplementation } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { IQuickInputOptions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInput';
 import { QaapMonacoQuickInputAdapter } from './qaap-monaco-quick-input-adapter';
@@ -193,7 +193,7 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
     }
 
     protected isMobileQuickInputContext(): boolean {
-        return matchesMobileNarrowViewport()
+        return matchesMobileOneColumnLayout()
             || this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
     }
 }

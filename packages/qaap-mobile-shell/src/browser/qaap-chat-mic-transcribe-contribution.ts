@@ -6,7 +6,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { nls } from '@theia/core/lib/common/nls';
 import * as monaco from '@theia/monaco-editor-core';
 
@@ -24,8 +24,10 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
     protected static readonly TOOLBAR_SELECTOR = '.theia-ChatInputOptions-right';
     protected static readonly INLINE_WRAP_SELECTOR = '.theia-mobile-projects-inline-input-wrap';
     protected static readonly STICKY_WRAP_SELECTOR = '.theia-mobile-projects-sticky-composer-input-wrap';
+    protected static readonly STICKY_CONTROLS_SELECTOR = '.theia-mobile-projects-sticky-composer-controls-right';
     protected static readonly PLAIN_INPUT_SELECTOR =
-        'input.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-inline-input';
+        'textarea.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-inline-input';
+    protected static readonly STICKY_FIELD_SELECTOR = '.theia-mobile-projects-sticky-composer-input';
 
     protected readonly toDispose = new DisposableCollection();
     protected observer: MutationObserver | undefined;
@@ -41,6 +43,8 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                 .forEach(wrap => this.injectInlineButton(wrap));
             root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR)
                 .forEach(wrap => this.injectStickyButton(wrap));
+            root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_CONTROLS_SELECTOR)
+                .forEach(row => this.injectStickyControlsButton(row));
         };
         sweep(document);
 
@@ -58,6 +62,9 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
                     }
                     if (node.matches?.(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR)) {
                         this.injectStickyButton(node);
+                    }
+                    if (node.matches?.(QaapChatMicTranscribeContribution.STICKY_CONTROLS_SELECTOR)) {
+                        this.injectStickyControlsButton(node);
                     }
                     sweep(node);
                 });
@@ -84,8 +91,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         }
         const button = this.buildButton();
         this.wireRecognition(button, chatInput);
-        // Prepend so the mic sits before the send / token-usage indicator without disturbing layout.
-        toolbar.insertBefore(button, toolbar.firstChild);
+        this.placeMicBeforeSend(toolbar, button);
     }
 
     protected injectInlineButton(wrap: HTMLElement): void {
@@ -98,12 +104,63 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
     }
 
     protected injectStickyButton(wrap: HTMLElement): void {
+        const controls = wrap.querySelector<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_CONTROLS_SELECTOR)
+            ?? wrap.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-controls-row');
+        if (controls) {
+            this.injectStickyControlsButton(controls);
+            return;
+        }
         this.injectPlainInputMicButton(
             wrap,
             'input.theia-mobile-projects-sticky-composer-input',
             'qaap-chat-mic-btn-sticky',
             false,
         );
+    }
+
+    protected injectStickyControlsButton(row: HTMLElement): void {
+        const existing = row.querySelector<HTMLButtonElement>(`.${QaapChatMicTranscribeContribution.BUTTON_CLASS}`);
+        if (existing) {
+            this.placeMicBeforeSend(row, existing);
+            return;
+        }
+        const wrap = row.closest<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR);
+        const field = wrap?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+            QaapChatMicTranscribeContribution.STICKY_FIELD_SELECTOR,
+        );
+        if (!field) {
+            return;
+        }
+        const button = this.buildButton();
+        button.classList.add('qaap-chat-mic-btn-sticky');
+        this.wireInlineRecognition(button, field);
+        this.placeMicBeforeSend(row, button);
+    }
+
+    /** Mic immediately precedes send (Codex: … mic · send on the right). */
+    protected placeMicBeforeSend(container: HTMLElement, mic: HTMLElement): void {
+        const send = this.findSendControl(container);
+        if (send) {
+            container.insertBefore(mic, send);
+        } else {
+            container.appendChild(mic);
+        }
+    }
+
+    protected findSendControl(container: HTMLElement): HTMLElement | undefined {
+        const stickySend = container.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-send');
+        if (stickySend) {
+            return stickySend;
+        }
+        for (const option of container.querySelectorAll<HTMLElement>('.option')) {
+            if (option.classList.contains(QaapChatMicTranscribeContribution.BUTTON_CLASS)) {
+                continue;
+            }
+            if (option.querySelector('.codicon-send')) {
+                return option;
+            }
+        }
+        return undefined;
     }
 
     protected injectPlainInputMicButton(
@@ -115,7 +172,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         if (wrap.querySelector(`.${QaapChatMicTranscribeContribution.BUTTON_CLASS}`)) {
             return;
         }
-        const input = wrap.querySelector<HTMLInputElement>(inputSelector);
+        const input = wrap.querySelector<HTMLInputElement | HTMLTextAreaElement>(inputSelector);
         if (!input) {
             return;
         }
@@ -125,14 +182,8 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             wrap.classList.add('qaap-has-mic');
         }
         this.wireInlineRecognition(button, input);
-        const send = wrap.querySelector<HTMLElement>(
-            '.theia-mobile-projects-sticky-composer-send, .theia-mobile-projects-inline-start',
-        );
-        if (send) {
-            wrap.insertBefore(button, send);
-        } else {
-            wrap.appendChild(button);
-        }
+        const sendHost = wrap.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-controls-right') ?? wrap;
+        this.placeMicBeforeSend(sendHost, button);
     }
 
     protected buildButton(): HTMLButtonElement {
@@ -296,7 +347,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         this.toDispose.push(Disposable.create(() => stop()));
     }
 
-    protected wireInlineRecognition(button: HTMLButtonElement, input: HTMLInputElement): void {
+    protected wireInlineRecognition(button: HTMLButtonElement, input: HTMLInputElement | HTMLTextAreaElement): void {
         const Ctor = this.getSpeechRecognitionCtor();
         if (!Ctor) {
             return;
@@ -308,7 +359,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         let trailingSpace = '';
         let detachObserver: MutationObserver | undefined;
 
-        const resolveInput = (): HTMLInputElement | undefined =>
+        const resolveInput = (): HTMLInputElement | HTMLTextAreaElement | undefined =>
             this.resolvePlainComposerInput(button, input);
 
         const refreshBaseline = (): void => {
@@ -454,16 +505,22 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         return baseline.length > 0 && !/\s$/.test(baseline) ? ' ' : '';
     }
 
-    protected resolvePlainComposerInput(button: HTMLButtonElement, fallback: HTMLInputElement): HTMLInputElement | undefined {
-        const wrap = button.parentElement;
-        const liveInput = wrap?.querySelector<HTMLInputElement>(QaapChatMicTranscribeContribution.PLAIN_INPUT_SELECTOR);
+    protected resolvePlainComposerInput(
+        button: HTMLButtonElement,
+        fallback: HTMLInputElement | HTMLTextAreaElement,
+    ): HTMLInputElement | HTMLTextAreaElement | undefined {
+        const wrap = button.closest(QaapChatMicTranscribeContribution.STICKY_WRAP_SELECTOR)
+            ?? button.parentElement;
+        const liveInput = wrap?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+            QaapChatMicTranscribeContribution.PLAIN_INPUT_SELECTOR,
+        );
         if (liveInput?.isConnected) {
             return liveInput;
         }
         return fallback.isConnected ? fallback : undefined;
     }
 
-    protected applyPlainInputText(input: HTMLInputElement, text: string): void {
+    protected applyPlainInputText(input: HTMLInputElement | HTMLTextAreaElement, text: string): void {
         if (input.value === text) {
             return;
         }
@@ -488,8 +545,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         if (typeof window === 'undefined') {
             return false;
         }
-        return window.matchMedia('(pointer: coarse)').matches
-            || window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY).matches;
+        return matchesMobileOneColumnLayout();
     }
 
     protected isFatalSpeechError(error: string | undefined): boolean {

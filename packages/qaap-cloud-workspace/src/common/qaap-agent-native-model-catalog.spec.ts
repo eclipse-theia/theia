@@ -5,8 +5,10 @@
 
 import { expect } from 'chai';
 import {
+    ANTIGRAVITY_API_MODELS,
     agentUsesNativeModelCatalog,
     agentUsesSettingsModelCatalog,
+    listStaticAntigravityModels,
     listStaticNativeAgentModels,
     parseNativeModelLines,
 } from './qaap-agent-native-model-catalog';
@@ -37,5 +39,14 @@ describe('qaap-agent-native-model-catalog', () => {
         expect(listStaticNativeAgentModels('codex').length).to.be.greaterThan(0);
         expect(listStaticNativeAgentModels('qwen').map(m => m.modelId)).to.include('qwen3-coder-plus');
         expect(listStaticNativeAgentModels('unknown-agent')).to.deep.equal([]);
+    });
+
+    it('lists Antigravity API models from the CLI /model menu', () => {
+        const models = listStaticAntigravityModels('antigravity');
+        expect(models).to.have.length(ANTIGRAVITY_API_MODELS.length);
+        expect(models.map(m => m.modelId)).to.deep.equal(ANTIGRAVITY_API_MODELS.map(m => m.label));
+        expect(models.map(m => m.label)).to.deep.equal(ANTIGRAVITY_API_MODELS.map(m => m.label));
+        expect(listStaticNativeAgentModels('gemini').map(m => m.modelId))
+            .to.deep.equal(listStaticAntigravityModels('gemini').map(m => m.modelId));
     });
 });

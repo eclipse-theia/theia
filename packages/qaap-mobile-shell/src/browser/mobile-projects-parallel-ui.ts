@@ -20,7 +20,7 @@ import {
     type QaapParallelChooseAction,
     type QaapParallelRunVariantDTO,
 } from '../common/qaap-parallel-run-client';
-import { SHELL_AGENT_ID, type QaapAgentTaskAgentOption } from '../common/qaap-agent-task-client';
+import { filterUiSelectableVpsAgents, type QaapAgentTaskAgentOption } from '../common/qaap-agent-task-client';
 import { createAgentBrandChip, createAgentRowAvatar, createDiffStatsLine } from './qaap-agent-ui';
 import { MobileSnackbar } from './mobile-snackbar';
 
@@ -289,7 +289,7 @@ export class MobileProjectsParallelUi {
 
     protected availableAgents(): QaapAgentTaskAgentOption[] {
         const agents = this.deps.getAgents();
-        const selectable = agents.filter(agent => agent.id !== SHELL_AGENT_ID);
+        const selectable = filterUiSelectableVpsAgents(agents);
         return selectable.length > 0 ? selectable : agents;
     }
 

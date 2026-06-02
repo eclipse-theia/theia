@@ -18,16 +18,30 @@ import { ApplicationShell } from './application-shell';
 export const MOBILE_ONE_COLUMN_LAYOUT_CLASS = 'theia-mod-mobile-one-column';
 
 /**
- * Breakpoint for narrow mobile layout. TypeScript should use this constant; CSS must duplicate the
- * value. Search the repo for `767px` when changing it.
+ * Breakpoint for narrow mobile layout. TypeScript should use {@link MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY}
+ * for the one-column shell; CSS must duplicate the value. Search the repo for `767px` and
+ * `(pointer: coarse)` when changing it.
  */
 export const MOBILE_NARROW_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)';
+
+/**
+ * One-column mobile shell: narrow viewport **or** coarse pointer (phones in landscape often exceed
+ * 767px width). Align with CSS that uses `(max-width: 767px), (pointer: coarse)`.
+ */
+export const MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 
 /** `true` when the viewport matches {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY} (safe without `window`). */
 export function matchesMobileNarrowViewport(): boolean {
     return typeof window !== 'undefined'
         && typeof window.matchMedia === 'function'
         && window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY).matches;
+}
+
+/** `true` when the one-column mobile shell layout should be active (safe without `window`). */
+export function matchesMobileOneColumnLayout(): boolean {
+    return typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY).matches;
 }
 
 /** Collapse the left explorer sheet after navigation on one-column mobile layout. */

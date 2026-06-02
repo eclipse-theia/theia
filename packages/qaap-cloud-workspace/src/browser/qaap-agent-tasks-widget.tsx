@@ -20,6 +20,7 @@ import {
     buildCreateAgentTaskBody,
     cancelAgentTask,
     createAgentTask,
+    filterUiSelectableVpsAgents,
     reconcileSelectedAgent,
     resolveStoredAgentModelForSubmit,
     SHELL_AGENT_ID,
@@ -94,7 +95,7 @@ export class QaapAgentTasksWidget extends ReactWidget {
         if (this.projectCwd && !this.selectedAgent) {
             this.selectedAgent = reconcileSelectedAgent(
                 undefined,
-                this.activeTasks.getAgents(),
+                filterUiSelectableVpsAgents(this.activeTasks.getAgents()),
                 this.activeTasks.getDefaultAgent(),
                 this.projectCwd,
             );
@@ -124,7 +125,7 @@ export class QaapAgentTasksWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
-        const agents = this.activeTasks.getAgents();
+        const agents = filterUiSelectableVpsAgents(this.activeTasks.getAgents());
         const agentConfigured = this.activeTasks.isAgentConfigured();
         const showBanner = !agentConfigured || this.selectedAgent === SHELL_AGENT_ID;
         const conversations = this.vpsConversations();

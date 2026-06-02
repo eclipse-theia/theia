@@ -10,7 +10,7 @@
 | PerfectScrollbar sets `overflow: hidden` on hosts; on iOS nested scroll breaks
 | when `html/body { overflow: hidden }` unless we force native overflow + pan-y.
 | Horizontal strips (tab rows, bottom nav, status bar) stay pan-x only.
-| Breakpoint matches MOBILE_NARROW_VIEWPORT_MEDIA_QUERY (767px).
+| Breakpoint matches `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY` (767px / coarse pointer).
 |-----------------------------------------------------------------------------*/
 
 @media (max-width: 767px), (pointer: coarse) {

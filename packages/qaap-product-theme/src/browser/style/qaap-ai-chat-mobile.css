@@ -8,7 +8,7 @@
 | Mobile: AI chat full viewport (body.theia-mod-mobile-ai-chat-fullwidth).
 | Class toggled by @theia/qaap-extensions QaapAiChatMobileContribution.
 |-----------------------------------------------------------------------------*/
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-left-content-panel,
   body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-bottom-split-panel {
     flex-basis: 0 !important;

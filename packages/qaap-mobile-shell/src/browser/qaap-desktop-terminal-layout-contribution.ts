@@ -12,8 +12,8 @@ import { FrontendApplication } from '@theia/core/lib/browser/frontend-applicatio
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { animationFrame, ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser';
 import {
-    matchesMobileNarrowViewport,
-    MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
+    matchesMobileOneColumnLayout,
+    MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY,
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 
@@ -40,7 +40,7 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
     protected readonly stateService: FrontendApplicationStateService;
 
     protected readonly mobileMq = typeof window !== 'undefined'
-        ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY)
+        ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY)
         : undefined;
 
     protected ensureScheduled = false;
@@ -48,7 +48,7 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
     onStart(): void {
         this.mobileMq?.addEventListener('change', this.onViewportChange);
         this.shell.onDidAddWidget(widget => {
-            if (!matchesMobileNarrowViewport() && this.shell.getAreaFor(widget) === 'bottom') {
+            if (!matchesMobileOneColumnLayout() && this.shell.getAreaFor(widget) === 'bottom') {
                 this.scheduleEnsureDesktopTerminal();
             }
         });
@@ -63,13 +63,13 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
     }
 
     protected readonly onViewportChange = (): void => {
-        if (!matchesMobileNarrowViewport()) {
+        if (!matchesMobileOneColumnLayout()) {
             this.scheduleEnsureDesktopTerminal();
         }
     };
 
     protected scheduleEnsureDesktopTerminal(): void {
-        if (matchesMobileNarrowViewport() || this.ensureScheduled) {
+        if (matchesMobileOneColumnLayout() || this.ensureScheduled) {
             return;
         }
         this.ensureScheduled = true;
@@ -79,7 +79,7 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
     }
 
     protected async runEnsureDesktopTerminal(): Promise<void> {
-        if (matchesMobileNarrowViewport()) {
+        if (matchesMobileOneColumnLayout()) {
             return;
         }
         await this.stateService.reachedState('ready');
@@ -90,7 +90,7 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
 
     /** Called from {@link MobileOneColumnShellContribution.ensureDesktopSidePanelSizes} after split restore. */
     async ensureDesktopTerminalMaximized(): Promise<void> {
-        if (matchesMobileNarrowViewport()) {
+        if (matchesMobileOneColumnLayout()) {
             return;
         }
         await this.preferenceService.ready;

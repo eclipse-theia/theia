@@ -7,7 +7,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ConnectionStatus, ConnectionStatusService } from '@theia/core/lib/browser/connection-status-service';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { nls } from '@theia/core/lib/common';
 import { MobileSnackbar } from './mobile-snackbar';
 
@@ -33,7 +33,7 @@ export class MobileConnectionStatusContribution implements FrontendApplicationCo
     }
 
     protected handleStatusChange(status: ConnectionStatus): void {
-        if (!matchesMobileNarrowViewport()) {
+        if (!matchesMobileOneColumnLayout()) {
             return;
         }
         if (status === ConnectionStatus.OFFLINE) {

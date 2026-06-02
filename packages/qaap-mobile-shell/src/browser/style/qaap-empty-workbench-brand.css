@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/* Responsive empty workbench wallpaper (breakpoint 767px = MOBILE_NARROW_VIEWPORT_MEDIA_QUERY). */
+/* Responsive empty workbench wallpaper (MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY). */
 
 html.theia-splash-branded {
   --qaap-empty-brand-gap: clamp(16px, 4vmin, 28px);
@@ -41,7 +41,7 @@ html.theia-splash-branded .qaap-empty-workbench-brand {
 }
 
 /* Narrow viewport: fixed layer between top bar and bottom chrome (host = #theia-app-shell). */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   html.theia-splash-branded {
     --qaap-empty-brand-gap: clamp(8px, 2.4vmin, 14px);
     --qaap-empty-brand-logo-size: clamp(56px, min(28vmin, 18vh), 96px);

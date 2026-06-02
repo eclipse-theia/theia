@@ -5,7 +5,7 @@
 
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import {
-    MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
+    MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY,
     MOBILE_ONE_COLUMN_LAYOUT_CLASS
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MessageLoop } from '@lumino/messaging';
@@ -56,7 +56,7 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
     protected readonly onViewportLayoutChange = (): void => this.scheduleRefresh();
 
     protected mobileMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY) : undefined;
 
     protected readonly onDocumentClick = (event: MouseEvent): void => {
         const target = event.target;

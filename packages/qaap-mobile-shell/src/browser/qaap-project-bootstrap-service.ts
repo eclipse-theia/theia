@@ -8,7 +8,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -403,7 +403,7 @@ export class QaapProjectBootstrapService {
                 command: spawnPlan.command,
                 cwd: plan.cwd,
             };
-            const terminal = matchesMobileNarrowViewport()
+            const terminal = matchesMobileOneColumnLayout()
                 ? await this.spawnCommandWithRetry(spawnOptions)
                 : await this.spawnCommand(spawnOptions);
             if (runId !== this.devRunGeneration) {
@@ -950,7 +950,7 @@ export class QaapProjectBootstrapService {
         await terminal.start();
         if (options.reveal !== false) {
             // On mobile, revealing the bottom terminal panel can dispose/recreate widgets mid-start.
-            this.terminalService.open(terminal, { mode: matchesMobileNarrowViewport() ? 'open' : 'reveal' });
+            this.terminalService.open(terminal, { mode: matchesMobileOneColumnLayout() ? 'open' : 'reveal' });
         }
         return terminal;
     }

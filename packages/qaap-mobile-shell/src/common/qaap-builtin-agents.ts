@@ -37,8 +37,16 @@ export const QAAP_BUILTIN_AGENT_IDS = new Set(QAAP_BUILTIN_AGENT_DEFINITIONS.map
 
 export const CURSOR_AGENT_ID = 'cursor';
 
+/** VPS agents detected on PATH but not offered in mobile/desktop agent pickers. */
+export const UI_HIDDEN_VPS_AGENT_IDS = new Set([CURSOR_AGENT_ID]);
+
 /** VPS agents whose CLI model list is not API-selectable in headless runs (no `{model_flags}`). */
 export const NATIVE_MODEL_CATALOG_EXCLUDED_AGENT_IDS = new Set([CURSOR_AGENT_ID]);
+
+export function isUiHiddenVpsAgent(agentId: string | undefined): boolean {
+    const normalized = agentId?.trim().toLowerCase();
+    return !!normalized && UI_HIDDEN_VPS_AGENT_IDS.has(normalized);
+}
 
 /**
  * OpenAI Codex CLI changed its headless entrypoint over time:

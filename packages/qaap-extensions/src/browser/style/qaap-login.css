@@ -204,7 +204,7 @@ body.qaap-login-active .theia-preload {
     }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
     .qaap-login-overlay {
         padding: 24px 20px 20px;
     }

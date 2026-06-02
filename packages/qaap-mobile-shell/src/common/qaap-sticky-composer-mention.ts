@@ -155,9 +155,11 @@ export interface StickyComposerTokenUi {
 /** @deprecated Use {@link StickyComposerTokenUi}. */
 export type StickyComposerMentionUi = StickyComposerTokenUi;
 
+export type StickyComposerTextField = HTMLInputElement | HTMLTextAreaElement;
+
 export function attachStickyComposerMentionUi(options: {
     inputWrap: HTMLElement;
-    input: HTMLInputElement;
+    input: StickyComposerTextField;
     getMentionOptions: () => readonly StickyComposerTokenOption[];
     getVariableOptions?: () => readonly StickyComposerTokenOption[];
     onDraftChange: (value: string) => void;

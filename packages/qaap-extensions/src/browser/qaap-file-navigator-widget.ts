@@ -6,7 +6,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { TreeNode } from '@theia/core/lib/browser';
-import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNode } from '@theia/filesystem/lib/browser/file-tree';
 import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
 import { QaapFileNavigatorModel } from './qaap-file-navigator-model';
@@ -15,7 +15,7 @@ import { QaapFileNavigatorModel } from './qaap-file-navigator-model';
 export class QaapFileNavigatorWidget extends FileNavigatorWidget {
 
     protected override tapNode(node?: TreeNode): void {
-        if (node && matchesMobileNarrowViewport() && FileNode.is(node)) {
+        if (node && matchesMobileOneColumnLayout() && FileNode.is(node)) {
             (this.model as QaapFileNavigatorModel).openFileOnMobileSingleTap(node);
             return;
         }

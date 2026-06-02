@@ -5,8 +5,8 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Narrow viewport (max-width: 767px): same breakpoint as
-| `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` in `mobile-layout-state.ts`.
+| Narrow viewport / touch: `(max-width: 767px), (pointer: coarse)` — same as
+| `MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY` in `mobile-layout-state.ts`.
 |
 | Theia's `SelectComponent` is built for desktop: the trigger is small and the
 | dropdown is anchored to the field's bounding box with tiny (~22px) options.
@@ -18,7 +18,7 @@
 | written directly on the element.
 |----------------------------------------------------------------------------*/
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   .theia-select-component {
     min-height: 36px;
     padding: 0 12px;
@@ -68,7 +68,7 @@
   }
 }
 
-@media (max-width: 767px) and (pointer: coarse) {
+@media (pointer: coarse) {
   .theia-select-component {
     min-height: 44px;
   }
@@ -78,7 +78,7 @@
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   /* Premium chat toolbar: extra gutter for send; readable mode selector on phones. */
   .chat-view-widget .theia-ChatInputOptions {
     padding-right: 14px;

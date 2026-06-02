@@ -57,5 +57,9 @@ export function formatModelFlagsForAgent(agentId: string, binding: QaapQaiqModel
     if (normalized === 'codex') {
         return `-m ${shellQuote(binding.modelId)}`;
     }
+    if (normalized === 'antigravity' || normalized === 'gemini') {
+        // agy reads the model from ~/.gemini/antigravity-cli/settings.json (see qaap-antigravity-settings).
+        return '';
+    }
     return `--model ${shellQuote(binding.modelId)}`;
 }
