@@ -16,7 +16,7 @@
 
 import type * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { Disposable } from '@theia/core/lib/common/disposable';
+
 import { RPCProtocol } from '../common/rpc-protocol';
 import {
     LanguageModelToolsExt,
@@ -29,6 +29,7 @@ import {
 import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { PluginPackageLanguageModelToolContribution } from '../common';
 import { PluginLogger } from './logger';
+import { Disposable, LanguageModelTextPart, LanguageModelPromptTsxPart, LanguageModelDataPart, LanguageModelToolResult } from './types-impl';
 
 export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
 
@@ -51,25 +52,29 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         }
     }
 
-    registerTool<T>(name: string, tool: theia.LanguageModelTool<T>, pluginId: string): theia.Disposable {
+    registerTool<T>(name: string, tool: theia.LanguageModelTool<T>, pluginId: string): Disposable {
         const contribution = this.toolContributions.get(name);
         if (!contribution) {
             this.logger.warn(`Tool '${name}' is not declared in package.json contributes.languageModelTools.`);
         }
         const handle = this.handleCounter++;
-        this.tools.set(handle, tool);
-        this.toolNameToHandle.set(name, handle);
-
         const metadata: LanguageModelToolDto = {
             name,
             description: contribution?.description,
             inputSchema: contribution?.inputSchema,
             tags: contribution?.tags,
         };
+        this.tools.set(handle, tool);
+        this.toolNameToHandle.set(name, handle);
         this.registeredToolMetadata.set(handle, metadata);
-        this.proxy.$registerTool(handle, name, metadata, pluginId);
+        this.proxy.$registerTool(handle, name, metadata, pluginId).catch(err => {
+            this.logger.error(`Failed to register tool '${name}': ${err.message || err}`);
+            this.tools.delete(handle);
+            this.toolNameToHandle.delete(name);
+            this.registeredToolMetadata.delete(handle);
+        });
 
-        return Disposable.create(() => {
+        return new Disposable(() => {
             this.tools.delete(handle);
             this.toolNameToHandle.delete(name);
             this.registeredToolMetadata.delete(handle);
@@ -86,7 +91,7 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         if (isToolInvocationError(result)) {
             throw new Error(result.error);
         }
-        return result as unknown as theia.LanguageModelToolResult;
+        return new LanguageModelToolResult(result.content.map(part => this.convertDtoToApiPart(part)));
     }
 
     getTools(): theia.LanguageModelToolInformation[] {
@@ -171,6 +176,19 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             && !('data' in (part as object)) && !('mimeType' in (part as object));
     }
 
+    private convertDtoToApiPart(part: ToolResultPartDto): theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | theia.LanguageModelDataPart {
+        switch (part.type) {
+            case 'text':
+                return new LanguageModelTextPart(part.value);
+            case 'data':
+                return new LanguageModelDataPart(this.base64ToUint8Array(part.base64), part.mimeType);
+            case 'prompt-tsx':
+                return new LanguageModelPromptTsxPart(part.value);
+            case 'unknown':
+                return new LanguageModelTextPart(part.json);
+        }
+    }
+
     private uint8ArrayToBase64(data: Uint8Array): string {
         if (typeof Buffer !== 'undefined') {
             return Buffer.from(data).toString('base64');
@@ -181,5 +199,18 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             binary += String.fromCharCode(data[i]);
         }
         return btoa(binary);
+    }
+
+    private base64ToUint8Array(base64: string): Uint8Array {
+        if (typeof Buffer !== 'undefined') {
+            return new Uint8Array(Buffer.from(base64, 'base64'));
+        }
+        // Fallback for browser environments
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
     }
 }

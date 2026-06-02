@@ -1,6 +1,6 @@
 # plugin-lm-tools
 
-A sample Theia/VS Code plugin that demonstrates the `lm.registerTool` API by registering two language model tools.
+A sample Theia/VS Code plugin that demonstrates the `lm.registerTool` API by registering three language model tools.
 
 ## Tools
 
@@ -15,6 +15,12 @@ A sample Theia/VS Code plugin that demonstrates the `lm.registerTool` API by reg
 - **Description:** Calculates the sum of an array of numbers.
 - **Input:** `{ "numbers": [1, 2, 3] }`
 - **Output:** A string like `"The sum of [1, 2, 3] is 6."`
+
+### sample-getSystemInfo
+
+- **Description:** Returns system information including platform, Node.js version, and uptime.
+- **Input:** None (empty object).
+- **Output:** Mixed content: a text part and a JSON data part with system details.
 
 ## Testing
 

@@ -44,7 +44,7 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
         }
     }
 
-    $registerTool(handle: number, name: string, metadata: LanguageModelToolDto, pluginId: string): void {
+    async $registerTool(handle: number, name: string, metadata: LanguageModelToolDto, pluginId: string): Promise<void> {
         if (!this.toolInvocationRegistry) {
             console.warn('ToolInvocationRegistry not available - tool will not be registered');
             return;
