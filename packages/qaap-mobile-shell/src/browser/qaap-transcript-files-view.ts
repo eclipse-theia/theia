@@ -183,11 +183,16 @@ export function isTranscriptPreviewableTextFile(path: string): boolean {
     return TEXT_EXTENSIONS.has(ext);
 }
 
+export interface TranscriptFilesMount {
+    readonly root: HTMLElement;
+    readonly dispose: Disposable;
+}
+
 export function mountTranscriptFilesView(
     host: HTMLElement,
     cwd: string,
     services: TranscriptFilesViewServices,
-): Disposable {
+): TranscriptFilesMount {
     const disposables = new DisposableCollection();
     host.replaceChildren();
 
@@ -203,7 +208,7 @@ export function mountTranscriptFilesView(
             'Files are unavailable for this conversation (no workspace path).',
         );
         root.append(note);
-        return disposables;
+        return { root, dispose: disposables };
     }
 
     const rootLabel = services.resolveRootLabel(cwd);
@@ -452,8 +457,10 @@ export function mountTranscriptFilesView(
     let newMenuOutsideListener: ((event: Event) => void) | undefined;
     let newMenuKeyListener: ((event: KeyboardEvent) => void) | undefined;
 
+    // Portal from `root` (live DOM under the transcript sheet), not `host`: cached mounts
+    // are created on a detached stash, so `host.closest(...)` would miss the transcript root.
     const resolveMenuPortal = (): HTMLElement =>
-        host.closest('.theia-mobile-agent-transcript-root') as HTMLElement ?? document.body;
+        root.closest('.theia-mobile-agent-transcript-root') as HTMLElement ?? document.body;
 
     const positionAnchorMenu = (anchor: HTMLElement, menu: HTMLElement, minWidth = 220): void => {
         const margin = 8;
@@ -1428,8 +1435,8 @@ export function mountTranscriptFilesView(
         void savePreviewText();
         disposePreviewMonacoEditor();
         state.previewRequestId++;
-        host.replaceChildren();
+        root.remove();
     }));
 
-    return disposables;
+    return { root, dispose: disposables };
 }

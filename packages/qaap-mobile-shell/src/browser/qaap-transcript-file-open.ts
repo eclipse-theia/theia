@@ -38,20 +38,26 @@ export function resolveTranscriptWorkspaceFileUri(filePath: string, workspaceSer
     if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)) {
         return new URI(trimmed);
     }
+    const absolute = toTranscriptAbsoluteFilePath(trimmed);
+    if (absolute) {
+        return FileUri.create(absolute);
+    }
     const roots = workspaceService.tryGetRoots();
     if (roots.length > 0) {
-        const root = roots[0].resource;
-        if (trimmed.startsWith('/')) {
-            const rootPath = FileUri.fsPath(root.toString());
-            if (trimmed.startsWith(rootPath)) {
-                return FileUri.create(trimmed);
-            }
-        }
-        return root.resolve(trimmed.replace(/^\.?\//, ''));
+        return roots[0].resource.resolve(trimmed.replace(/^\.?\//, ''));
     }
-    return trimmed.startsWith('/')
-        ? FileUri.create(trimmed)
-        : new URI(trimmed);
+    return new URI(trimmed);
+}
+
+/** Absolute path on the backend (VPS or local) — not relative to the IDE's open folder. */
+function toTranscriptAbsoluteFilePath(path: string): string | undefined {
+    if (path.startsWith('/')) {
+        return path;
+    }
+    if (/^[A-Za-z]:[\\/]/.test(path)) {
+        return path.replace(/\\/g, '/');
+    }
+    return undefined;
 }
 
 export function resolveTranscriptWorkspaceRootUri(cwd: string, workspaceService: WorkspaceService): URI | undefined {
@@ -59,18 +65,30 @@ export function resolveTranscriptWorkspaceRootUri(cwd: string, workspaceService:
     if (!trimmed) {
         return undefined;
     }
-    const cwdUri = trimmed.startsWith('/') ? FileUri.create(trimmed) : new URI(trimmed);
+    if (/^file:/i.test(trimmed)) {
+        return new URI(trimmed);
+    }
+    const absolute = toTranscriptAbsoluteFilePath(trimmed);
+    const cwdUri = absolute ? FileUri.create(absolute) : new URI(trimmed);
     for (const root of workspaceService.tryGetRoots()) {
         const relative = root.resource.relative(cwdUri);
         if (relative !== undefined && !relative.toString().startsWith('..')) {
             return cwdUri;
         }
     }
-    const roots = workspaceService.tryGetRoots();
-    if (roots.length > 0) {
-        return roots[0].resource;
-    }
+    // Project path from the hub may differ from the IDE's open folder — always honor cwd.
     return cwdUri;
+}
+
+/** Stable cache key for transcript Files/Terminal surfaces (one per project workspace). */
+export function resolveTranscriptWorkspaceKey(cwd: string, workspaceService: WorkspaceService): string | undefined {
+    const root = resolveTranscriptWorkspaceRootUri(cwd, workspaceService);
+    const path = root ? FileUri.fsPath(root.toString()) : cwd.trim();
+    if (!path) {
+        return undefined;
+    }
+    const normalized = path.replace(/\/+$/, '') || path;
+    return normalized || undefined;
 }
 
 export function resolveTranscriptWorkspaceRootLabel(cwd: string, workspaceService: WorkspaceService): string {

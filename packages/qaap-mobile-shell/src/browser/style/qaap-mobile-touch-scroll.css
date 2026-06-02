@@ -40,6 +40,13 @@
     height: 100%;
   }
 
+  .theia-mobile-transcript-terminal-host .terminal-container,
+  .theia-mobile-agent-transcript-root .theia-mobile-transcript-terminal-mount .terminal-container {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
   #theia-app-shell .theia-mini-browser-content-area iframe {
     flex: 1 1 auto;
     min-height: 0;

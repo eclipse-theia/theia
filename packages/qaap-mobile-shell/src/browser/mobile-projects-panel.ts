@@ -219,6 +219,19 @@ import {
     mountTranscriptFilesView,
     type TranscriptFilesViewServices,
 } from './qaap-transcript-files-view';
+import {
+    attachTranscriptTerminalSurface,
+    createTranscriptTerminalStagingHost,
+    createTranscriptTerminalSurface,
+    detachTranscriptTerminalSurface,
+    type TranscriptTerminalViewServices,
+} from './qaap-transcript-terminal-view';
+import {
+    normalizeTranscriptWorkspaceKey,
+    TranscriptWorkspaceSurfacesCache,
+    type TranscriptWorkspaceSurfaceKey,
+} from './qaap-transcript-workspace-surfaces-cache';
+import { resolveTranscriptWorkspaceCwd } from '../common/qaap-transcript-workspace-cwd';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -279,6 +292,8 @@ export interface MobileProjectsPanelOptions {
     openTranscriptFile?: (filePath: string) => void | Promise<void>;
     /** Codex-style workspace browser for the transcript Files tab. */
     createTranscriptFilesViewServices?: () => TranscriptFilesViewServices | undefined;
+    /** Integrated terminal for the transcript Terminal tab (same {@link TerminalService} as the workbench). */
+    createTranscriptTerminalViewServices?: () => TranscriptTerminalViewServices | undefined;
 }
 
 interface RestorableTheiaChatData {
@@ -301,8 +316,8 @@ interface QaapDiffProjectTab {
     fileCount: number;
 }
 
-/** Tabs of the transcript sheet (execution view). 'messages' is the existing chat, unchanged. */
-type TranscriptTab = 'messages' | 'review' | 'verify' | 'preview' | 'files';
+/** Tabs of the transcript sheet (execution view). 'messages' is the chat tab. */
+type TranscriptTab = 'messages' | 'review' | 'preview' | 'files' | 'terminal';
 
 /** A single verification step run on the project (build/test/lint). */
 interface VerifyCheck {
@@ -424,10 +439,14 @@ export class MobileProjectsPanel {
     protected transcriptReviewChecksHost: HTMLElement | undefined;
     protected transcriptReviewComposerHost: HTMLElement | undefined;
     protected transcriptReviewComposerDraft = '';
-    protected transcriptVerifyHost: HTMLElement | undefined;
     protected transcriptPreviewHost: HTMLElement | undefined;
     protected transcriptFilesHost: HTMLElement | undefined;
-    protected transcriptFilesDispose: Disposable = Disposable.NULL;
+    protected transcriptTerminalHost: HTMLElement | undefined;
+    /** One Files tree + Terminal per workspace cwd (project), reused across tasks. */
+    protected readonly transcriptWorkspaceSurfaces = new TranscriptWorkspaceSurfacesCache();
+    protected transcriptFilesAttachedKey: TranscriptWorkspaceSurfaceKey | undefined;
+    protected transcriptTerminalAttachedKey: TranscriptWorkspaceSurfaceKey | undefined;
+    protected transcriptTerminalAttachDispose: Disposable = Disposable.NULL;
     protected transcriptPreviewRequestRunning = false;
     protected transcriptPreviewRequestPending = false;
     protected transcriptActiveTab: TranscriptTab = 'messages';
@@ -499,6 +518,7 @@ export class MobileProjectsPanel {
     protected readonly resolveVerifyChecks: MobileProjectsPanelOptions['resolveVerifyChecks'];
     protected readonly openTranscriptFile: MobileProjectsPanelOptions['openTranscriptFile'];
     protected readonly createTranscriptFilesViewServices: MobileProjectsPanelOptions['createTranscriptFilesViewServices'];
+    protected readonly createTranscriptTerminalViewServices: MobileProjectsPanelOptions['createTranscriptTerminalViewServices'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -573,6 +593,7 @@ export class MobileProjectsPanel {
         this.resolveVerifyChecks = options.resolveVerifyChecks;
         this.openTranscriptFile = options.openTranscriptFile;
         this.createTranscriptFilesViewServices = options.createTranscriptFilesViewServices;
+        this.createTranscriptTerminalViewServices = options.createTranscriptTerminalViewServices;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -985,6 +1006,7 @@ export class MobileProjectsPanel {
         this.chatServiceDispose = Disposable.NULL;
         this.disposeChatSessionModelListeners();
         this.closeTranscriptSheet();
+        this.transcriptWorkspaceSurfaces.disposeAll();
         this.stickyComposerFabLiftObserver?.disconnect();
         this.stickyComposerFabLiftObserver = undefined;
         this.detachDiffReviewWidget();
@@ -5481,6 +5503,7 @@ export class MobileProjectsPanel {
         }
         try {
             await this.commands.executeCommand(commandId);
+            this.transcriptWorkspaceSurfaces.disposeAll();
             await this.refreshProjects();
         } catch (error) {
             console.error('[qaap-mobile-projects] close workspace failed:', error);
@@ -7418,23 +7441,21 @@ export class MobileProjectsPanel {
         const chatInputHost = document.createElement('div');
         chatInputHost.className = 'theia-mobile-agent-transcript-chat-input';
 
-        // Verify tab: an additive sibling. The chat host + composer are only hidden (never
-        // disposed) when Verify is active, so the existing chat keeps streaming underneath.
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
         const reviewHost = document.createElement('div');
         reviewHost.className = 'theia-mobile-transcript-review';
         reviewHost.hidden = true;
-        const verifyHost = document.createElement('div');
-        verifyHost.className = 'theia-mobile-transcript-verify';
-        verifyHost.hidden = true;
         const previewHost = document.createElement('div');
         previewHost.className = 'theia-mobile-transcript-preview';
         previewHost.hidden = true;
         const filesHost = document.createElement('div');
         filesHost.className = 'theia-mobile-transcript-files-host';
         filesHost.hidden = true;
+        const terminalHost = document.createElement('div');
+        terminalHost.className = 'theia-mobile-transcript-terminal-host';
+        terminalHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, reviewHost, verifyHost, previewHost, filesHost, chatInputHost);
+        sheet.append(header, tabStrip, chatHost, reviewHost, previewHost, filesHost, terminalHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
@@ -7442,9 +7463,9 @@ export class MobileProjectsPanel {
         this.transcriptChatInputHost = chatInputHost;
         this.transcriptTabStrip = tabStrip;
         this.transcriptReviewHost = reviewHost;
-        this.transcriptVerifyHost = verifyHost;
         this.transcriptPreviewHost = previewHost;
         this.transcriptFilesHost = filesHost;
+        this.transcriptTerminalHost = terminalHost;
         this.transcriptActiveTab = 'messages';
         this.verifyResults = [];
         this.verifyChecksCwd = undefined;
@@ -7584,17 +7605,17 @@ export class MobileProjectsPanel {
         }
     }
 
-    /** Messages · Review · Verify · Preview tab strip. Messages mirrors the existing chat exactly. */
+    /** Chat · Review · Preview tab strip. Chat mirrors the existing conversation view. */
     protected buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement {
         const strip = document.createElement('div');
         strip.className = 'theia-mobile-transcript-tabs';
         strip.setAttribute('role', 'tablist');
         const tabs: Array<{ id: TranscriptTab; label: string }> = [
-            { id: 'messages', label: nls.localize('qaap/mobileProjects/tabMessages', 'Messages') },
+            { id: 'messages', label: nls.localize('qaap/mobileProjects/tabChat', 'Chat') },
             { id: 'review', label: nls.localize('qaap/mobileProjects/tabReview', 'Review') },
-            { id: 'verify', label: nls.localize('qaap/mobileProjects/tabChecks', 'Checks') },
             { id: 'preview', label: nls.localize('qaap/mobileProjects/tabPreview', 'Preview') },
             { id: 'files', label: nls.localize('qaap/mobileProjects/tabFiles', 'Files') },
+            { id: 'terminal', label: nls.localize('qaap/mobileProjects/tabTerminal', 'Terminal') },
         ];
         for (const tab of tabs) {
             const btn = document.createElement('button');
@@ -7635,23 +7656,23 @@ export class MobileProjectsPanel {
         if (this.transcriptReviewHost) {
             this.transcriptReviewHost.hidden = tab !== 'review';
         }
-        if (this.transcriptVerifyHost) {
-            this.transcriptVerifyHost.hidden = tab !== 'verify';
-        }
         if (this.transcriptPreviewHost) {
             this.transcriptPreviewHost.hidden = tab !== 'preview';
         }
         if (this.transcriptFilesHost) {
             this.transcriptFilesHost.hidden = tab !== 'files';
         }
+        if (this.transcriptTerminalHost) {
+            this.transcriptTerminalHost.hidden = tab !== 'terminal';
+        }
         if (tab === 'review') {
             void this.mountTranscriptReviewWidget(project, summary);
-        } else if (tab === 'verify') {
-            this.renderVerifyTab(project, summary);
         } else if (tab === 'preview') {
             this.renderPreviewTab(project, summary);
         } else if (tab === 'files') {
-            this.renderFilesTab(project, summary);
+            this.ensureTranscriptFilesTab(project, summary);
+        } else if (tab === 'terminal') {
+            void this.ensureTranscriptTerminalTab(project, summary);
         }
         this.updateTranscriptHeaderForTab(tab, project, summary);
     }
@@ -7698,16 +7719,16 @@ export class MobileProjectsPanel {
                 }
                 break;
             }
-            case 'verify':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
-                subtitle.textContent = this.transcriptConversationMeta(project, summary);
-                break;
             case 'preview':
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
                 subtitle.textContent = this.transcriptConversationMeta(project, summary);
                 break;
             case 'files':
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabFiles', 'Files');
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
+                break;
+            case 'terminal':
+                titleEl.textContent = nls.localize('qaap/mobileProjects/tabTerminal', 'Terminal');
                 subtitle.textContent = this.transcriptConversationMeta(project, summary);
                 break;
             default:
@@ -7850,9 +7871,6 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void {
-        if (this.transcriptActiveTab === 'verify') {
-            this.renderVerifyTab(project, summary);
-        }
         if (this.transcriptReviewChecksHost) {
             this.renderChecksSection(this.transcriptReviewChecksHost, project, summary, { embedded: true });
         }
@@ -7862,7 +7880,7 @@ export class MobileProjectsPanel {
         host: HTMLElement,
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
-        options: { embedded?: boolean } = {},
+        options: { readonly embedded?: boolean } = {},
     ): void {
         host.replaceChildren();
         if (!summary.cwd) {
@@ -7875,52 +7893,28 @@ export class MobileProjectsPanel {
         const checksReady = this.verifyChecksCwd === summary.cwd && !this.verifyChecksLoading;
         const checksAvailable = checksReady && this.verifyResults.length > 0;
 
-        if (options.embedded) {
-            const sep = document.createElement('div');
-            sep.className = 'theia-mobile-transcript-review-sep';
-            host.append(sep);
-            const between = document.createElement('div');
-            between.className = 'theia-mobile-transcript-review-checks-between';
-            const checksLabel = document.createElement('span');
-            checksLabel.className = 'theia-mobile-transcript-review-checks-title';
-            checksLabel.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
-            const checksStat = document.createElement('span');
-            checksStat.className = 'theia-mobile-transcript-review-checks-stat';
-            if (this.verifyRunning) {
-                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…');
-            } else if (this.verifyChecksLoading) {
-                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyLoadingChecks', 'Loading checks…');
-            } else if (failed > 0) {
-                checksStat.classList.add('theia-mod-fail');
-                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed));
-            } else {
-                checksStat.textContent = nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
-            }
-            between.append(checksLabel, checksStat);
-            host.append(between);
+        const sep = document.createElement('div');
+        sep.className = 'theia-mobile-transcript-review-sep';
+        host.append(sep);
+        const between = document.createElement('div');
+        between.className = 'theia-mobile-transcript-review-checks-between';
+        const checksLabel = document.createElement('span');
+        checksLabel.className = 'theia-mobile-transcript-review-checks-title';
+        checksLabel.textContent = nls.localize('qaap/mobileProjects/tabChecks', 'Checks');
+        const checksStat = document.createElement('span');
+        checksStat.className = 'theia-mobile-transcript-review-checks-stat';
+        if (this.verifyRunning) {
+            checksStat.textContent = nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…');
+        } else if (this.verifyChecksLoading) {
+            checksStat.textContent = nls.localize('qaap/mobileProjects/verifyLoadingChecks', 'Loading checks…');
+        } else if (failed > 0) {
+            checksStat.classList.add('theia-mod-fail');
+            checksStat.textContent = nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed));
         } else {
-            const head = document.createElement('div');
-            head.className = 'theia-mobile-transcript-verify-head';
-            const label = document.createElement('span');
-            label.className = 'theia-mobile-transcript-verify-label';
-            label.textContent = this.verifyRunning
-                ? nls.localize('qaap/mobileProjects/verifyRunning', 'Running…')
-                : this.verifyChecksLoading
-                    ? nls.localize('qaap/mobileProjects/verifyLoadingChecks', 'Loading checks…')
-                    : failed > 0
-                        ? nls.localize('qaap/mobileProjects/verifyFailing', '{0} failing', String(failed))
-                        : nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
-            const runBtn = document.createElement('button');
-            runBtn.type = 'button';
-            runBtn.className = 'theia-mobile-transcript-verify-run';
-            runBtn.disabled = this.verifyRunning || this.verifyChecksLoading || !checksAvailable;
-            runBtn.textContent = this.verifyRunning
-                ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
-                : nls.localize('qaap/mobileProjects/verifyRun', 'Run');
-            runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
-            head.append(label, runBtn);
-            host.append(head);
+            checksStat.textContent = nls.localize('qaap/mobileProjects/verifyChecks', 'Checks');
         }
+        between.append(checksLabel, checksStat);
+        host.append(between);
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-transcript-verify-list';
@@ -7941,18 +7935,16 @@ export class MobileProjectsPanel {
 
         const runRow = document.createElement('div');
         runRow.className = 'theia-mobile-transcript-review-checks-run-row';
-        if (options.embedded) {
-            const runBtn = document.createElement('button');
-            runBtn.type = 'button';
-            runBtn.className = 'theia-mobile-transcript-verify-run theia-mod-embedded';
-            runBtn.disabled = this.verifyRunning || this.verifyChecksLoading || !checksAvailable;
-            runBtn.textContent = this.verifyRunning
-                ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
-                : nls.localize('qaap/mobileProjects/verifyRun', 'Run checks');
-            runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
-            runRow.append(runBtn);
-            host.append(runRow);
-        }
+        const runBtn = document.createElement('button');
+        runBtn.type = 'button';
+        runBtn.className = 'theia-mobile-transcript-verify-run theia-mod-embedded';
+        runBtn.disabled = this.verifyRunning || this.verifyChecksLoading || !checksAvailable;
+        runBtn.textContent = this.verifyRunning
+            ? nls.localize('qaap/mobileProjects/verifyRunningShort', 'Running…')
+            : nls.localize('qaap/mobileProjects/verifyRun', 'Run checks');
+        runBtn.addEventListener('click', () => { void this.runVerifyChecks(project, summary); });
+        runRow.append(runBtn);
+        host.append(runRow);
 
         if (failed > 0 && !this.verifyRunning) {
             const sendBtn = document.createElement('button');
@@ -7989,24 +7981,6 @@ export class MobileProjectsPanel {
         this.transcriptReviewChecksHost = undefined;
         this.transcriptReviewComposerHost = undefined;
         this.transcriptReviewComposerDraft = '';
-    }
-
-    protected renderVerifyTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
-        const host = this.transcriptVerifyHost;
-        if (!host) {
-            return;
-        }
-        host.replaceChildren();
-
-        if (!summary.cwd) {
-            const note = document.createElement('div');
-            note.className = 'theia-mobile-transcript-verify-note';
-            note.textContent = nls.localize('qaap/mobileProjects/verifyUnavailable', 'Verify is unavailable for this conversation (no workspace path).');
-            host.append(note);
-            return;
-        }
-
-        this.renderChecksSection(host, project, summary);
     }
 
     protected renderPreviewTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
@@ -8049,18 +8023,52 @@ export class MobileProjectsPanel {
         host.append(wrap);
     }
 
-    protected renderFilesTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+    /**
+     * Workspace path for transcript Files/Terminal.
+     * Hub project URI locally; on the VPS, {@link QaapAgentConversationSummaryDTO.cwd} wins for agent tasks.
+     */
+    protected resolveTranscriptProjectCwd(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): string | undefined {
+        return resolveTranscriptWorkspaceCwd({
+            summary,
+            projectCwd: this.projectsService.getProjectCwd(project),
+            preparedCwd: this.preparedCwdByProjectId.get(project.id),
+        });
+    }
+
+    protected resolveTranscriptWorkspaceKey(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): TranscriptWorkspaceSurfaceKey | undefined {
+        const cwd = this.resolveTranscriptProjectCwd(project, summary);
+        if (!cwd) {
+            return undefined;
+        }
+        const terminalServices = this.createTranscriptTerminalViewServices?.();
+        const resolved = terminalServices ? terminalServices.resolveCwd(cwd) : cwd;
+        return normalizeTranscriptWorkspaceKey(resolved);
+    }
+
+    protected ensureTranscriptFilesTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
         const host = this.transcriptFilesHost;
         if (!host) {
             return;
         }
-        this.transcriptFilesDispose.dispose();
-        this.transcriptFilesDispose = Disposable.NULL;
-        const cwd = summary.cwd ?? this.projectsService.getProjectCwd(project);
-        const services = this.createTranscriptFilesViewServices?.();
-        if (!cwd || !services) {
+        const workspaceKey = this.resolveTranscriptWorkspaceKey(project, summary);
+        if (!workspaceKey && project.github && this.projectsService) {
+            void this.projectsService.prepareProjectCwd(project).then(prepared => {
+                if (!prepared || !this.transcriptFilesHost?.isConnected || this.transcriptActiveTab !== 'files') {
+                    return;
+                }
+                this.preparedCwdByProjectId.set(project.id, prepared);
+                this.ensureTranscriptFilesTab(project, summary);
+            });
+        }
+        if (!workspaceKey) {
+            this.detachTranscriptFilesFromHost();
             host.replaceChildren();
-            host.hidden = false;
             const note = document.createElement('div');
             note.className = 'theia-mobile-transcript-files-note';
             note.textContent = nls.localize(
@@ -8070,7 +8078,16 @@ export class MobileProjectsPanel {
             host.append(note);
             return;
         }
-        this.transcriptFilesDispose = mountTranscriptFilesView(host, cwd, {
+        if (this.transcriptFilesAttachedKey === workspaceKey && host.querySelector('.theia-mobile-transcript-files')) {
+            return;
+        }
+        this.detachTranscriptFilesFromHost();
+        const cwd = this.resolveTranscriptProjectCwd(project, summary);
+        const services = this.createTranscriptFilesViewServices?.();
+        if (!cwd || !services) {
+            return;
+        }
+        const wrappedServices: TranscriptFilesViewServices = {
             ...services,
             renderMarkdownPreview: services.renderMarkdownPreview
                 ? (resourcePath, markdown) => services.renderMarkdownPreview!(
@@ -8078,7 +8095,143 @@ export class MobileProjectsPanel {
                     this.cleanTranscriptDisplayText(markdown),
                 )
                 : undefined,
-        });
+        };
+        let mount = this.transcriptWorkspaceSurfaces.peekFiles(workspaceKey);
+        if (!mount) {
+            const stash = document.createElement('div');
+            stash.className = 'theia-mobile-transcript-files-staging';
+            stash.hidden = true;
+            stash.setAttribute('aria-hidden', 'true');
+            document.body.append(stash);
+            mount = mountTranscriptFilesView(stash, cwd, wrappedServices);
+            this.transcriptWorkspaceSurfaces.setFiles(workspaceKey, mount);
+        }
+        host.replaceChildren();
+        host.append(mount.root);
+        this.transcriptFilesAttachedKey = workspaceKey;
+        mount.root.querySelector<HTMLElement>('.theia-mobile-transcript-files-preview-body')
+            ?.dispatchEvent(new Event('resize'));
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    protected async ensureTranscriptTerminalTab(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        const host = this.transcriptTerminalHost;
+        if (!host) {
+            return;
+        }
+        const workspaceKey = this.resolveTranscriptWorkspaceKey(project, summary);
+        if (!workspaceKey && project.github && this.projectsService) {
+            void this.projectsService.prepareProjectCwd(project).then(prepared => {
+                if (!prepared || !this.transcriptTerminalHost?.isConnected || this.transcriptActiveTab !== 'terminal') {
+                    return;
+                }
+                this.preparedCwdByProjectId.set(project.id, prepared);
+                void this.ensureTranscriptTerminalTab(project, summary);
+            });
+        }
+        if (!workspaceKey) {
+            this.detachTranscriptTerminalFromHost();
+            host.replaceChildren();
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-terminal-note';
+            note.textContent = nls.localize(
+                'qaap/mobileProjects/terminalUnavailable',
+                'Terminal is unavailable for this conversation (no workspace path).',
+            );
+            host.append(note);
+            return;
+        }
+        if (this.transcriptTerminalAttachedKey === workspaceKey && host.querySelector('.theia-mobile-transcript-terminal-mount')) {
+            return;
+        }
+        this.detachTranscriptTerminalFromHost();
+        const cwd = this.resolveTranscriptProjectCwd(project, summary);
+        const services = this.createTranscriptTerminalViewServices?.();
+        if (!cwd || !services) {
+            return;
+        }
+        if (!host.isConnected) {
+            return;
+        }
+
+        const loading = document.createElement('div');
+        loading.className = 'theia-mobile-transcript-terminal-loading';
+        loading.textContent = services.localize(
+            'qaap/mobileProjects/transcriptTerminalLoading',
+            'Starting terminal…',
+        );
+        host.replaceChildren();
+        host.classList.add('theia-mobile-transcript-terminal');
+        host.append(loading);
+
+        try {
+            const surface = await this.transcriptWorkspaceSurfaces.acquireTerminal(
+                workspaceKey,
+                () => {
+                    const staging = createTranscriptTerminalStagingHost();
+                    return createTranscriptTerminalSurface(staging, cwd, services);
+                },
+            );
+            if (!this.transcriptTerminalHost || this.transcriptTerminalHost !== host || !host.isConnected) {
+                return;
+            }
+            if (this.transcriptActiveTab !== 'terminal'
+                || this.resolveTranscriptWorkspaceKey(project, summary) !== workspaceKey) {
+                return;
+            }
+            loading.remove();
+            this.transcriptTerminalAttachDispose.dispose();
+            this.transcriptTerminalAttachDispose = attachTranscriptTerminalSurface(host, surface);
+            this.transcriptTerminalAttachedKey = workspaceKey;
+        } catch (error) {
+            if (!host.isConnected) {
+                return;
+            }
+            loading.remove();
+            const note = document.createElement('div');
+            note.className = 'theia-mobile-transcript-terminal-error';
+            const message = error instanceof Error ? error.message : String(error);
+            note.textContent = services.localize(
+                'qaap/mobileProjects/transcriptTerminalFailed',
+                'Could not start the terminal: {0}',
+                message,
+            );
+            host.append(note);
+            console.error('[qaap-mobile-shell] transcript terminal failed', error);
+        }
+    }
+
+    protected detachTranscriptFilesFromHost(): void {
+        const host = this.transcriptFilesHost;
+        if (host) {
+            host.querySelector('.theia-mobile-transcript-files')?.remove();
+            host.querySelector('.theia-mobile-transcript-files-note')?.remove();
+        }
+        this.transcriptFilesAttachedKey = undefined;
+    }
+
+    protected detachTranscriptTerminalFromHost(): void {
+        this.transcriptTerminalAttachDispose.dispose();
+        this.transcriptTerminalAttachDispose = Disposable.NULL;
+        const host = this.transcriptTerminalHost;
+        const key = this.transcriptTerminalAttachedKey;
+        if (host && key) {
+            const surface = this.transcriptWorkspaceSurfaces.getTerminal(key);
+            if (surface) {
+                detachTranscriptTerminalSurface(host, surface);
+            }
+            host.replaceChildren();
+            host.classList.remove('theia-mobile-transcript-terminal');
+        }
+        this.transcriptTerminalAttachedKey = undefined;
+    }
+
+    protected detachTranscriptWorkspaceSurfacesFromSheet(): void {
+        this.detachTranscriptFilesFromHost();
+        this.detachTranscriptTerminalFromHost();
     }
 
     protected createTranscriptPreviewLoading(conv: QaapAgentConversationDTO | undefined): HTMLElement {
@@ -8414,7 +8567,7 @@ export class MobileProjectsPanel {
             try {
                 await postConversationMessage(summary.id, report);
                 if (!auto) {
-                    // Manual send: jump to Messages so the user watches the agent react.
+                    // Manual send: jump to Chat so the user watches the agent react.
                     this.selectTranscriptTab('messages', project, summary);
                     MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifySent', 'Failure sent to agent'), { kind: 'success', duration: 1600 });
                 }
@@ -10634,12 +10787,113 @@ export class MobileProjectsPanel {
         }
     }
 
+    protected transcriptShellStateAriaLabel(finished: boolean, failed: boolean): string {
+        if (!finished) {
+            return nls.localize('qaap/mobileProjects/transcriptShellRunning', 'running');
+        }
+        return failed
+            ? nls.localize('qaap/mobileProjects/transcriptShellFailed', 'failed')
+            : nls.localize('qaap/mobileProjects/transcriptShellDone', 'done');
+    }
+
+    /** Full shell-window text for clipboard: `$ command` plus any output block. */
+    protected collectTranscriptShellBodyCopyText(body: HTMLElement): string {
+        const parts: string[] = [];
+        const command = body.querySelector('.theia-mobile-agent-shell-command code')?.textContent?.trim();
+        if (command) {
+            parts.push(`$ ${command}`);
+        }
+        const output = body.querySelector('.theia-mobile-agent-shell-output')?.textContent;
+        if (output?.trim()) {
+            if (parts.length) {
+                parts.push('');
+            }
+            parts.push(output.trimEnd());
+        }
+        if (parts.length) {
+            return parts.join('\n');
+        }
+        return body.textContent?.trim() ?? '';
+    }
+
+    protected appendTranscriptShellSummaryTail(
+        summary: HTMLElement,
+        options: { finished: boolean; failed: boolean; copyFrom?: () => string; copyLabel?: string },
+    ): void {
+        const tail = document.createElement('div');
+        tail.className = 'theia-mobile-agent-shell-tail';
+        const state = document.createElement('span');
+        state.className = 'theia-mobile-agent-shell-state';
+        state.setAttribute('role', 'status');
+        state.setAttribute('aria-label', this.transcriptShellStateAriaLabel(options.finished, options.failed));
+        tail.append(state);
+        if (options.copyFrom) {
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'theia-mobile-agent-shell-copy codicon codicon-copy';
+            const copyLabel = options.copyLabel
+                ?? nls.localize('qaap/mobileProjects/transcriptShellCopy', 'Copy');
+            copyBtn.setAttribute('aria-label', copyLabel);
+            const tip = document.createElement('span');
+            tip.className = 'theia-mobile-agent-shell-copy-tip';
+            tip.setAttribute('role', 'tooltip');
+            tip.textContent = nls.localize('qaap/mobileProjects/transcriptShellCopied', 'Copied');
+            copyBtn.append(tip);
+            copyBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                const text = options.copyFrom!().trim();
+                if (text) {
+                    void this.copyTranscriptShellText(text, copyBtn, tip, copyLabel);
+                }
+            });
+            tail.append(copyBtn);
+        }
+        summary.append(tail);
+    }
+
+    protected async copyTranscriptShellText(
+        text: string,
+        copyBtn: HTMLButtonElement,
+        tip: HTMLElement,
+        copyLabel: string,
+    ): Promise<void> {
+        const copiedLabel = nls.localize('qaap/mobileProjects/transcriptShellCopied', 'Copied');
+        const failedLabel = nls.localize('qaap/mobileProjects/transcriptShellCopyFailed', 'Could not copy');
+        try {
+            await navigator.clipboard.writeText(text);
+            this.flashTranscriptShellCopyTooltip(copyBtn, tip, copiedLabel, copyLabel, false);
+        } catch {
+            this.flashTranscriptShellCopyTooltip(copyBtn, tip, failedLabel, copyLabel, true);
+        }
+    }
+
+    protected flashTranscriptShellCopyTooltip(
+        copyBtn: HTMLButtonElement,
+        tip: HTMLElement,
+        message: string,
+        copyLabel: string,
+        failed: boolean,
+    ): void {
+        tip.textContent = message;
+        copyBtn.classList.remove('theia-mod-copied', 'theia-mod-copy-failed');
+        copyBtn.classList.add(failed ? 'theia-mod-copy-failed' : 'theia-mod-copied');
+        copyBtn.setAttribute('aria-label', message);
+        window.clearTimeout(copyBtn.dataset.copyTipTimerId ? Number(copyBtn.dataset.copyTipTimerId) : undefined);
+        copyBtn.dataset.copyTipTimerId = String(window.setTimeout(() => {
+            copyBtn.classList.remove('theia-mod-copied', 'theia-mod-copy-failed');
+            copyBtn.setAttribute('aria-label', copyLabel);
+            delete copyBtn.dataset.copyTipTimerId;
+        }, 1400));
+    }
+
     protected createTranscriptShellDetails(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
         const details = document.createElement('details');
         details.className = 'theia-mobile-agent-shell-window';
         details.open = true;
+        const failed = this.transcriptToolResultFailed(segment.result);
         if (segment.finished) {
-            details.classList.add(this.transcriptToolResultFailed(segment.result) ? 'theia-mod-failed' : 'theia-mod-done');
+            details.classList.add(failed ? 'theia-mod-failed' : 'theia-mod-done');
         } else {
             details.classList.add('theia-mod-running');
         }
@@ -10656,14 +10910,7 @@ export class MobileProjectsPanel {
         label.textContent = command && command !== '{}'
             ? this.compactTranscriptCommand(command)
             : nls.localize('qaap/mobileProjects/transcriptShell', 'Shell');
-        const state = document.createElement('span');
-        state.className = 'theia-mobile-agent-shell-state';
-        state.textContent = segment.finished
-            ? this.transcriptToolResultFailed(segment.result)
-                ? nls.localize('qaap/mobileProjects/transcriptShellFailed', 'failed')
-                : nls.localize('qaap/mobileProjects/transcriptShellDone', 'done')
-            : nls.localize('qaap/mobileProjects/transcriptShellRunning', 'running');
-        summary.append(icon, label, state);
+        summary.append(icon, label);
 
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
@@ -10678,10 +10925,15 @@ export class MobileProjectsPanel {
         body.append(commandLine);
         if (segment.result?.trim()) {
             body.append(this.createTranscriptClampedPre(
-                this.cleanTranscriptDisplayText(segment.result),
+                this.formatTranscriptToolResult(segment.result),
                 'theia-mobile-agent-shell-output',
             ));
         }
+        this.appendTranscriptShellSummaryTail(summary, {
+            finished: segment.finished,
+            failed,
+            copyFrom: () => this.collectTranscriptShellBodyCopyText(body),
+        });
         details.append(summary, body);
         return details;
     }
@@ -10844,8 +11096,10 @@ export class MobileProjectsPanel {
 
     protected createTranscriptTextTerminalWindow(content: string): HTMLElement {
         const details = document.createElement('details');
-        details.className = `theia-mobile-agent-shell-window ${this.isTranscriptErrorOutput(content) ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
+        const failed = this.isTranscriptErrorOutput(content);
+        details.className = `theia-mobile-agent-shell-window ${failed ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
         details.open = true;
+        const cleanContent = this.cleanTranscriptDisplayText(content);
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-shell-head';
         const icon = document.createElement('span');
@@ -10853,18 +11107,18 @@ export class MobileProjectsPanel {
         icon.textContent = '>_';
         const label = document.createElement('span');
         label.className = 'theia-mobile-agent-shell-title';
-        label.textContent = this.isTranscriptErrorOutput(content)
+        label.textContent = failed
             ? nls.localize('qaap/mobileProjects/transcriptErrorOutput', 'Error output')
             : nls.localize('qaap/mobileProjects/transcriptTerminalOutput', 'Terminal output');
-        const state = document.createElement('span');
-        state.className = 'theia-mobile-agent-shell-state';
-        state.textContent = this.isTranscriptErrorOutput(content)
-            ? nls.localize('qaap/mobileProjects/transcriptShellFailed', 'failed')
-            : nls.localize('qaap/mobileProjects/transcriptShellDone', 'done');
-        summary.append(icon, label, state);
+        summary.append(icon, label);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
-        body.append(this.createTranscriptClampedPre(content, 'theia-mobile-agent-shell-output'));
+        body.append(this.createTranscriptClampedPre(cleanContent, 'theia-mobile-agent-shell-output'));
+        this.appendTranscriptShellSummaryTail(summary, {
+            finished: true,
+            failed,
+            copyFrom: () => this.collectTranscriptShellBodyCopyText(body),
+        });
         details.append(summary, body);
         return details;
     }
@@ -10970,11 +11224,10 @@ export class MobileProjectsPanel {
         this.transcriptHeaderSubtitle = undefined;
         this.detachTranscriptReviewWidget();
         this.transcriptReviewHost = undefined;
-        this.transcriptVerifyHost = undefined;
         this.transcriptPreviewHost = undefined;
-        this.transcriptFilesDispose.dispose();
-        this.transcriptFilesDispose = Disposable.NULL;
+        this.detachTranscriptWorkspaceSurfacesFromSheet();
         this.transcriptFilesHost = undefined;
+        this.transcriptTerminalHost = undefined;
         this.transcriptPreviewRequestRunning = false;
         this.transcriptPreviewRequestPending = false;
         this.transcriptActiveTab = 'messages';

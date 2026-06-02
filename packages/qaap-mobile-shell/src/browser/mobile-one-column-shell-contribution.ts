@@ -59,6 +59,8 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
 import { openTranscriptWorkspaceFile, createTranscriptFilesViewServices } from './qaap-transcript-file-open';
+import { createTranscriptTerminalViewServices } from './qaap-transcript-terminal-view';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { MarkdownPreviewHandler } from '@theia/preview/lib/browser/markdown/markdown-preview-handler';
@@ -230,6 +232,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MarkdownPreviewHandler)
     protected readonly markdownPreviewHandler: MarkdownPreviewHandler;
+
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
@@ -898,6 +903,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     this.monacoEditorProvider,
                     this.labelProvider,
                     this.markdownPreviewHandler,
+                ),
+                createTranscriptTerminalViewServices: () => createTranscriptTerminalViewServices(
+                    this.terminalService,
+                    this.workspaceService,
                 ),
             }
         );
