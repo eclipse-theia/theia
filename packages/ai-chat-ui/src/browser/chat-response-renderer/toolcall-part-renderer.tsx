@@ -25,7 +25,7 @@ import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState 
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { MarkdownRender } from './markdown-part-renderer';
-import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { isToolCallContent, ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
@@ -98,7 +98,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (typeof result !== 'object' || result === null) {
             return <pre>{String(result)}</pre>;
         }
-        if ('content' in result) {
+        if (isToolCallContent(result)) {
             return <div className='theia-toolCall-response-content'>
                 {result.content.map((content, idx) => {
                     switch (content.type) {
