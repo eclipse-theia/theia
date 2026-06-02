@@ -112,7 +112,6 @@ import {
     readStoredAgentModel,
     resolveStoredAgentModelForSubmit,
     isOpencodeAgent,
-    isQaiqAgent,
     isStickyComposerAgentSelected,
     reconcileStickyComposerAgent,
     resolveBackendAgentForTurn,
@@ -2807,11 +2806,16 @@ export class MobileProjectsPanel {
         agentBtn.type = 'button';
         agentBtn.className = 'theia-mobile-projects-sticky-composer-agent';
         const agentLabel = options.resolveAgentLabel();
-        agentBtn.title = nls.localize('qaap/mobileProjects/stickyComposerAgent', 'Agent: {0}', agentLabel);
+        const agentId = options.resolveAgentId();
+        const modelLabel = this.resolveStickyComposerModelLabel(agentId, options.project);
+        agentBtn.title = modelLabel
+            ? nls.localize('qaap/mobileProjects/stickyComposerAgentWithModel', 'Agent: {0}, model: {1}', agentLabel, modelLabel)
+            : nls.localize('qaap/mobileProjects/stickyComposerAgent', 'Agent: {0}', agentLabel);
         agentBtn.setAttribute('aria-label', agentBtn.title);
         populateAgentToolbarButton(agentBtn, {
-            agentId: options.resolveAgentId(),
+            agentId,
             label: agentLabel,
+            modelLabel,
         });
         if (options.agentLocked) {
             agentBtn.classList.add('theia-mod-locked');
@@ -2996,20 +3000,20 @@ export class MobileProjectsPanel {
             return this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID)?.name ?? 'Coder';
         }
         const fromList = this.stickyComposerBackendAgents.find(a => a.id === pinned)?.label;
-        if (fromList && !isQaiqAgent(pinned)) {
+        if (fromList) {
             return fromList;
+        }
+        return this.resolveConversationAgentLabel(undefined);
+    }
+
+    protected resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined {
+        if (!agentSupportsModelPicker(agentId)) {
+            return undefined;
         }
         const cwd = project
             ? (this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id))
             : undefined;
-        const model = agentSupportsModelPicker(pinned) ? readStoredAgentModel(cwd, pinned) : undefined;
-        if (fromList && model?.modelId) {
-            return `${fromList} · ${model.modelId}`;
-        }
-        if (isQaiqAgent(pinned)) {
-            return model?.modelId ? `QAIQ · ${model.modelId}` : 'QAIQ';
-        }
-        return fromList ?? this.resolveConversationAgentLabel(undefined);
+        return readStoredAgentModel(cwd, agentId)?.modelId;
     }
 
     protected reconcileStickyComposerPinnedAgent(

@@ -137,20 +137,31 @@ export function createPickerSheetOptionButton(options: {
     return btn;
 }
 
-/** Sticky composer toolbar agent button contents. */
+/** Sticky composer toolbar agent button — brand icon + optional model id (agent name is aria/title only). */
 export function populateAgentToolbarButton(
     button: HTMLButtonElement,
-    options: { readonly agentId: string; readonly label: string },
+    options: { readonly agentId: string; readonly label: string; readonly modelLabel?: string },
 ): void {
     button.replaceChildren();
-    appendAgentBrandIcon(button, options.agentId, 'sm');
-    const labelEl = document.createElement('span');
-    labelEl.className = 'theia-mobile-projects-sticky-composer-agent-label';
-    labelEl.textContent = options.label;
     const chevron = document.createElement('span');
     chevron.className = 'codicon codicon-chevron-down';
     chevron.setAttribute('aria-hidden', 'true');
-    button.append(labelEl, chevron);
+    const model = options.modelLabel?.trim();
+    if (model) {
+        const identity = document.createElement('span');
+        identity.className = 'theia-mobile-projects-sticky-composer-agent-identity';
+        appendAgentBrandIcon(identity, options.agentId, 'sm');
+        const labelEl = document.createElement('span');
+        labelEl.className = 'theia-mobile-projects-sticky-composer-agent-label';
+        labelEl.textContent = model;
+        identity.append(labelEl);
+        button.append(identity, chevron);
+        button.classList.remove('theia-mod-logo-only');
+    } else {
+        appendAgentBrandIcon(button, options.agentId, 'sm');
+        button.append(chevron);
+        button.classList.add('theia-mod-logo-only');
+    }
 }
 
 /** Task foot / inbox agent badge. */
