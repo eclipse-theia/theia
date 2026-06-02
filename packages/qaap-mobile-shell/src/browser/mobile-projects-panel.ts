@@ -64,6 +64,7 @@ import {
 import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
+    QaapAgentMessageDTO,
     QaapAgentMessageSegmentDTO,
     cancelConversation,
     conversationToSummary,
@@ -78,6 +79,7 @@ import {
     updateConversation,
 } from '../common/qaap-agent-conversation-client';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
+import { parseOpencodeLog } from '../common/qaap-opencode-stream';
 import {
     approveAgentRequest,
     fetchAgentApprovals,
@@ -102,6 +104,9 @@ import {
     migrateLegacyBackendAgentId,
     normalizeBackendAgentId,
     readStoredAgent,
+    readStoredQaiqModel,
+    isOpencodeAgent,
+    isQaiqAgent,
     isStickyComposerAgentSelected,
     reconcileStickyComposerAgent,
     resolveBackendAgentForTurn,
@@ -111,7 +116,9 @@ import {
     SHELL_AGENT_ID,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
+    writeStoredQaiqModel,
     type QaapAgentTaskAgentOption,
+    type QaapQaiqModelOption,
     type QaapAgentTaskDetailDTO,
     type QaapAgentTaskListSnapshot,
 } from '../common/qaap-agent-task-client';
@@ -134,6 +141,11 @@ import {
     createAgentTaskBadge,
     populateAgentToolbarButton,
 } from './qaap-agent-ui';
+import {
+    renderStickyComposerContextStrip,
+    resolveStickyComposerContextChip,
+    type StickyComposerContextChipView,
+} from './qaap-sticky-composer-context-ui';
 import { createFormFieldLabel, createSegmentedField, type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import {
     createMobileSheetGrabber,
@@ -235,10 +247,9 @@ import {
     type TranscriptFilesViewServices,
 } from './qaap-transcript-files-view';
 import {
-    attachTranscriptTerminalSurface,
     createTranscriptTerminalStagingHost,
     createTranscriptTerminalSurface,
-    detachTranscriptTerminalSurface,
+    type TranscriptTerminalSurface,
     type TranscriptTerminalViewServices,
 } from './qaap-transcript-terminal-view';
 import {
@@ -247,6 +258,11 @@ import {
     type TranscriptWorkspaceSurfaceKey,
 } from './qaap-transcript-workspace-surfaces-cache';
 import { resolveTranscriptWorkspaceCwd } from '../common/qaap-transcript-workspace-cwd';
+import {
+    formatQaiqModelProviderLabel,
+    groupQaiqModelsByProvider,
+    listQaiqModelsFromPreferences,
+} from '../common/qaap-qaiq-model-catalog';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -296,6 +312,8 @@ export interface MobileProjectsPanelOptions {
     createDiffReviewWidget?: () => Promise<QaapDiffReviewWidget>;
     /** Context attach picker; anchor is the sticky composer attach button. */
     pickContextVariable?: (anchor: HTMLElement) => Promise<AIVariableResolutionRequest | undefined>;
+    /** Labels/icons for attached context chips (Agent chat label provider). */
+    formatContextChip?: (item: AIVariableResolutionRequest) => StickyComposerContextChipView;
     /** Variables offered for `#` completion in the sticky composer (same pool as Agent chat). */
     getComposerVariables?: () => readonly AIVariable[];
     chatService?: ChatService;
@@ -315,6 +333,13 @@ export interface MobileProjectsPanelOptions {
     previewInspectorDeps?: QaapPreviewInspectorDeps;
     /** Clipboard for preview overflow actions (screenshot, copy URL). */
     clipboard?: ClipboardService;
+    /** Reads AI provider settings (API keys + model lists) for the QAIQ model submenu. */
+    readPreference?: (key: string) => unknown;
+}
+
+interface TranscriptTerminalSliderState {
+    surfaces: TranscriptTerminalSurface[];
+    activeIndex: number;
 }
 
 interface RestorableTheiaChatData {
@@ -425,9 +450,12 @@ export class MobileProjectsPanel {
     protected stickyComposerFabLiftObserver: ResizeObserver | undefined;
     protected stickyComposerDraft = '';
     protected stickyComposerContext: AIVariableResolutionRequest[] = [];
+    protected stickyComposerFilesExpanded = true;
     protected stickyComposerPinnedAgentId: string | undefined;
     protected stickyComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
+    protected stickyComposerQaiqModels: QaapQaiqModelOption[] = [];
     protected stickyComposerAgentSheet: HTMLElement | undefined;
+    protected stickyComposerQaiqModelSheet: HTMLElement | undefined;
     protected stickyComposerModeSheet: HTMLElement | undefined;
     protected stickyComposerModeId: string | undefined;
     protected stickyComposerSurface: QaapComposerSurface = 'task';
@@ -436,10 +464,13 @@ export class MobileProjectsPanel {
     protected transcriptComposerProject: MobileProjectEntry | undefined;
     protected transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
     protected transcriptComposerContext: AIVariableResolutionRequest[] = [];
+    protected transcriptComposerFilesExpanded = true;
     protected transcriptComposerPinnedAgentId: string | undefined;
     protected transcriptComposerDraft = '';
     protected transcriptComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
+    protected transcriptComposerQaiqModels: QaapQaiqModelOption[] = [];
     protected transcriptComposerAgentSheet: HTMLElement | undefined;
+    protected transcriptComposerQaiqModelSheet: HTMLElement | undefined;
     protected transcriptComposerModeSheet: HTMLElement | undefined;
     protected transcriptComposerModeId: string | undefined;
     protected agentChatInputSession: ChatSession | undefined;
@@ -461,11 +492,13 @@ export class MobileProjectsPanel {
     protected transcriptEmbeddedPreview: EmbeddedAgentPreviewChrome | undefined;
     protected transcriptFilesHost: HTMLElement | undefined;
     protected transcriptTerminalHost: HTMLElement | undefined;
+    protected transcriptTerminalToolbar: HTMLElement | undefined;
+    protected transcriptTerminalSlider: HTMLElement | undefined;
+    protected transcriptTerminalDots: HTMLElement | undefined;
     /** One Files tree + Terminal per workspace cwd (project), reused across tasks. */
     protected readonly transcriptWorkspaceSurfaces = new TranscriptWorkspaceSurfacesCache();
     protected transcriptFilesAttachedKey: TranscriptWorkspaceSurfaceKey | undefined;
-    protected transcriptTerminalAttachedKey: TranscriptWorkspaceSurfaceKey | undefined;
-    protected transcriptTerminalAttachDispose: Disposable = Disposable.NULL;
+    protected readonly transcriptTerminalSlidesByWorkspace = new Map<TranscriptWorkspaceSurfaceKey, TranscriptTerminalSliderState>();
     protected transcriptPreviewRequestRunning = false;
     protected transcriptPreviewRequestPending = false;
     protected transcriptActiveTab: TranscriptTab = 'messages';
@@ -531,6 +564,7 @@ export class MobileProjectsPanel {
     protected readonly createChatViewWidget: MobileProjectsPanelOptions['createChatViewWidget'];
     protected readonly createDiffReviewWidget: MobileProjectsPanelOptions['createDiffReviewWidget'];
     protected readonly pickContextVariable: MobileProjectsPanelOptions['pickContextVariable'];
+    protected readonly formatContextChip: MobileProjectsPanelOptions['formatContextChip'];
     protected readonly getComposerVariables: MobileProjectsPanelOptions['getComposerVariables'];
     protected readonly chatService: ChatService | undefined;
     protected readonly chatAgentService: ChatAgentService | undefined;
@@ -542,6 +576,7 @@ export class MobileProjectsPanel {
     protected readonly previewSurfaceRegistry: MobileProjectsPanelOptions['previewSurfaceRegistry'];
     protected readonly previewInspectorDeps: MobileProjectsPanelOptions['previewInspectorDeps'];
     protected readonly previewClipboard: MobileProjectsPanelOptions['clipboard'];
+    protected readonly readPreference: MobileProjectsPanelOptions['readPreference'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -609,6 +644,7 @@ export class MobileProjectsPanel {
         this.createChatViewWidget = options.createChatViewWidget;
         this.createDiffReviewWidget = options.createDiffReviewWidget;
         this.pickContextVariable = options.pickContextVariable;
+        this.formatContextChip = options.formatContextChip;
         this.getComposerVariables = options.getComposerVariables;
         this.chatService = options.chatService;
         this.chatAgentService = options.chatAgentService;
@@ -620,6 +656,7 @@ export class MobileProjectsPanel {
         this.previewSurfaceRegistry = options.previewSurfaceRegistry;
         this.previewInspectorDeps = options.previewInspectorDeps;
         this.previewClipboard = options.clipboard;
+        this.readPreference = options.readPreference;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -1033,6 +1070,7 @@ export class MobileProjectsPanel {
         this.chatServiceDispose = Disposable.NULL;
         this.disposeChatSessionModelListeners();
         this.closeTranscriptSheet();
+        this.disposeTranscriptTerminalSlides();
         this.transcriptWorkspaceSurfaces.disposeAll();
         this.stickyComposerFabLiftObserver?.disconnect();
         this.stickyComposerFabLiftObserver = undefined;
@@ -1916,6 +1954,8 @@ export class MobileProjectsPanel {
             this.openRepoDialog = new MobileOpenRepositoryDialog(this.projectsService, {
                 onProjectsChanged: nextProjects => {
                     this.projects = nextProjects;
+                    this.hubView = 'repos';
+                    this.projectsService.setHubView('repos');
                     this.render();
                     this.delegate.onProjectsChanged?.();
                 },
@@ -2515,9 +2555,16 @@ export class MobileProjectsPanel {
                 this.stickyComposerContext = [];
                 this.renderStickyComposer();
             },
+            removeContextItem: index => {
+                this.stickyComposerContext.splice(index, 1);
+                this.renderStickyComposer();
+            },
+            formatContextChip: item => this.formatComposerContextChip(item),
+            filesExpanded: this.stickyComposerFilesExpanded,
+            onFilesExpandedChange: expanded => { this.stickyComposerFilesExpanded = expanded; },
             getDraft: () => this.stickyComposerDraft,
             setDraft: value => { this.stickyComposerDraft = value; },
-            resolveAgentLabel: () => this.resolveStickyComposerAgentLabel(),
+            resolveAgentLabel: () => this.resolveStickyComposerAgentLabel(project),
             resolveAgentId: () => this.resolveStickyComposerPinnedAgentId(project),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.stickyComposerModeId),
@@ -2684,6 +2731,10 @@ export class MobileProjectsPanel {
         agentLocked?: boolean;
         getContext: () => AIVariableResolutionRequest[];
         clearContext: () => void;
+        removeContextItem: (index: number) => void;
+        formatContextChip: (item: AIVariableResolutionRequest) => StickyComposerContextChipView;
+        filesExpanded?: boolean;
+        onFilesExpandedChange?: (expanded: boolean) => void;
         getDraft: () => string;
         setDraft: (value: string) => void;
         resolveAgentLabel: () => string;
@@ -2706,25 +2757,7 @@ export class MobileProjectsPanel {
         column.className = 'theia-mobile-projects-sticky-composer-column';
         const contextItems = options.getContext();
         if (contextItems.length > 0) {
-            const contextRow = document.createElement('div');
-            contextRow.className = 'theia-mobile-projects-sticky-composer-context';
-            const contextLabel = document.createElement('span');
-            contextLabel.className = 'theia-mobile-projects-sticky-composer-context-label';
-            contextLabel.textContent = nls.localize(
-                'qaap/mobileProjects/stickyComposerContextCount',
-                '{0} context item(s)',
-                String(contextItems.length),
-            );
-            const clearContext = document.createElement('button');
-            clearContext.type = 'button';
-            clearContext.className = 'theia-mobile-projects-sticky-composer-context-clear';
-            clearContext.textContent = nls.localize('qaap/mobileProjects/stickyComposerContextClear', 'Clear');
-            clearContext.addEventListener('click', ev => {
-                ev.stopPropagation();
-                options.clearContext();
-            });
-            contextRow.append(contextLabel, clearContext);
-            column.append(contextRow);
+            column.classList.add('theia-mod-has-context');
         }
 
         if (options.surface) {
@@ -2870,9 +2903,28 @@ export class MobileProjectsPanel {
         });
 
         inputWrap.append(attachBtn, input, sendBtn);
-        wrap.append(inputWrap);
+
+        const card = document.createElement('div');
+        card.className = 'theia-mobile-projects-sticky-composer-card';
+        if (contextItems.length > 0) {
+            card.classList.add('theia-mod-has-context');
+            card.append(renderStickyComposerContextStrip({
+                items: contextItems,
+                formatChip: options.formatContextChip,
+                onRemoveItem: index => { options.removeContextItem(index); },
+                onClearAll: () => { options.clearContext(); },
+                filesExpanded: options.filesExpanded,
+                onFilesExpandedChange: options.onFilesExpandedChange,
+            }));
+        }
+        card.append(inputWrap);
+        wrap.append(card);
         column.append(toolbar, wrap);
         return column;
+    }
+
+    protected formatComposerContextChip(item: AIVariableResolutionRequest): StickyComposerContextChipView {
+        return this.formatContextChip?.(item) ?? resolveStickyComposerContextChip(item);
     }
 
     protected resolveComposerMentionOptions(
@@ -2904,19 +2956,23 @@ export class MobileProjectsPanel {
             : (this.stickyComposerBackendAgents[0]?.id ?? QAIQ_AGENT_ID);
     }
 
-    protected resolveStickyComposerAgentLabel(): string {
+    protected resolveStickyComposerAgentLabel(project?: MobileProjectEntry): string {
         const pinned = this.stickyComposerPinnedAgentId;
         if (isTheiaCoderAgent(pinned)) {
             return this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID)?.name ?? 'Coder';
         }
         const fromList = this.stickyComposerBackendAgents.find(a => a.id === pinned)?.label;
-        if (fromList) {
+        if (fromList && !isQaiqAgent(pinned)) {
             return fromList;
         }
-        if (pinned === QAIQ_AGENT_ID) {
-            return 'QAIQ';
+        if (isQaiqAgent(pinned)) {
+            const cwd = project
+                ? (this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id))
+                : undefined;
+            const model = readStoredQaiqModel(cwd);
+            return model?.modelId ? `QAIQ · ${model.modelId}` : 'QAIQ';
         }
-        return this.resolveConversationAgentLabel(undefined);
+        return fromList ?? this.resolveConversationAgentLabel(undefined);
     }
 
     protected reconcileStickyComposerPinnedAgent(
@@ -2946,6 +3002,7 @@ export class MobileProjectsPanel {
             const snapshot = await this.loadBackendAgentSnapshot();
             const filteredAgents = this.filterSelectableComposerAgents(snapshot.agents);
             this.stickyComposerBackendAgents = filteredAgents;
+            this.stickyComposerQaiqModels = snapshot.qaiqModels;
             const resolved = this.reconcileStickyComposerPinnedAgent(
                 this.stickyComposerPinnedAgentId ?? readStoredAgent(cwd),
                 filteredAgents,
@@ -2958,6 +3015,7 @@ export class MobileProjectsPanel {
             }
         } catch {
             this.stickyComposerBackendAgents = this.filterSelectableComposerAgents(this.activeTasks?.getAgents() ?? []);
+            this.stickyComposerQaiqModels = [];
         }
     }
 
@@ -2993,56 +3051,39 @@ export class MobileProjectsPanel {
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
-
-        const coder = this.getOfferableCoderAgent();
-        if (coder) {
-            list.append(this.createStickyAgentSheetOption(
-                coder.name,
-                THEIA_CODER_AGENT_ID,
-                cwd,
-                () => this.closeStickyComposerSheets(),
-            ));
-        }
-        for (const agent of this.filterSelectableComposerAgents(this.stickyComposerBackendAgents)) {
-            list.append(this.createStickyAgentSheetOption(
-                agent.label,
-                agent.id,
-                cwd,
-                () => this.closeStickyComposerSheets(),
-            ));
-        }
+        const loading = document.createElement('p');
+        loading.className = 'theia-mobile-sticky-composer-sheet-loading';
+        loading.textContent = nls.localize('qaap/mobileProjects/stickyComposerLoadingModels', 'Loading models…');
+        list.append(loading);
 
         panel.append(header, list);
         sheet.append(backdrop, panel);
         document.body.append(sheet);
         this.stickyComposerAgentSheet = sheet;
-    }
 
-    protected createStickyAgentSheetOption(
-        label: string,
-        agentId: string,
-        cwd: string | undefined,
-        onPick: () => void,
-    ): HTMLElement {
-        return this.createAgentSheetOption(
-            label,
-            agentId,
+        void this.populateComposerAgentSheetList({
+            list,
             cwd,
-            this.stickyComposerPinnedAgentId,
-            id => {
-                this.stickyComposerPinnedAgentId = id;
+            agents: this.filterSelectableComposerAgents(this.stickyComposerBackendAgents),
+            selectedAgentId: this.stickyComposerPinnedAgentId,
+            includeCoder: true,
+            onSelectAgent: (agentId, model) => {
+                this.stickyComposerPinnedAgentId = agentId;
                 if (cwd) {
-                    writeStoredAgent(cwd, id);
+                    writeStoredAgent(cwd, agentId);
+                    if (model) {
+                        writeStoredQaiqModel(cwd, model);
+                    }
                 }
-                const modes = resolveStickyComposerModes(id, this.chatAgentService);
+                const modes = resolveStickyComposerModes(agentId, this.chatAgentService);
                 this.stickyComposerModeId = reconcileComposerModeId(undefined, modes, cwd);
                 if (cwd && this.stickyComposerModeId) {
                     writeStoredComposerMode(cwd, this.stickyComposerModeId);
                 }
-                onPick();
+                this.closeStickyComposerSheets();
                 this.renderStickyComposer();
             },
-        );
+        });
     }
 
     protected openStickyComposerModeSheet(project: MobileProjectEntry, modes: readonly ChatMode[]): void {
@@ -3130,10 +3171,133 @@ export class MobileProjectsPanel {
         });
     }
 
+    protected async resolveQaiqModelsForPicker(): Promise<QaapQaiqModelOption[]> {
+        const fromSettings = this.readPreference
+            ? listQaiqModelsFromPreferences(this.readPreference)
+            : [];
+        try {
+            const remote = (await fetchAgentTaskListAll()).qaiqModels;
+            const merged = new Map<string, QaapQaiqModelOption>();
+            for (const model of [...fromSettings, ...remote]) {
+                merged.set(`${model.provider}|${model.vendor}|${model.modelId}`, model);
+            }
+            return [...merged.values()];
+        } catch {
+            return fromSettings;
+        }
+    }
+
+    protected async populateComposerAgentSheetList(options: {
+        readonly list: HTMLElement;
+        readonly cwd: string | undefined;
+        readonly agents: readonly QaapAgentTaskAgentOption[];
+        readonly selectedAgentId: string | undefined;
+        readonly includeCoder: boolean;
+        readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
+        readonly qaiqExpanded?: boolean;
+    }): Promise<boolean> {
+        const qaiqModels = await this.resolveQaiqModelsForPicker();
+        this.stickyComposerQaiqModels = qaiqModels;
+        this.transcriptComposerQaiqModels = qaiqModels;
+        let qaiqExpanded = options.qaiqExpanded ?? isQaiqAgent(options.selectedAgentId);
+        options.list.replaceChildren();
+
+        const appendAgent = (agentId: string, label: string): void => {
+            const isQaiq = agentId === QAIQ_AGENT_ID;
+            const hasModels = isQaiq && qaiqModels.length > 0;
+            const row = document.createElement('div');
+            row.className = 'theia-qaap-agent-sheet-row';
+            const agentSelected = isStickyComposerAgentSelected(agentId, options.selectedAgentId, options.cwd);
+            const btn = createAgentSheetOptionButton({
+                agentId,
+                label,
+                selected: agentSelected && (!isQaiq || !hasModels),
+                submenuChevron: hasModels ? (qaiqExpanded ? 'expanded' : 'collapsed') : undefined,
+                onSelect: () => {
+                    if (hasModels) {
+                        qaiqExpanded = !qaiqExpanded;
+                        void this.populateComposerAgentSheetList({ ...options, qaiqExpanded });
+                        return;
+                    }
+                    options.onSelectAgent(agentId);
+                },
+            });
+            row.append(btn);
+            if (hasModels && qaiqExpanded) {
+                row.append(this.createQaiqModelSubmenu(qaiqModels, options.cwd, options.selectedAgentId, model => {
+                    options.onSelectAgent(QAIQ_AGENT_ID, model);
+                }));
+            } else if (isQaiq && !hasModels) {
+                const hint = document.createElement('p');
+                hint.className = 'theia-qaap-agent-sheet-empty-models';
+                hint.textContent = nls.localize(
+                    'qaap/mobileProjects/stickyComposerNoQaiqModels',
+                    'Add an API key in Settings → AI Features to choose a model.',
+                );
+                row.append(hint);
+            }
+            options.list.append(row);
+        };
+
+        if (options.includeCoder) {
+            const coder = this.getOfferableCoderAgent();
+            if (coder) {
+                appendAgent(THEIA_CODER_AGENT_ID, coder.name);
+            }
+        }
+        for (const agent of options.agents) {
+            appendAgent(agent.id, agent.label);
+        }
+        return qaiqExpanded;
+    }
+
+    protected createQaiqModelSubmenu(
+        models: readonly QaapQaiqModelOption[],
+        cwd: string | undefined,
+        selectedAgentId: string | undefined,
+        onSelect: (model: QaapQaiqModelOption) => void,
+    ): HTMLElement {
+        const stored = readStoredQaiqModel(cwd);
+        const submenu = document.createElement('div');
+        submenu.className = 'theia-qaap-agent-sheet-submenu';
+        submenu.setAttribute('role', 'group');
+        for (const [vendor, providerModels] of groupQaiqModelsByProvider(models)) {
+            const section = document.createElement('div');
+            section.className = 'theia-qaap-agent-sheet-provider';
+            const label = document.createElement('div');
+            label.className = 'theia-qaap-agent-sheet-provider-label';
+            label.textContent = formatQaiqModelProviderLabel(vendor);
+            section.append(label);
+            for (const model of providerModels) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'theia-mobile-sticky-composer-sheet-option theia-qaap-agent-sheet-model-option';
+                const modelSelected = isQaiqAgent(selectedAgentId)
+                    && stored?.provider === model.provider
+                    && stored.modelId === model.modelId;
+                if (modelSelected) {
+                    btn.classList.add('theia-mod-selected');
+                }
+                btn.textContent = model.label || model.modelId;
+                btn.addEventListener('click', ev => {
+                    ev.stopPropagation();
+                    onSelect(model);
+                });
+                section.append(btn);
+            }
+            submenu.append(section);
+        }
+        return submenu;
+    }
+
     protected closeStickyComposerSheets(): void {
         if (this.stickyComposerAgentSheet) {
             this.stickyComposerAgentSheet.remove();
             this.stickyComposerAgentSheet = undefined;
+        }
+        if (this.stickyComposerQaiqModelSheet) {
+            this.stickyComposerQaiqModelSheet.remove();
+            this.stickyComposerQaiqModelSheet = undefined;
         }
         if (this.stickyComposerModeSheet) {
             this.stickyComposerModeSheet.remove();
@@ -5397,6 +5561,7 @@ export class MobileProjectsPanel {
         }
         try {
             await this.commands.executeCommand(commandId);
+            this.disposeTranscriptTerminalSlides();
             this.transcriptWorkspaceSurfaces.disposeAll();
             await this.refreshProjects();
         } catch (error) {
@@ -7070,9 +7235,13 @@ export class MobileProjectsPanel {
     }
 
     protected async loadBackendAgentSnapshot(): Promise<QaapAgentTaskListSnapshot> {
-        return this.activeTasks
-            ? { agents: this.activeTasks.getAgents(), defaultAgent: this.activeTasks.getDefaultAgent(), agentConfigured: true }
-            : fetchAgentTaskListAll();
+        try {
+            return await fetchAgentTaskListAll();
+        } catch {
+            return this.activeTasks
+                ? { agents: this.activeTasks.getAgents(), defaultAgent: this.activeTasks.getDefaultAgent(), agentConfigured: true, qaiqModels: [] }
+                : { agents: [], defaultAgent: undefined, agentConfigured: false, qaiqModels: [] };
+        }
     }
 
     protected async selectBackendConversationAgent(
@@ -7360,6 +7529,9 @@ export class MobileProjectsPanel {
         this.transcriptPreviewHost = previewHost;
         this.transcriptFilesHost = filesHost;
         this.transcriptTerminalHost = terminalHost;
+        this.transcriptTerminalToolbar = undefined;
+        this.transcriptTerminalSlider = undefined;
+        this.transcriptTerminalDots = undefined;
         this.transcriptActiveTab = 'messages';
         this.verifyResults = [];
         this.verifyChecksCwd = undefined;
@@ -7968,6 +8140,9 @@ export class MobileProjectsPanel {
             clipboard: this.previewClipboard,
             previewSurfaces: this.previewSurfaceRegistry,
             inspectorDeps: this.previewInspectorDeps,
+            notify: (message, kind) => {
+                MobileSnackbar.show(message, { kind: kind === 'warn' ? 'warning' : 'success' });
+            },
             openExternal: target => {
                 window.open(target, '_blank', 'noopener,noreferrer');
             },
@@ -8134,10 +8309,6 @@ export class MobileProjectsPanel {
             host.append(note);
             return;
         }
-        if (this.transcriptTerminalAttachedKey === workspaceKey && host.querySelector('.theia-mobile-transcript-terminal-mount')) {
-            return;
-        }
-        this.detachTranscriptTerminalFromHost();
         const cwd = this.resolveTranscriptProjectCwd(project, summary);
         const services = this.createTranscriptTerminalViewServices?.();
         if (!cwd || !services) {
@@ -8147,40 +8318,93 @@ export class MobileProjectsPanel {
             return;
         }
 
-        const loading = document.createElement('div');
-        loading.className = 'theia-mobile-transcript-terminal-loading';
-        loading.textContent = services.localize(
-            'qaap/mobileProjects/transcriptTerminalLoading',
-            'Starting terminal…',
-        );
-        host.replaceChildren();
-        host.classList.add('theia-mobile-transcript-terminal');
-        host.append(loading);
+        this.ensureTranscriptTerminalChrome(host, workspaceKey, cwd, services, project, summary);
+        let state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+        if (!state) {
+            state = { surfaces: [], activeIndex: 0 };
+            this.transcriptTerminalSlidesByWorkspace.set(workspaceKey, state);
+        }
+        if (state.surfaces.length === 0) {
+            await this.createTranscriptTerminalSlide(workspaceKey, cwd, services, project, summary);
+            state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+        }
+        if (state && state.surfaces.length > 0) {
+            this.renderTranscriptTerminalSlides(workspaceKey);
+        }
+    }
 
+    protected ensureTranscriptTerminalChrome(
+        host: HTMLElement,
+        workspaceKey: TranscriptWorkspaceSurfaceKey,
+        cwd: string,
+        services: TranscriptTerminalViewServices,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        if (this.transcriptTerminalSlider?.parentElement === host
+            && this.transcriptTerminalToolbar?.parentElement === host
+            && this.transcriptTerminalDots?.parentElement === this.transcriptTerminalToolbar) {
+            return;
+        }
+        host.classList.add('theia-mobile-transcript-terminal');
+        host.replaceChildren();
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'theia-mobile-transcript-terminal-toolbar';
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-transcript-terminal-title';
+        label.textContent = services.localize('qaap/mobileProjects/transcriptTerminalToolbar', 'Terminals');
+        const switcher = document.createElement('div');
+        switcher.className = 'theia-mobile-transcript-terminal-switcher';
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'theia-mobile-transcript-terminal-add codicon codicon-add';
+        addBtn.title = services.localize('qaap/mobileProjects/transcriptTerminalNew', 'New terminal');
+        addBtn.setAttribute('aria-label', addBtn.title);
+        addBtn.addEventListener('click', () => {
+            void this.createTranscriptTerminalSlide(workspaceKey, cwd, services, project, summary, true);
+        });
+        toolbar.append(label, switcher, addBtn);
+
+        const slider = document.createElement('div');
+        slider.className = 'theia-mobile-transcript-terminal-slider';
+        host.append(toolbar, slider);
+        this.transcriptTerminalToolbar = toolbar;
+        this.transcriptTerminalSlider = slider;
+        this.transcriptTerminalDots = switcher;
+    }
+
+    protected async createTranscriptTerminalSlide(
+        workspaceKey: TranscriptWorkspaceSurfaceKey,
+        cwd: string,
+        services: TranscriptTerminalViewServices,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        activateNewest = false,
+    ): Promise<void> {
+        const host = this.transcriptTerminalHost;
+        if (!host?.isConnected) {
+            return;
+        }
         try {
-            const surface = await this.transcriptWorkspaceSurfaces.acquireTerminal(
-                workspaceKey,
-                () => {
-                    const staging = createTranscriptTerminalStagingHost();
-                    return createTranscriptTerminalSurface(staging, cwd, services);
-                },
-            );
-            if (!this.transcriptTerminalHost || this.transcriptTerminalHost !== host || !host.isConnected) {
-                return;
+            const staging = createTranscriptTerminalStagingHost();
+            const surface = await createTranscriptTerminalSurface(staging, cwd, services);
+            const state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey) ?? { surfaces: [], activeIndex: 0 };
+            state.surfaces.push(surface);
+            state.activeIndex = activateNewest ? state.surfaces.length - 1 : Math.max(0, state.activeIndex);
+            this.transcriptTerminalSlidesByWorkspace.set(workspaceKey, state);
+            if (this.transcriptActiveTab === 'terminal'
+                && this.resolveTranscriptWorkspaceKey(project, summary) === workspaceKey) {
+                this.renderTranscriptTerminalSlides(workspaceKey);
             }
-            if (this.transcriptActiveTab !== 'terminal'
-                || this.resolveTranscriptWorkspaceKey(project, summary) !== workspaceKey) {
-                return;
-            }
-            loading.remove();
-            this.transcriptTerminalAttachDispose.dispose();
-            this.transcriptTerminalAttachDispose = attachTranscriptTerminalSurface(host, surface);
-            this.transcriptTerminalAttachedKey = workspaceKey;
         } catch (error) {
             if (!host.isConnected) {
                 return;
             }
-            loading.remove();
+            const slider = this.transcriptTerminalSlider;
+            if (slider) {
+                slider.replaceChildren();
+            }
             const note = document.createElement('div');
             note.className = 'theia-mobile-transcript-terminal-error';
             const message = error instanceof Error ? error.message : String(error);
@@ -8189,9 +8413,103 @@ export class MobileProjectsPanel {
                 'Could not start the terminal: {0}',
                 message,
             );
-            host.append(note);
+            slider?.append(note);
             console.error('[qaap-mobile-shell] transcript terminal failed', error);
         }
+    }
+
+    protected renderTranscriptTerminalSlides(workspaceKey: TranscriptWorkspaceSurfaceKey): void {
+        const slider = this.transcriptTerminalSlider;
+        const state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+        if (!slider || !state) {
+            return;
+        }
+        slider.replaceChildren();
+        const active = state.surfaces[state.activeIndex];
+        if (active) {
+            const slide = document.createElement('div');
+            slide.className = 'theia-mobile-transcript-terminal-slide theia-mod-active';
+            slide.dataset.index = String(state.activeIndex);
+            slide.append(active.mountHost);
+            slider.append(slide);
+        } else {
+            const empty = document.createElement('div');
+            empty.className = 'theia-mobile-transcript-terminal-note';
+            empty.textContent = nls.localize(
+                'qaap/mobileProjects/transcriptTerminalEmpty',
+                'No terminals open. Create one with +.',
+            );
+            slider.append(empty);
+        }
+        this.renderTranscriptTerminalDots(workspaceKey);
+    }
+
+    protected renderTranscriptTerminalDots(workspaceKey: TranscriptWorkspaceSurfaceKey): void {
+        const dots = this.transcriptTerminalDots;
+        const state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+        if (!dots || !state) {
+            return;
+        }
+        dots.replaceChildren();
+        state.surfaces.forEach((surface, index) => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'theia-mobile-transcript-terminal-tab';
+            tab.classList.toggle('theia-mod-active', index === state.activeIndex);
+            const title = this.resolveTranscriptTerminalTabTitle(surface, index);
+            tab.title = title;
+            tab.setAttribute('aria-label', title);
+            tab.addEventListener('click', () => {
+                state.activeIndex = index;
+                this.renderTranscriptTerminalSlides(workspaceKey);
+                this.renderTranscriptTerminalDots(workspaceKey);
+            });
+
+            const icon = document.createElement('span');
+            icon.className = 'theia-mobile-transcript-terminal-tab-icon codicon codicon-terminal';
+            icon.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-transcript-terminal-tab-label';
+            label.textContent = title;
+            tab.append(icon, label);
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'theia-mobile-transcript-terminal-tab-close codicon codicon-close';
+            close.title = nls.localize('qaap/mobileProjects/transcriptTerminalClose', 'Close terminal');
+            close.setAttribute('aria-label', close.title);
+            close.addEventListener('click', event => {
+                event.stopPropagation();
+                this.closeTranscriptTerminalTab(workspaceKey, index);
+            });
+            tab.append(close);
+
+            dots.append(tab);
+        });
+    }
+
+    protected resolveTranscriptTerminalTabTitle(surface: TranscriptTerminalSurface, index: number): string {
+        const title = surface.terminal.title.label?.trim();
+        if (title) {
+            return title;
+        }
+        return nls.localize('qaap/mobileProjects/transcriptTerminalIndex', 'Terminal {0}', String(index + 1));
+    }
+
+    protected closeTranscriptTerminalTab(workspaceKey: TranscriptWorkspaceSurfaceKey, index: number): void {
+        const state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+        if (!state) {
+            return;
+        }
+        const [removed] = state.surfaces.splice(index, 1);
+        removed?.dispose.dispose();
+        if (state.surfaces.length === 0) {
+            state.activeIndex = 0;
+        } else if (state.activeIndex >= state.surfaces.length) {
+            state.activeIndex = state.surfaces.length - 1;
+        }
+        this.transcriptTerminalSlidesByWorkspace.set(workspaceKey, state);
+        this.renderTranscriptTerminalSlides(workspaceKey);
     }
 
     protected detachTranscriptFilesFromHost(): void {
@@ -8204,24 +8522,38 @@ export class MobileProjectsPanel {
     }
 
     protected detachTranscriptTerminalFromHost(): void {
-        this.transcriptTerminalAttachDispose.dispose();
-        this.transcriptTerminalAttachDispose = Disposable.NULL;
         const host = this.transcriptTerminalHost;
-        const key = this.transcriptTerminalAttachedKey;
-        if (host && key) {
-            const surface = this.transcriptWorkspaceSurfaces.getTerminal(key);
-            if (surface) {
-                detachTranscriptTerminalSurface(host, surface);
-            }
+        if (host) {
             host.replaceChildren();
             host.classList.remove('theia-mobile-transcript-terminal');
         }
-        this.transcriptTerminalAttachedKey = undefined;
+        this.transcriptTerminalToolbar = undefined;
+        this.transcriptTerminalSlider = undefined;
+        this.transcriptTerminalDots = undefined;
     }
 
     protected detachTranscriptWorkspaceSurfacesFromSheet(): void {
         this.detachTranscriptFilesFromHost();
         this.detachTranscriptTerminalFromHost();
+    }
+
+    protected disposeTranscriptTerminalSlides(workspaceKey?: TranscriptWorkspaceSurfaceKey): void {
+        if (workspaceKey) {
+            const state = this.transcriptTerminalSlidesByWorkspace.get(workspaceKey);
+            if (state) {
+                for (const surface of state.surfaces) {
+                    surface.dispose.dispose();
+                }
+            }
+            this.transcriptTerminalSlidesByWorkspace.delete(workspaceKey);
+            return;
+        }
+        for (const state of this.transcriptTerminalSlidesByWorkspace.values()) {
+            for (const surface of state.surfaces) {
+                surface.dispose.dispose();
+            }
+        }
+        this.transcriptTerminalSlidesByWorkspace.clear();
     }
 
     protected createTranscriptPreviewLoading(_conv: QaapAgentConversationDTO | undefined): HTMLElement {
@@ -8703,6 +9035,13 @@ export class MobileProjectsPanel {
                 this.transcriptComposerContext = [];
                 this.remountTranscriptStickyComposer();
             },
+            removeContextItem: index => {
+                this.transcriptComposerContext.splice(index, 1);
+                this.remountTranscriptStickyComposer();
+            },
+            formatContextChip: item => this.formatComposerContextChip(item),
+            filesExpanded: this.transcriptComposerFilesExpanded,
+            onFilesExpandedChange: expanded => { this.transcriptComposerFilesExpanded = expanded; },
             getDraft: () => this.transcriptComposerDraft,
             setDraft: value => { this.transcriptComposerDraft = value; },
             resolveAgentLabel: () => this.resolveTranscriptComposerAgentLabel(),
@@ -8824,6 +9163,7 @@ export class MobileProjectsPanel {
             const snapshot = await this.loadBackendAgentSnapshot();
             const filteredAgents = this.filterSelectableComposerAgents(snapshot.agents);
             this.transcriptComposerBackendAgents = filteredAgents;
+            this.transcriptComposerQaiqModels = snapshot.qaiqModels;
             const resolved = this.reconcileStickyComposerPinnedAgent(
                 this.transcriptComposerPinnedAgentId ?? readStoredAgent(cwd),
                 filteredAgents,
@@ -8836,6 +9176,7 @@ export class MobileProjectsPanel {
             }
         } catch {
             this.transcriptComposerBackendAgents = this.filterSelectableComposerAgents(this.activeTasks?.getAgents() ?? []);
+            this.transcriptComposerQaiqModels = [];
         }
     }
 
@@ -8889,55 +9230,39 @@ export class MobileProjectsPanel {
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
-
-        const coder = this.getOfferableCoderAgent();
-        if (coder) {
-            list.append(this.createAgentSheetOption(
-                coder.name,
-                THEIA_CODER_AGENT_ID,
-                cwd,
-                this.transcriptComposerPinnedAgentId,
-                id => {
-                    this.transcriptComposerPinnedAgentId = id;
-                    if (cwd) {
-                        writeStoredAgent(cwd, id);
-                    }
-                    const modes = resolveStickyComposerModes(id, this.chatAgentService);
-                    this.transcriptComposerModeId = reconcileComposerModeId(undefined, modes, cwd);
-                    if (cwd && this.transcriptComposerModeId) {
-                        writeStoredComposerMode(cwd, this.transcriptComposerModeId);
-                    }
-                    this.closeTranscriptComposerSheets();
-                    this.remountTranscriptStickyComposer();
-                },
-            ));
-        }
-        for (const agent of this.filterSelectableComposerAgents(this.transcriptComposerBackendAgents)) {
-            list.append(this.createAgentSheetOption(
-                agent.label,
-                agent.id,
-                cwd,
-                this.transcriptComposerPinnedAgentId,
-                id => {
-                    this.transcriptComposerPinnedAgentId = id;
-                    if (cwd) {
-                        writeStoredAgent(cwd, id);
-                    }
-                    const modes = resolveStickyComposerModes(id, this.chatAgentService);
-                    this.transcriptComposerModeId = reconcileComposerModeId(undefined, modes, cwd);
-                    if (cwd && this.transcriptComposerModeId) {
-                        writeStoredComposerMode(cwd, this.transcriptComposerModeId);
-                    }
-                    this.closeTranscriptComposerSheets();
-                    this.remountTranscriptStickyComposer();
-                },
-            ));
-        }
+        const loading = document.createElement('p');
+        loading.className = 'theia-mobile-sticky-composer-sheet-loading';
+        loading.textContent = nls.localize('qaap/mobileProjects/stickyComposerLoadingModels', 'Loading models…');
+        list.append(loading);
 
         panel.append(header, list);
         sheet.append(backdrop, panel);
         document.body.append(sheet);
         this.transcriptComposerAgentSheet = sheet;
+
+        void this.populateComposerAgentSheetList({
+            list,
+            cwd,
+            agents: this.filterSelectableComposerAgents(this.transcriptComposerBackendAgents),
+            selectedAgentId: this.transcriptComposerPinnedAgentId,
+            includeCoder: true,
+            onSelectAgent: (agentId, model) => {
+                this.transcriptComposerPinnedAgentId = agentId;
+                if (cwd) {
+                    writeStoredAgent(cwd, agentId);
+                    if (model) {
+                        writeStoredQaiqModel(cwd, model);
+                    }
+                }
+                const modes = resolveStickyComposerModes(agentId, this.chatAgentService);
+                this.transcriptComposerModeId = reconcileComposerModeId(undefined, modes, cwd);
+                if (cwd && this.transcriptComposerModeId) {
+                    writeStoredComposerMode(cwd, this.transcriptComposerModeId);
+                }
+                this.closeTranscriptComposerSheets();
+                this.remountTranscriptStickyComposer();
+            },
+        });
     }
 
     protected openTranscriptComposerModeSheet(
@@ -8999,6 +9324,10 @@ export class MobileProjectsPanel {
         if (this.transcriptComposerAgentSheet) {
             this.transcriptComposerAgentSheet.remove();
             this.transcriptComposerAgentSheet = undefined;
+        }
+        if (this.transcriptComposerQaiqModelSheet) {
+            this.transcriptComposerQaiqModelSheet.remove();
+            this.transcriptComposerQaiqModelSheet = undefined;
         }
         if (this.transcriptComposerModeSheet) {
             this.transcriptComposerModeSheet.remove();
@@ -9724,6 +10053,20 @@ export class MobileProjectsPanel {
         widget.update();
     }
 
+    protected resolveTranscriptAgentSegments(
+        conv: QaapAgentConversationDTO,
+        msg: QaapAgentMessageDTO,
+    ): QaapAgentMessageSegmentDTO[] | undefined {
+        if (msg.segments && msg.segments.length > 0) {
+            return msg.segments;
+        }
+        if (msg.role !== 'agent' || !isOpencodeAgent(conv.agentId)) {
+            return undefined;
+        }
+        const parsed = parseOpencodeLog(msg.content);
+        return parsed.segments.length > 0 ? parsed.segments : undefined;
+    }
+
     protected renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
         this.transcriptLastConv = conv;
         const messageHost = this.resolveTranscriptMessageHost(host);
@@ -9745,8 +10088,9 @@ export class MobileProjectsPanel {
             return;
         }
         for (const msg of conv.messages) {
-            if (msg.role === 'agent' && msg.segments && msg.segments.length > 0) {
-                messageHost.append(this.createTranscriptAgentSegmentsRow(msg.segments, msg.error));
+            const agentSegments = this.resolveTranscriptAgentSegments(conv, msg);
+            if (msg.role === 'agent' && agentSegments && agentSegments.length > 0) {
+                messageHost.append(this.createTranscriptAgentSegmentsRow(agentSegments, msg.error));
             } else {
                 messageHost.append(this.createTranscriptMessageRow(
                     msg.role,
@@ -11144,6 +11488,9 @@ export class MobileProjectsPanel {
         this.detachTranscriptWorkspaceSurfacesFromSheet();
         this.transcriptFilesHost = undefined;
         this.transcriptTerminalHost = undefined;
+        this.transcriptTerminalToolbar = undefined;
+        this.transcriptTerminalSlider = undefined;
+        this.transcriptTerminalDots = undefined;
         this.transcriptPreviewRequestRunning = false;
         this.transcriptPreviewRequestPending = false;
         this.transcriptActiveTab = 'messages';

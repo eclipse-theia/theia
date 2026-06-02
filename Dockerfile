@@ -45,7 +45,7 @@ ARG QAIQ_REPO=https://github.com/juancristobalgd1/qaiq.git
 ARG QAIQ_REF=main
 ARG CODEX_CLI_VERSION=latest
 ARG CLAUDE_CODE_VERSION=latest
-ARG GEMINI_CLI_VERSION=latest
+ARG ANTIGRAVITY_CLI_VERSION=latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -62,11 +62,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && npm install -g \
         @openai/codex@"${CODEX_CLI_VERSION}" \
         @anthropic-ai/claude-code@"${CLAUDE_CODE_VERSION}" \
-        @google/gemini-cli@"${GEMINI_CLI_VERSION}" \
+        @sanchaymittal/antigravity-cli@"${ANTIGRAVITY_CLI_VERSION}" \
     && npm install -g bun \
     && codex --version \
     && claude --version \
-    && gemini --version \
+    && ln -sf "$(command -v ag)" /usr/local/bin/antigravity \
+    && antigravity --version \
     && git clone --depth 1 --branch "${QAIQ_REF}" "${QAIQ_REPO}" /opt/qaiq \
     && cd /opt/qaiq && bun install && bun run build \
     && ln -sf /opt/qaiq/bin/qaiq /usr/local/bin/qaiq \

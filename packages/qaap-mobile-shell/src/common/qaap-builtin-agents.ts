@@ -22,12 +22,12 @@ export const QAAP_BUILTIN_AGENT_DEFINITIONS: readonly QaapBuiltinAgentDefinition
     { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {prompt}' },
     { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude -p {prompt}' },
     { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always --message {prompt}' },
-    { id: 'opencode', label: 'OpenCode', bin: 'opencode', template: 'opencode run --dangerously-skip-permissions {prompt}' },
+    { id: 'opencode', label: 'OpenCode', bin: 'opencode', template: 'opencode run --format json --dangerously-skip-permissions {prompt}' },
     { id: 'goose', label: 'Goose', bin: 'goose', template: 'goose run --no-session -t {prompt}' },
     { id: 'hermes', label: 'Hermes', bin: 'hermes', template: 'hermes chat -q {prompt}' },
     { id: 'openclaw', label: 'OpenClaw', bin: 'openclaw', template: 'openclaw agent --local --message {prompt}' },
     { id: 'cursor', label: 'Cursor Agent', bin: 'cursor-agent', template: 'cursor-agent -p --force {prompt}' },
-    { id: 'gemini', label: 'Gemini CLI', bin: 'gemini', template: 'gemini -p --approval-mode=yolo {prompt}' },
+    { id: 'antigravity', label: 'Antigravity CLI', bin: 'antigravity', template: 'antigravity -p {prompt}' },
     { id: 'copilot', label: 'Copilot CLI', bin: 'copilot', template: 'copilot --autopilot --yolo --max-autopilot-continues 20 -p {prompt}' },
     { id: 'qwen', label: 'Qwen Code', bin: 'qwen', template: 'qwen -p --approval-mode yolo {prompt}' },
     { id: 'kimi', label: 'Kimi CLI', bin: 'kimi', template: 'kimi -p {prompt}' },
@@ -57,6 +57,9 @@ export function resolveQaapBuiltinAgentMentionId(token: string): string | undefi
     }
     if (normalized === 'cursor-agent') {
         return 'cursor';
+    }
+    if (normalized === 'gemini') {
+        return 'antigravity';
     }
     return QAAP_BUILTIN_AGENT_IDS.has(normalized) ? normalized : undefined;
 }

@@ -36,7 +36,7 @@ Edit `.env`:
 | `QAAP_DEFAULT_AGENT` | `qaiq` | Default agent (already the image default) |
 | `CODEX_CLI_VERSION` | `latest` | Codex CLI version installed during Docker build |
 | `CLAUDE_CODE_VERSION` | `latest` | Claude Code CLI version installed during Docker build |
-| `GEMINI_CLI_VERSION` | `latest` | Gemini CLI version installed during Docker build |
+| `ANTIGRAVITY_CLI_VERSION` | `latest` | Antigravity CLI version installed during Docker build |
 
 Open the firewall port (example with UFW):
 
@@ -61,7 +61,7 @@ The runtime stage of `Dockerfile` installs:
 - **QAIQ** → `/usr/local/bin/qaiq` (built from `github.com/juancristobalgd1/qaiq`)
 - **Codex CLI** → `codex` (`@openai/codex`)
 - **Claude Code** → `claude` (`@anthropic-ai/claude-code`)
-- **Gemini CLI** → `gemini` (`@google/gemini-cli`)
+- **Antigravity CLI** → `antigravity` (installed from `@sanchaymittal/antigravity-cli` with `antigravity` alias)
 - **Aider** → `~/.local/bin/aider`
 - `git`, `curl`, `bun`, `pnpm`, `yarn`, `build-essential`, `ripgrep` for agent shell work
 
@@ -130,8 +130,8 @@ extra_hosts:
 docker compose exec theia qaiq --version
 docker compose exec theia codex --version
 docker compose exec theia claude --version
-docker compose exec theia gemini --version
-docker compose exec theia which qaiq aider codex claude gemini
+docker compose exec theia antigravity --version
+docker compose exec theia which qaiq aider codex claude antigravity
 docker compose logs theia 2>&1 | grep 'qaap-agent-tasks'
 ```
 
@@ -149,7 +149,7 @@ fresh VPS build:
 ```bash
 CODEX_CLI_VERSION=0.135.0
 CLAUDE_CODE_VERSION=2.1.159
-GEMINI_CLI_VERSION=0.44.1
+ANTIGRAVITY_CLI_VERSION=latest
 ```
 
 If you are rebuilding an existing VPS image and want Docker to re-resolve `latest`, rebuild

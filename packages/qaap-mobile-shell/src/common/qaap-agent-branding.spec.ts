@@ -16,23 +16,24 @@ describe('qaap-agent-branding', () => {
         expect(normalizeAgentBrandId('cursor-agent')).to.equal('cursor');
         expect(normalizeAgentBrandId('openclaude')).to.equal(QAIQ_AGENT_ID);
         expect(normalizeAgentBrandId(THEIA_CODER_AGENT_ID)).to.equal('coder');
-        expect(normalizeAgentBrandId('  Gemini  ')).to.equal('gemini');
+        expect(normalizeAgentBrandId('  Antigravity  ')).to.equal('antigravity');
+        expect(normalizeAgentBrandId('  Gemini  ')).to.equal('antigravity');
     });
 
     it('resolveAgentBrand returns svg brands for built-in agents', () => {
         expect(resolveAgentBrand('openclaw')?.label).to.equal('OpenClaw');
         expect(resolveAgentBrand('openclaw')?.svg).to.include('<svg');
-        expect(resolveAgentBrand('gemini')?.tone).to.equal('light');
+        expect(resolveAgentBrand('antigravity')?.tone).to.equal('light');
         expect(resolveAgentBrand('codex')?.tone).to.equal('dark');
         expect(resolveAgentBrand('qwen')?.label).to.equal('Qwen Code');
     });
 
-    it('resolveAgentBrand uniquifies gemini mask ids across calls', () => {
-        const first = resolveAgentBrand('gemini')?.svg ?? '';
-        const second = resolveAgentBrand('gemini')?.svg ?? '';
+    it('resolveAgentBrand uniquifies antigravity mask ids across calls', () => {
+        const first = resolveAgentBrand('antigravity')?.svg ?? '';
+        const second = resolveAgentBrand('antigravity')?.svg ?? '';
         expect(first).to.not.equal(second);
-        expect(first).to.include('gemini__a-');
-        expect(second).to.include('gemini__a-');
+        expect(first).to.include('antigravity__mask0_111_52-');
+        expect(second).to.include('antigravity__mask0_111_52-');
     });
 
     it('resolveAgentBrand returns undefined for unknown ids', () => {

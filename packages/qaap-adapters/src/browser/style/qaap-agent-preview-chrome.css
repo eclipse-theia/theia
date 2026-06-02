@@ -248,7 +248,9 @@ body.qaap-mod-history-resizing * {
 }
 
 .qaap-agent-preview-overflow-menu {
-  z-index: 12000;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   min-width: 220px;
   max-height: min(70vh, 420px);
   overflow-y: auto;
@@ -274,6 +276,8 @@ body.qaap-mod-history-resizing * {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .qaap-agent-preview-overflow-item:hover {
@@ -461,38 +465,42 @@ body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
   color: var(--theia-foreground);
 }
 
+.qaap-preview-split.qaap-preview-split--inspector-bottom {
+  flex-direction: column;
+}
+
+.qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-slot {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 160px;
+  border-left: none;
+  border-top: 1px solid var(--theia-panel-border);
+}
+
+.qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-resize-handle {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: auto;
+  width: auto;
+  height: 10px;
+  cursor: row-resize;
+}
+
+.qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-resize-handle::after {
+  top: 4px;
+  left: 8px;
+  right: 8px;
+  bottom: auto;
+  width: auto;
+  height: 2px;
+}
+
 @media (max-width: 767px) {
-  .qaap-preview-split.qaap-preview-split--inspector-open {
+  .qaap-preview-split:not(.qaap-preview-split--inspector-side) {
     flex-direction: column;
-  }
-
-  .qaap-preview-inspector-slot {
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-    min-height: 160px;
-    border-left: none;
-    border-top: 1px solid var(--theia-panel-border);
-  }
-
-  .qaap-preview-inspector-resize-handle {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: auto;
-    width: auto;
-    height: 10px;
-    cursor: row-resize;
-  }
-
-  .qaap-preview-inspector-resize-handle::after {
-    top: 4px;
-    left: 8px;
-    right: 8px;
-    bottom: auto;
-    width: auto;
-    height: 2px;
   }
 }
 

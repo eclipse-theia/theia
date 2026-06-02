@@ -38,10 +38,13 @@ export class MobileOpenRepositoryDialog {
     protected readonly statusRow: HTMLElement;
     protected readonly statusIcon: HTMLElement;
     protected readonly statusText: HTMLElement;
+    protected readonly busyRow: HTMLElement;
+    protected readonly busyText: HTMLElement;
     protected readonly filterInput: HTMLInputElement;
     protected readonly list: HTMLElement;
     protected readonly emptyState: HTMLElement;
     protected readonly footer: HTMLElement;
+    protected readonly createButton: HTMLButtonElement;
     protected publicInput!: HTMLInputElement;
     protected publicSubmit!: HTMLButtonElement;
     protected publicError!: HTMLElement;
@@ -122,6 +125,18 @@ export class MobileOpenRepositoryDialog {
         this.statusRow.append(this.statusIcon, this.statusText);
         this.repositoriesPanel.append(this.statusRow);
 
+        this.busyRow = document.createElement('div');
+        this.busyRow.className = 'theia-mobile-open-repo-busy';
+        this.busyRow.hidden = true;
+        const busyIcon = document.createElement('span');
+        busyIcon.className = 'codicon codicon-loading codicon-mod-spin';
+        busyIcon.setAttribute('aria-hidden', 'true');
+        this.busyText = document.createElement('span');
+        this.busyText.className = 'theia-mobile-open-repo-busy-text';
+        this.busyText.textContent = '';
+        this.busyRow.append(busyIcon, this.busyText);
+        this.repositoriesPanel.append(this.busyRow);
+
         const filterWrap = document.createElement('div');
         filterWrap.className = 'theia-mobile-open-repo-filter';
         const filterIcon = document.createElement('span');
@@ -153,13 +168,13 @@ export class MobileOpenRepositoryDialog {
 
         this.footer = document.createElement('div');
         this.footer.className = 'theia-mobile-open-repo-footer';
-        const createBtn = document.createElement('button');
-        createBtn.type = 'button';
-        createBtn.className = 'theia-mobile-open-repo-create';
-        createBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span> ' +
+        this.createButton = document.createElement('button');
+        this.createButton.type = 'button';
+        this.createButton.className = 'theia-mobile-open-repo-create';
+        this.createButton.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span> ' +
             nls.localize('qaap/mobileOpenRepo/startNewProject', 'Start new project');
-        createBtn.addEventListener('click', () => { void this.onCreateNew(); });
-        this.footer.append(createBtn);
+        this.createButton.addEventListener('click', () => { void this.onCreateNew(); });
+        this.footer.append(this.createButton);
         this.repositoriesPanel.append(this.footer);
 
         this.clonePanel = this.createClonePanel();
@@ -496,26 +511,40 @@ export class MobileOpenRepositoryDialog {
             ));
             return;
         }
-        await this.runWithBusy(() => this.service.cloneGithubProjectByRepository(value));
+        await this.runWithBusy(
+            () => this.service.cloneGithubProjectByRepository(value),
+            nls.localize('qaap/mobileOpenRepo/busyCloning', 'Cloning repository…')
+        );
     }
 
     protected async onSelectRepository(project: MobileProjectEntry): Promise<void> {
         if (!project.github) {
             return;
         }
-        await this.runWithBusy(() => this.service.importGithubProject(project));
+        await this.runWithBusy(
+            () => this.service.importGithubProject(project),
+            nls.localize(
+                'qaap/mobileOpenRepo/busyImporting',
+                'Importing {0}…',
+                project.github.fullName
+            )
+        );
     }
 
     protected async onCreateNew(): Promise<void> {
-        await this.runWithBusy(() => this.service.createGithubProject());
+        await this.runWithBusy(
+            () => this.service.createGithubProject(),
+            nls.localize('qaap/mobileOpenRepo/busyCreating', 'Creating repository…')
+        );
     }
 
-    protected async runWithBusy(action: () => Promise<MobileProjectEntry[] | undefined>): Promise<void> {
-        this.setBusy(true);
+    protected async runWithBusy(action: () => Promise<MobileProjectEntry[] | undefined>, busyMessage: string): Promise<void> {
+        this.setBusy(true, busyMessage);
         try {
             const next = await action();
             if (next) {
                 this.repositories = next;
+                this.renderList();
                 this.delegate.onProjectsChanged?.(next);
                 this.hide();
             }
@@ -524,12 +553,19 @@ export class MobileOpenRepositoryDialog {
         }
     }
 
-    protected setBusy(busy: boolean): void {
+    protected setBusy(busy: boolean, message?: string): void {
         this.busy = busy;
         this.root.classList.toggle('theia-mod-busy', busy);
         this.publicSubmit.disabled = busy;
         this.publicInput.disabled = busy;
         this.filterInput.disabled = busy;
+        this.repositoriesTab.disabled = busy;
+        this.cloneTab.disabled = busy;
+        this.createButton.disabled = busy;
+        this.busyRow.hidden = !busy;
+        this.busyText.textContent = busy
+            ? (message ?? nls.localize('qaap/mobileOpenRepo/busyDefault', 'Working…'))
+            : '';
         this.updatePublicSubmitLabel();
     }
 

@@ -8,7 +8,9 @@ import {
     buildCreateAgentTaskBody,
     extractBackendAgentMention,
     hashString,
+    isOpencodeAgent,
     isQaiqAgent,
+    isStructuredStreamAgent,
     isStickyComposerAgentSelected,
     isTheiaCoderMention,
     stripNonCoderAgentMention,
@@ -40,7 +42,8 @@ describe('qaap-agent-task-client', () => {
         expect(normalizeBackendAgentId('openclaw')).to.equal('openclaw');
         expect(normalizeBackendAgentId('cursor')).to.equal('cursor');
         expect(normalizeBackendAgentId('cursor-agent')).to.equal('cursor');
-        expect(normalizeBackendAgentId('gemini')).to.equal('gemini');
+        expect(normalizeBackendAgentId('antigravity')).to.equal('antigravity');
+        expect(normalizeBackendAgentId('gemini')).to.equal('antigravity');
         expect(normalizeBackendAgentId('copilot')).to.equal('copilot');
         expect(normalizeBackendAgentId('qwen')).to.equal('qwen');
         expect(normalizeBackendAgentId('kimi')).to.equal('kimi');
@@ -110,6 +113,15 @@ describe('qaap-agent-task-client', () => {
         expect(isQaiqAgent('QAIQ')).to.be.true;
         expect(isQaiqAgent('codex')).to.be.false;
         expect(isQaiqAgent(undefined)).to.be.false;
+    });
+
+    it('isOpencodeAgent and isStructuredStreamAgent recognize opencode', () => {
+        expect(isOpencodeAgent('opencode')).to.be.true;
+        expect(isOpencodeAgent('OpenCode')).to.be.true;
+        expect(isOpencodeAgent('codex')).to.be.false;
+        expect(isStructuredStreamAgent('opencode')).to.be.true;
+        expect(isStructuredStreamAgent('qaiq')).to.be.true;
+        expect(isStructuredStreamAgent('claude')).to.be.false;
     });
 
     it('isTheiaCoderMention detects @coder prefix in message text', () => {

@@ -6,7 +6,9 @@
 import { MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common/chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from '@theia/ai-chat/lib/common/parsed-chat-request';
 import type { QaapAgentConversationDTO, QaapAgentMessageDTO } from '../common/qaap-agent-conversation-client';
+import { isOpencodeAgent } from '../common/qaap-agent-task-client';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
+import { parseOpencodeLog } from '../common/qaap-opencode-stream';
 import { qaiqSegmentsToChatContents, syncAgentResponseContents } from './qaap-qaiq-chat-contents';
 
 interface MessagePair {
@@ -41,6 +43,7 @@ export function syncBackendConversationToChatModel(
                 request,
                 pair.agent,
                 isStreamingAgentTurn(conversation, pair.agent),
+                conversation,
             );
         }
     }
@@ -52,8 +55,23 @@ export function syncBackendConversationToChatModel(
             lastRequest,
             lastPair.agent,
             isStreamingAgentTurn(conversation, lastPair.agent),
+            conversation,
         );
     }
+}
+
+function resolveAgentMessageSegments(
+    conversation: QaapAgentConversationDTO,
+    message: QaapAgentMessageDTO,
+): QaapAgentMessageDTO['segments'] {
+    if (message.segments && message.segments.length > 0) {
+        return message.segments;
+    }
+    if (!isOpencodeAgent(conversation.agentId) || message.role !== 'agent') {
+        return message.segments;
+    }
+    const parsed = parseOpencodeLog(message.content);
+    return parsed.segments.length > 0 ? parsed.segments : message.segments;
 }
 
 function pairConversationMessages(messages: readonly QaapAgentMessageDTO[]): MessagePair[] {
@@ -97,9 +115,10 @@ function applyAgentMessageToRequest(
     request: MutableChatRequestModel,
     message: QaapAgentMessageDTO,
     streaming: boolean,
+    conversation: QaapAgentConversationDTO,
 ): void {
     const contents = qaiqSegmentsToChatContents(
-        message.segments,
+        resolveAgentMessageSegments(conversation, message),
         normalizeAgentMessageContentForDisplay(message.content),
     );
     const response = request.response.response;

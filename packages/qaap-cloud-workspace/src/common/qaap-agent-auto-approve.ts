@@ -79,14 +79,14 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
     if (id === 'cursor') {
         return injectAfterExecutable(command, 'cursor-agent', '-p --force');
     }
-    if (id === 'gemini') {
+    if (id === 'antigravity') {
         if (/--approval-mode(?:=|\s+)yolo\b/.test(command) || /\b-y\b/.test(command)) {
             return command;
         }
         if (hasHeadlessPromptFlag(command)) {
-            return injectAfterHeadlessPromptFlag(command, '--approval-mode=yolo');
+            return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo');
         }
-        return injectAfterExecutable(command, 'gemini', '-p --approval-mode=yolo');
+        return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo -p');
     }
     if (id === 'copilot') {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');
@@ -115,11 +115,11 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
     if (/\bcursor-agent\b/.test(command)) {
         return injectAfterExecutable(command, 'cursor-agent', '-p --force');
     }
-    if (/\bgemini\b/.test(command) && !commandHasAutoApproveFlags(command)) {
+    if (/\b(antigravity|gemini)\b/.test(command) && !commandHasAutoApproveFlags(command)) {
         if (hasHeadlessPromptFlag(command)) {
-            return injectAfterHeadlessPromptFlag(command, '--approval-mode=yolo');
+            return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo');
         }
-        return injectAfterExecutable(command, 'gemini', '-p --approval-mode=yolo');
+        return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo -p');
     }
     if (/\bcopilot\b/.test(command) && !commandHasAutoApproveFlags(command)) {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');

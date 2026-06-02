@@ -34,7 +34,9 @@ import { AIVariableService } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { QuickInputService } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { pickMobileContextVariable } from './qaap-mobile-context-attach-menu';
+import { resolveStickyComposerContextChip } from './qaap-sticky-composer-context-ui';
 import {
     matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
@@ -215,6 +217,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(MobileProjectChatViewWidgetFactory)
     protected readonly mobileProjectChatViewWidgetFactory: MobileProjectChatViewWidgetFactory;
@@ -904,6 +909,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     this.variableService,
                     this.quickInputService,
                 ),
+                formatContextChip: item => resolveStickyComposerContextChip(item, this.labelProvider),
                 getComposerVariables: () => this.variableService.getVariables(),
                 createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
                 resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),
@@ -931,6 +937,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     commands: this.commands,
                 },
                 clipboard: this.clipboardService,
+                readPreference: key => this.preferenceService.get(key),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

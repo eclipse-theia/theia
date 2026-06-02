@@ -10,12 +10,13 @@ browser tab is closed. The server auto-detects these CLIs on `PATH`:
   (stream-json is parsed live in chat/transcript UIs: thinking blocks, tool calls, and assistant text)
   (`{qaiq_flags}` is filled from your Settings API keys: Gemini, OpenRouter, Ollama, …)
 - `aider` -> `aider --yes-always --message {prompt}`
-- `opencode` -> `opencode run --dangerously-skip-permissions {prompt}`
+- `opencode` -> `opencode run --format json --dangerously-skip-permissions {prompt}`
+  (JSON events are parsed live like QAIQ: tool calls in the activity timeline, assistant text as the main answer; older formatted logs are still parsed on replay)
 - `goose` -> `goose run --no-session -t {prompt}`
 - `hermes` -> `hermes chat -q {prompt}`
 - `openclaw` -> `openclaw agent --local --message {prompt}`
 - `cursor` (`cursor-agent` on PATH) -> `cursor-agent -p --force {prompt}`
-- `gemini` -> `gemini -p --approval-mode=yolo {prompt}`
+- `antigravity` -> `antigravity -p {prompt}`
 - `copilot` -> `copilot --autopilot --yolo --max-autopilot-continues 20 -p {prompt}`
 - `qwen` -> `qwen -p --approval-mode yolo {prompt}`
 - `kimi` -> `kimi -p {prompt}` (prompt mode auto-approves tool calls)

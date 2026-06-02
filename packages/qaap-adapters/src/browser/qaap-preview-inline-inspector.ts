@@ -16,10 +16,12 @@ import {
 import {
     clampPreviewInspectorHeight,
     clampPreviewInspectorWidth,
-    isPreviewInspectorMobileLayout,
+    type QaapPreviewInspectorPosition,
     readPreviewInspectorHeight,
+    readPreviewInspectorPosition,
     readPreviewInspectorWidth,
     writePreviewInspectorHeight,
+    writePreviewInspectorPosition,
     writePreviewInspectorWidth,
 } from './qaap-preview-inspector-panel-size';
 
@@ -117,8 +119,10 @@ export function createPreviewSplitLayout(frameHost: HTMLElement): {
 }
 
 export function applyPreviewInspectorPanelSize(inspectorSlot: HTMLElement, split: HTMLElement): void {
-    const mobile = isPreviewInspectorMobileLayout();
-    if (mobile) {
+    const position = readPreviewInspectorPosition();
+    split.classList.toggle('qaap-preview-split--inspector-bottom', position === 'bottom');
+    split.classList.toggle('qaap-preview-split--inspector-side', position === 'side');
+    if (position === 'bottom') {
         const height = readPreviewInspectorHeight(split.clientHeight);
         inspectorSlot.style.width = '100%';
         inspectorSlot.style.maxWidth = 'none';
@@ -144,7 +148,7 @@ export function wirePreviewInspectorResize(
     const handle = document.createElement('div');
     handle.className = QAAP_PREVIEW_INSPECTOR_RESIZE_HANDLE;
     handle.setAttribute('role', 'separator');
-    handle.setAttribute('aria-orientation', isPreviewInspectorMobileLayout() ? 'horizontal' : 'vertical');
+    handle.setAttribute('aria-orientation', readPreviewInspectorPosition() === 'bottom' ? 'horizontal' : 'vertical');
     handle.setAttribute('aria-label', nls.localize('qaap/preview/resizeInspector', 'Resize element inspector panel'));
     handle.tabIndex = 0;
     inspectorSlot.prepend(handle);
@@ -155,10 +159,10 @@ export function wirePreviewInspectorResize(
     let dragStartWidth = 0;
     let dragStartHeight = 0;
 
-    const mobileLayout = (): boolean => isPreviewInspectorMobileLayout();
+    const stackedLayout = (): boolean => readPreviewInspectorPosition() === 'bottom';
 
     const persistSize = (): void => {
-        if (mobileLayout()) {
+        if (stackedLayout()) {
             writePreviewInspectorHeight(inspectorSlot.getBoundingClientRect().height, split.clientHeight);
         } else {
             writePreviewInspectorWidth(inspectorSlot.getBoundingClientRect().width, split.clientWidth);
@@ -184,9 +188,9 @@ export function wirePreviewInspectorResize(
         if (resizePointerId === undefined || e.pointerId !== resizePointerId) {
             return;
         }
-        if (mobileLayout()) {
+        if (stackedLayout()) {
             const bounded = clampPreviewInspectorHeight(
-                dragStartHeight + (e.clientY - dragStartY),
+                dragStartHeight + (dragStartY - e.clientY),
                 split.clientHeight,
             );
             inspectorSlot.style.height = `${bounded}px`;
@@ -207,7 +211,7 @@ export function wirePreviewInspectorResize(
         }
         e.preventDefault();
         e.stopPropagation();
-        handle.setAttribute('aria-orientation', mobileLayout() ? 'horizontal' : 'vertical');
+        handle.setAttribute('aria-orientation', stackedLayout() ? 'horizontal' : 'vertical');
         dragStartX = e.clientX;
         dragStartY = e.clientY;
         dragStartWidth = inspectorSlot.getBoundingClientRect().width;
@@ -215,13 +219,20 @@ export function wirePreviewInspectorResize(
         resizePointerId = e.pointerId;
         handle.setPointerCapture(e.pointerId);
         document.body.classList.add(QAAP_PREVIEW_INSPECTOR_RESIZING);
-        if (mobileLayout()) {
+        if (stackedLayout()) {
             document.body.classList.add(`${QAAP_PREVIEW_INSPECTOR_RESIZING}-vertical`);
         }
     }));
-    toDispose.push(addEventListener(handle, 'pointermove', onPointerMove));
-    toDispose.push(addEventListener(handle, 'pointerup', stopDrag));
-    toDispose.push(addEventListener(handle, 'pointercancel', stopDrag));
+    // Listen on `window` too so resizing still works if pointer capture is flaky
+    // on specific browsers/devices while dragging outside the handle hit-area.
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', stopDrag);
+    window.addEventListener('pointercancel', stopDrag);
+    toDispose.push(Disposable.create(() => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', stopDrag);
+        window.removeEventListener('pointercancel', stopDrag);
+    }));
     toDispose.push(addEventListener(handle, 'lostpointercapture', () => {
         if (resizePointerId === undefined) {
             return;
@@ -234,13 +245,13 @@ export function wirePreviewInspectorResize(
 
     toDispose.push(addEventListener(handle, 'keydown', (e: KeyboardEvent) => {
         const step = e.shiftKey ? 32 : 16;
-        if (mobileLayout()) {
+        if (stackedLayout()) {
             const current = inspectorSlot.getBoundingClientRect().height;
             let next = current;
             if (e.key === 'ArrowUp') {
-                next = current - step;
-            } else if (e.key === 'ArrowDown') {
                 next = current + step;
+            } else if (e.key === 'ArrowDown') {
+                next = current - step;
             } else {
                 return;
             }
@@ -274,4 +285,13 @@ export function wirePreviewInspectorResize(
     };
     window.addEventListener('resize', onWindowResize);
     toDispose.push(Disposable.create(() => window.removeEventListener('resize', onWindowResize)));
+}
+
+export function setPreviewInspectorPosition(
+    split: HTMLElement,
+    inspectorSlot: HTMLElement,
+    position: QaapPreviewInspectorPosition,
+): void {
+    writePreviewInspectorPosition(position);
+    applyPreviewInspectorPanelSize(inspectorSlot, split);
 }

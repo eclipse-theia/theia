@@ -28,7 +28,11 @@ import {
     QaapPreviewSurfaceRegistry,
 } from './qaap-preview-surface-registry';
 import { QaapPreviewFramePicker, QaapPreviewFramePickerFactory } from './qaap-preview-frame-picker';
-import { QaapPreviewInlineInspector, wirePreviewInspectorResize } from './qaap-preview-inline-inspector';
+import {
+    QaapPreviewInlineInspector,
+    setPreviewInspectorPosition,
+    wirePreviewInspectorResize,
+} from './qaap-preview-inline-inspector';
 import { normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
 import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
 /**
@@ -318,6 +322,13 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             },
             onPickElement: () => this.startElementPicker(),
             onToggleInspector: () => { void this.openElementInspector(); },
+            setInspectorPosition: position => {
+                const split = this.node.querySelector('.qaap-preview-split');
+                const inspectorSlot = this.node.querySelector('.qaap-preview-inspector-slot');
+                if (split instanceof HTMLElement && inspectorSlot instanceof HTMLElement) {
+                    setPreviewInspectorPosition(split, inspectorSlot, position);
+                }
+            },
         };
     }
 

@@ -67,13 +67,15 @@ describe('qaap-agent-auto-approve', () => {
         expect(applyAutoApproveToCommand(cmd, 'aider')).to.equal(cmd);
     });
 
-    it('applyAutoApproveToCommand adds opencode, cursor, gemini, and copilot flags', () => {
+    it('applyAutoApproveToCommand adds opencode, cursor, antigravity, and copilot flags', () => {
         expect(applyAutoApproveToCommand("opencode run 'hi'", 'opencode'))
             .to.equal("opencode run --dangerously-skip-permissions 'hi'");
         expect(applyAutoApproveToCommand("cursor-agent 'hi'", 'cursor'))
             .to.equal("cursor-agent -p --force 'hi'");
-        expect(applyAutoApproveToCommand("gemini 'hi'", 'gemini'))
-            .to.equal("gemini -p --approval-mode=yolo 'hi'");
+        expect(applyAutoApproveToCommand("antigravity 'hi'", 'antigravity'))
+            .to.equal("antigravity --approval-mode=yolo -p 'hi'");
+        expect(applyAutoApproveToCommand("gemini 'hi'", 'antigravity'))
+            .to.equal("gemini --approval-mode=yolo -p 'hi'");
         expect(applyAutoApproveToCommand("copilot -p 'hi'", 'copilot'))
             .to.equal("copilot --autopilot --yolo --max-autopilot-continues 20 -p 'hi'");
         expect(applyAutoApproveToCommand("qwen -p 'hi'", 'qwen'))

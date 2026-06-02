@@ -61,6 +61,8 @@ export interface QaapCreateAgentTaskRequest {
      * to bypass any agent and run the prompt verbatim as a command.
      */
     readonly agent?: string;
+    /** Optional QAIQ model selected from the frontend picker submenu. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     readonly cwd: string;
     /** Forwarded by the `qaap-task` helper so spawned tasks attribute to their parent. */
     readonly parentId?: string;
@@ -81,6 +83,21 @@ export interface QaapAgentDescriptor {
     readonly available: boolean;
 }
 
+/** Selectable QAIQ model option exposed to the frontend picker. */
+export interface QaapQaiqModelOption {
+    readonly provider: 'openai' | 'gemini' | 'ollama' | 'anthropic' | 'mistral';
+    readonly vendor: string;
+    readonly modelId: string;
+    readonly label: string;
+}
+
+/** QAIQ model binding selected by the user in the agent picker submenu. */
+export interface QaapCreateAgentTaskQaiqModel {
+    readonly provider: 'openai' | 'gemini' | 'ollama' | 'anthropic' | 'mistral';
+    readonly vendor: string;
+    readonly modelId: string;
+}
+
 export interface QaapAgentTaskListResponse {
     readonly tasks: QaapAgentTask[];
     /**
@@ -92,6 +109,8 @@ export interface QaapAgentTaskListResponse {
     readonly agents: QaapAgentDescriptor[];
     /** Id of the agent used when the request omits one (first available, else `'shell'`). */
     readonly defaultAgent: string;
+    /** QAIQ model options available from configured provider settings grouped client-side by provider. */
+    readonly qaiqModels?: QaapQaiqModelOption[];
 }
 
 /** All tasks the runner knows about, grouped by their working directory. */
@@ -112,6 +131,7 @@ export interface QaapAgentTaskAllResponse {
     readonly agentConfigured: boolean;
     readonly agents: QaapAgentDescriptor[];
     readonly defaultAgent: string;
+    readonly qaiqModels?: QaapQaiqModelOption[];
 }
 
 /** Payload pushed over SSE when a task changes state. */

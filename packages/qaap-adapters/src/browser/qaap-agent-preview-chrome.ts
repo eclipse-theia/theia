@@ -12,7 +12,12 @@ import { MiniBrowserProps } from '@theia/mini-browser/lib/browser/mini-browser-c
 import { normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
 import { QaapAgentPreviewChromeStyle as Style } from './qaap-agent-preview-chrome-style';
 import { normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
-import { QaapPreviewInlineInspector, type QaapPreviewInspectorDeps, wirePreviewInspectorResize } from './qaap-preview-inline-inspector';
+import {
+    QaapPreviewInlineInspector,
+    setPreviewInspectorPosition,
+    type QaapPreviewInspectorDeps,
+    wirePreviewInspectorResize,
+} from './qaap-preview-inline-inspector';
 import {
     QaapPreviewSurfaceHandle,
     QaapPreviewSurfaceRegistry,
@@ -32,9 +37,8 @@ import {
     type QaapPreviewHistoryEntry,
 } from './qaap-preview-browsing-history';
 import {
-    buildPreviewOverflowMenuItems,
-    runPreviewOverflowAction,
-    type QaapPreviewOverflowActionId,
+    mountPreviewOverflowMenu,
+    previewNotify,
 } from './qaap-preview-overflow-actions';
 
 export interface QaapAgentPreviewChromeHost {
@@ -50,12 +54,15 @@ export interface QaapAgentPreviewChromeHost {
     takeScreenshot?(): void | Promise<void>;
     onPickElement?(): void;
     onToggleInspector?(): void;
+    setInspectorPosition?(position: 'side' | 'bottom'): void;
 }
 
 export interface QaapAgentPreviewChromeOptions {
     readonly clipboard?: ClipboardService;
     readonly messageService?: MessageService;
     readonly embedded?: boolean;
+    /** Extra toast feedback (e.g. mobile snackbar). */
+    readonly notify?: (message: string, kind?: 'info' | 'warn') => void;
 }
 
 /** Cursor-style preview chrome: browsing history drawer + overflow menu. */
@@ -68,6 +75,7 @@ export class QaapAgentPreviewChromeController implements Disposable {
     protected historyList: HTMLElement | undefined;
     protected historySearchInput: HTMLInputElement | undefined;
     protected overflowMenu: HTMLElement | undefined;
+    protected overflowMenuDispose: (() => void) | undefined;
     protected historyButton: HTMLButtonElement | undefined;
     protected historyPanel: HTMLElement | undefined;
     protected historyResizePointerId: number | undefined;
@@ -410,68 +418,14 @@ export class QaapAgentPreviewChromeController implements Disposable {
             this.closeOverflowMenu();
             return;
         }
-        const menu = document.createElement('div');
-        menu.className = Style.OVERFLOW_MENU;
-        menu.setAttribute('role', 'menu');
-
-        const items = buildPreviewOverflowMenuItems({
+        const mounted = mountPreviewOverflowMenu({
+            anchor,
             bookmarkBarVisible: () => this.bookmarkBarVisible,
+            getContext: () => this.createOverflowActionContext(),
+            onClose: () => this.closeOverflowMenu(),
         });
-
-        for (const item of items) {
-            const row = document.createElement('button');
-            row.type = 'button';
-            row.className = Style.OVERFLOW_ITEM;
-            row.setAttribute('role', 'menuitem');
-            row.setAttribute('data-action', item.id);
-            if (item.toggle) {
-                row.classList.add(Style.OVERFLOW_TOGGLE);
-                row.setAttribute('aria-checked', item.checked ? 'true' : 'false');
-                const label = document.createElement('span');
-                label.className = Style.OVERFLOW_ITEM_LABEL;
-                label.textContent = item.label;
-                const toggle = document.createElement('span');
-                toggle.className = Style.OVERFLOW_TOGGLE_SWITCH;
-                toggle.setAttribute('aria-hidden', 'true');
-                row.append(label, toggle);
-            } else {
-                row.textContent = item.label;
-            }
-            menu.append(row);
-        }
-
-        menu.addEventListener('click', (e: MouseEvent) => {
-            const target = (e.target as HTMLElement).closest(`[data-action]`);
-            if (!(target instanceof HTMLElement) || !menu.contains(target)) {
-                return;
-            }
-            e.preventDefault();
-            e.stopPropagation();
-            const actionId = target.getAttribute('data-action') as QaapPreviewOverflowActionId | null;
-            if (actionId) {
-                void runPreviewOverflowAction(actionId, this.createOverflowActionContext());
-            }
-            this.closeOverflowMenu();
-        });
-
-        const root = this.host.getRoot();
-        const rect = anchor.getBoundingClientRect();
-        menu.style.position = 'fixed';
-        menu.style.top = `${rect.bottom + 4}px`;
-        menu.style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
-        menu.style.zIndex = '12000';
-        (root.isConnected ? root : document.body).append(menu);
-        this.overflowMenu = menu;
-        menu.addEventListener('pointerdown', e => e.stopPropagation());
-        const closeOnOutside = (e: Event): void => {
-            const target = e.target as Node;
-            if (menu.contains(target) || anchor.contains(target)) {
-                return;
-            }
-            this.closeOverflowMenu();
-            document.removeEventListener('pointerdown', closeOnOutside, true);
-        };
-        setTimeout(() => document.addEventListener('pointerdown', closeOnOutside, true), 0);
+        this.overflowMenu = mounted.menu;
+        this.overflowMenuDispose = mounted.dispose;
     }
 
     protected createOverflowActionContext() {
@@ -484,14 +438,19 @@ export class QaapAgentPreviewChromeController implements Disposable {
             copyCurrentUrl: () => this.host.copyCurrentUrl(),
             clipboard: this.options.clipboard,
             messageService: this.options.messageService,
+            notify: this.options.notify,
             bookmarkBarVisible: () => this.bookmarkBarVisible,
             toggleBookmarkBar: () => this.toggleBookmarkBar(),
+            setInspectorPosition: this.host.setInspectorPosition
+                ? (position: 'side' | 'bottom') => this.host.setInspectorPosition?.(position)
+                : undefined,
             clearHistory: () => this.clearHistory(),
         };
     }
 
     protected closeOverflowMenu(): void {
-        this.overflowMenu?.remove();
+        this.overflowMenuDispose?.();
+        this.overflowMenuDispose = undefined;
         this.overflowMenu = undefined;
     }
 
@@ -502,7 +461,8 @@ export class QaapAgentPreviewChromeController implements Disposable {
             this.bookmarkBar.hidden = !this.bookmarkBarVisible;
         }
         this.refreshBookmarkBar();
-        this.options.messageService?.info(
+        previewNotify(
+            { messageService: this.options.messageService, notify: this.options.notify },
             this.bookmarkBarVisible
                 ? nls.localize('qaap/preview/bookmarkBarOn', 'Bookmark bar shown')
                 : nls.localize('qaap/preview/bookmarkBarOff', 'Bookmark bar hidden'),
@@ -513,7 +473,10 @@ export class QaapAgentPreviewChromeController implements Disposable {
         clearPreviewBrowsingHistory();
         this.renderHistoryList();
         this.refreshBookmarkBar();
-        this.options.messageService?.info(nls.localize('qaap/preview/historyCleared', 'Browsing history cleared'));
+        previewNotify(
+            { messageService: this.options.messageService, notify: this.options.notify },
+            nls.localize('qaap/preview/historyCleared', 'Browsing history cleared'),
+        );
     }
 
     protected createToolbarIconButton(title: string, icon: string, className: string): HTMLButtonElement {
@@ -708,7 +671,23 @@ export function mountEmbeddedAgentPreviewChrome(
             }
         },
         hardReload: () => {
-            void adapter.navigate(currentUrl, { hard: true });
+            const url = currentUrl.trim();
+            if (!url) {
+                previewNotify(
+                    { messageService: options.messageService, notify: options.notify },
+                    nls.localize('qaap/preview/noUrlToReload', 'No URL loaded'),
+                    'warn',
+                );
+                return;
+            }
+            const bust = url.includes('?')
+                ? `${url}&_qaap_cache_bust=${Date.now()}`
+                : `${url}?_qaap_cache_bust=${Date.now()}`;
+            try {
+                frame.contentWindow?.location.replace(bust);
+            } catch {
+                frame.src = bust;
+            }
         },
         openExternal: () => {
             const target = currentUrl;
@@ -728,9 +707,15 @@ export function mountEmbeddedAgentPreviewChrome(
         },
         onPickElement: pickHandler,
         onToggleInspector: inspectorHandler,
+        setInspectorPosition: position => setPreviewInspectorPosition(split, inspectorSlot, position),
     };
 
-    const controller = new QaapAgentPreviewChromeController(adapter, { ...options, embedded: true });
+    const controller = new QaapAgentPreviewChromeController(adapter, {
+        clipboard: options.clipboard,
+        messageService: options.messageService,
+        notify: options.notify,
+        embedded: true,
+    });
     controller.attachToolbarControls(toolbar, refreshBtn);
     disposables.push(controller);
 

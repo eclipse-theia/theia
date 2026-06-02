@@ -15,6 +15,8 @@ import * as path from 'path';
 import {
     isQaapAgentTaskFinished,
     type QaapAgentDescriptor,
+    type QaapCreateAgentTaskQaiqModel,
+    type QaapQaiqModelOption,
     type QaapAgentTask,
     type QaapAgentTaskCwdGroup,
     type QaapAgentTaskDetail,
@@ -29,6 +31,7 @@ import {
     resolveQaapCodexTemplate,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
 import {
     applyAutoApproveToCommand,
     resolveAgentAutoApprove,
@@ -288,6 +291,7 @@ export class QaapAgentTaskRunner {
                 this.detectedAgents.set(candidate.id, candidate);
             }
         }
+        this.detectAntigravityAgent();
         this.detectCodexAgent();
         this.detectQaiqAgent();
         for (const candidate of this.readCustomAgents()) {
@@ -318,6 +322,36 @@ export class QaapAgentTaskRunner {
 
     protected isCandidateAvailable(candidate: AgentCandidate): boolean {
         return !candidate.bin || this.isOnPath(candidate.bin);
+    }
+
+    /**
+     * Prefer the new `antigravity` binary; keep legacy `gemini` binary compatibility on local
+     * machines until users migrate.
+     */
+    protected resolveAntigravityBin(): string | undefined {
+        if (this.isOnPath('antigravity')) {
+            return 'antigravity';
+        }
+        if (this.isOnPath('gemini')) {
+            return 'gemini';
+        }
+        return undefined;
+    }
+
+    protected detectAntigravityAgent(): void {
+        const bin = this.resolveAntigravityBin();
+        if (!bin) {
+            return;
+        }
+        const template = bin === 'antigravity'
+            ? 'antigravity -p {prompt}'
+            : 'gemini --approval-mode=yolo -p {prompt}';
+        this.detectedAgents.set('antigravity', {
+            id: 'antigravity',
+            label: 'Antigravity CLI',
+            bin,
+            template,
+        });
     }
 
     /** Prefer `qaiq` on PATH; accept legacy `openclaude` binary until installs catch up. */
@@ -534,6 +568,13 @@ export class QaapAgentTaskRunner {
         return result;
     }
 
+    listQaiqModels(): QaapQaiqModelOption[] {
+        if (!this.preferenceService) {
+            return [];
+        }
+        return listQaiqModelsFromPreferences(key => this.preferenceService!.get(key));
+    }
+
     /** Id picked when a create request omits one — first detected agent, env template, or shell. */
     defaultAgent(): string {
         const configured = this.normalizeAgentId(process.env.QAAP_DEFAULT_AGENT);
@@ -635,7 +676,12 @@ export class QaapAgentTaskRunner {
      * A template's `{prompt}` placeholder is replaced with a POSIX shell-quoted prompt;
      * without a placeholder the prompt is appended.
      */
-    protected buildAgentCommand(prompt: string, agentId: string | undefined, autoApprove: boolean): string {
+    protected buildAgentCommand(
+        prompt: string,
+        agentId: string | undefined,
+        autoApprove: boolean,
+        qaiqModel?: QaapCreateAgentTaskQaiqModel,
+    ): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
         if (id === SHELL_AGENT_ID) {
@@ -646,11 +692,11 @@ export class QaapAgentTaskRunner {
         const detected = this.detectedAgents.get(id);
         let command: string;
         if (detected) {
-            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id));
+            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, qaiqModel));
         } else {
             const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
             if (envTemplate) {
-                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id));
+                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id, qaiqModel));
             } else {
                 command = agentPrompt;
             }
@@ -726,9 +772,19 @@ export class QaapAgentTaskRunner {
         return prompt.trim();
     }
 
-    protected buildTemplateVars(agentId: string): Record<string, string> {
+    protected buildTemplateVars(agentId: string, qaiqModel?: QaapCreateAgentTaskQaiqModel): Record<string, string> {
         if (agentId !== QAIQ_AGENT_ID) {
             return {};
+        }
+        if (qaiqModel?.provider && qaiqModel.modelId?.trim()) {
+            return {
+                qaiq_flags: formatQaiqProviderFlags({
+                    provider: qaiqModel.provider,
+                    vendor: (qaiqModel.vendor || 'unknown') as QaapQaiqModelBinding['vendor'],
+                    modelId: qaiqModel.modelId.trim(),
+                    contextWindow: 128_000,
+                }),
+            };
         }
         return { qaiq_flags: this.resolveQaiqProviderFlags() };
     }
@@ -851,7 +907,7 @@ export class QaapAgentTaskRunner {
         if (prompt) {
             try {
                 const autoApprove = task.autoApprove !== false;
-                const command = this.buildAgentCommand(prompt, request.agent, autoApprove);
+                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, request.qaiqModel);
                 const next = { ...task, command };
                 this.tasks.set(task.id, next);
                 void this.persist();

@@ -72,6 +72,7 @@ export function createAgentSheetOptionButton(options: {
     readonly agentId: string;
     readonly label: string;
     readonly selected?: boolean;
+    readonly submenuChevron?: 'collapsed' | 'expanded';
     readonly onSelect: () => void;
 }): HTMLButtonElement {
     const btn = document.createElement('button');
@@ -87,7 +88,12 @@ export function createAgentSheetOptionButton(options: {
     labelEl.className = 'theia-mobile-sticky-composer-sheet-option-label';
     labelEl.textContent = options.label;
     content.append(labelEl);
-    if (options.selected) {
+    if (options.submenuChevron) {
+        const chevron = document.createElement('span');
+        chevron.className = `codicon codicon-chevron-${options.submenuChevron === 'expanded' ? 'down' : 'right'} theia-mobile-sticky-composer-sheet-option-chevron`;
+        chevron.setAttribute('aria-hidden', 'true');
+        content.append(chevron);
+    } else if (options.selected) {
         const check = document.createElement('span');
         check.className = 'codicon codicon-check theia-mobile-sticky-composer-sheet-option-check';
         check.setAttribute('aria-hidden', 'true');

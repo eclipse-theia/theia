@@ -257,8 +257,8 @@ function inferAgentIdFromCommand(command: string): string {
     if (/\bcursor-agent\b/.test(command)) {
         return 'cursor';
     }
-    if (/\bgemini\b/.test(command)) {
-        return 'gemini';
+    if (/\bantigravity\b|\bgemini\b/.test(command)) {
+        return 'antigravity';
     }
     if (/\bcopilot\b/.test(command)) {
         return 'copilot';

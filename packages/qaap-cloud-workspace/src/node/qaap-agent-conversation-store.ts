@@ -25,7 +25,13 @@ import {
     QaapUpdateAgentConversationRequest,
     toConversationSummary,
 } from '../common/qaap-agent-conversation';
-import { isQaiqAgent, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import {
+    isOpencodeAgent,
+    isQaiqAgent,
+    isStructuredStreamAgent,
+    resolveQaapAgentMentionToken,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import { parseOpencodeLog, QaapOpencodeStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-opencode-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
@@ -66,6 +72,8 @@ export class QaapAgentConversationStore {
     protected readonly pendingTeamSynthesisForLeader = new Set<string>();
     /** Per-task parsers for QAIQ stream-json stdout. */
     protected readonly qaiqStreamByTaskId = new Map<string, QaapQaiqStreamAccumulator>();
+    /** Per-task parsers for OpenCode {@code --format json} stdout. */
+    protected readonly opencodeStreamByTaskId = new Map<string, QaapOpencodeStreamAccumulator>();
 
     protected readonly onDidChangeEmitter = new Emitter<QaapAgentConversationEvent>();
     readonly onDidChange: Event<QaapAgentConversationEvent> = this.onDidChangeEmitter.event;
@@ -561,9 +569,9 @@ export class QaapAgentConversationStore {
             return;
         }
         const now = Date.now();
-        const useQaiqStream = this.isQaiqConversation(conv);
-        const { content, segments } = useQaiqStream
-            ? this.appendQaiqStreamChunk(taskId, filtered)
+        const useStructuredStream = this.isStructuredStreamConversation(conv);
+        const { content, segments } = useStructuredStream
+            ? this.appendStructuredStreamChunk(taskId, conv.agentId, filtered)
             : { content: filtered, segments: undefined as QaapAgentMessage['segments'] };
         if (!content && (!segments || segments.length === 0)) {
             return;
@@ -587,7 +595,7 @@ export class QaapAgentConversationStore {
             messages = conv.messages.map(message => message.id === agentMessageId
                 ? {
                     ...message,
-                    content: useQaiqStream ? (content || message.content) : `${message.content}${filtered}`,
+                    content: useStructuredStream ? (content || message.content) : `${message.content}${filtered}`,
                     segments: segments ?? message.segments,
                 }
                 : message
@@ -603,8 +611,19 @@ export class QaapAgentConversationStore {
         void this.persist();
     }
 
-    protected isQaiqConversation(conv: QaapAgentConversation): boolean {
-        return isQaiqAgent(conv.agentId);
+    protected isStructuredStreamConversation(conv: QaapAgentConversation): boolean {
+        return isStructuredStreamAgent(conv.agentId);
+    }
+
+    protected appendStructuredStreamChunk(
+        taskId: string,
+        agentId: string,
+        chunk: string,
+    ): { content: string; segments: QaapAgentMessage['segments'] } {
+        if (isQaiqAgent(agentId)) {
+            return this.appendQaiqStreamChunk(taskId, chunk);
+        }
+        return this.appendOpencodeStreamChunk(taskId, chunk);
     }
 
     protected appendQaiqStreamChunk(
@@ -621,11 +640,38 @@ export class QaapAgentConversationStore {
         return { content: accumulator.getDisplayText(), segments };
     }
 
+    protected appendOpencodeStreamChunk(
+        taskId: string,
+        chunk: string,
+    ): { content: string; segments: QaapAgentMessage['segments'] } {
+        let accumulator = this.opencodeStreamByTaskId.get(taskId);
+        if (!accumulator) {
+            accumulator = new QaapOpencodeStreamAccumulator();
+            this.opencodeStreamByTaskId.set(taskId, accumulator);
+        }
+        accumulator.push(chunk);
+        const segments = [...accumulator.getSegments()];
+        return { content: accumulator.getDisplayText(), segments };
+    }
+
     protected parseQaiqLog(log: string): { content: string; segments: QaapAgentMessage['segments'] } {
         const accumulator = new QaapQaiqStreamAccumulator();
         accumulator.push(log);
         const segments = [...accumulator.getSegments()];
         return { content: accumulator.getDisplayText() || log, segments };
+    }
+
+    protected parseStructuredLog(
+        agentId: string,
+        log: string,
+    ): { content: string; segments: QaapAgentMessage['segments'] } | undefined {
+        if (isQaiqAgent(agentId)) {
+            return this.parseQaiqLog(log);
+        }
+        if (isOpencodeAgent(agentId)) {
+            return parseOpencodeLog(log);
+        }
+        return undefined;
     }
 
     protected async applyTaskOutcome(
@@ -636,6 +682,7 @@ export class QaapAgentConversationStore {
         startSha?: string,
     ): Promise<void> {
         this.qaiqStreamByTaskId.delete(task.id);
+        this.opencodeStreamByTaskId.delete(task.id);
         const conv = this.conversations.get(conversationId);
         if (!conv) {
             return;
@@ -647,9 +694,7 @@ export class QaapAgentConversationStore {
         }
         const detail = await this.taskRunner.detail(task.id);
         const log = this.filterAgentLogChunk((detail?.log ?? '').trim());
-        const qaiqParsed = this.isQaiqConversation(conv) && log
-            ? this.parseQaiqLog(log)
-            : undefined;
+        const structuredParsed = log ? this.parseStructuredLog(conv.agentId, log) : undefined;
         if (task.state !== 'completed') {
             const reason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
             const errored = this.markUserMessageFailed(conv, userMessageId, reason);
@@ -660,12 +705,12 @@ export class QaapAgentConversationStore {
             return;
         }
         let withReply: QaapAgentConversation;
-        if (agentMessageId && qaiqParsed) {
+        if (agentMessageId && structuredParsed) {
             const messages = conv.messages.map(message => message.id === agentMessageId
                 ? {
                     ...message,
-                    content: qaiqParsed.content || message.content,
-                    segments: qaiqParsed.segments,
+                    content: structuredParsed.content || message.content,
+                    segments: structuredParsed.segments,
                 }
                 : message
             );
@@ -673,12 +718,12 @@ export class QaapAgentConversationStore {
         } else if (agentMessageId) {
             withReply = { ...conv, status: 'idle' as const, updatedAt: Date.now() };
         } else {
-            const body = qaiqParsed?.content || log || '(agent produced no output)';
+            const body = structuredParsed?.content || log || '(agent produced no output)';
             const reply = this.appendAgentReply({ ...conv, status: 'idle' }, body);
-            if (qaiqParsed?.segments?.length) {
+            if (structuredParsed?.segments?.length) {
                 const messages = reply.messages.map((message, index, all) => {
                     if (index === all.length - 1 && message.role === 'agent') {
-                        return { ...message, segments: qaiqParsed.segments };
+                        return { ...message, segments: structuredParsed.segments };
                     }
                     return message;
                 });

@@ -16,7 +16,7 @@ services:
         QAAP_IDE_PORT: ${THEIA_PORT:-4873}
         CODEX_CLI_VERSION: ${CODEX_CLI_VERSION:-latest}
         CLAUDE_CODE_VERSION: ${CLAUDE_CODE_VERSION:-latest}
-        GEMINI_CLI_VERSION: ${GEMINI_CLI_VERSION:-latest}
+        ANTIGRAVITY_CLI_VERSION: ${ANTIGRAVITY_CLI_VERSION:-latest}
     ports:
       - "${THEIA_PORT:-4873}:${THEIA_PORT:-4873}"
     environment:

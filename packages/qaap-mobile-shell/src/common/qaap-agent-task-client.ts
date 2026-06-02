@@ -27,6 +27,7 @@ export function resolveQaapAgentMentionToken(token: string): string {
 
 /** Legacy global fallback for users that picked an agent before selections became cwd-scoped. */
 export const SELECTED_AGENT_STORAGE_KEY = 'qaap.agentTasks.selectedAgent';
+export const SELECTED_QAIQ_MODEL_STORAGE_KEY = 'qaap.agentTasks.selectedQaiqModel';
 
 export interface QaapAgentTaskAgentOption {
     readonly id: string;
@@ -38,6 +39,20 @@ export interface QaapAgentTaskListSnapshot {
     readonly agents: QaapAgentTaskAgentOption[];
     readonly agentConfigured: boolean;
     readonly defaultAgent?: string;
+    readonly qaiqModels: QaapQaiqModelOption[];
+}
+
+export interface QaapQaiqModelOption {
+    readonly provider: 'openai' | 'gemini' | 'ollama' | 'anthropic' | 'mistral';
+    readonly vendor: string;
+    readonly modelId: string;
+    readonly label: string;
+}
+
+export interface QaapCreateAgentTaskQaiqModel {
+    readonly provider: 'openai' | 'gemini' | 'ollama' | 'anthropic' | 'mistral';
+    readonly vendor: string;
+    readonly modelId: string;
 }
 
 export interface QaapAgentTaskCreated {
@@ -67,10 +82,14 @@ export function isAgentTaskFinished(state: string): boolean {
 
 export type QaapCreateAgentTaskBody =
     | { readonly command: string; readonly cwd: string }
-    | { readonly prompt: string; readonly agent: string; readonly cwd: string };
+    | { readonly prompt: string; readonly agent: string; readonly cwd: string; readonly qaiqModel?: QaapCreateAgentTaskQaiqModel };
 
 export function scopedAgentStorageKey(cwd: string): string {
     return `${SELECTED_AGENT_STORAGE_KEY}.${hashString(cwd)}`;
+}
+
+export function scopedQaiqModelStorageKey(cwd: string): string {
+    return `${SELECTED_QAIQ_MODEL_STORAGE_KEY}.${hashString(cwd)}`;
 }
 
 export function migrateLegacyBackendAgentId(agentId: string | undefined): string | undefined {
@@ -97,6 +116,40 @@ export function writeStoredAgent(cwd: string | undefined, agentId: string): void
             window.localStorage.setItem(scopedAgentStorageKey(cwd), agentId);
         }
         window.localStorage.setItem(SELECTED_AGENT_STORAGE_KEY, agentId);
+    } catch {
+        /* localStorage unavailable — selection is session-only */
+    }
+}
+
+export function readStoredQaiqModel(cwd: string | undefined): QaapCreateAgentTaskQaiqModel | undefined {
+    try {
+        const raw = cwd
+            ? window.localStorage.getItem(scopedQaiqModelStorageKey(cwd)) ?? window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY) ?? undefined
+            : window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY) ?? undefined;
+        if (!raw) {
+            return undefined;
+        }
+        const parsed = JSON.parse(raw) as Partial<QaapCreateAgentTaskQaiqModel>;
+        if (!parsed || typeof parsed.provider !== 'string' || typeof parsed.modelId !== 'string') {
+            return undefined;
+        }
+        return {
+            provider: parsed.provider as QaapCreateAgentTaskQaiqModel['provider'],
+            vendor: typeof parsed.vendor === 'string' ? parsed.vendor : 'unknown',
+            modelId: parsed.modelId,
+        };
+    } catch {
+        return undefined;
+    }
+}
+
+export function writeStoredQaiqModel(cwd: string | undefined, model: QaapCreateAgentTaskQaiqModel): void {
+    try {
+        const serialized = JSON.stringify(model);
+        if (cwd) {
+            window.localStorage.setItem(scopedQaiqModelStorageKey(cwd), serialized);
+        }
+        window.localStorage.setItem(SELECTED_QAIQ_MODEL_STORAGE_KEY, serialized);
     } catch {
         /* localStorage unavailable — selection is session-only */
     }
@@ -222,6 +275,16 @@ export function isQaiqAgent(agentId: string | undefined): boolean {
     return normalized === QAIQ_AGENT_ID || normalized === LEGACY_OPENCLAUDE_AGENT_ID;
 }
 
+/** OpenCode conversations use {@code --format json} NDJSON parsed into transcript segments. */
+export function isOpencodeAgent(agentId: string | undefined): boolean {
+    return agentId?.trim().toLowerCase() === 'opencode';
+}
+
+/** Agents whose stdout is parsed into structured transcript/chat segments (not raw log append). */
+export function isStructuredStreamAgent(agentId: string | undefined): boolean {
+    return isQaiqAgent(agentId) || isOpencodeAgent(agentId);
+}
+
 /**
  * Agent for a mobile/background submit: `@mention` in the draft wins, then the pinned chat agent.
  */
@@ -325,6 +388,7 @@ function parseAgentTaskListBody(body: {
     agents?: QaapAgentTaskAgentOption[];
     agentConfigured?: boolean;
     defaultAgent?: string;
+    qaiqModels?: QaapQaiqModelOption[];
 }): QaapAgentTaskListSnapshot {
     const agents = [...(body.agents ?? [])];
     if (agents.length === 0) {
@@ -334,6 +398,7 @@ function parseAgentTaskListBody(body: {
         agents,
         agentConfigured: body.agentConfigured === true,
         defaultAgent: body.defaultAgent,
+        qaiqModels: body.qaiqModels ?? [],
     };
 }
 
