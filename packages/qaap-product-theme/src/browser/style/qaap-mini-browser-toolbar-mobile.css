@@ -34,6 +34,13 @@
 
 .theia-mini-browser-workbench-button::before {
   font-size: 18px;
+  pointer-events: none;
+}
+
+.qaap-agent-preview-toolbar-history,
+.qaap-agent-preview-toolbar-overflow {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .theia-mini-browser-workbench-button:hover {

@@ -48,8 +48,11 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
             return;
         }
         try {
-            const files = await this.collectChangedFiles(root);
-            res.json({ root, files } satisfies QaapGitChangesResponse);
+            const [files, branch] = await Promise.all([
+                this.collectChangedFiles(root),
+                this.readCurrentBranch(root),
+            ]);
+            res.json({ root, branch, files } satisfies QaapGitChangesResponse);
         } catch (error) {
             res.status(500).json({ error: this.errorMessage(error) });
         }
@@ -195,6 +198,15 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
             // `git diff --no-index` exits 1 when files differ; its stdout still holds the patch.
             const stdout = (error as { stdout?: string }).stdout;
             return typeof stdout === 'string' ? stdout : '';
+        }
+    }
+
+    protected async readCurrentBranch(root: string): Promise<string | undefined> {
+        try {
+            const name = (await this.git(root, ['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+            return name && name !== 'HEAD' ? name : undefined;
+        } catch {
+            return undefined;
         }
     }
 

@@ -4,8 +4,6 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry } from '@theia/core/lib/common/command';
-import { Disposable } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { Message } from '@theia/core/shared/@lumino/messaging';
@@ -16,25 +14,23 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { MiniBrowserContent } from '@theia/mini-browser/lib/browser/mini-browser-content';
 import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
-import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
-import {
-    ELEMENT_PICKER_MESSAGE_TYPE,
-    ELEMENT_PICKER_CANCEL_TYPE,
-    ELEMENT_REFRESH_RESPONSE_TYPE,
-    PickedElement
-} from '@theia/qaap-element-inspector/lib/browser/element-inspector-types';
-import { buildElementBridgeScript, buildElementPickerScript } from '@theia/qaap-element-inspector/lib/browser/element-picker-script';
-import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '@theia/qaap-element-inspector/lib/browser/element-inspector-contribution';
 import { QaapMiniBrowserContentStyle } from './qaap-mini-browser-content-style';
 import { isMiniBrowserPreviewPlaceholderUrl, QAAP_DEFAULT_PREVIEW_INPUT_URL } from './qaap-mini-browser-defaults';
+import {
+    QaapAgentPreviewChromeController,
+    type QaapAgentPreviewChromeHost,
+} from './qaap-agent-preview-chrome';
+import {
+    QaapPreviewSurfaceHandle,
+    QaapPreviewSurfaceRegistry,
+} from './qaap-preview-surface-registry';
+import { QaapPreviewFramePicker, QaapPreviewFramePickerFactory } from './qaap-preview-frame-picker';
+import { normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
 /**
  * Qaap mini-browser preview: element inspector, workbench toolbar, read-only URL editing.
  */
 @injectable()
 export class QaapMiniBrowserContent extends MiniBrowserContent {
-
-    @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
 
     @inject(ClipboardService)
     protected readonly clipboard: ClipboardService;
@@ -42,10 +38,25 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ElementInspectorService)
-    protected readonly inspectorService: ElementInspectorService;
+    @inject(QaapPreviewSurfaceRegistry)
+    protected readonly previewSurfaces: QaapPreviewSurfaceRegistry;
 
-    protected pickerListenerInstalled = false;
+    @inject(QaapPreviewFramePickerFactory)
+    protected readonly pickerFactory: QaapPreviewFramePickerFactory;
+
+    protected previewChrome: QaapAgentPreviewChromeController | undefined;
+
+    protected surfaceHandle: QaapPreviewSurfaceHandle | undefined;
+
+    protected framePicker: QaapPreviewFramePicker | undefined;
+
+    get previewFrame(): HTMLIFrameElement {
+        return this.frame;
+    }
+
+    getPreviewFramePicker(): QaapPreviewFramePicker {
+        return this.ensureFramePicker();
+    }
 
     @postConstruct()
     protected override init(): void {
@@ -66,6 +77,18 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         } else {
             this.setInput(QAAP_DEFAULT_PREVIEW_INPUT_URL);
         }
+        this.ensureFramePicker();
+    }
+
+    protected ensureFramePicker(): QaapPreviewFramePicker {
+        if (!this.framePicker) {
+            this.framePicker = this.pickerFactory.create(this.frame, this.toDispose);
+        }
+        return this.framePicker;
+    }
+
+    protected override go(location: string, options?: Parameters<MiniBrowserContent['go']>[1]): Promise<void> {
+        return super.go(normalizePreviewUrlForSameOrigin(location), options);
     }
 
     protected effectiveStartPage(): string | undefined {
@@ -78,6 +101,9 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        if (!this.surfaceHandle) {
+            this.surfaceHandle = this.previewSurfaces.registerMiniBrowserContent(this, this.toDispose);
+        }
         const url = this.effectiveStartPage();
         if (!url) {
             return;
@@ -142,15 +168,94 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
         this.createWorkbenchControls(toolbar);
+        if (this.getToolbarProps() !== 'hide') {
+            this.ensurePreviewChrome(toolbar);
+        }
         if (this.getToolbarProps() === 'hide') {
             toolbar.style.display = 'none';
         }
         return Object.assign(toolbar, { input });
     }
 
+    protected ensurePreviewChrome(toolbar: HTMLElement): void {
+        if (this.previewChrome) {
+            return;
+        }
+        const host = this.createPreviewChromeHost();
+        this.previewChrome = new QaapAgentPreviewChromeController(host, {
+            clipboard: this.clipboard,
+            messageService: this.messageService,
+        });
+        const firstNav = toolbar.querySelector('.theia-mini-browser-previous');
+        this.previewChrome.attachToolbarControls(
+            toolbar,
+            firstNav instanceof HTMLElement ? firstNav : undefined,
+        );
+        this.toDispose.push(this.previewChrome);
+    }
+
+    protected createPreviewChromeHost(): QaapAgentPreviewChromeHost {
+        return {
+            getRoot: () => this.node,
+            getFrame: () => this.frame,
+            getCurrentUrl: () => this.frameSrc() || this.input.value || '',
+            getPageTitle: () => {
+                try {
+                    return this.frame.contentDocument?.title || undefined;
+                } catch {
+                    return undefined;
+                }
+            },
+            navigate: (url, options) => {
+                const normalized = url.trim();
+                if (options?.hard) {
+                    const bust = normalized.includes('?')
+                        ? `${normalized}&_qaap_cache_bust=${Date.now()}`
+                        : `${normalized}?_qaap_cache_bust=${Date.now()}`;
+                    return this.go(bust, { preserveFocus: false });
+                }
+                return this.go(normalized, { preserveFocus: false });
+            },
+            reload: () => this.handleRefresh(),
+            hardReload: () => {
+                const current = this.frameSrc() || this.input.value;
+                if (current) {
+                    void this.go(
+                        current.includes('?')
+                            ? `${current}&_qaap_cache_bust=${Date.now()}`
+                            : `${current}?_qaap_cache_bust=${Date.now()}`,
+                        { preserveFocus: false },
+                    );
+                } else {
+                    this.handleRefresh();
+                }
+            },
+            openExternal: () => this.handleOpen(),
+            copyCurrentUrl: async () => {
+                const url = this.frameSrc() || this.input.value;
+                if (url) {
+                    await this.clipboard.writeText(url);
+                    this.messageService.info(nls.localize('qaap/preview/urlCopied', 'URL copied to clipboard'));
+                }
+            },
+            onPickElement: () => this.startElementPicker(),
+            onToggleInspector: () => { void this.toggleElementInspector(); },
+        };
+    }
+
     protected override onFrameLoad(): void {
         super.onFrameLoad();
-        this.injectInspectorBridge();
+        this.ensureFramePicker().onFrameLoad();
+        this.previewChrome?.recordVisit();
+    }
+
+    /** Starts the in-iframe DOM picker (toolbar, command, AI tool). */
+    startElementPicker(): void {
+        this.ensureFramePicker().startElementPicker();
+    }
+
+    toggleElementInspector(): Promise<void> {
+        return this.ensureFramePicker().toggleElementInspector();
     }
 
     protected override handleOpen(): void {
@@ -160,33 +265,13 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         }
     }
 
-    protected injectInspectorBridge(): void {
-        try {
-            const doc = this.frame?.contentDocument;
-            if (!doc) {
-                return;
-            }
-            const script = doc.createElement('script');
-            script.textContent = buildElementBridgeScript();
-            doc.documentElement.appendChild(script);
-            script.remove();
-        } catch {
-            // cross-origin iframe — silently skip; the picker will warn at use time.
-        }
-    }
-
     protected createWorkbenchControls(parent: HTMLElement): HTMLElement {
         const controls = document.createElement('div');
         controls.classList.add(QaapMiniBrowserContentStyle.WORKBENCH_CONTROLS);
         parent.appendChild(controls);
         this.createOpen(controls);
         this.createInspectButton(controls);
-        this.createCommandButton(
-            controls,
-            ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
-            nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
-            'layout-panel'
-        );
+        this.createInspectorToggleButton(controls);
         return controls;
     }
 
@@ -196,109 +281,24 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             nls.localize('theia/mini-browser/pickElement', 'Pick an element to send to chat'),
             'inspect'
         );
-        this.toDispose.push(addEventListener(button, 'click', () => this.startElementPicker()));
+        this.toDispose.push(addEventListener(button, 'click', (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.startElementPicker();
+        }));
         return button;
     }
 
-    /** Starts the in-iframe DOM picker (toolbar button, command, and AI tool). */
-    startElementPicker(): void {
-        this.installPickerListener();
-        try {
-            const doc = this.frame?.contentDocument;
-            const win = this.frame?.contentWindow;
-            if (!doc || !win) {
-                this.notifyPickerUnavailable();
-                return;
-            }
-            this.injectInspectorBridge();
-            const script = doc.createElement('script');
-            script.textContent = buildElementPickerScript();
-            doc.documentElement.appendChild(script);
-            script.remove();
-        } catch {
-            this.notifyPickerUnavailable();
-        }
-    }
-
-    protected notifyPickerUnavailable(): void {
-        this.messageService.warn(nls.localize(
-            'theia/mini-browser/pickerUnavailable',
-            'The element picker cannot run on this page because the preview is cross-origin. Open a same-origin preview to use it.'
-        ));
-    }
-
-    protected installPickerListener(): void {
-        if (this.pickerListenerInstalled) {
-            return;
-        }
-        this.pickerListenerInstalled = true;
-        const handler = (event: MessageEvent): void => {
-            if (!event.data || typeof event.data !== 'object') {
-                return;
-            }
-            if (this.frame && event.source && event.source !== this.frame.contentWindow) {
-                return;
-            }
-            const data = event.data as { type?: string; payload?: PickedElement; error?: string };
-            if (data.type === ELEMENT_PICKER_MESSAGE_TYPE && data.payload) {
-                void this.handlePickedElement(data.payload);
-            } else if (data.type === ELEMENT_REFRESH_RESPONSE_TYPE && data.payload) {
-                this.inspectorService.refreshed(data.payload);
-            } else if (data.type === ELEMENT_PICKER_CANCEL_TYPE) {
-                // no-op: the in-frame script tears itself down
-            }
-        };
-        window.addEventListener('message', handler);
-        this.toDispose.push(Disposable.create(() => window.removeEventListener('message', handler)));
-    }
-
-    protected async handlePickedElement(element: PickedElement): Promise<void> {
-        this.inspectorService.bind(this.frame?.contentWindow ?? undefined);
-        this.inspectorService.pick(element);
-        const summary = this.formatElementForChat(element);
-        try {
-            await this.clipboard.writeText(summary);
-        } catch {
-            // clipboard may be denied in some sandboxes; the inspector panel still has the data
-        }
-        await this.revealInspector();
-        this.messageService.info(nls.localize(
-            'theia/mini-browser/elementCaptured',
-            'Captured {0}. Details opened in the Element Inspector and copied to the clipboard.',
-            element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : '')
-        ));
-    }
-
-    protected async revealInspector(): Promise<void> {
-        if (!this.commands.getCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID)) {
-            return;
-        }
-        try {
-            await this.commands.executeCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID);
-        } catch {
-            // inspector contribution might not be available; ignore
-        }
-    }
-
-    protected formatElementForChat(element: PickedElement): string {
-        const lines: string[] = [];
-        lines.push('Selected DOM element from preview ' + element.pageUrl);
-        lines.push('DOM Path: ' + element.domPath);
-        const { top, left, width, height } = element.position;
-        lines.push(`Position: top=${top}px, left=${left}px, width=${width}px, height=${height}px`);
-        lines.push('HTML Element: ' + element.outerHTML);
-        if (element.textPreview) {
-            lines.push('Text: ' + element.textPreview);
-        }
-        return lines.join('\n');
-    }
-
-    protected createCommandButton(parent: HTMLElement, commandId: string, title: string, icon: string): HTMLElement {
-        const button = this.createWorkbenchButton(parent, title, icon);
-        this.toDispose.push(addEventListener(button, 'click', () => {
-            if (this.commands.isEnabled(commandId)) {
-                void this.commands.executeCommand(commandId).catch(() => undefined);
-            }
+    protected createInspectorToggleButton(parent: HTMLElement): HTMLElement {
+        const button = this.createWorkbenchButton(
+            parent,
+            nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
+            'layout-panel'
+        );
+        this.toDispose.push(addEventListener(button, 'click', (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void this.toggleElementInspector();
         }));
         return button;
     }
@@ -319,7 +319,11 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             'link-external'
         );
         button.classList.add(QaapMiniBrowserContentStyle.OPEN);
-        this.toDispose.push(addEventListener(button, 'click', () => this.openEmitter.fire(undefined)));
+        this.toDispose.push(addEventListener(button, 'click', (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.openEmitter.fire(undefined);
+        }));
         return button;
     }
 }

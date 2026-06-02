@@ -32,7 +32,8 @@ import { ChatService } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
-import { ContextVariablePicker } from '@theia/ai-chat-ui/lib/browser/context-variable-picker';
+import { QuickInputService } from '@theia/core';
+import { pickMobileContextVariable } from './qaap-mobile-context-attach-menu';
 import {
     matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
@@ -68,6 +69,7 @@ import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contr
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
 import { MobileSnackbar } from './mobile-snackbar';
 import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
 import {
@@ -200,11 +202,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
-    @inject(ContextVariablePicker)
-    protected readonly contextVariablePicker: ContextVariablePicker;
-
     @inject(AIVariableService)
     protected readonly variableService: AIVariableService;
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
@@ -232,6 +234,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MarkdownPreviewHandler)
     protected readonly markdownPreviewHandler: MarkdownPreviewHandler;
+
+    @inject(QaapPreviewSurfaceRegistry)
+    protected readonly previewSurfaceRegistry: QaapPreviewSurfaceRegistry;
 
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
@@ -886,7 +891,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 chatService: this.chatService,
                 chatAgentService: this.chatAgentService,
                 messageService: this.messageService,
-                pickContextVariable: () => this.contextVariablePicker.pickContextVariable(),
+                pickContextVariable: anchor => pickMobileContextVariable(
+                    anchor,
+                    this.variableService,
+                    this.quickInputService,
+                ),
                 getComposerVariables: () => this.variableService.getVariables(),
                 createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
                 resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),
@@ -908,6 +917,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     this.terminalService,
                     this.workspaceService,
                 ),
+                previewSurfaceRegistry: this.previewSurfaceRegistry,
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

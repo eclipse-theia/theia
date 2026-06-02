@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/qaap-mini-browser-content.css';
+import '../../src/browser/style/qaap-agent-preview-chrome.css';
 import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
@@ -25,6 +26,8 @@ import { QaapMobileQuickInputContribution } from './qaap-mobile-quick-input-cont
 import { QaapElementPickerCommandContribution } from './qaap-element-picker-command-contribution';
 import { QaapElementPickerService } from './qaap-element-picker-service';
 import { QaapPickElementTool } from './qaap-element-picker-tool-provider';
+import { QaapPreviewFramePickerFactory } from './qaap-preview-frame-picker';
+import { QaapPreviewSurfaceRegistry } from './qaap-preview-surface-registry';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultQaapMiniBrowserLifecycle).toSelf().inSingletonScope();
@@ -52,6 +55,8 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(QaapMiniBrowserOpenHandler).toSelf().inSingletonScope();
     rebind(MiniBrowserOpenHandler).toService(QaapMiniBrowserOpenHandler);
 
+    bind(QaapPreviewFramePickerFactory).toSelf().inSingletonScope();
+    bind(QaapPreviewSurfaceRegistry).toSelf().inSingletonScope();
     bind(QaapElementPickerService).toSelf().inSingletonScope();
     bind(QaapElementPickerCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(QaapElementPickerCommandContribution);

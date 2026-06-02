@@ -106,6 +106,8 @@
 }
 
 .theia-mini-browser-workbench-button {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,6 +119,12 @@
   color: var(--theia-icon-foreground);
   background: transparent;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mini-browser-workbench-button::before {
+  pointer-events: none;
 }
 
 .theia-mini-browser-workbench-button:hover {

@@ -19,7 +19,7 @@ export function getQaapPublicOrigin(): string {
     return window.location.origin.replace(/\/+$/, '');
 }
 
-/** Preview URL for the current host: direct on localhost, same-origin proxy on remote deployments. */
+/** Preview URL for the current host via the same-origin `/qaap-dev/:port/` proxy. */
 export function toDevPreviewUrl(port: number, origin: string = getQaapPublicOrigin()): string {
     if (!origin) {
         return buildQaapDevPreviewOpenUrl(`http://127.0.0.1:${port}`, port);

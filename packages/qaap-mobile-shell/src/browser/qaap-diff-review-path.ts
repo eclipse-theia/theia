@@ -12,3 +12,12 @@ export function splitRepoRelativePath(path: string): { base: string; dir: string
     }
     return { base: normalized.slice(slash + 1), dir: normalized.slice(0, slash) };
 }
+
+/** Middle-ellipsis truncation for narrow diff headers (Cursor-style). */
+export function middleTruncatePath(path: string, maxLength = 52): string {
+    if (path.length <= maxLength) {
+        return path;
+    }
+    const keep = Math.max(8, Math.floor((maxLength - 1) / 2));
+    return `${path.slice(0, keep)}…${path.slice(-keep)}`;
+}

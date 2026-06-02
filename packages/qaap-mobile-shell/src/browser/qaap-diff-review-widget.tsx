@@ -18,11 +18,14 @@ import {
     type QaapGitFileDiffResponse,
     type QaapGitHunkLine,
 } from '../common/qaap-git-review';
-import { splitRepoRelativePath } from './qaap-diff-review-path';
+import { middleTruncatePath, splitRepoRelativePath } from './qaap-diff-review-path';
 
 /** Git extension commands used by the bulk review actions. */
 const GIT_STAGE_ALL = 'git.stageAll';
 const GIT_CLEAN_ALL = 'git.cleanAll';
+
+/** Context lines above this count collapse into an expandable bar (Cursor agent diff style). */
+const CONTEXT_COLLAPSE_THRESHOLD = 4;
 
 export interface QaapDiffReviewRepositoryContext {
     rootUri: string;
@@ -76,17 +79,14 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected workHubEmbed = false;
     /** Embedded in the execution-view Review tab (transcript sheet). */
     protected transcriptEmbed = false;
-    /** Review tab: checks + composer live in the panel below the diff widget. */
+    /** Changes tab: checks + composer live in the panel below the diff widget. */
     protected transcriptExternalChrome = false;
-    protected reviewListFilter: 'all' | 'pending' = 'all';
     protected reviewComposerDraft = '';
     protected runningFileAction = false;
-    /** Transcript Review: diff hunks hidden so the file list has more room. */
-    protected transcriptHunksCollapsed = false;
-    /** Transcript Review: file list height in px after drag-resize; undefined = CSS default. */
-    protected transcriptFileListHeightPx: number | undefined;
-    protected transcriptResizeStartY = 0;
-    protected transcriptResizeStartListHeight = 0;
+    protected branchName: string | undefined;
+    protected readonly agentFileDiffs = new Map<string, QaapGitFileDiffResponse>();
+    protected loadingAgentDiffs = false;
+    protected readonly expandedContextBlocks = new Set<string>();
     protected onTranscriptAgentFeedback: ((message: string) => void | Promise<void>) | undefined;
     protected onReviewStatsChange: ((stats: { fileCount: number; adds: number; dels: number; pending: number }) => void) | undefined;
 
@@ -99,23 +99,35 @@ export class QaapDiffReviewWidget extends ReactWidget {
         this.workHubEmbed = true;
         this.filesPanelCollapsed = true;
         this.removeClass('qaap-diff-review--transcript');
+        this.removeClass('qaap-diff-review--transcript-agent');
         this.addClass('qaap-diff-review--work-hub');
         this.update();
     }
 
-    /** Execution-view Review tab: mockup layout with chips, file list, and optional external chrome. */
+    /** Execution-view Changes tab: Cursor-style unified diff scroll. */
     enableTranscriptEmbed(options?: { externalChrome?: boolean }): void {
         this.workHubEmbed = false;
         this.transcriptEmbed = true;
         this.transcriptExternalChrome = options?.externalChrome ?? false;
-        this.reviewListFilter = 'all';
-        this.filesPanelCollapsed = false;
-        this.transcriptHunksCollapsed = false;
-        this.transcriptFileListHeightPx = undefined;
+        this.agentFileDiffs.clear();
+        this.expandedContextBlocks.clear();
+        this.branchName = undefined;
         this.removeClass('qaap-diff-review--work-hub');
         this.addClass('qaap-diff-review--transcript');
+        this.addClass('qaap-diff-review--transcript-agent');
         this.node.classList.toggle('qaap-mod-external-chrome', this.transcriptExternalChrome);
+        this.applyTranscriptAgentLayoutStyles();
         this.update();
+    }
+
+    protected applyTranscriptAgentLayoutStyles(): void {
+        const node = this.node;
+        node.style.display = 'flex';
+        node.style.flexDirection = 'column';
+        node.style.flex = '1 1 auto';
+        node.style.minHeight = '0';
+        node.style.height = '100%';
+        node.style.overflow = 'hidden';
     }
 
     setTranscriptAgentFeedbackHandler(
@@ -194,10 +206,15 @@ export class QaapDiffReviewWidget extends ReactWidget {
             if (!response.ok) {
                 throw new Error(`changes request failed (${response.status})`);
             }
-            const body = await response.json() as { files?: QaapGitChangedFile[] };
+            const body = await response.json() as { files?: QaapGitChangedFile[]; branch?: string };
             this.files = body.files ?? [];
+            this.branchName = body.branch;
             this.error = undefined;
             this.notifyReviewStats();
+            if (this.transcriptEmbed && this.transcriptExternalChrome) {
+                await this.loadAllAgentDiffs();
+                return;
+            }
             const stillThere = this.files.some(file => file.path === this.selectedPath);
             const next = stillThere ? this.selectedPath : this.files[0]?.path;
             if (next !== this.selectedPath || (next && !this.diff)) {
@@ -210,6 +227,45 @@ export class QaapDiffReviewWidget extends ReactWidget {
         this.update();
     }
 
+    protected async fetchFileDiff(path: string): Promise<QaapGitFileDiffResponse | undefined> {
+        if (!this.rootFsPath) {
+            return undefined;
+        }
+        const response = await fetch(
+            `${QAAP_GIT_REVIEW_API_PATH}/diff?root=${encodeURIComponent(this.rootFsPath)}&file=${encodeURIComponent(path)}`,
+            { credentials: 'include' },
+        );
+        if (!response.ok) {
+            throw new Error(`diff request failed (${response.status})`);
+        }
+        return await response.json() as QaapGitFileDiffResponse;
+    }
+
+    protected async loadAllAgentDiffs(): Promise<void> {
+        this.agentFileDiffs.clear();
+        if (this.files.length === 0 || !this.rootFsPath) {
+            this.update();
+            return;
+        }
+        this.loadingAgentDiffs = true;
+        this.update();
+        try {
+            await Promise.all(this.files.map(async file => {
+                try {
+                    const diff = await this.fetchFileDiff(file.path);
+                    if (diff) {
+                        this.agentFileDiffs.set(file.path, diff);
+                    }
+                } catch {
+                    /* per-file errors are surfaced when that section renders */
+                }
+            }));
+        } finally {
+            this.loadingAgentDiffs = false;
+            this.update();
+        }
+    }
+
     protected async selectFile(path: string | undefined): Promise<void> {
         this.selectedPath = path;
         this.diff = undefined;
@@ -220,14 +276,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
         this.loadingDiff = true;
         this.update();
         try {
-            const response = await fetch(
-                `${QAAP_GIT_REVIEW_API_PATH}/diff?root=${encodeURIComponent(this.rootFsPath)}&file=${encodeURIComponent(path)}`,
-                { credentials: 'include' },
-            );
-            if (!response.ok) {
-                throw new Error(`diff request failed (${response.status})`);
-            }
-            this.diff = await response.json() as QaapGitFileDiffResponse;
+            this.diff = await this.fetchFileDiff(path);
         } catch (error) {
             this.error = error instanceof Error ? error.message : String(error);
         } finally {
@@ -272,189 +321,183 @@ export class QaapDiffReviewWidget extends ReactWidget {
                         )}
                     </div>
                 )}
-                {this.files.length === 0 ? this.renderEmpty() : this.transcriptEmbed
-                    ? this.renderTranscriptContent(totals)
+                {this.files.length === 0 ? this.renderEmpty() : this.transcriptEmbed && this.transcriptExternalChrome
+                    ? this.renderAgentChangesContent(totals)
                     : this.renderContent(totals)}
             </div>
         );
     }
 
     protected renderEmpty(): React.ReactNode {
+        const agent = this.transcriptEmbed && this.transcriptExternalChrome;
         return (
-            <div className='qaap-diff-review-empty'>
-                <i className={codicon('check-all')} />
+            <div className={`qaap-diff-review-empty${agent ? ' qaap-diff-review-empty--agent' : ''}`}>
+                <i className={codicon(agent ? 'diff' : 'check-all')} />
                 <p>{nls.localize('qaap/diff/noChanges', 'No changes to review.')}</p>
-                <span>{nls.localize('qaap/diff/noChangesHint', 'Edits made by you or an agent will show up here.')}</span>
+                <span>
+                    {agent
+                        ? nls.localize(
+                            'qaap/mobileProjects/changesEmptyHint',
+                            'When the agent edits files in this workspace, diffs will appear here.',
+                        )
+                        : nls.localize('qaap/diff/noChangesHint', 'Edits made by you or an agent will show up here.')}
+                </span>
             </div>
         );
     }
 
-    protected renderTranscriptContent(totals: { adds: number; dels: number }): React.ReactNode {
-        const pendingCount = this.files.filter(file => !file.staged).length;
-        const visibleFiles = this.reviewListFilter === 'pending'
-            ? this.files.filter(file => !file.staged)
-            : this.files;
-        const selected = this.files.find(file => file.path === this.selectedPath);
-        const selectedParts = selected ? splitRepoRelativePath(selected.path) : undefined;
-        const hunkCount = this.diff?.hunks.length ?? 0;
+    protected renderAgentChangesContent(totals: { adds: number; dels: number }): React.ReactNode {
         const count = this.files.length;
-        const fileListStyle = this.transcriptFileListHeightPx !== undefined
-            ? { height: this.transcriptFileListHeightPx, flex: '0 0 auto' as const }
-            : undefined;
         return (
-            <div
-                className={`qaap-transcript-review-layout${this.transcriptHunksCollapsed ? ' qaap-mod-hunks-collapsed' : ''}`}
-            >
-                <div className='qaap-transcript-review-chips'>
-                    <button
-                        type='button'
-                        className={`qaap-transcript-review-chip${this.reviewListFilter === 'all' ? ' qaap-mod-active' : ''}`}
-                        onClick={this.onShowAllFiles}
-                    >
-                        {nls.localize('qaap/mobileProjects/reviewChipDiff', 'Diff')}
-                    </button>
-                    <button
-                        type='button'
-                        className={`qaap-transcript-review-chip${this.reviewListFilter === 'pending' ? ' qaap-mod-active' : ''}`}
-                        onClick={this.onShowPendingFiles}
-                    >
-                        {pendingCount === 1
-                            ? nls.localize('qaap/mobileProjects/reviewChipPendingOne', '1 unreviewed')
-                            : nls.localize('qaap/mobileProjects/reviewChipPendingMany', '{0} unreviewed', String(pendingCount))}
-                    </button>
-                </div>
-                <div className='qaap-transcript-review-summary'>
-                    {count === 1
-                        ? nls.localize('qaap/mobileProjects/reviewSummaryOne', '1 file')
-                        : nls.localize('qaap/mobileProjects/reviewSummaryMany', '{0} files', String(count))}
-                    {' · '}
-                    <span className='qaap-diff-add'>+{totals.adds}</span>
-                    {' '}
-                    <span className='qaap-diff-del'>−{totals.dels}</span>
-                </div>
-                <div
-                    className={`qaap-transcript-review-file-list${this.transcriptFileListHeightPx !== undefined ? ' qaap-mod-sized' : ''}`}
-                    role='listbox'
-                    style={fileListStyle}
-                >
-                    {visibleFiles.map(file => {
-                        const parts = splitRepoRelativePath(file.path);
-                        const active = file.path === this.selectedPath;
-                        return (
-                            <button
-                                key={file.path}
-                                type='button'
-                                role='option'
-                                aria-selected={active}
-                                className={`qaap-transcript-review-file${active ? ' qaap-mod-active' : ''}${file.staged ? ' qaap-mod-reviewed' : ''}`}
-                                onClick={() => this.onSelectFile(file.path)}
-                            >
-                                <i className={this.iconFor(file.path)} />
-                                <span className='qaap-transcript-review-file-ident'>
-                                    <span className='qaap-transcript-review-file-base'>{parts.base}</span>
-                                    {parts.dir && (
-                                        <span className='qaap-transcript-review-file-dir'>{parts.dir}</span>
-                                    )}
-                                </span>
-                                <span className='qaap-diff-review-stats'>
-                                    <span className='qaap-diff-add'>+{file.adds}</span>
-                                    <span className='qaap-diff-del'>−{file.dels}</span>
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-                {selected && selectedParts && (
-                    <>
-                        <div
-                            className='qaap-transcript-review-resize-handle'
-                            role='separator'
-                            aria-orientation='horizontal'
-                            aria-label={nls.localize('qaap/mobileProjects/reviewResizeDivider', 'Resize file list and diff')}
-                            onPointerDown={this.onTranscriptResizePointerDown}
-                        />
-                        <div className='qaap-transcript-review-diff-pane'>
-                            <div
-                                className='qaap-transcript-review-filehdr'
-                                role='button'
-                                tabIndex={0}
-                                aria-expanded={!this.transcriptHunksCollapsed}
-                                title={this.transcriptHunksCollapsed
-                                    ? nls.localize('qaap/mobileProjects/reviewExpandDiff', 'Show diff')
-                                    : nls.localize('qaap/mobileProjects/reviewCollapseDiff', 'Hide diff')}
-                                onClick={this.onTranscriptFilehdrActivate}
-                                onKeyDown={this.onTranscriptFilehdrKeyDown}
-                            >
-                                <i
-                                    className={`qaap-transcript-review-filehdr-chevron codicon ${this.transcriptHunksCollapsed ? 'codicon-chevron-down' : 'codicon-chevron-up'}`}
-                                    aria-hidden='true'
-                                />
-                                <span className='qaap-transcript-review-filehdr-name'>{selectedParts.base}</span>
-                                {hunkCount > 0 && (
-                                    <span className='qaap-transcript-review-hunk-label'>
-                                        {nls.localize('qaap/mobileProjects/reviewHunkOf', 'Hunk 1 of {0}', String(hunkCount))}
-                                    </span>
-                                )}
-                                {this.bulkActionsEnabled && (
-                                    <span className='qaap-transcript-review-filehdr-acts'>
-                                        <button
-                                            type='button'
-                                            className='qaap-transcript-review-act qaap-mod-accept'
-                                            disabled={this.runningFileAction || selected.staged}
-                                            onClick={event => {
-                                                event.stopPropagation();
-                                                void this.acceptFile(selected.path);
-                                            }}
-                                        >
-                                            {nls.localize('qaap/mobileProjects/reviewAcceptFile', 'Accept')}
-                                        </button>
-                                        <button
-                                            type='button'
-                                            className='qaap-transcript-review-act qaap-mod-reject'
-                                            disabled={this.runningFileAction}
-                                            onClick={event => {
-                                                event.stopPropagation();
-                                                void this.rejectFile(selected.path);
-                                            }}
-                                        >
-                                            {nls.localize('qaap/diff/reject', 'Reject')}
-                                        </button>
-                                    </span>
-                                )}
-                            </div>
-                            {!this.transcriptHunksCollapsed && (
-                                <div className='qaap-transcript-review-hunks'>
-                                    {this.renderHunkBody()}
-                                </div>
-                            )}
+            <div className='qaap-agent-changes'>
+                {this.renderAgentToolbar(totals, count)}
+                <div className='qaap-agent-changes-scroll'>
+                    {this.loadingAgentDiffs && this.agentFileDiffs.size === 0 && (
+                        <div className='qaap-agent-changes-loading' aria-busy='true'>
+                            <div className='qaap-agent-changes-loading-bar' />
+                            <div className='qaap-agent-changes-loading-bar qaap-mod-short' />
+                            <div className='qaap-agent-changes-loading-bar qaap-mod-shorter' />
                         </div>
-                    </>
-                )}
-                {!selected && (
-                    <div className='qaap-transcript-review-hunks'>
-                        {this.renderHunkBody()}
-                    </div>
-                )}
-                {this.onTranscriptAgentFeedback && !this.transcriptExternalChrome && (
-                    <form className='qaap-transcript-review-composer' onSubmit={this.onReviewComposerSubmit}>
-                        <input
-                            type='text'
-                            className='qaap-transcript-review-composer-input'
-                            value={this.reviewComposerDraft}
-                            placeholder={nls.localize('qaap/mobileProjects/reviewAskAgent', 'Ask the agent for changes…')}
-                            onChange={this.onReviewComposerDraftChange}
-                        />
-                        <button
-                            type='submit'
-                            className='qaap-transcript-review-composer-send codicon codicon-send'
-                            title={nls.localize('qaap/mobileProjects/transcriptSend', 'Send')}
-                            aria-label={nls.localize('qaap/mobileProjects/transcriptSend', 'Send')}
-                            disabled={!this.reviewComposerDraft.trim()}
-                        />
-                    </form>
-                )}
+                    )}
+                    {this.files.map(file => this.renderAgentFileSection(file))}
+                </div>
             </div>
         );
+    }
+
+    protected renderAgentToolbar(totals: { adds: number; dels: number }, count: number): React.ReactNode {
+        const branch = this.branchName ?? '…';
+        const summaryLabel = count === 1
+            ? nls.localize('qaap/mobileProjects/uncommittedChangeOne', '1 Uncommitted Change')
+            : nls.localize('qaap/mobileProjects/uncommittedChangeMany', '{0} Uncommitted Changes', String(count));
+        return (
+            <header className='qaap-agent-changes-toolbar'>
+                <div className='qaap-agent-changes-toolbar-primary'>
+                    <span className='qaap-agent-changes-scope'>
+                        {nls.localize('qaap/mobileProjects/changesScopeLocal', 'Local')}
+                    </span>
+                    <span className='qaap-agent-changes-branch' title={branch}>
+                        <i className={codicon('git-branch')} aria-hidden='true' />
+                        <span>{branch}</span>
+                    </span>
+                </div>
+                <div className='qaap-agent-changes-toolbar-secondary'>
+                    <span className='qaap-agent-changes-summary-label'>{summaryLabel}</span>
+                    <span className='qaap-agent-changes-stat-pill qaap-mod-add'>+{totals.adds}</span>
+                    <span className='qaap-agent-changes-stat-pill qaap-mod-del'>−{totals.dels}</span>
+                    <button
+                        type='button'
+                        className='qaap-diff-review-icon-btn qaap-agent-changes-refresh'
+                        title={nls.localize('qaap/diff/refresh', 'Refresh')}
+                        aria-label={nls.localize('qaap/diff/refresh', 'Refresh')}
+                        onClick={this.onRefresh}
+                    >
+                        <i className={codicon('refresh')} />
+                    </button>
+                </div>
+            </header>
+        );
+    }
+
+    protected renderAgentFileSection(file: QaapGitChangedFile): React.ReactNode {
+        const diff = this.agentFileDiffs.get(file.path);
+        const displayPath = middleTruncatePath(file.path);
+        return (
+            <section key={file.path} className='qaap-agent-changes-file'>
+                <div className='qaap-agent-changes-filehdr'>
+                    <button
+                        type='button'
+                        className='qaap-agent-changes-filehdr-main'
+                        title={file.path}
+                        onClick={() => this.onOpenInEditor(file.path)}
+                    >
+                        <i className={this.iconFor(file.path)} aria-hidden='true' />
+                        <span className='qaap-agent-changes-path'>{displayPath}</span>
+                    </button>
+                    <span className='qaap-agent-changes-filehdr-stats'>
+                        <span className='qaap-diff-add'>+{file.adds}</span>
+                        <span className='qaap-diff-del'>−{file.dels}</span>
+                    </span>
+                    <span className='qaap-agent-changes-filehdr-actions'>
+                        {this.bulkActionsEnabled && (
+                            <button
+                                type='button'
+                                className='qaap-diff-review-icon-btn'
+                                title={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
+                                aria-label={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
+                                disabled={this.runningFileAction}
+                                onClick={() => { void this.rejectFile(file.path); }}
+                            >
+                                <i className={codicon('discard')} />
+                            </button>
+                        )}
+                    </span>
+                </div>
+                <div className='qaap-agent-changes-hunks'>
+                    {diff ? this.renderAgentFileDiff(file.path, diff) : (
+                        <div className='qaap-diff-review-note qaap-mod-compact'>
+                            {this.loadingAgentDiffs
+                                ? nls.localize('qaap/diff/loading', 'Loading diff…')
+                                : nls.localize('qaap/diff/loadFailed', 'Could not load diff for this file.')}
+                        </div>
+                    )}
+                </div>
+            </section>
+        );
+    }
+
+    protected renderAgentFileDiff(path: string, diff: QaapGitFileDiffResponse): React.ReactNode {
+        if (diff.binary) {
+            return <div className='qaap-diff-review-note'>{nls.localize('qaap/diff/binary', 'Binary file — open in the editor to inspect.')}</div>;
+        }
+        if (diff.hunks.length === 0) {
+            return <div className='qaap-diff-review-note'>{nls.localize('qaap/diff/noHunks', 'No textual changes.')}</div>;
+        }
+        return diff.hunks.map((hunk, hunkIndex) => (
+            <div key={hunkIndex} className='qaap-diff-review-hunk'>
+                <div className='qaap-diff-review-hunk-header'>{hunk.header}</div>
+                {this.renderCollapsedHunkLines(path, hunkIndex, hunk.lines)}
+            </div>
+        ));
+    }
+
+    protected renderCollapsedHunkLines(path: string, hunkIndex: number, lines: QaapGitHunkLine[]): React.ReactNode {
+        const segments = buildContextSegments(lines);
+        return segments.map((segment, segmentIndex) => {
+            if (segment.kind === 'lines') {
+                return (
+                    <React.Fragment key={`lines-${hunkIndex}-${segmentIndex}`}>
+                        {segment.lines.map((line, lineIndex) => (
+                            <DiffLine key={lineIndex} line={line} />
+                        ))}
+                    </React.Fragment>
+                );
+            }
+            const blockId = `${path}:${hunkIndex}:${segmentIndex}`;
+            const expanded = this.expandedContextBlocks.has(blockId);
+            if (expanded) {
+                return (
+                    <React.Fragment key={blockId}>
+                        <CollapsedContextBar
+                            count={segment.lines.length}
+                            expanded={true}
+                            onToggle={() => this.onToggleContextBlock(blockId)}
+                        />
+                        {segment.lines.map((line, lineIndex) => (
+                            <DiffLine key={lineIndex} line={line} />
+                        ))}
+                    </React.Fragment>
+                );
+            }
+            return (
+                <CollapsedContextBar
+                    key={blockId}
+                    count={segment.lines.length}
+                    expanded={false}
+                    onToggle={() => this.onToggleContextBlock(blockId)}
+                />
+            );
+        });
     }
 
     protected renderContent(totals: { adds: number; dels: number }): React.ReactNode {
@@ -777,17 +820,11 @@ export class QaapDiffReviewWidget extends ReactWidget {
         }
     }
 
-    protected readonly onShowAllFiles = (): void => {
-        this.reviewListFilter = 'all';
-        this.update();
-    };
-
-    protected readonly onShowPendingFiles = (): void => {
-        this.reviewListFilter = 'pending';
-        const next = this.files.find(file => !file.staged);
-        if (next && next.path !== this.selectedPath) {
-            void this.selectFile(next.path);
-            return;
+    protected readonly onToggleContextBlock = (blockId: string): void => {
+        if (this.expandedContextBlocks.has(blockId)) {
+            this.expandedContextBlocks.delete(blockId);
+        } else {
+            this.expandedContextBlocks.add(blockId);
         }
         this.update();
     };
@@ -795,68 +832,6 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected readonly onReviewComposerDraftChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         this.reviewComposerDraft = event.target.value;
         this.update();
-    };
-
-    protected readonly onTranscriptFilehdrActivate = (event: React.MouseEvent | React.KeyboardEvent): void => {
-        const target = event.target as HTMLElement;
-        if (target.closest('.qaap-transcript-review-filehdr-acts')) {
-            return;
-        }
-        this.transcriptHunksCollapsed = !this.transcriptHunksCollapsed;
-        this.update();
-    };
-
-    protected readonly onTranscriptFilehdrKeyDown = (event: React.KeyboardEvent): void => {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            this.onTranscriptFilehdrActivate(event);
-        }
-    };
-
-    protected readonly onTranscriptResizePointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
-        if (event.button !== 0) {
-            return;
-        }
-        event.preventDefault();
-        const listEl = this.node.querySelector<HTMLElement>('.qaap-transcript-review-file-list');
-        if (!listEl) {
-            return;
-        }
-        const measured = listEl.getBoundingClientRect().height;
-        this.transcriptFileListHeightPx = this.transcriptFileListHeightPx ?? measured;
-        this.transcriptResizeStartY = event.clientY;
-        this.transcriptResizeStartListHeight = this.transcriptFileListHeightPx;
-        const handle = event.currentTarget;
-        handle.setPointerCapture(event.pointerId);
-
-        const onMove = (moveEvent: PointerEvent): void => {
-            if (moveEvent.pointerId !== event.pointerId) {
-                return;
-            }
-            const layout = this.node.querySelector<HTMLElement>('.qaap-transcript-review-layout');
-            const layoutHeight = layout?.clientHeight ?? 480;
-            const maxList = Math.max(96, layoutHeight * 0.78);
-            const delta = moveEvent.clientY - this.transcriptResizeStartY;
-            this.transcriptFileListHeightPx = Math.min(
-                maxList,
-                Math.max(72, this.transcriptResizeStartListHeight + delta),
-            );
-            this.update();
-        };
-
-        const onEnd = (endEvent: PointerEvent): void => {
-            if (endEvent.pointerId !== event.pointerId) {
-                return;
-            }
-            handle.releasePointerCapture(event.pointerId);
-            handle.removeEventListener('pointermove', onMove);
-            handle.removeEventListener('pointerup', onEnd);
-            handle.removeEventListener('pointercancel', onEnd);
-        };
-
-        handle.addEventListener('pointermove', onMove);
-        handle.addEventListener('pointerup', onEnd);
-        handle.addEventListener('pointercancel', onEnd);
     };
 
     protected readonly onReviewComposerSubmit = (event: React.FormEvent): void => {
@@ -990,6 +965,56 @@ function FileRow(props: {
                 <i className={codicon('go-to-file')} />
             </button>
         </div>
+    );
+}
+
+type ContextSegment =
+    | { kind: 'lines'; lines: QaapGitHunkLine[] }
+    | { kind: 'collapsed'; lines: QaapGitHunkLine[] };
+
+function buildContextSegments(lines: QaapGitHunkLine[]): ContextSegment[] {
+    const segments: ContextSegment[] = [];
+    let ctxRun: QaapGitHunkLine[] = [];
+
+    const flushCtx = (): void => {
+        if (ctxRun.length === 0) {
+            return;
+        }
+        if (ctxRun.length >= CONTEXT_COLLAPSE_THRESHOLD) {
+            segments.push({ kind: 'collapsed', lines: ctxRun });
+        } else {
+            segments.push({ kind: 'lines', lines: ctxRun });
+        }
+        ctxRun = [];
+    };
+
+    for (const line of lines) {
+        if (line.type === 'ctx') {
+            ctxRun.push(line);
+        } else {
+            flushCtx();
+            segments.push({ kind: 'lines', lines: [line] });
+        }
+    }
+    flushCtx();
+    return segments;
+}
+
+function CollapsedContextBar(props: { count: number; expanded: boolean; onToggle: () => void }): React.ReactElement {
+    const label = props.count === 1
+        ? nls.localize('qaap/diff/oneUnmodifiedLine', '1 unmodified line')
+        : nls.localize('qaap/diff/nUnmodifiedLines', '{0} unmodified lines', String(props.count));
+    const icon = props.expanded ? codicon('chevron-up') : codicon('chevron-down');
+    return (
+        <button
+            type='button'
+            className={`qaap-diff-review-collapsed${props.expanded ? ' qaap-mod-expanded' : ''}`}
+            onClick={props.onToggle}
+            aria-expanded={props.expanded}
+        >
+            <i className={`${icon} qaap-diff-review-collapsed-chevron`} aria-hidden='true' />
+            <span>{label}</span>
+        </button>
     );
 }
 

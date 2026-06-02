@@ -18,11 +18,11 @@ describe('qaap-dev-preview', () => {
             .to.equal('http://178.105.136.93:3000/qaap-dev/3001/');
     });
 
-    it('buildQaapDevPreviewOpenUrl uses direct localhost ports', () => {
+    it('buildQaapDevPreviewOpenUrl uses the same-origin proxy on localhost too', () => {
         expect(buildQaapDevPreviewOpenUrl('http://localhost:3000', 5173))
-            .to.equal('http://localhost:5173/');
+            .to.equal('http://localhost:3000/qaap-dev/5173/');
         expect(buildQaapDevPreviewOpenUrl('http://127.0.0.1:3000', 5173))
-            .to.equal('http://127.0.0.1:5173/');
+            .to.equal('http://127.0.0.1:3000/qaap-dev/5173/');
     });
 
     it('buildQaapDevPreviewOpenUrl keeps the proxy for remote origins', () => {

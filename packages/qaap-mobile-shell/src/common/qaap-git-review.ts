@@ -23,6 +23,8 @@ export interface QaapGitChangedFile {
 export interface QaapGitChangesResponse {
     /** Absolute fs path of the repository root that was inspected. */
     root: string;
+    /** Current branch name (`git rev-parse --abbrev-ref HEAD`), when available. */
+    branch?: string;
     files: QaapGitChangedFile[];
 }
 

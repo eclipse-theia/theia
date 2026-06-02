@@ -14,6 +14,7 @@ import {
     PickedElement,
 } from '@theia/qaap-element-inspector/lib/browser/element-inspector-types';
 import { QaapMiniBrowserContent } from './qaap-mini-browser-content';
+import { QaapPreviewSurfaceRegistry } from './qaap-preview-surface-registry';
 
 export interface QaapElementPickResult {
     readonly picked?: QaapElementPickSummary;
@@ -49,18 +50,24 @@ export class QaapElementPickerService {
     @inject(ElementInspectorService)
     protected readonly inspector: ElementInspectorService;
 
-    /** True when a preview mini-browser tab exists (picker can run). */
+    @inject(QaapPreviewSurfaceRegistry)
+    protected readonly previewSurfaces: QaapPreviewSurfaceRegistry;
+
+    /** True when a preview surface exists (mini-browser tab or embedded transcript preview). */
     hasPreviewTab(): boolean {
-        return this.findPreviewContent() !== undefined;
+        return this.previewSurfaces.hasActiveSurface() || this.findPreviewContent() !== undefined;
     }
 
-    /** Activates the picker on the active or first open preview mini-browser. */
+    /** Activates the picker on the active embedded or mini-browser preview. */
     activatePicker(): { started: boolean; message: string } {
+        if (this.previewSurfaces.hasActiveSurface()) {
+            return this.previewSurfaces.activateElementPicker();
+        }
         const content = this.findPreviewContent();
         if (!content) {
             return {
                 started: false,
-                message: 'No preview tab open. Run qaap_bootstrap_open_preview first, then pick an element.',
+                message: 'No preview open. Open a dev preview first, then pick an element.',
             };
         }
         content.startElementPicker();

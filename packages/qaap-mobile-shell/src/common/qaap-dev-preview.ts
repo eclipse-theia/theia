@@ -10,7 +10,7 @@ export const QAAP_DEV_PREVIEW_PROBE_PATH = `${QAAP_DEV_PREVIEW_PREFIX}/api/probe
 
 export interface QaapDevPreviewProbeResponse {
     readonly ready: boolean;
-    /** URL the mini-browser should load, direct on localhost and proxied on remote hosts. */
+    /** URL the mini-browser should load via the same-origin `/qaap-dev/:port/` proxy. */
     readonly previewUrl: string;
 }
 
@@ -62,9 +62,8 @@ export function buildQaapDevPreviewUrl(publicOrigin: string, port: number): stri
 }
 
 export function buildQaapDevPreviewOpenUrl(publicOrigin: string, port: number): string {
-    return isLocalQaapPreviewOrigin(publicOrigin)
-        ? buildDirectDevPreviewUrl(publicOrigin, port)
-        : buildQaapDevPreviewUrl(publicOrigin, port);
+    // Always use the same-origin proxy so in-IDE preview can run the element picker / inspector.
+    return buildQaapDevPreviewUrl(publicOrigin, port);
 }
 
 /** Parses `/qaap-dev/5173/...` upgrade or request paths. */
