@@ -35,7 +35,7 @@
 }
 
 .theia-ChatInput-Editor-Box.qaap-codex-input-shell:has(.monaco-editor.focused) {
-  border-color: color-mix(in srgb, var(--theia-foreground) 14%, transparent);
+  border-color: var(--qaap-codex-line-strong);
   box-shadow: none;
 }
 

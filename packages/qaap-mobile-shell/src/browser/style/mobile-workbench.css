@@ -12407,9 +12407,15 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .lm-Widget.dialo
   transition: border-color 140ms ease;
 }
 
-.theia-mobile-projects-sticky-composer-card.theia-mod-codex:focus-within {
-  border-color: color-mix(in srgb, var(--theia-foreground) 14%, transparent);
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex:focus-within,
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex.theia-mod-has-context:focus-within {
+  border-color: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
   box-shadow: none;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex.theia-mod-has-context .theia-mobile-projects-sticky-composer-input-wrap:focus-within {
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex {
@@ -12458,6 +12464,14 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .lm-Widget.dialo
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-input::placeholder {
   color: color-mix(in srgb, var(--theia-descriptionForeground) 65%, transparent);
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-input:focus,
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-input:focus-visible {
+  outline: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-controls-row {
@@ -12531,9 +12545,126 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .lm-Widget.dialo
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-strip {
   margin: 0;
-  padding: 10px 14px 8px;
+  padding: 8px 14px 6px;
+  gap: 5px;
   border-bottom: 1px solid color-mix(in srgb, var(--theia-foreground) 6%, transparent);
   background: transparent;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-head-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 10px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-clear-all {
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chips {
+  gap: 4px;
+  padding-bottom: 0;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip {
+  gap: 4px;
+  max-width: min(180px, 70vw);
+  min-height: 24px;
+  padding: 2px 3px 2px 5px;
+  border-radius: 6px;
+  border-color: color-mix(in srgb, var(--theia-foreground) 7%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground) 5%, transparent);
+  box-shadow: none;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip:hover {
+  border-color: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+  box-shadow: none;
+  transform: none;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip:active {
+  transform: scale(0.98);
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-icon {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip.theia-mod-kind-file .theia-mobile-projects-sticky-composer-context-chip-icon,
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip.theia-mod-kind-imageContext .theia-mobile-projects-sticky-composer-context-chip-icon,
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip.theia-mod-kind-editorContext .theia-mobile-projects-sticky-composer-context-chip-icon {
+  opacity: 0.85;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-title {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: color-mix(in srgb, var(--theia-foreground) 82%, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-subtitle {
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-remove {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-left: 1px;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-remove:hover,
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-chip-remove:focus-visible {
+  opacity: 0.9;
+  background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file {
+  min-height: 26px;
+  padding: 2px 3px 2px 6px;
+  border-radius: 6px;
+  gap: 5px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file-icon {
+  font-size: 12px;
+  width: 14px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file-title {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file-subtitle {
+  font-size: 10px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file-remove {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
 }
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex > .qaap-codex-context-tray {
