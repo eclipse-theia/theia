@@ -271,6 +271,14 @@ class PluginImpl implements Plugin {
             contents = 'const __nativePtyRequire = require;\n' + contents.replace(/\brequire\(/g, '__nativePtyRequire(');
             return { contents, loader: 'js' };
         });
+        build.onLoad({ filter: /node_modules[/\\]@stroncium[/\\]procfs[/\\]lib[/\\]parsers\.js$/ }, async args => {
+            let contents = await fs.promises.readFile(args.path, 'utf8');
+            // esbuild expands `require(`./parsers/${name}`)` into a glob lookup whose
+            // keys include the `.js` extension, but the runtime call passes the bare
+            // name and misses. Append `.js` so the runtime key matches the map.
+            contents = contents.replace('require(`./parsers/${name}`)', 'require(`./parsers/${name}.js`)');
+            return { contents, loader: 'js' };
+        });
         build.onEnd(() => {
             if (this.options.trash) {
                 copyTrashHelper(outdir);
