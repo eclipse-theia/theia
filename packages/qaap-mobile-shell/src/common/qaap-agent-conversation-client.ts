@@ -159,6 +159,8 @@ export interface QaapCreateConversationBody {
     readonly agentModel?: QaapCreateAgentTaskQaiqModel;
     /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    /** When `false`, tool calls need manual CLI approval on the VPS. */
+    readonly autoApprove?: boolean;
 }
 
 export async function listConversationsForCwd(cwd: string): Promise<QaapAgentConversationSummaryDTO[]> {

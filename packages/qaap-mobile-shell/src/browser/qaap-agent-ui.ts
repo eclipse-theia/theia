@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { appendAgentBrandIcon, createAgentBrandIcon, resolveAgentBrand } from '../common/qaap-agent-branding';
+import type { QaapAgentApprovalPolicyOption } from '../common/qaap-sticky-composer-approval-policy';
 
 export type QaapAgentUiSize = 'sm' | 'md';
 
@@ -106,6 +107,67 @@ export function createAgentSheetOptionButton(options: {
     btn.append(content);
     btn.addEventListener('click', options.onSelect);
     return btn;
+}
+
+/** Agent approval policy row (icon + title + description + optional check). */
+export function createApprovalPolicySheetOptionButton(options: {
+    readonly policy: QaapAgentApprovalPolicyOption;
+    readonly selected?: boolean;
+    readonly onSelect: () => void;
+}): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theia-mobile-sticky-composer-sheet-option theia-qaap-approval-policy-sheet-option';
+    if (options.selected) {
+        btn.classList.add('theia-mod-selected');
+    }
+    const content = document.createElement('span');
+    content.className = 'theia-mobile-sticky-composer-sheet-option-content theia-qaap-approval-policy-sheet-option-content';
+
+    const iconHost = document.createElement('span');
+    iconHost.className = 'theia-qaap-approval-policy-sheet-icon';
+    const icon = document.createElement('span');
+    icon.className = `codicon ${options.policy.sheetIconClass}`;
+    icon.setAttribute('aria-hidden', 'true');
+    iconHost.append(icon);
+    content.append(iconHost);
+
+    const text = document.createElement('span');
+    text.className = 'theia-qaap-approval-policy-sheet-text';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'theia-qaap-approval-policy-sheet-label';
+    labelEl.textContent = options.policy.label;
+    const descriptionEl = document.createElement('span');
+    descriptionEl.className = 'theia-qaap-approval-policy-sheet-description';
+    descriptionEl.textContent = options.policy.description;
+    text.append(labelEl, descriptionEl);
+    content.append(text);
+
+    if (options.selected) {
+        const check = document.createElement('span');
+        check.className = 'codicon codicon-check theia-mobile-sticky-composer-sheet-option-check';
+        check.setAttribute('aria-hidden', 'true');
+        content.append(check);
+    }
+
+    btn.append(content);
+    btn.addEventListener('click', options.onSelect);
+    return btn;
+}
+
+/** Sticky composer approval trigger — icon + chevron. */
+export function populateApprovalPolicyToolbarButton(
+    button: HTMLButtonElement,
+    policy: QaapAgentApprovalPolicyOption,
+): void {
+    button.replaceChildren();
+    const icon = document.createElement('span');
+    icon.className = `codicon ${policy.toolbarIconClass} theia-qaap-approval-policy-toolbar-icon`;
+    icon.setAttribute('aria-hidden', 'true');
+    const chevron = document.createElement('span');
+    chevron.className = 'codicon codicon-chevron-down';
+    chevron.setAttribute('aria-hidden', 'true');
+    button.append(icon, chevron);
 }
 
 /** Picker row for model lists (no agent brand icon). */

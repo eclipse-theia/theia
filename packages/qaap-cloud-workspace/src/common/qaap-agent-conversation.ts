@@ -172,6 +172,8 @@ export interface QaapCreateAgentConversationRequest {
     /** Marks this conversation as a parallel-run variant (grouped under {@link parallelBaseCwd}). */
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
+    /** When `false`, tool calls need manual CLI approval on the VPS. */
+    readonly autoApprove?: boolean;
 }
 
 export interface QaapPostAgentMessageRequest {

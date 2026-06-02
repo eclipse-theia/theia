@@ -160,6 +160,7 @@ export class QaapAgentConversationStore {
             messages: [],
             ...(request.parallelRunId ? { parallelRunId: request.parallelRunId } : {}),
             ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
+            ...(request.autoApprove === false ? { autoApprove: false } : {}),
             ...(() => {
                 const agentModel = request.agentModel ?? request.qaiqModel;
                 return agentModel && agentSupportsModelPicker(agentId)

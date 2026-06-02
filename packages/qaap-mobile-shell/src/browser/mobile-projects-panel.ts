@@ -135,6 +135,15 @@ import {
     writeStoredComposerMode,
 } from '../common/qaap-sticky-composer-mode';
 import {
+    agentSupportsApprovalPolicy,
+    QAAP_AGENT_APPROVAL_POLICIES,
+    reconcileAgentApprovalPolicyId,
+    resolveAutoApproveFromApprovalPolicy,
+    resolveAgentApprovalPolicyOption,
+    writeStoredAgentApprovalPolicy,
+    type QaapAgentApprovalPolicyId,
+} from '../common/qaap-sticky-composer-approval-policy';
+import {
     attachStickyComposerMentionUi,
     buildStickyComposerMentionOptions,
     buildStickyComposerVariableOptions,
@@ -144,8 +153,10 @@ import {
     createAgentPickerField,
     createAgentSheetOptionButton,
     createAgentTaskBadge,
+    createApprovalPolicySheetOptionButton,
     createPickerSheetOptionButton,
     populateAgentToolbarButton,
+    populateApprovalPolicyToolbarButton,
 } from './qaap-agent-ui';
 import {
     renderStickyComposerContextStrip,
@@ -200,7 +211,7 @@ import {
     writeStoredComposerSurface,
     type QaapComposerSurface,
 } from '../common/qaap-composer-surface';
-import { resolveQaapAgentTaskVisualStatus, type QaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
+import { resolveQaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
 import {
     filterCatalogSections,
     QAAP_WORK_HUB_GETTING_STARTED,
@@ -472,7 +483,9 @@ export class MobileProjectsPanel {
     protected stickyComposerQaiqModels: QaapQaiqModelOption[] = [];
     protected stickyComposerAgentSheet: HTMLElement | undefined;
     protected stickyComposerModeSheet: HTMLElement | undefined;
+    protected stickyComposerApprovalSheet: HTMLElement | undefined;
     protected stickyComposerModeId: string | undefined;
+    protected stickyComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     protected stickyComposerSurface: QaapComposerSurface = 'task';
     protected tasksHubSurface: QaapComposerSurface = 'task';
     protected transcriptComposerHost: HTMLElement | undefined;
@@ -487,7 +500,9 @@ export class MobileProjectsPanel {
     protected transcriptComposerAgentSheet: HTMLElement | undefined;
     protected transcriptComposerQaiqModelSheet: HTMLElement | undefined;
     protected transcriptComposerModeSheet: HTMLElement | undefined;
+    protected transcriptComposerApprovalSheet: HTMLElement | undefined;
     protected transcriptComposerModeId: string | undefined;
+    protected transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     protected agentChatInputSession: ChatSession | undefined;
     protected transcriptChatInputWidget: AIChatInputWidget | undefined;
     protected transcriptChatViewWidget: MobileProjectChatViewWidget | undefined;
@@ -2560,6 +2575,15 @@ export class MobileProjectsPanel {
             modes,
             cwd,
         );
+        const showApprovalPolicy = !isChatSurface && agentSupportsApprovalPolicy(pinnedId);
+        if (showApprovalPolicy) {
+            this.stickyComposerApprovalPolicyId = reconcileAgentApprovalPolicyId(
+                this.stickyComposerApprovalPolicyId,
+                cwd,
+            );
+        } else {
+            this.stickyComposerApprovalPolicyId = undefined;
+        }
 
         const column = this.buildStickyComposerColumn({
             project,
@@ -2586,6 +2610,15 @@ export class MobileProjectsPanel {
             onOpenModeSheet: modes.length > 1
                 ? () => { this.openStickyComposerModeSheet(project, modes); }
                 : undefined,
+            approvalPolicyId: showApprovalPolicy ? this.stickyComposerApprovalPolicyId : undefined,
+            onOpenApprovalPolicySheet: showApprovalPolicy
+                ? () => {
+                    this.openStickyComposerApprovalPolicySheet(
+                        project,
+                        this.resolveStickyComposerAgentLabel(project),
+                    );
+                }
+                : undefined,
             canSubmit,
             onAttach: anchor => { void this.onStickyComposerAttach(project, anchor); },
             onOpenAgentSheet: isChatSurface ? () => { /* Chat is Coder-only */ } : () => { this.openStickyComposerAgentSheet(project); },
@@ -2600,12 +2633,16 @@ export class MobileProjectsPanel {
                     }) ?? resolvedPinnedId;
                 const variables = this.stickyComposerContext.length > 0 ? [...this.stickyComposerContext] : undefined;
                 const modeId = this.stickyComposerModeId;
+                const autoApprove = showApprovalPolicy && this.stickyComposerApprovalPolicyId
+                    ? resolveAutoApproveFromApprovalPolicy(this.stickyComposerApprovalPolicyId)
+                    : undefined;
                 this.stickyComposerContext = [];
                 const submitOptions = {
                     openConversation: isChatSurface,
                     selectedAgentId,
                     modeId,
                     variables,
+                    autoApprove,
                 };
                 const done = isChatSurface
                     ? this.submitLocalChatFromComposer(project, draft, submitOptions)
@@ -2634,7 +2671,7 @@ export class MobileProjectsPanel {
                 : undefined,
             inputPlaceholder: isChatSurface
                 ? nls.localize('qaap/mobileProjects/stickyComposerNewChat', 'Message the workspace agent…')
-                : nls.localize('qaap/mobileProjects/stickyComposerNewTask', 'Delegate a VPS task…'),
+                : nls.localize('qaap/mobileProjects/stickyComposerNewTask', 'Delegate a task…'),
             sendLabel: isChatSurface
                 ? nls.localize('qaap/mobileProjects/chatSend', 'Send')
                 : nls.localize('qaap/mobileProjects/taskCreate', 'Create'),
@@ -2757,6 +2794,8 @@ export class MobileProjectsPanel {
         modes?: readonly ChatMode[];
         resolveModeLabel?: () => string;
         onOpenModeSheet?: () => void;
+        approvalPolicyId?: QaapAgentApprovalPolicyId;
+        onOpenApprovalPolicySheet?: () => void;
         canSubmit: boolean;
         onAttach: (anchor: HTMLElement) => void;
         onOpenAgentSheet: () => void;
@@ -2801,6 +2840,27 @@ export class MobileProjectsPanel {
             ev.stopPropagation();
             options.onAttach(attachBtn);
         });
+
+        const controlsLeftItems: HTMLElement[] = [attachBtn];
+        if (options.approvalPolicyId && options.onOpenApprovalPolicySheet) {
+            const approvalPolicy = resolveAgentApprovalPolicyOption(options.approvalPolicyId);
+            const approvalBtn = document.createElement('button');
+            approvalBtn.type = 'button';
+            approvalBtn.className = 'theia-mobile-projects-sticky-composer-approval-policy';
+            approvalBtn.title = nls.localize(
+                'qaap/mobileProjects/stickyComposerApprovalPolicy',
+                'Approval policy: {0}',
+                approvalPolicy.label,
+            );
+            approvalBtn.setAttribute('aria-label', approvalBtn.title);
+            approvalBtn.setAttribute('aria-haspopup', 'dialog');
+            populateApprovalPolicyToolbarButton(approvalBtn, approvalPolicy);
+            approvalBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                options.onOpenApprovalPolicySheet!();
+            });
+            controlsLeftItems.push(approvalBtn);
+        }
 
         const agentBtn = document.createElement('button');
         agentBtn.type = 'button';
@@ -2936,7 +2996,7 @@ export class MobileProjectsPanel {
 
         inputWrap.classList.add('theia-mod-codex');
         inputBody.append(input);
-        controlsLeft.append(attachBtn);
+        controlsLeft.append(...controlsLeftItems);
         controlsRight.append(sendBtn);
         controlsRow.append(controlsLeft, controlsRight);
         inputWrap.append(inputBody, controlsRow);
@@ -3147,6 +3207,105 @@ export class MobileProjectsPanel {
         sheet.append(backdrop, panel);
         document.body.append(sheet);
         this.stickyComposerModeSheet = sheet;
+    }
+
+    protected openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void {
+        this.closeStickyComposerSheets();
+        const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
+        this.openApprovalPolicySheet({
+            agentLabel,
+            cwd,
+            selectedId: reconcileAgentApprovalPolicyId(this.stickyComposerApprovalPolicyId, cwd),
+            onSelect: policyId => {
+                this.stickyComposerApprovalPolicyId = policyId;
+                if (cwd) {
+                    writeStoredAgentApprovalPolicy(cwd, policyId);
+                }
+                this.closeStickyComposerSheets();
+                this.renderStickyComposer();
+            },
+            onClose: () => this.closeStickyComposerSheets(),
+            assignSheet: sheet => { this.stickyComposerApprovalSheet = sheet; },
+        });
+    }
+
+    protected openTranscriptComposerApprovalPolicySheet(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        agentLabel: string,
+    ): void {
+        this.closeTranscriptComposerSheets();
+        const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
+        this.openApprovalPolicySheet({
+            agentLabel,
+            cwd,
+            selectedId: reconcileAgentApprovalPolicyId(this.transcriptComposerApprovalPolicyId, cwd),
+            onSelect: policyId => {
+                this.transcriptComposerApprovalPolicyId = policyId;
+                if (cwd) {
+                    writeStoredAgentApprovalPolicy(cwd, policyId);
+                }
+                this.closeTranscriptComposerSheets();
+                this.remountTranscriptStickyComposer();
+            },
+            onClose: () => this.closeTranscriptComposerSheets(),
+            assignSheet: sheet => { this.transcriptComposerApprovalSheet = sheet; },
+        });
+    }
+
+    protected openApprovalPolicySheet(options: {
+        readonly agentLabel: string;
+        readonly cwd: string | undefined;
+        readonly selectedId: QaapAgentApprovalPolicyId;
+        readonly onSelect: (policyId: QaapAgentApprovalPolicyId) => void;
+        readonly onClose: () => void;
+        readonly assignSheet: (sheet: HTMLElement) => void;
+    }): void {
+        const sheet = document.createElement('div');
+        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-approval-policy';
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
+        backdrop.addEventListener('click', () => options.onClose());
+
+        const panel = document.createElement('section');
+        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
+
+        const header = document.createElement('header');
+        header.className = 'theia-mobile-sticky-composer-sheet-header';
+
+        const title = document.createElement('h2');
+        title.textContent = nls.localize(
+            'qaap/mobileProjects/approvalPolicySheetTitle',
+            'How should {0} actions be approved?',
+            options.agentLabel,
+        );
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
+        close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
+        close.setAttribute('aria-label', close.title);
+        close.addEventListener('click', () => options.onClose());
+
+        header.append(title, close);
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-sticky-composer-sheet-list theia-qaap-approval-policy-sheet-list';
+        for (const policy of QAAP_AGENT_APPROVAL_POLICIES) {
+            list.append(createApprovalPolicySheetOptionButton({
+                policy,
+                selected: policy.id === options.selectedId,
+                onSelect: () => options.onSelect(policy.id),
+            }));
+        }
+
+        panel.append(header, list);
+        sheet.append(backdrop, panel);
+        document.body.append(sheet);
+        options.assignSheet(sheet);
     }
 
     protected createModeSheetOption(
@@ -3365,6 +3524,10 @@ export class MobileProjectsPanel {
         if (this.stickyComposerModeSheet) {
             this.stickyComposerModeSheet.remove();
             this.stickyComposerModeSheet = undefined;
+        }
+        if (this.stickyComposerApprovalSheet) {
+            this.stickyComposerApprovalSheet.remove();
+            this.stickyComposerApprovalSheet = undefined;
         }
     }
 
@@ -5936,35 +6099,30 @@ export class MobileProjectsPanel {
         const agentChip = createAgentTaskBadge({
             agentId,
             label: agentLabel,
-            labelColor: stateColor,
         });
         footRow.append(agentChip);
         if (summary?.linkedPullRequest?.number) {
             const prChip = document.createElement('span');
             prChip.className = 'theia-mobile-projects-task-agent theia-mod-linked-pr';
             prChip.textContent = nls.localize(
-                'qaap/mobileProjects/inboxLinkedPr',
-                'PR #{0}',
+                'qaap/mobileProjects/inboxLinkedPrShort',
+                '#{0}',
                 String(summary.linkedPullRequest.number),
             );
             footRow.append(prChip);
         }
-        this.appendConversationFootMetrics(footRow, summary, isRunning, stateColor);
-
-        this.appendTaskFootSeparator(footRow);
-        const stateChip = document.createElement('span');
-        stateChip.className = `theia-mobile-projects-task-state ${visualStatus.className}`;
-        stateChip.style.color = stateColor;
-        stateChip.textContent = this.taskStateLabel(visualStatus);
-        footRow.append(stateChip);
+        this.appendConversationFootMetrics(footRow, summary, isRunning);
 
         if (summary && summary.messageCount > 0 && !this.hasConversationDiffStats(summary)) {
             this.appendTaskFootSeparator(footRow);
             const msgCount = document.createElement('span');
             msgCount.className = 'theia-mobile-projects-task-message-count';
-            msgCount.textContent = summary.messageCount === 1
+            msgCount.textContent = String(summary.messageCount);
+            const msgLabel = summary.messageCount === 1
                 ? nls.localize('qaap/mobileProjects/taskMessageOne', '1 message')
                 : nls.localize('qaap/mobileProjects/taskMessageMany', '{0} messages', String(summary.messageCount));
+            msgCount.setAttribute('aria-label', msgLabel);
+            msgCount.title = msgLabel;
             footRow.append(msgCount);
         }
         taskBody.append(footRow);
@@ -5976,7 +6134,7 @@ export class MobileProjectsPanel {
         });
         row.append(item);
 
-        if (summary && isUnread) {
+        if (summary && isUnread && !needsInput) {
             const unread = document.createElement('span');
             unread.className = 'theia-mobile-projects-task-unread';
             const unreadLabel = nls.localize('qaap/mobileProjects/unreadBadge', 'New agent reply');
@@ -6128,7 +6286,6 @@ export class MobileProjectsPanel {
         footRow: HTMLElement,
         summary: QaapAgentConversationSummaryDTO | undefined,
         isRunning: boolean,
-        stateColor: string,
     ): void {
         if (!summary) {
             return;
@@ -6137,7 +6294,6 @@ export class MobileProjectsPanel {
             this.appendTaskFootSeparator(footRow);
             const activity = document.createElement('span');
             activity.className = 'theia-mobile-projects-task-activity';
-            activity.style.color = stateColor;
             activity.textContent = this.localizeActivityLabel(summary.activityLabel);
             footRow.append(activity);
         }
@@ -6209,11 +6365,7 @@ export class MobileProjectsPanel {
         if (durationMs === undefined || durationMs < 1000) {
             return undefined;
         }
-        return nls.localize(
-            'qaap/mobileProjects/ranFor',
-            'Ran {0}',
-            this.formatDurationShort(durationMs),
-        );
+        return this.formatDurationShort(durationMs);
     }
 
     protected formatDurationShort(durationMs: number): string {
@@ -6260,10 +6412,6 @@ export class MobileProjectsPanel {
             return nls.localize('qaap/mobileProjects/agentChat', 'Chat');
         }
         return agentId.startsWith('@') ? agentId : `@${agentId}`;
-    }
-
-    protected taskStateLabel(status: QaapAgentTaskVisualStatus): string {
-        return nls.localize(status.labelKey, status.label);
     }
 
     /**
@@ -7180,6 +7328,7 @@ export class MobileProjectsPanel {
             forceVps?: boolean;
             selectedAgentId?: string;
             modeId?: string;
+            autoApprove?: boolean;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
@@ -7269,6 +7418,7 @@ export class MobileProjectsPanel {
             forceVps?: boolean;
             selectedAgentId?: string;
             modeId?: string;
+            autoApprove?: boolean;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
@@ -7286,6 +7436,7 @@ export class MobileProjectsPanel {
             title: draft,
             message,
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
+            ...(options.autoApprove === false ? { autoApprove: false } : {}),
         });
         const summary = conversationToSummary(conversation);
         this.conversations?.recordSnapshot(summary);
@@ -7828,12 +7979,11 @@ export class MobileProjectsPanel {
             return;
         }
         switch (tab) {
-            case 'review': {
+            case 'review':
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabChanges', 'Changes');
-                subtitle.textContent = '';
-                subtitle.hidden = true;
+                subtitle.hidden = false;
+                subtitle.textContent = this.transcriptConversationMeta(project, summary);
                 break;
-            }
             case 'preview':
                 titleEl.textContent = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
                 subtitle.hidden = false;
@@ -9092,6 +9242,15 @@ export class MobileProjectsPanel {
             modes,
             cwd,
         );
+        const showApprovalPolicy = !isTheiaChat && agentSupportsApprovalPolicy(pinnedId);
+        if (showApprovalPolicy) {
+            this.transcriptComposerApprovalPolicyId = reconcileAgentApprovalPolicyId(
+                this.transcriptComposerApprovalPolicyId,
+                cwd,
+            );
+        } else {
+            this.transcriptComposerApprovalPolicyId = undefined;
+        }
         const column = this.buildStickyComposerColumn({
             project,
             surface: isTheiaChat ? 'chat' : 'task',
@@ -9117,6 +9276,16 @@ export class MobileProjectsPanel {
             onOpenModeSheet: modes.length > 1
                 ? () => { this.openTranscriptComposerModeSheet(project, summary, modes); }
                 : undefined,
+            approvalPolicyId: showApprovalPolicy ? this.transcriptComposerApprovalPolicyId : undefined,
+            onOpenApprovalPolicySheet: showApprovalPolicy
+                ? () => {
+                    this.openTranscriptComposerApprovalPolicySheet(
+                        project,
+                        summary,
+                        this.resolveTranscriptComposerAgentLabel(),
+                    );
+                }
+                : undefined,
             canSubmit: true,
             onAttach: anchor => { void this.onTranscriptComposerAttach(project, anchor); },
             onOpenAgentSheet: isTheiaChat
@@ -9137,6 +9306,9 @@ export class MobileProjectsPanel {
                     ? [...this.transcriptComposerContext]
                     : undefined;
                 const modeId = this.transcriptComposerModeId;
+                const autoApprove = showApprovalPolicy && this.transcriptComposerApprovalPolicyId
+                    ? resolveAutoApproveFromApprovalPolicy(this.transcriptComposerApprovalPolicyId)
+                    : undefined;
                 this.transcriptComposerContext = [];
                 void (async () => {
                     try {
@@ -9155,6 +9327,7 @@ export class MobileProjectsPanel {
                                 selectedAgentId,
                                 modeId,
                                 variables,
+                                autoApprove,
                             });
                         }
                     } catch (error) {
@@ -9370,6 +9543,10 @@ export class MobileProjectsPanel {
             this.transcriptComposerModeSheet.remove();
             this.transcriptComposerModeSheet = undefined;
         }
+        if (this.transcriptComposerApprovalSheet) {
+            this.transcriptComposerApprovalSheet.remove();
+            this.transcriptComposerApprovalSheet = undefined;
+        }
     }
 
     protected attachTranscriptChatViewWidget(
@@ -9562,6 +9739,7 @@ export class MobileProjectsPanel {
         options: {
             selectedAgentId?: string;
             modeId?: string;
+            autoApprove?: boolean;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: AIVariableResolutionRequest[];
@@ -9588,6 +9766,11 @@ export class MobileProjectsPanel {
             this.renderTranscriptMessages(this.transcriptChatHost, optimistic);
         }
         try {
+            if (options.autoApprove === false && base.autoApprove !== false) {
+                await updateConversation(summary.id, { autoApprove: false });
+            } else if (options.autoApprove === true && base.autoApprove === false) {
+                await updateConversation(summary.id, { autoApprove: true });
+            }
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
             const updated = await postConversationMessage(summary.id, outbound, agent, agentModel);
             const nextSummary = conversationToSummary(updated);

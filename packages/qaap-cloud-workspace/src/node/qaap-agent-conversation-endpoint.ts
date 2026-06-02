@@ -115,6 +115,7 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 message: body.message,
                 agentModel: body.agentModel ?? body.qaiqModel,
                 qaiqModel: body.agentModel ?? body.qaiqModel,
+                autoApprove: body.autoApprove,
             });
             res.status(201).json(conv);
         } catch (error) {
