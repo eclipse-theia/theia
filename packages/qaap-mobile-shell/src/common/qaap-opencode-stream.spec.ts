@@ -75,4 +75,11 @@ describe('parseOpencodeLog', () => {
         expect(parsed.segments.some(segment => segment.type === 'tool')).to.be.true;
         expect(parsed.content).to.equal('Hello.');
     });
+
+    it('does not invent tool segments from plain prose', () => {
+        const log = 'Here is a summary:\n\n**Lo bueno**\n- React 19 + Vite 7';
+        const parsed = parseOpencodeLog(log);
+        expect(parsed.segments.filter(segment => segment.type === 'tool')).to.have.length(0);
+        expect(parsed.content).to.include('Here is a summary');
+    });
 });

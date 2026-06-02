@@ -72,7 +72,7 @@ export function createAgentSheetOptionButton(options: {
     readonly agentId: string;
     readonly label: string;
     readonly selected?: boolean;
-    readonly submenuChevron?: 'collapsed' | 'expanded';
+    readonly submenuChevron?: 'collapsed' | 'expanded' | 'forward';
     readonly onSelect: () => void;
 }): HTMLButtonElement {
     const btn = document.createElement('button');
@@ -88,12 +88,45 @@ export function createAgentSheetOptionButton(options: {
     labelEl.className = 'theia-mobile-sticky-composer-sheet-option-label';
     labelEl.textContent = options.label;
     content.append(labelEl);
+    if (options.selected) {
+        const check = document.createElement('span');
+        check.className = 'codicon codicon-check theia-mobile-sticky-composer-sheet-option-check';
+        check.setAttribute('aria-hidden', 'true');
+        content.append(check);
+    }
     if (options.submenuChevron) {
         const chevron = document.createElement('span');
-        chevron.className = `codicon codicon-chevron-${options.submenuChevron === 'expanded' ? 'down' : 'right'} theia-mobile-sticky-composer-sheet-option-chevron`;
+        const icon = options.submenuChevron === 'expanded'
+            ? 'codicon-chevron-down'
+            : 'codicon-chevron-right';
+        chevron.className = `codicon ${icon} theia-mobile-sticky-composer-sheet-option-chevron`;
         chevron.setAttribute('aria-hidden', 'true');
         content.append(chevron);
-    } else if (options.selected) {
+    }
+    btn.append(content);
+    btn.addEventListener('click', options.onSelect);
+    return btn;
+}
+
+/** Picker row for model lists (no agent brand icon). */
+export function createPickerSheetOptionButton(options: {
+    readonly label: string;
+    readonly selected?: boolean;
+    readonly onSelect: () => void;
+}): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theia-mobile-sticky-composer-sheet-option theia-qaap-picker-sheet-option';
+    if (options.selected) {
+        btn.classList.add('theia-mod-selected');
+    }
+    const content = document.createElement('span');
+    content.className = 'theia-mobile-sticky-composer-sheet-option-content';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'theia-mobile-sticky-composer-sheet-option-label';
+    labelEl.textContent = options.label;
+    content.append(labelEl);
+    if (options.selected) {
         const check = document.createElement('span');
         check.className = 'codicon codicon-check theia-mobile-sticky-composer-sheet-option-check';
         check.setAttribute('aria-hidden', 'true');

@@ -37,6 +37,8 @@ export interface QaapAgentTask {
     readonly parentId?: string;
     /** Whether skip-permission flags were applied when the CLI was spawned. */
     readonly autoApprove?: boolean;
+    /** QAIQ model the user picked in the mobile agent sheet (provider + vendor + modelId). */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 
 /** A task plus its captured stdout/stderr log. */

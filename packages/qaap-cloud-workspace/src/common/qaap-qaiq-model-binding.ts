@@ -124,6 +124,20 @@ function openAiCompatibleBinding(vendor: QaapModelVendor, modelId: string): Qaap
     };
 }
 
+/** Build a QAIQ CLI binding from the user's explicit picker selection (provider + vendor + modelId). */
+export function bindingFromQaiqModelSelection(model: {
+    readonly provider: QaapQaiqProviderId;
+    readonly vendor: string;
+    readonly modelId: string;
+}): QaapQaiqModelBinding {
+    return {
+        provider: model.provider,
+        vendor: (model.vendor?.trim() || 'unknown') as QaapModelVendor,
+        modelId: model.modelId.trim(),
+        contextWindow: DEFAULT_QAAP_MODEL_CONTEXT_WINDOW,
+    };
+}
+
 export function formatQaiqProviderFlags(binding: QaapQaiqModelBinding): string {
     return `--provider ${binding.provider} --model ${shellQuote(binding.modelId)}`;
 }

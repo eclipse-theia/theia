@@ -21,6 +21,7 @@ import {
     cancelAgentTask,
     createAgentTask,
     reconcileSelectedAgent,
+    resolveStoredQaiqModelForAgent,
     SHELL_AGENT_ID,
     writeStoredAgent,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
@@ -394,11 +395,13 @@ export class QaapAgentTasksWidget extends ReactWidget {
                 const body = buildCreateAgentTaskBody(draft, agent, cwd);
                 await createAgentTask(body);
             } else {
+                const qaiqModel = resolveStoredQaiqModelForAgent(agent, cwd);
                 await createConversation({
                     cwd,
                     agent,
                     title: draft,
                     message: draft,
+                    ...(qaiqModel ? { qaiqModel } : {}),
                 });
             }
             this.commandDraft = '';

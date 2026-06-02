@@ -113,6 +113,7 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 agent: body.agent,
                 title: body.title,
                 message: body.message,
+                qaiqModel: body.qaiqModel,
             });
             res.status(201).json(conv);
         } catch (error) {
@@ -128,8 +129,9 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             return;
         }
         const agent = typeof body.agent === 'string' ? body.agent.trim() : undefined;
+        const qaiqModel = body.qaiqModel;
         try {
-            const conv = this.store.postUserMessage(req.params.id, content, agent || undefined);
+            const conv = this.store.postUserMessage(req.params.id, content, agent || undefined, qaiqModel);
             res.status(202).json(conv);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

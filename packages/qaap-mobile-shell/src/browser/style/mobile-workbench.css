@@ -4618,6 +4618,11 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   box-sizing: border-box;
 }
 
+/* Menu is portaled to `body`; sit above the full-screen task transcript sheet. */
+body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-projects-sticky-composer-attach-menu {
+  z-index: 2147483003 !important;
+}
+
 .theia-mobile-projects-sticky-composer-attach-menu-item {
   display: flex;
   align-items: flex-start;
@@ -5311,10 +5316,40 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.2));
 }
 
+.theia-mobile-sticky-composer-sheet-header.theia-mod-drilldown {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+}
+
 .theia-mobile-sticky-composer-sheet-header h2 {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
+}
+
+.theia-mobile-sticky-composer-sheet-header.theia-mod-drilldown h2 {
+  text-align: center;
+  grid-column: 2;
+}
+
+.theia-mobile-sticky-composer-sheet-header.theia-mod-drilldown .theia-mobile-sticky-composer-sheet-close {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.theia-mobile-sticky-composer-sheet-back {
+  border: none;
+  background: transparent;
+  color: var(--theia-foreground);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theia-mobile-sticky-composer-sheet-back[hidden] {
+  display: none;
 }
 
 .theia-mobile-sticky-composer-sheet-close {
@@ -5385,17 +5420,8 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   color: var(--theia-descriptionForeground, rgba(255, 255, 255, 0.65));
 }
 
-.theia-qaap-agent-sheet-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.theia-qaap-agent-sheet-submenu {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 4px 0 8px 40px;
+.theia-qaap-agent-sheet-provider {
+  margin-bottom: 8px;
 }
 
 .theia-qaap-agent-sheet-provider-label {

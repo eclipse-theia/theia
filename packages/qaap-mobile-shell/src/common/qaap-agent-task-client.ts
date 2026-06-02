@@ -143,9 +143,33 @@ export function readStoredQaiqModel(cwd: string | undefined): QaapCreateAgentTas
     }
 }
 
-export function writeStoredQaiqModel(cwd: string | undefined, model: QaapCreateAgentTaskQaiqModel): void {
+export function toQaapCreateAgentTaskQaiqModel(model: {
+    readonly provider: QaapCreateAgentTaskQaiqModel['provider'];
+    readonly vendor: string;
+    readonly modelId: string;
+}): QaapCreateAgentTaskQaiqModel {
+    return {
+        provider: model.provider,
+        vendor: model.vendor,
+        modelId: model.modelId,
+    };
+}
+
+/** Stored QAIQ model for the given agent id (undefined when the agent is not QAIQ). */
+export function resolveStoredQaiqModelForAgent(
+    agentId: string | undefined,
+    cwd: string | undefined,
+): QaapCreateAgentTaskQaiqModel | undefined {
+    return isQaiqAgent(agentId) ? readStoredQaiqModel(cwd) : undefined;
+}
+
+export function writeStoredQaiqModel(
+    cwd: string | undefined,
+    model: QaapCreateAgentTaskQaiqModel | QaapQaiqModelOption,
+): void {
+    const payload = toQaapCreateAgentTaskQaiqModel(model);
     try {
-        const serialized = JSON.stringify(model);
+        const serialized = JSON.stringify(payload);
         if (cwd) {
             window.localStorage.setItem(scopedQaiqModelStorageKey(cwd), serialized);
         }
@@ -227,7 +251,9 @@ export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: stri
     if (agent === SHELL_AGENT_ID) {
         return { command: draft, cwd };
     }
-    return { prompt: draft, agent, cwd };
+    const base: QaapCreateAgentTaskBody = { prompt: draft, agent, cwd };
+    const qaiqModel = resolveStoredQaiqModelForAgent(agent, cwd);
+    return qaiqModel ? { ...base, qaiqModel } : base;
 }
 
 export function shellAgentFallback(): QaapAgentTaskAgentOption {
@@ -280,8 +306,8 @@ export function isOpencodeAgent(agentId: string | undefined): boolean {
     return agentId?.trim().toLowerCase() === 'opencode';
 }
 
-/** Agents whose stdout is parsed into structured transcript/chat segments (not raw log append). */
-export function isStructuredStreamAgent(agentId: string | undefined): boolean {
+/** QAIQ and OpenCode use structured transcript segments; every other agent keeps raw stdout. */
+export function usesStructuredAgentTranscript(agentId: string | undefined): boolean {
     return isQaiqAgent(agentId) || isOpencodeAgent(agentId);
 }
 

@@ -1,5 +1,10 @@
 import { expect } from 'chai';
-import { formatQaiqProviderFlags, parseTheiaLanguageModelId, resolveQaapQaiqModelBinding } from './qaap-qaiq-model-binding';
+import {
+    bindingFromQaiqModelSelection,
+    formatQaiqProviderFlags,
+    parseTheiaLanguageModelId,
+    resolveQaapQaiqModelBinding,
+} from './qaap-qaiq-model-binding';
 
 describe('parseTheiaLanguageModelId', () => {
     it('parses openrouter, nvidia, google ids', () => {
@@ -102,6 +107,21 @@ describe('resolveQaapQaiqModelBinding', () => {
 
     it('returns undefined when no prefs are set', () => {
         expect(resolveQaapQaiqModelBinding(() => undefined)).to.be.undefined;
+    });
+});
+
+describe('bindingFromQaiqModelSelection', () => {
+    it('preserves provider, vendor, and modelId from the picker', () => {
+        const binding = bindingFromQaiqModelSelection({
+            provider: 'openai',
+            vendor: 'openrouter',
+            modelId: 'nvidia/nemotron-3-super-120b-a12b:free',
+        });
+        expect(binding.vendor).to.equal('openrouter');
+        expect(binding.modelId).to.equal('nvidia/nemotron-3-super-120b-a12b:free');
+        expect(formatQaiqProviderFlags(binding)).to.equal(
+            '--provider openai --model nvidia/nemotron-3-super-120b-a12b:free',
+        );
     });
 });
 

@@ -105,6 +105,7 @@ import {
     normalizeBackendAgentId,
     readStoredAgent,
     readStoredQaiqModel,
+    resolveStoredQaiqModelForAgent,
     isOpencodeAgent,
     isQaiqAgent,
     isStickyComposerAgentSelected,
@@ -139,6 +140,7 @@ import {
     createAgentPickerField,
     createAgentSheetOptionButton,
     createAgentTaskBadge,
+    createPickerSheetOptionButton,
     populateAgentToolbarButton,
 } from './qaap-agent-ui';
 import {
@@ -380,6 +382,26 @@ interface VerifyCheckResult {
     logTail?: string;
 }
 
+type ComposerAgentPickerView = 'agents' | 'qaiq-models';
+
+interface ComposerAgentPickerChrome {
+    readonly sheet: HTMLElement;
+    readonly header: HTMLElement;
+    readonly title: HTMLElement;
+    readonly backBtn: HTMLButtonElement;
+    readonly list: HTMLElement;
+}
+
+function isSameQaiqModel(
+    stored: { readonly provider: string; readonly vendor: string; readonly modelId: string } | undefined,
+    model: QaapQaiqModelOption,
+): boolean {
+    return !!stored
+        && stored.provider === model.provider
+        && stored.vendor === model.vendor
+        && stored.modelId === model.modelId;
+}
+
 function isRestorableTheiaChatData(candidate: unknown): candidate is RestorableTheiaChatData {
     const data = candidate as Partial<RestorableTheiaChatData> | undefined;
     const model = data?.model as Partial<RestorableTheiaChatData['model']> | undefined;
@@ -455,7 +477,6 @@ export class MobileProjectsPanel {
     protected stickyComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
     protected stickyComposerQaiqModels: QaapQaiqModelOption[] = [];
     protected stickyComposerAgentSheet: HTMLElement | undefined;
-    protected stickyComposerQaiqModelSheet: HTMLElement | undefined;
     protected stickyComposerModeSheet: HTMLElement | undefined;
     protected stickyComposerModeId: string | undefined;
     protected stickyComposerSurface: QaapComposerSurface = 'task';
@@ -3025,44 +3046,15 @@ export class MobileProjectsPanel {
         }
         this.closeStickyComposerSheets();
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
-        const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-agent';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.closeStickyComposerSheets());
-
-        const panel = document.createElement('section');
-        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-sticky-composer-sheet-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickAgent', 'Choose agent');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
-        close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.closeStickyComposerSheets());
-        header.append(title, close);
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-sticky-composer-sheet-list';
-        const loading = document.createElement('p');
-        loading.className = 'theia-mobile-sticky-composer-sheet-loading';
-        loading.textContent = nls.localize('qaap/mobileProjects/stickyComposerLoadingModels', 'Loading models…');
-        list.append(loading);
-
-        panel.append(header, list);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.stickyComposerAgentSheet = sheet;
-
-        void this.populateComposerAgentSheetList({
-            list,
+        const chrome = this.createComposerAgentPickerChrome({
+            sheetClassName: 'theia-mobile-sticky-composer-sheet theia-mod-agent',
+            closeTitle: nls.localize('qaap/mobileAgentComposer/close', 'Close'),
+            onClose: () => this.closeStickyComposerSheets(),
+        });
+        document.body.append(chrome.sheet);
+        this.stickyComposerAgentSheet = chrome.sheet;
+        void this.renderComposerAgentPicker(chrome, {
+            view: 'agents',
             cwd,
             agents: this.filterSelectableComposerAgents(this.stickyComposerBackendAgents),
             selectedAgentId: this.stickyComposerPinnedAgentId,
@@ -3187,56 +3179,119 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected async populateComposerAgentSheetList(options: {
-        readonly list: HTMLElement;
-        readonly cwd: string | undefined;
-        readonly agents: readonly QaapAgentTaskAgentOption[];
-        readonly selectedAgentId: string | undefined;
-        readonly includeCoder: boolean;
-        readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
-        readonly qaiqExpanded?: boolean;
-    }): Promise<boolean> {
+    protected createComposerAgentPickerChrome(options: {
+        readonly sheetClassName: string;
+        readonly closeTitle: string;
+        readonly onClose: () => void;
+    }): ComposerAgentPickerChrome {
+        const sheet = document.createElement('div');
+        sheet.className = options.sheetClassName;
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
+        backdrop.addEventListener('click', options.onClose);
+
+        const panel = document.createElement('section');
+        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
+
+        const header = document.createElement('header');
+        header.className = 'theia-mobile-sticky-composer-sheet-header';
+
+        const backBtn = document.createElement('button');
+        backBtn.type = 'button';
+        backBtn.className = 'theia-mobile-sticky-composer-sheet-back codicon codicon-arrow-left';
+        backBtn.hidden = true;
+        backBtn.title = nls.localize('qaap/mobileProjects/backToAgents', 'Back to agents');
+        backBtn.setAttribute('aria-label', backBtn.title);
+
+        const title = document.createElement('h2');
+        title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickAgent', 'Choose agent');
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
+        close.title = options.closeTitle;
+        close.setAttribute('aria-label', options.closeTitle);
+        close.addEventListener('click', options.onClose);
+
+        header.append(backBtn, title, close);
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-sticky-composer-sheet-list';
+
+        panel.append(header, list);
+        sheet.append(backdrop, panel);
+
+        return { sheet, header, title, backBtn, list };
+    }
+
+    protected async renderComposerAgentPicker(
+        chrome: ComposerAgentPickerChrome,
+        options: {
+            readonly view: ComposerAgentPickerView;
+            readonly cwd: string | undefined;
+            readonly agents: readonly QaapAgentTaskAgentOption[];
+            readonly selectedAgentId: string | undefined;
+            readonly includeCoder: boolean;
+            readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
+        },
+    ): Promise<void> {
         const qaiqModels = await this.resolveQaiqModelsForPicker();
         this.stickyComposerQaiqModels = qaiqModels;
         this.transcriptComposerQaiqModels = qaiqModels;
-        let qaiqExpanded = options.qaiqExpanded ?? isQaiqAgent(options.selectedAgentId);
-        options.list.replaceChildren();
+        const storedModel = readStoredQaiqModel(options.cwd);
+
+        chrome.list.replaceChildren();
+        if (options.view === 'qaiq-models') {
+            chrome.header.classList.add('theia-mod-drilldown');
+            chrome.backBtn.hidden = false;
+            chrome.title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickModel', 'Choose model');
+            chrome.backBtn.onclick = () => {
+                void this.renderComposerAgentPicker(chrome, { ...options, view: 'agents' });
+            };
+            this.appendQaiqModelPickerList(chrome.list, qaiqModels, storedModel, model => {
+                options.onSelectAgent(QAIQ_AGENT_ID, model);
+            });
+            return;
+        }
+
+        chrome.header.classList.remove('theia-mod-drilldown');
+        chrome.backBtn.hidden = true;
+        chrome.backBtn.onclick = null;
+        chrome.title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickAgent', 'Choose agent');
 
         const appendAgent = (agentId: string, label: string): void => {
             const isQaiq = agentId === QAIQ_AGENT_ID;
             const hasModels = isQaiq && qaiqModels.length > 0;
-            const row = document.createElement('div');
-            row.className = 'theia-qaap-agent-sheet-row';
             const agentSelected = isStickyComposerAgentSelected(agentId, options.selectedAgentId, options.cwd);
-            const btn = createAgentSheetOptionButton({
+            let displayLabel = label;
+            if (isQaiq && storedModel && agentSelected) {
+                displayLabel = `${label} · ${storedModel.modelId}`;
+            }
+            chrome.list.append(createAgentSheetOptionButton({
                 agentId,
-                label,
-                selected: agentSelected && (!isQaiq || !hasModels),
-                submenuChevron: hasModels ? (qaiqExpanded ? 'expanded' : 'collapsed') : undefined,
+                label: displayLabel,
+                selected: agentSelected,
+                submenuChevron: hasModels ? 'forward' : undefined,
                 onSelect: () => {
                     if (hasModels) {
-                        qaiqExpanded = !qaiqExpanded;
-                        void this.populateComposerAgentSheetList({ ...options, qaiqExpanded });
+                        void this.renderComposerAgentPicker(chrome, { ...options, view: 'qaiq-models' });
                         return;
                     }
                     options.onSelectAgent(agentId);
                 },
-            });
-            row.append(btn);
-            if (hasModels && qaiqExpanded) {
-                row.append(this.createQaiqModelSubmenu(qaiqModels, options.cwd, options.selectedAgentId, model => {
-                    options.onSelectAgent(QAIQ_AGENT_ID, model);
-                }));
-            } else if (isQaiq && !hasModels) {
+            }));
+            if (isQaiq && !hasModels) {
                 const hint = document.createElement('p');
                 hint.className = 'theia-qaap-agent-sheet-empty-models';
                 hint.textContent = nls.localize(
                     'qaap/mobileProjects/stickyComposerNoQaiqModels',
                     'Add an API key in Settings → AI Features to choose a model.',
                 );
-                row.append(hint);
+                chrome.list.append(hint);
             }
-            options.list.append(row);
         };
 
         if (options.includeCoder) {
@@ -3248,19 +3303,24 @@ export class MobileProjectsPanel {
         for (const agent of options.agents) {
             appendAgent(agent.id, agent.label);
         }
-        return qaiqExpanded;
     }
 
-    protected createQaiqModelSubmenu(
+    protected appendQaiqModelPickerList(
+        list: HTMLElement,
         models: readonly QaapQaiqModelOption[],
-        cwd: string | undefined,
-        selectedAgentId: string | undefined,
+        storedModel: ReturnType<typeof readStoredQaiqModel>,
         onSelect: (model: QaapQaiqModelOption) => void,
-    ): HTMLElement {
-        const stored = readStoredQaiqModel(cwd);
-        const submenu = document.createElement('div');
-        submenu.className = 'theia-qaap-agent-sheet-submenu';
-        submenu.setAttribute('role', 'group');
+    ): void {
+        if (models.length === 0) {
+            const hint = document.createElement('p');
+            hint.className = 'theia-qaap-agent-sheet-empty-models';
+            hint.textContent = nls.localize(
+                'qaap/mobileProjects/stickyComposerNoQaiqModels',
+                'Add an API key in Settings → AI Features to choose a model.',
+            );
+            list.append(hint);
+            return;
+        }
         for (const [vendor, providerModels] of groupQaiqModelsByProvider(models)) {
             const section = document.createElement('div');
             section.className = 'theia-qaap-agent-sheet-provider';
@@ -3269,35 +3329,20 @@ export class MobileProjectsPanel {
             label.textContent = formatQaiqModelProviderLabel(vendor);
             section.append(label);
             for (const model of providerModels) {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'theia-mobile-sticky-composer-sheet-option theia-qaap-agent-sheet-model-option';
-                const modelSelected = isQaiqAgent(selectedAgentId)
-                    && stored?.provider === model.provider
-                    && stored.modelId === model.modelId;
-                if (modelSelected) {
-                    btn.classList.add('theia-mod-selected');
-                }
-                btn.textContent = model.label || model.modelId;
-                btn.addEventListener('click', ev => {
-                    ev.stopPropagation();
-                    onSelect(model);
-                });
-                section.append(btn);
+                section.append(createPickerSheetOptionButton({
+                    label: model.label || model.modelId,
+                    selected: isSameQaiqModel(storedModel, model),
+                    onSelect: () => onSelect(model),
+                }));
             }
-            submenu.append(section);
+            list.append(section);
         }
-        return submenu;
     }
 
     protected closeStickyComposerSheets(): void {
         if (this.stickyComposerAgentSheet) {
             this.stickyComposerAgentSheet.remove();
             this.stickyComposerAgentSheet = undefined;
-        }
-        if (this.stickyComposerQaiqModelSheet) {
-            this.stickyComposerQaiqModelSheet.remove();
-            this.stickyComposerQaiqModelSheet = undefined;
         }
         if (this.stickyComposerModeSheet) {
             this.stickyComposerModeSheet.remove();
@@ -7216,11 +7261,13 @@ export class MobileProjectsPanel {
         }
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
+        const qaiqModel = resolveStoredQaiqModelForAgent(agent, cwd);
         const conversation = await createConversation({
             cwd,
             agent,
             title: draft,
             message,
+            ...(qaiqModel ? { qaiqModel } : {}),
         });
         const summary = conversationToSummary(conversation);
         this.conversations?.recordSnapshot(summary);
@@ -8837,7 +8884,8 @@ export class MobileProjectsPanel {
         // VPS-backed conversations accept a follow-up message that triggers the next agent turn.
         if (summary.source !== 'theia-chat') {
             try {
-                await postConversationMessage(summary.id, report);
+                const qaiqModel = resolveStoredQaiqModelForAgent(summary.agentId, summary.cwd);
+                await postConversationMessage(summary.id, report, undefined, qaiqModel);
                 if (!auto) {
                     // Manual send: jump to Chat so the user watches the agent react.
                     this.selectTranscriptTab('messages', project, summary);
@@ -9204,44 +9252,15 @@ export class MobileProjectsPanel {
         }
         this.closeTranscriptComposerSheets();
         const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
-        const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-agent theia-mod-transcript-overlay';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.closeTranscriptComposerSheets());
-
-        const panel = document.createElement('section');
-        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-sticky-composer-sheet-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickAgent', 'Choose agent');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
-        close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.closeTranscriptComposerSheets());
-        header.append(title, close);
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-sticky-composer-sheet-list';
-        const loading = document.createElement('p');
-        loading.className = 'theia-mobile-sticky-composer-sheet-loading';
-        loading.textContent = nls.localize('qaap/mobileProjects/stickyComposerLoadingModels', 'Loading models…');
-        list.append(loading);
-
-        panel.append(header, list);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.transcriptComposerAgentSheet = sheet;
-
-        void this.populateComposerAgentSheetList({
-            list,
+        const chrome = this.createComposerAgentPickerChrome({
+            sheetClassName: 'theia-mobile-sticky-composer-sheet theia-mod-agent theia-mod-transcript-overlay',
+            closeTitle: nls.localize('qaap/mobileProjects/closeTranscript', 'Close'),
+            onClose: () => this.closeTranscriptComposerSheets(),
+        });
+        document.body.append(chrome.sheet);
+        this.transcriptComposerAgentSheet = chrome.sheet;
+        void this.renderComposerAgentPicker(chrome, {
+            view: 'agents',
             cwd,
             agents: this.filterSelectableComposerAgents(this.transcriptComposerBackendAgents),
             selectedAgentId: this.transcriptComposerPinnedAgentId,
@@ -9551,7 +9570,8 @@ export class MobileProjectsPanel {
             this.renderTranscriptMessages(this.transcriptChatHost, optimistic);
         }
         try {
-            const updated = await postConversationMessage(summary.id, outbound, agent);
+            const qaiqModel = resolveStoredQaiqModelForAgent(agent, summary.cwd);
+            const updated = await postConversationMessage(summary.id, outbound, agent, qaiqModel);
             const nextSummary = conversationToSummary(updated);
             this.conversations?.recordSnapshot(nextSummary);
             if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
@@ -10053,6 +10073,7 @@ export class MobileProjectsPanel {
         widget.update();
     }
 
+    /** Structured transcript UI: persisted segments (QAIQ/OpenCode) or on-the-fly OpenCode replay only. */
     protected resolveTranscriptAgentSegments(
         conv: QaapAgentConversationDTO,
         msg: QaapAgentMessageDTO,
@@ -10060,6 +10081,7 @@ export class MobileProjectsPanel {
         if (msg.segments && msg.segments.length > 0) {
             return msg.segments;
         }
+        // Never infer OpenCode-shaped segments for Codex, Claude, Aider, etc.
         if (msg.role !== 'agent' || !isOpencodeAgent(conv.agentId)) {
             return undefined;
         }

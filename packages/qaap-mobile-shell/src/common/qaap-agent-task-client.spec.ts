@@ -10,22 +10,26 @@ import {
     hashString,
     isOpencodeAgent,
     isQaiqAgent,
-    isStructuredStreamAgent,
+    usesStructuredAgentTranscript,
     isStickyComposerAgentSelected,
     isTheiaCoderMention,
     stripNonCoderAgentMention,
     normalizeBackendAgentId,
     migrateLegacyBackendAgentId,
     QAIQ_AGENT_ID,
+    readStoredQaiqModel,
     reconcileSelectedAgent,
     reconcileStickyComposerAgent,
     resolveAgentOptionId,
     resolveBackendAgentForTurn,
     resolveExplicitAgentForSubmit,
     resolveQaapAgentMentionToken,
+    resolveStoredQaiqModelForAgent,
     SHELL_AGENT_ID,
     shellAgentFallback,
     THEIA_CODER_AGENT_ID,
+    toQaapCreateAgentTaskQaiqModel,
+    writeStoredQaiqModel,
 } from './qaap-agent-task-client';
 
 describe('qaap-agent-task-client', () => {
@@ -103,8 +107,44 @@ describe('qaap-agent-task-client', () => {
     it('buildCreateAgentTaskBody uses command for shell agent and prompt for others', () => {
         expect(buildCreateAgentTaskBody('ls -la', SHELL_AGENT_ID, '/home'))
             .to.deep.equal({ command: 'ls -la', cwd: '/home' });
-        expect(buildCreateAgentTaskBody('fix tests', QAIQ_AGENT_ID, '/home'))
-            .to.deep.equal({ prompt: 'fix tests', agent: QAIQ_AGENT_ID, cwd: '/home' });
+        expect(buildCreateAgentTaskBody('fix tests', 'codex', '/home'))
+            .to.deep.equal({ prompt: 'fix tests', agent: 'codex', cwd: '/home' });
+    });
+
+    describe('QAIQ model storage', () => {
+        const storage = new Map<string, string>();
+
+        beforeEach(() => {
+            storage.clear();
+            (global as unknown as { window: Window }).window = {
+                localStorage: {
+                    getItem: (key: string) => storage.get(key) ?? null,
+                    setItem: (key: string, value: string) => { storage.set(key, value); },
+                    removeItem: (key: string) => { storage.delete(key); },
+                    clear: () => { storage.clear(); },
+                    key: () => null,
+                    length: 0,
+                },
+            } as unknown as Window;
+        });
+
+        it('buildCreateAgentTaskBody attaches stored QAIQ model for qaiq agent', () => {
+            const cwd = '/tmp/qaap-qaiq-model-test';
+            const model = toQaapCreateAgentTaskQaiqModel({
+                provider: 'openai',
+                vendor: 'openrouter',
+                modelId: 'nvidia/nemotron-3-super-120b-a12b:free',
+            });
+            writeStoredQaiqModel(cwd, model);
+            expect(buildCreateAgentTaskBody('fix tests', QAIQ_AGENT_ID, cwd)).to.deep.equal({
+                prompt: 'fix tests',
+                agent: QAIQ_AGENT_ID,
+                cwd,
+                qaiqModel: model,
+            });
+            expect(resolveStoredQaiqModelForAgent('codex', cwd)).to.be.undefined;
+            expect(readStoredQaiqModel(cwd)).to.deep.equal(model);
+        });
     });
 
     it('isQaiqAgent recognizes qaiq and legacy openclaude alias', () => {
@@ -115,13 +155,16 @@ describe('qaap-agent-task-client', () => {
         expect(isQaiqAgent(undefined)).to.be.false;
     });
 
-    it('isOpencodeAgent and isStructuredStreamAgent recognize opencode', () => {
+    it('isOpencodeAgent only matches opencode; other agents stay on raw stdout', () => {
         expect(isOpencodeAgent('opencode')).to.be.true;
         expect(isOpencodeAgent('OpenCode')).to.be.true;
         expect(isOpencodeAgent('codex')).to.be.false;
-        expect(isStructuredStreamAgent('opencode')).to.be.true;
-        expect(isStructuredStreamAgent('qaiq')).to.be.true;
-        expect(isStructuredStreamAgent('claude')).to.be.false;
+        expect(isOpencodeAgent('claude')).to.be.false;
+        expect(isOpencodeAgent('aider')).to.be.false;
+        expect(usesStructuredAgentTranscript('opencode')).to.be.true;
+        expect(usesStructuredAgentTranscript('qaiq')).to.be.true;
+        expect(usesStructuredAgentTranscript('codex')).to.be.false;
+        expect(usesStructuredAgentTranscript('claude')).to.be.false;
     });
 
     it('isTheiaCoderMention detects @coder prefix in message text', () => {

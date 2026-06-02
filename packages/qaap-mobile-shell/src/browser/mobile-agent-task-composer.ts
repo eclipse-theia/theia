@@ -8,8 +8,6 @@ import {
     buildCreateAgentTaskBody,
     createAgentTask,
     fetchAgentTaskListAll,
-    QAIQ_AGENT_ID,
-    readStoredQaiqModel,
     reconcileSelectedAgent,
     SHELL_AGENT_ID,
     writeStoredAgent,
@@ -210,10 +208,7 @@ export class MobileAgentTaskComposer {
             return;
         }
         const agent = this.selectedAgent ?? SHELL_AGENT_ID;
-        const baseBody = buildCreateAgentTaskBody(draft, agent, this.cwd);
-        const body = agent === QAIQ_AGENT_ID && 'prompt' in baseBody
-            ? { ...baseBody, qaiqModel: readStoredQaiqModel(this.cwd) }
-            : baseBody;
+        const body = buildCreateAgentTaskBody(draft, agent, this.cwd);
         this.busy = true;
         this.errorEl.textContent = '';
         this.renderState();

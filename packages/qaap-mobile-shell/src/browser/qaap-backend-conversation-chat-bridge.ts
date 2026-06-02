@@ -60,6 +60,7 @@ export function syncBackendConversationToChatModel(
     }
 }
 
+/** QAIQ/OpenCode use stored segments; only OpenCode replays legacy formatted stdout. */
 function resolveAgentMessageSegments(
     conversation: QaapAgentConversationDTO,
     message: QaapAgentMessageDTO,
@@ -67,11 +68,11 @@ function resolveAgentMessageSegments(
     if (message.segments && message.segments.length > 0) {
         return message.segments;
     }
-    if (!isOpencodeAgent(conversation.agentId) || message.role !== 'agent') {
-        return message.segments;
+    if (message.role !== 'agent' || !isOpencodeAgent(conversation.agentId)) {
+        return undefined;
     }
     const parsed = parseOpencodeLog(message.content);
-    return parsed.segments.length > 0 ? parsed.segments : message.segments;
+    return parsed.segments.length > 0 ? parsed.segments : undefined;
 }
 
 function pairConversationMessages(messages: readonly QaapAgentMessageDTO[]): MessagePair[] {

@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task-client';
 import { buildConversationListMetrics } from './qaap-agent-conversation-list-metrics';
 import { normalizeAgentMessageContentForDisplay } from './qaap-agent-message-content';
 
@@ -155,6 +156,7 @@ export interface QaapCreateConversationBody {
     readonly agent?: string;
     readonly title?: string;
     readonly message?: string;
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 
 export async function listConversationsForCwd(cwd: string): Promise<QaapAgentConversationSummaryDTO[]> {
@@ -212,12 +214,13 @@ export async function postConversationMessage(
     id: string,
     content: string,
     agent?: string,
+    qaiqModel?: QaapCreateAgentTaskQaiqModel,
 ): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, agent }),
+        body: JSON.stringify({ content, agent, qaiqModel }),
     });
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);

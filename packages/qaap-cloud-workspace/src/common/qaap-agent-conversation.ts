@@ -5,6 +5,7 @@
 
 import { buildConversationListMetrics } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-conversation-list-metrics';
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task';
 
 /** HTTP base path for the persistent agent-conversation endpoints. */
 export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
@@ -68,6 +69,8 @@ export interface QaapAgentConversation {
     readonly cwd: string;
     /** Agent id (e.g. `'claude'`, `'codex'`, `'shell'`). */
     readonly agentId: string;
+    /** Explicit QAIQ model for this thread (user picker), not the global Settings alias. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     /** Best-effort title, derived from the first user message. */
     readonly title: string;
     readonly status: QaapAgentConversationStatus;
@@ -161,6 +164,8 @@ export interface QaapCreateAgentConversationRequest {
     readonly title?: string;
     /** Optional first user message; when present, the agent turn fires right after creation. */
     readonly message?: string;
+    /** QAIQ model selected in the composer picker for this thread. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     /** Marks this conversation as a parallel-run variant (grouped under {@link parallelBaseCwd}). */
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
@@ -170,6 +175,8 @@ export interface QaapPostAgentMessageRequest {
     readonly content: string;
     /** When set, overrides the conversation's stored agent for this turn (and updates it). */
     readonly agent?: string;
+    /** Updates the thread's QAIQ model when the user changes the picker before sending. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
 }
 
 export interface QaapRenameAgentConversationRequest {
