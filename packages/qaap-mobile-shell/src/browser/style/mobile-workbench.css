@@ -2824,6 +2824,36 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   pointer-events: none !important;
 }
 
+/* Viewport widened past the mobile breakpoint while Work Hub landing is still up (e.g. DevTools resize). */
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) .theia-mobile-projects {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9550;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  box-sizing: border-box;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-top-panel,
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-main-content-panel,
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-left-content-panel,
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-right-content-panel,
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-bottom-content-panel,
+body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column) #theia-bottom-split-panel {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /*-----------------------------------------------------------------------------
 | Work Hub v2 — collapsible-row layout (overrides earlier rules where needed).
 |-----------------------------------------------------------------------------*/
@@ -3356,6 +3386,162 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-work-hub-home-usage {
+  padding: 14px 14px 12px;
+}
+
+.theia-mobile-work-hub-home-usage-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.theia-mobile-work-hub-home-usage-tabs,
+.theia-mobile-work-hub-home-usage-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--q-radius-pill, 99px);
+  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 6%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-pill {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: var(--q-radius-pill, 99px);
+  background: transparent;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theia-mobile-work-hub-home-usage-pill.theia-mod-selected {
+  background: var(--q-surface, var(--theia-editor-background));
+  color: var(--q-text, var(--theia-foreground));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--q-text, var(--theia-foreground)) 10%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.theia-mobile-work-hub-home-usage-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.theia-mobile-work-hub-home-usage-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 52px;
+  padding: 8px 8px 7px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 5%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-metric-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-work-hub-home-usage-metric-value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--q-text, var(--theia-foreground));
+}
+
+.theia-mobile-work-hub-home-usage-heatmap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 10px);
+  gap: 3px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 8%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-cell.theia-mod-level-1 {
+  background: color-mix(in srgb, var(--q-accent, var(--theia-button-background)) 28%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-cell.theia-mod-level-2 {
+  background: color-mix(in srgb, var(--q-accent, var(--theia-button-background)) 48%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-cell.theia-mod-level-3 {
+  background: color-mix(in srgb, var(--q-accent, var(--theia-button-background)) 68%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-heatmap-cell.theia-mod-level-4 {
+  background: color-mix(in srgb, var(--q-accent, var(--theia-button-background)) 88%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-footnote {
+  margin: 0;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-work-hub-home-usage-models {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theia-mobile-work-hub-home-usage-model-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 5%, transparent);
+}
+
+.theia-mobile-work-hub-home-usage-model-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--q-text, var(--theia-foreground));
+}
+
+.theia-mobile-work-hub-home-usage-model-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--q-muted, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-work-hub-home-usage-models-empty {
+  margin: 0;
+  padding: 4px 2px 8px;
 }
 
 .theia-mobile-work-hub-home-shortcuts-panel {
@@ -9137,22 +9323,6 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
 
 .theia-mobile-sheet-grabber:active {
   cursor: grabbing;
-}
-
-.theia-mobile-sheet-grabber-handle {
-  display: block;
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--theia-foreground);
-  opacity: 0.28;
-  transition: opacity 120ms ease, width 120ms ease;
-}
-
-.theia-mobile-sheet-grabber:active .theia-mobile-sheet-grabber-handle,
-.theia-mobile-sheet-grabber:focus-within .theia-mobile-sheet-grabber-handle {
-  opacity: 0.5;
-  width: 56px;
 }
 
 /*-----------------------------------------------------------------------------

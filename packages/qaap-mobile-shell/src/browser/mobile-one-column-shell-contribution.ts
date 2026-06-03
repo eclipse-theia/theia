@@ -450,6 +450,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.scheduleSnapAndUiRefresh();
     };
 
+    /** Work Hub landing is active — user has not opened/focused a project in this session yet. */
+    protected isProjectsLandingSession(): boolean {
+        return !this.landingLeftThisSession && !shouldSkipMobileProjectsLanding();
+    }
+
     protected enterMobileLayout(): void {
         this.ensureShellHooks(this.shell);
         if (this.mobileActive) {
@@ -471,10 +476,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (!this.mobileActive) {
             return;
         }
+        const preserveProjectsLanding = this.isProjectsLandingSession();
         this.mobileActive = false;
         this.restoreMobileBottomPanelFromMaximized();
         this.shell.node.classList.remove(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
-        this.teardownMobileUi();
+        this.teardownMobileUi(preserveProjectsLanding);
+        if (preserveProjectsLanding) {
+            window.requestAnimationFrame(() => this.requestFullShellRelayout());
+            return;
+        }
         this.restoreDesktopSplitLayout();
         window.requestAnimationFrame(() => {
             void this.ensureDesktopSidePanelSizes();
@@ -657,7 +667,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         MessageLoop.postMessage(this.shell.mainPanel, LuminoWidget.Msg.UpdateRequest);
     }
 
-    protected teardownMobileUi(): void {
+    protected teardownMobileUi(preserveProjectsLanding = false): void {
         this.removeBottomBarSecondaryMenu();
         this.removeBackdrop();
         this.unpinBottomChromeFromBody();
@@ -676,6 +686,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.rightEdge = undefined;
         this.keyboardHelper?.dispose();
         this.keyboardHelper = undefined;
+        if (preserveProjectsLanding) {
+            this.applyLandingChrome();
+            this.shell.node.classList.remove(MOBILE_BOTTOM_OPEN_CLASS);
+            return;
+        }
         this.hideProjectsPanel();
         if (this.projectsPanel) {
             this.projectsPanel.dispose();

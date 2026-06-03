@@ -167,6 +167,14 @@
     overflow-y: hidden !important;
   }
 
+  .theia-mobile-work-hub-home-usage-heatmap {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
+
   #theia-app-shell .theia-mobile-sheet-grabber {
     touch-action: none;
   }

@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { WorkHubHomeUsageSummary } from './qaap-work-hub-usage-summary';
+
 export type WorkHubHomeRecentSurface = 'chat' | 'task';
 
 export interface WorkHubHomeRecentSource {
@@ -35,6 +37,7 @@ export interface WorkHubHomeStats {
 
 export interface WorkHubHomeSnapshot {
     readonly stats: WorkHubHomeStats;
+    readonly usageSummary: WorkHubHomeUsageSummary;
     readonly attentionItems: readonly WorkHubHomeAttentionItem[];
     readonly recentItems: readonly WorkHubHomeRecentItem[];
     readonly pinnedProjectIds: readonly string[];

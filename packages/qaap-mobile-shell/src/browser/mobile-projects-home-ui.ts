@@ -9,6 +9,13 @@ import type {
     WorkHubHomeRecentItem,
     WorkHubHomeSnapshot,
 } from '../common/qaap-work-hub-home';
+import {
+    formatWorkHubUsageTokens,
+    type WorkHubHomeUsageSummary,
+    type WorkHubUsageMetric,
+    type WorkHubUsageTab,
+    type WorkHubUsageTimeRange,
+} from '../common/qaap-work-hub-usage-summary';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import { mobileProjectInitials } from './mobile-projects-types';
 
@@ -72,6 +79,7 @@ export class MobileProjectsHomeUi {
         root.className = 'theia-mobile-work-hub-home';
 
         root.append(this.createOverviewPanel(snapshot));
+        root.append(this.createUsageSummaryPanel(snapshot.usageSummary));
         root.append(this.createShortcutsPanel());
         if (snapshot.attentionItems.length > 0) {
             root.append(this.createAttentionPanel(snapshot.attentionItems));
@@ -110,6 +118,211 @@ export class MobileProjectsHomeUi {
         );
         panel.append(header, stats);
         return panel;
+    }
+
+    protected createUsageSummaryPanel(usage: WorkHubHomeUsageSummary): HTMLElement {
+        const panel = this.createPanel('theia-mobile-work-hub-home-usage');
+        let activeTab: WorkHubUsageTab = 'summary';
+        let activeRange: WorkHubUsageTimeRange = 'all';
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'theia-mobile-work-hub-home-usage-toolbar';
+
+        const tabsHost = document.createElement('div');
+        tabsHost.className = 'theia-mobile-work-hub-home-usage-tabs';
+        tabsHost.setAttribute('role', 'tablist');
+        const tabButtons = new Map<WorkHubUsageTab, HTMLButtonElement>();
+        for (const tab of ['summary', 'models'] as const) {
+            const btn = this.createUsagePill(
+                tabsHost,
+                nls.localize(
+                    tab === 'summary'
+                        ? 'qaap/workHubHome/usageTabSummary'
+                        : 'qaap/workHubHome/usageTabModels',
+                    tab === 'summary' ? 'Resumen' : 'Modelos',
+                ),
+                () => {
+                    activeTab = tab;
+                    syncToolbar();
+                    paintBody();
+                },
+                () => activeTab === tab,
+            );
+            btn.setAttribute('role', 'tab');
+            tabButtons.set(tab, btn);
+        }
+
+        const rangeHost = document.createElement('div');
+        rangeHost.className = 'theia-mobile-work-hub-home-usage-range';
+        rangeHost.setAttribute('role', 'group');
+        const rangeButtons = new Map<WorkHubUsageTimeRange, HTMLButtonElement>();
+        for (const range of ['all', '30d', '7d'] as const) {
+            rangeButtons.set(range, this.createUsagePill(
+                rangeHost,
+                nls.localize(
+                    range === 'all'
+                        ? 'qaap/workHubHome/usageRangeAll'
+                        : range === '30d'
+                            ? 'qaap/workHubHome/usageRange30d'
+                            : 'qaap/workHubHome/usageRange7d',
+                    range === 'all' ? 'Todo' : range,
+                ),
+                () => {
+                    activeRange = range;
+                    syncToolbar();
+                    paintBody();
+                },
+                () => activeRange === range,
+            ));
+        }
+
+        const syncToolbar = (): void => {
+            for (const [tab, btn] of tabButtons) {
+                btn.classList.toggle('theia-mod-selected', activeTab === tab);
+                btn.setAttribute('aria-selected', activeTab === tab ? 'true' : 'false');
+            }
+            for (const [range, btn] of rangeButtons) {
+                btn.classList.toggle('theia-mod-selected', activeRange === range);
+                btn.setAttribute('aria-pressed', activeRange === range ? 'true' : 'false');
+            }
+            rangeHost.hidden = activeTab !== 'summary';
+        };
+
+        toolbar.append(tabsHost, rangeHost);
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-work-hub-home-usage-body';
+
+        const paintBody = (): void => {
+            body.replaceChildren();
+            if (activeTab === 'models') {
+                body.append(this.createUsageModelsView(usage));
+                return;
+            }
+            body.append(
+                this.createUsageMetricsGrid(usage.metricsByRange[activeRange]),
+                this.createUsageHeatmap(usage.heatmapByRange[activeRange]),
+            );
+            if (usage.footnote) {
+                const footnote = document.createElement('p');
+                footnote.className = 'theia-mobile-work-hub-home-usage-footnote q-fs-meta';
+                footnote.textContent = usage.footnote;
+                body.append(footnote);
+            }
+        };
+
+        syncToolbar();
+        paintBody();
+        panel.append(toolbar, body);
+        return panel;
+    }
+
+    protected createUsagePill(
+        host: HTMLElement,
+        label: string,
+        onClick: () => void,
+        isSelected: () => boolean,
+    ): HTMLButtonElement {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theia-mobile-work-hub-home-usage-pill';
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+            if (isSelected()) {
+                return;
+            }
+            onClick();
+        });
+        host.append(btn);
+        return btn;
+    }
+
+    protected createUsageMetricsGrid(metrics: readonly WorkHubUsageMetric[]): HTMLElement {
+        const grid = document.createElement('div');
+        grid.className = 'theia-mobile-work-hub-home-usage-metrics';
+        for (const metric of metrics) {
+            const card = document.createElement('div');
+            card.className = 'theia-mobile-work-hub-home-usage-metric';
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-work-hub-home-usage-metric-label';
+            label.textContent = this.localizeUsageMetricLabel(metric.label);
+            const value = document.createElement('span');
+            value.className = 'theia-mobile-work-hub-home-usage-metric-value';
+            value.textContent = metric.value;
+            card.append(label, value);
+            grid.append(card);
+        }
+        return grid;
+    }
+
+    protected localizeUsageMetricLabel(key: string): string {
+        switch (key) {
+            case 'sessions':
+                return nls.localize('qaap/workHubHome/usageMetricSessions', 'Sesiones');
+            case 'messages':
+                return nls.localize('qaap/workHubHome/usageMetricMessages', 'Mensajes');
+            case 'tokens':
+                return nls.localize('qaap/workHubHome/usageMetricTokens', 'Tokens totales');
+            case 'activeDays':
+                return nls.localize('qaap/workHubHome/usageMetricActiveDays', 'Días activos');
+            case 'currentStreak':
+                return nls.localize('qaap/workHubHome/usageMetricCurrentStreak', 'Racha actual');
+            case 'longestStreak':
+                return nls.localize('qaap/workHubHome/usageMetricLongestStreak', 'Racha más larga');
+            case 'peakHour':
+                return nls.localize('qaap/workHubHome/usageMetricPeakHour', 'Hora pico');
+            case 'favoriteModel':
+                return nls.localize('qaap/workHubHome/usageMetricFavoriteModel', 'Modelo favorito');
+            default:
+                return key;
+        }
+    }
+
+    protected createUsageHeatmap(cells: readonly { readonly level: number }[]): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-work-hub-home-usage-heatmap';
+        wrap.setAttribute(
+            'aria-label',
+            nls.localize('qaap/workHubHome/usageHeatmapAria', 'Actividad reciente'),
+        );
+        const grid = document.createElement('div');
+        grid.className = 'theia-mobile-work-hub-home-usage-heatmap-grid';
+        grid.setAttribute('role', 'img');
+        for (const cell of cells) {
+            const box = document.createElement('span');
+            box.className = `theia-mobile-work-hub-home-usage-heatmap-cell theia-mod-level-${cell.level}`;
+            grid.append(box);
+        }
+        wrap.append(grid);
+        return wrap;
+    }
+
+    protected createUsageModelsView(usage: WorkHubHomeUsageSummary): HTMLElement {
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-work-hub-home-usage-models';
+        if (usage.models.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'theia-mobile-work-hub-home-usage-models-empty q-fs-meta';
+            empty.textContent = nls.localize(
+                'qaap/workHubHome/usageModelsEmpty',
+                'Aún no hay uso por modelo en este periodo.',
+            );
+            list.append(empty);
+            return list;
+        }
+        for (const row of usage.models) {
+            const item = document.createElement('div');
+            item.className = 'theia-mobile-work-hub-home-usage-model-row';
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-work-hub-home-usage-model-label';
+            label.textContent = row.label;
+            const value = document.createElement('span');
+            value.className = 'theia-mobile-work-hub-home-usage-model-value';
+            value.textContent = formatWorkHubUsageTokens(row.tokens);
+            item.append(label, value);
+            list.append(item);
+        }
+        return list;
     }
 
     protected createMetric(value: number, label: string): HTMLElement {

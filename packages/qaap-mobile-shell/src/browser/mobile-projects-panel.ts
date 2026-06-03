@@ -208,6 +208,7 @@ import {
     type WorkHubHomeRecentSource,
     type WorkHubHomeSnapshot,
 } from '../common/qaap-work-hub-home';
+import { buildWorkHubHomeUsageSummary } from '../common/qaap-work-hub-usage-summary';
 import {
     readStoredComposerSurface,
     writeStoredComposerSurface,
@@ -4161,6 +4162,16 @@ export class MobileProjectsPanel {
                 });
             }
         }
+        const usageEvents = [];
+        for (const project of this.projects) {
+            for (const summary of this.conversationsForProject(project)) {
+                usageEvents.push({
+                    createdAt: summary.createdAt,
+                    updatedAt: summary.updatedAt,
+                    messageCount: summary.messageCount,
+                });
+            }
+        }
         return {
             stats: {
                 projectCount: this.projects.length,
@@ -4172,10 +4183,18 @@ export class MobileProjectsPanel {
                     0,
                 ),
             },
+            usageSummary: buildWorkHubHomeUsageSummary(usageEvents, {
+                favoriteModelLabel: this.resolveHomeFavoriteModelLabel(),
+            }),
             attentionItems,
             recentItems: buildWorkHubHomeRecentItems(recentSources, 5),
             pinnedProjectIds: selectWorkHubHomePinnedProjectIds(this.projects, 4),
         };
+    }
+
+    protected resolveHomeFavoriteModelLabel(): string | undefined {
+        const name = this.chatAgentService?.getDefaultAgent()?.name?.trim();
+        return name || undefined;
     }
 
     protected buildHomeGreeting(): string {

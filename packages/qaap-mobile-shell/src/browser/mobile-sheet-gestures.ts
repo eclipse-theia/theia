@@ -61,9 +61,6 @@ export function createMobileSheetGrabber(): HTMLElement {
     grabber.className = 'theia-mobile-sheet-grabber';
     grabber.setAttribute('aria-hidden', 'true');
     grabber.dataset.theiaMobileGrabber = 'true';
-    const handle = document.createElement('span');
-    handle.className = 'theia-mobile-sheet-grabber-handle';
-    grabber.append(handle);
     return grabber;
 }
 
