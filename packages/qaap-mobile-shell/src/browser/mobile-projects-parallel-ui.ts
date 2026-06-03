@@ -73,7 +73,13 @@ export class MobileProjectsParallelUi {
     ): void {
         const titleWrap = document.createElement('div');
         titleWrap.className = 'theia-mobile-agent-log-title-wrap';
-        titleWrap.append(title);
+        const titleRow = document.createElement('div');
+        titleRow.className = 'theia-mobile-agent-log-title-row';
+        const backSpacer = document.createElement('span');
+        backSpacer.className = 'theia-mobile-agent-log-title-back-spacer';
+        backSpacer.setAttribute('aria-hidden', 'true');
+        titleRow.append(backSpacer, title);
+        titleWrap.append(titleRow);
         const actions = document.createElement('div');
         actions.className = 'theia-mobile-agent-log-header-actions';
         if (this.supportsQaapAgentWorkflow(summary)) {

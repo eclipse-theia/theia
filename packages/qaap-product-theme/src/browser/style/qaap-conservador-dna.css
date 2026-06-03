@@ -126,7 +126,7 @@ body.qaap-theme-dark .theia-mobile-projects.theia-mod-hub-repos .theia-mobile-pr
 }
 
 body.qaap-theme-dark .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title,
-body.qaap-theme-dark .theia-mobile-agent-transcript-root .theia-mobile-agent-log-header h2 {
+body.qaap-theme-dark .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-row > h2 {
   color: var(--q-text);
   font-family: var(--q-font-sans);
   font-size: 15px;

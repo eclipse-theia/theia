@@ -35,7 +35,7 @@ import { QaapWorkbenchColorContribution } from './qaap-workbench-color-contribut
 import { QaapThemeContribution } from './qaap-theme-contribution';
 import { QaapTerminalThemeService } from './qaap-terminal-theme-service';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapWorkbenchColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(QaapWorkbenchColorContribution);
 
@@ -43,5 +43,5 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(QaapThemeContribution);
 
     bind(QaapTerminalThemeService).toSelf().inSingletonScope();
-    bind(TerminalThemeService).toService(QaapTerminalThemeService);
+    rebind(TerminalThemeService).toService(QaapTerminalThemeService);
 });
