@@ -1,126 +1,117 @@
-<br/>
-<div id="theia-logo" align="center">
-    <br />
-    <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia-logo-gray.svg?sanitize=true" alt="Theia Logo" width="300"/>
-    <h3>Cloud & Desktop IDE Framework</h3>
-</div>
+# QAAP
 
-<div id="badges" align="center">
+QAAP is an agentic cloud IDE built on Eclipse Theia. It turns a browser or
+desktop workspace into a place where coding agents can run real tasks, keep
+working in the background, report progress, and hand changes back for review.
 
-  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
-  [![Build Status](https://github.com/eclipse-theia/theia/actions/workflows/ci-cd.yml/badge.svg?branch=master)](https://github.com/eclipse-theia/theia/actions/workflows/ci-cd.yml?query=branch%3Amaster)
-  [![Publish VS Code Built-in Extensions](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/build.yml?query=branch%3Amaster)
-  [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/discussions/categories/q-a)
-  [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
+The product focus is simple: open a project, delegate work to an agent, review
+the diff, run verification, and keep moving from desktop or mobile.
 
-Eclipse Theia is an extensible framework to develop full-fledged multi-language Cloud & Desktop IDEs and tools with state-of-the-art web technologies.
+## What QAAP Adds
 
-</div>
+- **Background coding agents** that keep running in the server process after the
+  browser tab closes.
+- **Multi-agent Work Hub** for active conversations, tasks, approvals, pull
+  requests, routines, and project-level follow-up.
+- **Mobile-first execution view** with chat, plan/activity, changes, preview,
+  files, terminal, and verification surfaces.
+- **BYOK/provider support** through QAIQ, OpenRouter, NVIDIA, Ollama, Gemini,
+  OpenAI-compatible endpoints, and other CLI-backed agents.
+- **Cloud workspace tooling** for Docker/VPS deployment, persistent Theia user
+  state, preview sharing, terminal persistence, and push notifications.
+- **Controlled Theia fork drift**: product code lives under `packages/qaap-*`;
+  intentional upstream seams are guarded by `npm run qaap:drift-check`.
 
-- [Website](#website)
-- [Repositories](#repositories)
-- [Releases](#releases)
-- [Scope](#scope)
-- [Roadmap](#roadmap)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [Feedback](#feedback)
-- [Documentation](#documentation)
-- [License](#license)
-- [Trademark](#trademark)
+## Agent Runtime
 
-<div style='margin:0 auto;width:60%;'>
+QAAP can detect and run several CLI agents on the backend:
 
-![Theia](https://raw.githubusercontent.com/eclipse-theia/theia/master/doc/images/theia-screenshot.png)
+- `qaiq`
+- `codex`
+- `claude`
+- `aider`
+- `opencode`
+- `goose`
+- `hermes`
+- `cursor-agent`
+- `antigravity` / `agy`
+- `copilot`
+- `qwen`
+- `kimi`
 
-</div>
+QAIQ is the default low-friction path for BYOK/free-tier usage. See
+[doc/qaap-background-agents.md](doc/qaap-background-agents.md) for command
+templates, environment variables, and custom agent configuration.
 
-## Website
+## Repository Layout
 
-[Visit the Eclipse Theia website](http://www.theia-ide.org) for more information and [the Theia documentation](http://www.theia-ide.org/docs).
+```text
+packages/
+  qaap-product/            product umbrella, branding, preload, Electron hooks
+  qaap-cloud-workspace/    background agents, conversations, tasks, deploy APIs
+  qaap-mobile-shell/       Work Hub, mobile shell, execution surfaces
+  qaap-adapters/           Theia seams and browser/preview adapters
+  qaap-ai-config/          AI defaults, prompts, model wiring
+  qaap-ai-openrouter/      OpenRouter preferences and model catalog
+  qaap-ai-nvidia/          NVIDIA preferences and model catalog
+  qaap-shell/              shell/layout overrides
+  qaap-product-theme/      product CSS and theme tokens
+  qaap-element-inspector/  preview element inspector
+qaiq/                      QAAP's bundled/forked agent CLI
+doc/                       architecture, deployment, agent docs, mockups
+```
 
-## Repositories
+## Run From Source
 
-This is the main repository for the Eclipse Theia project, containing the sources of the Theia Platform. Please open generic discussions, bug reports and feature requests about Theia on this repository. The Theia project also includes additional repositories, e.g. for the [artifacts building the Theia IDE](https://github.com/eclipse-theia/theia-blueprint) and the [Theia website](https://github.com/eclipse-theia/theia-website). Please also see the [overview of all Theia project repositories](https://github.com/eclipse-theia).
+Prerequisites:
 
-## Releases
+- Node.js 22 or newer
+- npm
+- native build tools for Theia dependencies
 
-- [All available releases](https://github.com/eclipse-theia/theia/releases) are available on GitHub including changelogs.
-- [Detailed release announcements](https://theia-ide.org/resources/) are linked on the Theia website.
-- [Community Releases](https://theia-ide.org/releases/) are listed on the Theia website.
-- [Visit the release website](https://theia-ide.org/releases/) for more information.
+Install and build:
 
-## Scope
+```bash
+npm install
+npm run build:browser
+```
 
-- Support building browser-based and desktop IDEs and tools
-- Provide a highly flexible architecture for adopters
-- Support VS Code Extension protocol
-- Develop under vendor-neutral open-source governance
+Start the browser IDE:
 
-[More details on the project goals](https://theia-ide.org/docs/project_goals/) are available on the Theia website.
+```bash
+npm run start:browser
+```
 
-## Roadmap
+Useful checks:
 
-See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for an overview about the current project goals and the upcoming releases.
+```bash
+npm run qaap:drift-check
+npm --prefix packages/qaap-cloud-workspace test
+npm --prefix packages/qaap-mobile-shell test
+```
 
-## Getting Started
+## Docker / VPS
 
-Here you can find guides and examples for common scenarios to adopt Theia:
+For a production-style browser IDE with persistent volumes and server-side
+agents, use the deployment guide:
 
-- [Get an overview of how to get started](https://theia-ide.org/#gettingstarted) on the Theia website
-- [Develop a Theia application - your own IDE/Tool](https://theia-ide.org/docs/composing_applications/)
-- [Learn about Theia's extension mechanisms](https://theia-ide.org/docs/extensions/)
-- [Develop a VS Code like extension](https://theia-ide.org/docs/authoring_vscode_extensions/)
-- [Develop a Theia extension](https://theia-ide.org/docs/authoring_extensions/)
-- [Test a VS Code extension in Theia](https://github.com/eclipse-theia/theia/wiki/Testing-VS-Code-extensions)
-- [Package a desktop Theia application with Electron](https://theia-ide.org/docs/blueprint_documentation/)
+[doc/qaap-vps-deployment.md](doc/qaap-vps-deployment.md)
 
-## Contributing
+## Architecture Notes
 
-Read below to learn how to take part in improving Theia:
+QAAP is intentionally a product fork, but it avoids burying product behavior in
+upstream Theia packages. The target architecture is:
 
-- Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
-- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](doc/coding-guidelines.md), [Code of Conduct](CODE_OF_CONDUCT.md) and [sign the Eclipse contributor agreement](CONTRIBUTING.md#eclipse-contributor-agreement)
-- Find an issue to work on and submit a pull request
-  - First time contributing to open source? Pick a [good first issue](https://github.com/eclipse-theia/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
-  - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/eclipse-theia/theia/labels/beginners) to get you familiar with codebase and our contributing process.
-  - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/eclipse-theia/theia/labels/help%20wanted) is a good list to start. Further, have a look at our [roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) to align your contributions with the current project goals.
-- Could not find an issue? Look for bugs, typos, and missing features.
+- product behavior in `packages/qaap-*`
+- narrow adapter seams where Theia needs to be re-bound or extended
+- explicit drift checks against `upstream/master`
 
-## Feedback
-
-Read below how to engage with Theia community:
-
-- Join the discussion on [GitHub](https://github.com/eclipse-theia/theia/discussions).
-- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new/choose).
-- Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!
-- Star the repository to show your support.
-- Follow Theia on [X](https://x.com/theia_ide).
-- Join the [weekly developer call](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings)
-
-## Documentation
-
-- [API Documentation](https://eclipse-theia.github.io/theia/docs/next/index.html)
-- [General Documentation](https://theia-ide.org/docs/)
-- [VS Code API Compatibility Report](https://eclipse-theia.github.io/vscode-theia-comparator/status.html)
-- Useful Links:
-  - [Developing](doc/Developing.md)
-  - [Testing](doc/Testing.md)
-  - [Migration Guide](doc/Migration.md)
-  - [API Integration Testing](doc/api-testing.md)
-  - [Coding Guidelines](doc/coding-guidelines.md)
-  - [Code Organization](doc/code-organization.md)
-  - [Plugin and VSCode API](doc/Plugin-API.md)
-
-## SBOM
-
-To enhance supply chain security and offer users clear insight into project  components, Eclipse Theia now generates a Software Bill of Materials (SBOM) for every release. These are published to the Eclipse Foundation SBOM registry, with access instructions and usage details available in this [documentation](https://eclipse-csi.github.io/security-handbook/sbom/registry.html).
+See [doc/qaap-architecture-audit.md](doc/qaap-architecture-audit.md) for the
+current seam inventory and migration history.
 
 ## License
 
+This repository inherits the Eclipse Theia licensing model:
+
 - [Eclipse Public License 2.0](LICENSE-EPL)
-- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL-2.0-ONLY-CLASSPATH-EXCEPTION)
-
-## Trademark
-
-"Theia" is a **trademark of the Eclipse Foundation**. [Learn More](https://www.eclipse.org/theia)
+- [GNU General Public License v2 with Classpath Exception](LICENSE-GPL-2.0-ONLY-CLASSPATH-EXCEPTION)

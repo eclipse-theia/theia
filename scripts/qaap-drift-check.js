@@ -75,7 +75,14 @@ const ALLOWED = [
     /^dev-packages\/private-re-exports\//,
     /^scripts\/debug-.*\.mjs$/,
     /^scripts\/translation-update\.js$/,
+    /^\.claude\/skills\/qaap-dev\.md$/,
+    /^\.cursor\/rules\/mobile-touch-accessibility\.mdc$/,
+    /^\.worktrees\/qaiq$/,
+    /^qaiq$/,
+    /^bom\.json$/,
+    /^configs\/base\.tsconfig\.json$/,
     /^\.github\/workflows\/set-milestone-on-pr\.yml$/,
+    /^\.github\/workflows\/generate-sbom\.yml$/,
     // ---- Product seams in upstream Theia AI packages -----------------------
     // Small tweaks in upstream Theia AI packages to match product behaviour
     // (model lists, branding strings, dropped-Theia-only test fixtures, minor
@@ -100,9 +107,12 @@ const ALLOWED = [
     /^packages\/core\/src\/browser\/style\/select-component\.css$/,
     /^packages\/core\/src\/browser\/widgets\/select-component\.tsx$/,
     /^packages\/core\/src\/node\/logger-cli-contribution\.spec\.ts$/,
+    /^packages\/ai-chat-ui\/src\/browser\/style\/index\.css$/,
+    /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
     /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
+    /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,
     // ---- Plugin host customizations (small upstream patches) ---------------
     /^packages\/plugin-ext\/src\/main\/browser\/plugin-ext-frontend-module\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
@@ -119,6 +129,7 @@ const ALLOWED = [
     // TODO: triage each entry against the current upstream Theia release.
     /^package\.json$/,
     /^package-lock\.json$/,
+    /^README\.md$/,
     /^CLAUDE\.md$/,
     /^doc\/qaap-.*\.(md|html)$/,
     /^\.github\/workflows\/qaap-.*\.yml$/,

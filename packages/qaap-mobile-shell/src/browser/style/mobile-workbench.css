@@ -9587,12 +9587,14 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   gap: 10px;
 }
 
-/* Execution-view tab strip (Chat · Changes · Preview · …) + tab content. */
+/* Execution-view tab strip (icon-only on phones, icon + label when width allows). */
 .theia-mobile-transcript-tabs {
   display: flex;
   flex: 0 0 auto;
-  gap: 14px;
-  padding: 4px 16px 0;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px max(12px, env(safe-area-inset-left, 0px)) 0 max(12px, env(safe-area-inset-right, 0px));
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.16));
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -9604,10 +9606,16 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
 }
 
 .theia-mobile-transcript-tab {
+  min-width: 42px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 8px 0;
+  padding: 8px 8px;
   margin-bottom: -1px;
   color: var(--theia-descriptionForeground);
   font-family: var(--theia-ui-font-family, sans-serif);
@@ -9615,14 +9623,48 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   font-weight: 500;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   white-space: nowrap;
+  border-radius: 8px 8px 0 0;
+}
+
+.theia-mobile-transcript-tab-icon {
+  flex: 0 0 auto;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.theia-mobile-transcript-tab-label {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theia-mobile-transcript-tab.theia-mod-active {
   color: var(--theia-foreground);
   font-weight: 600;
   border-bottom-color: var(--q-accent, var(--qaap-accent, #E58E40));
+}
+
+@media (min-width: 560px) {
+  .theia-mobile-transcript-tabs {
+    gap: 8px;
+    justify-content: flex-start;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  .theia-mobile-transcript-tab {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .theia-mobile-transcript-tab-label {
+    display: inline;
+  }
 }
 
 /* Explicit hidden rules: the chat host sets display:flex, which would beat the UA [hidden] rule. */
@@ -13454,4 +13496,3 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-
 .theia-mobile-projects-sticky-composer-column .theia-mobile-projects-sticky-composer-inner {
   gap: 0;
 }
-
