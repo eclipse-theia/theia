@@ -16,14 +16,32 @@
     min-height: 0;
     overflow: hidden;
     box-sizing: border-box;
+    background: var(--theia-terminal-background);
 }
 
 .terminal-container .xterm {
     height: 100%;
+    background-color: var(--theia-terminal-background);
 }
 
+/*
+ * xterm.js writes `background-color` inline on `.xterm-viewport` from its JS theme
+ * (often #1e1e1e from the VS Code theme JSON). Override so empty/scroll bands use
+ * the same token as `.terminal-container` and the mobile execution surfaces.
+ */
 .terminal-container .xterm-viewport {
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+    background-color: var(--theia-terminal-background) !important;
+}
+
+.theia-mobile-transcript-terminal-host .terminal-container,
+.theia-mobile-transcript-terminal-host .terminal-container .xterm,
+.theia-mobile-transcript-terminal-host .terminal-container .xterm-viewport {
+    background-color: var(--theia-editor-background) !important;
+}
+
+.theia-mobile-transcript-terminal-host .terminal-container {
+    background: var(--theia-editor-background);
 }

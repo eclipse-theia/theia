@@ -30,8 +30,10 @@ import '../../src/browser/style/qaap-getting-started.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { TerminalThemeService } from '@theia/terminal/lib/browser/terminal-theme-service';
 import { QaapWorkbenchColorContribution } from './qaap-workbench-color-contribution';
 import { QaapThemeContribution } from './qaap-theme-contribution';
+import { QaapTerminalThemeService } from './qaap-terminal-theme-service';
 
 export default new ContainerModule(bind => {
     bind(QaapWorkbenchColorContribution).toSelf().inSingletonScope();
@@ -39,4 +41,7 @@ export default new ContainerModule(bind => {
 
     bind(QaapThemeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapThemeContribution);
+
+    bind(QaapTerminalThemeService).toSelf().inSingletonScope();
+    bind(TerminalThemeService).toService(QaapTerminalThemeService);
 });

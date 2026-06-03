@@ -4,6 +4,7 @@
   "description": "Qaap — product typography and theme overrides",
   "dependencies": {
     "@theia/core": "1.71.0",
+    "@theia/terminal": "1.71.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {

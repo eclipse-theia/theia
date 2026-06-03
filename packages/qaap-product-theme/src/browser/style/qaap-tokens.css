@@ -170,6 +170,10 @@ body.qaap-theme-dark {
   --theia-panelTitle-activeForeground: var(--qaap-ink) !important;
   --theia-panelTitle-inactiveForeground: var(--qaap-muted) !important;
 
+  /* Integrated terminal — match editor canvas so xterm/viewport blend with the shell. */
+  --theia-terminal-background: var(--qaap-bg) !important;
+  --theia-terminal-foreground: var(--qaap-ink) !important;
+
   /* Hairline borders everywhere */
   --theia-panel-border: var(--qaap-line) !important;
   --theia-panelInput-border: var(--qaap-line) !important;

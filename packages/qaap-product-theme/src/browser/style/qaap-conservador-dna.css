@@ -125,6 +125,16 @@ body.qaap-theme-dark .theia-mobile-projects.theia-mod-hub-repos .theia-mobile-pr
   line-height: 1.2;
 }
 
+body.qaap-theme-dark .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title,
+body.qaap-theme-dark .theia-mobile-agent-transcript-root .theia-mobile-agent-log-header h2 {
+  color: var(--q-text);
+  font-family: var(--q-font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 15px;
+}
+
 body.qaap-theme-dark .theia-mobile-pr-title,
 body.qaap-theme-dark .theia-mobile-open-repo-title {
   font-size: 22px;
