@@ -131,7 +131,7 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 
 ## Creating Issues and Pull Requests
 
-When creating a PR or issue, follow the repository templates in `.github/`.
+When creating a PR or issue, follow the repository templates in `.github/`. Keep the content **brief and concise** — cover the required template sections, but no padding, marketing language, or restating the diff.
 
 **Pull requests** — use [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md). The body must include these sections, in order:
 - `#### What it does` — what the change does; reference relevant issues.
