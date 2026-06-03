@@ -9,7 +9,6 @@ import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import {
     getConversation,
-    isConversationAutoApproveEnabled,
     type QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
 import {
@@ -36,9 +35,6 @@ export interface MobileProjectsParallelUiDeps {
         activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
         parentIds: ReadonlySet<string>,
     ): HTMLElement;
-    onToggleAutoApprove(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    /** Resolve the latest summary for toggles (header buttons keep a stale closure). */
-    resolveConversationSummary(summary: QaapAgentConversationSummaryDTO): QaapAgentConversationSummaryDTO;
 }
 
 /** Parallel-run sheets, variant groups in Chats, and live diff stats polling. */
@@ -75,51 +71,22 @@ export class MobileProjectsParallelUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void {
-        if (!this.supportsQaapAgentWorkflow(summary)) {
-            const titleWrap = document.createElement('div');
-            titleWrap.className = 'theia-mobile-agent-log-title-wrap';
-            titleWrap.append(title);
-            header.append(titleWrap, close);
-            return;
-        }
-        const timelineBtn = document.createElement('button');
-        timelineBtn.type = 'button';
-        timelineBtn.className = 'theia-mobile-agent-log-action theia-mobile-agent-log-variants codicon codicon-history';
-        timelineBtn.title = nls.localize('qaap/mobileProjects/timeline', 'Timeline');
-        timelineBtn.setAttribute('aria-label', timelineBtn.title);
-        timelineBtn.addEventListener('click', () => this.deps.openTimeline(project, summary));
-        const variantsBtn = document.createElement('button');
-        variantsBtn.type = 'button';
-        variantsBtn.className = 'theia-mobile-agent-log-action theia-mobile-agent-log-variants codicon codicon-git-branch';
-        variantsBtn.title = nls.localize('qaap/mobileProjects/runVariants', 'Run variants');
-        variantsBtn.setAttribute('aria-label', variantsBtn.title);
-        variantsBtn.addEventListener('click', () => this.openParallelRunsSheet(project, summary));
-        const yoloBtn = document.createElement('button');
-        yoloBtn.type = 'button';
-        yoloBtn.className = 'theia-mobile-agent-log-action theia-mobile-agent-log-yolo codicon codicon-zap';
-        const syncYoloButton = (): void => {
-            const current = this.deps.resolveConversationSummary(summary);
-            const yoloOn = isConversationAutoApproveEnabled(current);
-            yoloBtn.classList.toggle('theia-mod-on', yoloOn);
-            yoloBtn.title = yoloOn
-                ? nls.localize('qaap/mobileProjects/taskAutoApproveOff', 'Disable auto-approve (YOLO)')
-                : nls.localize('qaap/mobileProjects/taskAutoApproveOn', 'Enable auto-approve (YOLO)');
-            yoloBtn.setAttribute('aria-label', yoloBtn.title);
-            yoloBtn.setAttribute('aria-pressed', yoloOn ? 'true' : 'false');
-        };
-        syncYoloButton();
-        yoloBtn.addEventListener('click', () => {
-            if (yoloBtn.classList.contains('theia-mod-busy')) {
-                return;
-            }
-            this.deps.onToggleAutoApprove(project, summary);
-        });
         const titleWrap = document.createElement('div');
         titleWrap.className = 'theia-mobile-agent-log-title-wrap';
         titleWrap.append(title);
-        header.append(titleWrap, timelineBtn, variantsBtn, yoloBtn, close);
-        // Expose sync for the panel after PATCH / SSE refresh.
-        (header as HTMLElement & { syncYoloButton?: () => void }).syncYoloButton = syncYoloButton;
+        const actions = document.createElement('div');
+        actions.className = 'theia-mobile-agent-log-header-actions';
+        if (this.supportsQaapAgentWorkflow(summary)) {
+            const timelineBtn = document.createElement('button');
+            timelineBtn.type = 'button';
+            timelineBtn.className = 'theia-mobile-agent-log-action codicon codicon-history';
+            timelineBtn.title = nls.localize('qaap/mobileProjects/timeline', 'Timeline');
+            timelineBtn.setAttribute('aria-label', timelineBtn.title);
+            timelineBtn.addEventListener('click', () => this.deps.openTimeline(project, summary));
+            actions.append(timelineBtn);
+        }
+        actions.append(close);
+        header.append(titleWrap, actions);
     }
 
     createVariantRunSection(

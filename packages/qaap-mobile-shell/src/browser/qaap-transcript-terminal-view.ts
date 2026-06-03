@@ -25,7 +25,7 @@ export interface TranscriptTerminalSurface {
     readonly mountHost: HTMLElement;
 }
 
-function scheduleTranscriptTerminalResize(terminal: TerminalWidget): void {
+export function scheduleTranscriptTerminalResize(terminal: TerminalWidget): void {
     terminal.update();
     requestAnimationFrame(() => {
         if (terminal.isAttached) {

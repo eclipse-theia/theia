@@ -209,8 +209,8 @@
 
 .theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ChatContext {
   order: 3;
-  background: var(--qaap-codex-tray-bg);
-  border-top: 1px solid var(--qaap-codex-line);
+  background: transparent;
+  border-top: none;
 }
 
 .theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInput-ChatContext ul {

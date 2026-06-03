@@ -398,8 +398,9 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
   body.qaap-theme-dark .theia-mobile-projects-search:focus-within,
   body.qaap-theme-light .theia-mobile-open-repo-filter:focus-within,
   body.qaap-theme-dark .theia-mobile-open-repo-filter:focus-within {
-    border-color: var(--qaap-accent);
-    box-shadow: var(--qaap-shadow-accent);
+    border-color: var(--qaap-line);
+    box-shadow: none;
+    outline: none;
   }
 
   body.qaap-theme-light .theia-mobile-projects-filter-chip,
@@ -482,20 +483,12 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
     border-radius: var(--qaap-radius-md);
   }
 
-  body.qaap-theme-light .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab,
-  body.qaap-theme-dark .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab {
+  body.qaap-theme-light .theia-mobile-projects .theia-mobile-projects-fab,
+  body.qaap-theme-dark .theia-mobile-projects .theia-mobile-projects-fab {
     border-color: var(--qaap-accent);
     background: var(--qaap-accent);
     color: var(--qaap-bg);
     border-radius: 50%;
-  }
-
-  body.qaap-theme-light .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab,
-  body.qaap-theme-dark .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab {
-    border-color: transparent;
-    background: var(--qaap-accent-soft);
-    color: var(--qaap-accent);
-    border-radius: var(--qaap-radius-pill, 99px);
   }
 
   body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
@@ -507,17 +500,11 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
     color: var(--qaap-bg);
   }
 
-  body.qaap-theme-light .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab:hover,
-  body.qaap-theme-dark .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab:hover {
+  body.qaap-theme-light .theia-mobile-projects .theia-mobile-projects-fab:hover,
+  body.qaap-theme-dark .theia-mobile-projects .theia-mobile-projects-fab:hover {
     background: var(--qaap-accent-ink);
     border-color: var(--qaap-accent-ink);
     color: var(--qaap-bg);
-  }
-
-  body.qaap-theme-light .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab:hover,
-  body.qaap-theme-dark .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab:hover {
-    background: color-mix(in srgb, var(--qaap-accent-soft) 72%, var(--qaap-accent) 28%);
-    color: var(--qaap-accent);
   }
 
   /* Bottom-bar long-press action sheet sits on document.body, not under the

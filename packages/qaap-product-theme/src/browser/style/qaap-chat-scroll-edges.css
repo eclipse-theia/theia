@@ -5,16 +5,38 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Chat scroll edges — top/bottom fade + backdrop blur (premium glass vignette).
+| Chat scroll edges — compact top/bottom fade + backdrop blur vignette.
 |-----------------------------------------------------------------------------*/
 
 :root {
-  --qaap-chat-edge-fade-height: 40px;
-  --qaap-chat-edge-blur: 12px;
-  --qaap-chat-edge-saturate: 140%;
-  --qaap-chat-edge-top-lift: 8px;
-  --qaap-chat-edge-top-lift-transcript: 10px;
+  --qaap-chat-edge-fade-height-top: 12px;
+  --qaap-chat-edge-fade-height-bottom: 12px;
+  --qaap-chat-edge-blur: 8px;
+  --qaap-chat-edge-blur-bottom: 20px;
+  --qaap-chat-edge-saturate: 130%;
+  --qaap-chat-edge-saturate-bottom: 155%;
+  --qaap-chat-edge-top-lift: 2px;
+  --qaap-chat-edge-top-lift-transcript: 3px;
   --qaap-chat-edge-top-lift-transcript-sheet: 0px;
+  --qaap-chat-edge-blur-bleed-top: 3px;
+  --qaap-chat-edge-blur-bleed-bottom: 3px;
+  --qaap-chat-edge-blur-bleed-bottom-composer: 4px;
+  --qaap-chat-edge-scroll-padding-top: calc(
+    var(--qaap-chat-edge-fade-height-top)
+    + var(--qaap-chat-edge-blur-bleed-top)
+    + var(--qaap-chat-edge-top-lift)
+    + 6px
+  );
+  --qaap-chat-edge-scroll-padding-bottom: calc(
+    var(--qaap-chat-edge-fade-height-bottom)
+    + var(--qaap-chat-edge-blur-bleed-bottom)
+    + 6px
+  );
+  --qaap-chat-edge-scroll-padding-bottom-composer: calc(
+    var(--qaap-chat-edge-fade-height-bottom)
+    + var(--qaap-chat-edge-blur-bleed-bottom-composer)
+    + 6px
+  );
 }
 
 .chat-view-widget,
@@ -36,24 +58,24 @@
   right: 0;
   z-index: 6;
   pointer-events: none;
-  height: calc(var(--qaap-chat-edge-fade-height) + var(--qaap-chat-edge-top-lift));
+  height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-top-lift));
   top: calc(-1 * var(--qaap-chat-edge-top-lift));
   background: linear-gradient(
     to bottom,
     var(--theia-editor-background) 0%,
-    color-mix(in srgb, var(--theia-editor-background) 88%, transparent) 42%,
-    color-mix(in srgb, var(--theia-editor-background) 48%, transparent) 78%,
+    color-mix(in srgb, var(--theia-editor-background) 88%, transparent) 32%,
+    color-mix(in srgb, var(--theia-editor-background) 48%, transparent) 62%,
     transparent 100%
   );
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::before {
-  height: calc(var(--qaap-chat-edge-fade-height) + var(--qaap-chat-edge-top-lift-transcript));
+  height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-top-lift-transcript));
   top: calc(-1 * var(--qaap-chat-edge-top-lift-transcript));
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::before {
-  height: calc(var(--qaap-chat-edge-fade-height) + var(--qaap-chat-edge-top-lift-transcript-sheet));
+  height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-top-lift-transcript-sheet));
   top: calc(-1 * var(--qaap-chat-edge-top-lift-transcript-sheet));
 }
 
@@ -62,7 +84,7 @@
   display: none;
 }
 
-/* Bottom edge — fades into composer / safe area. */
+/* Bottom edge — short band, heavy blur for a glass dissolve into composer. */
 .chat-tree-view-widget::after,
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::after,
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::after {
@@ -71,14 +93,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: var(--qaap-chat-edge-fade-height);
+  height: var(--qaap-chat-edge-fade-height-bottom);
   z-index: 6;
   pointer-events: none;
   background: linear-gradient(
     to top,
     var(--theia-editor-background) 0%,
-    color-mix(in srgb, var(--theia-editor-background) 88%, transparent) 42%,
-    color-mix(in srgb, var(--theia-editor-background) 48%, transparent) 78%,
+    color-mix(in srgb, var(--theia-editor-background) 92%, transparent) 22%,
+    color-mix(in srgb, var(--theia-editor-background) 62%, transparent) 48%,
+    color-mix(in srgb, var(--theia-editor-background) 24%, transparent) 72%,
     transparent 100%
   );
 }
@@ -86,26 +109,23 @@
 @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
   .chat-view-widget::before,
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::before,
-  .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::before,
-  .chat-tree-view-widget::after,
-  .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::after,
-  .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::after {
+  .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::before {
     -webkit-backdrop-filter: blur(var(--qaap-chat-edge-blur)) saturate(var(--qaap-chat-edge-saturate));
     backdrop-filter: blur(var(--qaap-chat-edge-blur)) saturate(var(--qaap-chat-edge-saturate));
   }
 
   .chat-view-widget::before {
-    height: calc(var(--qaap-chat-edge-fade-height) + 12px + var(--qaap-chat-edge-top-lift));
+    height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-blur-bleed-top) + var(--qaap-chat-edge-top-lift));
     top: calc(-1 * var(--qaap-chat-edge-top-lift));
     background: linear-gradient(
       to bottom,
       color-mix(in srgb, var(--theia-editor-background) 98%, transparent) 0%,
-      color-mix(in srgb, var(--theia-editor-background) 82%, transparent) 38%,
-      color-mix(in srgb, var(--theia-editor-background) 46%, transparent) 72%,
+      color-mix(in srgb, var(--theia-editor-background) 82%, transparent) 18%,
+      color-mix(in srgb, var(--theia-editor-background) 46%, transparent) 42%,
       transparent 100%
     );
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
   }
 
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::before,
@@ -113,47 +133,94 @@
     background: linear-gradient(
       to bottom,
       color-mix(in srgb, var(--theia-editor-background) 98%, transparent) 0%,
-      color-mix(in srgb, var(--theia-editor-background) 82%, transparent) 38%,
-      color-mix(in srgb, var(--theia-editor-background) 46%, transparent) 72%,
+      color-mix(in srgb, var(--theia-editor-background) 82%, transparent) 18%,
+      color-mix(in srgb, var(--theia-editor-background) 46%, transparent) 42%,
       transparent 100%
     );
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
   }
 
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::before {
-    height: calc(var(--qaap-chat-edge-fade-height) + 12px + var(--qaap-chat-edge-top-lift-transcript));
+    height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-blur-bleed-top) + var(--qaap-chat-edge-top-lift-transcript));
     top: calc(-1 * var(--qaap-chat-edge-top-lift-transcript));
   }
 
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::before {
-    height: calc(var(--qaap-chat-edge-fade-height) + 12px + var(--qaap-chat-edge-top-lift-transcript-sheet));
+    height: calc(var(--qaap-chat-edge-fade-height-top) + var(--qaap-chat-edge-blur-bleed-top) + var(--qaap-chat-edge-top-lift-transcript-sheet));
     top: calc(-1 * var(--qaap-chat-edge-top-lift-transcript-sheet));
   }
 
   .chat-tree-view-widget::after,
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::after,
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::after {
-    height: calc(var(--qaap-chat-edge-fade-height) + 14px);
+    height: calc(var(--qaap-chat-edge-fade-height-bottom) + var(--qaap-chat-edge-blur-bleed-bottom));
+    -webkit-backdrop-filter: blur(var(--qaap-chat-edge-blur-bottom)) saturate(var(--qaap-chat-edge-saturate-bottom));
+    backdrop-filter: blur(var(--qaap-chat-edge-blur-bottom)) saturate(var(--qaap-chat-edge-saturate-bottom));
     background: linear-gradient(
       to top,
-      color-mix(in srgb, var(--theia-editor-background) 98%, transparent) 0%,
-      color-mix(in srgb, var(--theia-editor-background) 82%, transparent) 38%,
-      color-mix(in srgb, var(--theia-editor-background) 46%, transparent) 72%,
+      color-mix(in srgb, var(--theia-editor-background) 99%, transparent) 0%,
+      color-mix(in srgb, var(--theia-editor-background) 88%, transparent) 18%,
+      color-mix(in srgb, var(--theia-editor-background) 58%, transparent) 42%,
+      color-mix(in srgb, var(--theia-editor-background) 22%, transparent) 68%,
       transparent 100%
     );
-    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 82%, transparent 100%);
-    mask-image: linear-gradient(to top, #000 0%, #000 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 52%, transparent 100%);
   }
 }
 
-/* Sticky composer transcript: extra bottom lift so blur meets the input card cleanly. */
+/* Sticky composer transcript: minimal extra lift so blur meets the input card cleanly. */
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::after {
-  height: calc(var(--qaap-chat-edge-fade-height) + 20px);
+  height: calc(var(--qaap-chat-edge-fade-height-bottom) + var(--qaap-chat-edge-blur-bleed-bottom-composer));
 }
 
 @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
   .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat::after {
-    height: calc(var(--qaap-chat-edge-fade-height) + 24px);
+    height: calc(var(--qaap-chat-edge-fade-height-bottom) + var(--qaap-chat-edge-blur-bleed-bottom-composer));
   }
+}
+
+/*-----------------------------------------------------------------------------
+| Scroll safe area — first/last messages stay readable under edge fades.
+|-----------------------------------------------------------------------------*/
+
+.chat-view-widget .chat-tree-view-widget {
+  box-sizing: border-box;
+  scroll-padding-top: var(--qaap-chat-edge-scroll-padding-top);
+  scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
+  padding-top: var(--qaap-chat-edge-scroll-padding-top);
+  padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat .chat-view-widget .chat-tree-view-widget {
+  scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+  padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript {
+  box-sizing: border-box;
+  scroll-padding-top: var(--qaap-chat-edge-scroll-padding-top);
+  scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
+  padding-top: var(--qaap-chat-edge-scroll-padding-top);
+  padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat > .theia-mobile-agent-transcript {
+  scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+  padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript > .theia-mobile-agent-transcript-msg:first-child {
+  scroll-margin-top: var(--qaap-chat-edge-scroll-padding-top);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript > .theia-mobile-agent-transcript-msg:last-child {
+  scroll-margin-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat > .theia-mobile-agent-transcript > .theia-mobile-agent-transcript-msg:last-child {
+  scroll-margin-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
 }

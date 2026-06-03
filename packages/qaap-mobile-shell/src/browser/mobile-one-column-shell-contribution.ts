@@ -938,6 +938,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 },
                 clipboard: this.clipboardService,
                 readPreference: key => this.preferenceService.get(key),
+                quickInputService: this.quickInputService,
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

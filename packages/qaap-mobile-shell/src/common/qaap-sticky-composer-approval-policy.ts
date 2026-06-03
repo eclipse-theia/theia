@@ -50,8 +50,8 @@ export const QAAP_AGENT_APPROVAL_POLICIES: readonly QaapAgentApprovalPolicyOptio
             'qaap/mobileProjects/approvalPolicyFullHint',
             'Unrestricted network and filesystem access without approval prompts.',
         ),
-        toolbarIconClass: 'codicon-shield',
-        sheetIconClass: 'codicon-shield',
+        toolbarIconClass: 'codicon-zap',
+        sheetIconClass: 'codicon-zap',
     },
 ];
 

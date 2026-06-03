@@ -118,6 +118,13 @@ body.qaap-theme-dark .theia-mobile-projects-title {
   line-height: 1.12;
 }
 
+body.qaap-theme-dark .theia-mobile-projects.theia-mod-hub-repos .theia-mobile-projects-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 body.qaap-theme-dark .theia-mobile-pr-title,
 body.qaap-theme-dark .theia-mobile-open-repo-title {
   font-size: 22px;
@@ -167,8 +174,8 @@ body.qaap-theme-dark .theia-mobile-pr-card {
 
 body.qaap-theme-dark .q-input-wrap,
 body.qaap-theme-dark .theia-input,
-body.qaap-theme-dark input,
-body.qaap-theme-dark textarea,
+body.qaap-theme-dark input:not(.theia-mobile-projects-sticky-composer-input):not(.theia-mobile-projects-search-input),
+body.qaap-theme-dark textarea:not(.theia-mobile-projects-sticky-composer-input),
 body.qaap-theme-dark .monaco-inputbox {
   min-height: 42px;
   background: var(--q-surface);
@@ -290,19 +297,11 @@ body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
   font-family: var(--q-font-sans);
 }
 
-body.qaap-theme-dark .theia-mobile-projects:not(.theia-mod-home) .theia-mobile-projects-fab {
+body.qaap-theme-dark .theia-mobile-projects .theia-mobile-projects-fab {
   border-color: var(--q-accent);
   border-radius: 50%;
   background: var(--q-accent);
   color: var(--q-bg);
-  font-family: var(--q-font-sans);
-}
-
-body.qaap-theme-dark .theia-mobile-projects.theia-mod-home .theia-mobile-projects-header-actions .theia-mobile-projects-fab {
-  border-color: transparent;
-  border-radius: var(--q-radius-pill, 99px);
-  background: var(--q-accent-soft);
-  color: var(--q-accent);
   font-family: var(--q-font-sans);
 }
 
@@ -373,4 +372,57 @@ body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-secondary:hover {
     border-radius: var(--q-radius-row);
     box-shadow: var(--q-shadow-md);
   }
+}
+
+/*-----------------------------------------------------------------------------
+|| Sticky composer + Work Hub search — no accent focus ring on click/focus.
+|| Product theme loads after mobile-shell CSS so these overrides win in cascade.
+||-----------------------------------------------------------------------------*/
+
+body.qaap-theme-dark .theia-mobile-projects-search:focus-within,
+body.qaap-theme-light .theia-mobile-projects-search:focus-within {
+  border-color: var(--q-line, var(--qaap-line)) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+body.qaap-theme-dark .theia-mobile-projects-search-input,
+body.qaap-theme-light .theia-mobile-projects-search-input {
+  min-height: unset;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+body.qaap-theme-dark .theia-mobile-projects-search-input:focus,
+body.qaap-theme-dark .theia-mobile-projects-search-input:focus-visible,
+body.qaap-theme-light .theia-mobile-projects-search-input:focus,
+body.qaap-theme-light .theia-mobile-projects-search-input:focus-visible {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card:focus-within,
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-input-wrap:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-wrap:focus-within,
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-input-body:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-body:focus-within {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card.theia-mod-codex:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card.theia-mod-codex:focus-within {
+  border-color: color-mix(in srgb, var(--theia-foreground) 8%, transparent) !important;
+}
+
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex:focus-within {
+  border: none !important;
+  background: transparent !important;
 }

@@ -73,19 +73,20 @@ export function listStaticNativeAgentModels(agentId: string): QaapQaiqModelOptio
                 nativeOption(id, 'qwen3.5-plus', 'Qwen3.5 Plus'),
             ];
         case 'codex':
+            // Keep in sync with the Codex CLI /model menu (ChatGPT sign-in).
             return [
-                nativeOption(id, 'o4-mini', 'o4-mini'),
-                nativeOption(id, 'gpt-4o', 'gpt-4o'),
-                nativeOption(id, 'gpt-4.1', 'gpt-4.1'),
-                nativeOption(id, 'gpt-4.1-mini', 'gpt-4.1-mini'),
+                nativeOption(id, 'gpt-5.5', 'GPT-5.5'),
+                nativeOption(id, 'gpt-5.4', 'GPT-5.4'),
+                nativeOption(id, 'gpt-5.4-mini', 'GPT-5.4-Mini'),
             ];
         case 'claude':
+            // Keep in sync with the Claude Code CLI /model menu.
             return [
-                nativeOption(id, 'sonnet', 'Sonnet', 'anthropic'),
-                nativeOption(id, 'opus', 'Opus', 'anthropic'),
-                nativeOption(id, 'haiku', 'Haiku', 'anthropic'),
-                nativeOption(id, 'claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic'),
-                nativeOption(id, 'claude-opus-4-6', 'claude-opus-4-6', 'anthropic'),
+                nativeOption(id, 'claude-opus-4-8', 'Opus 4.8', 'anthropic'),
+                nativeOption(id, 'claude-sonnet-4-6', 'Sonnet 4.6', 'anthropic'),
+                nativeOption(id, 'claude-haiku-4-5', 'Haiku 4.5', 'anthropic'),
+                nativeOption(id, 'claude-opus-4-7', 'Opus 4.7 Legado', 'anthropic'),
+                nativeOption(id, 'claude-opus-4-6', 'Opus 4.6 Legado', 'anthropic'),
             ];
         case 'copilot':
             return [
