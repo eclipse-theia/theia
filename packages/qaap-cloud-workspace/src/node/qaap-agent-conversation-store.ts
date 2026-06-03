@@ -33,6 +33,7 @@ import {
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import { parseOpencodeLog, QaapOpencodeStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-opencode-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
+import { patchConversationAutoApprove } from '../common/qaap-agent-conversation-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
 import {
@@ -207,7 +208,7 @@ export class QaapAgentConversationStore {
         const messages = [...conv.messages, userMessage];
         let next: QaapAgentConversation = {
             ...conv,
-            ...this.patchConversationAutoApprove(conv, autoApproveOverride),
+            ...patchConversationAutoApprove(conv, autoApproveOverride),
             agentId: turnAgentId,
             title: conv.messages.length === 0 ? this.deriveTitle(content) : conv.title,
             status: 'streaming',
@@ -822,23 +823,6 @@ export class QaapAgentConversationStore {
             }
         }
         return last;
-    }
-
-    /**
-     * Merge composer / per-message auto-approve into the conversation before spawning a task.
-     * `true` clears an explicit opt-out; `false` requires manual CLI approval on this turn.
-     */
-    protected patchConversationAutoApprove(
-        conv: QaapAgentConversation,
-        override?: boolean,
-    ): Pick<QaapAgentConversation, 'autoApprove'> {
-        if (override === false) {
-            return { autoApprove: false };
-        }
-        if (override === true) {
-            return { autoApprove: undefined };
-        }
-        return { autoApprove: conv.autoApprove };
     }
 
     protected buildTaskCreateRequest(
