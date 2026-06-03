@@ -75,7 +75,14 @@ export class QaapWorkHubRoutineRunner {
             if (existing
                 && existing.cwd === routine.cwd
                 && existing.status !== 'streaming') {
-                const conv = this.conversationStore.postUserMessage(existing.id, routine.prompt, agent);
+                const routineAutoApprove = routine.autoApprove === false ? false : true;
+                const conv = this.conversationStore.postUserMessage(
+                    existing.id,
+                    routine.prompt,
+                    agent,
+                    undefined,
+                    routineAutoApprove,
+                );
                 conversationId = conv.id;
                 taskId = [...conv.messages].reverse().find(m => m.role === 'user' && m.taskId)?.taskId;
             }
@@ -87,6 +94,7 @@ export class QaapWorkHubRoutineRunner {
                 agent,
                 title: routine.title,
                 message: routine.prompt,
+                ...(routine.autoApprove === false ? { autoApprove: false } : {}),
             });
             conversationId = conv.id;
             taskId = conv.messages.find(m => m.role === 'user' && m.taskId)?.taskId;

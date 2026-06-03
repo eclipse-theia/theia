@@ -120,6 +120,22 @@ export function resolveAutoApproveFromApprovalPolicy(policyId: QaapAgentApproval
     return policyId !== 'request-approval';
 }
 
+/**
+ * Resolves auto-approve for the next VPS submit from the composer approval picker.
+ * When the picker is shown, always returns a boolean so tasks get YOLO flags when appropriate.
+ */
+export function resolveComposerAutoApprove(
+    showApprovalPolicy: boolean,
+    policyId: QaapAgentApprovalPolicyId | undefined,
+    cwd: string | undefined,
+): boolean | undefined {
+    if (!showApprovalPolicy) {
+        return undefined;
+    }
+    const policy = reconcileAgentApprovalPolicyId(policyId, cwd);
+    return resolveAutoApproveFromApprovalPolicy(policy);
+}
+
 function isAgentApprovalPolicyId(value: string | null | undefined): value is QaapAgentApprovalPolicyId {
     return value === 'request-approval' || value === 'approve-for-me' || value === 'full-access';
 }

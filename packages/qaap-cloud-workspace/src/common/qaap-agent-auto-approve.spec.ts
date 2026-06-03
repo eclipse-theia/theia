@@ -76,6 +76,8 @@ describe('qaap-agent-auto-approve', () => {
             .to.equal("antigravity --approval-mode=yolo -p 'hi'");
         expect(applyAutoApproveToCommand("gemini 'hi'", 'antigravity'))
             .to.equal("gemini --approval-mode=yolo -p 'hi'");
+        expect(applyAutoApproveToCommand("agy -p 'hi'", 'antigravity'))
+            .to.equal("agy --approval-mode=yolo -p 'hi'");
         expect(applyAutoApproveToCommand("copilot -p 'hi'", 'copilot'))
             .to.equal("copilot --autopilot --yolo --max-autopilot-continues 20 -p 'hi'");
         expect(applyAutoApproveToCommand("qwen -p 'hi'", 'qwen'))

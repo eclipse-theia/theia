@@ -109,15 +109,26 @@ export interface QaapAgentConversationDTO {
     readonly linkedPullRequest?: QaapLinkedPullRequest;
 }
 
+function resolveEffectiveConversationStatus(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO['status'] {
+    if (conv.status === 'streaming') {
+        return 'streaming';
+    }
+    if (conv.status === 'failed' || conv.messages.some(message => message.role === 'user' && message.error)) {
+        return 'failed';
+    }
+    return conv.status;
+}
+
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {
     const last = conv.messages[conv.messages.length - 1];
+    const status = resolveEffectiveConversationStatus(conv);
     const clean = last
         ? normalizeAgentMessageContentForDisplay(last.content).replace(/\s+/g, ' ').trim()
         : undefined;
     const preview = clean === undefined
         ? undefined
         : clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
-    const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });
+    const metrics = buildConversationListMetrics({ status, messages: conv.messages });
     const hasGitOperation = metrics.hasGitOperation || conv.linkedPullRequest
         ? true
         : undefined;
@@ -126,7 +137,7 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         cwd: conv.cwd,
         agentId: conv.agentId,
         title: conv.title,
-        status: conv.status,
+        status,
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt,
         messageCount: conv.messages.length,
@@ -219,12 +230,19 @@ export async function postConversationMessage(
     content: string,
     agent?: string,
     agentModel?: QaapCreateAgentTaskQaiqModel,
+    autoApprove?: boolean,
 ): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, agent, agentModel, qaiqModel: agentModel }),
+        body: JSON.stringify({
+            content,
+            agent,
+            agentModel,
+            qaiqModel: agentModel,
+            ...(autoApprove === false ? { autoApprove: false } : autoApprove === true ? { autoApprove: true } : {}),
+        }),
     });
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);

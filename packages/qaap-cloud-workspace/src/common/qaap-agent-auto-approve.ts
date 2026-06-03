@@ -6,6 +6,9 @@
 /** Agent id for the built-in QAIQ runner (matches {@link QAIQ_AGENT_ID} in the task runner). */
 export const QAAP_QAIQ_AGENT_ID = 'qaiq';
 
+/** Binaries used by the Antigravity agent (`agy`, community CLI, legacy `gemini`). */
+const ANTIGRAVITY_CLI_PATTERN = /\b(agy|antigravity|gemini)\b/;
+
 /**
  * Whether a background agent task should bypass CLI permission prompts.
  *
@@ -84,9 +87,9 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
             return command;
         }
         if (hasHeadlessPromptFlag(command)) {
-            return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo');
+            return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo');
         }
-        return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo -p');
+        return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo -p');
     }
     if (id === 'copilot') {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');
@@ -115,11 +118,11 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
     if (/\bcursor-agent\b/.test(command)) {
         return injectAfterExecutable(command, 'cursor-agent', '-p --force');
     }
-    if (/\b(antigravity|gemini)\b/.test(command) && !commandHasAutoApproveFlags(command)) {
+    if (ANTIGRAVITY_CLI_PATTERN.test(command) && !commandHasAutoApproveFlags(command)) {
         if (hasHeadlessPromptFlag(command)) {
-            return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo');
+            return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo');
         }
-        return injectAfterPattern(command, /\b(antigravity|gemini)\b/, '--approval-mode=yolo -p');
+        return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo -p');
     }
     if (/\bcopilot\b/.test(command) && !commandHasAutoApproveFlags(command)) {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');

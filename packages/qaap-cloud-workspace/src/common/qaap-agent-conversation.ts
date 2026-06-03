@@ -183,6 +183,10 @@ export interface QaapPostAgentMessageRequest {
     readonly agentModel?: QaapCreateAgentTaskQaiqModel;
     /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    /**
+     * When set, applies the composer approval policy for this turn (`true` → YOLO / auto-approve CLI flags).
+     */
+    readonly autoApprove?: boolean;
 }
 
 export interface QaapRenameAgentConversationRequest {
@@ -214,14 +218,26 @@ export type QaapAgentConversationEvent =
     | { readonly type: 'message'; readonly conversationId: string; readonly cwd: string; readonly message: QaapAgentMessage }
     | { readonly type: 'deleted'; readonly conversationId: string; readonly cwd: string };
 
+/** Status exposed to list rows — keeps `failed` when a user turn still carries an error. */
+export function resolveEffectiveConversationStatus(conv: QaapAgentConversation): QaapAgentConversationStatus {
+    if (conv.status === 'streaming') {
+        return 'streaming';
+    }
+    if (conv.status === 'failed' || conv.messages.some(message => message.role === 'user' && message.error)) {
+        return 'failed';
+    }
+    return conv.status;
+}
+
 export function toConversationSummary(conv: QaapAgentConversation): QaapAgentConversationSummary {
     const last = conv.messages[conv.messages.length - 1];
+    const status = resolveEffectiveConversationStatus(conv);
     const base: QaapAgentConversationSummary = {
         id: conv.id,
         cwd: conv.cwd,
         agentId: conv.agentId,
         title: conv.title,
-        status: conv.status,
+        status,
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt,
         messageCount: conv.messages.length,
@@ -235,7 +251,7 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         parallelBaseCwd: conv.parallelBaseCwd,
         linkedPullRequest: conv.linkedPullRequest,
     };
-    const metrics = buildConversationListMetrics({ status: conv.status, messages: conv.messages });
+    const metrics = buildConversationListMetrics({ status, messages: conv.messages });
     const hasGitOperation = metrics.hasGitOperation || conv.linkedPullRequest
         ? true
         : undefined;

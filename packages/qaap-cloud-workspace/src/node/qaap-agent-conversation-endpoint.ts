@@ -133,7 +133,14 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         const agent = typeof body.agent === 'string' ? body.agent.trim() : undefined;
         const agentModel = body.agentModel ?? body.qaiqModel;
         try {
-            const conv = this.store.postUserMessage(req.params.id, content, agent || undefined, agentModel);
+            const autoApprove = typeof body.autoApprove === 'boolean' ? body.autoApprove : undefined;
+            const conv = this.store.postUserMessage(
+                req.params.id,
+                content,
+                agent || undefined,
+                agentModel,
+                autoApprove,
+            );
             res.status(202).json(conv);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

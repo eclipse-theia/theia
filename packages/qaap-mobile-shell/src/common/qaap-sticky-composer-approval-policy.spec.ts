@@ -10,6 +10,7 @@ import {
     DEFAULT_AGENT_APPROVAL_POLICY_ID,
     reconcileAgentApprovalPolicyId,
     resolveAutoApproveFromApprovalPolicy,
+    resolveComposerAutoApprove,
 } from './qaap-sticky-composer-approval-policy';
 
 describe('qaap-sticky-composer-approval-policy', () => {
@@ -35,5 +36,13 @@ describe('qaap-sticky-composer-approval-policy', () => {
         expect(resolveAutoApproveFromApprovalPolicy('request-approval')).to.equal(false);
         expect(resolveAutoApproveFromApprovalPolicy('approve-for-me')).to.equal(true);
         expect(resolveAutoApproveFromApprovalPolicy('full-access')).to.equal(true);
+    });
+
+    it('resolveComposerAutoApprove always returns a boolean when the picker is shown', () => {
+        expect(resolveComposerAutoApprove(false, undefined, undefined)).to.equal(undefined);
+        expect(resolveComposerAutoApprove(true, undefined, '/tmp/repo')).to.equal(true);
+        expect(resolveComposerAutoApprove(true, 'request-approval', '/tmp/repo')).to.equal(false);
+        expect(resolveComposerAutoApprove(true, 'approve-for-me', '/tmp/repo')).to.equal(true);
+        expect(resolveComposerAutoApprove(true, 'full-access', '/tmp/repo')).to.equal(true);
     });
 });

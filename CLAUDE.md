@@ -62,6 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Example apps should depend on **`@theia/qaap-product`** once; it pulls `qaap-element-inspector`, `qaap-mobile-shell`, and `qaap-product-theme` and exposes a minimal frontend module so the extension collector loads them transitively.
 - **`@theia/mini-browser`** still lists **`@theia/qaap-element-inspector`** directly (DI and imports from that package).
 - Narrow mobile viewport breakpoint for TypeScript: **`MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`** and **`matchesMobileNarrowViewport()`** in `packages/core/src/browser/shell/mobile-layout-state.ts` (keep CSS using the same `767px` breakpoint in sync). Narrow-viewport rules for menus / side panel / dialogs live in **`@theia/qaap-product-theme`** (`qaap-menus-narrow-viewport.css`, `qaap-sidepanel-narrow-viewport.css`, `qaap-dialog-narrow-viewport.css`); apps without that package will not get those overrides.
+- **Mobile touch scroll (critical):** nested lists inside flex overlays must use `min-height: 0` + native overflow and be listed in `qaap-mobile-touch-scroll.css` and `MOBILE_VERTICAL_SCROLL_SELECTOR` (`mobile-vertical-touch-scroll.ts`). See `.cursor/rules/mobile-touch-accessibility.mdc`.
 
 **Platform-specific code organization (per package):**
 - `src/common/` - Shared JavaScript APIs (runs everywhere)

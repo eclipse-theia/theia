@@ -172,7 +172,13 @@ export class QaapAgentConversationStore {
         this.fire({ type: 'created', conversation: toConversationSummary(conversation) });
         void this.persist();
         if (request.message?.trim()) {
-            this.postUserMessage(id, request.message.trim());
+            this.postUserMessage(
+                id,
+                request.message.trim(),
+                undefined,
+                undefined,
+                request.autoApprove === false ? false : request.autoApprove === true ? true : undefined,
+            );
         }
         return this.conversations.get(id)!;
     }
@@ -182,6 +188,7 @@ export class QaapAgentConversationStore {
         content: string,
         agentOverride?: string,
         agentModelOverride?: QaapCreateAgentTaskRequest['agentModel'],
+        autoApproveOverride?: boolean,
     ): QaapAgentConversation {
         const conv = this.conversations.get(id);
         if (!conv) {
@@ -200,6 +207,7 @@ export class QaapAgentConversationStore {
         const messages = [...conv.messages, userMessage];
         let next: QaapAgentConversation = {
             ...conv,
+            ...this.patchConversationAutoApprove(conv, autoApproveOverride),
             agentId: turnAgentId,
             title: conv.messages.length === 0 ? this.deriveTitle(content) : conv.title,
             status: 'streaming',
@@ -772,7 +780,7 @@ export class QaapAgentConversationStore {
         };
         return {
             ...conv,
-            status: 'idle',
+            status: conv.status === 'failed' ? 'failed' : 'idle',
             updatedAt: message.createdAt,
             messages: [...conv.messages, message],
         };
@@ -814,6 +822,23 @@ export class QaapAgentConversationStore {
             }
         }
         return last;
+    }
+
+    /**
+     * Merge composer / per-message auto-approve into the conversation before spawning a task.
+     * `true` clears an explicit opt-out; `false` requires manual CLI approval on this turn.
+     */
+    protected patchConversationAutoApprove(
+        conv: QaapAgentConversation,
+        override?: boolean,
+    ): Pick<QaapAgentConversation, 'autoApprove'> {
+        if (override === false) {
+            return { autoApprove: false };
+        }
+        if (override === true) {
+            return { autoApprove: undefined };
+        }
+        return { autoApprove: conv.autoApprove };
     }
 
     protected buildTaskCreateRequest(

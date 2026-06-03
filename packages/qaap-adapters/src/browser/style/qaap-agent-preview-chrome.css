@@ -389,37 +389,53 @@ body.qaap-mod-history-resizing * {
 
 .qaap-preview-inspector-slot {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 320px;
   width: 320px;
   max-width: 88%;
   min-height: 0;
   min-width: 240px;
-  border-left: 1px solid var(--theia-panel-border);
   background: var(--theia-sideBar-background);
   overflow: hidden;
 }
 
+.qaap-preview-inspector-panel-root {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Split grabber between preview and inspector (same role as shell side-panel sash). */
 .qaap-preview-inspector-resize-handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 10px;
-  z-index: 3;
+  flex: 0 0 8px;
+  align-self: stretch;
+  width: 8px;
+  min-width: 8px;
   margin: 0;
   padding: 0;
   border: none;
+  border-left: 1px solid var(--theia-panel-border);
   background: transparent;
   cursor: col-resize;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 2;
+}
+
+.qaap-preview-split:not(.qaap-preview-split--inspector-open) .qaap-preview-inspector-resize-handle {
+  display: none !important;
 }
 
 .qaap-preview-inspector-resize-handle::after {
   content: "";
   position: absolute;
   top: 8px;
-  left: 4px;
+  left: 3px;
   bottom: 8px;
   width: 2px;
   border-radius: 1px;
@@ -456,8 +472,11 @@ body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
 }
 
 .qaap-preview-inline-inspector.theia-mini-browser-inspector__root,
-.qaap-preview-inline-inspector .theia-mini-browser-inspector__root {
+.qaap-preview-inline-inspector .theia-mini-browser-inspector__root,
+.qaap-preview-inspector-panel-root .theia-mini-browser-inspector__root,
+.qaap-preview-inspector-panel-root .theia-mini-browser-inspector__empty {
   height: 100%;
+  min-height: 0;
 }
 
 .theia-mini-browser-workbench-button--active {
@@ -476,21 +495,23 @@ body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
   min-width: 0;
   min-height: 160px;
   border-left: none;
-  border-top: 1px solid var(--theia-panel-border);
+  border-top: none;
 }
 
 .qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-resize-handle {
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: auto;
-  width: auto;
-  height: 10px;
+  flex: 0 0 8px;
+  align-self: auto;
+  width: 100%;
+  min-width: 0;
+  height: 8px;
+  min-height: 8px;
+  border-left: none;
+  border-top: 1px solid var(--theia-panel-border);
   cursor: row-resize;
 }
 
 .qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-resize-handle::after {
-  top: 4px;
+  top: 3px;
   left: 8px;
   right: 8px;
   bottom: auto;

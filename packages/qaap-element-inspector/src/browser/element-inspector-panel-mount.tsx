@@ -14,6 +14,9 @@ import {
     ELEMENT_INSPECTOR_COPY_SELECTOR_COMMAND_ID,
     ELEMENT_INSPECTOR_GENERATE_VARIANT_COMMAND_ID,
 } from './element-inspector-contribution';
+import { ensurePreviewInspectorPanelRoot } from './preview-inspector-panel-root';
+
+export { QAAP_PREVIEW_INSPECTOR_PANEL_ROOT_CLASS, ensurePreviewInspectorPanelRoot } from './preview-inspector-panel-root';
 
 export interface EmbeddedElementInspectorHost extends Disposable {
     show(): void;
@@ -34,6 +37,8 @@ export function mountEmbeddedElementInspector(
     container.setAttribute('role', 'complementary');
     container.setAttribute('aria-label', 'Element Inspector');
 
+    const panelRoot = ensurePreviewInspectorPanelRoot(container);
+
     let root: Root | undefined;
     const render = (): void => {
         if (!root) {
@@ -49,7 +54,7 @@ export function mountEmbeddedElementInspector(
         );
     };
 
-    root = createRoot(container);
+    root = createRoot(panelRoot);
     toDispose.push(Disposable.create(() => {
         root?.unmount();
         root = undefined;

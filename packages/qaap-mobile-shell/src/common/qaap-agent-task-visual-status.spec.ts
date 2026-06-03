@@ -44,5 +44,12 @@ describe('resolveQaapAgentTaskVisualStatus', () => {
     it('falls back to idle for quiet tasks', () => {
         expect(resolveQaapAgentTaskVisualStatus({ state: 'idle' }).id).to.equal('idle');
     });
+
+    it('classifies failed conversations even when task state was derived as completed', () => {
+        expect(resolveQaapAgentTaskVisualStatus(
+            { state: 'completed' },
+            { status: 'failed', messageCount: 2 },
+        ).id).to.equal('failed');
+    });
 });
 

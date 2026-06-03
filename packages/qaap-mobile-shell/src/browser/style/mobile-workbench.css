@@ -2012,6 +2012,16 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   overscroll-behavior-y: contain;
   touch-action: pan-y;
   padding: 6px 16px 16px;
+  /* Hide the vertical scrollbar rail — it shares the panel's right edge with header
+     actions (search / account) and intermittently clips the avatar on overflow. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.theia-mobile-projects-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .theia-mobile-projects-section {
@@ -5319,11 +5329,13 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.25));
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .theia-mobile-sticky-composer-sheet-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5377,7 +5389,13 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 }
 
 .theia-mobile-sticky-composer-sheet-list {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
   padding: 8px;
 }
 
@@ -5456,9 +5474,13 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 
 .theia-mobile-sticky-composer-tools-host {
   flex: 1 1 auto;
-  min-height: 120px;
+  min-height: 0;
   max-height: min(52vh, 400px);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
   padding: 8px;
 }
 
@@ -5808,7 +5830,31 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   padding-left: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-left, 0px));
   padding-right: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-right, 0px));
   box-sizing: border-box;
-  overflow: hidden;
+  /* Title/subtitle clipping stays on `.theia-mobile-projects-title-block`; avoid
+     `overflow: hidden` here — it can crop trailing header actions on tight widths. */
+  overflow: visible;
+}
+
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-header-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-header-actions {
+  position: relative;
+  z-index: 2;
+}
+
+body.theia-mobile-mod-landing
+  .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail
+  .theia-mobile-projects-header {
+  padding-top: calc(var(--theia-mobile-execution-header-pad-top) + env(safe-area-inset-top, 0px));
+  height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
+  max-height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
 }
 
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-scroll {
@@ -5864,6 +5910,17 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 
 .theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-title-block.theia-mod-with-back .theia-mobile-projects-subtitle {
   margin-top: 3px;
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-actions .theia-workbench-nav-btn.theia-workbench-account-btn,
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-actions .theia-mobile-projects-search-toggle {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  max-width: 32px;
+  max-height: 32px;
+  flex: 0 0 32px;
 }
 
 .theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-back {
@@ -7279,8 +7336,10 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   width: 100%;
   max-height: calc(100vh - env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
   background: var(--theia-editor-background);
   color: var(--theia-foreground);
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.32));
@@ -7298,6 +7357,7 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 
 .theia-mobile-agent-composer-header,
 .theia-mobile-agent-log-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9713,8 +9773,12 @@ button.theia-mobile-transcript-team-row:focus-visible {
   margin-top: 6px;
   padding: 8px 10px;
   max-height: min(26vh, 180px);
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
   border-radius: 10px;
   border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.2));
   background: color-mix(in srgb, var(--theia-foreground) 3%, var(--theia-editor-background));
@@ -9757,8 +9821,12 @@ button.theia-mobile-transcript-team-row:focus-visible {
 .theia-mobile-transcript-review-checks-body {
   padding: 0 14px 10px;
   max-height: min(34vh, 240px);
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 .theia-mobile-transcript-review-checks-between {
@@ -10808,8 +10876,13 @@ body > .theia-mobile-transcript-files-menu {
 }
 
 .theia-mobile-parallel-body {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
   padding: 4px 16px 22px;
   display: flex;
   flex-direction: column;

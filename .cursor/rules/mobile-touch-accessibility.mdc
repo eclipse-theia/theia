@@ -1,0 +1,32 @@
+---
+description: Accesibilidad táctil móvil — scroll, overlays y viewport estrecho (CRÍTICO)
+alwaysApply: true
+---
+
+# Accesibilidad móvil táctil (crítico)
+
+En viewports estrechos (`max-width: 767px`) y puntero grueso (`pointer: coarse`), **todo panel con lista larga debe desplazarse con el dedo sin fallos**. Esto es requisito de producto, no un detalle opcional.
+
+## Checklist al añadir o tocar UI móvil
+
+1. **Cadena flex**: si el scroll vive dentro de `display: flex` + `overflow: hidden`, el host scrollable necesita `flex: 1 1 auto`, `min-height: 0` y `overflow-y: auto`. Sin `min-height: 0` el contenido crece y el scroll no engancha (síntoma: barra visible pero el dedo no mueve la lista).
+2. **CSS táctil** en el host scrollable:
+   - `-webkit-overflow-scrolling: touch`
+   - `touch-action: pan-y` (vertical) o `pan-x` (franjas horizontales)
+   - `overscroll-behavior-y: contain` en listas verticales
+3. **Registro en el fallback iOS**: añadir el selector a **ambos**:
+   - `packages/qaap-mobile-shell/src/browser/style/qaap-mobile-touch-scroll.css` (bloque `@media` móvil)
+   - `MOBILE_VERTICAL_SCROLL_SELECTOR` en `mobile-vertical-touch-scroll.ts`
+   Los overlays se montan fuera de `#theia-app-shell`; `MobileTouchScrollContribution` los parchea vía `MutationObserver` solo si el selector está registrado.
+4. **No poner `touch-action: none`** en contenedores que envuelvan listas scrollables (solo grabbers, edge-swipe, gestos de arrastre explícitos).
+5. **Breakpoint**: alinear con `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY` / `767px` y `qaap-product-theme` narrow CSS.
+
+## Patrones de referencia
+
+- Sheet compositor (agente / modelo / herramientas): `.theia-mobile-sticky-composer-sheet-list`, `.theia-mobile-sticky-composer-tools-host`
+- Quick input Monaco: `qaap-monaco-quick-input-narrow.css`
+- Diálogos Theia: `qaap-dialog-narrow-viewport.css`
+
+## Verificación manual
+
+Tras cambios en overlays o listas: `npm run build:browser`, dispositivo real o emulador táctil, abrir el sheet y deslizar verticalmente toda la lista (p. ej. «Choose model» con muchos proveedores).

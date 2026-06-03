@@ -133,3 +133,22 @@ export function writePreviewInspectorHeight(heightPx: number, containerHeightPx?
         /* storage blocked */
     }
 }
+
+export function applyPreviewInspectorPanelSize(inspectorSlot: HTMLElement, split: HTMLElement): void {
+    const position = readPreviewInspectorPosition();
+    split.classList.toggle('qaap-preview-split--inspector-bottom', position === 'bottom');
+    split.classList.toggle('qaap-preview-split--inspector-side', position === 'side');
+    if (position === 'bottom') {
+        const height = readPreviewInspectorHeight(split.clientHeight);
+        inspectorSlot.style.width = '100%';
+        inspectorSlot.style.maxWidth = 'none';
+        inspectorSlot.style.height = `${height}px`;
+        inspectorSlot.style.flex = `0 0 ${height}px`;
+        return;
+    }
+    const width = readPreviewInspectorWidth(split.clientWidth);
+    inspectorSlot.style.width = `${width}px`;
+    inspectorSlot.style.flex = `0 0 ${width}px`;
+    inspectorSlot.style.maxWidth = 'none';
+    inspectorSlot.style.height = '';
+}

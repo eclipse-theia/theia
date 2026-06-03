@@ -140,7 +140,7 @@ import {
     agentSupportsApprovalPolicy,
     QAAP_AGENT_APPROVAL_POLICIES,
     reconcileAgentApprovalPolicyId,
-    resolveAutoApproveFromApprovalPolicy,
+    resolveComposerAutoApprove,
     resolveAgentApprovalPolicyOption,
     writeStoredAgentApprovalPolicy,
     type QaapAgentApprovalPolicyId,
@@ -1668,34 +1668,11 @@ export class MobileProjectsPanel {
         return parts.join(' · ');
     }
 
-    protected resolveOpenProjectConversation(
-        project: MobileProjectEntry,
-    ): QaapAgentConversationSummaryDTO | undefined {
-        if (!this.transcriptOpenSummaryId) {
-            return undefined;
-        }
-        return this.conversationsForProject(project).find(entry => entry.id === this.transcriptOpenSummaryId);
-    }
-
     protected projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string {
         if (!project) {
             return nls.localize('qaap/mobileProjects/tasksTitle', 'Tasks');
         }
-        switch (this.executionSurfaceTabForProject(project)) {
-            case 'review':
-                return nls.localize('qaap/mobileProjects/tabChanges', 'Changes');
-            case 'preview':
-                return nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
-            case 'files':
-                return nls.localize('qaap/mobileProjects/tabFiles', 'Files');
-            case 'terminal':
-                return nls.localize('qaap/mobileProjects/tabTerminal', 'Terminal');
-            default: {
-                const openSummary = this.resolveOpenProjectConversation(project);
-                const conversationTitle = openSummary?.title?.trim();
-                return conversationTitle || project.name;
-            }
-        }
+        return project.name;
     }
 
     protected createExecutionHeaderSubtitle(project: MobileProjectEntry): HTMLDivElement {
@@ -2246,7 +2223,7 @@ export class MobileProjectsPanel {
         if (this.hubView === 'tasks') {
             return this.tasksHubSurface === 'chat'
                 ? nls.localize('qaap/mobileProjects/searchChatPlaceholder', 'Search local chat sessions')
-                : nls.localize('qaap/mobileProjects/searchTasksPlaceholder', 'Search VPS tasks and agents');
+                : nls.localize('qaap/mobileProjects/searchTasksPlaceholder', 'Search tasks and agents');
         }
         if (this.hubView === 'review') {
             return nls.localize('qaap/mobileProjects/searchReviewPlaceholder', 'Search pull requests');
@@ -2262,7 +2239,7 @@ export class MobileProjectsPanel {
             const surface = project ? this.detailComposerSurfaceForProject(project) : 'task';
             return surface === 'chat'
                 ? nls.localize('qaap/mobileProjects/searchChatPlaceholder', 'Search local chat sessions')
-                : nls.localize('qaap/mobileProjects/searchTasksPlaceholder', 'Search VPS tasks and agents');
+                : nls.localize('qaap/mobileProjects/searchTasksPlaceholder', 'Search tasks and agents');
         }
         return nls.localize('qaap/mobileProjects/searchPlaceholder', 'Search repositories and tasks');
     }
@@ -3170,9 +3147,11 @@ export class MobileProjectsPanel {
                     }) ?? resolvedPinnedId;
                 const variables = this.stickyComposerContext.length > 0 ? [...this.stickyComposerContext] : undefined;
                 const modeId = this.stickyComposerModeId;
-                const autoApprove = showApprovalPolicy && this.stickyComposerApprovalPolicyId
-                    ? resolveAutoApproveFromApprovalPolicy(this.stickyComposerApprovalPolicyId)
-                    : undefined;
+                const autoApprove = resolveComposerAutoApprove(
+                    showApprovalPolicy,
+                    this.stickyComposerApprovalPolicyId,
+                    cwd,
+                );
                 this.stickyComposerContext = [];
                 const submitOptions = {
                     openConversation: isChatSurface,
@@ -3773,6 +3752,7 @@ export class MobileProjectsPanel {
         this.openApprovalPolicySheet({
             agentLabel,
             cwd,
+            transcriptOverlay: true,
             selectedId: reconcileAgentApprovalPolicyId(this.transcriptComposerApprovalPolicyId, cwd),
             onSelect: policyId => {
                 this.transcriptComposerApprovalPolicyId = policyId;
@@ -3791,12 +3771,16 @@ export class MobileProjectsPanel {
         readonly agentLabel: string;
         readonly cwd: string | undefined;
         readonly selectedId: QaapAgentApprovalPolicyId;
+        /** Raise above the full-screen transcript overlay (z-index 2147483001). */
+        readonly transcriptOverlay?: boolean;
         readonly onSelect: (policyId: QaapAgentApprovalPolicyId) => void;
         readonly onClose: () => void;
         readonly assignSheet: (sheet: HTMLElement) => void;
     }): void {
         const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-approval-policy';
+        sheet.className = options.transcriptOverlay
+            ? 'theia-mobile-sticky-composer-sheet theia-mod-approval-policy theia-mod-transcript-overlay'
+            : 'theia-mobile-sticky-composer-sheet theia-mod-approval-policy';
         sheet.setAttribute('role', 'dialog');
         sheet.setAttribute('aria-modal', 'true');
 
@@ -6561,26 +6545,8 @@ export class MobileProjectsPanel {
 
         const lineage = summary ? this.resolveConversationLineage(summary, parentIds) : 'none';
         const taskDot = document.createElement('span');
-        if (lineage === 'none') {
-            if (visualStatus.id === 'verified') {
-                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-                taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-            } else if (visualStatus.id === 'pr-ready') {
-                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-                taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-            } else if (isFailed) {
-                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-                taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-            } else if (isRunning) {
-                this.renderConversationTurnProgress(taskDot, summary);
-            } else if (needsInput) {
-                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-                taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-            } else {
-                taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-                taskDot.style.background = stateColor;
-            }
-        } else {
+        const showLineageGlyph = lineage !== 'none' && !isFailed && !isRunning && !needsInput;
+        if (showLineageGlyph) {
             // Fork lineage: one glyph size for all roles; color + tooltip carry parent/child/both.
             taskDot.className = `theia-mobile-projects-task-lineage theia-mod-${lineage}`;
             taskDot.append(this.createTaskLeadingGlyph('codicon-repo-forked'));
@@ -6591,6 +6557,23 @@ export class MobileProjectsPanel {
                     ? nls.localize('qaap/mobileProjects/lineageChild', 'Forked from another task')
                     : nls.localize('qaap/mobileProjects/lineageBoth', 'Forked from another task and into others');
             taskDot.title = lineageLabel;
+        } else if (visualStatus.id === 'verified') {
+            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
+            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
+        } else if (visualStatus.id === 'pr-ready') {
+            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
+            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
+        } else if (isFailed) {
+            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
+            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
+        } else if (isRunning) {
+            this.renderConversationTurnProgress(taskDot, summary);
+        } else if (needsInput) {
+            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
+            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
+        } else {
+            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
+            taskDot.style.background = stateColor;
         }
 
         const taskBody = document.createElement('div');
@@ -7945,7 +7928,11 @@ export class MobileProjectsPanel {
             title: draft,
             message,
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
-            ...(options.autoApprove === false ? { autoApprove: false } : {}),
+            ...(options.autoApprove === false
+                ? { autoApprove: false }
+                : options.autoApprove === true
+                    ? { autoApprove: true }
+                    : {}),
         });
         const summary = conversationToSummary(conversation);
         this.conversations?.recordSnapshot(summary);
@@ -8209,7 +8196,7 @@ export class MobileProjectsPanel {
         const header = document.createElement('header');
         header.className = 'theia-mobile-agent-log-header';
         const title = document.createElement('h2');
-        title.textContent = summary.title || project.name;
+        title.textContent = project.name;
         const close = document.createElement('button');
         close.type = 'button';
         close.className = 'theia-mobile-agent-log-close codicon codicon-close';
@@ -8220,7 +8207,7 @@ export class MobileProjectsPanel {
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
         this.transcriptHeaderSubtitle = subtitle;
         const initialTab = this.executionSurfaceTabForProject(project);
-        this.updateTranscriptHeaderForTab(initialTab, project, summary);
+        this.updateTranscriptHeader(project);
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
@@ -8446,7 +8433,7 @@ export class MobileProjectsPanel {
         this.syncTranscriptTabStrip(project);
         this.applyTranscriptTabVisibility(tab);
         this.mountTranscriptSurfaceTab(project, summary, tab);
-        this.updateTranscriptHeaderForTab(tab, project, summary);
+        this.updateTranscriptHeader(project);
     }
 
     protected applyTranscriptTabVisibility(tab: TranscriptTab): void {
@@ -8495,34 +8482,13 @@ export class MobileProjectsPanel {
         return agentLabel ? `${project.name} · ${agentLabel}` : project.name;
     }
 
-    protected updateTranscriptHeaderForTab(
-        tab: TranscriptTab,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        reviewStats?: { fileCount: number; adds: number; dels: number },
-    ): void {
+    protected updateTranscriptHeader(project: MobileProjectEntry): void {
         const titleEl = this.transcriptSheet?.querySelector('.theia-mobile-agent-log-header h2');
         const subtitle = this.transcriptHeaderSubtitle;
         if (!titleEl || !subtitle) {
             return;
         }
-        switch (tab) {
-            case 'review':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabChanges', 'Changes');
-                break;
-            case 'preview':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabPreview', 'Preview');
-                break;
-            case 'files':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabFiles', 'Files');
-                break;
-            case 'terminal':
-                titleEl.textContent = nls.localize('qaap/mobileProjects/tabTerminal', 'Terminal');
-                break;
-            default:
-                titleEl.textContent = summary.title || project.name;
-                break;
-        }
+        titleEl.textContent = project.name;
         subtitle.hidden = false;
         subtitle.textContent = this.buildProjectBranchSubtitle(project);
     }
@@ -8574,11 +8540,6 @@ export class MobileProjectsPanel {
         this.diffReviewWidget.node.classList.add('theia-mobile-transcript-diff-embed');
         this.diffReviewWidget.setTranscriptAgentFeedbackHandler(async message => {
             await this.submitTranscriptReviewFeedback(project, summary, message);
-        });
-        this.diffReviewWidget.setReviewStatsChangeHandler(stats => {
-            if (this.activeExecutionTab(project) === 'review') {
-                this.updateTranscriptHeaderForTab('review', project, summary, stats);
-            }
         });
         this.attachDiffReviewWidget(diffHost);
         this.diffReviewWidget.setRepositoryContext({
@@ -9843,9 +9804,11 @@ export class MobileProjectsPanel {
                     ? [...this.transcriptComposerContext]
                     : undefined;
                 const modeId = this.transcriptComposerModeId;
-                const autoApprove = showApprovalPolicy && this.transcriptComposerApprovalPolicyId
-                    ? resolveAutoApproveFromApprovalPolicy(this.transcriptComposerApprovalPolicyId)
-                    : undefined;
+                const autoApprove = resolveComposerAutoApprove(
+                    showApprovalPolicy,
+                    this.transcriptComposerApprovalPolicyId,
+                    summary.cwd,
+                );
                 this.transcriptComposerContext = [];
                 void (async () => {
                     try {
@@ -10303,13 +10266,14 @@ export class MobileProjectsPanel {
             this.renderTranscriptMessages(this.transcriptChatHost, optimistic);
         }
         try {
-            if (options.autoApprove === false && base.autoApprove !== false) {
-                await updateConversation(summary.id, { autoApprove: false });
-            } else if (options.autoApprove === true && base.autoApprove === false) {
-                await updateConversation(summary.id, { autoApprove: true });
-            }
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
-            const updated = await postConversationMessage(summary.id, outbound, agent, agentModel);
+            const updated = await postConversationMessage(
+                summary.id,
+                outbound,
+                agent,
+                agentModel,
+                options.autoApprove,
+            );
             const nextSummary = conversationToSummary(updated);
             this.conversations?.recordSnapshot(nextSummary);
             if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
@@ -10499,7 +10463,7 @@ export class MobileProjectsPanel {
         const header = document.createElement('header');
         header.className = 'theia-mobile-agent-log-header';
         const title = document.createElement('h2');
-        title.textContent = summary.title || project.name;
+        title.textContent = project.name;
         const close = document.createElement('button');
         close.type = 'button';
         close.className = 'theia-mobile-agent-log-close codicon codicon-close';
@@ -10508,6 +10472,7 @@ export class MobileProjectsPanel {
         this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, close, project, summary);
         const subtitle = this.createExecutionHeaderSubtitle(project);
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
+        this.transcriptHeaderSubtitle = subtitle;
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
