@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject, named, optional, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, named, optional, postConstruct, preDestroy } from '@theia/core/shared/inversify';
 import { HostedPluginServer, HostedPluginClient, PluginDeployer, DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
 import { ILogger, Disposable, ContributionProvider, DisposableCollection } from '@theia/core';
@@ -119,6 +119,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return 'hosted-plugin';
     }
 
+    @preDestroy()
     dispose(): void {
         this.toDispose.dispose();
     }

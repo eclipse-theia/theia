@@ -16,7 +16,7 @@
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { Disposable, DisposableCollection } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, preDestroy } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
 import { CopilotLanguageModel } from './copilot-language-model';
@@ -48,6 +48,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
         }));
     }
 
+    @preDestroy()
     dispose(): void {
         this.toDispose.dispose();
     }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { type RpcServer } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, preDestroy } from '@theia/core/shared/inversify';
 import { Browser, launch, Page } from 'puppeteer-core';
 import type { BrowserAutomation, BrowserAutomationClient, LaunchResult } from '../../common/browser-automation-protocol';
 
@@ -91,6 +91,7 @@ export class BrowserAutomationImpl implements RpcServer<BrowserAutomationClient>
         return content;
     }
 
+    @preDestroy()
     dispose(): void {
         this._browser?.close();
         this._browser = undefined;
