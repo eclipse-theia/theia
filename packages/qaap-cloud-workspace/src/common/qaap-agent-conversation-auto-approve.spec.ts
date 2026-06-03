@@ -37,8 +37,8 @@ describe('qaap-agent-conversation-auto-approve', () => {
         const patched = { ...conv, ...patchConversationAutoApprove(conv, true) };
         const base = "agy -p 'que hace esta app'";
         const command = buildAntigravityCommandForTurn(base, patched);
-        expect(command).to.include('--approval-mode=yolo');
-        expect(command).to.match(/^agy --approval-mode=yolo -p /);
+        expect(command).to.include('--dangerously-skip-permissions');
+        expect(command).to.match(/^agy --dangerously-skip-permissions -p /);
     });
 
     it('request-approval composer policy skips YOLO injection on the task runner path', () => {

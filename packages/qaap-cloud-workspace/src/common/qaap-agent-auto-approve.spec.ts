@@ -73,11 +73,13 @@ describe('qaap-agent-auto-approve', () => {
         expect(applyAutoApproveToCommand("cursor-agent 'hi'", 'cursor'))
             .to.equal("cursor-agent -p --force 'hi'");
         expect(applyAutoApproveToCommand("antigravity 'hi'", 'antigravity'))
-            .to.equal("antigravity --approval-mode=yolo -p 'hi'");
+            .to.equal("antigravity --dangerously-skip-permissions -p 'hi'");
         expect(applyAutoApproveToCommand("gemini 'hi'", 'antigravity'))
             .to.equal("gemini --approval-mode=yolo -p 'hi'");
         expect(applyAutoApproveToCommand("agy -p 'hi'", 'antigravity'))
-            .to.equal("agy --approval-mode=yolo -p 'hi'");
+            .to.equal("agy --dangerously-skip-permissions -p 'hi'");
+        expect(applyAutoApproveToCommand("antigravity -p 'hi'", 'antigravity'))
+            .to.equal("antigravity --dangerously-skip-permissions -p 'hi'");
         expect(applyAutoApproveToCommand("copilot -p 'hi'", 'copilot'))
             .to.equal("copilot --autopilot --yolo --max-autopilot-continues 20 -p 'hi'");
         expect(applyAutoApproveToCommand("qwen -p 'hi'", 'qwen'))

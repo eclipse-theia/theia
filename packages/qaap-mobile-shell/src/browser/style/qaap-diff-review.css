@@ -209,6 +209,9 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
 }
 
 .qaap-diff-review-row {
@@ -353,6 +356,9 @@
     font-family: var(--theia-code-font-family, monospace);
     font-size: 12px;
     line-height: 1.55;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
 }
 
 .qaap-diff-review-hunk-header {
@@ -960,6 +966,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     overscroll-behavior-y: contain;
     padding: 10px 10px 16px;
     display: flex;

@@ -27,7 +27,12 @@
   #theia-app-shell #theia-main-content-panel .theia-mini-browser,
   #theia-app-shell #theia-main-content-panel .theia-mini-browser-content-area,
   #theia-app-shell .chat-view-widget,
-  #theia-app-shell .chat-tree-view-widget {
+  #theia-app-shell .chat-tree-view-widget,
+  .theia-mobile-transcript-review,
+  .theia-mobile-transcript-review-diff-host,
+  .qaap-diff-review--transcript-agent,
+  .qaap-diff-review--transcript-agent .qaap-diff-review-body,
+  .qaap-agent-changes {
     min-height: 0;
   }
 
@@ -87,8 +92,14 @@
   .theia-mobile-agent-transcript,
   .theia-mobile-agent-log-output,
   .theia-mobile-transcript-plan,
-  .theia-mobile-transcript-review-scroll,
   .theia-mobile-transcript-verify,
+  .theia-mobile-transcript-checks-panel,
+  .theia-mobile-transcript-files-preview-body,
+  .theia-mobile-transcript-files-tree-scroll,
+  .qaap-agent-changes-scroll,
+  .qaap-diff-review-hunks,
+  .qaap-diff-review-files,
+  .theia-mobile-pr-diff,
   .qaap-project-bootstrap-picker {
     overflow-y: auto !important;
     overflow-x: hidden;
@@ -181,5 +192,17 @@
 
   #theia-app-shell .theia-mobile-edgeSwipeZone {
     touch-action: none;
+  }
+
+  /*
+   * Execution surfaces (Changes / Preview / Files / diff hub) delegate scroll to
+   * nested hosts — do not re-enable overflow on the outer projects scroll shell.
+   */
+  #theia-app-shell
+    .theia-mobile-projects.theia-mod-project-detail.theia-mod-project-surface-tools
+    .theia-mobile-projects-scroll,
+  #theia-app-shell .theia-mobile-projects.theia-mod-hub-diff .theia-mobile-projects-scroll {
+    overflow: hidden !important;
+    overflow-y: hidden !important;
   }
 }

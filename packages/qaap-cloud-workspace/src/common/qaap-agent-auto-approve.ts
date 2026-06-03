@@ -6,8 +6,10 @@
 /** Agent id for the built-in QAIQ runner (matches {@link QAIQ_AGENT_ID} in the task runner). */
 export const QAAP_QAIQ_AGENT_ID = 'qaiq';
 
-/** Binaries used by the Antigravity agent (`agy`, community CLI, legacy `gemini`). */
-const ANTIGRAVITY_CLI_PATTERN = /\b(agy|antigravity|gemini)\b/;
+/** {@code agy} and the Docker {@code antigravity} alias — use {@code --dangerously-skip-permissions}. */
+const AGY_STYLE_ANTIGRAVITY_CLI_PATTERN = /\b(agy|antigravity)\b/;
+/** Legacy Google Gemini CLI — uses {@code --approval-mode=yolo}. */
+const GEMINI_CLI_PATTERN = /\bgemini\b/;
 
 /**
  * Whether a background agent task should bypass CLI permission prompts.
@@ -83,13 +85,7 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
         return injectAfterExecutable(command, 'cursor-agent', '-p --force');
     }
     if (id === 'antigravity') {
-        if (/--approval-mode(?:=|\s+)yolo\b/.test(command) || /\b-y\b/.test(command)) {
-            return command;
-        }
-        if (hasHeadlessPromptFlag(command)) {
-            return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo');
-        }
-        return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo -p');
+        return applyAntigravityAutoApprove(command);
     }
     if (id === 'copilot') {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');
@@ -118,11 +114,8 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
     if (/\bcursor-agent\b/.test(command)) {
         return injectAfterExecutable(command, 'cursor-agent', '-p --force');
     }
-    if (ANTIGRAVITY_CLI_PATTERN.test(command) && !commandHasAutoApproveFlags(command)) {
-        if (hasHeadlessPromptFlag(command)) {
-            return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo');
-        }
-        return injectAfterPattern(command, ANTIGRAVITY_CLI_PATTERN, '--approval-mode=yolo -p');
+    if (resolveAntigravityCliKind(command) && !commandHasAutoApproveFlags(command)) {
+        return applyAntigravityAutoApprove(command);
     }
     if (/\bcopilot\b/.test(command) && !commandHasAutoApproveFlags(command)) {
         return injectAfterExecutable(command, 'copilot', '--autopilot --yolo --max-autopilot-continues 20');
@@ -134,6 +127,44 @@ export function applyAutoApproveToCommand(command: string, agentId: string | und
         return injectAfterExecutable(command, 'qwen', '-p --approval-mode yolo');
     }
     return command;
+}
+
+function resolveAntigravityCliKind(command: string): 'agy' | 'gemini' | undefined {
+    if (AGY_STYLE_ANTIGRAVITY_CLI_PATTERN.test(command)) {
+        return 'agy';
+    }
+    if (GEMINI_CLI_PATTERN.test(command)) {
+        return 'gemini';
+    }
+    return undefined;
+}
+
+/**
+ * agy/antigravity accept {@code --dangerously-skip-permissions}; gemini uses {@code --approval-mode=yolo}.
+ */
+function applyAntigravityAutoApprove(command: string): string {
+    const kind = resolveAntigravityCliKind(command);
+    if (!kind) {
+        return command;
+    }
+    if (kind === 'agy') {
+        if (/--dangerously-skip-permissions\b/.test(command)) {
+            return command;
+        }
+        const flag = '--dangerously-skip-permissions';
+        if (hasHeadlessPromptFlag(command)) {
+            return injectAfterPattern(command, AGY_STYLE_ANTIGRAVITY_CLI_PATTERN, flag);
+        }
+        return injectAfterPattern(command, AGY_STYLE_ANTIGRAVITY_CLI_PATTERN, `${flag} -p`);
+    }
+    if (/--approval-mode(?:=|\s+)yolo\b/.test(command) || /\b-y\b/.test(command)) {
+        return command;
+    }
+    const flag = '--approval-mode=yolo';
+    if (hasHeadlessPromptFlag(command)) {
+        return injectAfterPattern(command, GEMINI_CLI_PATTERN, flag);
+    }
+    return injectAfterPattern(command, GEMINI_CLI_PATTERN, `${flag} -p`);
 }
 
 function hasHeadlessPromptFlag(command: string): boolean {

@@ -8200,6 +8200,8 @@ body.theia-mobile-mod-landing
   font-size: 11.5px;
   line-height: 1.6;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 .theia-mobile-pr-card:not(.theia-mod-expanded) .theia-mobile-pr-diff {
