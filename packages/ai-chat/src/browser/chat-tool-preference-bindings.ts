@@ -115,6 +115,29 @@ export class ToolConfirmationManager {
     }
 
     /**
+     * Apply multiple per-tool confirmation modes with a single preference write.
+     *
+     * Preserves the same "remove entry if it matches the effective default" behavior as
+     * {@link setConfirmationMode}. Use this for bulk operations to avoid one preference
+     * round-trip per tool.
+     */
+    setConfirmationModes(updates: Iterable<{ toolId: string; mode: ToolConfirmationMode; toolRequest?: ToolRequest }>): Promise<void> {
+        const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
+        const next: Record<string, ToolConfirmationMode> = { ...current };
+        for (const { toolId, mode, toolRequest } of updates) {
+            const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest);
+            if (mode === effectiveDefault) {
+                delete next[toolId];
+            } else {
+                next[toolId] = mode;
+            }
+        }
+        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, next);
+    }
+
+    /**
      * Set the confirmation mode for a specific tool for this session only (not persisted, per chat)
      */
     setSessionConfirmationMode(toolId: string, mode: ToolConfirmationMode, chatId: string): void {
