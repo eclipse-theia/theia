@@ -17,6 +17,8 @@ services:
         CODEX_CLI_VERSION: ${CODEX_CLI_VERSION:-latest}
         CLAUDE_CODE_VERSION: ${CLAUDE_CODE_VERSION:-latest}
         ANTIGRAVITY_CLI_VERSION: ${ANTIGRAVITY_CLI_VERSION:-latest}
+        OPENCODE_CLI_VERSION: ${OPENCODE_CLI_VERSION:-latest}
+        COPILOT_CLI_VERSION: ${COPILOT_CLI_VERSION:-latest}
     ports:
       - "${THEIA_PORT:-4873}:${THEIA_PORT:-4873}"
     environment:

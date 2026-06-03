@@ -46,6 +46,8 @@ ARG QAIQ_REF=main
 ARG CODEX_CLI_VERSION=latest
 ARG CLAUDE_CODE_VERSION=latest
 ARG ANTIGRAVITY_CLI_VERSION=latest
+ARG OPENCODE_CLI_VERSION=latest
+ARG COPILOT_CLI_VERSION=latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -63,9 +65,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         @openai/codex@"${CODEX_CLI_VERSION}" \
         @anthropic-ai/claude-code@"${CLAUDE_CODE_VERSION}" \
         @sanchaymittal/antigravity-cli@"${ANTIGRAVITY_CLI_VERSION}" \
+        opencode-ai@"${OPENCODE_CLI_VERSION}" \
+        @github/copilot@"${COPILOT_CLI_VERSION}" \
     && npm install -g bun \
     && codex --version \
     && claude --version \
+    && opencode --version \
+    && copilot --version \
     && ln -sf "$(command -v ag)" /usr/local/bin/antigravity \
     && antigravity --version \
     && git clone --depth 1 --branch "${QAIQ_REF}" "${QAIQ_REPO}" /opt/qaiq \

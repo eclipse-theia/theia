@@ -37,6 +37,8 @@ Edit `.env`:
 | `CODEX_CLI_VERSION` | `latest` | Codex CLI version installed during Docker build |
 | `CLAUDE_CODE_VERSION` | `latest` | Claude Code CLI version installed during Docker build |
 | `ANTIGRAVITY_CLI_VERSION` | `latest` | Antigravity CLI version installed during Docker build |
+| `OPENCODE_CLI_VERSION` | `latest` | OpenCode CLI (`opencode-ai`) installed during Docker build |
+| `COPILOT_CLI_VERSION` | `latest` | GitHub Copilot CLI (`@github/copilot`) installed during Docker build |
 
 Open the firewall port (example with UFW):
 
@@ -62,6 +64,8 @@ The runtime stage of `Dockerfile` installs:
 - **Codex CLI** → `codex` (`@openai/codex`)
 - **Claude Code** → `claude` (`@anthropic-ai/claude-code`)
 - **Antigravity CLI** → `antigravity` (installed from `@sanchaymittal/antigravity-cli` with `antigravity` alias)
+- **OpenCode** → `opencode` (`opencode-ai`)
+- **GitHub Copilot CLI** → `copilot` (`@github/copilot`)
 - **Aider** → `~/.local/bin/aider`
 - `git`, `curl`, `bun`, `pnpm`, `yarn`, `build-essential`, `ripgrep` for agent shell work
 
@@ -131,7 +135,9 @@ docker compose exec theia qaiq --version
 docker compose exec theia codex --version
 docker compose exec theia claude --version
 docker compose exec theia antigravity --version
-docker compose exec theia which qaiq aider codex claude antigravity
+docker compose exec theia opencode --version
+docker compose exec theia copilot --version
+docker compose exec theia which qaiq aider codex claude antigravity opencode copilot
 docker compose logs theia 2>&1 | grep 'qaap-agent-tasks'
 ```
 
