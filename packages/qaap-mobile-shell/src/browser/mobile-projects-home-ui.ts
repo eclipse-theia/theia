@@ -117,6 +117,18 @@ export class MobileProjectsHomeUi {
             this.createMetric(snapshot.stats.openPullRequests, nls.localize('qaap/workHubHome/statPrs', 'PRs')),
         );
         panel.append(header, stats);
+
+        const nothingInFlight = snapshot.stats.runningTasks === 0
+            && snapshot.stats.needsYou === 0
+            && snapshot.stats.openPullRequests === 0;
+        if (nothingInFlight) {
+            const cta = document.createElement('button');
+            cta.type = 'button';
+            cta.className = 'theia-mobile-work-hub-home-overview-cta';
+            cta.textContent = nls.localize('qaap/workHubHome/delegateFirstTask', 'Delegate your first task');
+            cta.addEventListener('click', () => this.deps.onQuickAction('delegate-task'));
+            panel.append(cta);
+        }
         return panel;
     }
 
@@ -139,7 +151,7 @@ export class MobileProjectsHomeUi {
                     tab === 'summary'
                         ? 'qaap/workHubHome/usageTabSummary'
                         : 'qaap/workHubHome/usageTabModels',
-                    tab === 'summary' ? 'Resumen' : 'Modelos',
+                    tab === 'summary' ? 'Summary' : 'Models',
                 ),
                 () => {
                     activeTab = tab;
@@ -165,7 +177,7 @@ export class MobileProjectsHomeUi {
                         : range === '30d'
                             ? 'qaap/workHubHome/usageRange30d'
                             : 'qaap/workHubHome/usageRange7d',
-                    range === 'all' ? 'Todo' : range,
+                    range === 'all' ? 'All' : range,
                 ),
                 () => {
                     activeRange = range;
@@ -258,21 +270,21 @@ export class MobileProjectsHomeUi {
     protected localizeUsageMetricLabel(key: string): string {
         switch (key) {
             case 'sessions':
-                return nls.localize('qaap/workHubHome/usageMetricSessions', 'Sesiones');
+                return nls.localize('qaap/workHubHome/usageMetricSessions', 'Sessions');
             case 'messages':
-                return nls.localize('qaap/workHubHome/usageMetricMessages', 'Mensajes');
+                return nls.localize('qaap/workHubHome/usageMetricMessages', 'Messages');
             case 'tokens':
-                return nls.localize('qaap/workHubHome/usageMetricTokens', 'Tokens totales');
+                return nls.localize('qaap/workHubHome/usageMetricTokens', 'Total tokens');
             case 'activeDays':
-                return nls.localize('qaap/workHubHome/usageMetricActiveDays', 'Días activos');
+                return nls.localize('qaap/workHubHome/usageMetricActiveDays', 'Active days');
             case 'currentStreak':
-                return nls.localize('qaap/workHubHome/usageMetricCurrentStreak', 'Racha actual');
+                return nls.localize('qaap/workHubHome/usageMetricCurrentStreak', 'Current streak');
             case 'longestStreak':
-                return nls.localize('qaap/workHubHome/usageMetricLongestStreak', 'Racha más larga');
+                return nls.localize('qaap/workHubHome/usageMetricLongestStreak', 'Longest streak');
             case 'peakHour':
-                return nls.localize('qaap/workHubHome/usageMetricPeakHour', 'Hora pico');
+                return nls.localize('qaap/workHubHome/usageMetricPeakHour', 'Peak hour');
             case 'favoriteModel':
-                return nls.localize('qaap/workHubHome/usageMetricFavoriteModel', 'Modelo favorito');
+                return nls.localize('qaap/workHubHome/usageMetricFavoriteModel', 'Favorite model');
             default:
                 return key;
         }
@@ -283,7 +295,7 @@ export class MobileProjectsHomeUi {
         wrap.className = 'theia-mobile-work-hub-home-usage-heatmap';
         wrap.setAttribute(
             'aria-label',
-            nls.localize('qaap/workHubHome/usageHeatmapAria', 'Actividad reciente'),
+            nls.localize('qaap/workHubHome/usageHeatmapAria', 'Recent activity'),
         );
         const grid = document.createElement('div');
         grid.className = 'theia-mobile-work-hub-home-usage-heatmap-grid';
@@ -305,7 +317,7 @@ export class MobileProjectsHomeUi {
             empty.className = 'theia-mobile-work-hub-home-usage-models-empty q-fs-meta';
             empty.textContent = nls.localize(
                 'qaap/workHubHome/usageModelsEmpty',
-                'Aún no hay uso por modelo en este periodo.',
+                'No per-model usage in this period yet.',
             );
             list.append(empty);
             return list;

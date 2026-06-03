@@ -26,6 +26,9 @@ function createWorkbenchNavBtn(iconClasses: string, title: string): HTMLButtonEl
     btn.type = 'button';
     btn.className = `theia-workbench-nav-btn ${iconClasses}`;
     btn.title = title;
+    // Icon-only controls need an explicit accessible name; `title` alone is not reliably
+    // exposed to assistive tech across browsers.
+    btn.setAttribute('aria-label', title);
     return btn;
 }
 
@@ -326,6 +329,7 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         this.terminalBtn.title = on
             ? nls.localize('theia/core/workbenchBar/hideTerminal', 'Hide Terminal')
             : nls.localize('theia/core/workbenchBar/showTerminal', 'Show Terminal');
+        this.terminalBtn.setAttribute('aria-label', this.terminalBtn.title);
     }
 
     protected updateAiChatSwitchVisual(): void {
@@ -333,6 +337,7 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         if (!narrow) {
             this.aiChatBtn.classList.remove('theia-mod-toggled');
             this.aiChatBtn.title = nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat');
+            this.aiChatBtn.setAttribute('aria-label', this.aiChatBtn.title);
             return;
         }
         const title = this.shell.rightPanelHandler.tabBar.currentTitle;
@@ -341,5 +346,6 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         this.aiChatBtn.title = on
             ? nls.localize('theia/core/workbenchBar/hideAiChat', 'Hide AI Chat')
             : nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat');
+        this.aiChatBtn.setAttribute('aria-label', this.aiChatBtn.title);
     }
 }

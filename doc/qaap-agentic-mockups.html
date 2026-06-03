@@ -44,12 +44,13 @@
   .statusbar .ic { font-size: 10px; opacity: 0.8; letter-spacing: 1px; }
 
   .appbar { padding: 10px 18px 14px; display: flex; align-items: center; gap: 12px; }
-  .appbar .back { color: var(--muted); font-size: 20px; line-height: 1; font-weight: 300; }
+  .appbar .back { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px; line-height: 1; font-weight: 300; }
   .appbar .titles { flex: 1; min-width: 0; }
   .appbar .t1 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
   .appbar .t2 { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
   .body { flex: 1; overflow: hidden; padding: 4px 18px 14px; display: flex; flex-direction: column; gap: 14px; }
+  .body.scroll { overflow-y: auto; }
   .sep { height: 1px; background: var(--hair); margin: 2px 0; }
 
   .msg { display: flex; gap: 10px; align-items: flex-start; }
@@ -74,12 +75,41 @@
   .step.done .stxt { color: var(--muted); }
   .prog { height: 3px; border-radius: 3px; background: var(--raise-2); overflow: hidden; }
   .prog > i { display: block; height: 100%; background: var(--accent); }
+  .plan-body { gap: 10px; }
+  .plan-summary { background: var(--raise); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 9px; }
+  .plan-summary-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .plan-mode { min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--raise-2); color: var(--fg); font-size: 12px; font-weight: 650; }
+  .plan-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .plan-pill { min-height: 32px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 9px; background: var(--raise-2); color: var(--muted); font-size: 11px; }
+  .plan-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .plan-tabs span { min-height: 44px; border-radius: 12px; background: var(--raise); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; }
+  .plan-tabs span.on { background: var(--accent-dim); color: var(--fg); box-shadow: inset 0 0 0 1px rgba(217,128,94,0.32); }
+  .plan-panel { background: var(--raise); border-radius: 14px; padding: 4px 10px; }
+  .plan-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
+  .plan-row + .plan-row { border-top: 1px solid var(--hair); }
+  .plan-row .pi { width: 18px; flex: 0 0 auto; text-align: center; color: var(--accent); font-size: 12px; line-height: 18px; }
+  .plan-row .pt { flex: 1; min-width: 0; }
+  .plan-row .pn { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .plan-row .pm { font-size: 10.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+  .cmdlist { display: flex; flex-direction: column; gap: 5px; }
+  .cmd { min-height: 36px; display: flex; align-items: center; font-family: var(--mono); font-size: 10.5px; color: var(--fg); background: var(--raise); border-radius: 10px; padding: 8px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cmd.wait { color: var(--muted); }
+  .riskline { display: flex; gap: 7px; align-items: flex-start; font-size: 11px; line-height: 1.35; color: var(--muted); }
+  .riskline .r { color: var(--warn); font-weight: 700; }
+  .edit-check { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 7px 0; font-size: 12px; }
+  .edit-check + .edit-check { border-top: 1px solid var(--hair); }
+  .box { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--faint); flex: 0 0 auto; position: relative; }
+  .box.on { background: var(--green); box-shadow: none; }
+  .box.on::after { content: "✓"; position: absolute; inset: -1px 0 0; text-align: center; font-size: 10px; color: #10100d; font-weight: 800; }
+  .box.edit { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .step.compact { padding: 6px 0; font-size: 12px; gap: 9px; }
+  .step.compact .stxt { line-height: 1.25; }
 
   .seg { display: flex; background: var(--raise); border-radius: 11px; padding: 3px; gap: 2px; }
-  .seg span { flex:1; text-align:center; font-size: 11px; padding: 6px 4px; border-radius: 8px; color: var(--muted); white-space: nowrap; }
+  .seg span { flex:1; min-height: 44px; display:flex; align-items:center; justify-content:center; text-align:center; font-size: 11px; padding: 6px 4px; border-radius: 8px; color: var(--muted); white-space: nowrap; }
   .seg span.on { background: var(--raise-2); color: var(--fg); font-weight: 600; }
   .seg.mini { display:inline-flex; padding:2px; }
-  .seg.mini span { flex:0 0 auto; font-size: 10px; padding: 4px 8px; }
+  .seg.mini span { flex:0 0 auto; min-height: 44px; font-size: 10px; padding: 4px 10px; }
 
   .chips { display: flex; gap: 8px; }
   .chip { font-size: 11px; color: var(--muted); }
@@ -101,20 +131,20 @@
   .check .cd { font-family: var(--mono); font-size: 10px; color: var(--faint); }
   .log { font-family: var(--mono); font-size: 9.5px; line-height: 1.55; color: #eaa493; padding: 0 0 0 27px; white-space: pre-wrap; }
 
-  .btn { display: flex; align-items:center; justify-content:center; gap:7px; width: 100%; padding: 12px; border-radius: 13px; font-size: 13px; font-weight: 600; border: none; }
+  .btn { min-height: 44px; display: flex; align-items:center; justify-content:center; gap:7px; width: 100%; padding: 12px; border-radius: 13px; font-size: 13px; font-weight: 600; border: none; }
   .btn.primary { background: var(--accent); color: #1a1310; }
   .btn.soft { background: var(--raise); color: var(--fg); }
   .btn.danger { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1px var(--red-dim); }
-  .toggle { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .toggle { min-height: 44px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
   .sw { width: 34px; height: 20px; border-radius: 11px; background: var(--accent); position: relative; flex:0 0 auto; }
   .sw::after { content:""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background:#fff; top: 2px; right: 2px; }
   .sw.off { background: var(--raise-2); } .sw.off::after { right: auto; left: 2px; background: var(--faint); }
 
-  .composer { margin: 0 14px 4px; padding: 12px 14px; border-radius: 16px; background: var(--raise); display: flex; align-items: center; gap: 8px; color: var(--faint); font-size: 12.5px; }
+  .composer { min-height: 48px; margin: 0 14px 4px; padding: 12px 14px; border-radius: 16px; background: var(--raise); display: flex; align-items: center; gap: 8px; color: var(--faint); font-size: 12.5px; }
   .composer .mic { margin-left: auto; color: var(--muted); font-size: 14px; }
 
   .tabs { display: flex; padding: 6px 10px 16px; }
-  .tabs .tab { flex: 1; text-align: center; font-size: 11px; color: var(--faint); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .tabs .tab { flex: 1; min-height: 44px; text-align: center; font-size: 11px; color: var(--faint); display: flex; flex-direction: column; align-items: center; justify-content:center; gap: 5px; }
   .tabs .tab .ti { font-size: 15px; opacity: 0.7; }
   .tabs .tab.on { color: var(--accent); }
   .tabs .tab.on .ti { opacity: 1; }
@@ -148,12 +178,147 @@
   .act { display:flex; gap:11px; align-items:center; padding: 11px 0; }
   .act + .act { border-top: 1px solid var(--hair); }
   .act .at { flex:1; } .act .an { font-size: 13px; font-weight: 600; } .act .am { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .review-card, .obs-card, .comment-box { background: var(--raise); border-radius: 10px; padding: 10px; }
+  .review-summary-card { border-radius: 14px; padding: 12px; }
+  .review-score { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin:8px 0 10px; }
+  .review-score .rv { font-family:var(--mono); font-size:24px; line-height:1; font-weight:800; color:var(--fg); }
+  .review-score .rm { color:var(--muted); font-size:11.5px; line-height:1.35; text-align:right; }
+  .mini-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .mini-action { color: var(--accent); font-size: 11px; font-weight: 600; }
+  .intent, .risk, .checkpoint, .obs-row { display:flex; gap:9px; align-items:flex-start; padding:8px 0; }
+  .intent { min-height: 48px; align-items: center; }
+  .intent + .intent, .risk + .risk, .checkpoint + .checkpoint, .obs-row + .obs-row { border-top:1px solid var(--hair); }
+  .intent .ii, .obs-ico { width:18px; height:18px; border-radius:50%; background:var(--raise-2); color:var(--accent); display:flex; align-items:center; justify-content:center; flex:0 0 auto; font-size:10px; font-weight:700; }
+  .intent .it, .ctitle, .obs-name { font-size:12px; font-weight:600; line-height:1.25; }
+  .intent .im, .cmeta, .obs-meta, .obs-detail { font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.35; }
+  .intent .is, .badge { margin-left:auto; flex:0 0 auto; font-family:var(--mono); font-size:9.5px; color:var(--faint); background:var(--raise-2); border-radius:7px; padding:3px 6px; }
+  .risk .rmark { color:var(--warn); flex:0 0 auto; font-weight:700; }
+  .risk.tap { min-height:44px; align-items:center; background:var(--warn-dim); border-radius:12px; padding:9px 10px; }
+  .comment-box .path { font-family:var(--mono); font-size:9.5px; color:var(--faint); margin-bottom:7px; }
+  .comment-box .quote { font-family:var(--mono); font-size:10px; color:var(--green); background:rgba(0,0,0,0.12); border-radius:7px; padding:6px; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .comment-box .text { font-size:12px; line-height:1.45; color:var(--fg); }
+  .action-row, .metric-grid { display:flex; gap:8px; }
+  .prog-row { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+  .prog-row i { height:3px; border-radius:3px; background:var(--raise-2); }
+  .prog-row i.done { background:var(--green); }
+  .prog-row i.cur { background:var(--accent); }
+  .obs-body { gap:10px; }
+  .obs-row { align-items:center; }
+  .obs-copy { flex:1; min-width:0; }
+  .obs-detail { font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .metric { flex:1; background:var(--raise); border-radius:9px; padding:9px; min-width:0; }
+  .metric .mv { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--fg); }
+  .metric .ml { font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:0.08em; margin-top:4px; }
+  .artifact { display:flex; align-items:center; gap:8px; padding:8px 0; }
+  .artifact + .artifact { border-top:1px solid var(--hair); }
+  .artifact .af { flex:1; min-width:0; }
+  .artifact .an { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .artifact .am { font-size:10.5px; color:var(--muted); margin-top:3px; }
+  .template-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .tpl { min-height:72px; border-radius:12px; background:var(--raise); padding:9px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:inset 0 0 0 1px transparent; }
+  .tpl.sel { background:var(--accent-dim); box-shadow:inset 0 0 0 1px rgba(217,128,94,0.35); }
+  .tpl-top { display:flex; align-items:center; gap:7px; }
+  .tpl-icon { width:18px; height:18px; border-radius:7px; background:var(--raise-2); color:var(--accent); display:flex; align-items:center; justify-content:center; flex:0 0 auto; font-size:10px; font-weight:700; }
+  .tpl-name { font-size:11.5px; font-weight:650; line-height:1.15; }
+  .tpl-meta { font-size:9.5px; color:var(--muted); line-height:1.25; margin-top:6px; }
+  .template-preview { border-radius:14px; background:var(--raise); padding:10px; }
+  .template-preview .head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .source-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .source-pill { border-radius:999px; padding:4px 7px; background:var(--raise-2); color:var(--muted); font-family:var(--mono); font-size:9px; }
+  .source-pill.on { color:var(--fg); background:var(--accent-dim); }
+  .field { display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--hair); font-size:11.5px; }
+  .field span:first-child { color:var(--muted); }
+  .field span:last-child { text-align:right; font-family:var(--mono); font-size:10px; color:var(--fg); }
 </style>
 </head>
 <body>
 
 <h1 class="board-title">qaap · Vistas agénticas</h1>
-<p class="board-sub">Minimalista y nativo de qaap. El <b>Work Hub</b> y el <b>panel de conversación</b> actuales no se tocan: la vista de ejecución solo añade las tabs <b>Plan</b> y <b>Verify</b> junto a <b>Messages</b>. La terminal sigue en el IDE (no es una tab). <b>Estado:</b> Verify ya implementado (Fase 1); el resto es roadmap.</p>
+<p class="board-sub">Minimalista y nativo de qaap. El <b>Work Hub</b> y el <b>panel de conversación</b> actuales no se tocan: la vista de ejecución solo añade las tabs <b>Plan</b> y <b>Verify</b> junto a <b>Messages</b>. La terminal sigue en el IDE (no es una tab). <b>Estado:</b> Verify ya implementado (Fase 1); Plan se prioriza como superficie real de control.</p>
+
+<div class="flow-label">Flujo 0 — Crear task con plantilla</div>
+<div class="flow-crumb">No todo empieza con prompt libre · intención primero, contexto después</div>
+<div class="row">
+
+  <!-- 0. TASK TEMPLATES -->
+  <div class="phone">
+    <div class="phone-cap">0 · Plantillas de tareas</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Nuevo task</div><div class="t2">elige una intención o escribe libre</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="composer" style="margin:0;">Describe un task…<span class="mic">⌘</span></div>
+        <div class="between"><span class="label">Plantillas</span><span class="stat">8</span></div>
+        <div class="template-grid">
+          <div class="tpl sel"><div class="tpl-top"><span class="tpl-icon">CI</span><span class="tpl-name">Fix failing CI</span></div><div class="tpl-meta">lee checks, reproduce, propone fix</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">#</span><span class="tpl-name">Implement issue</span></div><div class="tpl-meta">issue, alcance, branch nueva</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">PR</span><span class="tpl-name">Review PR</span></div><div class="tpl-meta">diff por intención y comentarios</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">↑</span><span class="tpl-name">Upgrade dependency</span></div><div class="tpl-meta">changelog, tests, rollback</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">✓</span><span class="tpl-name">Add tests</span></div><div class="tpl-meta">gaps, fixtures, cobertura</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">▶</span><span class="tpl-name">Deploy preview</span></div><div class="tpl-meta">build, env, URL verificable</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">!</span><span class="tpl-name">Run security check</span></div><div class="tpl-meta">deps, secrets, permisos</div></div>
+          <div class="tpl"><div class="tpl-top"><span class="tpl-icon">+</span><span class="tpl-name">Prompt libre</span></div><div class="tpl-meta">cuando no hay flujo claro</div></div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><span class="ti">▦</span>Templates</div>
+        <div class="tab"><span class="ti">⌕</span>Context</div>
+        <div class="tab"><span class="ti">▶</span>Run</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 0B. TEMPLATE DETAILS -->
+  <div class="phone">
+    <div class="phone-cap">0b · Preflight de plantilla</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Fix failing CI</div><div class="t2">preparar task antes de lanzar</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="template-preview">
+          <div class="head"><span class="label">Contexto</span><span class="stat">auto</span></div>
+          <div class="source-row">
+            <span class="source-pill on">PR #184</span>
+            <span class="source-pill on">checks</span>
+            <span class="source-pill on">logs</span>
+            <span class="source-pill">branch</span>
+          </div>
+        </div>
+        <div class="template-preview">
+          <div class="head"><span class="label">Campos</span><span class="stat">2 requeridos</span></div>
+          <div class="field"><span>Check fallando</span><span>mobile-tests</span></div>
+          <div class="field"><span>Permiso</span><span>push no</span></div>
+          <div class="field"><span>Modo</span><span>aprobar edits</span></div>
+        </div>
+        <div class="template-preview">
+          <div class="head"><span class="label">Plan inicial</span><span class="stat">4 pasos</span></div>
+          <div class="steps">
+            <div class="step compact"><span class="dot cur"></span><span class="stxt">Leer logs de CI</span></div>
+            <div class="step compact"><span class="dot"></span><span class="stxt">Reproducir localmente</span></div>
+            <div class="step compact"><span class="dot"></span><span class="stxt">Aplicar fix mínimo</span></div>
+            <div class="step compact"><span class="dot"></span><span class="stxt">Re-ejecutar verify</span></div>
+          </div>
+        </div>
+        <button class="btn primary" style="margin-top:auto;">Crear task desde plantilla</button>
+        <button class="btn soft">Editar prompt generado</button>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">▦</span>Templates</div>
+        <div class="tab on"><span class="ti">⌕</span>Context</div>
+        <div class="tab"><span class="ti">▶</span>Run</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
 
 <div class="flow-label">Flujo A — Vista de ejecución</div>
 <div class="flow-crumb">Work Hub › Chats › qaap-mobile-shell › Execution</div>
@@ -195,7 +360,7 @@
 
   <!-- 2. PLAN -->
   <div class="phone">
-    <div class="phone-cap">2 · Plan (roadmap · Fase 2)</div>
+    <div class="phone-cap">2 · Plan ★ (prioritario)</div>
     <div class="frame"><div class="screen">
       <div class="island"></div>
       <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
@@ -203,22 +368,31 @@
         <span class="back">‹</span>
         <div class="titles"><div class="t1">Add agents dashboard</div><div class="t2">qaap-mobile-shell · @qiq</div></div>
       </div>
-      <div class="body">
-        <div class="seg"><span>🔒 Lectura</span><span class="on">✋ Aprobar</span><span>⚡ Auto</span></div>
-        <div class="between"><span class="label">Plan · 4 de 8</span><span class="stat">50%</span></div>
-        <div class="prog"><i style="width:50%"></i></div>
-        <div class="steps">
-          <div class="step done"><span class="dot done"></span><span class="stxt">Extender MobileProjectsHubView</span></div>
-          <div class="step done"><span class="dot done"></span><span class="stxt">collectAgentMembers() + sort</span></div>
-          <div class="step done"><span class="dot done"></span><span class="stxt">createAgentMemberChip()</span></div>
-          <div class="step done"><span class="dot done"></span><span class="stxt">createAgentTasksSection()</span></div>
-          <div class="step"><span class="dot cur"></span><span class="stxt">renderAgentsDashboard()</span></div>
-          <div class="step"><span class="dot"></span><span class="stxt">CSS del dashboard</span></div>
-          <div class="step"><span class="dot"></span><span class="stxt">Cablear botón hub-team</span></div>
-          <div class="step"><span class="dot"></span><span class="stxt">compile + build:browser</span></div>
+      <div class="body plan-body">
+        <div class="plan-summary">
+          <div class="plan-summary-top"><span class="label">Plan vivo · 4 de 8</span><span class="stat">50%</span></div>
+          <div class="prog"><i style="width:50%"></i></div>
+          <div class="plan-meta">
+            <span class="plan-mode">✋ Aprobar edits</span>
+            <span class="plan-pill">2 riesgos</span>
+            <span class="plan-pill">2 comandos</span>
+          </div>
+        </div>
+        <div class="plan-tabs"><span class="on">Alcance</span><span>Riesgos</span><span>Pasos</span></div>
+        <div class="plan-panel">
+          <div class="between" style="min-height:36px;"><span class="label">Va a tocar</span><span class="stat">2 áreas</span></div>
+          <div class="plan-row"><span class="pi">✎</span><div class="pt"><div class="pn">MobileProjectsHubView</div><div class="pm">modelo de agentes y renderer Team</div></div></div>
+          <div class="plan-row"><span class="pi">◆</span><div class="pt"><div class="pn">mobile-projects-panel.css</div><div class="pm">progreso, estados vacíos y targets 44px</div></div></div>
+        </div>
+        <div class="plan-panel">
+          <div class="between" style="min-height:36px;"><span class="label">Siguiente</span><span class="stat">ahora</span></div>
+          <div class="step compact"><span class="dot cur"></span><span class="stxt">Renderer Team</span><span class="stat">paso 5</span></div>
+          <div class="cmdlist" style="margin:6px 0 4px;">
+            <div class="cmd">npm run compile</div>
+          </div>
         </div>
       </div>
-      <div class="composer">Corrige el plan o da instrucciones…<span class="mic">🎙</span></div>
+      <div class="composer">Instrucción o ajuste al plan…<span class="mic">🎙</span></div>
       <div class="tabs">
         <div class="tab"><span class="ti">💬</span>Messages</div>
         <div class="tab on"><span class="ti">☑</span>Plan</div>
@@ -380,6 +554,354 @@
         <div class="toggle">Avisar cuando termina<span class="sw"></span></div>
         <div class="toggle">Cuando necesita input<span class="sw"></span></div>
         <div class="toggle">Cuando falla un check<span class="sw off"></span></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="flow-label">Flujo C — Review móvil brutal</div>
+<div class="flow-crumb">PR listo › revisar por intención › pedir cambios / aprobar › verificar › revertir</div>
+<div class="row">
+
+  <!-- 8. REVIEW SUMMARY -->
+  <div class="phone">
+    <div class="phone-cap">8 · Resumen por intención</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Review PR #184</div><div class="t2">Team view · 8 archivos · +340 -96</div></div>
+        <span class="badge">listo</span>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="review-card review-summary-card">
+          <div class="mini-head"><span class="label">Cambios por intención</span><span class="stat">riesgo medio</span></div>
+          <div class="review-score"><span class="rv">4</span><span class="rm">bloques agrupados<br>8 archivos · +340 -96</span></div>
+          <div class="prog-row"><i class="done"></i><i class="done"></i><i class="cur"></i><i></i></div>
+        </div>
+        <div class="review-card">
+          <div class="intent"><span class="ii">1</span><div><div class="it">Nueva vista Team</div><div class="im">Agentes activos y progreso.</div></div><span class="is">3 files</span></div>
+          <div class="intent"><span class="ii">2</span><div><div class="it">Normalizar progreso</div><div class="im">Evita NaN en estados vacíos.</div></div><span class="is">2 files</span></div>
+          <div class="intent"><span class="ii">3</span><div><div class="it">Móvil y estados vacíos</div><div class="im">Spacing, scroll y targets táctiles.</div></div><span class="is">css</span></div>
+        </div>
+        <div class="risk tap"><span class="rmark">△</span><span><strong>Revisar:</strong> tabs y datos parciales.</span></div>
+        <button class="btn primary" style="margin-top:auto;">Revisar diff compacto</button>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><span class="ti">◉</span>Resumen</div>
+        <div class="tab"><span class="ti">▤</span>Diff</div>
+        <div class="tab"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 9. COMPACT DIFF -->
+  <div class="phone">
+    <div class="phone-cap">9 · Diff compacto</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Diff compacto</div><div class="t2">Intención 2 · Normalizar progreso</div></div>
+      </div>
+      <div class="body" style="gap:9px;">
+        <div class="seg"><span class="on">Intención</span><span>Archivo</span><span>Todo</span></div>
+        <div>
+          <div class="filehdr"><span>agent-progress.ts</span><span class="acts"><span class="ok">✓</span><span class="no">comentar</span></span></div>
+          <div class="diff compact">
+            <div class="dl ctx"> export function progressRatio(turns: Turn[]) {</div>
+            <div class="dl del">-  return done(turns) / turns.length;</div>
+            <div class="dl add">+  if (!turns.length) return 0;</div>
+            <div class="dl add">+  return done(turns) / turns.length;</div>
+            <div class="dl ctx"> }</div>
+          </div>
+        </div>
+        <div>
+          <div class="filehdr"><span>mobile-projects-panel.ts</span><span class="stat">+12 -4</span></div>
+          <div class="diff compact">
+            <div class="dl ctx"> const ratio = progressRatio(member.turns);</div>
+            <div class="dl add">+const label = formatPercent(ratio);</div>
+            <div class="dl ctx"> renderAgentRow(member, label);</div>
+          </div>
+        </div>
+        <div class="review-card" style="margin-top:auto;">
+          <div class="between"><span class="label">Navegación</span><span class="stat">2/4</span></div>
+          <div class="prog-row" style="margin-top:8px;"><i class="done"></i><i class="cur"></i><i></i><i></i></div>
+        </div>
+        <div class="action-row">
+          <button class="btn soft">Pedir cambios</button>
+          <button class="btn primary">Aceptar bloque</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">◉</span>Resumen</div>
+        <div class="tab on"><span class="ti">▤</span>Diff</div>
+        <div class="tab"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 10. REQUEST CHANGES -->
+  <div class="phone">
+    <div class="phone-cap">10 · Pedir cambios con contexto</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Pedir cambios</div><div class="t2">mobile-projects-panel.ts:214</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="comment-box">
+          <div class="path">packages/qaap-mobile/src/mobile-projects-panel.ts:214</div>
+          <div class="quote">+ const label = formatPercent(progressRatio(member.turns));</div>
+          <div class="text">Guarda el ratio antes de formatear para reutilizarlo en aria-label y evitar dos cálculos en cada render.</div>
+        </div>
+        <div class="review-card">
+          <div class="mini-head"><span class="label">Sugerencia</span><span class="mini-action">insertar</span></div>
+          <div class="diff compact">
+            <div class="dl add">+ const ratio = progressRatio(member.turns);</div>
+            <div class="dl add">+ const label = formatPercent(ratio);</div>
+          </div>
+        </div>
+        <div class="review-card">
+          <div class="between"><span class="label">Enviar a</span><span class="stat">@qiq</span></div>
+          <div class="toggle" style="margin-top:9px;">Bloquear aprobación hasta resolver<span class="sw"></span></div>
+        </div>
+        <button class="btn danger" style="margin-top:auto;">Pedir cambios en PR</button>
+        <button class="btn soft">Guardar comentario</button>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">◉</span>Resumen</div>
+        <div class="tab on"><span class="ti">▤</span>Diff</div>
+        <div class="tab"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 11. APPROVE PR -->
+  <div class="phone">
+    <div class="phone-cap">11 · Aprobar PR</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Aprobar PR #184</div><div class="t2">4 intenciones revisadas · checks verdes</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="review-card">
+          <div class="check"><span class="tick ok">✓</span><span class="cn">Diff revisado</span><span class="cd">8/8</span></div>
+          <div class="check"><span class="tick ok">✓</span><span class="cn">Comentarios resueltos</span><span class="cd">3</span></div>
+          <div class="check"><span class="tick ok">✓</span><span class="cn">Verify reciente</span><span class="cd">1m</span></div>
+        </div>
+        <div class="comment-box">
+          <div class="path">Review message</div>
+          <div class="text">Aprobado. La agrupación por intención queda clara y el guard de progreso cubre el estado vacío.</div>
+        </div>
+        <div class="toggle">Auto-merge si CI sigue verde<span class="sw off"></span></div>
+        <button class="btn primary" style="margin-top:auto;">Aprobar PR</button>
+        <button class="btn soft">Aprobar y mergear</button>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">◉</span>Resumen</div>
+        <div class="tab"><span class="ti">▤</span>Diff</div>
+        <div class="tab on"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 12. RERUN VERIFY -->
+  <div class="phone">
+    <div class="phone-cap">12 · Correr verify otra vez</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Verify PR #184</div><div class="t2">rerun manual · tras resolver cambios</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="review-card">
+          <div class="check"><span class="tick ok">✓</span><span class="cn">Typecheck</span><span class="cd">6.2s</span></div>
+          <div class="check"><span class="tick run">●</span><span class="cn">Tests móviles</span><span class="cd">12s</span></div>
+          <div class="check"><span class="tick">○</span><span class="cn">Build browser</span><span class="cd">cola</span></div>
+        </div>
+        <div class="log" style="padding-left:0;color:var(--muted);">pnpm test mobile-projects-panel
+PASS progressRatio empty turns
+PASS renders team tab</div>
+        <div class="toggle">Re-verificar antes de aprobar<span class="sw"></span></div>
+        <button class="btn primary" style="margin-top:auto;">Correr verify otra vez</button>
+        <button class="btn soft">Ver log completo</button>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">◉</span>Resumen</div>
+        <div class="tab"><span class="ti">▤</span>Diff</div>
+        <div class="tab on"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 13. REVERT -->
+  <div class="phone">
+    <div class="phone-cap">13 · Revertir archivo o checkpoint</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Revertir cambios</div><div class="t2">elige alcance · requiere confirmación</div></div>
+      </div>
+      <div class="body" style="gap:10px;">
+        <div class="review-card">
+          <div class="mini-head"><span class="label">Archivos</span><span class="stat">8 modificados</span></div>
+          <div class="checkpoint"><span class="tick no">↺</span><div class="ctext"><div class="ctitle">mobile-shell.css</div><div class="cmeta">solo spacing · +42 -9</div></div><span class="badge">archivo</span></div>
+          <div class="checkpoint"><span class="tick no">↺</span><div class="ctext"><div class="ctitle">agent-progress.ts</div><div class="cmeta">guard de progreso · +8 -1</div></div><span class="badge">archivo</span></div>
+        </div>
+        <div class="review-card">
+          <div class="mini-head"><span class="label">Checkpoints</span><span class="stat">3</span></div>
+          <div class="checkpoint"><span class="dot done"></span><div class="ctext"><div class="ctitle">Antes de resolver review</div><div class="cmeta">9:34 · tests fallando</div></div><span class="back">›</span></div>
+          <div class="checkpoint"><span class="dot cur"></span><div class="ctext"><div class="ctitle">PR listo</div><div class="cmeta">9:48 · checks verdes</div></div><span class="back">›</span></div>
+        </div>
+        <button class="btn danger" style="margin-top:auto;">Revertir selección</button>
+        <button class="btn soft">Crear checkpoint ahora</button>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ti">◉</span>Resumen</div>
+        <div class="tab"><span class="ti">▤</span>Diff</div>
+        <div class="tab on"><span class="ti">✓</span>Acciones</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="flow-label">Flujo D — Observabilidad de agentes</div>
+<div class="flow-crumb">Entender qué pasó › herramientas › archivos › coste › fallo › artefactos</div>
+<div class="row">
+
+  <!-- 14. OBSERVABILITY OVERVIEW -->
+  <div class="phone">
+    <div class="phone-cap">14 · Resumen de ejecución</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Qué pasó</div><div class="t2">Add agents dashboard · @qiq · 18m</div></div>
+        <span class="badge">auditable</span>
+      </div>
+      <div class="body obs-body">
+        <div class="metric-grid">
+          <div class="metric"><div class="mv">17</div><div class="ml">tools</div></div>
+          <div class="metric"><div class="mv">9</div><div class="ml">archivos</div></div>
+          <div class="metric"><div class="mv">$0.42</div><div class="ml">coste</div></div>
+        </div>
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Línea de tiempo</span><span class="stat">6 hitos</span></div>
+          <div class="tl" style="margin-top:5px;">
+            <div class="tlnode ok"><div class="tlt">Leyó contexto</div><div class="tlm">README, docs y panel móvil</div></div>
+            <div class="tlnode ok"><div class="tlt">Ejecutó búsqueda</div><div class="tlm">rg agentProgressRatio · 4 resultados</div></div>
+            <div class="tlnode no"><div class="tlt">Falló test inicial</div><div class="tlm">NaN en progreso vacío</div></div>
+            <div class="tlnode sel"><div class="tlt">Generó fix</div><div class="tlm">guard + estado vacío</div></div>
+          </div>
+        </div>
+        <div class="obs-card">
+          <div class="obs-row"><span class="obs-ico">!</span><div class="obs-copy"><div class="obs-name">Causa del fallo</div><div class="obs-meta">División por cero cuando no había turnos reportados.</div></div></div>
+        </div>
+        <button class="btn primary" style="margin-top:auto;">Abrir traza completa</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 15. TOOLS AND COMMANDS -->
+  <div class="phone">
+    <div class="phone-cap">15 · Herramientas y comandos</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Herramientas</div><div class="t2">orden real · entradas y resultado</div></div>
+      </div>
+      <div class="body obs-body">
+        <div class="seg"><span class="on">Tools</span><span>Shell</span><span>Errores</span></div>
+        <div class="obs-card">
+          <div class="obs-row"><span class="obs-ico">1</span><div class="obs-copy"><div class="obs-name">rg</div><div class="obs-detail">rg -n "agentProgressRatio"</div><div class="obs-meta">0.2s · 4 matches</div></div><span class="tick ok">✓</span></div>
+          <div class="obs-row"><span class="obs-ico">2</span><div class="obs-copy"><div class="obs-name">sed</div><div class="obs-detail">sed -n '180,260p' panel.ts</div><div class="obs-meta">contexto leído</div></div><span class="tick ok">✓</span></div>
+          <div class="obs-row"><span class="obs-ico">3</span><div class="obs-copy"><div class="obs-name">apply_patch</div><div class="obs-detail">+ guard y aria-label</div><div class="obs-meta">2 archivos editados</div></div><span class="tick ok">✓</span></div>
+          <div class="obs-row"><span class="obs-ico">4</span><div class="obs-copy"><div class="obs-name">npm test</div><div class="obs-detail">mobile-projects-panel</div><div class="obs-meta">falló primero, pasó al repetir</div></div><span class="tick run">●</span></div>
+        </div>
+        <div class="log" style="padding-left:0;color:var(--muted);">npm test mobile-projects-panel
+FAIL progressRatio empty turns
+PASS after guard</div>
+        <button class="btn soft" style="margin-top:auto;">Copiar comando reproducible</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 16. FILES AND ARTIFACTS -->
+  <div class="phone">
+    <div class="phone-cap">16 · Archivos y artefactos</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Archivos tocados</div><div class="t2">leídos, editados y generados</div></div>
+      </div>
+      <div class="body obs-body">
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Editados</span><span class="stat">+64 -18</span></div>
+          <div class="artifact"><span class="obs-ico">E</span><div class="af"><div class="an">mobile-projects-panel.ts</div><div class="am">renderer Team + estado vacío</div></div><span class="badge">+42</span></div>
+          <div class="artifact"><span class="obs-ico">E</span><div class="af"><div class="an">mobile-projects-panel.css</div><div class="am">chips, progreso, spacing móvil</div></div><span class="badge">+22</span></div>
+        </div>
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Leídos</span><span class="stat">7</span></div>
+          <div class="artifact"><span class="obs-ico">R</span><div class="af"><div class="an">README.md</div><div class="am">convenciones y scripts</div></div></div>
+          <div class="artifact"><span class="obs-ico">R</span><div class="af"><div class="an">qaap-background-agents.md</div><div class="am">eventos JSON y replay</div></div></div>
+        </div>
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Artefactos</span><span class="stat">3</span></div>
+          <div class="artifact"><span class="obs-ico">A</span><div class="af"><div class="an">before-after.png</div><div class="am">captura móvil 390px</div></div><span class="back">›</span></div>
+          <div class="artifact"><span class="obs-ico">A</span><div class="af"><div class="an">verify-log.txt</div><div class="am">salida completa de checks</div></div><span class="back">›</span></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 17. COST AND FAILURE -->
+  <div class="phone">
+    <div class="phone-cap">17 · Coste, tokens y fallo</div>
+    <div class="frame"><div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="ic">5G  ⏛  🔋</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <div class="titles"><div class="t1">Uso y diagnóstico</div><div class="t2">visible cuando el proveedor lo reporta</div></div>
+      </div>
+      <div class="body obs-body">
+        <div class="metric-grid">
+          <div class="metric"><div class="mv">38.4K</div><div class="ml">input</div></div>
+          <div class="metric"><div class="mv">6.1K</div><div class="ml">output</div></div>
+          <div class="metric"><div class="mv">2.8K</div><div class="ml">cache</div></div>
+        </div>
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Coste estimado</span><span class="stat">$0.42</span></div>
+          <div class="prog" style="margin-top:9px;"><i style="width:42%"></i></div>
+          <div class="obs-meta" style="margin-top:8px;">Incluye llamadas LLM. Shell local y lectura de archivos no tienen coste de proveedor.</div>
+        </div>
+        <div class="obs-card">
+          <div class="mini-head"><span class="label">Fallo explicado</span><span class="stat" style="color:var(--red)">resuelto</span></div>
+          <div class="risk" style="padding-bottom:0;"><span class="rmark">!</span><span><strong>Síntoma:</strong> test esperaba 0.5 y recibió NaN.</span></div>
+          <div class="risk"><span class="rmark">→</span><span><strong>Causa:</strong> turns.length era 0 antes de dividir.</span></div>
+          <div class="risk"><span class="rmark">✓</span><span><strong>Fix:</strong> return 0 cuando no hay turnos.</span></div>
+        </div>
+        <div class="toggle" style="margin-top:auto;">Adjuntar traza al PR<span class="sw"></span></div>
+        <button class="btn primary">Exportar auditoría</button>
       </div>
     </div></div>
   </div>

@@ -428,7 +428,8 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
         const tooltipMargin = 12;
 
         // Spotlight
-        if (rect && rect.width > 0 && rect.height > 0 && step.id !== 'swipe-dashboard') {
+        const hasSpotlight = !!rect && rect.width > 0 && rect.height > 0 && step.id !== 'swipe-dashboard';
+        if (hasSpotlight && rect) {
             // Pad the spotlight a few px so the focus ring sits outside the target.
             const pad = 6;
             this.spotlight.style.display = 'block';
@@ -439,6 +440,10 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
         } else {
             this.spotlight.style.display = 'none';
         }
+        // Drive the backdrop from an explicit class rather than a brittle inline-style selector:
+        // a spotlight step replaces the dim backdrop with its giant ring shadow, while a centered
+        // step (no spotlight) needs the dim backdrop so the tooltip reads against the live workbench.
+        this.overlay?.classList.toggle('theia-mod-has-spotlight', hasSpotlight);
 
         // Tooltip placement
         const tooltip = this.tooltip;

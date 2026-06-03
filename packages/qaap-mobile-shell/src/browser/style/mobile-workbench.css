@@ -1376,7 +1376,9 @@
 .theia-mobile-onboarding-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   animation: theia-mobile-onboarding-fade-in 180ms ease-out both;
 }
 
@@ -1392,9 +1394,10 @@
 }
 
 /* The spotlight uses a giant ring shadow that visually replaces the backdrop;
-   hide the backdrop element while a spotlight is shown so the two don't compound. */
-.theia-mobile-onboarding-spotlight[style*="display: block"] ~ .theia-mobile-onboarding-backdrop,
-.theia-mobile-onboarding-overlay:has(.theia-mobile-onboarding-spotlight[style*="display: block"]) .theia-mobile-onboarding-backdrop {
+   hide the backdrop element while a spotlight is shown so the two don't compound.
+   Driven by `theia-mod-has-spotlight`, toggled from the contribution — reliable across
+   browsers, unlike matching against the spotlight's inline `display` style. */
+.theia-mobile-onboarding-overlay.theia-mod-has-spotlight .theia-mobile-onboarding-backdrop {
   display: none;
 }
 
@@ -1466,10 +1469,15 @@
   width: calc(100vw - 24px);
   background: var(--theia-editorWidget-background, var(--theia-sideBar-background, #2b2b2b));
   color: var(--theia-editorWidget-foreground, var(--theia-foreground));
-  border: 1px solid var(--theia-editorWidget-border, var(--theia-panel-border, transparent));
+  /* A hairline of light gives the card a visible edge on dark themes, where its surface
+     colour is nearly identical to the panels behind it; the ring + drop shadow lift it
+     clearly off the workbench so it never looks fused with the content underneath. */
+  border: 1px solid var(--theia-editorWidget-border, rgba(255, 255, 255, 0.14));
   border-radius: 14px;
   padding: 16px 16px 12px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 24px 56px rgba(0, 0, 0, 0.62);
   animation: theia-mobile-onboarding-fade-in 220ms ease-out both;
   box-sizing: border-box;
 }
@@ -3424,6 +3432,30 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   color: var(--q-muted, var(--theia-descriptionForeground));
 }
 
+/* Shown only when nothing is running, pending, or in review — turns the all-zero state
+   from a dead-end into an invitation to start the first task. */
+.theia-mobile-work-hub-home-overview-cta {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: var(--q-radius-row, 12px);
+  background: var(--q-accent, var(--theia-button-background));
+  color: var(--q-on-accent, var(--theia-button-foreground, #fff));
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 120ms ease;
+}
+
+.theia-mobile-work-hub-home-overview-cta:active {
+  filter: brightness(0.94);
+}
+
 .theia-mobile-work-hub-home-usage {
   padding: 14px 14px 12px;
 }
@@ -3504,26 +3536,25 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
 }
 
 .theia-mobile-work-hub-home-usage-heatmap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
-  overscroll-behavior-x: contain;
+  /* The grid always renders a fixed number of week columns; size them to the card width
+     so the whole window of activity (including the most recent, right-most days) is visible
+     without a horizontal scrollbar leaking into the vertical feed. */
+  overflow: hidden;
 }
 
 .theia-mobile-work-hub-home-usage-heatmap-grid {
   display: grid;
   grid-auto-flow: column;
-  grid-template-rows: repeat(7, 10px);
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-columns: 1fr;
   gap: 3px;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
 }
 
 .theia-mobile-work-hub-home-usage-heatmap-cell {
-  width: 10px;
-  height: 10px;
+  aspect-ratio: 1 / 1;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 8%, transparent);
+  background: color-mix(in srgb, var(--q-text, var(--theia-foreground)) 16%, transparent);
 }
 
 .theia-mobile-work-hub-home-usage-heatmap-cell.theia-mod-level-1 {
@@ -3655,9 +3686,12 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   font-weight: 400;
   line-height: 1.25;
   color: var(--q-muted, var(--theia-descriptionForeground));
+  /* Wrap to a second line instead of clipping mid-word; the cell reserves height for two lines. */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .theia-mobile-work-hub-home-section-panel {
