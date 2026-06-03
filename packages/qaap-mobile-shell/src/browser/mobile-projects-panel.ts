@@ -9022,6 +9022,44 @@ export class MobileProjectsPanel {
             return;
         }
 
+        this.mountTranscriptEmptyPreview(host, project, summary);
+    }
+
+    protected mountTranscriptEmptyPreview(
+        host: HTMLElement,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        const removeEmptyState = (): void => {
+            this.transcriptEmbeddedPreview?.root.classList.remove('theia-mod-empty-preview');
+            this.transcriptEmbeddedPreview?.root.querySelector('.theia-mobile-transcript-preview-empty-overlay')?.remove();
+        };
+        this.transcriptEmbeddedPreview = mountEmbeddedAgentPreviewChrome(host, {
+            url: 'about:blank',
+            messageService: this.messageService,
+            clipboard: this.previewClipboard,
+            previewSurfaces: this.previewSurfaceRegistry,
+            inspectorDeps: this.previewInspectorDeps,
+            onNavigate: removeEmptyState,
+            notify: (message, kind) => {
+                MobileSnackbar.show(message, { kind: kind === 'warn' ? 'warning' : 'success' });
+            },
+            openExternal: target => {
+                window.open(target, '_blank', 'noopener,noreferrer');
+            },
+        });
+        this.transcriptEmbeddedPreview.root.classList.add('theia-mod-empty-preview');
+        const input = this.transcriptEmbeddedPreview.root.querySelector<HTMLInputElement>('.theia-mini-browser-url-field input');
+        if (input) {
+            input.value = '';
+            input.placeholder = nls.localize('qaap/mobileProjects/previewUrlPlaceholder', 'Ingresa una URL');
+        }
+        const content = this.transcriptEmbeddedPreview.root.querySelector<HTMLElement>('.qaap-preview-content-area');
+        if (!content) {
+            return;
+        }
+        const overlay = document.createElement('div');
+        overlay.className = 'theia-mobile-transcript-preview-empty-overlay';
         const wrap = document.createElement('div');
         wrap.className = 'theia-mobile-transcript-preview-empty';
         const btn = document.createElement('button');
@@ -9033,7 +9071,8 @@ export class MobileProjectsPanel {
             : nls.localize('qaap/mobileProjects/previewButton', 'Vista previa');
         btn.addEventListener('click', () => { void this.requestTranscriptPreview(project, summary); });
         wrap.append(btn);
-        host.append(wrap);
+        overlay.append(wrap);
+        content.append(overlay);
     }
 
     /**

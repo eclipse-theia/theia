@@ -745,10 +745,18 @@
   );
 }
 
+#theia-app-shell.theia-mod-mobile-one-column #theia-top-panel {
+  flex: 0 0 auto !important;
+  flex-shrink: 0;
+  min-height: 52px;
+  z-index: 2;
+}
+
 #theia-app-shell.theia-mod-mobile-one-column #theia-left-right-split-panel {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 #theia-app-shell.theia-mod-mobile-one-column #theia-bottom-split-panel {
@@ -757,6 +765,34 @@
   height: 100%;
   width: 100% !important;
   max-width: 100% !important;
+  overflow: hidden;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-bottom-split-panel > #theia-main-content-panel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-bottom-split-panel > #theia-bottom-content-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-agent-preview-embedded {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser-toolbar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser-toolbar-read-only,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-agent-preview-embedded-toolbar {
+  flex-shrink: 0;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-preview-content-area,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-agent-preview-embedded-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Bottom panel layout + terminal scroll: see qaap-mobile-touch-scroll.css */
@@ -10146,6 +10182,29 @@ button.theia-mobile-transcript-team-row:focus-visible {
 
 .theia-mobile-transcript-preview[hidden] {
   display: none;
+}
+
+.theia-mobile-transcript-preview .qaap-agent-preview-embedded.theia-mod-empty-preview .qaap-preview-content-area {
+  background: #343a3f;
+}
+
+.theia-mobile-transcript-preview .qaap-agent-preview-embedded.theia-mod-empty-preview .qaap-preview-frame-slot iframe {
+  background: #343a3f;
+}
+
+.theia-mobile-transcript-preview-empty-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #343a3f 0%, #7f8588 100%);
+  pointer-events: none;
+}
+
+.theia-mobile-transcript-preview-empty-overlay .theia-mobile-transcript-preview-run {
+  pointer-events: auto;
 }
 
 .theia-mobile-transcript-preview-empty {

@@ -123,6 +123,12 @@ const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
 
+/** Keep editor / preview chrome visible when the bottom panel (inspector, terminal, …) is open. */
+const MOBILE_BOTTOM_SPLIT_MAIN_MIN_RATIO = 0.28;
+
+/** Default bottom share when no persisted sash size exists yet. */
+const MOBILE_BOTTOM_SPLIT_DEFAULT_BOTTOM_RATIO = 0.38;
+
 /** {@link ApplicationShell} overlay host for {@link MAXIMIZED_CLASS} bottom panel (not in public API). */
 interface ShellWithMaximizedOverlay {
     readonly maximizedElement: HTMLElement;
@@ -559,7 +565,52 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         return parent instanceof SplitPanel ? parent : undefined;
     }
 
-    /** Vertical split between main editor and terminal panel inside the center column. */
+    /** Measured height of the bottom dock inside `#theia-bottom-split-panel` (px). */
+    protected measureMobileBottomPanelHeightPx(): number | undefined {
+        const parent = this.shell.bottomPanel.parent;
+        if (!(parent instanceof SplitPanel) || !parent.isVisible) {
+            return undefined;
+        }
+        const index = parent.widgets.indexOf(this.shell.bottomPanel) - 1;
+        if (index < 0) {
+            return undefined;
+        }
+        const handle = parent.handles[index];
+        if (handle.classList.contains('lm-mod-hidden')) {
+            return undefined;
+        }
+        const parentHeight = parent.node.clientHeight;
+        if (parentHeight <= 0) {
+            return undefined;
+        }
+        return parentHeight - handle.offsetTop;
+    }
+
+    /**
+     * Main/bottom ratios for the center-column split. Never collapses main to 0 — that pushed
+     * mini-browser toolbars and `#theia-top-panel` off-screen when resizing the inspector sash.
+     */
+    protected resolveMobileBottomSplitSizes(): [number, number] {
+        const split = this.getBottomAreaSplitPanel();
+        const total = split?.node.clientHeight ?? 0;
+        if (total <= 0) {
+            const bottom = MOBILE_BOTTOM_SPLIT_DEFAULT_BOTTOM_RATIO;
+            return [1 - bottom, bottom];
+        }
+        let bottomPx = this.measureMobileBottomPanelHeightPx();
+        if (!bottomPx || bottomPx <= 0) {
+            const state = (this.shell as ApplicationShell & { bottomPanelState?: { lastPanelSize?: number } }).bottomPanelState;
+            bottomPx = state?.lastPanelSize ?? Math.round(total * MOBILE_BOTTOM_SPLIT_DEFAULT_BOTTOM_RATIO);
+        }
+        const minBottomPx = 120;
+        const maxBottomPx = Math.round(total * (1 - MOBILE_BOTTOM_SPLIT_MAIN_MIN_RATIO));
+        bottomPx = Math.max(minBottomPx, Math.min(maxBottomPx, bottomPx));
+        const mainPx = Math.max(Math.round(total * MOBILE_BOTTOM_SPLIT_MAIN_MIN_RATIO), total - bottomPx);
+        const adjustedBottomPx = total - mainPx;
+        return [mainPx / total, adjustedBottomPx / total];
+    }
+
+    /** Vertical split between main editor and bottom panel inside the center column. */
     protected syncMobileBottomSplit(): void {
         if (this.shell.bottomPanel.hasClass(MAXIMIZED_CLASS)) {
             return;
@@ -570,7 +621,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         try {
             if (this.shell.isExpanded('bottom')) {
-                split.setRelativeSizes([0, 1]);
+                const current = split.relativeSizes();
+                if (current.length >= 2 && current[0] >= MOBILE_BOTTOM_SPLIT_MAIN_MIN_RATIO) {
+                    return;
+                }
+                const [main, bottom] = this.resolveMobileBottomSplitSizes();
+                split.setRelativeSizes([main, bottom]);
             } else {
                 split.setRelativeSizes([1, 0]);
             }

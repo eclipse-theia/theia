@@ -26,6 +26,13 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
+}
+
+.theia-mini-browser.qaap-agent-preview-chrome > .theia-mini-browser-toolbar,
+.theia-mini-browser.qaap-agent-preview-chrome > .theia-mini-browser-toolbar-read-only,
+.qaap-agent-preview-embedded > .qaap-agent-preview-embedded-toolbar {
+  flex-shrink: 0;
 }
 
 .qaap-agent-preview-history-backdrop {
@@ -486,6 +493,12 @@ body.qaap-mod-inspector-resizing.qaap-mod-inspector-resizing-vertical * {
 
 .qaap-preview-split.qaap-preview-split--inspector-bottom {
   flex-direction: column;
+}
+
+.qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-frame-slot {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .qaap-preview-split.qaap-preview-split--inspector-bottom .qaap-preview-inspector-slot {
