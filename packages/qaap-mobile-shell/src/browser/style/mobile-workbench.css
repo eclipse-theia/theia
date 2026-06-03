@@ -6048,11 +6048,16 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   min-width: 0;
 }
 
-.theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back-spacer {
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back.theia-mobile-projects-header-back {
   flex: 0 0 auto;
   width: 32px;
   height: 32px;
   margin: 0 4px 0 -4px;
+  border-radius: 8px;
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back.theia-mobile-projects-header-back .codicon {
+  font-size: 16px;
 }
 
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title-block,
@@ -9616,7 +9621,7 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   padding-right: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-right, 0px));
 }
 
-.theia-mobile-agent-transcript-root .theia-mobile-agent-log-close {
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back {
   position: relative;
   z-index: 3;
   pointer-events: auto;

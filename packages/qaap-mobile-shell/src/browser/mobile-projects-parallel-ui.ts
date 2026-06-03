@@ -67,18 +67,20 @@ export class MobileProjectsParallelUi {
     appendTranscriptHeaderActions(
         header: HTMLElement,
         title: HTMLElement,
-        close: HTMLButtonElement,
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
-    ): void {
+    ): HTMLButtonElement {
         const titleWrap = document.createElement('div');
         titleWrap.className = 'theia-mobile-agent-log-title-wrap';
         const titleRow = document.createElement('div');
         titleRow.className = 'theia-mobile-agent-log-title-row';
-        const backSpacer = document.createElement('span');
-        backSpacer.className = 'theia-mobile-agent-log-title-back-spacer';
-        backSpacer.setAttribute('aria-hidden', 'true');
-        titleRow.append(backSpacer, title);
+        const backBtn = document.createElement('button');
+        backBtn.type = 'button';
+        backBtn.className = 'theia-mobile-agent-log-title-back theia-mobile-projects-header-back';
+        backBtn.title = nls.localize('qaap/mobileProjects/backFromTranscript', 'Back');
+        backBtn.setAttribute('aria-label', backBtn.title);
+        backBtn.innerHTML = '<span class="codicon codicon-chevron-left" aria-hidden="true"></span>';
+        titleRow.append(backBtn, title);
         titleWrap.append(titleRow);
         const actions = document.createElement('div');
         actions.className = 'theia-mobile-agent-log-header-actions';
@@ -91,8 +93,8 @@ export class MobileProjectsParallelUi {
             timelineBtn.addEventListener('click', () => this.deps.openTimeline(project, summary));
             actions.append(timelineBtn);
         }
-        actions.append(close);
         header.append(titleWrap, actions);
+        return backBtn;
     }
 
     createVariantRunSection(

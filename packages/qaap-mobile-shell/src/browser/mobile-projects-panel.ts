@@ -647,7 +647,7 @@ export class MobileProjectsPanel {
     protected readonly chatSessionModelDisposables = new Map<string, Disposable>();
     protected readonly chatSessionProjectIds = new Map<string, string>();
     protected chatServiceRefreshHandle: number | undefined;
-    /** Open transcript sheet — only one at a time, dismissed on tap-outside or close button. */
+    /** Open transcript sheet — only one at a time, dismissed on tap-outside or header back button. */
     protected transcriptSheet: HTMLElement | undefined;
     protected transcriptHeaderSubtitle: HTMLElement | undefined;
     protected transcriptSheetDispose: Disposable = Disposable.NULL;
@@ -8227,12 +8227,7 @@ export class MobileProjectsPanel {
         header.className = 'theia-mobile-agent-log-header';
         const title = document.createElement('h2');
         title.textContent = project.name;
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-agent-log-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
-        close.setAttribute('aria-label', close.title);
-        this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, close, project, summary);
+        const back = this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, project, summary);
         const subtitle = this.createExecutionHeaderSubtitle(project);
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
         this.transcriptHeaderSubtitle = subtitle;
@@ -8293,7 +8288,7 @@ export class MobileProjectsPanel {
             this.renderSubtitle();
             this.renderList();
         }
-        this.bindTranscriptSheetDismiss(close, backdrop);
+        this.bindTranscriptSheetDismiss(back, backdrop);
 
         let refreshInFlight = false;
         const refresh = async (): Promise<void> => {
@@ -9882,7 +9877,7 @@ export class MobileProjectsPanel {
         return this.overlayUi;
     }
 
-    protected bindTranscriptSheetDismiss(close: HTMLButtonElement, backdrop: HTMLElement): void {
+    protected bindTranscriptSheetDismiss(back: HTMLButtonElement, backdrop: HTMLElement): void {
         const dismiss = (ev?: Event): void => {
             ev?.preventDefault();
             ev?.stopPropagation();
@@ -9890,7 +9885,7 @@ export class MobileProjectsPanel {
         };
         // Dismiss on click only — closing on pointerdown removes the overlay before the
         // synthesized click fires, so the tap can land on the workbench back/account controls.
-        close.addEventListener('click', dismiss);
+        back.addEventListener('click', dismiss);
         backdrop.addEventListener('click', dismiss);
         const onKeyDown = (ev: KeyboardEvent): void => {
             if (ev.key === 'Escape') {
@@ -9901,7 +9896,7 @@ export class MobileProjectsPanel {
         const previousDispose = this.transcriptSheetDispose;
         this.transcriptSheetDispose = Disposable.create(() => {
             previousDispose.dispose();
-            close.removeEventListener('click', dismiss);
+            back.removeEventListener('click', dismiss);
             backdrop.removeEventListener('click', dismiss);
             document.removeEventListener('keydown', onKeyDown, true);
         });
@@ -10655,12 +10650,7 @@ export class MobileProjectsPanel {
         header.className = 'theia-mobile-agent-log-header';
         const title = document.createElement('h2');
         title.textContent = project.name;
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-agent-log-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
-        close.setAttribute('aria-label', close.title);
-        this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, close, project, summary);
+        const back = this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title, project, summary);
         const subtitle = this.createExecutionHeaderSubtitle(project);
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
         this.transcriptHeaderSubtitle = subtitle;
@@ -10683,7 +10673,7 @@ export class MobileProjectsPanel {
             this.renderSubtitle();
             this.renderList();
         }
-        this.bindTranscriptSheetDismiss(close, backdrop);
+        this.bindTranscriptSheetDismiss(back, backdrop);
         try {
             if (!this.chatService || !summary.sessionId) {
                 throw new Error(nls.localize('qaap/mobileProjects/agentViewUnavailable', 'Agent chat is unavailable.'));
