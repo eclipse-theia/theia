@@ -685,33 +685,44 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => this.currentTerminal?.selectAll()
         });
         commands.registerCommand(TerminalCommands.PASTE_TERMINAL, {
-            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget && this.terminalPreferences['terminal.enablePaste'],
+            isEnabled: () => !!this.getPasteTargetTerminal(),
             execute: async () => {
-                const terminal = this.shell.activeWidget;
-                if (terminal instanceof TerminalWidget && this.terminalPreferences['terminal.enablePaste']) {
-                    const text = await this.clipboardService.readText();
-                    if (text) {
-                        terminal.paste(text);
-                    }
+                const terminal = this.getPasteTargetTerminal();
+                if (!terminal) {
+                    return;
+                }
+                const text = await this.clipboardService.readText();
+                if (text) {
+                    terminal.paste(text);
                 }
             }
         });
         commands.registerCommand(TerminalCommands.COPY_TERMINAL_SELECTION, {
-            isEnabled: () => {
-                const terminal = this.shell.activeWidget;
-                return terminal instanceof TerminalWidget
-                    && terminal.hasSelection()
-                    && this.terminalPreferences['terminal.enableCopy'];
-            },
+            isEnabled: () => !!this.getCopySourceTerminal(),
             execute: () => {
-                const terminal = this.shell.activeWidget;
-                if (terminal instanceof TerminalWidget
-                    && terminal.hasSelection()
-                    && this.terminalPreferences['terminal.enableCopy']) {
-                    this.copyHandler.syncCopy(terminal.getSelection());
+                const terminal = this.getCopySourceTerminal();
+                if (!terminal) {
+                    return;
                 }
+                this.copyHandler.syncCopy(terminal.getSelection());
             }
         });
+    }
+
+    protected getPasteTargetTerminal(): TerminalWidget | undefined {
+        const terminal = this.shell.activeWidget;
+        if (terminal instanceof TerminalWidget && this.terminalPreferences['terminal.enablePaste']) {
+            return terminal;
+        }
+        return undefined;
+    }
+
+    protected getCopySourceTerminal(): TerminalWidget | undefined {
+        const terminal = this.shell.activeWidget;
+        if (terminal instanceof TerminalWidget && terminal.hasSelection() && this.terminalPreferences['terminal.enableCopy']) {
+            return terminal;
+        }
+        return undefined;
     }
 
     protected toggleTerminal(): void {
