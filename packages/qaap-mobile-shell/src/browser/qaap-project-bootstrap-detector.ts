@@ -13,6 +13,7 @@ import {
     parsePnpmWorkspaceYaml,
 } from './qaap-project-bootstrap-pm-detect';
 import {
+    QAAP_STATIC_DEV_PORT,
     QAAP_THEIA_DEV_PORT,
     QaapMonorepoAppCandidate,
     QaapMonorepoFlavor,
@@ -20,6 +21,12 @@ import {
     QaapProjectDescriptor,
     QaapProjectKind,
 } from './qaap-project-bootstrap-types';
+import {
+    STATIC_INDEX_FILE,
+    STATIC_INSTALL_COMMAND,
+    STATIC_ROOT_CANDIDATE_DIRS,
+    buildStaticServeCommand,
+} from './qaap-project-bootstrap-static';
 
 interface PackageJsonShape {
     name?: unknown;
@@ -67,7 +74,9 @@ export class QaapProjectBootstrapDetector {
     async detect(rootUri: URI): Promise<QaapProjectDescriptor | undefined> {
         const packageJsonUri = rootUri.resolve('package.json');
         if (!(await this.fileService.exists(packageJsonUri))) {
-            return undefined;
+            // No Node project: fall back to serving a plain static site (index.html) if present, so
+            // hand-written / exported front-ends get the same one-tap preview and AI bootstrap tools.
+            return this.detectStaticSite(rootUri);
         }
 
         let pkg: PackageJsonShape;
@@ -112,6 +121,51 @@ export class QaapProjectBootstrapDetector {
             monorepoFlavor: flavor,
             apps,
         };
+    }
+
+    /**
+     * Builds a descriptor for a static front-end (no `package.json`). Looks for `index.html` at the
+     * workspace root first, then in conventional output / source folders. The synthesized dev
+     * command runs a zero-dependency inline Node static server (see `qaap-project-bootstrap-static`),
+     * so the rest of the bootstrap pipeline (auto-run banner, AI tools, preview) works unchanged.
+     */
+    protected async detectStaticSite(rootUri: URI): Promise<QaapProjectDescriptor | undefined> {
+        const staticRootRel = await this.findStaticRoot(rootUri);
+        if (staticRootRel === undefined) {
+            return undefined;
+        }
+        const devCommand = buildStaticServeCommand(staticRootRel);
+        const label = staticRootRel === '.' ? 'index.html' : `${staticRootRel}/index.html`;
+        return {
+            rootUri,
+            name: rootUri.path.base || 'static-site',
+            kind: 'static',
+            packageManager: 'npm',
+            installCommand: STATIC_INSTALL_COMMAND,
+            devCommand,
+            devCommandLabel: `Static server · ${label}`,
+            expectedPort: QAAP_STATIC_DEV_PORT,
+            // Nothing to install for a static site, so the pipeline goes straight to "ready-to-run".
+            nodeModulesPresent: true,
+            monorepoFlavor: undefined,
+            apps: [],
+        };
+    }
+
+    /**
+     * Returns the directory (relative to the workspace root) that holds `index.html`, or `undefined`
+     * when the workspace is not a servable static site. `'.'` means the root itself.
+     */
+    protected async findStaticRoot(rootUri: URI): Promise<string | undefined> {
+        if (await this.fileService.exists(rootUri.resolve(STATIC_INDEX_FILE))) {
+            return '.';
+        }
+        for (const dir of STATIC_ROOT_CANDIDATE_DIRS) {
+            if (await this.fileService.exists(rootUri.resolve(dir).resolve(STATIC_INDEX_FILE))) {
+                return dir;
+            }
+        }
+        return undefined;
     }
 
     /**

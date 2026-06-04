@@ -30,6 +30,7 @@ export type QaapProjectKind =
     | 'node-svelte'
     | 'node-nuxt'
     | 'node-generic'
+    | 'static'
     | 'unknown';
 
 /** Sub-package inside a monorepo with its own runnable dev script. */
@@ -52,6 +53,9 @@ export interface QaapMonorepoAppCandidate {
 
 /** Default HTTP port for `@theia/*` example apps (`theia start`). */
 export const QAAP_THEIA_DEV_PORT = 3000;
+
+/** Default port the inline static server binds to for `kind: 'static'` projects (no `package.json`). */
+export const QAAP_STATIC_DEV_PORT = 8080;
 
 /**
  * Layout hint inferred from the lockfile / config files. We only need the marker presence at this

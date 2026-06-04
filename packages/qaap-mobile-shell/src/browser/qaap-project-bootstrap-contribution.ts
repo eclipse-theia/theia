@@ -32,6 +32,7 @@ function frameworkLabel(kind: QaapProjectDescriptor['kind']): string {
         case 'node-svelte': return 'SvelteKit';
         case 'node-nuxt': return 'Nuxt';
         case 'node-generic': return 'Node.js';
+        case 'static': return 'Static site';
         default: return 'Project';
     }
 }

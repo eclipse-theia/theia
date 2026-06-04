@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { QAAP_THEIA_DEV_PORT, QaapProjectKind } from './qaap-project-bootstrap-types';
+import { QAAP_STATIC_DEV_PORT, QAAP_THEIA_DEV_PORT, QaapProjectKind } from './qaap-project-bootstrap-types';
 
 /** Default dev port per framework when `package.json` does not imply one. */
 export function getImplicitDevPort(kind: QaapProjectKind): number | undefined {
     switch (kind) {
+        case 'static':
+            return QAAP_STATIC_DEV_PORT;
         case 'node-vite':
         case 'node-svelte':
             return 5173;

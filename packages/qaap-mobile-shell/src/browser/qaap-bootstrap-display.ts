@@ -17,6 +17,7 @@ export function qaapFrameworkLabel(kind: QaapProjectKind | undefined): string {
         case 'node-svelte': return 'SvelteKit';
         case 'node-nuxt': return 'Nuxt';
         case 'node-generic': return 'Node';
+        case 'static': return 'Static';
         default: return 'App';
     }
 }

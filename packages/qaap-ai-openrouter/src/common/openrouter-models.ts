@@ -30,16 +30,11 @@ export const OPENROUTER_DEFAULT_FREE_MODELS: readonly string[] = [
 
     // 1M context — best fit for the Coder agent's large system prompt.
     'nvidia/nemotron-3-super-120b-a12b:free',
-    // 262k context — modern, strong general models.
+    // 262k context — modern, strong general model.
     'google/gemma-4-31b-it:free',
-    'qwen/qwen3-next-80b-a3b-instruct:free',
-    'arcee-ai/trinity-large-thinking:free',
     // 256k context — NVIDIA Nemotron Nano (Nemo, but smaller / faster).
     'nvidia/nemotron-3-nano-30b-a3b:free',
-    // 200k context — MiniMax 2.5 (good agentic behavior).
-    'minimax/minimax-m2.5:free',
     // 131k context — well-tested, strong tool calling.
-    'meta-llama/llama-3.3-70b-instruct:free',
     'openai/gpt-oss-120b:free',
     'z-ai/glm-4.5-air:free',
     // Massive 405B model on a free endpoint — slow but capable.
