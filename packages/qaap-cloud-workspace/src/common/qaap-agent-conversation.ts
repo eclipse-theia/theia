@@ -88,6 +88,8 @@ export interface QaapAgentConversation {
      * Omitted/`true` enables YOLO / auto-approve for background runs.
      */
     readonly autoApprove?: boolean;
+    /** Resolved cross-project context (frontend PromptService), prepended to each agent turn's prompt. */
+    readonly contextPreamble?: string;
     /** Set on conversations created via {@link fork} — points at the parent's id. */
     readonly forkedFromId?: string;
     /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
@@ -174,6 +176,8 @@ export interface QaapCreateAgentConversationRequest {
     readonly parallelBaseCwd?: string;
     /** When `false`, tool calls need manual CLI approval on the VPS. */
     readonly autoApprove?: boolean;
+    /** Resolved cross-project context (frontend PromptService), stored on the conversation. */
+    readonly contextPreamble?: string;
 }
 
 export interface QaapPostAgentMessageRequest {

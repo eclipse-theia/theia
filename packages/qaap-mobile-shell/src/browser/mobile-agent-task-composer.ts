@@ -19,6 +19,7 @@ import { createAgentSelectField } from './qaap-agent-ui';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileSnackbar } from './mobile-snackbar';
+import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 
 export type { QaapAgentTaskCreated as MobileAgentTaskCreated };
 export { scopedAgentStorageKey } from '../common/qaap-agent-task-client';
@@ -58,6 +59,7 @@ export class MobileAgentTaskComposer {
     constructor(
         protected readonly activeTasks: MobileProjectsActiveTasks | undefined,
         protected readonly delegate: MobileAgentTaskComposerDelegate = {},
+        protected readonly contextProvider?: QaapBackgroundContextProvider,
     ) {
         this.node = document.createElement('div');
         this.node.className = 'theia-mobile-agent-composer';
@@ -209,7 +211,8 @@ export class MobileAgentTaskComposer {
             return;
         }
         const agent = this.selectedAgent ?? SHELL_AGENT_ID;
-        const body = buildCreateAgentTaskBody(draft, agent, this.cwd);
+        const contextPreamble = await this.contextProvider?.resolve();
+        const body = buildCreateAgentTaskBody(draft, agent, this.cwd, contextPreamble);
         this.busy = true;
         this.errorEl.textContent = '';
         this.renderState();

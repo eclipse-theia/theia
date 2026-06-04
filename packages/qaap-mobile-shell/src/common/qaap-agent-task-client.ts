@@ -105,6 +105,8 @@ export type QaapCreateAgentTaskBody =
         readonly agentModel?: QaapCreateAgentTaskQaiqModel;
         /** @deprecated Use {@link agentModel}. */
         readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+        /** Resolved cross-project context, prepended to the agent prompt by the backend runner. */
+        readonly contextPreamble?: string;
     };
 
 export function scopedAgentStorageKey(cwd: string): string {
@@ -245,11 +247,11 @@ export function isStickyComposerAgentSelected(
     return effective === agentId;
 }
 
-export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: string): QaapCreateAgentTaskBody {
+export function buildCreateAgentTaskBody(draft: string, agent: string, cwd: string, contextPreamble?: string): QaapCreateAgentTaskBody {
     if (agent === SHELL_AGENT_ID) {
         return { command: draft, cwd };
     }
-    const base: QaapCreateAgentTaskBody = { prompt: draft, agent, cwd };
+    const base = { prompt: draft, agent, cwd, ...(contextPreamble ? { contextPreamble } : {}) };
     const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
     return agentModel ? { ...base, agentModel, qaiqModel: agentModel } : base;
 }

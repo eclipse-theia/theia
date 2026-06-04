@@ -84,6 +84,12 @@
   display: none;
 }
 
+/* Native transcript list scrolls inside `.theia-mobile-agent-transcript` — avoid stacked edge fades on the flex wrapper. */
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat:has(> .theia-mobile-agent-transcript)::before,
+.theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat:has(> .theia-mobile-agent-transcript)::after {
+  display: none;
+}
+
 /* Bottom edge — short band, heavy blur for a glass dissolve into composer. */
 .chat-tree-view-widget::after,
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript::after,

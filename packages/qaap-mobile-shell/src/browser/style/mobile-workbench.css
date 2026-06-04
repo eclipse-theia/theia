@@ -12352,7 +12352,8 @@ body > .theia-mobile-transcript-files-menu {
   position: sticky;
   top: -12px;
   padding-bottom: 4px;
-  background: transparent;
+  /* Opaque backing so scrolling messages do not show through the reserved min-height slot. */
+  background: var(--theia-editor-background, var(--q-bg, #0a0a0a));
   pointer-events: none;
 }
 
@@ -12373,8 +12374,20 @@ body > .theia-mobile-transcript-files-menu {
     var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08))
   );
   position: relative;
-  max-height: calc(5 * 1.45em + 0.35em);
+  max-height: calc(5 * 1.58em + 0.35em);
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 2.6em),
+    transparent calc(100% - 0.35em)
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 2.6em),
+    transparent calc(100% - 0.35em)
+  );
 }
 
 .theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-stuck

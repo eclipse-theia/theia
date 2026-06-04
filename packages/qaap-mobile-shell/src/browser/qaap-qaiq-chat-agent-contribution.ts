@@ -9,10 +9,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChatAgent, ChatAgentLocation } from '@theia/ai-chat/lib/common/chat-agents';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableChatRequestModel } from '@theia/ai-chat/lib/common/chat-model';
-import { Agent, AgentService, AIVariableContext, PromptService } from '@theia/ai-core';
+import { Agent, AgentService } from '@theia/ai-core';
 import { QAAP_AGENT_TASK_API_PATH } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt, QAAP_BACKEND_INTERACTION_MODES } from '../common/qaap-sticky-composer-mode';
-import { QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID } from '../common/qaap-tasks-background-prompt-ids';
+import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import { QaapQaiqStreamAccumulator } from '../common/qaap-qaiq-stream';
 import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 
@@ -47,8 +47,8 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(PromptService)
-    protected readonly promptService: PromptService;
+    @inject(QaapBackgroundContextProvider)
+    protected readonly backgroundContext: QaapBackgroundContextProvider;
 
     protected registered = false;
     /** Shared SSE connection reused across concurrent task streams. */
@@ -138,7 +138,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             // Cloud CLI agents never read Theia's PromptService. We resolve the editable global
             // context fragment here and forward it as `contextPreamble`; the backend runner prepends
             // it plus the per-project `project-info` artifact (read from cwd) for every agent.
-            const contextPreamble = await this.resolveGlobalContext(request);
+            const contextPreamble = await this.backgroundContext.resolve(request);
             const task = await this.startTask(userPrompt, cwd, contextPreamble);
             const accumulator = new QaapQaiqStreamAccumulator();
             const sync = new QaapQaiqChatStreamSync(request);
@@ -330,21 +330,6 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
 
     protected stripMention(text: string): string {
         return text.replace(/^@qaiq\b\s*/i, '').trim();
-    }
-
-    /**
-     * Resolves the editable global Qaap background-agent context fragment, if registered. The
-     * per-project `project-info` artifact is NOT resolved here — the backend runner reads it from
-     * the workspace cwd so every agent gets it, not just QAIQ. Returns undefined when absent.
-     */
-    protected async resolveGlobalContext(context: AIVariableContext): Promise<string | undefined> {
-        try {
-            const resolved = await this.promptService.getResolvedPromptFragment(QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID, undefined, context);
-            const text = resolved?.text.trim();
-            return text || undefined;
-        } catch {
-            return undefined;
-        }
     }
 
     protected async startTask(prompt: string, cwd: string, contextPreamble?: string): Promise<{ id: string }> {

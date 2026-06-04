@@ -53,6 +53,7 @@ import { markMobileSidePanelCollapsed } from './mobile-side-sheet-collapse';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
+import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
@@ -196,6 +197,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MobileProjectsActiveTasks)
     protected readonly activeTasks: MobileProjectsActiveTasks;
+
+    @inject(QaapBackgroundContextProvider)
+    protected readonly backgroundContext: QaapBackgroundContextProvider;
 
     @inject(MobileProjectsConversations)
     protected readonly conversations: MobileProjectsConversations;
@@ -963,6 +967,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 homeMode,
                 activeTasks: this.activeTasks,
                 conversations: this.conversations,
+                backgroundContext: this.backgroundContext,
                 inboxStream: this.inboxStream,
                 conversationFlags: this.conversationFlags,
                 // Use WidgetManager with our own factory id (registered by the mobile-shell
@@ -1183,7 +1188,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                         { kind: 'success' }
                     );
                 },
-            });
+            }, this.backgroundContext);
             document.body.appendChild(this.agentTaskComposer.node);
             this.toDispose.push(Disposable.create(() => {
                 this.agentTaskComposer?.dispose();

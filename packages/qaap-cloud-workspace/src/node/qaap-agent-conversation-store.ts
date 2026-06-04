@@ -163,6 +163,7 @@ export class QaapAgentConversationStore {
             ...(request.parallelRunId ? { parallelRunId: request.parallelRunId } : {}),
             ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
             ...(request.autoApprove === false ? { autoApprove: false } : {}),
+            ...(request.contextPreamble ? { contextPreamble: request.contextPreamble } : {}),
             ...(() => {
                 const agentModel = request.agentModel ?? request.qaiqModel;
                 return agentModel && agentSupportsModelPicker(agentId)
@@ -844,6 +845,7 @@ export class QaapAgentConversationStore {
             cwd: conv.cwd,
             title: conv.title,
             ...(conv.autoApprove === false ? { autoApprove: false } : {}),
+            ...(conv.contextPreamble ? { contextPreamble: conv.contextPreamble } : {}),
             ...(() => {
                 const agentModel = conv.agentModel ?? conv.qaiqModel;
                 return agentSupportsModelPicker(turnAgentId) && agentModel

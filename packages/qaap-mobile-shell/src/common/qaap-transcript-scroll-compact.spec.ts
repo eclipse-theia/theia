@@ -14,7 +14,7 @@ describe('qaap-transcript-scroll-compact', () => {
 
     it('computes max height for five lines at 13px', () => {
         const max = transcriptScrollCompactMaxHeightPx(13, TRANSCRIPT_SCROLL_COMPACT_LINE_COUNT);
-        expect(max).to.equal(Math.ceil(13 * 1.45 * 5 + 6));
+        expect(max).to.equal(Math.ceil(13 * 1.58 * 5 + 6));
     });
 
     it('marks content taller than the compact cap as tall', () => {

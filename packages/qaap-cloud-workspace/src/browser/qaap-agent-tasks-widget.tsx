@@ -28,6 +28,7 @@ import {
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import { MobileProjectsActiveTasks, type MobileProjectTaskView } from '@theia/qaap-mobile-shell/lib/browser/mobile-projects-active-tasks';
 import { MobileProjectsConversations } from '@theia/qaap-mobile-shell/lib/browser/mobile-projects-conversations';
+import { QaapBackgroundContextProvider } from '@theia/qaap-mobile-shell/lib/browser/qaap-background-context-provider';
 
 /**
  * Desktop Work Hub parity — VPS agent conversations plus background CLI tasks for the
@@ -50,6 +51,9 @@ export class QaapAgentTasksWidget extends ReactWidget {
 
     @inject(MobileProjectsConversations)
     protected readonly conversations: MobileProjectsConversations;
+
+    @inject(QaapBackgroundContextProvider)
+    protected readonly backgroundContext: QaapBackgroundContextProvider;
 
     protected commandDraft = '';
     protected expandedTaskId: string | undefined;
@@ -397,11 +401,13 @@ export class QaapAgentTasksWidget extends ReactWidget {
                 await createAgentTask(body);
             } else {
                 const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
+                const contextPreamble = await this.backgroundContext.resolve();
                 await createConversation({
                     cwd,
                     agent,
                     title: draft,
                     message: draft,
+                    ...(contextPreamble ? { contextPreamble } : {}),
                     ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
                 });
             }

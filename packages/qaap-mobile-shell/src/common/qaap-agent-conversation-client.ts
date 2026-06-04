@@ -172,6 +172,8 @@ export interface QaapCreateConversationBody {
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     /** When `false`, tool calls need manual CLI approval on the VPS. */
     readonly autoApprove?: boolean;
+    /** Resolved cross-project context, stored on the conversation and prepended to each agent turn. */
+    readonly contextPreamble?: string;
 }
 
 export async function listConversationsForCwd(cwd: string): Promise<QaapAgentConversationSummaryDTO[]> {

@@ -68,6 +68,7 @@ import { QaapChatInputCodexLayoutContribution } from './qaap-chat-input-codex-co
 import { MobileConnectionStatusContribution } from './mobile-connection-status-contribution';
 import { MobileChatSessionRestoreContribution } from './mobile-chat-session-restore-contribution';
 import { QaapQaiqChatAgentContribution } from './qaap-qaiq-chat-agent-contribution';
+import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import { QaapQaiqBashToolRenderer } from './qaap-qaiq-bash-tool-renderer';
 import { QaapQaiqGenericToolRenderer } from './qaap-qaiq-generic-tool-renderer';
 import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-layout-contribution';
@@ -146,6 +147,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(MobileConnectionStatusContribution);
     bind(MobileChatSessionRestoreContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileChatSessionRestoreContribution);
+    bind(QaapBackgroundContextProvider).toSelf().inSingletonScope();
     bind(QaapQaiqChatAgentContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapQaiqChatAgentContribution);
 

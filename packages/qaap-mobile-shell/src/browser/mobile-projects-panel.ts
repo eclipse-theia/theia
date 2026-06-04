@@ -37,6 +37,7 @@ import { MobileProjectsConversationFlags } from './mobile-projects-conversation-
 import { MobileProjectsParallelUi } from './mobile-projects-parallel-ui';
 import { MobileProjectsTeamUi } from './mobile-projects-team-ui';
 import { MobileProjectsTeamHubUi, type WorkHubApprovalItem } from './mobile-projects-team-hub-ui';
+import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import {
     collectAgentMembers,
     countRunningTeamMembers,
@@ -333,6 +334,8 @@ export interface MobileProjectsPanelOptions {
      * of firing fire-and-forget background tasks.
      */
     conversations?: MobileProjectsConversations;
+    /** Resolves the editable global background-agent context for VPS conversations. */
+    backgroundContext?: QaapBackgroundContextProvider;
     /** GitHub webhook inbox SSE — refreshes the Work Hub inbox without polling. */
     inboxStream?: MobileWorkHubInboxStream;
     /**
@@ -646,6 +649,7 @@ export class MobileProjectsPanel {
     protected readonly homeMode: boolean;
     protected readonly activeTasks: MobileProjectsActiveTasks | undefined;
     protected readonly conversations: MobileProjectsConversations | undefined;
+    protected readonly backgroundContext: QaapBackgroundContextProvider | undefined;
     protected readonly inboxStream: MobileWorkHubInboxStream | undefined;
     protected readonly conversationFlags: MobileProjectsConversationFlags | undefined;
     protected readonly createChatInputWidget: MobileProjectsPanelOptions['createChatInputWidget'];
@@ -730,6 +734,7 @@ export class MobileProjectsPanel {
         this.homeMode = !!options.homeMode;
         this.activeTasks = options.activeTasks;
         this.conversations = options.conversations;
+        this.backgroundContext = options.backgroundContext;
         this.inboxStream = options.inboxStream;
         this.conversationFlags = options.conversationFlags;
         this.createChatInputWidget = options.createChatInputWidget;
@@ -8185,11 +8190,16 @@ export class MobileProjectsPanel {
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
         const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
+        const contextPreamble = await this.backgroundContext?.resolve({
+            text: draft,
+            variables: options.variables,
+        });
         const conversation = await createConversation({
             cwd,
             agent,
             title: draft,
             message,
+            ...(contextPreamble ? { contextPreamble } : {}),
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
             ...(options.autoApprove === false
                 ? { autoApprove: false }

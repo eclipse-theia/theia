@@ -6,8 +6,8 @@
 /** Lines shown per message while the transcript list is scrolling. */
 export const TRANSCRIPT_SCROLL_COMPACT_LINE_COUNT = 5;
 
-/** Matches transcript bubble `line-height: 1.45` in mobile-workbench.css. */
-export const TRANSCRIPT_SCROLL_COMPACT_LINE_HEIGHT_EM = 1.45;
+/** Matches user markdown bubble `line-height: 1.58` in mobile-workbench.css. */
+export const TRANSCRIPT_SCROLL_COMPACT_LINE_HEIGHT_EM = 1.58;
 
 /**
  * Max content height (px) before a bubble is treated as "long" and may compact while scrolling.
