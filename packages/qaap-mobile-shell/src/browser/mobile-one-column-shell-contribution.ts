@@ -76,6 +76,9 @@ import { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaa
 import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
 import { MobileSnackbar } from './mobile-snackbar';
 import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
+import { MobileWorkHubPreferencesSheet } from './mobile-work-hub-preferences-sheet';
+import { MobileWorkHubAiConfigurationSheet } from './mobile-work-hub-ai-configuration-sheet';
+import { AIConfigurationSelectionService } from '@theia/ai-ide/lib/browser/ai-configuration/ai-configuration-service';
 import {
     clearMobileProjectsHomeVisible,
     clearMobileWorkHubBootGuard,
@@ -260,6 +263,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
 
+    @inject(AIConfigurationSelectionService)
+    protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
+
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
         typeof window !== 'undefined' ? window.matchMedia(MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY) : undefined;
@@ -280,6 +286,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected projectsPanel: MobileProjectsPanel | undefined;
     protected pullRequestPanel: MobilePullRequestPanel | undefined;
     protected agentTaskComposer: MobileAgentTaskComposer | undefined;
+    protected workHubPreferencesSheet: MobileWorkHubPreferencesSheet | undefined;
+    protected workHubAiConfigurationSheet: MobileWorkHubAiConfigurationSheet | undefined;
     protected projectsCount = 0;
     protected authOpenFirstRepoListenerInstalled = false;
     /**
@@ -1010,6 +1018,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 clipboard: this.clipboardService,
                 readPreference: key => this.preferenceService.get(key),
                 quickInputService: this.quickInputService,
+                openPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),
+                openAiConfigurationSheet: tabId => this.openWorkHubAiConfigurationSheet(tabId),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -1182,6 +1192,33 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }));
         }
         await this.agentTaskComposer.show(project, cwd);
+    }
+
+    protected async openWorkHubPreferencesSheet(query?: string): Promise<void> {
+        if (!this.workHubPreferencesSheet) {
+            this.workHubPreferencesSheet = new MobileWorkHubPreferencesSheet(this.widgetManager);
+            document.body.appendChild(this.workHubPreferencesSheet.node);
+            this.toDispose.push(Disposable.create(() => {
+                this.workHubPreferencesSheet?.dispose();
+                this.workHubPreferencesSheet = undefined;
+            }));
+        }
+        await this.workHubPreferencesSheet.show(query);
+    }
+
+    protected async openWorkHubAiConfigurationSheet(tabId?: string): Promise<void> {
+        if (!this.workHubAiConfigurationSheet) {
+            this.workHubAiConfigurationSheet = new MobileWorkHubAiConfigurationSheet(
+                this.widgetManager,
+                this.aiConfigurationSelectionService,
+            );
+            document.body.appendChild(this.workHubAiConfigurationSheet.node);
+            this.toDispose.push(Disposable.create(() => {
+                this.workHubAiConfigurationSheet?.dispose();
+                this.workHubAiConfigurationSheet = undefined;
+            }));
+        }
+        await this.workHubAiConfigurationSheet.show(tabId);
     }
 
     protected async toggleProjectsPanel(): Promise<void> {

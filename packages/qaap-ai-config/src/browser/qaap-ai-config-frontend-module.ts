@@ -9,6 +9,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences/preference-schema';
 import { QaapCoderPromptContribution } from './qaap-coder-prompt-contribution';
+import { QaapTasksBackgroundPromptContribution } from './qaap-tasks-background-prompt-contribution';
 import { QaapAiModelDefaultsContribution } from './qaap-ai-model-defaults-contribution';
 import { LanguageModelOptionContribution } from '@theia/ai-ide/lib/browser/ai-configuration/language-model-option-contribution';
 import { QaapLanguageModelOptionContribution } from './qaap-language-model-option-contribution';
@@ -16,6 +17,9 @@ import { QaapLanguageModelOptionContribution } from './qaap-language-model-optio
 export default new ContainerModule(bind => {
     bind(QaapCoderPromptContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCoderPromptContribution);
+
+    bind(QaapTasksBackgroundPromptContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapTasksBackgroundPromptContribution);
 
     bind(QaapAiModelDefaultsContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(QaapAiModelDefaultsContribution);

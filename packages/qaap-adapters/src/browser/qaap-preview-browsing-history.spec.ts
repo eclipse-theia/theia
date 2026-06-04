@@ -9,10 +9,30 @@ import {
     groupPreviewBrowsingHistory,
     previewHistoryEntryLabel,
     QAAP_PREVIEW_HISTORY_WIDTH_MIN_PX,
+    readPreviewBrowsingHistory,
+    recordPreviewBrowsingVisit,
     type QaapPreviewHistoryEntry,
 } from './qaap-preview-browsing-history';
 
 describe('qaap-preview-browsing-history', () => {
+
+    const storage = new Map<string, string>();
+
+    beforeEach(() => {
+        storage.clear();
+        const mockStorage = {
+            getItem: (key: string) => storage.get(key) ?? null,
+            setItem: (key: string, value: string) => { storage.set(key, value); },
+            removeItem: (key: string) => { storage.delete(key); },
+            clear: () => { storage.clear(); },
+            key: () => null,
+            length: 0,
+        };
+        const g = global as typeof globalThis & { localStorage?: Storage; window?: Window & typeof globalThis };
+        g.localStorage = mockStorage;
+        g.window = g as unknown as Window & typeof globalThis;
+        g.window.localStorage = mockStorage;
+    });
 
     const now = new Date('2026-06-02T15:00:00Z').getTime();
     const todayMorning: QaapPreviewHistoryEntry = {
@@ -46,5 +66,14 @@ describe('qaap-preview-browsing-history', () => {
     it('clamps history panel width to container bounds', () => {
         expect(clampPreviewHistoryPanelWidth(100)).to.equal(QAAP_PREVIEW_HISTORY_WIDTH_MIN_PX);
         expect(clampPreviewHistoryPanelWidth(900, 300)).to.equal(Math.round(300 * 0.92));
+    });
+
+    it('records active dev ports and dedupes proxy vs direct URLs', () => {
+        recordPreviewBrowsingVisit('http://localhost:3000/qaap-dev/3001/', 'App 3001');
+        recordPreviewBrowsingVisit('http://localhost:3001/', 'App 3001 again');
+        const entries = readPreviewBrowsingHistory();
+        expect(entries).to.have.length(1);
+        expect(entries[0].url).to.equal('http://localhost:3001/');
+        expect(entries[0].title).to.equal('App 3001 again');
     });
 });

@@ -1739,6 +1739,16 @@
   pointer-events: auto;
 }
 
+/*
+ * Work Hub home list: skip transform on the visible panel so the FAB's position:fixed
+ * anchors to the viewport (transformed ancestors trap fixed positioning).
+ */
+#theia-app-shell.theia-mod-mobile-one-column
+  .theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome.theia-mod-visible {
+  transform: none;
+  transition: opacity 180ms ease;
+}
+
 /* Home mode: panel is the workbench main view, not a dismissable sheet — drop the drag handle. */
 #theia-app-shell.theia-mod-mobile-one-column .theia-mobile-projects.theia-mod-home .theia-mobile-sheet-grabber {
   display: none;
@@ -1871,7 +1881,7 @@ body.theia-mobile-mod-workhub-composer-header .theia-workbench-right-controls .t
 
 .theia-mobile-projects-fab {
   position: absolute;
-  right: calc(20px + env(safe-area-inset-right, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
   bottom: calc(var(--theia-mobile-projects-fab-bottom, 16px) + var(--theia-mobile-projects-fab-lift, 0px));
   z-index: 4;
   display: inline-flex;
@@ -1911,11 +1921,12 @@ body.theia-mobile-mod-workhub-composer-header .theia-workbench-right-controls .t
 }
 
 /*
- * Landing hub list: pin FAB to the viewport — 16px above the bottom nav (Material-style).
- * Avoids double-counting the panel's padding-bottom and keeps a consistent 16px gap.
+ * Work Hub list: Material FAB — 16px from the right safe area, 16px above the bottom nav.
+ * Panel class (not body) drives placement so it stays correct even if landing chrome lags.
  */
-body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
-  .theia-mobile-projects.theia-mod-home
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome:not(.theia-mod-repo-expanded)
+  .theia-mobile-projects-fab,
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome.theia-mod-hub-routines
   .theia-mobile-projects-fab {
   position: fixed;
   right: calc(16px + env(safe-area-inset-right, 0px));
@@ -1926,11 +1937,9 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   z-index: 9400;
 }
 
-body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
-  .theia-mobile-projects.theia-mod-hub-repos:not(.theia-mod-repo-expanded)
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome.theia-mod-hub-repos:not(.theia-mod-repo-expanded)
   .theia-mobile-projects-scroll,
-body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
-  .theia-mobile-projects.theia-mod-hub-routines
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome.theia-mod-hub-routines
   .theia-mobile-projects-scroll {
   padding-bottom: calc(72px + var(--theia-mobile-bottom-bar-height, 56px) + env(safe-area-inset-bottom, 0px));
 }
@@ -2665,7 +2674,8 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
 }
 
 /* The landing panel claims the full viewport (no top bar peeking). */
-body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column .theia-mobile-projects.theia-mod-home {
+body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column .theia-mobile-projects.theia-mod-home,
+#theia-app-shell.theia-mod-mobile-one-column .theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome {
   inset: 0 !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
@@ -2674,7 +2684,9 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column .thei
 
 body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   #theia-app-shell.theia-mod-mobile-one-column
-  .theia-mobile-projects.theia-mod-home {
+  .theia-mobile-projects.theia-mod-home,
+#theia-app-shell.theia-mod-mobile-one-column
+  .theia-mobile-projects.theia-mod-home.theia-mod-hub-list-chrome {
   padding-bottom: calc(var(--theia-mobile-bottom-bar-height, 56px) + env(safe-area-inset-bottom, 0px));
 }
 
@@ -7781,6 +7793,305 @@ body.theia-mobile-mod-landing
   line-height: 1.5;
   color: var(--theia-foreground);
   background: var(--theia-editorWidget-background);
+}
+
+/*-----------------------------------------------------------------------------
+| Work Hub embedded Settings (AI Features from account menu).
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-work-hub-preferences {
+  position: fixed;
+  inset: 0;
+  z-index: 12960;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-preferences.theia-mod-visible {
+  pointer-events: auto;
+}
+
+.theia-mobile-work-hub-preferences-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.theia-mobile-work-hub-preferences.theia-mod-visible .theia-mobile-work-hub-preferences-backdrop {
+  opacity: 1;
+}
+
+.theia-mobile-work-hub-preferences-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+  margin-top: max(8px, env(safe-area-inset-top, 0px));
+  margin-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: 16px 16px 0 0;
+  background: var(--theia-editor-background);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
+  transform: translateY(12px);
+  opacity: 0;
+  transition: transform 220ms ease, opacity 220ms ease;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.theia-mobile-work-hub-preferences.theia-mod-visible .theia-mobile-work-hub-preferences-sheet {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.theia-mobile-work-hub-preferences-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 10px 8px;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border, rgba(128, 128, 128, 0.35));
+}
+
+.theia-mobile-work-hub-preferences-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-work-hub-preferences-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--theia-foreground);
+  cursor: pointer;
+}
+
+.theia-mobile-work-hub-preferences-close:hover,
+.theia-mobile-work-hub-preferences-close:focus-visible {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-mobile-work-hub-preferences-widget-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-mobile-work-hub-preferences-embed.theia-settings-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  grid-template-areas: unset;
+  grid-template-columns: unset;
+  grid-template-rows: unset;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-searchbar-widget,
+.theia-mobile-work-hub-preferences-embed .preferences-tabbar-widget {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-searchbar-widget {
+  margin: 8px 12px 0;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-tabbar-widget {
+  margin: 4px 12px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.theia-mobile-work-hub-preferences-embed .settings-search-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-tree-widget {
+  flex: 0 0 auto;
+  max-height: min(38vh, 280px);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-tree-widget[hidden],
+.theia-mobile-work-hub-preferences-embed .preferences-tree-widget.lm-mod-hidden {
+  display: none !important;
+  flex: 0 0 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-editor-widget {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-mobile-work-hub-preferences-embed .preferences-editor-widget.full-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-column: unset;
+}
+
+.theia-mobile-work-hub-preferences-embed .settings-main,
+.theia-mobile-work-hub-preferences-embed .settings-main-scroll-container {
+  min-height: 0;
+}
+
+.theia-mobile-work-hub-preferences-embed .settings-main-scroll-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 16px;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-preferences-embed .pref-content-container .pref-input,
+.theia-mobile-work-hub-preferences-embed .theia-select-component {
+  max-width: none;
+  width: 100%;
+}
+
+.theia-mobile-work-hub-preferences-embed .settings-section > li {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.theia-mobile-work-hub-preferences-embed li.single-pref {
+  padding: 12px 10px 16px;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .theia-mobile-work-hub-preferences-sheet {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .theia-mobile-work-hub-preferences-embed .settings-search-container .settings-search-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/*-----------------------------------------------------------------------------
+| Work Hub embedded AI Configuration (agents / MCP / prompts from account menu).
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-work-hub-ai-config-embed.theia-settings-container,
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-widget {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-widget .lm-DockPanel,
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-widget .lm-DockPanel-widget {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-widget .lm-TabBar {
+  flex: 0 0 auto;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-widget [role="tablist"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-list-detail-configuration-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-list {
+  flex: 0 0 auto;
+  max-height: min(34vh, 260px);
+  min-height: 0;
+  overflow-y: auto;
+  border-right: none;
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-detail {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-value-row {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-configuration-value-row-value,
+.theia-mobile-work-hub-ai-config-embed .theia-select,
+.theia-mobile-work-hub-ai-config-embed .theia-select-component {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-mobile-work-hub-ai-config-embed .ai-templates-table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .theia-mobile-work-hub-ai-config-embed .ai-configuration-list {
+    display: block;
+  }
+
+  .theia-mobile-work-hub-ai-config-embed .ai-configuration-detail {
+    padding: 10px 12px 16px;
+  }
 }
 
 /*-----------------------------------------------------------------------------

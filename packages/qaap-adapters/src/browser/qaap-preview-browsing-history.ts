@@ -3,6 +3,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import {
+    canonicalPreviewHistoryKey,
+    toPreviewHistoryDisplayUrl,
+} from './qaap-preview-url-utils';
+
 export const QAAP_PREVIEW_BROWSING_HISTORY_STORAGE_KEY = 'qaap.preview.browsingHistory';
 export const QAAP_PREVIEW_BOOKMARK_BAR_PREF_KEY = 'qaap.preview.showBookmarkBar';
 export const QAAP_PREVIEW_HISTORY_WIDTH_STORAGE_KEY = 'qaap.preview.historyPanelWidth';
@@ -89,15 +94,18 @@ export function writePreviewBrowsingHistory(entries: readonly QaapPreviewHistory
 }
 
 export function recordPreviewBrowsingVisit(url: string, title?: string): QaapPreviewHistoryEntry[] {
-    const normalized = url.trim();
-    if (!normalized || normalized === 'about:blank') {
+    const displayUrl = toPreviewHistoryDisplayUrl(url);
+    if (!displayUrl || displayUrl === 'about:blank') {
         return readPreviewBrowsingHistory();
     }
+    const historyKey = canonicalPreviewHistoryKey(displayUrl);
     const now = Date.now();
-    const nextTitle = title?.trim() || previewHistoryEntryLabel({ url: normalized, title: '', visitedAt: now });
-    const withoutDup = readPreviewBrowsingHistory().filter(entry => entry.url !== normalized);
+    const nextTitle = title?.trim() || previewHistoryEntryLabel({ url: displayUrl, title: '', visitedAt: now });
+    const withoutDup = readPreviewBrowsingHistory().filter(
+        entry => canonicalPreviewHistoryKey(entry.url) !== historyKey,
+    );
     const next: QaapPreviewHistoryEntry[] = [
-        { url: normalized, title: nextTitle, visitedAt: now },
+        { url: displayUrl, title: nextTitle, visitedAt: now },
         ...withoutDup,
     ].slice(0, MAX_ENTRIES);
     writePreviewBrowsingHistory(next);

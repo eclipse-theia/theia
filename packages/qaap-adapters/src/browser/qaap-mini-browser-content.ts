@@ -160,7 +160,10 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     }
 
     protected override go(location: string, options?: Parameters<MiniBrowserContent['go']>[1]): Promise<void> {
-        return super.go(normalizePreviewUrlForSameOrigin(location), options);
+        const normalized = normalizePreviewUrlForSameOrigin(location);
+        const result = super.go(normalized, options);
+        this.previewChrome?.recordNavigationIntent(location);
+        return result;
     }
 
     protected effectiveStartPage(): string | undefined {
@@ -335,7 +338,9 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     protected override onFrameLoad(): void {
         super.onFrameLoad();
         this.ensureFramePicker().onFrameLoad();
-        this.previewChrome?.recordVisit();
+        if (this.frameSrc()) {
+            this.previewChrome?.recordVisit();
+        }
     }
 
     /** Starts the in-iframe DOM picker (toolbar, command, AI tool). */

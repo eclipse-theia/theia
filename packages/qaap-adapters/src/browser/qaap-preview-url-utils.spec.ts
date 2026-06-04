@@ -4,7 +4,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { buildSameOriginDevPreviewUrl, normalizePreviewUrlForSameOrigin } from './qaap-preview-url-utils';
+import {
+    buildSameOriginDevPreviewUrl,
+    canonicalPreviewHistoryKey,
+    normalizePreviewUrlForSameOrigin,
+    toPreviewHistoryDisplayUrl,
+} from './qaap-preview-url-utils';
 
 describe('qaap-preview-url-utils', () => {
 
@@ -23,5 +28,20 @@ describe('qaap-preview-url-utils', () => {
     it('buildSameOriginDevPreviewUrl uses the proxy path', () => {
         expect(buildSameOriginDevPreviewUrl(5173, 'http://localhost:3000'))
             .to.equal('http://localhost:3000/qaap-dev/5173/');
+    });
+
+    it('toPreviewHistoryDisplayUrl maps proxy paths to direct localhost ports', () => {
+        expect(toPreviewHistoryDisplayUrl('http://localhost:3000/qaap-dev/3001/', 'http://localhost:3000'))
+            .to.equal('http://localhost:3001/');
+        expect(toPreviewHistoryDisplayUrl('http://localhost:3000/qaap-dev/5173/app', 'http://localhost:3000'))
+            .to.equal('http://localhost:5173/app');
+    });
+
+    it('canonicalPreviewHistoryKey dedupes proxy and direct dev URLs', () => {
+        const origin = 'http://localhost:3000';
+        const direct = 'http://localhost:3001/';
+        const proxied = 'http://localhost:3000/qaap-dev/3001/';
+        expect(canonicalPreviewHistoryKey(direct, origin))
+            .to.equal(canonicalPreviewHistoryKey(proxied, origin));
     });
 });

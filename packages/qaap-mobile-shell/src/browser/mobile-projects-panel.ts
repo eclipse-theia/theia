@@ -230,6 +230,9 @@ import {
 import { resolveQaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
 import {
     filterCatalogSections,
+    QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB,
+    QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND,
+    QAAP_WORK_HUB_AI_FEATURES_COMMAND,
     QAAP_WORK_HUB_GETTING_STARTED,
     QAAP_WORK_HUB_WORKFLOWS,
     countCatalogItems,
@@ -371,6 +374,10 @@ export interface MobileProjectsPanelOptions {
     readPreference?: (key: string) => unknown;
     /** Monaco quick input — Work Hub search opens as a top overlay instead of an inline field. */
     quickInputService?: QuickInputService;
+    /** Opens AI / Settings preferences inside the Work Hub instead of the IDE main area. */
+    openPreferencesSheet?: (query?: string) => Promise<void>;
+    /** Opens AI Configuration (agents, MCP, prompts) inside the Work Hub overlay. */
+    openAiConfigurationSheet?: (tabId?: string) => Promise<void>;
 }
 
 type WorkHubSearchTarget =
@@ -659,6 +666,8 @@ export class MobileProjectsPanel {
     protected readonly previewClipboard: MobileProjectsPanelOptions['clipboard'];
     protected readonly readPreference: MobileProjectsPanelOptions['readPreference'];
     protected readonly quickInputService: QuickInputService | undefined;
+    protected readonly openPreferencesSheet: MobileProjectsPanelOptions['openPreferencesSheet'];
+    protected readonly openAiConfigurationSheet: MobileProjectsPanelOptions['openAiConfigurationSheet'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -741,6 +750,8 @@ export class MobileProjectsPanel {
         this.previewClipboard = options.clipboard;
         this.readPreference = options.readPreference;
         this.quickInputService = options.quickInputService;
+        this.openPreferencesSheet = options.openPreferencesSheet;
+        this.openAiConfigurationSheet = options.openAiConfigurationSheet;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {
@@ -2660,10 +2671,12 @@ export class MobileProjectsPanel {
      */
     protected syncLandingHubListChrome(): void {
         if (!this.homeMode) {
+            this.root.classList.remove('theia-mod-hub-list-chrome');
             setMobileLandingHubListChrome(false);
             return;
         }
         const hubList = this.visible && this.expandedId === undefined;
+        this.root.classList.toggle('theia-mod-hub-list-chrome', hubList);
         setMobileLandingHubListChrome(hubList);
     }
 
@@ -5677,6 +5690,14 @@ export class MobileProjectsPanel {
     protected async runCatalogAction(action: WorkHubCatalogAction): Promise<void> {
         switch (action.type) {
             case 'command':
+                if (action.commandId === QAAP_WORK_HUB_AI_FEATURES_COMMAND && this.openPreferencesSheet) {
+                    await this.openPreferencesSheet('ai-features');
+                    return;
+                }
+                if (action.commandId === QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND && this.openAiConfigurationSheet) {
+                    await this.openAiConfigurationSheet(QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB);
+                    return;
+                }
                 if (this.commands.getCommand(action.commandId)) {
                     await this.commands.executeCommand(action.commandId);
                 }

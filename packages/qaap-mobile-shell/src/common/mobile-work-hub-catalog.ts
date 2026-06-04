@@ -6,6 +6,9 @@
 /** Same command ids as the IDE welcome quick actions / settings. */
 export const QAAP_WORK_HUB_COLOR_THEME_COMMAND = 'workbench.action.selectTheme';
 export const QAAP_WORK_HUB_AI_FEATURES_COMMAND = 'ai-chat-ui.show-settings';
+export const QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND = 'aiConfiguration:open';
+/** Default tab when opening AI Configuration from the Work Hub account menu. */
+export const QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB = 'ai-agent-configuration-container-widget';
 
 export type WorkHubCatalogHubTarget = 'home' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff';
 
@@ -58,14 +61,13 @@ export const QAAP_WORK_HUB_GETTING_STARTED: WorkHubCatalogSection = {
             searchText: 'ai features settings api keys models agents chat',
         },
         {
-            id: 'workflow-github',
+            id: 'workflow-ai-configuration',
             sectionId: 'start',
-            title: 'Connect GitHub',
-            subtitle: 'Sign in to load repos, pull requests, and review handoffs.',
-            meta: '1 step',
-            iconClass: 'codicon-github',
-            action: { type: 'hub-view', view: 'tasks' },
-            searchText: 'github sign in repositories pull requests inbox review',
+            title: 'AI Configuration',
+            subtitle: 'Agents, prompts, MCP servers, and model aliases.',
+            iconClass: 'codicon-hubot',
+            action: { type: 'command', commandId: QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND },
+            searchText: 'ai configuration agents variables mcp prompt fragments model aliases tools skills',
         },
     ],
 };

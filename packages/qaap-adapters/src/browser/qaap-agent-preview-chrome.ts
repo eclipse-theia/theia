@@ -135,16 +135,24 @@ export class QaapAgentPreviewChromeController implements Disposable {
         }
     }
 
+    recordNavigationIntent(url: string): void {
+        const trimmed = url.trim();
+        if (!trimmed || trimmed === 'about:blank') {
+            return;
+        }
+        recordPreviewBrowsingVisit(trimmed, this.host.getPageTitle());
+        this.refreshBookmarkBar();
+        if (this.historyOpen) {
+            this.renderHistoryList();
+        }
+    }
+
     recordVisit(): void {
         const url = this.host.getCurrentUrl();
         if (!url) {
             return;
         }
-        recordPreviewBrowsingVisit(url, this.host.getPageTitle());
-        this.refreshBookmarkBar();
-        if (this.historyOpen) {
-            this.renderHistoryList();
-        }
+        this.recordNavigationIntent(url);
     }
 
     toggleHistory(open?: boolean): void {
@@ -639,6 +647,7 @@ export function mountEmbeddedAgentPreviewChrome(
     root.append(toolbar, body);
 
     let currentUrl = normalizePreviewNavigateUrl(options.url);
+    let previewController: QaapAgentPreviewChromeController | undefined;
 
     const adapter: QaapAgentPreviewChromeHost = {
         getRoot: () => root,
@@ -661,6 +670,7 @@ export function mountEmbeddedAgentPreviewChrome(
             } else {
                 frame.src = next;
             }
+            previewController?.recordNavigationIntent(url);
             options.onNavigate?.(next);
         },
         reload: () => {
@@ -716,6 +726,7 @@ export function mountEmbeddedAgentPreviewChrome(
         notify: options.notify,
         embedded: true,
     });
+    previewController = controller;
     controller.attachToolbarControls(toolbar, refreshBtn);
     disposables.push(controller);
 
@@ -795,6 +806,7 @@ export function attachAgentPreviewChromeToMiniBrowserContent(
         inspectorToggleCommandId?: string;
     },
 ): QaapAgentPreviewChromeController {
+    let previewController: QaapAgentPreviewChromeController | undefined;
     const host: QaapAgentPreviewChromeHost = {
         getRoot: () => content.node,
         getFrame: () => content.frame,
@@ -808,6 +820,7 @@ export function attachAgentPreviewChromeToMiniBrowserContent(
         },
         navigate: (url, options) => {
             const normalized = normalizeMiniBrowserOpenUrl(url) || url;
+            previewController?.recordNavigationIntent(url);
             if (options?.hard) {
                 const bust = normalized.includes('?')
                     ? `${normalized}&_qaap_cache_bust=${Date.now()}`
@@ -847,6 +860,7 @@ export function attachAgentPreviewChromeToMiniBrowserContent(
         clipboard: deps.clipboard,
         messageService: deps.messageService,
     });
+    previewController = controller;
     const toolbar = content.node.querySelector('.theia-mini-browser-toolbar, .theia-mini-browser-toolbar-read-only');
     if (toolbar instanceof HTMLElement) {
         const firstNav = toolbar.querySelector('.theia-mini-browser-previous');

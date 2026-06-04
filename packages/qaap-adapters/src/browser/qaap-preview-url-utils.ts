@@ -69,3 +69,80 @@ export function buildSameOriginDevPreviewUrl(port: number, publicOrigin?: string
     }
     return `${origin}${QAAP_DEV_PREVIEW_PATH_PREFIX}/${port}/`;
 }
+
+export interface QaapPreviewProxyPath {
+    readonly port: number;
+    readonly targetPath: string;
+}
+
+/** Parses `/qaap-dev/5173/...` paths on the IDE origin. */
+export function parsePreviewProxyPath(pathname: string): QaapPreviewProxyPath | undefined {
+    const match = /^\/qaap-dev\/(\d+)(\/.*)?$/.exec(pathname);
+    if (!match) {
+        return undefined;
+    }
+    const port = parseDevPort(match[1]);
+    if (port === undefined) {
+        return undefined;
+    }
+    return { port, targetPath: match[2] || '/' };
+}
+
+/**
+ * User-facing URL for browsing history (direct `localhost:PORT` instead of `/qaap-dev/:port/`).
+ */
+function stripPreviewHistoryCacheBust(url: URL): void {
+    url.searchParams.delete('_qaap_cache_bust');
+    if (!url.searchParams.toString()) {
+        url.search = '';
+    }
+}
+
+export function toPreviewHistoryDisplayUrl(url: string, publicOrigin?: string): string {
+    const trimmed = url.trim();
+    if (!trimmed) {
+        return trimmed;
+    }
+    const origin = (publicOrigin ?? ideOrigin())?.replace(/\/+$/, '');
+    try {
+        const parsed = new URL(trimmed, origin);
+        stripPreviewHistoryCacheBust(parsed);
+        const proxy = parsePreviewProxyPath(parsed.pathname);
+        if (proxy) {
+            const suffix = `${proxy.targetPath}${parsed.search}${parsed.hash}` || '/';
+            const path = suffix.startsWith('/') ? suffix : `/${suffix}`;
+            return `http://localhost:${proxy.port}${path}`;
+        }
+        if (origin) {
+            const ide = new URL(origin);
+            if (parsed.origin !== ide.origin) {
+                return parsed.toString();
+            }
+        }
+        if (LOCAL_DEV_HOSTS.has(parsed.hostname)) {
+            const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+            const suffix = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+            const path = suffix.startsWith('/') ? suffix : `/${suffix}`;
+            return `http://localhost:${port}${path}`;
+        }
+        return parsed.toString();
+    } catch {
+        return trimmed;
+    }
+}
+
+/** Stable key so proxy and direct dev URLs dedupe to one history row. */
+export function canonicalPreviewHistoryKey(url: string, publicOrigin?: string): string {
+    const display = toPreviewHistoryDisplayUrl(url, publicOrigin);
+    if (!display) {
+        return '';
+    }
+    try {
+        const parsed = new URL(display);
+        const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+        const path = parsed.pathname.replace(/\/+$/, '') || '/';
+        return `${parsed.protocol}//${parsed.hostname}:${port}${path}${parsed.search}`;
+    } catch {
+        return display.toLowerCase();
+    }
+}

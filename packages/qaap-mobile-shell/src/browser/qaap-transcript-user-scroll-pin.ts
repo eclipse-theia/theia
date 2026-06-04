@@ -127,6 +127,7 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
     let stuckIndex: number | undefined;
     let scrollToUserMessage = false;
     let scrollToUserMessageTimer: number | undefined;
+    let skipNextSync = false;
 
     const collectEntries = (): TranscriptUserPinEntry[] => {
         const entries: TranscriptUserPinEntry[] = [];
@@ -150,11 +151,12 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
 
     const finishScrollToUserMessage = (): void => {
         scrollToUserMessage = false;
+        skipNextSync = true;
         if (scrollToUserMessageTimer !== undefined) {
             window.clearTimeout(scrollToUserMessageTimer);
             scrollToUserMessageTimer = undefined;
         }
-        scheduleSync();
+        clearStickyEntries();
     };
 
     const scrollStickyMessageIntoView = (entry: TranscriptUserPinEntry): void => {
@@ -222,6 +224,11 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
         }
         raf = 0;
         const entries = collectEntries();
+        if (skipNextSync) {
+            skipNextSync = false;
+            clearStickyEntries(entries);
+            return;
+        }
         if (
             entries.length === 0
             || isTranscriptScrollAtTop(scroller.scrollTop)
