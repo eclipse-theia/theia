@@ -406,6 +406,15 @@ export class FileService {
         if (!activation) {
             const deferredActivation = new Deferred<FileSystemProvider>();
             this.activations.set(scheme, activation = deferredActivation.promise);
+            // Resolve the activation as soon as a provider is registered for the scheme. Otherwise a
+            // slow or dangling `onWillActivateFileSystemProvider` listener whose `waitUntil` promise
+            // never settles would wedge this activation (and everything awaiting it) forever. See #17506.
+            const registration = this.onDidChangeFileSystemProviderRegistrations(event => {
+                if (event.added && event.scheme === scheme && event.provider) {
+                    deferredActivation.resolve(event.provider);
+                }
+            });
+            deferredActivation.promise.then(() => registration.dispose(), () => registration.dispose());
             WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme }).then(() => {
                 provider = this.providers.get(scheme);
                 if (!provider) {
