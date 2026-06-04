@@ -399,7 +399,9 @@ export class WorkspaceFunctionScope {
             }
             const uri = await this.toExternalUri(trimmed);
             if (uri && uri.scheme === 'file') {
-                result.push(uri.normalizePath());
+                // Strip a trailing separator so an entry like `/foo/` still matches the
+                // directory `/foo` itself (URI.isEqualOrParent compares the last segment exactly).
+                result.push(WorkspaceFunctionScope.withoutTrailingSeparator(uri.normalizePath()));
             }
         }
         return result;
@@ -472,6 +474,20 @@ export class WorkspaceFunctionScope {
             return true;
         }
         return /^[A-Za-z]:\//.test(normalized);
+    }
+
+    /**
+     * Returns the URI without a trailing path separator (except for a root path). This makes
+     * directory comparisons via {@link URI.isEqualOrParent} insensitive to a trailing slash, so
+     * an allow-list entry such as `/foo/` matches the directory `/foo` itself, not only its
+     * children.
+     */
+    static withoutTrailingSeparator(uri: URI): URI {
+        const path = uri.path.toString();
+        if (path.length > 1 && path.endsWith('/')) {
+            return uri.withPath(path.substring(0, path.length - 1));
+        }
+        return uri;
     }
 
     protected getHomeDirUri(): Promise<URI | undefined> {
@@ -1320,27 +1336,27 @@ export class FindFilesByPattern implements ToolProvider {
             const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.
-            const targets: { rootUri: URI; rootName?: string; emitAbsolutePaths: boolean }[] = [];
+            const targets: { rootUri: URI; rootName?: string; external: boolean }[] = [];
             if (searchRoot) {
                 const resolved = await this.workspaceScope.resolveToUri(searchRoot);
                 if (!resolved) {
                     return JSON.stringify({ error: `Invalid searchRoot: '${searchRoot}'` });
                 }
                 await this.workspaceScope.ensureAccessible(resolved);
-                targets.push({ rootUri: resolved, emitAbsolutePaths: !this.workspaceScope.isInWorkspace(resolved) });
+                targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved) });
             } else {
                 const rootMapping = this.workspaceScope.getRootMapping();
                 if (rootMapping.size === 0) {
                     return JSON.stringify({ error: 'No workspace has been opened yet' });
                 }
                 for (const [rootName, rootUri] of rootMapping) {
-                    targets.push({ rootUri, rootName, emitAbsolutePaths: false });
+                    targets.push({ rootUri, rootName, external: false });
                 }
             }
 
             // Delegate the actual traversal to the backend ripgrep-based file search.
-            // It runs natively on the backend filesystem (no per-directory RPC),
-            // honors `.gitignore` (and excludes `.git`), and applies include/exclude globs.
+            // It runs natively on the backend filesystem (no per-directory RPC) and applies
+            // include/exclude globs.
             const files: string[] = [];
             for (const target of targets) {
                 if (cancellationToken?.isCancellationRequested) {
@@ -1349,12 +1365,16 @@ export class FindFilesByPattern implements ToolProvider {
                 if (files.length > maxResults) {
                     break;
                 }
+                // `considerGitIgnore` is scoped to workspace roots (see its preference description),
+                // so external allow-listed roots are searched with user/caller excludes only (plus
+                // `.git`). Applying gitignore there would also leak the user's *global* gitignore
+                // into an explicitly allow-listed directory and silently hide files.
                 // Request one extra result across all roots so we can detect truncation.
                 const matches = await this.fileSearchService.find('', {
                     rootUris: [target.rootUri.toString()],
                     includePatterns: [pattern],
-                    excludePatterns: excludes,
-                    useGitIgnore,
+                    excludePatterns: target.external ? [...excludes, '.git'] : excludes,
+                    useGitIgnore: target.external ? false : useGitIgnore,
                     fuzzyMatch: false,
                     limit: maxResults - files.length + 1
                 }, cancellationToken);
@@ -1389,8 +1409,8 @@ export class FindFilesByPattern implements ToolProvider {
      * path for external roots, or a `<rootName>/<relativePath>` (or bare relative
      * path when no root name is available) for workspace roots.
      */
-    protected toDisplayPath(match: URI, target: { rootUri: URI; rootName?: string; emitAbsolutePaths: boolean }): string | undefined {
-        if (target.emitAbsolutePaths) {
+    protected toDisplayPath(match: URI, target: { rootUri: URI; rootName?: string; external: boolean }): string | undefined {
+        if (target.external) {
             return match.path.toString();
         }
         const relativePath = target.rootUri.relative(match)?.toString();

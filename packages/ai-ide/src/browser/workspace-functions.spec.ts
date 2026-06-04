@@ -921,6 +921,37 @@ describe('FindFilesByPattern.findFiles', () => {
         expect(result.files).to.deep.equal(['/external/data/x.ts']);
         expect(fileSearchService.calls[0].options.rootUris).to.deep.equal(['file:///external/data']);
     });
+
+    it('does not apply gitignore to external roots (it is scoped to workspace roots)', async () => {
+        prefs['ai-features.workspaceFunctions.considerGitIgnore'] = true;
+        allowedExternal = ['/external/data'];
+        await call({ pattern: '**/*.ts', searchRoot: '/external/data' });
+        const options = fileSearchService.calls[0].options;
+        expect(options.useGitIgnore).to.equal(false);
+        expect(options.excludePatterns).to.include('.git');
+    });
+
+    it('still applies gitignore to workspace roots', async () => {
+        prefs['ai-features.workspaceFunctions.considerGitIgnore'] = true;
+        await call({ pattern: '**/*.ts' });
+        expect(fileSearchService.calls[0].options.useGitIgnore).to.equal(true);
+    });
+
+    it('matches an allow-list entry with a trailing slash against a searchRoot without one', async () => {
+        allowedExternal = ['/external/data/']; // trailing slash, as a user/file-picker may enter it
+        searchResults = ['file:///external/data/x.ts'];
+        const result = JSON.parse(await call({ pattern: '**/*.ts', searchRoot: '/external/data' }));
+        expect(result.error).to.be.undefined;
+        expect(result.files).to.deep.equal(['/external/data/x.ts']);
+    });
+
+    it('matches an allow-list entry without a trailing slash against a searchRoot that has one', async () => {
+        allowedExternal = ['/external/data'];
+        searchResults = ['file:///external/data/x.ts'];
+        const result = JSON.parse(await call({ pattern: '**/*.ts', searchRoot: '/external/data/' }));
+        expect(result.error).to.be.undefined;
+        expect(result.files).to.deep.equal(['/external/data/x.ts']);
+    });
 });
 
 describe('WorkspaceFunctionScope gitignore caching', () => {
