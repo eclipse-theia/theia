@@ -40,6 +40,43 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
+import { Minimatch } from 'minimatch';
+
+const makeFileSearchService = (
+    impl?: (searchPattern: string, options: FileSearchService.Options) => Promise<string[]>
+): FileSearchService & { calls: Array<{ searchPattern: string; options: FileSearchService.Options }> } => {
+    const calls: Array<{ searchPattern: string; options: FileSearchService.Options }> = [];
+    return {
+        calls,
+        find: async (searchPattern: string, options: FileSearchService.Options) => {
+            calls.push({ searchPattern, options });
+            return impl ? impl(searchPattern, options) : [];
+        }
+    } as unknown as FileSearchService & { calls: Array<{ searchPattern: string; options: FileSearchService.Options }> };
+};
+
+/**
+ * A FileSearchService stand-in that mimics ripgrep: given a flat map of file URIs per
+ * root, it returns the files under the requested root that match the include globs and
+ * are not removed by the exclude globs (matched against each file's root-relative path).
+ */
+const makeRipgrepLikeSearchService = (filesByRoot: Record<string, string[]>) =>
+    makeFileSearchService(async (_searchPattern, options) => {
+        const root = options.rootUris?.[0];
+        if (!root) {
+            return [];
+        }
+        const rootUri = new URI(root);
+        const includes = (options.includePatterns ?? []).map(pattern => new Minimatch(pattern, { dot: true }));
+        const excludes = (options.excludePatterns ?? []).map(pattern => new Minimatch(pattern, { dot: true }));
+        return (filesByRoot[root] ?? []).filter(file => {
+            const relativePath = rootUri.relative(new URI(file))?.toString() ?? '';
+            const included = includes.length === 0 || includes.some(matcher => matcher.match(relativePath));
+            const excluded = excludes.some(matcher => matcher.match(relativePath));
+            return included && !excluded;
+        });
+    });
 
 const makeTrustAwareReader = (overrides: { [pref: string]: unknown } = {}): TrustAwarePreferenceReader => ({
     get: <T>(name: string, fallback?: T) => (name in overrides ? overrides[name] as T : fallback),
@@ -136,6 +173,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
         container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(FileSearchService).toConstantValue(makeFileSearchService());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceDirectoryStructure).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -740,6 +778,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(FileSearchService).toConstantValue(makeFileSearchService());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FindFilesByPattern).toSelf();
 
@@ -766,6 +805,121 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
     it('returns undefined when pattern key is missing', () => {
         const result = getArgumentsShortLabel(JSON.stringify({ glob: '**/*.ts' }));
         expect(result).to.be.undefined;
+    });
+});
+
+describe('FindFilesByPattern.findFiles', () => {
+    let container: Container;
+    let findFilesByPattern: FindFilesByPattern;
+    let fileSearchService: ReturnType<typeof makeFileSearchService>;
+    let searchResults: string[];
+    let roots: Array<{ resource: URI }>;
+    let prefs: { [key: string]: unknown };
+    let allowedExternal: string[];
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        searchResults = [];
+        roots = [{ resource: new URI('file:///workspace') }];
+        prefs = {
+            'ai-features.workspaceFunctions.considerGitIgnore': true,
+            'ai-features.workspaceFunctions.userExcludes': ['node_modules', 'lib']
+        };
+        allowedExternal = [];
+
+        const mockWorkspaceService = {
+            roots: Promise.resolve(roots),
+            tryGetRoots: () => roots,
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({ isDirectory: true, children: [], resource: uri }),
+            read: async () => ({ value: { toString: () => '' } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(path: string, defaultValue: T) => (path in prefs ? prefs[path] as T : defaultValue)
+        };
+
+        const trustAwareReader = {
+            get: <T>(name: string, fallback?: T) =>
+                (name === 'ai-features.workspaceFunctions.allowedExternalPaths' ? (allowedExternal as unknown as T) : fallback),
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        fileSearchService = makeFileSearchService(async () => searchResults);
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(FileSearchService).toConstantValue(fileSearchService);
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
+
+        findFilesByPattern = container.get(FindFilesByPattern);
+    });
+
+    const call = (args: object, ctx?: ToolInvocationContext) =>
+        findFilesByPattern.getTool().handler(JSON.stringify(args), ctx) as Promise<string>;
+
+    it('returns root-prefixed workspace-relative paths', async () => {
+        searchResults = ['file:///workspace/src/a.ts', 'file:///workspace/src/b.ts'];
+        const result = JSON.parse(await call({ pattern: '**/*.ts' }));
+        expect(result.files).to.deep.equal(['workspace/src/a.ts', 'workspace/src/b.ts']);
+    });
+
+    it('passes the glob, user excludes, gitignore flag and root to the search service', async () => {
+        await call({ pattern: '**/*.ts', exclude: ['**/*.spec.ts'] });
+        expect(fileSearchService.calls).to.have.length(1);
+        const options = fileSearchService.calls[0].options;
+        expect(options.includePatterns).to.deep.equal(['**/*.ts']);
+        expect(options.excludePatterns).to.deep.equal(['node_modules', 'lib', '**/*.spec.ts']);
+        expect(options.useGitIgnore).to.equal(true);
+        expect(options.rootUris).to.deep.equal(['file:///workspace']);
+        expect(options.fuzzyMatch).to.equal(false);
+    });
+
+    it('does not use gitignore when the preference is disabled', async () => {
+        prefs['ai-features.workspaceFunctions.considerGitIgnore'] = false;
+        await call({ pattern: '**/*.ts' });
+        expect(fileSearchService.calls[0].options.useGitIgnore).to.equal(false);
+    });
+
+    it('reports an error when no workspace is open', async () => {
+        roots.length = 0;
+        const result = JSON.parse(await call({ pattern: '**/*.ts' }));
+        expect(result.error).to.equal('No workspace has been opened yet');
+    });
+
+    it('respects the cancellation token', async () => {
+        const cts = new CancellationTokenSource();
+        cts.cancel();
+        const result = JSON.parse(await call({ pattern: '**/*.ts' }, { cancellationToken: cts.token }));
+        expect(result.error).to.equal('Operation cancelled by user');
+    });
+
+    it('truncates to 200 results and flags truncation', async () => {
+        searchResults = Array.from({ length: 250 }, (_, i) => `file:///workspace/f${i}.ts`);
+        const result = JSON.parse(await call({ pattern: '**/*.ts' }));
+        expect(result.files).to.have.length(200);
+        expect(result.truncated).to.equal(true);
+    });
+
+    it('returns absolute paths for an allow-listed external searchRoot', async () => {
+        allowedExternal = ['/external/data'];
+        searchResults = ['file:///external/data/x.ts'];
+        const result = JSON.parse(await call({ pattern: '**/*.ts', searchRoot: '/external/data' }));
+        expect(result.files).to.deep.equal(['/external/data/x.ts']);
+        expect(fileSearchService.calls[0].options.rootUris).to.deep.equal(['file:///external/data']);
     });
 });
 
@@ -1041,12 +1195,9 @@ describe('FindFilesByPattern with searchRoot', () => {
     let findFilesByPattern: FindFilesByPattern;
     let allowedPaths: string[];
 
-    const FS_TREE: Record<string, { isDirectory: boolean; children?: string[] }> = {
-        'file:///workspace': { isDirectory: true, children: ['file:///workspace/a.ts'] },
-        'file:///workspace/a.ts': { isDirectory: false },
-        'file:///external/configs': { isDirectory: true, children: ['file:///external/configs/myapp.json', 'file:///external/configs/other.txt'] },
-        'file:///external/configs/myapp.json': { isDirectory: false },
-        'file:///external/configs/other.txt': { isDirectory: false }
+    const FILES_BY_ROOT: Record<string, string[]> = {
+        'file:///workspace': ['file:///workspace/a.ts'],
+        'file:///external/configs': ['file:///external/configs/myapp.json', 'file:///external/configs/other.txt']
     };
 
     let disableJSDOMInner: () => void;
@@ -1065,24 +1216,8 @@ describe('FindFilesByPattern with searchRoot', () => {
 
         const mockFileService = {
             exists: async () => true,
-            resolve: async (uri: URI) => {
-                const node = FS_TREE[uri.toString()];
-                if (!node) {
-                    throw new Error('not found');
-                }
-                return {
-                    isDirectory: node.isDirectory,
-                    isFile: !node.isDirectory,
-                    resource: uri,
-                    children: node.children?.map(child => ({
-                        isDirectory: !!FS_TREE[child]?.isDirectory,
-                        isFile: !FS_TREE[child]?.isDirectory,
-                        resource: new URI(child),
-                        path: { base: child.split('/').pop() }
-                    })) ?? []
-                };
-            },
-            read: async () => ({ value: '' })
+            resolve: async (uri: URI) => ({ isDirectory: true, children: [], resource: uri }),
+            read: async () => ({ value: { toString: () => '' } })
         } as unknown as FileService;
 
         const mockPreferenceService = {
@@ -1100,6 +1235,7 @@ describe('FindFilesByPattern with searchRoot', () => {
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(FileSearchService).toConstantValue(makeRipgrepLikeSearchService(FILES_BY_ROOT));
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FindFilesByPattern).toSelf();
 
