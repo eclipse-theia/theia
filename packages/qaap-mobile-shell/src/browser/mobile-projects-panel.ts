@@ -13040,7 +13040,7 @@ export class MobileProjectsPanel {
     }
 
     protected renderTranscriptMarkdown(host: HTMLElement, content: string): void {
-        const html = this.transcriptMarkdownIt.render(this.cleanTranscriptDisplayText(content));
+        const html = this.transcriptMarkdownIt.render(this.linkifyTranscriptPreviewUrls(this.cleanTranscriptDisplayText(content)));
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true,
         });
@@ -13056,9 +13056,71 @@ export class MobileProjectsPanel {
             if (!href) {
                 return;
             }
-            window.open(href, '_blank', 'noopener');
             event.preventDefault();
+            event.stopPropagation();
+            void this.openTranscriptPreviewUrlFromLink(href).then(handled => {
+                if (!handled) {
+                    window.open(href, '_blank', 'noopener');
+                }
+            });
         });
+    }
+
+    protected linkifyTranscriptPreviewUrls(content: string): string {
+        return content.replace(
+            /(^|[\s(])((?:https?:\/\/)?(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):\d{2,5}(?:\/[^\s\x60<)]*)?|\/qaap-dev\/\d{2,5}(?:\/[^\s\x60<)]*)?)/gi,
+            (match, prefix: string, url: string, offset: number) => {
+                const before = content.slice(0, offset);
+                if (/\[[^\]]*$/.test(before) || /\]\([^)]*$/.test(before)) {
+                    return match;
+                }
+                return prefix + '[' + url + '](' + url + ')';
+            },
+        );
+    }
+
+    protected normalizeTranscriptPreviewLink(href: string): string | undefined {
+        const trimmed = href.trim();
+        if (!trimmed) {
+            return undefined;
+        }
+        if (/^\/qaap-dev\/\d{2,5}(?:\/.*)?$/i.test(trimmed)) {
+            return window.location.origin + trimmed;
+        }
+        if (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):\d{2,5}(?:\/.*)?$/i.test(trimmed)) {
+            return normalizePreviewUrlForSameOrigin(trimmed);
+        }
+        try {
+            const parsed = new URL(trimmed, window.location.origin);
+            if (parsed.origin === window.location.origin && parsed.pathname.startsWith('/qaap-dev/')) {
+                return normalizePreviewUrlForSameOrigin(parsed.toString());
+            }
+        } catch {
+            return undefined;
+        }
+        return undefined;
+    }
+
+    protected async openTranscriptPreviewUrlFromLink(href: string): Promise<boolean> {
+        const previewUrl = this.normalizeTranscriptPreviewLink(href);
+        const summary = this.transcriptComposerSummary ?? this.transcriptOpenSummary;
+        const project = this.transcriptOpenProject;
+        if (!previewUrl || !summary || !project) {
+            return false;
+        }
+
+        this.transcriptPreviewRequestPending = false;
+        this.transcriptPreviewRequestRunning = false;
+        const latestProject = { ...project, previewUrl };
+        this.transcriptOpenProject = latestProject;
+        this.projects = this.projects.map(candidate => candidate.id === latestProject.id
+            ? { ...candidate, previewUrl }
+            : candidate);
+        await this.projectsService.recordProjectPreviewUrl(latestProject, previewUrl).catch(() => undefined);
+
+        this.selectTranscriptTab('preview', latestProject, summary);
+        MobileSnackbar.show(nls.localize('qaap/mobileProjects/previewLinkOpened', 'Preview opened'), { kind: 'success', duration: 1400 });
+        return true;
     }
 
     protected cleanTranscriptDisplayText(content: string): string {
