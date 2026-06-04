@@ -4103,7 +4103,10 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   width: 100%;
   max-width: 520px;
   max-height: min(88vh, 640px);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   border-radius: 24px 24px 0 0;
   padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   background: var(--q-surface, var(--qaap-surface, var(--theia-editor-background)));
@@ -4115,6 +4118,7 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
 }
 
 .theia-mobile-routine-sheet-handle {
+  flex-shrink: 0;
   width: 32px;
   height: 4px;
   margin: 6px auto 14px;
@@ -4123,6 +4127,7 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
 }
 
 .theia-mobile-routine-sheet-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4150,6 +4155,13 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 .theia-mobile-routine-field {
@@ -4192,6 +4204,7 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
 
 .theia-mobile-routine-sheet-footer {
   display: flex;
+  flex-shrink: 0;
   gap: 8px;
   margin-top: 16px;
   padding-top: 2px;

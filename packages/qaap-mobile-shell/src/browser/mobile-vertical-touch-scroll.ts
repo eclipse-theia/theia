@@ -110,6 +110,7 @@ export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
     '.theia-mobile-pr-picker',
     '.theia-mobile-sticky-composer-sheet-list',
     '.theia-mobile-sticky-composer-tools-host',
+    '.theia-mobile-routine-sheet-form',
     '.theia-mobile-parallel-body',
     '.theia-mobile-transcript-checks-panel',
     '.theia-mobile-transcript-review-checks-body',
