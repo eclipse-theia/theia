@@ -5987,7 +5987,7 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   --theia-mobile-execution-chrome-pad-x: 20px;
   --theia-mobile-execution-header-pad-top: 14px;
   --theia-mobile-execution-header-pad-bottom: 8px;
-  --theia-mobile-execution-header-title-row: 32px;
+  --theia-mobile-execution-header-title-row: 44px;
   --theia-mobile-execution-header-subtitle-gap: 3px;
   --theia-mobile-execution-header-subtitle-row: 15px;
   --theia-mobile-execution-header-text-block: calc(
@@ -6026,6 +6026,7 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   min-height: var(--theia-mobile-execution-header-title-row);
 }
 
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title,
 .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-row > h2 {
   flex: 1 1 auto;
   min-width: 0;
@@ -6033,10 +6034,13 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back.theia-mobile-projects-header-back {
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  margin: 0 4px 0 -4px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0 2px 0 -6px;
+  border-radius: 10px;
+  touch-action: manipulation;
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back.theia-mobile-projects-header-back .codicon {
@@ -6067,8 +6071,8 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 }
 
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-header {
-  height: var(--theia-mobile-execution-header-block);
-  max-height: var(--theia-mobile-execution-header-block);
+  height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
+  max-height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
   padding-top: var(--theia-mobile-execution-header-pad-top);
   padding-bottom: var(--theia-mobile-execution-header-pad-bottom);
   padding-left: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-left, 0px));
@@ -6079,12 +6083,35 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   overflow: visible;
 }
 
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header {
+  position: relative;
+  z-index: 4;
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-execution-tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(56vw, 168px);
+  margin-left: 8px;
+  padding-left: 2px;
+  touch-action: manipulation;
+}
+
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-header-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title-row {
+  gap: 6px;
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-title {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -6097,6 +6124,7 @@ body.theia-mobile-mod-landing
   .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail
   .theia-mobile-projects-header {
   padding-top: calc(var(--theia-mobile-execution-header-pad-top) + env(safe-area-inset-top, 0px));
+  padding-bottom: var(--theia-mobile-execution-header-pad-bottom);
   height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
   max-height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
 }
@@ -6161,10 +6189,13 @@ body.theia-mobile-mod-landing
 }
 
 .theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-back {
-  width: 32px;
-  height: 32px;
-  margin: 0 4px 0 -4px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0 2px 0 -6px;
+  border-radius: 10px;
+  touch-action: manipulation;
 }
 
 .theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-back .codicon {
@@ -6182,12 +6213,6 @@ body.theia-mobile-mod-landing
   flex: 1 1 auto;
   min-height: 0;
   gap: 0;
-}
-
-.theia-mobile-projects-detail .theia-mobile-transcript-tabs {
-  flex: 0 0 auto;
-  padding: 0 0 0;
-  margin-bottom: 0;
 }
 
 .theia-mobile-projects-detail-surfaces-body {
@@ -9570,10 +9595,11 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   z-index: 2147483010 !important;
 }
 
-.theia-mobile-agent-transcript-root .theia-mobile-agent-log-header {
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-header.theia-mod-execution-tabs {
   position: relative;
-  z-index: 2;
+  z-index: 4;
   flex-shrink: 0;
+  align-items: flex-start;
   height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
   max-height: calc(var(--theia-mobile-execution-header-block) + env(safe-area-inset-top, 0px));
   padding-top: calc(var(--theia-mobile-execution-header-pad-top) + env(safe-area-inset-top, 0px));
@@ -9584,10 +9610,13 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   overflow: hidden;
 }
 
-.theia-mobile-agent-transcript-root .theia-mobile-transcript-tabs {
-  padding-top: 0;
-  padding-left: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-left, 0px));
-  padding-right: max(var(--theia-mobile-execution-chrome-pad-x), env(safe-area-inset-right, 0px));
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-header.theia-mod-execution-tabs .theia-mobile-agent-log-title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-header.theia-mod-execution-tabs .theia-mobile-agent-log-title-row {
+  gap: 6px;
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-back {
@@ -9678,6 +9707,27 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   line-height: 1;
 }
 
+.theia-mobile-transcript-tab-icon.qaap-icon-scm-changes,
+.theia-mobile-transcript-tab-icon-select-symbol.qaap-icon-scm-changes,
+.theia-mobile-transcript-tab-icon-select-option .qaap-icon-scm-changes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  line-height: 0;
+  overflow: visible;
+}
+
+.theia-mobile-transcript-tab-icon.qaap-icon-scm-changes svg,
+.theia-mobile-transcript-tab-icon-select-symbol.qaap-icon-scm-changes svg,
+.theia-mobile-transcript-tab-icon-select-option .qaap-icon-scm-changes svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+  overflow: visible;
+}
+
 .theia-mobile-transcript-tab-label {
   display: none;
   min-width: 0;
@@ -9689,6 +9739,340 @@ body.theia-mobile-mod-landing.theia-mobile-mod-landing-hub-list
   color: var(--theia-foreground);
   font-weight: 600;
   border-bottom-color: var(--q-accent, var(--qaap-accent, #E58E40));
+}
+
+/* Inline execution tabs — same row as project title, right-aligned. */
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
+  flex: 0 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 2px;
+  margin: 0;
+  border-bottom: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs::-webkit-scrollbar,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 44px;
+  width: 44px;
+  min-height: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  border: none;
+  border-bottom: none;
+  border-radius: 10px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  color: var(--theia-descriptionForeground);
+  opacity: 0.72;
+  font-weight: 500;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab.theia-mod-active,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab.theia-mod-active {
+  border-bottom: none;
+  font-weight: 500;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label {
+  display: none !important;
+}
+
+/* Chat — flat/transparent; mutual opacity with the overflow select (data-active-surface on tablist). */
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab[data-tab='messages'],
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab[data-tab='messages'] {
+  border: none;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab[data-tab='messages']:active,
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab[data-tab='messages']:focus,
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab[data-tab='messages']:focus-visible,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab[data-tab='messages']:active,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab[data-tab='messages']:focus,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab[data-tab='messages']:focus-visible {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab[data-tab='messages'],
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab[data-tab='messages'].theia-mod-active {
+  opacity: 0.72 !important;
+  color: var(--theia-descriptionForeground) !important;
+  background: transparent !important;
+  font-weight: 500;
+}
+
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='messages'] .theia-mobile-transcript-tab[data-tab='messages'] {
+  opacity: 1;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='messages'] .theia-mobile-transcript-tab-icon-select:not([aria-expanded='true']) {
+  opacity: 0.72;
+  color: var(--theia-descriptionForeground);
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab-icon-select,
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab-icon-select.theia-mod-active {
+  opacity: 1;
+  color: var(--theia-foreground);
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab-icon-select .theia-mobile-transcript-tab-icon-select-chevron {
+  opacity: 1;
+}
+
+.theia-mobile-transcript-tab-icon-select-host {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon-select,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon-select {
+  min-width: 48px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 8px 0 10px;
+}
+
+.theia-mobile-transcript-tab-icon-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-sizing: border-box;
+  min-width: 48px;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 7px 0 9px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theia-descriptionForeground);
+  opacity: 0.72;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font: inherit;
+}
+
+.theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon-select:not(.theia-mod-active):not([aria-expanded='true']),
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon-select:not(.theia-mod-active):not([aria-expanded='true']) {
+  opacity: 0.72;
+  color: var(--theia-descriptionForeground);
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-transcript-tab-icon-select-symbol {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.theia-mobile-transcript-tab-icon-select-chevron {
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.72;
+  transition: transform 120ms ease;
+}
+
+.theia-mobile-transcript-tab-icon-select.theia-mod-active {
+  color: var(--theia-foreground);
+  opacity: 1;
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-transcript-tab-icon-select.theia-mod-active .theia-mobile-transcript-tab-icon-select-chevron {
+  opacity: 1;
+}
+
+.theia-mobile-transcript-tab-icon-select[aria-expanded='true'] {
+  color: var(--theia-foreground);
+  opacity: 1;
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-transcript-tab-icon-select[aria-expanded='true'] .theia-mobile-transcript-tab-icon-select-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
+    gap: 6px;
+    padding-inline: 4px;
+  }
+
+  .theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='messages'] .theia-mobile-transcript-tab[data-tab='messages']:active,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab[data-tab='messages']:active,
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab[data-tab='messages']:active {
+    opacity: 0.92;
+    background: transparent !important;
+  }
+
+  .theia-mobile-transcript-tabs.theia-mod-header-inline[data-active-surface='overflow'] .theia-mobile-transcript-tab[data-tab='messages']:active {
+    opacity: 0.72;
+    background: transparent !important;
+  }
+
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon-select:active,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon-select:active {
+    opacity: 0.92;
+  }
+}
+
+@media (min-width: 560px) {
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
+    gap: 4px;
+  }
+
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab {
+    min-width: 44px;
+    width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
+  .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label {
+    display: none !important;
+  }
+}
+
+.theia-mobile-transcript-tab-icon-select-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 188px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.22));
+  background: var(--theia-dropdown-background, var(--theia-editor-background));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+.theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
+  position: relative;
+  z-index: 1;
+}
+
+/* Portaled as a direct child of transcript/projects root — must stay below the header chrome. */
+.theia-mobile-agent-transcript-root > .theia-mobile-transcript-tab-icon-select-menu.theia-mod-floating,
+.theia-mobile-projects > .theia-mobile-transcript-tab-icon-select-menu.theia-mod-floating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.theia-mobile-transcript-tab-icon-select-menu.theia-mod-floating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  z-index: 9670;
+}
+
+.theia-mobile-transcript-tab-icon-select-menu.theia-mod-open:not([hidden]) {
+  display: flex;
+}
+
+.theia-mobile-transcript-tab-icon-select-menu[hidden] {
+  display: none !important;
+}
+
+.theia-mobile-transcript-tab-icon-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--theia-foreground);
+  font-family: var(--theia-ui-font-family, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-transcript-tab-icon-select-option .codicon,
+.theia-mobile-transcript-tab-icon-select-option .qaap-icon-scm-changes {
+  flex: 0 0 auto;
+  font-size: 16px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-transcript-tab-icon-select-option .qaap-icon-scm-changes svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+
+.theia-mobile-transcript-tab-icon-select-option.theia-mod-active {
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+}
+
+.theia-mobile-transcript-tab-icon-select-option:active:not(:disabled) {
+  background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-title-block {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 @media (min-width: 560px) {
@@ -11516,6 +11900,62 @@ body > .theia-mobile-transcript-files-menu {
 .theia-mobile-agent-transcript-user-wrap .theia-mobile-agent-transcript-msg.theia-mod-user {
   align-self: stretch;
   max-width: none;
+}
+
+.theia-mobile-agent-transcript-user-pin-spacer {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.theia-mobile-agent-transcript-user-wrap.theia-mod-scroll-pin-active {
+  z-index: 4;
+}
+
+.theia-mobile-agent-transcript-user-wrap.theia-mod-scroll-pin-active
+  .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned {
+  background: color-mix(
+    in srgb,
+    var(--q-accent, #E58E40) 16%,
+    var(--theia-editor-background, var(--theia-layout-color0)) 84%
+  );
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 26%, transparent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 220ms ease,
+    box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.theia-mobile-agent-transcript-user-wrap
+  .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned.theia-mod-scroll-pin-handoff-in {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.985);
+  filter: blur(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.theia-mobile-agent-transcript-user-wrap
+  .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned.theia-mod-scroll-pin-handoff-out {
+  opacity: 0;
+  transform: translateY(-18px) scale(0.97);
+  filter: blur(3px);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theia-mobile-agent-transcript-user-wrap
+    .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned,
+  .theia-mobile-agent-transcript-user-wrap
+    .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned.theia-mod-scroll-pin-handoff-in,
+  .theia-mobile-agent-transcript-user-wrap
+    .theia-mobile-agent-transcript-msg.theia-mod-user.theia-mod-scroll-pinned.theia-mod-scroll-pin-handoff-out {
+    transition: none;
+    filter: none;
+  }
 }
 
 .theia-mobile-agent-transcript-user-actions {

@@ -600,8 +600,8 @@ body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
 
 body.qaap-theme-light .lm-Menu,
 body.qaap-theme-dark .lm-Menu,
-body.qaap-theme-light .dialogContent,
-body.qaap-theme-dark .dialogContent,
+body.qaap-theme-light .lm-Widget.dialogOverlay .dialogBlock,
+body.qaap-theme-dark .lm-Widget.dialogOverlay .dialogBlock,
 body.qaap-theme-light .theia-Dialog,
 body.qaap-theme-dark .theia-Dialog {
   border-radius: var(--qaap-radius-lg);

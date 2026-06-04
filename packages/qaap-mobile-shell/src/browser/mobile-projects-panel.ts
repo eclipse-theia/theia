@@ -194,6 +194,17 @@ import type { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browse
 import type { QaapPreviewInspectorDeps } from '@theia/qaap-adapters/lib/browser/qaap-preview-inline-inspector';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
+    layoutExecutionSurfaceTabs,
+    recordExecutionSurfaceTabUse,
+    type ExecutionSurfaceTabId,
+} from '../common/qaap-execution-surface-tabs';
+import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin';
+import {
+    appendExecutionSurfaceTabIcon,
+    createExecutionSurfaceIconElement,
+    QAAP_SCM_CHANGES_ICON_CLASS,
+} from '../common/qaap-scm-changes-icon';
+import {
     filterVpsTaskSummaries,
     isLocalChatSummary,
     normalizeWorkHubViewId,
@@ -397,7 +408,7 @@ interface QaapDiffProjectTab {
 }
 
 /** Tabs of the transcript sheet (execution view). 'messages' is the chat tab. */
-type TranscriptTab = 'messages' | 'plan' | 'review' | 'preview' | 'files' | 'terminal';
+type TranscriptTab = ExecutionSurfaceTabId;
 
 /** A single verification step run on the project (build/test/lint). */
 interface VerifyCheck {
@@ -460,7 +471,9 @@ export class MobileProjectsPanel {
     protected readonly headerBackBtn: HTMLButtonElement;
     protected readonly newFabBtn: HTMLButtonElement;
     protected readonly headerSurfacePickerHost: HTMLElement;
+    protected readonly headerExecutionTabsHost: HTMLElement;
     protected headerSurfacePicker?: QaapSegmentedFieldController<QaapComposerSurface>;
+    protected headerExecutionTabsProjectId: string | undefined;
     protected filter: MobileProjectFilter = 'all';
     protected hubView: MobileProjectsHubView = 'home';
     protected query = '';
@@ -579,6 +592,8 @@ export class MobileProjectsPanel {
         home: MobileProjectsHomeUi;
     } | undefined;
     protected transcriptOpenSummaryId: string | undefined;
+    protected transcriptOpenSummary: QaapAgentConversationSummaryDTO | undefined;
+    protected transcriptOpenProject: MobileProjectEntry | undefined;
     protected transcriptAutoApproveBusy = false;
     protected transcriptLastFingerprint: string | undefined;
     protected transcriptLastConv: QaapAgentConversationDTO | undefined;
@@ -612,6 +627,9 @@ export class MobileProjectsPanel {
     protected openMenuAnchor: HTMLElement | undefined;
     protected openMenuCard: HTMLElement | undefined;
     protected openMenuRepositionDispose: Disposable = Disposable.NULL;
+    protected executionTabOverflowMenu: HTMLElement | undefined;
+    protected executionTabOverflowAnchor: HTMLElement | undefined;
+    protected executionTabOverflowDispose: Disposable = Disposable.NULL;
     protected openRepoDialog: MobileOpenRepositoryDialog | undefined;
     protected dragDismissDispose: Disposable = Disposable.NULL;
     protected pullToRefreshDispose: Disposable = Disposable.NULL;
@@ -650,6 +668,7 @@ export class MobileProjectsPanel {
     protected transcriptSheet: HTMLElement | undefined;
     protected transcriptHeaderSubtitle: HTMLElement | undefined;
     protected transcriptSheetDispose: Disposable = Disposable.NULL;
+    protected transcriptUserScrollPinDispose: Disposable = Disposable.NULL;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         if (!this.openMenu) {
             return;
@@ -755,6 +774,10 @@ export class MobileProjectsPanel {
                 this.closeProjectDiffView();
                 return;
             }
+            const project = this.resolveSelectedProject();
+            if (project && this.navigateExecutionSurfaceBack(project)) {
+                return;
+            }
             this.closeProjectDetail();
         });
         this.titleEl = document.createElement('h1');
@@ -764,9 +787,12 @@ export class MobileProjectsPanel {
         this.titleAttentionEl.className = 'theia-mobile-projects-title-attention';
         this.titleAttentionEl.hidden = true;
         this.titleAttentionEl.setAttribute('aria-hidden', 'true');
+        this.headerExecutionTabsHost = document.createElement('div');
+        this.headerExecutionTabsHost.className = 'theia-mobile-projects-header-execution-tabs';
+        this.headerExecutionTabsHost.hidden = true;
         this.subtitleEl = document.createElement('div');
         this.subtitleEl.className = this.homeMode ? 'theia-mobile-projects-subtitle' : 'theia-mobile-projects-meta';
-        this.titleRow.append(this.headerBackBtn, this.titleEl, this.titleAttentionEl);
+        this.titleRow.append(this.headerBackBtn, this.titleEl, this.titleAttentionEl, this.headerExecutionTabsHost);
         this.titleBlock.append(this.titleRow, this.subtitleEl);
 
         const actions = document.createElement('div');
@@ -962,9 +988,13 @@ export class MobileProjectsPanel {
     }
 
     protected resetProjectDetailSurfaces(): void {
+        this.closeExecutionTabOverflowMenu();
         this.projectDetailExpandedId = undefined;
         this.projectDetailTabStrip = undefined;
         this.projectDetailSurfaceTargets = undefined;
+        this.headerExecutionTabsProjectId = undefined;
+        this.headerExecutionTabsHost.hidden = true;
+        this.headerExecutionTabsHost.replaceChildren();
     }
 
     protected executionSurfaceTabForProject(project: MobileProjectEntry): TranscriptTab {
@@ -973,6 +1003,18 @@ export class MobileProjectsPanel {
 
     protected setExecutionSurfaceTab(project: MobileProjectEntry, tab: TranscriptTab): void {
         this.executionSurfaceTabByProjectId.set(project.id, tab);
+        this.syncExecutionSurfaceChrome(project);
+    }
+
+    /** Keep Chat vs overflow-select styling in sync on every connected header strip. */
+    protected syncExecutionSurfaceChrome(project: MobileProjectEntry): void {
+        const tab = this.executionSurfaceTabForProject(project);
+        if (this.projectDetailTabStrip?.isConnected) {
+            this.refreshExecutionSurfaceTabStripState(this.projectDetailTabStrip, tab);
+        }
+        if (this.transcriptTabStrip?.isConnected) {
+            this.refreshExecutionSurfaceTabStripState(this.transcriptTabStrip, tab);
+        }
     }
 
     protected resolveExecutionSurfaceProject(): MobileProjectEntry | undefined {
@@ -2124,6 +2166,7 @@ export class MobileProjectsPanel {
         this.renderHeader();
         this.renderSubtitle();
         this.syncHeaderComposerSurfacePicker();
+        this.syncHeaderExecutionTabStrip();
         this.syncHubViewAvailability();
         this.renderFilters();
         this.renderList();
@@ -2839,12 +2882,6 @@ export class MobileProjectsPanel {
         detail.style.setProperty('--qaap-mobile-project-accent', project.color);
 
         const summary = this.projectDetailSurfaceSummary(project);
-        const tabStrip = this.buildExecutionViewTabStrip(
-            activeTab,
-            tab => this.selectProjectDetailTab(tab, project),
-        );
-        this.projectDetailTabStrip = tabStrip;
-        detail.append(tabStrip);
 
         const body = document.createElement('div');
         body.className = 'theia-mobile-projects-detail-surfaces-body';
@@ -2910,11 +2947,32 @@ export class MobileProjectsPanel {
 
     protected selectProjectDetailTab(tab: TranscriptTab, project: MobileProjectEntry): void {
         if (this.executionSurfaceTabForProject(project) === tab) {
+            this.syncExecutionSurfaceChrome(project);
+            if (tab === 'messages') {
+                this.closeExecutionTabOverflowMenu();
+                const targets = this.projectDetailSurfaceTargets;
+                if (targets) {
+                    targets.chatHost.hidden = false;
+                    targets.planHost.hidden = true;
+                    targets.reviewHost.hidden = true;
+                    targets.previewHost.hidden = true;
+                    targets.filesHost.hidden = true;
+                    targets.terminalHost.hidden = true;
+                }
+                this.root.classList.add('theia-mod-project-surface-chat');
+                this.root.classList.remove('theia-mod-project-surface-tools');
+            }
+            if (this.transcriptTabStrip && this.transcriptOpenSummary) {
+                this.applyTranscriptTabVisibility(tab);
+            }
             return;
         }
+        recordExecutionSurfaceTabUse(tab);
         this.setExecutionSurfaceTab(project, tab);
-        this.syncProjectDetailTabStrip();
-        this.syncTranscriptTabStrip(project);
+        this.rebuildExecutionSurfaceTabStrips(project, tab);
+        if (this.transcriptTabStrip && this.transcriptOpenSummary) {
+            this.applyTranscriptTabVisibility(tab);
+        }
         const targets = this.projectDetailSurfaceTargets;
         if (targets) {
             targets.chatHost.hidden = tab !== 'messages';
@@ -2930,6 +2988,34 @@ export class MobileProjectsPanel {
         this.renderHeader();
         this.renderSubtitle();
         this.mountProjectDetailSurfaceTab(project, this.projectDetailSurfaceSummary(project), tab);
+        this.syncExecutionSurfaceChrome(project);
+    }
+
+    protected syncHeaderExecutionTabStrip(): void {
+        const project = this.isProjectDetailView() ? this.resolveSelectedProject() : undefined;
+        if (!project) {
+            this.headerExecutionTabsHost.hidden = true;
+            this.headerExecutionTabsHost.replaceChildren();
+            this.projectDetailTabStrip = undefined;
+            this.headerExecutionTabsProjectId = undefined;
+            return;
+        }
+        this.headerExecutionTabsHost.hidden = false;
+        const activeTab = this.executionSurfaceTabForProject(project);
+        const needsRebuild = this.headerExecutionTabsProjectId !== project.id
+            || !this.projectDetailTabStrip
+            || !this.headerExecutionTabsHost.contains(this.projectDetailTabStrip);
+        if (needsRebuild) {
+            this.headerExecutionTabsProjectId = project.id;
+            const tabStrip = this.buildExecutionViewTabStrip(
+                activeTab,
+                tab => this.selectProjectDetailTab(tab, project),
+            );
+            this.headerExecutionTabsHost.replaceChildren(tabStrip);
+            this.projectDetailTabStrip = tabStrip;
+            return;
+        }
+        this.syncProjectDetailTabStrip();
     }
 
     protected syncProjectDetailTabStrip(): void {
@@ -2937,23 +3023,106 @@ export class MobileProjectsPanel {
             return;
         }
         const project = this.resolveExecutionSurfaceProject();
-        const activeTab = project ? this.executionSurfaceTabForProject(project) : 'messages';
-        for (const btn of Array.from(this.projectDetailTabStrip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab'))) {
-            const active = btn.dataset.tab === activeTab;
-            btn.classList.toggle('theia-mod-active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        if (!project) {
+            return;
         }
+        this.refreshExecutionSurfaceTabStripState(this.projectDetailTabStrip, this.executionSurfaceTabForProject(project));
     }
 
     protected syncTranscriptTabStrip(project: MobileProjectEntry): void {
-        if (!this.transcriptTabStrip || this.expandedId !== project.id) {
+        if (!this.transcriptTabStrip) {
             return;
         }
-        const activeTab = this.executionSurfaceTabForProject(project);
-        for (const btn of Array.from(this.transcriptTabStrip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab'))) {
-            const active = btn.dataset.tab === activeTab;
-            btn.classList.toggle('theia-mod-active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        this.refreshExecutionSurfaceTabStripState(this.transcriptTabStrip, this.executionSurfaceTabForProject(project));
+    }
+
+    protected rebuildExecutionSurfaceTabStrips(project: MobileProjectEntry, activeTab: TranscriptTab): void {
+        this.closeExecutionTabOverflowMenu();
+        if (this.projectDetailTabStrip && this.headerExecutionTabsHost.contains(this.projectDetailTabStrip)) {
+            const strip = this.buildExecutionViewTabStrip(
+                activeTab,
+                tab => this.selectProjectDetailTab(tab, project),
+            );
+            this.headerExecutionTabsHost.replaceChildren(strip);
+            this.projectDetailTabStrip = strip;
+        }
+        if (this.transcriptTabStrip?.isConnected && this.transcriptOpenSummary) {
+            const summary = this.transcriptOpenSummary;
+            const strip = this.buildExecutionViewTabStrip(
+                activeTab,
+                tab => this.selectTranscriptTab(tab, project, summary),
+            );
+            this.transcriptTabStrip.replaceWith(strip);
+            this.transcriptTabStrip = strip;
+        }
+    }
+
+    protected refreshExecutionSurfaceTabStripState(strip: HTMLElement, activeTab: TranscriptTab): void {
+        if (activeTab === 'messages') {
+            this.closeExecutionTabOverflowMenu();
+        }
+        strip.dataset.activeSurface = activeTab === 'messages' ? 'messages' : 'overflow';
+        const chatBtn = strip.querySelector<HTMLButtonElement>('.theia-mobile-transcript-tab[data-tab="messages"]');
+        if (chatBtn) {
+            const chatActive = activeTab === 'messages';
+            chatBtn.classList.toggle('theia-mod-active', chatActive);
+            chatBtn.setAttribute('aria-selected', chatActive ? 'true' : 'false');
+        }
+        const selectBtn = strip.querySelector<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select');
+        if (selectBtn) {
+            selectBtn.setAttribute('aria-expanded', 'false');
+        }
+        this.applyExecutionSurfaceIconSelectDisplay(strip, activeTab);
+    }
+
+    protected resolveExecutionSurfaceIconSelectDisplayTab(activeTab: TranscriptTab): TranscriptTab {
+        if (activeTab !== 'messages') {
+            return activeTab;
+        }
+        const layout = layoutExecutionSurfaceTabs(activeTab);
+        return layout.visible[1] ?? 'plan';
+    }
+
+    protected isExecutionSurfaceSelectActive(tab: TranscriptTab): boolean {
+        return tab !== 'messages';
+    }
+
+    /**
+     * Header back: leave Plan/Files/etc. for Chat before closing the project or transcript sheet.
+     */
+    protected navigateExecutionSurfaceBack(project: MobileProjectEntry): boolean {
+        if (this.executionSurfaceTabForProject(project) === 'messages') {
+            return false;
+        }
+        if (this.transcriptSheet && this.transcriptOpenSummary) {
+            this.selectTranscriptTab('messages', project, this.transcriptOpenSummary);
+            return true;
+        }
+        if (this.isProjectDetailView() && this.expandedId === project.id) {
+            this.selectProjectDetailTab('messages', project);
+            return true;
+        }
+        return false;
+    }
+
+    protected applyExecutionSurfaceIconSelectDisplay(strip: HTMLElement, activeTab: TranscriptTab): void {
+        const selectBtn = strip.querySelector<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select');
+        const symbol = strip.querySelector<HTMLElement>('.theia-mobile-transcript-tab-icon-select-symbol');
+        if (!selectBtn || !symbol) {
+            return;
+        }
+        const displayTabId = this.resolveExecutionSurfaceIconSelectDisplayTab(activeTab);
+        const spec = this.executionSurfaceTabSpecs().find(entry => entry.id === displayTabId);
+        if (!spec) {
+            return;
+        }
+        selectBtn.dataset.tab = spec.id;
+        selectBtn.title = spec.label;
+        selectBtn.classList.toggle('theia-mod-active', this.isExecutionSurfaceSelectActive(activeTab));
+        symbol.replaceWith(createExecutionSurfaceIconElement(spec.icon, 'theia-mobile-transcript-tab-icon-select-symbol'));
+        for (const item of Array.from(strip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select-option'))) {
+            const tabId = item.dataset.tab as TranscriptTab | undefined;
+            item.classList.toggle('theia-mod-active', tabId === activeTab);
         }
     }
 
@@ -6987,6 +7156,7 @@ export class MobileProjectsPanel {
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
         this.closeCardMenu();
+        this.setExecutionSurfaceTab(project, 'messages');
         // Opening a chat clears its unread badge — record the high-water mark before navigating so
         // the project glyph drops the "new replies" treatment on the next render.
         this.conversationFlags?.markRead(summary.id, summary.updatedAt);
@@ -8225,43 +8395,45 @@ export class MobileProjectsPanel {
         const sheet = document.createElement('section');
         sheet.className = 'theia-mobile-agent-log-sheet theia-mod-transcript';
         const header = document.createElement('header');
-        header.className = 'theia-mobile-agent-log-header';
+        header.className = 'theia-mobile-agent-log-header theia-mod-execution-tabs';
         const title = document.createElement('h2');
         title.textContent = project.name;
         const back = this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title);
         const subtitle = this.createExecutionHeaderSubtitle(project);
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
         this.transcriptHeaderSubtitle = subtitle;
-        const initialTab = this.executionSurfaceTabForProject(project);
+        this.setExecutionSurfaceTab(project, 'messages');
         this.updateTranscriptHeader(project);
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
-        chatHost.hidden = initialTab !== 'messages';
+        chatHost.hidden = false;
         this.renderTranscriptMessages(chatHost, this.summaryToTranscriptPlaceholder(summary));
 
         const chatInputHost = document.createElement('div');
         chatInputHost.className = 'theia-mobile-agent-transcript-chat-input';
-        chatInputHost.hidden = initialTab !== 'messages';
+        chatInputHost.hidden = false;
 
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
+        header.querySelector('.theia-mobile-agent-log-title-row')?.append(tabStrip);
+        this.refreshExecutionSurfaceTabStripState(tabStrip, 'messages');
         const planHost = document.createElement('div');
         planHost.className = 'theia-mobile-transcript-plan';
-        planHost.hidden = initialTab !== 'plan';
+        planHost.hidden = true;
         const reviewHost = document.createElement('div');
         reviewHost.className = 'theia-mobile-transcript-review';
-        reviewHost.hidden = initialTab !== 'review';
+        reviewHost.hidden = true;
         const previewHost = document.createElement('div');
         previewHost.className = 'theia-mobile-transcript-preview';
-        previewHost.hidden = initialTab !== 'preview';
+        previewHost.hidden = true;
         const filesHost = document.createElement('div');
         filesHost.className = 'theia-mobile-transcript-files-host';
-        filesHost.hidden = initialTab !== 'files';
+        filesHost.hidden = true;
         const terminalHost = document.createElement('div');
         terminalHost.className = 'theia-mobile-transcript-terminal-host';
-        terminalHost.hidden = initialTab !== 'terminal';
+        terminalHost.hidden = true;
 
-        sheet.append(header, tabStrip, chatHost, planHost, reviewHost, previewHost, filesHost, terminalHost, chatInputHost);
+        sheet.append(header, chatHost, planHost, reviewHost, previewHost, filesHost, terminalHost, chatInputHost);
         root.append(backdrop, sheet);
         document.body.append(root);
         this.transcriptSheet = root;
@@ -8283,11 +8455,14 @@ export class MobileProjectsPanel {
         this.verifyAutoAttempts = 0;
         this.transcriptLastStatus = summary.status;
         this.transcriptOpenSummaryId = summary.id;
+        this.transcriptOpenSummary = summary;
+        this.transcriptOpenProject = project;
         this.transcriptLastFingerprint = undefined;
         if (this.visible) {
             this.renderHeader();
             this.renderSubtitle();
             this.renderList();
+            this.syncHeaderExecutionTabStrip();
         }
         this.bindTranscriptSheetDismiss(back, backdrop);
 
@@ -8311,6 +8486,7 @@ export class MobileProjectsPanel {
                 this.transcriptLastFingerprint = fingerprint;
                 this.renderTranscriptMessages(chatHost, full);
                 this.mountTranscriptSurfaceTab(project, summary, this.executionSurfaceTabForProject(project));
+                this.syncExecutionSurfaceChrome(project);
                 this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
                 if (full.status === 'streaming' || this.transcriptPreviewRequestPending) {
                     this.watchOpenTranscriptUntilIdle(project, summary.id);
@@ -8350,7 +8526,7 @@ export class MobileProjectsPanel {
             ?? readStoredAgent(summary.cwd);
         void this.refreshTranscriptComposerAgents(project);
         this.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
-        this.mountTranscriptSurfaceTab(project, summary, initialTab);
+        this.mountTranscriptSurfaceTab(project, summary, 'messages');
     }
 
     protected setTranscriptLiveUpdates(disposable: Disposable): void {
@@ -8430,50 +8606,262 @@ export class MobileProjectsPanel {
         onSelect: (tab: TranscriptTab) => void,
     ): HTMLElement {
         const strip = document.createElement('div');
-        strip.className = 'theia-mobile-transcript-tabs';
+        strip.className = 'theia-mobile-transcript-tabs theia-mod-header-inline';
         strip.setAttribute('role', 'tablist');
-        const tabs: Array<{ id: TranscriptTab; label: string; icon: string }> = [
+        strip.dataset.activeSurface = activeTab === 'messages' ? 'messages' : 'overflow';
+        const tabSpecs = this.executionSurfaceTabSpecs();
+        const selectTab = (tab: TranscriptTab): void => {
+            this.closeExecutionTabOverflowMenu();
+            if (tab === activeTab) {
+                onSelect(tab);
+                return;
+            }
+            onSelect(tab);
+        };
+        const chatSpec = tabSpecs.find(entry => entry.id === 'messages');
+        if (chatSpec) {
+            strip.append(this.createExecutionSurfaceTabButton(chatSpec, activeTab === 'messages', () => selectTab('messages')));
+        }
+        const overflowSpecs = tabSpecs.filter(entry => entry.id !== 'messages');
+        const displayTabId = this.resolveExecutionSurfaceIconSelectDisplayTab(activeTab);
+        strip.append(this.createExecutionSurfaceIconSelect(
+            displayTabId,
+            activeTab,
+            overflowSpecs,
+            selectTab,
+        ));
+        return strip;
+    }
+
+    protected executionSurfaceTabSpecs(): Array<{ id: TranscriptTab; label: string; icon: string }> {
+        return [
             { id: 'messages', label: nls.localize('qaap/mobileProjects/tabChat', 'Chat'), icon: 'codicon-comment-discussion' },
             { id: 'plan', label: nls.localize('qaap/mobileProjects/tabPlan', 'Plan'), icon: 'codicon-file-text' },
-            { id: 'review', label: nls.localize('qaap/mobileProjects/tabChanges', 'Changes'), icon: 'codicon-diff-added' },
+            { id: 'review', label: nls.localize('qaap/mobileProjects/tabChanges', 'Changes'), icon: QAAP_SCM_CHANGES_ICON_CLASS },
             { id: 'preview', label: nls.localize('qaap/mobileProjects/tabPreview', 'Preview'), icon: 'codicon-globe' },
             { id: 'files', label: nls.localize('qaap/mobileProjects/tabFiles', 'Files'), icon: 'codicon-folder-opened' },
             { id: 'terminal', label: nls.localize('qaap/mobileProjects/tabTerminal', 'Terminal'), icon: 'codicon-terminal' },
         ];
-        for (const tab of tabs) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'theia-mobile-transcript-tab';
-            btn.dataset.tab = tab.id;
-            btn.setAttribute('role', 'tab');
-            const active = tab.id === activeTab;
-            btn.classList.toggle('theia-mod-active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
-            btn.title = tab.label;
-            btn.setAttribute('aria-label', tab.label);
-            const icon = document.createElement('span');
-            icon.className = `theia-mobile-transcript-tab-icon codicon ${tab.icon}`;
-            icon.setAttribute('aria-hidden', 'true');
-            const label = document.createElement('span');
-            label.className = 'theia-mobile-transcript-tab-label';
-            label.textContent = tab.label;
-            btn.append(icon, label);
-            btn.addEventListener('click', () => onSelect(tab.id));
-            strip.append(btn);
+    }
+
+    protected createExecutionSurfaceTabButton(
+        tab: { id: TranscriptTab; label: string; icon: string },
+        active: boolean,
+        onClick: () => void,
+    ): HTMLButtonElement {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theia-mobile-transcript-tab';
+        btn.dataset.tab = tab.id;
+        btn.setAttribute('role', 'tab');
+        btn.classList.toggle('theia-mod-active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        btn.title = tab.label;
+        btn.setAttribute('aria-label', tab.label);
+        appendExecutionSurfaceTabIcon(btn, tab.icon, 'theia-mobile-transcript-tab-icon');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-transcript-tab-label';
+        label.textContent = tab.label;
+        btn.append(label);
+        btn.addEventListener('click', event => {
+            event.stopPropagation();
+            onClick();
+        });
+        return btn;
+    }
+
+    protected createExecutionSurfaceIconSelect(
+        displayTabId: TranscriptTab,
+        activeTab: TranscriptTab,
+        tabSpecs: Array<{ id: TranscriptTab; label: string; icon: string }>,
+        onSelect: (tab: TranscriptTab) => void,
+    ): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-transcript-tab-icon-select-host';
+
+        const displaySpec = tabSpecs.find(entry => entry.id === displayTabId) ?? tabSpecs[1];
+        const menuLabel = nls.localize('qaap/mobileProjects/tabOverflow', 'Change view');
+        const menuOptions = this.executionSurfaceTabSpecs().filter(entry => entry.id !== 'messages');
+
+        const menu = document.createElement('div');
+        menu.className = 'theia-mobile-transcript-tab-icon-select-menu';
+        menu.hidden = true;
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', menuLabel);
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'theia-mobile-transcript-tab-icon-select';
+        trigger.dataset.tab = displaySpec.id;
+        trigger.setAttribute('role', 'button');
+        trigger.setAttribute('aria-haspopup', 'menu');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.classList.toggle('theia-mod-active', this.isExecutionSurfaceSelectActive(activeTab));
+        trigger.title = displaySpec.label;
+        trigger.setAttribute('aria-label', menuLabel);
+
+        appendExecutionSurfaceTabIcon(trigger, displaySpec.icon, 'theia-mobile-transcript-tab-icon-select-symbol');
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-transcript-tab-icon-select-chevron codicon codicon-chevron-down';
+        chevron.setAttribute('aria-hidden', 'true');
+        trigger.append(chevron);
+        trigger.addEventListener('click', event => {
+            event.stopPropagation();
+            if (this.executionTabOverflowMenu?.classList.contains('theia-mod-open')) {
+                this.closeExecutionTabOverflowMenu();
+                return;
+            }
+            this.openExecutionTabOverflowMenu(trigger, menu);
+        });
+
+        for (const spec of menuOptions) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'theia-mobile-transcript-tab-icon-select-option';
+            item.dataset.tab = spec.id;
+            item.setAttribute('role', 'menuitem');
+            item.classList.toggle('theia-mod-active', spec.id === activeTab);
+            item.title = spec.label;
+            item.setAttribute('aria-label', spec.label);
+            appendExecutionSurfaceTabIcon(item, spec.icon, '');
+            const itemLabel = document.createElement('span');
+            itemLabel.textContent = spec.label;
+            item.append(itemLabel);
+            item.addEventListener('click', event => {
+                event.stopPropagation();
+                this.closeExecutionTabOverflowMenu();
+                onSelect(spec.id);
+            });
+            menu.append(item);
         }
-        return strip;
+
+        wrap.append(trigger, menu);
+        return wrap;
+    }
+
+    protected resolveExecutionTabOverflowMenuPortal(anchor: HTMLElement): HTMLElement {
+        const transcriptRoot = anchor.closest('.theia-mobile-agent-transcript-root');
+        if (transcriptRoot instanceof HTMLElement) {
+            return transcriptRoot;
+        }
+        return this.root;
+    }
+
+    protected openExecutionTabOverflowMenu(anchor: HTMLButtonElement, menu: HTMLElement): void {
+        this.closeExecutionTabOverflowMenu();
+        this.closeCardMenu();
+        this.executionTabOverflowAnchor = anchor;
+        this.executionTabOverflowMenu = menu;
+        anchor.setAttribute('aria-expanded', 'true');
+        menu.hidden = false;
+        menu.classList.add('theia-mod-open', 'theia-mod-floating');
+        this.resolveExecutionTabOverflowMenuPortal(anchor).append(menu);
+        window.requestAnimationFrame(() => {
+            if (this.executionTabOverflowMenu === menu && this.executionTabOverflowAnchor === anchor) {
+                this.positionExecutionTabOverflowMenu(menu, anchor);
+            }
+        });
+        const onDismiss = (event: Event): void => {
+            const target = event.target;
+            if (target instanceof Node && (menu.contains(target) || anchor.contains(target))) {
+                return;
+            }
+            this.closeExecutionTabOverflowMenu();
+        };
+        const onReposition = (): void => {
+            if (this.executionTabOverflowMenu === menu && this.executionTabOverflowAnchor === anchor) {
+                this.positionExecutionTabOverflowMenu(menu, anchor);
+            }
+        };
+        window.setTimeout(() => {
+            window.addEventListener('pointerdown', onDismiss, true);
+        }, 0);
+        window.addEventListener('resize', onReposition);
+        this.scroll.addEventListener('scroll', onReposition, { passive: true });
+        this.executionTabOverflowDispose = Disposable.create(() => {
+            window.removeEventListener('pointerdown', onDismiss, true);
+            window.removeEventListener('resize', onReposition);
+            this.scroll.removeEventListener('scroll', onReposition);
+        });
+    }
+
+    protected executionTabOverflowMenuMinTop(anchor: HTMLElement): number {
+        const gap = 6;
+        const titleRow = anchor.closest('.theia-mobile-transcript-tabs')
+            ?.closest('.theia-mobile-projects-title-row, .theia-mobile-agent-log-title-row');
+        if (titleRow) {
+            return titleRow.getBoundingClientRect().bottom + gap;
+        }
+        const header = anchor.closest('.theia-mobile-agent-log-header, .theia-mobile-projects-header');
+        if (header) {
+            return header.getBoundingClientRect().bottom + gap;
+        }
+        return anchor.getBoundingClientRect().bottom + gap;
+    }
+
+    protected positionExecutionTabOverflowMenu(menu: HTMLElement, anchor: HTMLElement): void {
+        const margin = 8;
+        const gap = 6;
+        const anchorRect = anchor.getBoundingClientRect();
+        const menuWidth = Math.max(menu.offsetWidth || menu.scrollWidth, 188);
+        const menuHeight = Math.max(menu.offsetHeight || menu.scrollHeight, 1);
+        const minTop = this.executionTabOverflowMenuMinTop(anchor);
+        let top = Math.max(anchorRect.bottom + gap, minTop);
+        const maxBottom = window.innerHeight - margin;
+        if (top + menuHeight > maxBottom) {
+            const aboveTop = anchorRect.top - gap - menuHeight;
+            if (aboveTop >= margin && aboveTop >= minTop) {
+                top = aboveTop;
+            } else {
+                top = Math.max(minTop, Math.max(margin, maxBottom - menuHeight));
+            }
+        }
+        let left = anchorRect.right - menuWidth;
+        left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
+        menu.style.position = 'fixed';
+        menu.style.top = `${top}px`;
+        menu.style.left = `${left}px`;
+    }
+
+    protected closeExecutionTabOverflowMenu(): void {
+        const menu = this.executionTabOverflowMenu;
+        const anchor = this.executionTabOverflowAnchor;
+        if (!menu) {
+            return;
+        }
+        menu.hidden = true;
+        menu.classList.remove('theia-mod-open', 'theia-mod-floating');
+        menu.style.position = '';
+        menu.style.zIndex = '';
+        menu.style.top = '';
+        menu.style.left = '';
+        const parent = anchor?.closest('.theia-mobile-transcript-tab-icon-select-host');
+        if (parent && !parent.contains(menu)) {
+            parent.append(menu);
+        }
+        anchor?.setAttribute('aria-expanded', 'false');
+        this.executionTabOverflowDispose.dispose();
+        this.executionTabOverflowDispose = Disposable.NULL;
+        this.executionTabOverflowMenu = undefined;
+        this.executionTabOverflowAnchor = undefined;
     }
 
     protected selectTranscriptTab(tab: TranscriptTab, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
         if (this.executionSurfaceTabForProject(project) === tab) {
+            this.syncExecutionSurfaceChrome(project);
+            if (tab === 'messages') {
+                this.closeExecutionTabOverflowMenu();
+            }
+            this.applyTranscriptTabVisibility(tab);
             return;
         }
+        recordExecutionSurfaceTabUse(tab);
         this.setExecutionSurfaceTab(project, tab);
-        this.syncProjectDetailTabStrip();
-        this.syncTranscriptTabStrip(project);
+        this.rebuildExecutionSurfaceTabStrips(project, tab);
         this.applyTranscriptTabVisibility(tab);
         this.mountTranscriptSurfaceTab(project, summary, tab);
         this.updateTranscriptHeader(project);
+        this.syncExecutionSurfaceChrome(project);
     }
 
     protected applyTranscriptTabVisibility(tab: TranscriptTab): void {
@@ -9873,6 +10261,10 @@ export class MobileProjectsPanel {
         const dismiss = (ev?: Event): void => {
             ev?.preventDefault();
             ev?.stopPropagation();
+            const project = this.transcriptOpenProject;
+            if (project && this.navigateExecutionSurfaceBack(project)) {
+                return;
+            }
             this.closeTranscriptSheet();
         };
         // Dismiss on click only — closing on pointerdown removes the overlay before the
@@ -10628,6 +11020,7 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
+        this.setExecutionSurfaceTab(project, 'messages');
         this.closeTranscriptSheet();
         const root = document.createElement('div');
         root.className = 'theia-mobile-agent-log theia-mobile-agent-transcript-root theia-mod-visible';
@@ -10660,10 +11053,13 @@ export class MobileProjectsPanel {
 
         this.transcriptChatHost = chatHost;
         this.transcriptOpenSummaryId = summary.id;
+        this.transcriptOpenSummary = summary;
+        this.transcriptOpenProject = project;
         if (this.visible) {
             this.renderHeader();
             this.renderSubtitle();
             this.renderList();
+            this.syncHeaderExecutionTabStrip();
         }
         this.bindTranscriptSheetDismiss(back, backdrop);
         try {
@@ -11012,6 +11408,8 @@ export class MobileProjectsPanel {
             }
         }
         messageHost.scrollTop = messageHost.scrollHeight;
+        this.transcriptUserScrollPinDispose.dispose();
+        this.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
         this.ensureOverlayUi().team.renderTeamSection(host, conv);
     }
 
@@ -12548,6 +12946,7 @@ export class MobileProjectsPanel {
     }
 
     protected closeTranscriptSheet(): void {
+        this.closeExecutionTabOverflowMenu();
         this.ensureOverlayUi().parallel.closeSheet();
         this.closeTranscriptComposerSheets();
         this.transcriptComposerHost = undefined;
@@ -12561,6 +12960,8 @@ export class MobileProjectsPanel {
         const sheet = this.transcriptSheet;
         this.transcriptSheet = undefined;
         this.transcriptOpenSummaryId = undefined;
+        this.transcriptOpenSummary = undefined;
+        this.transcriptOpenProject = undefined;
         this.transcriptLastFingerprint = undefined;
         this.transcriptLastConv = undefined;
         this.transcriptChatHost = undefined;
@@ -12598,6 +12999,8 @@ export class MobileProjectsPanel {
         }
         this.transcriptScheduleRefresh = undefined;
         this.setTranscriptLiveUpdates(Disposable.NULL);
+        this.transcriptUserScrollPinDispose.dispose();
+        this.transcriptUserScrollPinDispose = Disposable.NULL;
         this.transcriptSheetDispose.dispose();
         this.transcriptSheetDispose = Disposable.NULL;
         this.transcriptTheiaSessionByConversationId.clear();

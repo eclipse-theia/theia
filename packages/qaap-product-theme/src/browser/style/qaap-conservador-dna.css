@@ -271,7 +271,7 @@ body.qaap-theme-dark .theia-mobile-pr-stat-chip {
 body.qaap-theme-dark .q-sheet,
 body.qaap-theme-dark .lm-Menu,
 body.qaap-theme-dark .quick-input-widget,
-body.qaap-theme-dark .dialogContent,
+body.qaap-theme-dark .lm-Widget.dialogOverlay .dialogBlock,
 body.qaap-theme-dark .theia-Dialog,
 body.qaap-theme-dark .theia-mobile-bottom-actionsheet {
   background: var(--q-surface);

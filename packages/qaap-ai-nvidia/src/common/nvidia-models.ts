@@ -15,7 +15,6 @@ export const NVIDIA_PROVIDER_ID = 'nvidia';
 export const NVIDIA_FREE_MODELS: readonly string[] = [
     'nvidia/llama-3.3-nemotron-super-49b-v1',
     'meta/llama-3.3-70b-instruct',
-    'deepseek-ai/deepseek-r1',
     // Replaces qwen/qwen2.5-coder-32b-instruct (NIM EOL 2026-05-12).
     'qwen/qwen3-coder-480b-a35b-instruct',
     'minimaxai/minimax-m2.7'

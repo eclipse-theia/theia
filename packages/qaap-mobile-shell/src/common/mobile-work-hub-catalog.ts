@@ -3,6 +3,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+/** Same command ids as the IDE welcome quick actions / settings. */
+export const QAAP_WORK_HUB_COLOR_THEME_COMMAND = 'workbench.action.selectTheme';
+export const QAAP_WORK_HUB_AI_FEATURES_COMMAND = 'ai-chat-ui.show-settings';
+
 export type WorkHubCatalogHubTarget = 'home' | 'repos' | 'chat' | 'tasks' | 'review' | 'diff';
 
 export type WorkHubCatalogAction =
@@ -36,15 +40,22 @@ export const QAAP_WORK_HUB_GETTING_STARTED: WorkHubCatalogSection = {
     title: 'Getting started',
     items: [
         {
-            id: 'workflow-work-hub',
+            id: 'workflow-color-theme',
             sectionId: 'start',
-            title: 'Run task to PR',
-            subtitle: 'Capture work, delegate an agent, review diffs, and open the PR.',
-            meta: '3 steps · ~4 min',
-            progress: 0.33,
-            iconClass: 'codicon-git-pull-request',
-            action: { type: 'hub-view', view: 'home' },
-            searchText: 'work hub home dashboard task agent branch pull request pr',
+            title: 'Color Theme',
+            subtitle: 'Switch light, dark, or high contrast color themes.',
+            iconClass: 'codicon-color-mode',
+            action: { type: 'command', commandId: QAAP_WORK_HUB_COLOR_THEME_COMMAND },
+            searchText: 'color theme light dark high contrast appearance',
+        },
+        {
+            id: 'workflow-ai-features',
+            sectionId: 'start',
+            title: 'AI Features',
+            subtitle: 'API keys, models, agents, and chat defaults.',
+            iconClass: 'codicon-sparkle',
+            action: { type: 'command', commandId: QAAP_WORK_HUB_AI_FEATURES_COMMAND },
+            searchText: 'ai features settings api keys models agents chat',
         },
         {
             id: 'workflow-github',
@@ -55,16 +66,6 @@ export const QAAP_WORK_HUB_GETTING_STARTED: WorkHubCatalogSection = {
             iconClass: 'codicon-github',
             action: { type: 'hub-view', view: 'tasks' },
             searchText: 'github sign in repositories pull requests inbox review',
-        },
-        {
-            id: 'workflow-mobile-tour',
-            sectionId: 'start',
-            title: 'Mobile walkthrough',
-            subtitle: 'Replay the narrow-viewport tutorial for gestures and the agent bar.',
-            meta: 'Interactive',
-            iconClass: 'codicon-device-mobile',
-            action: { type: 'replay-tutorial' },
-            searchText: 'tutorial onboarding mobile gestures',
         },
     ],
 };
