@@ -28,7 +28,6 @@ const VARIANT_STATS_POLL_MS = 5000;
 export interface MobileProjectsParallelUiDeps {
     getAgents(): QaapAgentTaskAgentOption[];
     onRunsChanged(): void;
-    openTimeline(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     buildVariantTaskRow(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -67,8 +66,6 @@ export class MobileProjectsParallelUi {
     appendTranscriptHeaderActions(
         header: HTMLElement,
         title: HTMLElement,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
     ): HTMLButtonElement {
         const titleWrap = document.createElement('div');
         titleWrap.className = 'theia-mobile-agent-log-title-wrap';
@@ -82,18 +79,7 @@ export class MobileProjectsParallelUi {
         backBtn.innerHTML = '<span class="codicon codicon-chevron-left" aria-hidden="true"></span>';
         titleRow.append(backBtn, title);
         titleWrap.append(titleRow);
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-agent-log-header-actions';
-        if (this.supportsQaapAgentWorkflow(summary)) {
-            const timelineBtn = document.createElement('button');
-            timelineBtn.type = 'button';
-            timelineBtn.className = 'theia-mobile-agent-log-action codicon codicon-history';
-            timelineBtn.title = nls.localize('qaap/mobileProjects/timeline', 'Timeline');
-            timelineBtn.setAttribute('aria-label', timelineBtn.title);
-            timelineBtn.addEventListener('click', () => this.deps.openTimeline(project, summary));
-            actions.append(timelineBtn);
-        }
-        header.append(titleWrap, actions);
+        header.append(titleWrap);
         return backBtn;
     }
 
@@ -537,7 +523,7 @@ export class MobileProjectsParallelUi {
         }
     }
 
-    /** Shared overlay root — timeline sheets reuse the same layer. */
+    /** Shared overlay root for parallel-run sheets. */
     getOverlaySheet(): HTMLElement | undefined {
         return this.sheetRoot;
     }

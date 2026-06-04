@@ -95,6 +95,22 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 }
             })();
         });
+        app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/messages/:messageId/rewind`, (req, res) => {
+            void (async () => {
+                try {
+                    const conv = await this.store.rewindToMessage(req.params.id, req.params.messageId);
+                    if (!conv) {
+                        res.status(404).json({ error: 'Conversation not found.' });
+                        return;
+                    }
+                    res.json(conv);
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : String(error);
+                    const status = message === 'Message not found.' ? 404 : 400;
+                    res.status(status).json({ error: message });
+                }
+            })();
+        });
         app.delete(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
             const ok = this.store.delete(req.params.id);
             res.status(ok ? 204 : 404).end();

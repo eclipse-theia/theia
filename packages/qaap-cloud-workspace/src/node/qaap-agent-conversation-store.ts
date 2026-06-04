@@ -44,8 +44,9 @@ import {
     formatSubtaskMailboxMessage,
     isTeamSynthesisUserMessage,
 } from '../common/qaap-team-mailbox';
-import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
+import { planConversationRewind } from '../common/qaap-agent-conversation-rewind';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
+import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-conversations');
 const INDEX_PATH = path.join(STORE_DIR, 'index.json');
@@ -1085,6 +1086,54 @@ export class QaapAgentConversationStore {
     protected checkpointLabel(content: string): string {
         const clean = content.replace(/\s+/g, ' ').trim();
         return clean.length > 60 ? `${clean.slice(0, 57)}…` : (clean || 'Turn');
+    }
+
+    /**
+     * Drop a user message and every turn after it. Optionally restores tracked files to the
+     * checkpoint captured after the previous user turn (when one exists).
+     */
+    async rewindToMessage(conversationId: string, messageId: string): Promise<QaapAgentConversation | undefined> {
+        const conv = this.conversations.get(conversationId);
+        if (!conv) {
+            return undefined;
+        }
+        const plan = planConversationRewind(conv, messageId);
+        for (const taskId of plan.taskIdsToCancel) {
+            this.taskRunner.cancel(taskId);
+            this.qaiqStreamByTaskId.delete(taskId);
+            this.opencodeStreamByTaskId.delete(taskId);
+            this.taskToConversation.delete(taskId);
+        }
+        let next: QaapAgentConversation = {
+            ...conv,
+            status: 'idle',
+            messages: plan.trimmedMessages,
+            checkpoints: plan.trimmedCheckpoints,
+            updatedAt: Date.now(),
+            gitDiffAdded: undefined,
+            gitDiffRemoved: undefined,
+        };
+        if (plan.restoreCheckpoint) {
+            if (spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: conv.cwd, encoding: 'utf8' }).status !== 0) {
+                throw new Error('The conversation workspace is not a git repository.');
+            }
+            const undo = this.captureCheckpoint(conv.cwd, conversationId, messageId, 'Before rewind');
+            const restore = spawnSync(
+                'git',
+                ['restore', '--source', plan.restoreCheckpoint.commit, '--worktree', '--', '.'],
+                { cwd: conv.cwd, encoding: 'utf8' },
+            );
+            if (restore.status !== 0) {
+                throw new Error(`Restore failed: ${(restore.stderr || '').trim() || 'git restore error'}`);
+            }
+            if (undo) {
+                next = { ...next, checkpoints: [...(next.checkpoints ?? []), undo] };
+            }
+        }
+        this.conversations.set(conversationId, next);
+        this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+        void this.persist();
+        return next;
     }
 
     /**

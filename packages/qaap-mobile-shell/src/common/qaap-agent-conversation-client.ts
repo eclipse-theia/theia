@@ -212,6 +212,17 @@ export async function restoreConversationCheckpoint(id: string, checkpointId: st
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
+export async function rewindConversationToMessage(id: string, messageId: string): Promise<QaapAgentConversationDTO> {
+    const response = await fetch(
+        `${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}/rewind`,
+        { method: 'POST', credentials: 'include' },
+    );
+    if (!response.ok) {
+        throw new Error((await response.text()) || response.statusText);
+    }
+    return response.json() as Promise<QaapAgentConversationDTO>;
+}
+
 export async function createConversation(body: QaapCreateConversationBody): Promise<QaapAgentConversationDTO> {
     const response = await fetch(QAAP_AGENT_CONVERSATION_API_PATH, {
         method: 'POST',
