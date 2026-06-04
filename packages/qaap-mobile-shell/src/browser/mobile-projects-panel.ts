@@ -274,7 +274,7 @@ import {
     QaapDiffReviewWidget,
     type QaapDiffReviewRepositoryContext,
 } from './qaap-diff-review-widget';
-import { toDevPreviewUrl } from './qaap-dev-preview-client';
+import { probeQaapDevPreviewPort, toDevPreviewUrl } from './qaap-dev-preview-client';
 import {
     createTranscriptCodeView,
     resolveTranscriptCodeLanguage,
@@ -577,6 +577,7 @@ export class MobileProjectsPanel {
     protected readonly transcriptTerminalSlidesByWorkspace = new Map<TranscriptWorkspaceSurfaceKey, TranscriptTerminalSliderState>();
     protected transcriptPreviewRequestRunning = false;
     protected transcriptPreviewRequestPending = false;
+    protected readonly transcriptPreviewRecoveryRequests = new Set<string>();
     /** Shared Changes · Preview · Files · Terminal tab per project (task surface + transcript sheet). */
     protected readonly executionSurfaceTabByProjectId = new Map<string, TranscriptTab>();
     protected projectDetailExpandedId: string | undefined;
@@ -9481,6 +9482,14 @@ export class MobileProjectsPanel {
         if (previewUrl) {
             this.transcriptPreviewRequestPending = false;
             this.transcriptPreviewRequestRunning = false;
+            if (latestProject.previewUrl !== previewUrl) {
+                void this.projectsService.recordProjectPreviewUrl(latestProject, previewUrl)
+                    .then(() => {
+                        this.projects = this.projects.map(candidate => candidate.id === latestProject.id
+                            ? { ...candidate, previewUrl }
+                            : candidate);
+                    });
+            }
             host.replaceChildren();
             this.mountTranscriptEmbeddedPreview(host, previewUrl);
             return;
@@ -9490,11 +9499,28 @@ export class MobileProjectsPanel {
         host.replaceChildren();
 
         if (this.transcriptPreviewRequestRunning || this.transcriptPreviewRequestPending || conv?.status === 'streaming') {
+            this.recoverTranscriptPreviewUrl(project, summary);
             host.append(this.createTranscriptPreviewLoading(conv));
             return;
         }
 
         this.mountTranscriptEmptyPreview(host, project, summary);
+    }
+
+    protected recoverTranscriptPreviewUrl(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
+        if (this.transcriptPreviewRecoveryRequests.has(summary.id)) {
+            return;
+        }
+        this.transcriptPreviewRecoveryRequests.add(summary.id);
+        void this.refreshTranscriptPreviewProject(project, summary).then(latestProject => {
+            if (!latestProject.previewUrl || this.transcriptOpenSummaryId !== summary.id || this.activeExecutionTab(project) !== 'preview') {
+                return;
+            }
+            this.projects = this.projects.map(candidate => candidate.id === latestProject.id ? latestProject : candidate);
+            this.renderPreviewTab(latestProject, summary);
+        }).finally(() => {
+            this.transcriptPreviewRecoveryRequests.delete(summary.id);
+        });
     }
 
     protected mountTranscriptEmptyPreview(
@@ -9960,7 +9986,7 @@ export class MobileProjectsPanel {
         if (this.activeExecutionTab(project) !== 'preview' && !this.transcriptPreviewRequestPending) {
             return;
         }
-        const latestProject = await this.refreshTranscriptPreviewProject(project);
+        const latestProject = await this.refreshTranscriptPreviewProject(project, summary);
         if (this.resolveTranscriptPreviewUrl(latestProject, conv) || conv.status !== 'streaming') {
             this.transcriptPreviewRequestPending = false;
         }
@@ -9969,13 +9995,71 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected async refreshTranscriptPreviewProject(project: MobileProjectEntry): Promise<MobileProjectEntry> {
+    protected async refreshTranscriptPreviewProject(project: MobileProjectEntry, summary?: QaapAgentConversationSummaryDTO): Promise<MobileProjectEntry> {
         try {
+            const previousPreviewUrl = project.previewUrl
+                ?? this.projects.find(candidate => candidate.id === project.id)?.previewUrl;
             this.projects = await this.projectsService.loadProjects();
-            return this.projects.find(candidate => candidate.id === project.id) ?? project;
+            const loadedProject = this.projects.find(candidate => candidate.id === project.id) ?? project;
+            const latestProject = previousPreviewUrl && !loadedProject.previewUrl
+                ? { ...loadedProject, previewUrl: previousPreviewUrl }
+                : loadedProject;
+            if (latestProject.previewUrl) {
+                if (await this.previewUrlMatchesProject(latestProject.previewUrl, latestProject)) {
+                    return latestProject;
+                }
+            }
+            const previewUrl = await this.projectsService.resolveProjectPreviewUrl(latestProject, summary?.cwd);
+            if (previewUrl && await this.previewUrlMatchesProject(previewUrl, latestProject)) {
+                return { ...latestProject, previewUrl };
+            }
+            const discoveredPreviewUrl = await this.discoverProjectDevPreviewUrl(latestProject);
+            return discoveredPreviewUrl ? { ...latestProject, previewUrl: discoveredPreviewUrl } : latestProject;
         } catch {
+            const previewUrl = await this.projectsService.resolveProjectPreviewUrl(project, summary?.cwd).catch(() => undefined);
+            if (previewUrl && await this.previewUrlMatchesProject(previewUrl, project).catch(() => false)) {
+                return { ...project, previewUrl };
+            }
+            const discoveredPreviewUrl = await this.discoverProjectDevPreviewUrl(project).catch(() => undefined);
+            if (discoveredPreviewUrl) {
+                return { ...project, previewUrl: discoveredPreviewUrl };
+            }
             return project;
         }
+    }
+
+    protected async previewUrlMatchesProject(previewUrl: string, project: MobileProjectEntry): Promise<boolean> {
+        const projectName = project.name.trim().toLowerCase();
+        if (!projectName) {
+            return true;
+        }
+        try {
+            const response = await fetch(normalizePreviewUrlForSameOrigin(previewUrl), { cache: 'no-store' });
+            if (!response.ok) {
+                return false;
+            }
+            const html = await response.text();
+            const title = /<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1]?.trim().toLowerCase();
+            return !title || title.includes(projectName);
+        } catch {
+            return false;
+        }
+    }
+
+    protected async discoverProjectDevPreviewUrl(project: MobileProjectEntry): Promise<string | undefined> {
+        const ports = Array.from({ length: 18 }, (_, index) => 5173 + index);
+        const probes = await Promise.all(ports.map(async port => {
+            const probe = await probeQaapDevPreviewPort(port);
+            if (!probe.ready || !await this.previewUrlMatchesProject(probe.previewUrl, project)) {
+                return undefined;
+            }
+            return normalizePreviewUrlForSameOrigin(probe.previewUrl);
+        }));
+        const previewUrl = probes.find(Boolean);
+        if (previewUrl) {
+            void this.projectsService.recordProjectPreviewUrl(project, previewUrl);
+        }
+        return previewUrl;
     }
 
     protected resolveTranscriptPreviewUrl(

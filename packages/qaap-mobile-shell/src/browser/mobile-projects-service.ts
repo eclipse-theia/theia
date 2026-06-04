@@ -855,6 +855,30 @@ export class MobileProjectsService {
         }
     }
 
+    async recordProjectPreviewUrl(project: MobileProjectEntry, previewUrl: string): Promise<void> {
+        const repoKey = this.projectSessionKey(project);
+        if (!repoKey) {
+            return;
+        }
+        await this.recordProjectSession({
+            repoKey,
+            branch: project.branch || 'main',
+            previewUrl,
+        });
+    }
+
+    async resolveProjectPreviewUrl(project: MobileProjectEntry, cwd?: string): Promise<string | undefined> {
+        const repoKey = this.projectSessionKey(project);
+        const cwdRepoKey = cwd ? `ws:${new URI(cwd).withScheme('file').toString()}` : undefined;
+        if (!repoKey && !cwdRepoKey) {
+            return project.previewUrl;
+        }
+        const sessions = await this.loadSessionMap();
+        return (repoKey ? sessions.get(repoKey)?.previewUrl : undefined)
+            ?? (cwdRepoKey ? sessions.get(cwdRepoKey)?.previewUrl : undefined)
+            ?? project.previewUrl;
+    }
+
     protected touchProjectActivity(project: MobileProjectEntry): void {
         const repoKey = this.projectSessionKey(project);
         if (!repoKey) {

@@ -20,6 +20,13 @@ describe('qaap-preview-url-utils', () => {
             .to.equal('http://localhost:3000/qaap-dev/5173/@vite/client');
     });
 
+    it('rewrites bare localhost dev ports to the qaap-dev proxy', () => {
+        expect(normalizePreviewUrlForSameOrigin('localhost:5184', 'http://localhost:3000'))
+            .to.equal('http://localhost:3000/qaap-dev/5184/');
+        expect(normalizePreviewUrlForSameOrigin('127.0.0.1:5184/app', 'http://localhost:3000'))
+            .to.equal('http://localhost:3000/qaap-dev/5184/app');
+    });
+
     it('leaves already-proxied URLs unchanged', () => {
         const proxied = 'http://localhost:3000/qaap-dev/5173/';
         expect(normalizePreviewUrlForSameOrigin(proxied, 'http://localhost:3000')).to.equal(proxied);

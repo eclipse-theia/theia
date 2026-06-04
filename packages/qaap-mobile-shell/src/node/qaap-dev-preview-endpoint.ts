@@ -21,6 +21,7 @@ import { normalizeQaapPublicUrl } from './qaap-github-oauth-config';
 
 const PROBE_TIMEOUT_MS = 2500;
 const PROXY_TARGET_HOST = '127.0.0.1';
+const TEXT_RESPONSE_PATTERN = /\b(?:text\/html|text\/css|application\/javascript|text\/javascript|application\/x-javascript)\b/i;
 
 function getQaapBackendListenPort(): number {
     const parsed = Number(process.env.PORT);
@@ -124,6 +125,7 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
     protected forwardHttp(incoming: Request, outgoing: Response, targetPort: number, targetPath: string): void {
         const headers: http.OutgoingHttpHeaders = { ...incoming.headers };
         headers.host = `${PROXY_TARGET_HOST}:${targetPort}`;
+        headers['accept-encoding'] = 'identity';
         delete headers.connection;
 
         const proxyReq = http.request({
@@ -133,8 +135,26 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
             method: incoming.method,
             headers,
         }, proxyRes => {
-            outgoing.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
-            proxyRes.pipe(outgoing);
+            const responseHeaders = { ...proxyRes.headers };
+            const location = responseHeaders.location;
+            if (typeof location === 'string') {
+                responseHeaders.location = this.rewriteDevPreviewLocation(location, targetPort);
+            }
+
+            if (!this.shouldRewriteProxyBody(proxyRes)) {
+                outgoing.writeHead(proxyRes.statusCode ?? 502, responseHeaders);
+                proxyRes.pipe(outgoing);
+                return;
+            }
+
+            delete responseHeaders['content-length'];
+            outgoing.writeHead(proxyRes.statusCode ?? 502, responseHeaders);
+            const chunks: Buffer[] = [];
+            proxyRes.on('data', chunk => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+            proxyRes.on('end', () => {
+                const body = Buffer.concat(chunks).toString('utf8');
+                outgoing.end(this.rewriteDevPreviewBody(body, targetPort));
+            });
         });
         proxyReq.on('error', () => {
             if (!outgoing.headersSent) {
@@ -146,6 +166,45 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
             }
         });
         incoming.pipe(proxyReq);
+    }
+
+    protected shouldRewriteProxyBody(proxyRes: http.IncomingMessage): boolean {
+        const encoding = proxyRes.headers['content-encoding'];
+        if (encoding && encoding !== 'identity') {
+            return false;
+        }
+        const contentType = proxyRes.headers['content-type'];
+        return typeof contentType === 'string' && TEXT_RESPONSE_PATTERN.test(contentType);
+    }
+
+    protected rewriteDevPreviewLocation(location: string, targetPort: number): string {
+        if (location.startsWith(`${QAAP_DEV_PREVIEW_PREFIX}/`)) {
+            return location;
+        }
+        if (location.startsWith('/')) {
+            return `${QAAP_DEV_PREVIEW_PREFIX}/${targetPort}${location}`;
+        }
+        try {
+            const parsed = new URL(location);
+            if (parsed.hostname === PROXY_TARGET_HOST || parsed.hostname === 'localhost') {
+                parsed.host = '';
+                return `${QAAP_DEV_PREVIEW_PREFIX}/${targetPort}${parsed.pathname}${parsed.search}${parsed.hash}`;
+            }
+        } catch {
+            // Relative redirect without a leading slash; leave it untouched.
+        }
+        return location;
+    }
+
+    protected rewriteDevPreviewBody(body: string, targetPort: number): string {
+        const prefix = `${QAAP_DEV_PREVIEW_PREFIX}/${targetPort}`;
+        return body
+            .replace(/\b(src|href|action)=("|')\/(?!\/|qaap-dev\/)/g, `$1=$2${prefix}/`)
+            .replace(/\burl\(\s*(["']?)\/(?!\/|qaap-dev\/)/g, `url($1${prefix}/`)
+            .replace(/(["'`])\/(?!\/|qaap-dev\/)([^"'`\s]*)\1/g, `$1${prefix}/$2$1`)
+            .replace(/(\bimport\s*(?:\(|[^"'`]*from\s*)?["'`])\/(?!\/|qaap-dev\/)/g, `$1${prefix}/`)
+            .replace(/(\bexport\s+[^"'`]*from\s*["'`])\/(?!\/|qaap-dev\/)/g, `$1${prefix}/`)
+            .replace(/(\bnew\s+URL\(\s*["'`])\/(?!\/|qaap-dev\/)/g, `$1${prefix}/`);
     }
 
     protected isIdeListenPort(port: number): boolean {

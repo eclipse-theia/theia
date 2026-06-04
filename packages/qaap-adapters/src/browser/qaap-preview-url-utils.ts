@@ -7,6 +7,16 @@
 export const QAAP_DEV_PREVIEW_PATH_PREFIX = '/qaap-dev';
 
 const LOCAL_DEV_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '::1']);
+const BARE_LOCAL_DEV_URL_PATTERN = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):(\d{2,5})(\/.*)?$/i;
+
+function normalizeBareLocalDevUrl(url: string): string {
+    const match = BARE_LOCAL_DEV_URL_PATTERN.exec(url.trim());
+    if (!match) {
+        return url;
+    }
+    const host = match[1].replace(/^\[?::1\]?$/i, '[::1]');
+    return `http://${host}:${match[2]}${match[3] ?? '/'}`;
+}
 
 function parseDevPort(raw: string | undefined): number | undefined {
     const port = Number(raw);
@@ -28,7 +38,7 @@ function ideOrigin(): string | undefined {
  * `/qaap-dev/:port/...` proxy so the element picker and inspector can access the iframe DOM.
  */
 export function normalizePreviewUrlForSameOrigin(url: string, publicOrigin?: string): string {
-    const trimmed = url.trim();
+    const trimmed = normalizeBareLocalDevUrl(url.trim());
     if (!trimmed) {
         return trimmed;
     }
