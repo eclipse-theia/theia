@@ -4,7 +4,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { resolveTranscriptPinnedUserIndex } from './qaap-transcript-user-scroll-pin';
+import {
+    resolveStuckUserIndex,
+    resolveTranscriptPinnedUserIndex,
+    transcriptUserMessageScrollTop,
+} from './qaap-transcript-user-scroll-pin';
 
 describe('qaap-transcript-user-scroll-pin', () => {
 
@@ -27,5 +31,17 @@ describe('qaap-transcript-user-scroll-pin', () => {
 
     it('hands off to the previous user message when scrolling up', () => {
         expect(resolveTranscriptPinnedUserIndex([4, 400, 900], 200, 1)).to.equal(0);
+    });
+
+    it('scrolls to the message anchor offset with top padding', () => {
+        expect(transcriptUserMessageScrollTop(420)).to.equal(412);
+        expect(transcriptUserMessageScrollTop(4)).to.equal(0);
+    });
+
+    it('picks the last user message stuck at the scrollport top (handoff)', () => {
+        expect(resolveStuckUserIndex([520, 23, 23])).to.equal(2);
+        expect(resolveStuckUserIndex([23, 23, 890])).to.equal(1);
+        expect(resolveStuckUserIndex([120, 400])).to.equal(undefined);
+        expect(resolveStuckUserIndex([23])).to.equal(0);
     });
 });

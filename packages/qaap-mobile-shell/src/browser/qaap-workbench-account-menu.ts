@@ -6,6 +6,7 @@
 import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
 import type { WorkHubCatalogAction, WorkHubCatalogItem, WorkHubCatalogSection } from '../common/mobile-work-hub-catalog';
+import { bindCatalogCardTapFeedback } from './qaap-catalog-card-tap-feedback';
 
 export const QAAP_AUTH_SIGN_IN_GITHUB_COMMAND = 'qaap.auth.signInGithub';
 export const QAAP_AUTH_SIGN_OUT_COMMAND = 'qaap.auth.signOut';
@@ -334,6 +335,7 @@ function createAccountMenuCatalogCard(
     chevron.setAttribute('aria-hidden', 'true');
 
     card.append(icon, body, chevron);
+    bindCatalogCardTapFeedback(card);
     card.addEventListener('click', () => {
         dismissQaapAccountMenu();
         onCatalogAction(item.action);

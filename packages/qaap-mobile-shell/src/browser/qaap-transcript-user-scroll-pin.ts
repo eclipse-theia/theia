@@ -3,21 +3,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable } from '@theia/core/lib/common/disposable';
-import { resolveTranscriptPinnedUserIndex } from '../common/qaap-transcript-user-scroll-pin';
+import { Disposable, nls } from '@theia/core/lib/common';
+import {
+    isTranscriptContentTall,
+    transcriptScrollCompactMaxHeightPx,
+} from '../common/qaap-transcript-scroll-compact';
+import {
+    resolveStuckUserIndex,
+    transcriptUserMessageScrollTop,
+} from '../common/qaap-transcript-user-scroll-pin';
 
 const USER_WRAP_SELECTOR = '.theia-mobile-agent-transcript-user-wrap';
 const USER_BUBBLE_SELECTOR = '.theia-mobile-agent-transcript-msg.theia-mod-user';
-const PIN_SPACER_CLASS = 'theia-mobile-agent-transcript-user-pin-spacer';
-const PINNED_CLASS = 'theia-mod-scroll-pinned';
-const HANDOFF_IN_CLASS = 'theia-mod-scroll-pin-handoff-in';
-const HANDOFF_OUT_CLASS = 'theia-mod-scroll-pin-handoff-out';
-const HANDOFF_MS = 260;
+const STUCK_WRAP_CLASS = 'theia-mod-sticky-stuck';
+const JUMP_CLASS = 'theia-mod-scroll-pinned-jump';
+const STICKY_COMPACT_CLASS = 'theia-mod-sticky-compact';
+const CONTENT_SELECTOR = '.theia-mobile-agent-transcript-content';
 
 interface TranscriptUserPinEntry {
     readonly wrap: HTMLElement;
     readonly bubble: HTMLElement;
-    spacer: HTMLElement;
+}
+
+function wrapScrollTopInScroller(wrap: HTMLElement, scroller: HTMLElement): number {
+    let top = 0;
+    let node: HTMLElement | null = wrap;
+    while (node && node !== scroller) {
+        top += node.offsetTop;
+        node = node.offsetParent as HTMLElement | null;
+    }
+    return top;
 }
 
 function prefersReducedMotion(): boolean {
@@ -25,101 +40,42 @@ function prefersReducedMotion(): boolean {
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function anchorOffsetInScroller(wrap: HTMLElement, scroller: HTMLElement): number {
-    return wrap.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
-}
-
-function ensureSpacer(entry: TranscriptUserPinEntry): HTMLElement {
-    let spacer = entry.wrap.querySelector<HTMLElement>(`.${PIN_SPACER_CLASS}`);
-    if (!spacer) {
-        spacer = document.createElement('div');
-        spacer.className = PIN_SPACER_CLASS;
-        spacer.setAttribute('aria-hidden', 'true');
-        entry.wrap.insertBefore(spacer, entry.bubble);
-    }
-    entry.spacer = spacer;
-    return spacer;
-}
-
-function clearEntryPin(entry: TranscriptUserPinEntry): void {
-    entry.bubble.classList.remove(PINNED_CLASS, HANDOFF_IN_CLASS, HANDOFF_OUT_CLASS);
-    entry.bubble.style.removeProperty('position');
-    entry.bubble.style.removeProperty('top');
-    entry.bubble.style.removeProperty('right');
-    entry.bubble.style.removeProperty('width');
-    entry.bubble.style.removeProperty('max-width');
-    entry.bubble.style.removeProperty('z-index');
-    entry.bubble.style.removeProperty('transform');
-    entry.spacer.style.height = '0px';
-    entry.wrap.classList.remove('theia-mod-scroll-pin-active');
-}
-
-/** Lock bubble to the top edge of the scrollport (does not move with scroll). */
-function layoutFixedPin(entry: TranscriptUserPinEntry, scroller: HTMLElement): void {
-    const scrollerRect = scroller.getBoundingClientRect();
-    const wrapRect = entry.wrap.getBoundingClientRect();
-    const height = entry.bubble.offsetHeight;
-    ensureSpacer(entry);
-    entry.spacer.style.height = `${height}px`;
-    entry.wrap.classList.add('theia-mod-scroll-pin-active');
-    entry.bubble.classList.add(PINNED_CLASS);
-    entry.bubble.style.position = 'fixed';
-    entry.bubble.style.top = `${scrollerRect.top}px`;
-    entry.bubble.style.right = `${Math.max(0, window.innerWidth - wrapRect.right)}px`;
-    entry.bubble.style.width = `${wrapRect.width}px`;
-    entry.bubble.style.maxWidth = '86vw';
-    entry.bubble.style.zIndex = '5';
-    entry.bubble.style.transform = '';
-}
-
-function applyEntryPin(
-    entry: TranscriptUserPinEntry,
-    scroller: HTMLElement,
-    options: { readonly handoffIn: boolean },
-): void {
-    layoutFixedPin(entry, scroller);
-    if (options.handoffIn && !prefersReducedMotion()) {
-        entry.bubble.classList.add(HANDOFF_IN_CLASS);
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                entry.bubble.classList.remove(HANDOFF_IN_CLASS);
-            });
-        });
-    }
-}
-
-function releasePinWithHandoff(entry: TranscriptUserPinEntry, onDone: () => void): void {
-    if (!entry.bubble.classList.contains(PINNED_CLASS) || prefersReducedMotion()) {
-        onDone();
+function syncStickyCompact(entry: TranscriptUserPinEntry): void {
+    const content = entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR);
+    if (!content) {
         return;
     }
-    let finished = false;
-    const finish = (): void => {
-        if (finished) {
-            return;
-        }
-        finished = true;
-        entry.bubble.removeEventListener('transitionend', onTransitionEnd);
-        window.clearTimeout(fallbackTimer);
-        onDone();
-    };
-    const onTransitionEnd = (event: TransitionEvent): void => {
-        if (event.target === entry.bubble && (event.propertyName === 'opacity' || event.propertyName === 'transform')) {
-            finish();
-        }
-    };
-    entry.bubble.classList.remove(HANDOFF_IN_CLASS);
-    entry.bubble.classList.add(HANDOFF_OUT_CLASS);
-    entry.bubble.addEventListener('transitionend', onTransitionEnd);
-    const fallbackTimer = window.setTimeout(finish, HANDOFF_MS + 48);
+    const maxHeightPx = transcriptScrollCompactMaxHeightPx(parseFloat(getComputedStyle(content).fontSize));
+    content.classList.toggle(STICKY_COMPACT_CLASS, isTranscriptContentTall(content, maxHeightPx));
+}
+
+function clearStickyVisual(entry: TranscriptUserPinEntry): void {
+    entry.wrap.classList.remove(STUCK_WRAP_CLASS);
+    entry.bubble.classList.remove(JUMP_CLASS);
+    entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR)?.classList.remove(STICKY_COMPACT_CLASS);
+    entry.bubble.removeAttribute('tabindex');
+    entry.bubble.removeAttribute('title');
+    entry.bubble.removeAttribute('aria-label');
+}
+
+function applyStickyVisual(entry: TranscriptUserPinEntry): void {
+    entry.wrap.classList.add(STUCK_WRAP_CLASS);
+    const jumpLabel = nls.localize('qaap/mobileProjects/transcriptPinnedJump', 'Jump to message');
+    entry.bubble.classList.add(JUMP_CLASS);
+    syncStickyCompact(entry);
+    entry.bubble.setAttribute('tabindex', '0');
+    entry.bubble.setAttribute('title', jumpLabel);
+    entry.bubble.setAttribute('aria-label', jumpLabel);
 }
 
 /**
- * Cursor-style sticky user prompt: fixed at the scrollport top until the next/previous user message replaces it.
+ * Sticky user prompts hand off at scroll intersections (CSS sticky on every wrap; compact preview on the one stuck at top).
  */
 export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable {
     let raf = 0;
-    let activeIndex: number | undefined;
+    let stuckIndex: number | undefined;
+    let scrollToUserMessage = false;
+    let scrollToUserMessageTimer: number | undefined;
 
     const collectEntries = (): TranscriptUserPinEntry[] => {
         const entries: TranscriptUserPinEntry[] = [];
@@ -128,59 +84,121 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
             if (!bubble) {
                 continue;
             }
-            const spacer = wrap.querySelector<HTMLElement>(`.${PIN_SPACER_CLASS}`);
-            entries.push({
-                wrap,
-                bubble,
-                spacer: spacer ?? document.createElement('div'),
-            });
+            entries.push({ wrap, bubble });
         }
         return entries;
     };
 
-    const clearInactiveEntries = (entries: TranscriptUserPinEntry[], keepIndex: number): void => {
-        for (let i = 0; i < entries.length; i++) {
-            if (i === keepIndex) {
-                continue;
-            }
-            if (entries[i].bubble.classList.contains(PINNED_CLASS)
-                && !entries[i].bubble.classList.contains(HANDOFF_OUT_CLASS)) {
-                clearEntryPin(entries[i]);
-            }
+    const finishScrollToUserMessage = (): void => {
+        scrollToUserMessage = false;
+        if (scrollToUserMessageTimer !== undefined) {
+            window.clearTimeout(scrollToUserMessageTimer);
+            scrollToUserMessageTimer = undefined;
         }
+        scheduleSync();
+    };
+
+    const scrollStickyMessageIntoView = (entry: TranscriptUserPinEntry): void => {
+        const targetTop = transcriptUserMessageScrollTop(wrapScrollTopInScroller(entry.wrap, scroller));
+        scrollToUserMessage = true;
+        stuckIndex = undefined;
+        clearStickyVisual(entry);
+        if (scrollToUserMessageTimer !== undefined) {
+            window.clearTimeout(scrollToUserMessageTimer);
+        }
+        const onScrollDone = (): void => {
+            scroller.removeEventListener('scrollend', onScrollDone);
+            if (scrollToUserMessageTimer !== undefined) {
+                window.clearTimeout(scrollToUserMessageTimer);
+                scrollToUserMessageTimer = undefined;
+            }
+            finishScrollToUserMessage();
+        };
+        if ('onscrollend' in scroller) {
+            scroller.addEventListener('scrollend', onScrollDone, { once: true });
+        }
+        scrollToUserMessageTimer = window.setTimeout(onScrollDone, prefersReducedMotion() ? 32 : 700);
+        scroller.scrollTo({
+            top: targetTop,
+            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        });
+    };
+
+    const resolveStickyEntryFromTarget = (target: EventTarget | null): TranscriptUserPinEntry | undefined => {
+        const wrap = (target as HTMLElement | null)?.closest<HTMLElement>(USER_WRAP_SELECTOR);
+        if (!wrap?.classList.contains(STUCK_WRAP_CLASS)) {
+            return undefined;
+        }
+        return collectEntries().find(entry => entry.wrap === wrap);
+    };
+
+    const onStickyActivate = (event: Event): void => {
+        const entry = resolveStickyEntryFromTarget(event.target);
+        if (!entry) {
+            return;
+        }
+        if ((event.target as HTMLElement | null)?.closest('a, .theia-mobile-agent-transcript-user-action')) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        scrollStickyMessageIntoView(entry);
+    };
+
+    const onStickyKeyDown = (event: KeyboardEvent): void => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+        const entry = resolveStickyEntryFromTarget(event.target);
+        if (!entry) {
+            return;
+        }
+        event.preventDefault();
+        scrollStickyMessageIntoView(entry);
     };
 
     const sync = (): void => {
+        if (scrollToUserMessage) {
+            return;
+        }
         raf = 0;
         const entries = collectEntries();
         if (entries.length === 0) {
-            activeIndex = undefined;
+            stuckIndex = undefined;
             return;
         }
-        const offsets = entries.map(e => anchorOffsetInScroller(e.wrap, scroller));
-        const index = resolveTranscriptPinnedUserIndex(offsets, scroller.scrollTop, activeIndex);
+
+        const scrollerRect = scroller.getBoundingClientRect();
+        const wrapTopsRelative = entries.map(
+            e => e.wrap.getBoundingClientRect().top - scrollerRect.top,
+        );
+        const index = resolveStuckUserIndex(wrapTopsRelative);
+
+        entries.forEach((entry, i) => {
+            entry.wrap.style.zIndex = String(10 + i);
+        });
 
         if (index === undefined) {
+            stuckIndex = undefined;
+            for (const entry of entries) {
+                clearStickyVisual(entry);
+            }
             return;
         }
 
-        if (index === activeIndex) {
-            layoutFixedPin(entries[index], scroller);
+        if (index === stuckIndex) {
+            applyStickyVisual(entries[index]);
             return;
         }
 
-        const previousIndex = activeIndex;
-        activeIndex = index;
-        clearInactiveEntries(entries, index);
-
-        if (previousIndex !== undefined && previousIndex < entries.length) {
-            const outgoing = entries[previousIndex];
-            releasePinWithHandoff(outgoing, () => clearEntryPin(outgoing));
+        stuckIndex = index;
+        for (let i = 0; i < entries.length; i++) {
+            if (i === index) {
+                applyStickyVisual(entries[i]);
+            } else {
+                clearStickyVisual(entries[i]);
+            }
         }
-
-        applyEntryPin(entries[index], scroller, {
-            handoffIn: previousIndex !== undefined,
-        });
     };
 
     const scheduleSync = (): void => {
@@ -191,6 +209,8 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
     };
 
     scroller.addEventListener('scroll', scheduleSync, { passive: true });
+    scroller.addEventListener('click', onStickyActivate);
+    scroller.addEventListener('keydown', onStickyKeyDown);
     const resizeObserver = typeof ResizeObserver !== 'undefined'
         ? new ResizeObserver(scheduleSync)
         : undefined;
@@ -205,11 +225,17 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
             cancelAnimationFrame(raf);
         }
         scroller.removeEventListener('scroll', scheduleSync);
+        scroller.removeEventListener('click', onStickyActivate);
+        scroller.removeEventListener('keydown', onStickyKeyDown);
+        if (scrollToUserMessageTimer !== undefined) {
+            window.clearTimeout(scrollToUserMessageTimer);
+        }
         resizeObserver?.disconnect();
         mutationObserver.disconnect();
-        activeIndex = undefined;
+        stuckIndex = undefined;
         for (const entry of collectEntries()) {
-            clearEntryPin(entry);
+            clearStickyVisual(entry);
+            entry.wrap.style.removeProperty('z-index');
         }
     });
 }

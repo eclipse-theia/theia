@@ -178,6 +178,8 @@ import {
     dismissQaapAccountMenu,
     toggleQaapAccountMenu,
 } from './qaap-workbench-account-menu';
+import { bindCatalogCardTapFeedback } from './qaap-catalog-card-tap-feedback';
+import { applyExecutionSurfaceHeaderChrome } from './qaap-execution-surface-header-chrome';
 import {
     fetchQaapAuthConfig,
     fetchQaapAuthSession,
@@ -1009,12 +1011,54 @@ export class MobileProjectsPanel {
     /** Keep Chat vs overflow-select styling in sync on every connected header strip. */
     protected syncExecutionSurfaceChrome(project: MobileProjectEntry): void {
         const tab = this.executionSurfaceTabForProject(project);
-        if (this.projectDetailTabStrip?.isConnected) {
-            this.refreshExecutionSurfaceTabStripState(this.projectDetailTabStrip, tab);
-        }
-        if (this.transcriptTabStrip?.isConnected) {
+        this.syncExecutionSurfaceChromeInHost(this.headerExecutionTabsHost, tab, linked => {
+            this.projectDetailTabStrip = linked;
+        });
+        if (this.transcriptSheet?.isConnected) {
+            this.syncExecutionSurfaceChromeInHost(this.transcriptSheet, tab, linked => {
+                this.transcriptTabStrip = linked;
+            });
+        } else if (this.transcriptTabStrip?.isConnected) {
             this.refreshExecutionSurfaceTabStripState(this.transcriptTabStrip, tab);
         }
+    }
+
+    protected syncExecutionSurfaceChromeInHost(
+        host: HTMLElement,
+        tab: TranscriptTab,
+        linkStrip: (strip: HTMLElement) => void,
+    ): void {
+        const strips = host.querySelectorAll<HTMLElement>('.theia-mobile-transcript-tabs.theia-mod-header-inline');
+        if (strips.length === 0) {
+            return;
+        }
+        strips.forEach(strip => this.refreshExecutionSurfaceTabStripState(strip, tab));
+        linkStrip(strips[strips.length - 1]!);
+    }
+
+    protected resolveExecutionSurfaceTabStripHost(strip: HTMLElement | undefined): HTMLElement | undefined {
+        if (!strip) {
+            return undefined;
+        }
+        const host = strip.closest('.theia-mobile-projects-header-execution-tabs');
+        return host instanceof HTMLElement ? host : strip.parentElement ?? undefined;
+    }
+
+    /** Same host wrapper as project-detail (task) header — keeps tab chrome CSS identical. */
+    protected appendExecutionSurfaceTabStripToTitleRow(titleRow: HTMLElement, strip: HTMLElement): void {
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-projects-header-execution-tabs';
+        host.append(strip);
+        titleRow.append(host);
+    }
+
+    protected replaceExecutionSurfaceTabStrip(currentStrip: HTMLElement | undefined, nextStrip: HTMLElement): void {
+        const host = this.resolveExecutionSurfaceTabStripHost(currentStrip);
+        if (host) {
+            host.replaceChildren(nextStrip);
+            return;
+        }
+        currentStrip?.replaceWith(nextStrip);
     }
 
     protected resolveExecutionSurfaceProject(): MobileProjectEntry | undefined {
@@ -2167,6 +2211,9 @@ export class MobileProjectsPanel {
         this.renderSubtitle();
         this.syncHeaderComposerSurfacePicker();
         this.syncHeaderExecutionTabStrip();
+        if (this.transcriptSheet && this.transcriptOpenProject) {
+            this.syncExecutionSurfaceChrome(this.transcriptOpenProject);
+        }
         this.syncHubViewAvailability();
         this.renderFilters();
         this.renderList();
@@ -3013,20 +3060,19 @@ export class MobileProjectsPanel {
             );
             this.headerExecutionTabsHost.replaceChildren(tabStrip);
             this.projectDetailTabStrip = tabStrip;
+            applyExecutionSurfaceHeaderChrome(tabStrip, activeTab);
+            this.applyExecutionSurfaceIconSelectDisplay(tabStrip, activeTab);
             return;
         }
         this.syncProjectDetailTabStrip();
     }
 
     protected syncProjectDetailTabStrip(): void {
-        if (!this.projectDetailTabStrip) {
-            return;
-        }
         const project = this.resolveExecutionSurfaceProject();
         if (!project) {
             return;
         }
-        this.refreshExecutionSurfaceTabStripState(this.projectDetailTabStrip, this.executionSurfaceTabForProject(project));
+        this.syncExecutionSurfaceChrome(project);
     }
 
     protected syncTranscriptTabStrip(project: MobileProjectEntry): void {
@@ -3045,6 +3091,7 @@ export class MobileProjectsPanel {
             );
             this.headerExecutionTabsHost.replaceChildren(strip);
             this.projectDetailTabStrip = strip;
+            this.refreshExecutionSurfaceTabStripState(strip, activeTab);
         }
         if (this.transcriptTabStrip?.isConnected && this.transcriptOpenSummary) {
             const summary = this.transcriptOpenSummary;
@@ -3052,26 +3099,20 @@ export class MobileProjectsPanel {
                 activeTab,
                 tab => this.selectTranscriptTab(tab, project, summary),
             );
-            this.transcriptTabStrip.replaceWith(strip);
+            this.replaceExecutionSurfaceTabStrip(this.transcriptTabStrip, strip);
             this.transcriptTabStrip = strip;
+            this.refreshExecutionSurfaceTabStripState(strip, activeTab);
         }
     }
 
+    /** Transcript + task headers share {@link applyExecutionSurfaceHeaderChrome}. */
     protected refreshExecutionSurfaceTabStripState(strip: HTMLElement, activeTab: TranscriptTab): void {
         if (activeTab === 'messages') {
             this.closeExecutionTabOverflowMenu();
         }
-        strip.dataset.activeSurface = activeTab === 'messages' ? 'messages' : 'overflow';
-        const chatBtn = strip.querySelector<HTMLButtonElement>('.theia-mobile-transcript-tab[data-tab="messages"]');
-        if (chatBtn) {
-            const chatActive = activeTab === 'messages';
-            chatBtn.classList.toggle('theia-mod-active', chatActive);
-            chatBtn.setAttribute('aria-selected', chatActive ? 'true' : 'false');
-        }
+        applyExecutionSurfaceHeaderChrome(strip, activeTab);
         const selectBtn = strip.querySelector<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select');
-        if (selectBtn) {
-            selectBtn.setAttribute('aria-expanded', 'false');
-        }
+        selectBtn?.setAttribute('aria-expanded', 'false');
         this.applyExecutionSurfaceIconSelectDisplay(strip, activeTab);
     }
 
@@ -3118,7 +3159,6 @@ export class MobileProjectsPanel {
         }
         selectBtn.dataset.tab = spec.id;
         selectBtn.title = spec.label;
-        selectBtn.classList.toggle('theia-mod-active', this.isExecutionSurfaceSelectActive(activeTab));
         symbol.replaceWith(createExecutionSurfaceIconElement(spec.icon, 'theia-mobile-transcript-tab-icon-select-symbol'));
         for (const item of Array.from(strip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select-option'))) {
             const tabId = item.dataset.tab as TranscriptTab | undefined;
@@ -5615,6 +5655,7 @@ export class MobileProjectsPanel {
         chevron.setAttribute('aria-hidden', 'true');
 
         card.append(icon, body, chevron);
+        bindCatalogCardTapFeedback(card);
         card.addEventListener('click', () => { void this.runCatalogAction(item.action); });
         return card;
     }
@@ -8415,7 +8456,10 @@ export class MobileProjectsPanel {
         chatInputHost.hidden = false;
 
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
-        header.querySelector('.theia-mobile-agent-log-title-row')?.append(tabStrip);
+        const titleRow = header.querySelector('.theia-mobile-agent-log-title-row');
+        if (titleRow instanceof HTMLElement) {
+            this.appendExecutionSurfaceTabStripToTitleRow(titleRow, tabStrip);
+        }
         this.refreshExecutionSurfaceTabStripState(tabStrip, 'messages');
         const planHost = document.createElement('div');
         planHost.className = 'theia-mobile-transcript-plan';
@@ -8485,7 +8529,9 @@ export class MobileProjectsPanel {
                 }
                 this.transcriptLastFingerprint = fingerprint;
                 this.renderTranscriptMessages(chatHost, full);
-                this.mountTranscriptSurfaceTab(project, summary, this.executionSurfaceTabForProject(project));
+                const surfaceTab = this.executionSurfaceTabForProject(project);
+                this.applyTranscriptTabVisibility(surfaceTab);
+                this.mountTranscriptSurfaceTab(project, summary, surfaceTab);
                 this.syncExecutionSurfaceChrome(project);
                 this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
                 if (full.status === 'streaming' || this.transcriptPreviewRequestPending) {
@@ -8630,6 +8676,7 @@ export class MobileProjectsPanel {
             overflowSpecs,
             selectTab,
         ));
+        applyExecutionSurfaceHeaderChrome(strip, activeTab);
         return strip;
     }
 
@@ -8654,7 +8701,9 @@ export class MobileProjectsPanel {
         btn.className = 'theia-mobile-transcript-tab';
         btn.dataset.tab = tab.id;
         btn.setAttribute('role', 'tab');
-        btn.classList.toggle('theia-mod-active', active);
+        btn.classList.remove('theia-mod-active');
+        btn.classList.toggle('theia-mod-selected', active);
+        btn.dataset.surfaceActive = active ? 'true' : 'false';
         btn.setAttribute('aria-selected', active ? 'true' : 'false');
         btn.title = tab.label;
         btn.setAttribute('aria-label', tab.label);
@@ -8696,7 +8745,11 @@ export class MobileProjectsPanel {
         trigger.setAttribute('role', 'button');
         trigger.setAttribute('aria-haspopup', 'menu');
         trigger.setAttribute('aria-expanded', 'false');
-        trigger.classList.toggle('theia-mod-active', this.isExecutionSurfaceSelectActive(activeTab));
+        const selectActive = this.isExecutionSurfaceSelectActive(activeTab);
+        trigger.classList.remove('theia-mod-active');
+        trigger.classList.toggle('theia-mod-selected', selectActive);
+        trigger.dataset.surfaceActive = selectActive ? 'true' : 'false';
+        trigger.setAttribute('aria-selected', selectActive ? 'true' : 'false');
         trigger.title = displaySpec.label;
         trigger.setAttribute('aria-label', menuLabel);
 
@@ -8904,6 +8957,10 @@ export class MobileProjectsPanel {
             this.ensureTranscriptFilesTab(project, summary);
         } else if (tab === 'terminal') {
             void this.ensureTranscriptTerminalTab(project, summary);
+        }
+        this.applyTranscriptTabVisibility(tab);
+        if (this.transcriptOpenProject) {
+            this.syncExecutionSurfaceChrome(this.transcriptOpenProject);
         }
     }
 
@@ -9945,7 +10002,7 @@ export class MobileProjectsPanel {
 
         const message = nls.localize(
             'qaap/mobileProjects/previewAgentRequest',
-            'Levanta esta app para vista previa. Instala dependencias si hace falta. Antes de iniciar el servidor, detecta si el puerto por defecto ya está ocupado; si lo está, elige otro puerto libre para este proyecto sin detener previews de otros proyectos. Ejecuta el servidor de desarrollo en ese puerto disponible y mantenlo corriendo con recarga dinámica/HMR para que los cambios se vean automáticamente en la preview. Cada vez que modifiques código o cualquier archivo del proyecto, ejecuta el build, compile, typecheck o check disponible antes de dar el cambio por terminado; si falla, corrige el problema y vuelve a verificar. Expón la URL final y avísame cuando la preview esté lista.',
+            'Start this app for preview. Install dependencies if needed. Before starting the server, check whether the default port is already in use; if it is, pick another free port for this project without stopping previews for other projects. Run the dev server on that available port and keep it running with hot reload/HMR so changes appear automatically in the preview. Whenever you modify code or any project file, run the available build, compile, typecheck, or check before considering the change done; if it fails, fix the issue and verify again. Expose the final URL and let me know when the preview is ready.',
         );
         this.transcriptPreviewRequestRunning = true;
         this.transcriptPreviewRequestPending = true;

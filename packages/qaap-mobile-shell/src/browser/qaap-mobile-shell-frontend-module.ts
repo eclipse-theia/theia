@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/mobile-workbench.css';
+import '../../src/browser/style/qaap-catalog-card-tap-feedback.css';
 import '../../src/browser/style/qaap-mobile-touch-scroll.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';

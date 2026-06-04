@@ -35,3 +35,29 @@ export function resolveTranscriptPinnedUserIndex(
     }
     return candidate;
 }
+
+/** Scroll position that places the user message at the top of the transcript (unpins the bubble). */
+export function transcriptUserMessageScrollTop(anchorOffsetPx: number, paddingPx = 8): number {
+    return Math.max(0, anchorOffsetPx - paddingPx);
+}
+
+/**
+ * User message currently stuck at the scrollport top (last in document order whose wrap
+ * intersects the top edge). Uses layout-relative top only — sticky elements keep a
+ * document offsetTop near scrollTop, so scrollTop vs offsetTop cannot detect handoff.
+ */
+export function resolveStuckUserIndex(
+    wrapTopsRelativeToScroller: readonly number[],
+    stuckTopMaxPx = 48,
+): number | undefined {
+    if (wrapTopsRelativeToScroller.length === 0) {
+        return undefined;
+    }
+    let candidate: number | undefined;
+    for (let i = 0; i < wrapTopsRelativeToScroller.length; i++) {
+        if (wrapTopsRelativeToScroller[i] <= stuckTopMaxPx) {
+            candidate = i;
+        }
+    }
+    return candidate;
+}
