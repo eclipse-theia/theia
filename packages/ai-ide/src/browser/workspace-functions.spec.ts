@@ -34,7 +34,7 @@ import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-awa
 import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
+import { FileOperationError, FileOperationResult, FileStat } from '@theia/filesystem/lib/common/files';
 import { URI } from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -920,6 +920,199 @@ describe('FindFilesByPattern.findFiles', () => {
         const result = JSON.parse(await call({ pattern: '**/*.ts', searchRoot: '/external/data' }));
         expect(result.files).to.deep.equal(['/external/data/x.ts']);
         expect(fileSearchService.calls[0].options.rootUris).to.deep.equal(['file:///external/data']);
+    });
+});
+
+describe('WorkspaceFunctionScope gitignore caching', () => {
+    let container: Container;
+    let scope: WorkspaceFunctionScope;
+    let resolveCount: number;
+    let gitignoreReadCount: number;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        resolveCount = 0;
+        gitignoreReadCount = 0;
+
+        const mockWorkspaceService = {
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            resolve: async (uri: URI) => { resolveCount++; return { isDirectory: true, resource: uri }; },
+            read: async (uri: URI) => {
+                if (uri.path.base === '.gitignore') {
+                    gitignoreReadCount++;
+                    return { value: 'dist/\n' };
+                }
+                throw new Error('not found');
+            },
+            watch: () => ({ dispose: () => { } }),
+            onDidFilesChange: () => ({ dispose: () => { } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(path: string, defaultValue: T) =>
+                (path === 'ai-features.workspaceFunctions.considerGitIgnore' ? (true as unknown as T) : defaultValue)
+        };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+
+        scope = container.get(WorkspaceFunctionScope);
+    });
+
+    const stat = (path: string, isDirectory = false) => ({
+        resource: new URI(path),
+        isDirectory,
+        path: { base: path.split('/').pop() }
+    }) as unknown as FileStat;
+
+    it('still excludes gitignored paths and keeps others', async () => {
+        expect(await scope.shouldExclude(stat('file:///workspace/dist/a.js'))).to.be.true;
+        expect(await scope.shouldExclude(stat('file:///workspace/src/b.ts'))).to.be.false;
+    });
+
+    it('reads .gitignore at most once and issues no per-check resolve RPC', async () => {
+        for (let i = 0; i < 25; i++) {
+            await scope.shouldExclude(stat(`file:///workspace/src/file${i}.ts`));
+        }
+        expect(gitignoreReadCount).to.equal(1);
+        expect(resolveCount).to.equal(0);
+    });
+});
+
+describe('GetWorkspaceFileList resolves the target directory once', () => {
+    let container: Container;
+    let tool: GetWorkspaceFileList;
+    let resolveCount: number;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        resolveCount = 0;
+
+        const mockWorkspaceService = {
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => {
+                resolveCount++;
+                return {
+                    isDirectory: true,
+                    resource: uri,
+                    children: [
+                        { isDirectory: false, resource: new URI('file:///workspace/sub/a.ts'), path: { base: 'a.ts' } },
+                        { isDirectory: true, resource: new URI('file:///workspace/sub/dir'), path: { base: 'dir' } }
+                    ]
+                };
+            },
+            read: async () => ({ value: { toString: () => '' } }),
+            watch: () => ({ dispose: () => { } }),
+            onDidFilesChange: () => ({ dispose: () => { } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = { get: <T>(_path: string, def: T) => def };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(GetWorkspaceFileList).toSelf();
+
+        tool = container.get(GetWorkspaceFileList);
+    });
+
+    it('lists one level and resolves the directory only once', async () => {
+        const result = JSON.parse(await tool.getTool().handler(JSON.stringify({ path: 'workspace/sub' }), undefined) as string);
+        expect(result).to.deep.equal({ 'a.ts': 'file', 'dir': 'directory' });
+        expect(resolveCount).to.equal(1);
+    });
+});
+
+describe('GetWorkspaceDirectoryStructure preserves empty folders', () => {
+    let container: Container;
+    let tool: GetWorkspaceDirectoryStructure;
+
+    const TREE: Record<string, string[]> = {
+        'file:///workspace': ['file:///workspace/src', 'file:///workspace/empty', 'file:///workspace/node_modules'],
+        'file:///workspace/src': ['file:///workspace/src/nested'],
+        'file:///workspace/src/nested': [],
+        'file:///workspace/empty': [],
+        'file:///workspace/node_modules': ['file:///workspace/node_modules/pkg']
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            resolve: async (uri: URI) => ({
+                isDirectory: true,
+                resource: uri,
+                children: (TREE[uri.toString()] ?? []).map(child => ({
+                    isDirectory: true,
+                    resource: new URI(child),
+                    path: { base: child.split('/').pop() }
+                }))
+            }),
+            read: async () => ({ value: { toString: () => '' } }),
+            watch: () => ({ dispose: () => { } }),
+            onDidFilesChange: () => ({ dispose: () => { } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(path: string, def: T) =>
+                (path === 'ai-features.workspaceFunctions.userExcludes' ? (['node_modules'] as unknown as T) : def)
+        };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(GetWorkspaceDirectoryStructure).toSelf();
+
+        tool = container.get(GetWorkspaceDirectoryStructure);
+    });
+
+    it('includes empty directories and excludes user-excluded ones', async () => {
+        const result = await tool.getTool().handler(JSON.stringify({}), undefined);
+        expect(result).to.deep.equal({
+            workspace: {
+                src: { nested: {} },
+                empty: {}
+            }
+        });
     });
 });
 

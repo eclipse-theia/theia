@@ -60,7 +60,7 @@ export class WorkspaceFunctionScope {
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
 
-    private gitignoreMatchers = new Map<string, ReturnType<typeof ignore>>();
+    private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
 
     private _rootMapping: Map<string, URI> | undefined;
@@ -534,33 +534,43 @@ export class WorkspaceFunctionScope {
     }
 
     protected async isGitIgnored(stat: FileStat, workspaceRoot: URI): Promise<boolean> {
+        const matcher = await this.getGitignoreMatcher(workspaceRoot);
+        if (!matcher) {
+            return false;
+        }
+        const relativePath = workspaceRoot.relative(stat.resource);
+        if (!relativePath) {
+            return false;
+        }
+        const relativePathStr = relativePath.toString() + (stat.isDirectory ? '/' : '');
+        return matcher.ignores(relativePathStr);
+    }
+
+    /**
+     * Returns the cached `.gitignore` matcher for the given root, reading the file at most
+     * once per root. A root with no (or unreadable) `.gitignore` is cached as `undefined`.
+     * The cache is invalidated by {@link initializeGitignoreWatcher} when the `.gitignore` is
+     * created, changed, or deleted, so individual exclusion checks need no filesystem RPC.
+     */
+    protected async getGitignoreMatcher(workspaceRoot: URI): Promise<ReturnType<typeof ignore> | undefined> {
         await this.initializeGitignoreWatcher(workspaceRoot);
 
         const rootKey = workspaceRoot.toString();
-        const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
-
-        try {
-            const fileStat = await this.fileService.resolve(gitignoreUri);
-            if (fileStat) {
-                let matcher = this.gitignoreMatchers.get(rootKey);
-                if (!matcher) {
-                    const gitignoreContent = await this.fileService.read(gitignoreUri);
-                    matcher = ignore().add(gitignoreContent.value);
-                    this.gitignoreMatchers.set(rootKey, matcher);
-                }
-                const relativePath = workspaceRoot.relative(stat.resource);
-                if (relativePath) {
-                    const relativePathStr = relativePath.toString() + (stat.isDirectory ? '/' : '');
-                    if (matcher.ignores(relativePathStr)) {
-                        return true;
-                    }
-                }
-            }
-        } catch {
-            // If .gitignore does not exist or cannot be read, continue without error
+        if (this.gitignoreMatchers.has(rootKey)) {
+            return this.gitignoreMatchers.get(rootKey);
         }
 
-        return false;
+        let matcher: ReturnType<typeof ignore> | undefined;
+        try {
+            const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
+            const gitignoreContent = await this.fileService.read(gitignoreUri);
+            matcher = ignore().add(gitignoreContent.value);
+        } catch {
+            // No .gitignore (or it cannot be read): cache the absence so we don't retry on every check.
+            matcher = undefined;
+        }
+        this.gitignoreMatchers.set(rootKey, matcher);
+        return matcher;
     }
 }
 
@@ -654,17 +664,25 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         const result: Record<string, unknown> = {};
 
         if (stat && stat.isDirectory && stat.children) {
+            // Determine which child directories to include (the exclusion check may be async)...
+            const childDirs: URI[] = [];
             for (const child of stat.children) {
                 if (cancellationToken?.isCancellationRequested) {
                     return { error: 'Operation cancelled by user' };
                 }
-
-                if (!child.isDirectory || (await this.workspaceScope.shouldExclude(child))) {
-                    continue;
+                if (child.isDirectory && !(await this.workspaceScope.shouldExclude(child))) {
+                    childDirs.push(child.resource);
                 }
-                const dirName = child.resource.path.base;
-                result[dirName] = await this.buildDirectoryStructure(child.resource, cancellationToken);
             }
+            // ...then resolve their subtrees concurrently, so the traversal costs O(depth)
+            // round-trips instead of one serial round-trip per directory. Empty directories
+            // are preserved (they resolve to an empty object).
+            const subtrees = await Promise.all(
+                childDirs.map(childUri => this.buildDirectoryStructure(childUri, cancellationToken))
+            );
+            childDirs.forEach((childUri, index) => {
+                result[childUri.path.base] = subtrees[index];
+            });
         }
 
         return result;
@@ -1029,37 +1047,32 @@ export class GetWorkspaceFileList implements ToolProvider {
             if (!stat || !stat.isDirectory) {
                 return JSON.stringify({ error: 'Directory not found' });
             }
-            return await this.listFilesDirectly(targetUri, cancellationToken);
+            return await this.listFilesDirectly(stat, cancellationToken);
         } catch (error) {
             return JSON.stringify({ error: 'Directory not found' });
         }
     }
 
-    private async listFilesDirectly(uri: URI, cancellationToken?: CancellationToken): Promise<string> {
+    private async listFilesDirectly(stat: FileStat, cancellationToken?: CancellationToken): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
-        const stat = await this.fileService.resolve(uri);
         const result: Record<string, 'directory' | 'file'> = {};
 
-        if (stat && stat.isDirectory) {
-            if (await this.workspaceScope.shouldExclude(stat)) {
-                return JSON.stringify(result);
+        if (await this.workspaceScope.shouldExclude(stat)) {
+            return JSON.stringify(result);
+        }
+        // `stat` already carries one level of children from the caller's resolve, so no extra RPC.
+        for (const child of stat.children ?? []) {
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
             }
-            const children = await this.fileService.resolve(uri);
-            if (children.children) {
-                for (const child of children.children) {
-                    if (cancellationToken?.isCancellationRequested) {
-                        return JSON.stringify({ error: 'Operation cancelled by user' });
-                    }
 
-                    if (await this.workspaceScope.shouldExclude(child)) {
-                        continue;
-                    }
-                    result[child.resource.path.base] = child.isDirectory ? 'directory' : 'file';
-                }
+            if (await this.workspaceScope.shouldExclude(child)) {
+                continue;
             }
+            result[child.resource.path.base] = child.isDirectory ? 'directory' : 'file';
         }
 
         return JSON.stringify(result);
