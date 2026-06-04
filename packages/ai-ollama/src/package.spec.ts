@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolRequest } from '@theia/ai-core';
+import { ToolCall, ToolRequest } from '@theia/ai-core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { OllamaModel } from './node/ollama-language-model';
 import { Tool } from 'ollama';
 import { expect } from 'chai';
@@ -33,6 +34,40 @@ describe('ai-ollama package', () => {
         expect(ollamaTool.function.parameters?.properties).to.deep.equal(req.parameters.properties);
         expect(ollamaTool.function.parameters?.required).to.deep.equal(['question']);
     });
+
+    it('executes tool calls of a turn concurrently and preserves input order', async () => {
+        const model = new OllamaModelUnderTest();
+        // `a` only completes once `b` has started: a sequential implementation would deadlock here.
+        const bStarted = new Deferred<void>();
+        const chatRequest = {
+            messages: [],
+            tools: [
+                { function: { name: 'a' }, handler: async () => { await bStarted.promise; return 'a-result'; } },
+                { function: { name: 'b' }, handler: async () => { bStarted.resolve(); return 'b-result'; } }
+            ]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+        const toolCalls: ToolCall[] = [
+            { id: '1', function: { name: 'a', arguments: '{}' } },
+            { id: '2', function: { name: 'b', arguments: '{}' } }
+        ];
+
+        const result = await model.runProcessToolCalls(toolCalls, chatRequest);
+
+        expect(result.map(r => r.result)).to.deep.equal(['a-result', 'b-result']);
+        expect(chatRequest.messages.map((m: { content: string }) => m.content)).to.deep.equal([
+            'Tool call a returned: a-result',
+            'Tool call b returned: b-result'
+        ]);
+    });
+
+    it('reports a missing tool with the legacy error string', async () => {
+        const model = new OllamaModelUnderTest();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chatRequest = { messages: [], tools: [] } as any;
+        const result = await model.runProcessToolCalls([{ id: '1', function: { name: 'missing', arguments: '{}' } }], chatRequest);
+        expect(result[0].result).to.equal('error: Tool not found');
+    });
 });
 
 class OllamaModelUnderTest extends OllamaModel {
@@ -42,6 +77,12 @@ class OllamaModelUnderTest extends OllamaModel {
 
     override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {
         return super.toOllamaTool(tool);
+    }
+
+    // Exposes the private processToolCalls for testing concurrent tool execution.
+    runProcessToolCalls(toolCalls: ToolCall[], chatRequest: unknown): Promise<ToolCall[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (this as any).processToolCalls(toolCalls, chatRequest);
     }
 }
 function createToolRequest(): ToolRequest {

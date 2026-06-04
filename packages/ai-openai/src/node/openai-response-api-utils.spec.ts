@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isUsageResponsePart, LanguageModelStreamResponsePart, UserRequest } from '@theia/ai-core';
+import { isToolCallResponsePart, isUsageResponsePart, LanguageModelStreamResponsePart, UserRequest } from '@theia/ai-core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 
@@ -23,6 +24,13 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
         yield event;
     }
+}
+
+function functionCallItem(id: string, name: string, args: string): unknown {
+    return {
+        type: 'response.output_item.added',
+        item: { id, call_id: id, type: 'function_call', name, arguments: args }
+    };
 }
 
 describe('OpenAiResponseApiUtils', () => {
@@ -105,5 +113,51 @@ describe('OpenAiResponseApiUtils', () => {
             { input_tokens: 100, output_tokens: 10 },
             { input_tokens: 200, output_tokens: 20 }
         ]);
+    });
+
+    it('executes the tool calls of a single turn concurrently', async () => {
+        const utils = new OpenAiResponseApiUtils();
+        const streams = [
+            [
+                functionCallItem('call-a', 'a', '{}'),
+                functionCallItem('call-b', 'b', '{}'),
+                { type: 'response.completed', response: { usage: { input_tokens: 1, output_tokens: 1 } } }
+            ],
+            [
+                { type: 'response.output_text.delta', delta: 'done' },
+                { type: 'response.completed', response: { usage: { input_tokens: 2, output_tokens: 2 } } }
+            ]
+        ];
+        const openai = {
+            responses: {
+                stream: () => toStream(streams.shift() ?? [])
+            }
+        };
+        // `a` only resolves once `b` has started: a sequential implementation would deadlock here.
+        const bStarted = new Deferred<void>();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            tools: [
+                { id: 'a', name: 'a', parameters: { type: 'object', properties: {} }, handler: async () => { await bStarted.promise; return 'a-result'; } },
+                { id: 'b', name: 'b', parameters: { type: 'object', properties: {} }, handler: async () => { bStarted.resolve(); return 'b-result'; } }
+            ]
+        };
+
+        const response = await utils.handleRequest(openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', { maxChatCompletions: 3 }, 'openai/gpt-5', true);
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        const finishedResults = parts
+            .filter(isToolCallResponsePart)
+            .flatMap(part => part.tool_calls)
+            .filter(call => call.finished)
+            .map(call => call.result);
+        expect(finishedResults).to.have.members(['a-result', 'b-result']);
     });
 });

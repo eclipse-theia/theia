@@ -8,6 +8,8 @@
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [ai-anthropic, ai-google, ai-ollama, ai-openai, ai-copilot] added rebindable `<provider>LanguageModelFactory` bindings for instantiating provider language models [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-core] executed a model turn's tool calls concurrently, including parallel agent delegations, instead of sequentially, via a new injectable `ToolCallExecutor` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 

@@ -19,7 +19,7 @@ import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { AnthropicLanguageModelFactory, AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
@@ -46,6 +46,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(AnthropicLanguageModelFactory)
+    protected readonly anthropicLanguageModelFactory: AnthropicLanguageModelFactory;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -94,22 +97,22 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
-                new AnthropicModel(
-                    modelDescription.id,
-                    modelDescription.model,
+                this.anthropicLanguageModelFactory({
+                    id: modelDescription.id,
+                    model: modelDescription.model,
                     status,
-                    modelDescription.enableStreaming,
-                    modelDescription.useCaching,
-                    apiKeyProvider,
-                    modelDescription.url,
-                    metadata.maxTokens,
-                    modelDescription.maxRetries,
-                    proxyUrl,
-                    metadata.reasoningSupport,
-                    metadata.reasoningApi,
-                    metadata.supportsXHighEffort,
-                    metadata.maxInputTokens
-                )
+                    enableStreaming: modelDescription.enableStreaming,
+                    useCaching: modelDescription.useCaching,
+                    apiKey: apiKeyProvider,
+                    url: modelDescription.url,
+                    maxTokens: metadata.maxTokens,
+                    maxRetries: modelDescription.maxRetries,
+                    proxy: proxyUrl,
+                    reasoningSupport: metadata.reasoningSupport,
+                    reasoningApi: metadata.reasoningApi,
+                    supportsXHighEffort: metadata.supportsXHighEffort,
+                    maxInputTokens: metadata.maxInputTokens
+                })
             ]);
         }
     }

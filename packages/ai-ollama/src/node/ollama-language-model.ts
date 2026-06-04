@@ -24,6 +24,8 @@ import {
     ReasoningSettings,
     ReasoningSupport,
     ToolCall,
+    ToolCallExecutor,
+    ToolCallResult,
     ToolRequest,
     ToolRequestParametersProperties,
     ImageContent,
@@ -38,6 +40,19 @@ import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
+
+/** Parameters for constructing an {@link OllamaModel}. */
+export interface OllamaModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+}
+
+export const OllamaLanguageModelFactory = Symbol('OllamaLanguageModelFactory');
+export type OllamaLanguageModelFactory = (params: OllamaModelParams) => OllamaModel;
 
 export class OllamaModel implements LanguageModel {
 
@@ -61,7 +76,8 @@ export class OllamaModel implements LanguageModel {
         public status: LanguageModelStatus,
         protected host: () => string | undefined,
         public proxy?: string,
-        public reasoningSupport?: ReasoningSupport
+        public reasoningSupport?: ReasoningSupport,
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -363,18 +379,28 @@ export class OllamaModel implements LanguageModel {
 
     private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        // Adapt Ollama's ToolWithHandler to the ToolRequest shape expected by the executor.
+        const toolRequests: ToolRequest[] = tools.map(tool => ({
+            id: tool.function.name ?? '',
+            name: tool.function.name ?? '',
+            parameters: { type: 'object', properties: {} },
+            handler: async argString => (await tool.handler(argString)) as ToolCallResult
+        }));
+
+        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
+        const results = await this.toolCallExecutor.executeToolCalls(
+            toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
+            toolRequests
+        );
+
+        // Build the messages and response entries from the input-ordered results so that the
+        // next turn sees a deterministic ordering.
         const toolCallsForResponse: ToolCall[] = [];
-
-        for (const call of toolCalls) {
-            const functionToCall = tools.find(tool => tool.function.name === call.function!.name);
-            let funcResult: string;
-
-            if (functionToCall) {
-                const rawResult = await functionToCall.handler(call.function!.arguments!);
-                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
-            } else {
-                funcResult = 'error: Tool not found';
-            }
+        toolCalls.forEach((call, index) => {
+            const outcome = results[index];
+            const funcResult = outcome.notFound
+                ? 'error: Tool not found'
+                : typeof outcome.result === 'string' ? outcome.result : JSON.stringify(outcome.result);
 
             chatRequest.messages.push({
                 role: 'tool',
@@ -387,7 +413,7 @@ export class OllamaModel implements LanguageModel {
                 result: String(funcResult),
                 finished: true
             });
-        }
+        });
         return toolCallsForResponse;
     }
 
