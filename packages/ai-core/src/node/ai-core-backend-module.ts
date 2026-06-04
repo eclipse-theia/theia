@@ -54,6 +54,8 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
     bind(BackendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistryImpl);
 
+    bind(ToolCallExecutor).toSelf().inSingletonScope();
+
     bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
 
     bind(ConnectionHandler)
@@ -113,10 +115,5 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
     bindAICorePreferences(bind);
-    // Bound on the root container because it is injected by extant root-level dependents (notably
-    // OpenAiResponseApiUtils). This is safe only because the service is stateless. A pending refactoring
-    // should relocate it, together with those dependents, into the connection-scoped container so that a
-    // substituted, potentially stateful executor cannot leak state across frontend connections.
-    bind(ToolCallExecutor).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

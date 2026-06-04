@@ -16,6 +16,9 @@
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [ai-openai] `OpenAiResponseApiUtils` is now bound in the connection-scoped backend container instead of the root container, so it can no longer be injected into root-scoped services [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] `OpenAiLanguageModelsManagerImpl` no longer injects `OpenAiModelUtils` or `OpenAiResponseApiUtils` (the `openAiModelUtils` and `responseApiUtils` protected fields were removed); provider models are now constructed via the injected `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai, ai-copilot] `OpenAiModel.createTools()` and `CopilotLanguageModel.createTools()` now return `ChatCompletionTool[]` instead of `RunnableToolFunctionWithoutParse[]`, because the OpenAI SDK `runTools` runner is no longer used [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 
 ## 1.72.0 - 5/28/2026
 

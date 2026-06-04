@@ -15,20 +15,43 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ToolCallExecutor } from '@theia/ai-core';
 import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { OpenAiModelUtils } from './openai-language-model';
+import { OpenAiLanguageModelFactory, OpenAiModel, OpenAiModelParams, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OpenAiPreferencesSchema } from '../common/openai-preferences';
-
-export const OpenAiModelFactory = Symbol('OpenAiModelFactory');
 
 // We use a connection module to handle AI services separately for each frontend.
 const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OpenAiLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OpenAiLanguageModelsManager).toService(OpenAiLanguageModelsManagerImpl);
+    // Connection-scoped because it injects the connection-scoped ToolCallExecutor.
+    bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
+    bind(OpenAiLanguageModelFactory).toFactory<OpenAiModel, [OpenAiModelParams]>(
+        ({ container }) => params => new OpenAiModel(
+            params.id,
+            params.model,
+            params.status,
+            params.enableStreaming,
+            params.apiKey,
+            params.apiVersion,
+            params.supportsStructuredOutput,
+            params.url,
+            params.deployment,
+            container.get(OpenAiModelUtils),
+            container.get(OpenAiResponseApiUtils),
+            params.developerMessageSettings,
+            params.maxRetries,
+            params.useResponseApi,
+            params.proxy,
+            params.reasoningSupport,
+            params.maxInputTokens,
+            container.get(ToolCallExecutor)
+        )
+    );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(OPENAI_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OpenAiLanguageModelsManager))
     ).inSingletonScope();
@@ -37,6 +60,5 @@ const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
     bind(OpenAiModelUtils).toSelf().inSingletonScope();
-    bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(openAiConnectionModule);
 });
