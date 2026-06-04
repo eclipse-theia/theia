@@ -27,6 +27,16 @@ import { FileService } from './file-service';
 
 disableJSDOM();
 
+/** A `FileService` with a short, overridable activation timeout so tests need not wait the production duration. */
+class TestFileService extends FileService {
+    constructor(protected readonly timeout: number) {
+        super();
+    }
+    protected override getActivationTimeout(): number {
+        return this.timeout;
+    }
+}
+
 function createMockProvider(): FileSystemProvider {
     return {
         capabilities: FileSystemProviderCapabilities.PathCaseSensitive,
@@ -89,5 +99,46 @@ describe('FileService activateProvider resilience (#17506)', () => {
         // pending activation immediately.
         const resolved = await withinTimeout(activation);
         expect(resolved).to.equal(provider);
+    });
+
+    it('rejects an activation that never registers a provider once the timeout elapses, instead of hanging forever', async () => {
+        const fileService = new TestFileService(50);
+        const scheme = 'user-storage';
+
+        // A listener whose `waitUntil` never settles and which never registers a provider:
+        // the worst case where the provider's own (normally fast) backend dependency dangles.
+        fileService.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === scheme) {
+                event.waitUntil(new Promise<void>(() => { /* never settles */ }));
+            }
+        });
+
+        // Before the fix this never settles (the test would hit 'PENDING'); after the fix the
+        // activation rejects once the timeout elapses, so startup can proceed (degraded).
+        const outcome = await withinTimeout(
+            fileService.activateProvider(scheme).then(() => 'RESOLVED', () => 'REJECTED'),
+            300
+        );
+        expect(outcome).to.equal('REJECTED');
+    });
+
+    it('does not poison the scheme after a timed-out activation: a later activation can still succeed', async () => {
+        const fileService = new TestFileService(50);
+        const scheme = 'user-storage';
+
+        fileService.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === scheme) {
+                event.waitUntil(new Promise<void>(() => { /* never settles */ }));
+            }
+        });
+
+        // First attempt times out and rejects.
+        await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
+
+        // A fresh attempt must be able to succeed once a provider becomes available.
+        const provider = createMockProvider();
+        const retry = fileService.activateProvider(scheme);
+        fileService.registerProvider(scheme, provider);
+        expect(await withinTimeout(retry)).to.equal(provider);
     });
 });
