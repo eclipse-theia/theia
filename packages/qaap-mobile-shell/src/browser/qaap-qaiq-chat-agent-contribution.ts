@@ -9,9 +9,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChatAgent, ChatAgentLocation } from '@theia/ai-chat/lib/common/chat-agents';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableChatRequestModel } from '@theia/ai-chat/lib/common/chat-model';
-import { Agent, AgentService } from '@theia/ai-core';
+import { Agent, AgentService, AIVariableContext, PromptService } from '@theia/ai-core';
 import { QAAP_AGENT_TASK_API_PATH } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt, QAAP_BACKEND_INTERACTION_MODES } from '../common/qaap-sticky-composer-mode';
+import { QAAP_PROJECT_INFO_PROMPT_ID, QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID } from '../common/qaap-tasks-background-prompt-ids';
 import { QaapQaiqStreamAccumulator } from '../common/qaap-qaiq-stream';
 import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 
@@ -45,6 +46,9 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     protected registered = false;
     /** Shared SSE connection reused across concurrent task streams. */
@@ -113,8 +117,8 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
 
     protected async invoke(request: MutableChatRequestModel): Promise<void> {
         const raw = this.stripMention(request.request.text);
-        const prompt = applyBackendInteractionModeToPrompt(raw, request.request.modeId);
-        if (!prompt) {
+        const userPrompt = applyBackendInteractionModeToPrompt(raw, request.request.modeId);
+        if (!userPrompt) {
             request.response.response.addContent(new MarkdownChatResponseContentImpl(
                 'Please provide a prompt after `@qaiq`.'
             ));
@@ -131,6 +135,11 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             return;
         }
         try {
+            // Cloud CLI agents are stateless per task and never read Theia's PromptService, so the
+            // important project context must ride on the prompt itself: global Qaap rules followed by
+            // the per-project info artifact, prepended ahead of the user's task.
+            const preamble = await this.buildContextPreamble(request);
+            const prompt = preamble ? `${preamble}\n\n---\n\n${userPrompt}` : userPrompt;
             const task = await this.startTask(prompt, cwd);
             const accumulator = new QaapQaiqStreamAccumulator();
             const sync = new QaapQaiqChatStreamSync(request);
@@ -322,6 +331,27 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
 
     protected stripMention(text: string): string {
         return text.replace(/^@qaiq\b\s*/i, '').trim();
+    }
+
+    /**
+     * Resolves the global Qaap background-agent context fragment and the per-project `project-info`
+     * artifact, joining whichever are present. Either may be absent (fragment not registered, or no
+     * project-info file in the workspace) — missing or failing fragments are simply skipped.
+     */
+    protected async buildContextPreamble(context: AIVariableContext): Promise<string> {
+        const parts: string[] = [];
+        for (const id of [QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID, QAAP_PROJECT_INFO_PROMPT_ID]) {
+            try {
+                const resolved = await this.promptService.getResolvedPromptFragment(id, undefined, context);
+                const text = resolved?.text.trim();
+                if (text) {
+                    parts.push(text);
+                }
+            } catch {
+                /* fragment absent or failed to resolve — skip */
+            }
+        }
+        return parts.join('\n\n');
     }
 
     protected async startTask(prompt: string, cwd: string): Promise<{ id: string }> {

@@ -19,6 +19,7 @@ export class MobileWorkHubAiConfigurationSheet {
     protected visible = false;
     protected configurationWidget: AIConfigurationContainerWidget | undefined;
     protected widgetHostResizeObserver: ResizeObserver | undefined;
+    protected windowResizeListener: (() => void) | undefined;
 
     protected readonly onKeyDown = (ev: KeyboardEvent): void => {
         if (ev.key === 'Escape' && this.visible) {
@@ -94,18 +95,25 @@ export class MobileWorkHubAiConfigurationSheet {
         this.node.setAttribute('aria-hidden', 'false');
         this.visible = true;
         document.addEventListener('keydown', this.onKeyDown, true);
+        this.windowResizeListener = () => { this.scheduleLayoutSync(widget); };
+        window.addEventListener('resize', this.windowResizeListener, { passive: true });
         this.observeWidgetHostResize(widget);
-        this.syncWidgetLayout(widget);
+        this.scheduleLayoutSync(widget);
         await animationFrame(2);
         if (this.visible) {
             this.aiConfigurationSelectionService.selectConfigurationTab(tabId);
-            this.syncWidgetLayout(widget);
+            await animationFrame(2);
+            this.scheduleLayoutSync(widget);
         }
     }
 
     hide(): void {
         if (!this.visible) {
             return;
+        }
+        if (this.windowResizeListener) {
+            window.removeEventListener('resize', this.windowResizeListener);
+            this.windowResizeListener = undefined;
         }
         this.unobserveWidgetHostResize();
         this.detachWidget();
@@ -149,14 +157,19 @@ export class MobileWorkHubAiConfigurationSheet {
     }
 
     protected syncWidgetLayout(widget: Widget): void {
+        if (!this.visible || !this.widgetHost.isConnected) {
+            return;
+        }
+        const rect = this.widgetHost.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+        }
+    }
+
+    protected scheduleLayoutSync(widget: Widget): void {
         requestAnimationFrame(() => {
-            if (!this.visible || !this.widgetHost.isConnected) {
-                return;
-            }
-            const rect = this.widgetHost.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
-            }
+            this.syncWidgetLayout(widget);
+            requestAnimationFrame(() => this.syncWidgetLayout(widget));
         });
     }
 
@@ -166,7 +179,7 @@ export class MobileWorkHubAiConfigurationSheet {
             return;
         }
         this.widgetHostResizeObserver = new ResizeObserver(() => {
-            this.syncWidgetLayout(widget);
+            this.scheduleLayoutSync(widget);
         });
         this.widgetHostResizeObserver.observe(this.widgetHost);
     }

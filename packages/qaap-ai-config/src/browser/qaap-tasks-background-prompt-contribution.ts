@@ -6,13 +6,16 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
-import { getQaapTasksBackgroundPromptTemplate } from '../common/qaap-tasks-background-prompt-template';
+import { getQaapTasksBackgroundContextFragment } from '../common/qaap-tasks-background-prompt-template';
 
 /**
- * Registers the Qaap "tasks background" system prompt as a built-in, user-editable
- * prompt fragment. It is intentionally standalone (not attached to an upstream agent's
- * variant set) so it surfaces in AI Configuration → Prompt Fragments under its own id,
- * where the user can edit or reset it without touching code.
+ * Registers the Qaap "tasks background" global context as a built-in, user-editable prompt
+ * fragment. It is standalone (not attached to an agent's variant set) so it surfaces in
+ * AI Configuration → Prompt Fragments under its own id, where the user can edit or reset it.
+ *
+ * The QAIQ bridge ({@link QaapQaiqChatAgentContribution}) resolves this fragment at invoke time
+ * and prepends it — together with the workspace `project-info` artifact — to the prompt it sends
+ * to the cloud agent runner.
  */
 @injectable()
 export class QaapTasksBackgroundPromptContribution implements FrontendApplicationContribution {
@@ -21,6 +24,6 @@ export class QaapTasksBackgroundPromptContribution implements FrontendApplicatio
     protected readonly promptService: PromptService;
 
     onStart(): void {
-        this.promptService.addBuiltInPromptFragment(getQaapTasksBackgroundPromptTemplate());
+        this.promptService.addBuiltInPromptFragment(getQaapTasksBackgroundContextFragment());
     }
 }
