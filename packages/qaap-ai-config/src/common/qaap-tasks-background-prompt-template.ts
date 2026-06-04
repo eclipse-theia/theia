@@ -18,16 +18,13 @@ import { QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID } from '@theia/qaap-mobile-shel
  * Plain text (no `{{variables}}`) so it resolves cleanly regardless of editor/chat context.
  * Editable by the user in AI Configuration → Prompt Fragments under its id.
  */
-const QAAP_TASKS_BACKGROUND_CONTEXT_TEMPLATE = `# Qaap background-agent context
+const QAAP_TASKS_BACKGROUND_CONTEXT_TEMPLATE = `# Qaap environment context
 
-You are running as a background task inside a **Qaap cloud workspace**, detached, with **no human in the loop** during execution:
-- You cannot ask questions mid-task and no one reviews your changes before they are written. Decide autonomously; if truly blocked, stop and report the blocker instead of waiting.
-- Apply file changes directly and **verify them yourself** (build / lint / tests). Never defer verification to a user.
-- Work only inside the current workspace. No external network or system-level installs unless the task explicitly grants it.
-- Keep the diff minimal: change only what the task requires, no drive-by refactors, no comments describing your changes.
-- When you finish, report concisely: files changed, what was done, and the verification result (PASS / FAIL). This report is your only output — no one watches your session.
+You are running inside a **Qaap cloud workspace** — an ephemeral, per-project sandbox that holds this repository. Paths are relative to the workspace root; do not assume any path from another project or machine.
 
-Project-specific context (stack, build/test commands, conventions) follows below, when available.`;
+For web projects, a live in-IDE preview of the running app may be available.
+
+This is cross-project context. Project-specific details (stack, build/test commands, conventions) follow below when a project-info artifact is present.`;
 
 export function getQaapTasksBackgroundContextFragment(): BasePromptFragment {
     return {

@@ -105,6 +105,7 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
                 agentModel: body.agentModel ?? body.qaiqModel,
                 qaiqModel: body.agentModel ?? body.qaiqModel,
                 cwd: body.cwd,
+                contextPreamble: body.contextPreamble,
                 title: body.title,
                 parentId,
                 autoApprove: body.autoApprove,

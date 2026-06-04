@@ -85,6 +85,12 @@ export interface QaapCreateAgentTaskRequest {
     /** @deprecated Use {@link agentModel}. */
     readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
     readonly cwd: string;
+    /**
+     * Resolved cross-project context (the editable `qaap-tasks-background-context` fragment),
+     * prepended to the agent prompt by the runner ahead of the per-project `project-info` it reads
+     * from {@link cwd}. The frontend resolves this because the backend has no PromptService.
+     */
+    readonly contextPreamble?: string;
     /** Forwarded by the `qaap-task` helper so spawned tasks attribute to their parent. */
     readonly parentId?: string;
     /**

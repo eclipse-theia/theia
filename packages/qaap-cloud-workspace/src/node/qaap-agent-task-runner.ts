@@ -51,6 +51,7 @@ import {
 } from '../common/qaap-qaiq-model-binding';
 import { resolveRequestAgentModel, resolveTaskAgentModel } from '../common/qaap-agent-task';
 import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
+import { prependAgentTaskContextToPrompt } from '../common/qaap-agent-task-context';
 import {
     applyAntigravityModelSetting,
     isAntigravityCliCommand,
@@ -84,6 +85,9 @@ const AGENT_CANDIDATES: readonly AgentCandidate[] = QAAP_BUILTIN_AGENT_DEFINITIO
  * (for example GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, OPENAI_BASE_URL).
  */
 const CUSTOM_AGENTS_ENV = 'QAAP_AGENT_COMMANDS';
+
+/** Cap on the per-project info artifact injected into prompts, to keep the agent command bounded. */
+const PROJECT_INFO_MAX_CHARS = 8000;
 
 /** When several CLIs are on PATH, prefer BYOK/free-tier runners over subscription CLIs. */
 const DEFAULT_AGENT_PREFERENCE: readonly string[] = [QAIQ_AGENT_ID, 'aider', 'codex', 'claude'];
@@ -709,13 +713,18 @@ export class QaapAgentTaskRunner {
         agentId: string | undefined,
         autoApprove: boolean,
         agentModel?: QaapCreateAgentTaskQaiqModel,
+        cwd?: string,
+        contextPreamble?: string,
     ): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
         if (id === SHELL_AGENT_ID) {
             return runnerPrompt;
         }
-        const agentPrompt = appendAgentDefaultWorkflowToPrompt(runnerPrompt, id);
+        const workflowPrompt = appendAgentDefaultWorkflowToPrompt(runnerPrompt, id);
+        // Inject important project context for every agent: cross-project context from the request
+        // body plus the per-project info artifact read from the workspace.
+        const agentPrompt = prependAgentTaskContextToPrompt(workflowPrompt, contextPreamble, cwd ? this.readProjectInfo(cwd) : undefined);
         this.assertQaiqConfigured(id);
         const detected = this.detectedAgents.get(id);
         let command: string;
@@ -733,6 +742,20 @@ export class QaapAgentTaskRunner {
             command = applyAutoApproveToCommand(command, id);
         }
         return command;
+    }
+
+    /** Best-effort read of the workspace per-project info artifact (`.prompts/project-info.prompttemplate`). */
+    protected readProjectInfo(cwd: string): string | undefined {
+        try {
+            const file = path.join(cwd, '.prompts', 'project-info.prompttemplate');
+            const text = fs.readFileSync(file, 'utf8').trim();
+            if (!text) {
+                return undefined;
+            }
+            return text.length > PROJECT_INFO_MAX_CHARS ? text.slice(0, PROJECT_INFO_MAX_CHARS) : text;
+        } catch {
+            return undefined;
+        }
     }
 
     protected resolveAgentId(prompt: string, agentId: string | undefined): string {
@@ -947,7 +970,7 @@ export class QaapAgentTaskRunner {
             try {
                 const autoApprove = task.autoApprove !== false;
                 const agentModel = resolveRequestAgentModel(request);
-                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, agentModel);
+                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, agentModel, task.cwd, request.contextPreamble);
                 const next: QaapAgentTask = {
                     ...task,
                     command,

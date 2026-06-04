@@ -264,10 +264,7 @@ function createAccountMenuGettingStartedBlock(
     const title = document.createElement('span');
     title.className = 'theia-qaap-account-menu-getting-started-title';
     title.textContent = section.title;
-    const count = document.createElement('span');
-    count.className = 'theia-qaap-account-menu-getting-started-count';
-    count.textContent = String(section.items.length);
-    head.append(title, count);
+    head.append(title);
 
     const list = document.createElement('div');
     list.className = 'theia-qaap-account-menu-getting-started-cards';
@@ -330,11 +327,7 @@ function createAccountMenuCatalogCard(
         body.append(meta);
     }
 
-    const chevron = document.createElement('span');
-    chevron.className = 'theia-qaap-account-menu-catalog-card-chevron codicon codicon-chevron-right';
-    chevron.setAttribute('aria-hidden', 'true');
-
-    card.append(icon, body, chevron);
+    card.append(icon, body);
     bindCatalogCardTapFeedback(card);
     card.addEventListener('click', () => {
         dismissQaapAccountMenu();

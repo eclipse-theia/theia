@@ -13,7 +13,10 @@
   touch-action: manipulation;
 }
 
-.theia-qaap-account-menu-catalog-card::before,
+.theia-qaap-account-menu-catalog-card::before {
+  display: none;
+}
+
 .theia-mobile-hub-catalog-card::before {
   content: '';
   position: absolute;
@@ -41,7 +44,11 @@
   animation: qaap-catalog-card-tap-light 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.theia-qaap-account-menu-catalog-card.theia-mod-catalog-tap-glow,
+.theia-qaap-account-menu-catalog-card.theia-mod-catalog-tap-glow {
+  background: var(--theia-menu-selectionBackground);
+  box-shadow: none;
+}
+
 .theia-mobile-hub-catalog-card.theia-mod-catalog-tap-glow {
   border-color: color-mix(
     in srgb,
@@ -55,7 +62,10 @@
 }
 
 @media (pointer: coarse) {
-  .theia-qaap-account-menu-catalog-card:active:not(.theia-mod-catalog-tap-glow),
+  .theia-qaap-account-menu-catalog-card:active:not(.theia-mod-catalog-tap-glow) {
+    background: var(--theia-menu-selectionBackground);
+  }
+
   .theia-mobile-hub-catalog-card:active:not(.theia-mod-catalog-tap-glow) {
     border-color: color-mix(
       in srgb,
@@ -81,13 +91,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theia-qaap-account-menu-catalog-card.theia-mod-catalog-tap-glow::before,
   .theia-mobile-hub-catalog-card.theia-mod-catalog-tap-glow::before {
     animation: none;
     opacity: 0.45;
   }
 
-  .theia-qaap-account-menu-catalog-card.theia-mod-catalog-tap-glow,
   .theia-mobile-hub-catalog-card.theia-mod-catalog-tap-glow {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--qaap-hub-catalog-accent, var(--q-accent, #E58E40)) 30%, transparent);
   }

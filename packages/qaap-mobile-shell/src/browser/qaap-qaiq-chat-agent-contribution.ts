@@ -12,7 +12,7 @@ import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableC
 import { Agent, AgentService, AIVariableContext, PromptService } from '@theia/ai-core';
 import { QAAP_AGENT_TASK_API_PATH } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt, QAAP_BACKEND_INTERACTION_MODES } from '../common/qaap-sticky-composer-mode';
-import { QAAP_PROJECT_INFO_PROMPT_ID, QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID } from '../common/qaap-tasks-background-prompt-ids';
+import { QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID } from '../common/qaap-tasks-background-prompt-ids';
 import { QaapQaiqStreamAccumulator } from '../common/qaap-qaiq-stream';
 import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 
@@ -135,12 +135,11 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             return;
         }
         try {
-            // Cloud CLI agents are stateless per task and never read Theia's PromptService, so the
-            // important project context must ride on the prompt itself: global Qaap rules followed by
-            // the per-project info artifact, prepended ahead of the user's task.
-            const preamble = await this.buildContextPreamble(request);
-            const prompt = preamble ? `${preamble}\n\n---\n\n${userPrompt}` : userPrompt;
-            const task = await this.startTask(prompt, cwd);
+            // Cloud CLI agents never read Theia's PromptService. We resolve the editable global
+            // context fragment here and forward it as `contextPreamble`; the backend runner prepends
+            // it plus the per-project `project-info` artifact (read from cwd) for every agent.
+            const contextPreamble = await this.resolveGlobalContext(request);
+            const task = await this.startTask(userPrompt, cwd, contextPreamble);
             const accumulator = new QaapQaiqStreamAccumulator();
             const sync = new QaapQaiqChatStreamSync(request);
             await this.streamTask(task.id, accumulator, sync, request);
@@ -334,32 +333,26 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     }
 
     /**
-     * Resolves the global Qaap background-agent context fragment and the per-project `project-info`
-     * artifact, joining whichever are present. Either may be absent (fragment not registered, or no
-     * project-info file in the workspace) — missing or failing fragments are simply skipped.
+     * Resolves the editable global Qaap background-agent context fragment, if registered. The
+     * per-project `project-info` artifact is NOT resolved here — the backend runner reads it from
+     * the workspace cwd so every agent gets it, not just QAIQ. Returns undefined when absent.
      */
-    protected async buildContextPreamble(context: AIVariableContext): Promise<string> {
-        const parts: string[] = [];
-        for (const id of [QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID, QAAP_PROJECT_INFO_PROMPT_ID]) {
-            try {
-                const resolved = await this.promptService.getResolvedPromptFragment(id, undefined, context);
-                const text = resolved?.text.trim();
-                if (text) {
-                    parts.push(text);
-                }
-            } catch {
-                /* fragment absent or failed to resolve — skip */
-            }
+    protected async resolveGlobalContext(context: AIVariableContext): Promise<string | undefined> {
+        try {
+            const resolved = await this.promptService.getResolvedPromptFragment(QAAP_TASKS_BACKGROUND_CONTEXT_PROMPT_ID, undefined, context);
+            const text = resolved?.text.trim();
+            return text || undefined;
+        } catch {
+            return undefined;
         }
-        return parts.join('\n\n');
     }
 
-    protected async startTask(prompt: string, cwd: string): Promise<{ id: string }> {
+    protected async startTask(prompt: string, cwd: string, contextPreamble?: string): Promise<{ id: string }> {
         const response = await fetch(QAAP_AGENT_TASK_API_PATH, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, agent: QAIQ_CHAT_AGENT_ID, cwd }),
+            body: JSON.stringify({ prompt, agent: QAIQ_CHAT_AGENT_ID, cwd, contextPreamble }),
         });
         if (!response.ok) {
             const detail = await response.text();
