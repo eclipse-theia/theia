@@ -48,7 +48,7 @@ export function transcriptUserMessageScrollTop(anchorOffsetPx: number, paddingPx
  */
 export function resolveStuckUserIndex(
     wrapTopsRelativeToScroller: readonly number[],
-    stuckTopMaxPx = 48,
+    stuckTopMaxPx = 24,
 ): number | undefined {
     if (wrapTopsRelativeToScroller.length === 0) {
         return undefined;
@@ -60,4 +60,22 @@ export function resolveStuckUserIndex(
         }
     }
     return candidate;
+}
+
+export function isTranscriptScrollAtTop(scrollTop: number, thresholdPx = 1): boolean {
+    return scrollTop <= thresholdPx;
+}
+
+/** Avoid showing a compact sticky preview while the transcript is pinned to the newest response. */
+export function isTranscriptScrollNearBottom(
+    scrollTop: number,
+    clientHeight: number,
+    scrollHeight: number,
+    thresholdPx = 24,
+): boolean {
+    return scrollHeight - scrollTop - clientHeight <= thresholdPx;
+}
+
+export function shouldPinTranscriptUserIndex(index: number | undefined, userCount: number): index is number {
+    return index !== undefined && index < userCount - 1;
 }

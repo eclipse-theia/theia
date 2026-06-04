@@ -11909,9 +11909,7 @@ body > .theia-mobile-transcript-files-menu {
   align-self: flex-end;
   max-width: 86%;
   gap: 4px;
-  position: sticky;
-  top: 0;
-  z-index: 4;
+  position: relative;
 }
 
 .theia-mobile-agent-transcript-user-wrap .theia-mobile-agent-transcript-msg.theia-mod-user {
@@ -11919,15 +11917,20 @@ body > .theia-mobile-transcript-files-menu {
   max-width: none;
 }
 
+.theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-suppressed
+  .theia-mobile-agent-transcript-msg.theia-mod-user,
+.theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-suppressed
+  .theia-mobile-agent-transcript-user-actions {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Compact preview on the user query currently stuck at the scrollport top. */
 .theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-stuck {
+  position: sticky;
+  top: -12px;
   padding-bottom: 4px;
-  background: linear-gradient(
-    to bottom,
-    var(--theia-editor-background, var(--theia-layout-color0)) 0%,
-    var(--theia-editor-background, var(--theia-layout-color0)) 72%,
-    transparent 100%
-  );
+  background: transparent;
 }
 
 .theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-stuck

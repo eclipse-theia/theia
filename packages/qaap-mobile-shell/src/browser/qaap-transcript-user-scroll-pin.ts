@@ -9,30 +9,43 @@ import {
     transcriptScrollCompactMaxHeightPx,
 } from '../common/qaap-transcript-scroll-compact';
 import {
+    isTranscriptScrollAtTop,
+    isTranscriptScrollNearBottom,
     resolveStuckUserIndex,
+    shouldPinTranscriptUserIndex,
     transcriptUserMessageScrollTop,
 } from '../common/qaap-transcript-user-scroll-pin';
 
 const USER_WRAP_SELECTOR = '.theia-mobile-agent-transcript-user-wrap';
 const USER_BUBBLE_SELECTOR = '.theia-mobile-agent-transcript-msg.theia-mod-user';
 const STUCK_WRAP_CLASS = 'theia-mod-sticky-stuck';
+const SUPPRESSED_WRAP_CLASS = 'theia-mod-sticky-suppressed';
 const JUMP_CLASS = 'theia-mod-scroll-pinned-jump';
 const STICKY_COMPACT_CLASS = 'theia-mod-sticky-compact';
 const CONTENT_SELECTOR = '.theia-mobile-agent-transcript-content';
+const STUCK_TOP_MAX_PX = 24;
 
 interface TranscriptUserPinEntry {
     readonly wrap: HTMLElement;
     readonly bubble: HTMLElement;
 }
 
-function wrapScrollTopInScroller(wrap: HTMLElement, scroller: HTMLElement): number {
-    let top = 0;
-    let node: HTMLElement | null = wrap;
-    while (node && node !== scroller) {
-        top += node.offsetTop;
-        node = node.offsetParent as HTMLElement | null;
+function wrapNaturalScrollTopInScroller(wrap: HTMLElement, scroller: HTMLElement): number {
+    const previousPosition = wrap.style.position;
+    const previousTop = wrap.style.top;
+    const previousZIndex = wrap.style.zIndex;
+    wrap.style.position = 'static';
+    wrap.style.top = 'auto';
+    wrap.style.zIndex = 'auto';
+    try {
+        const scrollerRect = scroller.getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        return wrapRect.top - scrollerRect.top + scroller.scrollTop;
+    } finally {
+        wrap.style.position = previousPosition;
+        wrap.style.top = previousTop;
+        wrap.style.zIndex = previousZIndex;
     }
-    return top;
 }
 
 function prefersReducedMotion(): boolean {
@@ -51,6 +64,7 @@ function syncStickyCompact(entry: TranscriptUserPinEntry): void {
 
 function clearStickyVisual(entry: TranscriptUserPinEntry): void {
     entry.wrap.classList.remove(STUCK_WRAP_CLASS);
+    entry.wrap.classList.remove(SUPPRESSED_WRAP_CLASS);
     entry.bubble.classList.remove(JUMP_CLASS);
     entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR)?.classList.remove(STICKY_COMPACT_CLASS);
     entry.bubble.removeAttribute('tabindex');
@@ -60,12 +74,23 @@ function clearStickyVisual(entry: TranscriptUserPinEntry): void {
 
 function applyStickyVisual(entry: TranscriptUserPinEntry): void {
     entry.wrap.classList.add(STUCK_WRAP_CLASS);
+    entry.wrap.classList.remove(SUPPRESSED_WRAP_CLASS);
     const jumpLabel = nls.localize('qaap/mobileProjects/transcriptPinnedJump', 'Jump to message');
     entry.bubble.classList.add(JUMP_CLASS);
     syncStickyCompact(entry);
     entry.bubble.setAttribute('tabindex', '0');
     entry.bubble.setAttribute('title', jumpLabel);
     entry.bubble.setAttribute('aria-label', jumpLabel);
+}
+
+function applySuppressedStickyVisual(entry: TranscriptUserPinEntry): void {
+    entry.wrap.classList.remove(STUCK_WRAP_CLASS);
+    entry.wrap.classList.add(SUPPRESSED_WRAP_CLASS);
+    entry.bubble.classList.remove(JUMP_CLASS);
+    entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR)?.classList.remove(STICKY_COMPACT_CLASS);
+    entry.bubble.removeAttribute('tabindex');
+    entry.bubble.removeAttribute('title');
+    entry.bubble.removeAttribute('aria-label');
 }
 
 /**
@@ -89,6 +114,14 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
         return entries;
     };
 
+    const clearStickyEntries = (entries = collectEntries()): void => {
+        stuckIndex = undefined;
+        for (const entry of entries) {
+            clearStickyVisual(entry);
+            entry.wrap.style.removeProperty('z-index');
+        }
+    };
+
     const finishScrollToUserMessage = (): void => {
         scrollToUserMessage = false;
         if (scrollToUserMessageTimer !== undefined) {
@@ -99,10 +132,10 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
     };
 
     const scrollStickyMessageIntoView = (entry: TranscriptUserPinEntry): void => {
-        const targetTop = transcriptUserMessageScrollTop(wrapScrollTopInScroller(entry.wrap, scroller));
+        const targetTop = transcriptUserMessageScrollTop(wrapNaturalScrollTopInScroller(entry.wrap, scroller));
         scrollToUserMessage = true;
         stuckIndex = undefined;
-        clearStickyVisual(entry);
+        clearStickyEntries();
         if (scrollToUserMessageTimer !== undefined) {
             window.clearTimeout(scrollToUserMessageTimer);
         }
@@ -163,38 +196,55 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
         }
         raf = 0;
         const entries = collectEntries();
-        if (entries.length === 0) {
-            stuckIndex = undefined;
+        if (
+            entries.length === 0
+            || isTranscriptScrollAtTop(scroller.scrollTop)
+            || isTranscriptScrollNearBottom(scroller.scrollTop, scroller.clientHeight, scroller.scrollHeight)
+        ) {
+            clearStickyEntries(entries);
             return;
         }
 
-        const scrollerRect = scroller.getBoundingClientRect();
         const wrapTopsRelative = entries.map(
-            e => e.wrap.getBoundingClientRect().top - scrollerRect.top,
+            e => wrapNaturalScrollTopInScroller(e.wrap, scroller) - scroller.scrollTop,
         );
-        const index = resolveStuckUserIndex(wrapTopsRelative);
+        const index = resolveStuckUserIndex(wrapTopsRelative, STUCK_TOP_MAX_PX);
 
         entries.forEach((entry, i) => {
-            entry.wrap.style.zIndex = String(10 + i);
+            if (i === index) {
+                entry.wrap.style.zIndex = String(100 + i);
+            } else {
+                entry.wrap.style.removeProperty('z-index');
+            }
         });
 
-        if (index === undefined) {
-            stuckIndex = undefined;
-            for (const entry of entries) {
-                clearStickyVisual(entry);
+        if (!shouldPinTranscriptUserIndex(index, entries.length)) {
+            clearStickyEntries(entries);
+            return;
+        }
+        const pinnedIndex = index;
+
+        if (pinnedIndex === stuckIndex) {
+            applyStickyVisual(entries[pinnedIndex]);
+            for (let i = 0; i < entries.length; i++) {
+                if (i === pinnedIndex) {
+                    continue;
+                }
+                if (wrapTopsRelative[i] <= STUCK_TOP_MAX_PX) {
+                    applySuppressedStickyVisual(entries[i]);
+                } else {
+                    clearStickyVisual(entries[i]);
+                }
             }
             return;
         }
 
-        if (index === stuckIndex) {
-            applyStickyVisual(entries[index]);
-            return;
-        }
-
-        stuckIndex = index;
+        stuckIndex = pinnedIndex;
         for (let i = 0; i < entries.length; i++) {
-            if (i === index) {
+            if (i === pinnedIndex) {
                 applyStickyVisual(entries[i]);
+            } else if (wrapTopsRelative[i] <= STUCK_TOP_MAX_PX) {
+                applySuppressedStickyVisual(entries[i]);
             } else {
                 clearStickyVisual(entries[i]);
             }

@@ -5,8 +5,11 @@
 
 import { expect } from 'chai';
 import {
+    isTranscriptScrollAtTop,
+    isTranscriptScrollNearBottom,
     resolveStuckUserIndex,
     resolveTranscriptPinnedUserIndex,
+    shouldPinTranscriptUserIndex,
     transcriptUserMessageScrollTop,
 } from './qaap-transcript-user-scroll-pin';
 
@@ -43,5 +46,23 @@ describe('qaap-transcript-user-scroll-pin', () => {
         expect(resolveStuckUserIndex([23, 23, 890])).to.equal(1);
         expect(resolveStuckUserIndex([120, 400])).to.equal(undefined);
         expect(resolveStuckUserIndex([23])).to.equal(0);
+        expect(resolveStuckUserIndex([25])).to.equal(undefined);
+    });
+
+    it('detects transcript top before first sticky preview', () => {
+        expect(isTranscriptScrollAtTop(0)).to.equal(true);
+        expect(isTranscriptScrollAtTop(2)).to.equal(false);
+    });
+
+    it('detects transcript bottom proximity for newest-response reading', () => {
+        expect(isTranscriptScrollNearBottom(776, 200, 1000)).to.equal(true);
+        expect(isTranscriptScrollNearBottom(740, 200, 1000)).to.equal(false);
+    });
+
+    it('does not pin the final user message while reading the latest AI response', () => {
+        expect(shouldPinTranscriptUserIndex(0, 1)).to.equal(false);
+        expect(shouldPinTranscriptUserIndex(1, 2)).to.equal(false);
+        expect(shouldPinTranscriptUserIndex(0, 2)).to.equal(true);
+        expect(shouldPinTranscriptUserIndex(undefined, 2)).to.equal(false);
     });
 });
