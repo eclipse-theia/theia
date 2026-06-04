@@ -28,6 +28,22 @@ export interface QaapGitChangesResponse {
     files: QaapGitChangedFile[];
 }
 
+export interface QaapGitHistoryCommit {
+    hash: string;
+    shortHash: string;
+    subject: string;
+    authorName: string;
+    authorEmail?: string;
+    authoredAt: string;
+    refs: string[];
+}
+
+export interface QaapGitHistoryResponse {
+    root: string;
+    branch?: string;
+    commits: QaapGitHistoryCommit[];
+}
+
 export type QaapGitHunkLineType = 'ctx' | 'add' | 'del';
 
 export interface QaapGitHunkLine {

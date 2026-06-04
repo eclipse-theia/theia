@@ -269,6 +269,8 @@ import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import {
     QAAP_GIT_REVIEW_API_PATH,
     type QaapGitChangedFile,
+    type QaapGitHistoryCommit,
+    type QaapGitHistoryResponse,
 } from '../common/qaap-git-review';
 import {
     QaapDiffReviewWidget,
@@ -563,6 +565,14 @@ export class MobileProjectsPanel {
     protected transcriptReviewComposerHost: HTMLElement | undefined;
     protected transcriptReviewComposerDraft = '';
     protected transcriptChecksPanelOpen = false;
+    protected transcriptHistoryPanelOpen = false;
+    protected transcriptHistoryPanelHeightPx: number | undefined;
+    protected transcriptHistoryLoading = false;
+    protected transcriptHistoryCommits: QaapGitHistoryCommit[] = [];
+    protected transcriptHistoryBranch: string | undefined;
+    protected transcriptHistoryQuery = '';
+    protected transcriptHistoryRoot: string | undefined;
+    protected transcriptHistoryLoadGeneration = 0;
     protected transcriptPreviewHost: HTMLElement | undefined;
     protected transcriptEmbeddedPreview: EmbeddedAgentPreviewChrome | undefined;
     protected transcriptFilesHost: HTMLElement | undefined;
@@ -8529,6 +8539,12 @@ export class MobileProjectsPanel {
         this.verifyChecksLoading = false;
         this.verifyRunning = false;
         this.verifyAutoAttempts = 0;
+        this.transcriptHistoryPanelOpen = false;
+        this.transcriptHistoryCommits = [];
+        this.transcriptHistoryBranch = undefined;
+        this.transcriptHistoryQuery = '';
+        this.transcriptHistoryRoot = undefined;
+        this.transcriptHistoryLoading = false;
         this.transcriptLastStatus = summary.status;
         this.transcriptOpenSummaryId = summary.id;
         this.transcriptOpenSummary = summary;
@@ -9132,17 +9148,36 @@ export class MobileProjectsPanel {
         host.replaceChildren();
         const diffHost = document.createElement('div');
         diffHost.className = 'theia-mobile-transcript-review-diff-host';
+        const historyResizeHandle = document.createElement('div');
+        historyResizeHandle.className = 'theia-mobile-transcript-history-resize';
+        historyResizeHandle.setAttribute('role', 'separator');
+        historyResizeHandle.setAttribute('aria-orientation', 'horizontal');
+        historyResizeHandle.setAttribute('aria-label', nls.localize('qaap/mobileProjects/historyResizePanel', 'Resize history panel'));
+        historyResizeHandle.hidden = !this.transcriptHistoryPanelOpen;
+        const historyPanel = document.createElement('div');
+        historyPanel.className = 'theia-mobile-transcript-history-panel';
+        historyPanel.hidden = !this.transcriptHistoryPanelOpen;
+        if (this.transcriptHistoryPanelHeightPx !== undefined) {
+            historyPanel.style.setProperty('--qaap-transcript-history-height', `${this.transcriptHistoryPanelHeightPx}px`);
+        }
         const dock = document.createElement('div');
         dock.className = 'theia-mobile-transcript-changes-dock';
+        const dockControls = document.createElement('div');
+        dockControls.className = 'theia-mobile-transcript-changes-controls';
         const checksHost = document.createElement('div');
         checksHost.className = 'theia-mobile-transcript-review-checks';
+        const historyToggleHost = document.createElement('div');
+        historyToggleHost.className = 'theia-mobile-transcript-history-toggle-host';
         const composerHost = document.createElement('div');
         composerHost.className = 'theia-mobile-transcript-review-composer-host';
-        dock.append(checksHost, composerHost);
-        host.append(diffHost, dock);
+        dockControls.append(checksHost, historyToggleHost);
+        dock.append(dockControls, composerHost);
+        host.append(diffHost, historyResizeHandle, historyPanel, dock);
         this.transcriptReviewDiffHost = diffHost;
         this.transcriptReviewChecksHost = checksHost;
         this.transcriptReviewComposerHost = composerHost;
+        this.transcriptHistoryRoot = cwd;
+        this.installTranscriptHistoryResize(historyResizeHandle, historyPanel);
 
         const rootUri = project.uri?.toString() ?? `file://${cwd}`;
         if (!this.diffReviewWidget) {
@@ -9163,7 +9198,236 @@ export class MobileProjectsPanel {
             isActiveWorkspace: project.isCurrent,
         });
         this.renderChecksSection(checksHost, project, summary, { embedded: true });
+        this.renderTranscriptHistoryToggle(historyToggleHost, historyPanel, historyResizeHandle, cwd);
+        this.renderTranscriptHistoryPanel(historyPanel, cwd);
         this.mountTranscriptReviewComposer(composerHost, project, summary);
+    }
+
+    protected renderTranscriptHistoryToggle(
+        host: HTMLElement,
+        panel: HTMLElement,
+        resizeHandle: HTMLElement,
+        root: string,
+    ): void {
+        host.replaceChildren();
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theia-mobile-transcript-history-toggle codicon codicon-history';
+        btn.title = nls.localize('qaap/mobileProjects/historyToggle', 'Show commit history');
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-pressed', String(this.transcriptHistoryPanelOpen));
+        btn.classList.toggle('theia-mod-active', this.transcriptHistoryPanelOpen);
+        btn.addEventListener('click', () => {
+            this.transcriptHistoryPanelOpen = !this.transcriptHistoryPanelOpen;
+            btn.setAttribute('aria-pressed', String(this.transcriptHistoryPanelOpen));
+            btn.classList.toggle('theia-mod-active', this.transcriptHistoryPanelOpen);
+            panel.hidden = !this.transcriptHistoryPanelOpen;
+            resizeHandle.hidden = !this.transcriptHistoryPanelOpen;
+            if (this.transcriptHistoryPanelOpen) {
+                this.renderTranscriptHistoryPanel(panel, root);
+                void this.loadTranscriptHistory(root, panel, true);
+            }
+        });
+        host.append(btn);
+        if (this.transcriptHistoryPanelOpen) {
+            void this.loadTranscriptHistory(root, panel);
+        }
+    }
+
+    protected async loadTranscriptHistory(root: string, panel: HTMLElement, force = false): Promise<void> {
+        if (!force && this.transcriptHistoryRoot === root && this.transcriptHistoryCommits.length > 0) {
+            return;
+        }
+        const generation = ++this.transcriptHistoryLoadGeneration;
+        this.transcriptHistoryLoading = true;
+        this.renderTranscriptHistoryPanel(panel, root);
+        try {
+            const params = new URLSearchParams({ root });
+            const response = await fetch(`${QAAP_GIT_REVIEW_API_PATH}/history?${params.toString()}`, {
+                credentials: 'include',
+                cache: 'no-store',
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const payload = await response.json() as QaapGitHistoryResponse;
+            if (generation !== this.transcriptHistoryLoadGeneration || this.transcriptHistoryRoot !== root || !panel.isConnected) {
+                return;
+            }
+            this.transcriptHistoryBranch = payload.branch;
+            this.transcriptHistoryCommits = payload.commits;
+        } catch (error) {
+            if (generation === this.transcriptHistoryLoadGeneration && panel.isConnected) {
+                this.transcriptHistoryCommits = [];
+                this.transcriptHistoryBranch = error instanceof Error ? error.message : String(error);
+            }
+        } finally {
+            if (generation === this.transcriptHistoryLoadGeneration && panel.isConnected) {
+                this.transcriptHistoryLoading = false;
+                this.renderTranscriptHistoryPanel(panel, root);
+            }
+        }
+    }
+
+    protected renderTranscriptHistoryPanel(panel: HTMLElement, root: string): void {
+        panel.replaceChildren();
+        if (panel.hidden) {
+            return;
+        }
+        const header = document.createElement('div');
+        header.className = 'theia-mobile-transcript-history-header';
+        const title = document.createElement('div');
+        title.className = 'theia-mobile-transcript-history-title';
+        title.textContent = nls.localize('qaap/mobileProjects/historyTitle', 'History');
+        const actions = document.createElement('div');
+        actions.className = 'theia-mobile-transcript-history-actions';
+        const refresh = document.createElement('button');
+        refresh.type = 'button';
+        refresh.className = 'theia-mobile-transcript-history-icon codicon codicon-refresh';
+        refresh.title = nls.localize('qaap/mobileProjects/historyRefresh', 'Refresh history');
+        refresh.setAttribute('aria-label', refresh.title);
+        refresh.addEventListener('click', () => { void this.loadTranscriptHistory(root, panel, true); });
+        actions.append(refresh);
+        header.append(title, actions);
+
+        const searchWrap = document.createElement('label');
+        searchWrap.className = 'theia-mobile-transcript-history-search';
+        const searchIcon = document.createElement('span');
+        searchIcon.className = 'codicon codicon-search';
+        searchIcon.setAttribute('aria-hidden', 'true');
+        const search = document.createElement('input');
+        search.type = 'search';
+        search.value = this.transcriptHistoryQuery;
+        search.placeholder = nls.localize('qaap/mobileProjects/historySearch', 'Search commits');
+        search.setAttribute('aria-label', search.placeholder);
+        search.addEventListener('input', () => {
+            this.transcriptHistoryQuery = search.value;
+            this.renderTranscriptHistoryPanel(panel, root);
+        });
+        searchWrap.append(searchIcon, search);
+
+        const filters = document.createElement('div');
+        filters.className = 'theia-mobile-transcript-history-filters';
+        const branch = document.createElement('button');
+        branch.type = 'button';
+        branch.className = 'theia-mobile-transcript-history-filter';
+        branch.textContent = this.transcriptHistoryBranch ?? nls.localize('qaap/mobileProjects/historyBranch', 'Branch');
+        const user = document.createElement('button');
+        user.type = 'button';
+        user.className = 'theia-mobile-transcript-history-filter';
+        user.textContent = nls.localize('qaap/mobileProjects/historyUser', 'User');
+        filters.append(branch, user);
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-transcript-history-list';
+        const query = this.transcriptHistoryQuery.trim().toLowerCase();
+        const commits = query
+            ? this.transcriptHistoryCommits.filter(commit => `${commit.subject} ${commit.authorName} ${commit.refs.join(' ')}`.toLowerCase().includes(query))
+            : this.transcriptHistoryCommits;
+        if (this.transcriptHistoryLoading) {
+            list.append(this.createTranscriptHistoryNote(nls.localize('qaap/mobileProjects/historyLoading', 'Loading history...')));
+        } else if (commits.length === 0) {
+            list.append(this.createTranscriptHistoryNote(query
+                ? nls.localize('qaap/mobileProjects/historyNoMatches', 'No matching commits.')
+                : nls.localize('qaap/mobileProjects/historyEmpty', 'No commits found.')));
+        } else {
+            commits.forEach((commit, index) => list.append(this.createTranscriptHistoryRow(commit, index)));
+        }
+        panel.append(header, searchWrap, filters, list);
+    }
+
+    protected createTranscriptHistoryNote(text: string): HTMLElement {
+        const note = document.createElement('div');
+        note.className = 'theia-mobile-transcript-history-note';
+        note.textContent = text;
+        return note;
+    }
+
+    protected createTranscriptHistoryRow(commit: QaapGitHistoryCommit, index: number): HTMLElement {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'theia-mobile-transcript-history-row';
+        row.title = `${commit.subject}\n${commit.shortHash}`;
+        const lane = document.createElement('span');
+        lane.className = `theia-mobile-transcript-history-lane theia-mod-${index % 5}`;
+        const dot = document.createElement('span');
+        dot.className = 'theia-mobile-transcript-history-dot';
+        lane.append(dot);
+        const body = document.createElement('span');
+        body.className = 'theia-mobile-transcript-history-body';
+        const subject = document.createElement('span');
+        subject.className = 'theia-mobile-transcript-history-subject';
+        subject.textContent = commit.subject || commit.shortHash;
+        const meta = document.createElement('span');
+        meta.className = 'theia-mobile-transcript-history-meta';
+        meta.textContent = `${commit.authorName || commit.shortHash}, ${this.formatTranscriptHistoryDate(commit.authoredAt)}`;
+        body.append(subject, meta);
+        if (commit.refs.length > 0) {
+            const refs = document.createElement('span');
+            refs.className = 'theia-mobile-transcript-history-refs';
+            for (const ref of commit.refs.slice(0, 3)) {
+                const chip = document.createElement('span');
+                chip.className = 'theia-mobile-transcript-history-ref';
+                chip.textContent = ref.replace(/^HEAD ->\s*/, '');
+                refs.append(chip);
+            }
+            body.append(refs);
+        }
+        row.append(lane, body);
+        return row;
+    }
+
+    protected formatTranscriptHistoryDate(value: string): string {
+        const date = value ? new Date(value) : undefined;
+        if (!date || Number.isNaN(date.getTime())) {
+            return '';
+        }
+        return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+    }
+
+    protected installTranscriptHistoryResize(handle: HTMLElement, panel: HTMLElement): void {
+        let drag: { startY: number; startHeight: number; pointerId?: number } | undefined;
+        const applyHeight = (height: number): void => {
+            const hostHeight = this.transcriptReviewHost?.getBoundingClientRect().height ?? window.innerHeight;
+            const max = Math.max(180, Math.min(420, hostHeight * 0.62));
+            const next = Math.round(Math.max(150, Math.min(max, height)));
+            this.transcriptHistoryPanelHeightPx = next;
+            panel.style.setProperty('--qaap-transcript-history-height', `${next}px`);
+        };
+        const onMove = (event: PointerEvent): void => {
+            if (!drag || drag.pointerId !== event.pointerId) {
+                return;
+            }
+            event.preventDefault();
+            applyHeight(drag.startHeight + (drag.startY - event.clientY));
+        };
+        const onEnd = (event: PointerEvent): void => {
+            if (!drag || drag.pointerId !== event.pointerId) {
+                return;
+            }
+            drag = undefined;
+            this.transcriptReviewHost?.classList.remove('theia-mod-resizing-history');
+            document.removeEventListener('pointermove', onMove, true);
+            document.removeEventListener('pointerup', onEnd, true);
+            document.removeEventListener('pointercancel', onEnd, true);
+        };
+        handle.addEventListener('pointerdown', event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            const measured = panel.getBoundingClientRect().height;
+            drag = { startY: event.clientY, startHeight: this.transcriptHistoryPanelHeightPx ?? measured, pointerId: event.pointerId };
+            this.transcriptReviewHost?.classList.add('theia-mod-resizing-history');
+            try {
+                handle.setPointerCapture(event.pointerId);
+            } catch {
+                /* capture is best-effort */
+            }
+            document.addEventListener('pointermove', onMove, { capture: true, passive: false });
+            document.addEventListener('pointerup', onEnd, { capture: true });
+            document.addEventListener('pointercancel', onEnd, { capture: true });
+        });
     }
 
     protected async submitTranscriptReviewFeedback(
@@ -9440,6 +9704,8 @@ export class MobileProjectsPanel {
         this.transcriptReviewChecksHost = undefined;
         this.transcriptReviewComposerHost = undefined;
         this.transcriptReviewComposerDraft = '';
+        this.transcriptHistoryRoot = undefined;
+        this.transcriptHistoryLoading = false;
     }
 
     protected disposeTranscriptEmbeddedPreview(): void {

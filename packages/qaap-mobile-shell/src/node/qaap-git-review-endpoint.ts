@@ -16,6 +16,8 @@ import {
     type QaapGitChangesResponse,
     type QaapGitCommitWorkflowAction,
     type QaapGitFileDiffResponse,
+    type QaapGitHistoryCommit,
+    type QaapGitHistoryResponse,
 } from '../common/qaap-git-review';
 
 /** Diffs can be large; allow up to 16 MB of git output. */
@@ -34,6 +36,9 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         });
         app.get(`${QAAP_GIT_REVIEW_API_PATH}/diff`, (req, res) => {
             void this.handleDiff(req, res);
+        });
+        app.get(`${QAAP_GIT_REVIEW_API_PATH}/history`, (req, res) => {
+            void this.handleHistory(req, res);
         });
         app.post(`${QAAP_GIT_REVIEW_API_PATH}/stage`, (req, res) => {
             void this.handleStage(req, res);
@@ -231,6 +236,22 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         }
     }
 
+    protected async handleHistory(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepository(req, res);
+        if (!root) {
+            return;
+        }
+        try {
+            const [branch, commits] = await Promise.all([
+                this.readCurrentBranch(root),
+                this.collectHistory(root),
+            ]);
+            res.json({ root, branch, commits } satisfies QaapGitHistoryResponse);
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
     protected async collectChangedFiles(root: string): Promise<QaapGitChangedFile[]> {
         const status = await this.git(root, ['status', '--porcelain=v1', '-z']);
         const [unstaged, staged] = await Promise.all([
@@ -277,6 +298,26 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
             const stdout = (error as { stdout?: string }).stdout;
             return typeof stdout === 'string' ? stdout : '';
         }
+    }
+
+    protected async collectHistory(root: string): Promise<QaapGitHistoryCommit[]> {
+        const format = '%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%D%x1e';
+        const out = await this.git(root, ['log', '--decorate=short', '--date=iso-strict', `--pretty=format:${format}`, '-n', '80']);
+        return out.split('\x1e')
+            .map(entry => entry.trim())
+            .filter(Boolean)
+            .map(entry => {
+                const [hash = '', shortHash = '', subject = '', authorName = '', authorEmail = '', authoredAt = '', refsRaw = ''] = entry.split('\x1f');
+                return {
+                    hash,
+                    shortHash,
+                    subject,
+                    authorName,
+                    authorEmail,
+                    authoredAt,
+                    refs: refsRaw.split(',').map(ref => ref.trim()).filter(Boolean),
+                };
+            });
     }
 
     protected async readCurrentBranch(root: string): Promise<string | undefined> {
