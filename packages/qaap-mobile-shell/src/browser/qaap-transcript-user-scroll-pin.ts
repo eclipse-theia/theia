@@ -62,9 +62,33 @@ function syncStickyCompact(entry: TranscriptUserPinEntry): void {
     content.classList.toggle(STICKY_COMPACT_CLASS, isTranscriptContentTall(content, maxHeightPx));
 }
 
+function reserveNaturalWrapHeight(entry: TranscriptUserPinEntry): void {
+    const content = entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR);
+    const hadStuckClass = entry.wrap.classList.contains(STUCK_WRAP_CLASS);
+    const hadSuppressedClass = entry.wrap.classList.contains(SUPPRESSED_WRAP_CLASS);
+    const hadCompactClass = content?.classList.contains(STICKY_COMPACT_CLASS) ?? false;
+    const previousMinHeight = entry.wrap.style.minHeight;
+
+    entry.wrap.classList.remove(STUCK_WRAP_CLASS, SUPPRESSED_WRAP_CLASS);
+    content?.classList.remove(STICKY_COMPACT_CLASS);
+    entry.wrap.style.removeProperty('min-height');
+
+    const naturalHeight = entry.wrap.offsetHeight;
+
+    entry.wrap.classList.toggle(STUCK_WRAP_CLASS, hadStuckClass);
+    entry.wrap.classList.toggle(SUPPRESSED_WRAP_CLASS, hadSuppressedClass);
+    content?.classList.toggle(STICKY_COMPACT_CLASS, hadCompactClass);
+    entry.wrap.style.minHeight = previousMinHeight;
+
+    if (naturalHeight > 0) {
+        entry.wrap.style.minHeight = `${Math.ceil(naturalHeight)}px`;
+    }
+}
+
 function clearStickyVisual(entry: TranscriptUserPinEntry): void {
     entry.wrap.classList.remove(STUCK_WRAP_CLASS);
     entry.wrap.classList.remove(SUPPRESSED_WRAP_CLASS);
+    entry.wrap.style.removeProperty('min-height');
     entry.bubble.classList.remove(JUMP_CLASS);
     entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR)?.classList.remove(STICKY_COMPACT_CLASS);
     entry.bubble.removeAttribute('tabindex');
@@ -73,6 +97,7 @@ function clearStickyVisual(entry: TranscriptUserPinEntry): void {
 }
 
 function applyStickyVisual(entry: TranscriptUserPinEntry): void {
+    reserveNaturalWrapHeight(entry);
     entry.wrap.classList.add(STUCK_WRAP_CLASS);
     entry.wrap.classList.remove(SUPPRESSED_WRAP_CLASS);
     const jumpLabel = nls.localize('qaap/mobileProjects/transcriptPinnedJump', 'Jump to message');
@@ -86,6 +111,7 @@ function applyStickyVisual(entry: TranscriptUserPinEntry): void {
 function applySuppressedStickyVisual(entry: TranscriptUserPinEntry): void {
     entry.wrap.classList.remove(STUCK_WRAP_CLASS);
     entry.wrap.classList.add(SUPPRESSED_WRAP_CLASS);
+    entry.wrap.style.removeProperty('min-height');
     entry.bubble.classList.remove(JUMP_CLASS);
     entry.bubble.querySelector<HTMLElement>(CONTENT_SELECTOR)?.classList.remove(STICKY_COMPACT_CLASS);
     entry.bubble.removeAttribute('tabindex');

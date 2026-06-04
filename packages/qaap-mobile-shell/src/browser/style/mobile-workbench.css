@@ -11931,10 +11931,12 @@ body > .theia-mobile-transcript-files-menu {
   top: -12px;
   padding-bottom: 4px;
   background: transparent;
+  pointer-events: none;
 }
 
 .theia-mobile-agent-transcript-user-wrap.theia-mod-sticky-stuck
   .theia-mobile-agent-transcript-msg.theia-mod-scroll-pinned-jump {
+  pointer-events: auto;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
