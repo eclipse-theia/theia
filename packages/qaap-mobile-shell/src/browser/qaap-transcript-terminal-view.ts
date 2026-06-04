@@ -74,7 +74,7 @@ export async function createTranscriptTerminalSurface(
 
     const toDispose = new DisposableCollection(
         Disposable.create(() => {
-            if (terminal.isAttached) {
+            if (terminal.isAttached && terminal.node.parentElement) {
                 LuminoWidget.detach(terminal);
             }
             if (!terminal.isDisposed) {
