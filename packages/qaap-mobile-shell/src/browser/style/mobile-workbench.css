@@ -13504,8 +13504,7 @@ body > .theia-mobile-transcript-files-menu {
   position: sticky;
   top: -12px;
   padding-bottom: 4px;
-  /* Opaque backing so scrolling messages do not show through the reserved min-height slot. */
-  background: var(--theia-editor-background, var(--q-bg, #0a0a0a));
+  background: transparent;
   pointer-events: none;
 }
 
