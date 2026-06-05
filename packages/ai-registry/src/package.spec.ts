@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe('request package', () => {
+describe('ai-registry package', () => {
 
-    it('should support code coverage statistics', () => true);
+    it('support code coverage statistics', () => true);
 });

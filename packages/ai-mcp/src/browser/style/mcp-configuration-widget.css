@@ -51,6 +51,36 @@
   font-weight: 600;
   font-size: var(--theia-ui-font-size2);
   color: var(--theia-foreground);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding));
+}
+
+.mcp-server-registry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  background: none;
+  border: none;
+  padding: 0 calc(var(--theia-ui-padding) / 2);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 400;
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+}
+
+.mcp-server-registry-link:hover:not(:disabled) {
+  color: var(--theia-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+.mcp-server-registry-link:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.mcp-server-registry-link-icon {
+  font-size: var(--theia-ui-font-size1);
 }
 
 .mcp-server-header-controls {
@@ -264,6 +294,7 @@
 .mcp-header-actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--theia-ui-padding);
   margin-bottom: calc(var(--theia-ui-padding) * 2);
 }
 
@@ -280,41 +311,4 @@
 
 .mcp-server-header .mcp-action-button.mcp-delete-button:hover {
   background-color: var(--theia-errorBackground);
-}
-
-/* Dialog Form Styles */
-.mcp-dialog-form {
-  min-width: 400px;
-}
-
-.mcp-dialog-form .mcp-form-field {
-  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
-}
-
-.mcp-dialog-form .mcp-form-field label {
-  display: block;
-  margin-bottom: calc(var(--theia-ui-padding) / 2);
-  font-weight: 500;
-  color: var(--theia-foreground);
-}
-
-.mcp-dialog-form .mcp-form-field .theia-input,
-.mcp-dialog-form .mcp-form-field .theia-select {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.mcp-dialog-form .mcp-form-field textarea.theia-input {
-  resize: vertical;
-  min-height: 60px;
-  font-family: var(--monaco-monospace-font);
-  font-size: var(--theia-ui-font-size1);
-}
-
-.mcp-dialog-form .mcp-form-checkbox label {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding) / 2);
-  cursor: pointer;
-  margin-bottom: 0;
 }

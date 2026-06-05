@@ -23,7 +23,6 @@
 
 /* Import widget-specific styles */
 @import "./widgets/model-aliases-configuration.css";
-@import "./widgets/mcp-configuration.css";
 
 /* Override preferences grid layout for AI Configuration widgets */
 .ai-configuration-widget.theia-settings-container {
