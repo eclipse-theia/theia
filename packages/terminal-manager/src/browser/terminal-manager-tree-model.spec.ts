@@ -142,5 +142,40 @@ describe('TerminalManagerTreeModel', () => {
                 expect(page.children).to.have.lengthOf(2);
             }
         });
+
+        it('should recreate a special page after its last terminal is removed', () => {
+            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+            const firstGroup = 'group-tasks-a' as TerminalManagerTreeTypes.GroupId;
+            const firstTerminal = 'terminal-task-a' as TerminalManagerTreeTypes.TerminalKey;
+            const secondGroup = 'group-tasks-b' as TerminalManagerTreeTypes.GroupId;
+            const secondTerminal = 'terminal-task-b' as TerminalManagerTreeTypes.TerminalKey;
+
+            // Run a task -> Tasks page, group, and terminal appear.
+            model.addTerminalPage(firstTerminal, firstGroup, tasksPageId, 'Task A');
+            expect(model.getNode(tasksPageId)).to.not.be.undefined;
+
+            // Remove the terminal -> cascades up and detaches the Tasks page.
+            const addPageEvents: TerminalManagerTreeTypes.PageId[] = [];
+            model.onDidAddPage(({ pageId }) => addPageEvents.push(pageId));
+            model.deleteTerminalNode(firstTerminal);
+
+            // The Tasks page should be fully cleared from the tree index.
+            expect(model.getNode(tasksPageId)).to.be.undefined;
+            expect(model.getNode(firstGroup)).to.be.undefined;
+            expect(model.getNode(firstTerminal)).to.be.undefined;
+
+            // Run another task -> Tasks page should be re-created and re-attached,
+            // emitting onDidAddPage so the widget can rebuild the page panel.
+            model.addTerminalPage(secondTerminal, secondGroup, tasksPageId, 'Task B');
+
+            expect(addPageEvents).to.deep.equal([tasksPageId]);
+            const reattached = model.getNode(tasksPageId);
+            expect(TerminalManagerTreeTypes.isPageNode(reattached)).to.be.true;
+            if (TerminalManagerTreeTypes.isPageNode(reattached)) {
+                expect(reattached.parent).to.equal(model.root);
+                expect(reattached.children).to.have.lengthOf(1);
+                expect(reattached.children[0].id).to.equal(secondGroup);
+            }
+        });
     });
 });

@@ -90,7 +90,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         return this.specialPageConfigs.get(kind);
     }
 
-
     getSpecialPageConfigs(): ReadonlyMap<string, SpecialPageConfig> {
         return this.specialPageConfigs;
     }
@@ -141,7 +140,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
             const isActive = this.activePageNode === pageNode;
             this.onDidDeletePageEmitter.fire(pageNode.id);
-            CompositeTreeNode.removeChild(this.root, pageNode);
+            CompositeTreeNode.removeChild(this.root, pageNode, this.tree);
             this.refreshWithSelection(this.root, undefined, isActive ? pageNode : undefined);
         }
     }
@@ -206,7 +205,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
 
     protected doDeleteTerminalGroup(group: TerminalManagerTreeTypes.TerminalGroupNode, page: TerminalManagerTreeTypes.PageNode): void {
         this.onDidDeleteTerminalGroupEmitter.fire(group.id);
-        CompositeTreeNode.removeChild(page, group);
+        CompositeTreeNode.removeChild(page, group, this.tree);
     }
 
     addTerminal(newTerminalId: TerminalManagerTreeTypes.TerminalKey, groupId: TerminalManagerTreeTypes.GroupId, label?: string): void {
@@ -255,7 +254,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             terminalId: node.id,
             groupId: parent.id,
         });
-        CompositeTreeNode.removeChild(parent, node);
+        CompositeTreeNode.removeChild(parent, node, this.tree);
     }
 
     toggleRenameTerminal(entityId: TerminalManagerTreeTypes.TerminalManagerValidId): void {
@@ -378,10 +377,14 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     /**
      * Get or create a page by ID. If a special page config exists for this ID,
      * its label is used; otherwise an auto-numbered label is generated.
+     *
+     * An existing page is only reused if it is currently attached to the root
+     * of the tree. A page that has been detached (e.g., because its last
+     * terminal was removed) is treated as missing and recreated.
      */
     protected getOrCreatePage(pageId: TerminalManagerTreeTypes.PageId): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
         const existing = this.getNode(pageId);
-        if (TerminalManagerTreeTypes.isPageNode(existing)) {
+        if (TerminalManagerTreeTypes.isPageNode(existing) && existing.parent === this.root) {
             return { page: existing, isNewlyCreated: false };
         }
         // Check if this is a special page with a configured label
