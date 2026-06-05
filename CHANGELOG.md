@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.73.0 - tbd
+
+- [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+
+<a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
+
+- [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+
 ## 1.72.0 - 5/28/2026
 
 - [ai] continued ai white label [#17447](https://github.com/eclipse-theia/theia/pull/17447)
