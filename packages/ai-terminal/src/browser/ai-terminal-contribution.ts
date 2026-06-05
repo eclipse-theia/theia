@@ -112,8 +112,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
         }));
         commands.registerCommand(AI_TERMINAL_ASK_AI_COMMAND, this.commandHandlerFactory({
-            execute: async (terminalBlock: TerminalBlock) => {
-                const terminal = this.terminalService.lastUsedTerminal;
+            execute: async (terminalBlock: TerminalBlock, terminal: TerminalWidget) => {
                 if (!terminal) {
                     return;
                 }
@@ -134,7 +133,6 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             return;
         }
 
-        // Create the input widget using the factory
         this.askAiInputOverlay = new AskAITerminalOverlay(
             terminal,
             this.askAITerminalInputFactory
@@ -176,10 +174,10 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         const shell = await this.getTerminalShell(currentTerminal);
         const text = [
             `#terminalCommand:${terminalHistoryIndex}`,
-            '### Terminal Context:',
-            `Cwd: ${cwd}\n`,
-            `ShellType: ${shell}`,
-            '### User Questions',
+            '### Terminal Context',
+            `Cwd: ${cwd}`,
+            ...(shell ? [`ShellType: ${shell}`] : []),
+            '### User Question',
             request.text
         ].join('\n');
         const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);

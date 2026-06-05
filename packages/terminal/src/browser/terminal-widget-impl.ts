@@ -539,6 +539,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.enableCommandBlockActions) {
             this.blockOverlayController?.addBlock(
                 block,
+                this,
                 this.promptStartMarker,
                 endMarker,
             );
@@ -578,11 +579,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.blockOverlayController = this.blockOverlayControllerFactory({
             term: this.term,
-            renderBlockMenu: (event, block) => {
+            renderBlockMenu: (event, block, term) => {
                 this.contextMenuRenderer.render({
                     menuPath: TerminalMenus.TERMINAL_BLOCK_ACTIONS,
                     anchor: event,
-                    args: [block],
+                    args: [block, term],
                     includeAnchorArg: false,
                     context: this.node
                 });
