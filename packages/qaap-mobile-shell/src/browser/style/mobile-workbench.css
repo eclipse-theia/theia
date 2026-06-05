@@ -9398,6 +9398,45 @@ body.theia-mobile-mod-landing
   text-align: center;
 }
 
+.theia-mobile-pr-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--q-space-6, 12px);
+  padding: var(--q-space-2, 4px) 0;
+}
+
+.theia-mobile-pr-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--q-space-4, 8px);
+  padding: var(--q-space-8, 16px);
+}
+
+.theia-mobile-pr-skeleton-line {
+  height: 12px;
+}
+
+.theia-mobile-pr-skeleton-line.theia-mod-title {
+  width: 62%;
+  height: 15px;
+}
+
+.theia-mobile-pr-skeleton-line.theia-mod-meta {
+  width: 42%;
+}
+
+.theia-mobile-pr-skeleton-chips {
+  display: flex;
+  gap: var(--q-space-3, 6px);
+  margin-top: var(--q-space-1, 2px);
+}
+
+.theia-mobile-pr-skeleton-chip {
+  width: 52px;
+  height: 18px;
+  border-radius: var(--q-radius-pill, 99px);
+}
+
 .theia-mobile-pr-empty {
   height: 100%;
   min-height: 260px;

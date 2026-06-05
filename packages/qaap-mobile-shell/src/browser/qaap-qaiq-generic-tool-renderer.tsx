@@ -12,7 +12,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
-import { formatToolResult } from './qaap-qaiq-tool-renderer-utils';
+import { formatToolResult, summarizeToolArguments } from './qaap-qaiq-tool-renderer-utils';
 
 /** Tool names handled by a dedicated renderer — the generic one defers to them. */
 const DEDICATED_TOOL_RENDERERS = new Set(['bash', 'read', 'edit', 'write', 'grep', 'glob', 'ls', 'multiedit', 'webfetch', 'todowrite']);
@@ -34,6 +34,7 @@ export class QaapQaiqGenericToolRenderer implements ChatResponsePartRenderer<Too
     render(response: ToolCallChatResponseContent): ReactNode {
         const output = response.finished ? formatToolResult(response.result) : undefined;
         const args = response.arguments?.trim();
+        const summary = summarizeToolArguments(response.arguments);
         const hasExpandable = !!(args && args !== '{}' || output);
 
         const compactHeader = (
@@ -41,6 +42,7 @@ export class QaapQaiqGenericToolRenderer implements ChatResponsePartRenderer<Too
                 <div className="claude-code-tool header-left">
                     <span className="claude-code-tool title">{response.name}</span>
                     <span className={`${codicon('tools')} claude-code-tool icon`} />
+                    {summary && <span className="claude-code-tool command">{summary}</span>}
                     {!response.finished && (
                         <span className={`${codicon('loading')} claude-code-tool icon theia-animation-spin`} />
                     )}

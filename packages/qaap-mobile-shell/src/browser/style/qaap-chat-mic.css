@@ -80,3 +80,11 @@
 .qaap-chat-mic-btn-sticky.qaap-chat-mic-btn-recording {
     opacity: 1;
 }
+
+/* Reduced-motion (WCAG 2.3.3): drop the recording pulse; the red icon color
+ * still signals that recording is active. */
+@media (prefers-reduced-motion: reduce) {
+    .qaap-chat-mic-btn.qaap-chat-mic-btn-recording .codicon {
+        animation: none;
+    }
+}

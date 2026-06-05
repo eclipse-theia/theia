@@ -18,6 +18,37 @@
   --q-radius-pill: 99px;
   --q-font-sans: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --q-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Spacing scale (4px rhythm). Use these instead of magic px for
+     padding / margin / gap so vertical rhythm stays consistent across views. */
+  --q-space-0: 0;
+  --q-space-1: 2px;
+  --q-space-2: 4px;
+  --q-space-3: 6px;
+  --q-space-4: 8px;
+  --q-space-5: 10px;
+  --q-space-6: 12px;
+  --q-space-7: 14px;
+  --q-space-8: 16px;
+  --q-space-9: 18px;
+  --q-space-10: 20px;
+  --q-space-12: 24px;
+  --q-space-14: 28px;
+  --q-space-16: 32px;
+
+  /* Type scale — role-based names mapped to the established mobile rhythm.
+     Defining them once means the whole product can be re-tuned in one place. */
+  --q-text-micro: 10px;
+  --q-text-overline: 11px;
+  --q-text-meta: 13px;
+  --q-text-body: 14px;
+  --q-text-strong: 15px;
+  --q-text-lg: 18px;
+  --q-text-title: 22px;
+  --q-text-display: 26px;
+  --q-leading-tight: 1.12;
+  --q-leading-snug: 1.25;
+  --q-leading-normal: 1.45;
 }
 
 body.qaap-theme-light {
@@ -148,10 +179,10 @@ body.qaap-theme-dark .theia-mobile-hub-routines-section-label,
 body.qaap-theme-light .theia-mobile-hub-routines-section-label {
   color: var(--q-muted);
   font-family: var(--q-font-sans);
-  font-size: 11px;
+  font-size: var(--q-text-overline);
   font-weight: 600;
   letter-spacing: 0.4px;
-  line-height: 1.25;
+  line-height: var(--q-leading-snug);
   text-transform: uppercase;
 }
 
@@ -159,10 +190,10 @@ body.qaap-theme-dark .q-fs-display,
 body.qaap-theme-light .q-fs-display {
   color: var(--q-text);
   font-family: var(--q-font-sans);
-  font-size: 26px;
+  font-size: var(--q-text-display);
   font-weight: 600;
   letter-spacing: -0.5px;
-  line-height: 1.12;
+  line-height: var(--q-leading-tight);
 }
 
 body.qaap-theme-dark .theia-mobile-projects-title,
@@ -215,8 +246,8 @@ body.qaap-theme-dark .q-fs-meta,
 body.qaap-theme-light .q-fs-meta {
   color: var(--q-muted);
   font-family: var(--q-font-sans);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: var(--q-text-meta);
+  line-height: var(--q-leading-normal);
 }
 
 body.qaap-theme-dark .theia-mobile-projects-subtitle,
@@ -585,4 +616,109 @@ body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card .theia-mobile-p
 body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex:focus-within {
   border: none !important;
   background: transparent !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Loading skeletons + empty states — reusable primitives so any view can show
+|| a structural placeholder instead of a bare spinner, and a consistent empty
+|| state with an optional call to action. Both follow the q-* token language.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-dark .q-skeleton,
+body.qaap-theme-light .q-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--q-line-soft);
+  border-radius: var(--q-radius-row);
+}
+
+body.qaap-theme-dark .q-skeleton.q-skeleton-text,
+body.qaap-theme-light .q-skeleton.q-skeleton-text {
+  height: 12px;
+  border-radius: var(--q-radius-pill);
+}
+
+body.qaap-theme-dark .q-skeleton::after,
+body.qaap-theme-light .q-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--q-text) 9%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: q-skeleton-shimmer 1.4s var(--qaap-ease, ease) infinite;
+}
+
+@keyframes q-skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.qaap-theme-dark .q-skeleton::after,
+  body.qaap-theme-light .q-skeleton::after {
+    animation: none;
+  }
+}
+
+body.qaap-theme-dark .q-empty,
+body.qaap-theme-light .q-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--q-space-4);
+  padding: var(--q-space-12) var(--q-space-8);
+  text-align: center;
+}
+
+body.qaap-theme-dark .q-empty-icon,
+body.qaap-theme-light .q-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--q-radius-pill);
+  background: var(--q-accent-soft);
+  color: var(--q-accent-ink);
+  font-size: var(--q-text-lg);
+}
+
+body.qaap-theme-dark .q-empty-title,
+body.qaap-theme-light .q-empty-title {
+  margin: 0;
+  color: var(--q-text);
+  font-family: var(--q-font-sans);
+  font-size: var(--q-text-strong);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+body.qaap-theme-dark .q-empty-hint,
+body.qaap-theme-light .q-empty-hint {
+  max-width: 32ch;
+  margin: 0;
+  color: var(--q-muted);
+  font-family: var(--q-font-sans);
+  font-size: var(--q-text-meta);
+  line-height: var(--q-leading-normal);
+}
+
+body.qaap-theme-dark .q-empty-action,
+body.qaap-theme-light .q-empty-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: var(--q-space-2);
+  padding: 0 var(--q-space-8);
+  border: 1px solid var(--q-accent);
+  border-radius: var(--q-radius-card);
+  background: var(--q-accent);
+  color: var(--q-bg);
+  font-family: var(--q-font-sans);
+  font-size: var(--q-text-body);
+  font-weight: 600;
 }

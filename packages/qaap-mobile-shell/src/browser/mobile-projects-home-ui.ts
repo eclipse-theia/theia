@@ -428,13 +428,18 @@ export class MobileProjectsHomeUi {
         panel.append(head);
 
         if (pinnedProjects.length === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'theia-mobile-work-hub-home-empty q-fs-meta';
-            empty.textContent = nls.localize(
-                'qaap/workHubHome/noProjects',
-                'Add a GitHub repository to delegate agent work and review the resulting PR.',
-            );
-            panel.append(empty);
+            panel.append(this.createEmptyState({
+                icon: 'codicon-repo',
+                title: nls.localize('qaap/workHubHome/noProjectsTitle', 'No workspaces yet'),
+                hint: nls.localize(
+                    'qaap/workHubHome/noProjects',
+                    'Add a GitHub repository to delegate agent work and review the resulting PR.',
+                ),
+                action: {
+                    label: nls.localize('qaap/workHubHome/addRepository', 'Add repository'),
+                    onClick: () => this.deps.onNavigate('repos'),
+                },
+            }));
         } else {
             const list = document.createElement('div');
             list.className = 'theia-mobile-work-hub-home-rows';
@@ -526,6 +531,35 @@ export class MobileProjectsHomeUi {
         const panel = document.createElement('section');
         panel.className = `theia-mobile-work-hub-home-panel q-card ${className}`;
         return panel;
+    }
+
+    protected createEmptyState(options: {
+        readonly icon: string;
+        readonly title: string;
+        readonly hint: string;
+        readonly action?: { readonly label: string; readonly onClick: () => void };
+    }): HTMLElement {
+        const empty = document.createElement('div');
+        empty.className = 'q-empty theia-mobile-work-hub-home-empty';
+        const icon = document.createElement('span');
+        icon.className = `q-empty-icon codicon ${options.icon}`;
+        icon.setAttribute('aria-hidden', 'true');
+        const title = document.createElement('p');
+        title.className = 'q-empty-title';
+        title.textContent = options.title;
+        const hint = document.createElement('p');
+        hint.className = 'q-empty-hint';
+        hint.textContent = options.hint;
+        empty.append(icon, title, hint);
+        if (options.action) {
+            const action = document.createElement('button');
+            action.type = 'button';
+            action.className = 'q-empty-action';
+            action.textContent = options.action.label;
+            action.addEventListener('click', options.action.onClick);
+            empty.append(action);
+        }
+        return empty;
     }
 
     protected createSectionHead(

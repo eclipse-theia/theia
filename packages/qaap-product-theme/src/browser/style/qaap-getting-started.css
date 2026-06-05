@@ -254,3 +254,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Reduced-motion (WCAG 2.3.3): the quick-action hover tint transition is decorative. */
+@media (prefers-reduced-motion: reduce) {
+  .gs-quick-action {
+    transition: none;
+  }
+}

@@ -612,14 +612,32 @@ export class MobilePullRequestPanel {
     }
 
     protected createBusyState(): HTMLElement {
-        const busy = document.createElement('div');
-        busy.className = 'theia-mobile-pr-empty';
-        busy.append(
-            this.createIcon('codicon-sync codicon-modifier-spin'),
-            this.createTextSpan(nls.localize('qaap/mobilePr/loading', 'Loading pull requests...')),
-            this.createClassedTextSpan('theia-mobile-pr-empty-hint', this.repositoryLabel())
-        );
-        return busy;
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-pr-skeleton-list';
+        list.setAttribute('aria-busy', 'true');
+        list.setAttribute('aria-label', nls.localize('qaap/mobilePr/loading', 'Loading pull requests...'));
+        for (let i = 0; i < 3; i++) {
+            list.append(this.createSkeletonCard());
+        }
+        return list;
+    }
+
+    protected createSkeletonCard(): HTMLElement {
+        const card = document.createElement('div');
+        card.className = 'theia-mobile-pr-skeleton-card q-card';
+        const title = document.createElement('div');
+        title.className = 'q-skeleton q-skeleton-text theia-mobile-pr-skeleton-line theia-mod-title';
+        const meta = document.createElement('div');
+        meta.className = 'q-skeleton q-skeleton-text theia-mobile-pr-skeleton-line theia-mod-meta';
+        const chips = document.createElement('div');
+        chips.className = 'theia-mobile-pr-skeleton-chips';
+        for (let i = 0; i < 2; i++) {
+            const chip = document.createElement('div');
+            chip.className = 'q-skeleton theia-mobile-pr-skeleton-chip';
+            chips.append(chip);
+        }
+        card.append(title, meta, chips);
+        return card;
     }
 
     protected createSignInState(): HTMLElement {

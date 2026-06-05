@@ -280,3 +280,10 @@
   color: var(--theia-foreground);
   background: transparent;
 }
+
+/* Reduced-motion (WCAG 2.3.3): the input shell's focus border-color transition is decorative. */
+@media (prefers-reduced-motion: reduce) {
+  .theia-ChatInput-Editor-Box.qaap-codex-input-shell {
+    transition: none;
+  }
+}

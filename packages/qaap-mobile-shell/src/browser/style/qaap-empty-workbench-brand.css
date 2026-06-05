@@ -194,3 +194,10 @@ html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .monaco-keybindi
 html.theia-splash-branded .qaap-mobile-empty-brand {
   display: none !important;
 }
+
+/* Reduced-motion (WCAG 2.3.3): the shortcut-row hover tint transition is decorative. */
+@media (prefers-reduced-motion: reduce) {
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry {
+    transition: none;
+  }
+}

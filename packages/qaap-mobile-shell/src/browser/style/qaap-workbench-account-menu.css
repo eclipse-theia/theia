@@ -332,3 +332,11 @@ body.theia-mobile-mod-landing .theia-qaap-account-menu {
   color: inherit;
   opacity: 1;
 }
+
+/* Reduced-motion (WCAG 2.3.3): the row hover tint transitions are decorative. */
+@media (prefers-reduced-motion: reduce) {
+  .theia-qaap-account-menu-catalog-card,
+  .theia-qaap-account-menu-item {
+    transition: none;
+  }
+}

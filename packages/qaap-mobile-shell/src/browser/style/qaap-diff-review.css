@@ -1198,3 +1198,11 @@
     opacity: var(--theia-mod-disabled-opacity, 0.4);
     cursor: default;
 }
+
+/* Reduced-motion (WCAG 2.3.3): drop the looping shimmer; the static gradient bar
+ * still indicates that agent changes are loading. */
+@media (prefers-reduced-motion: reduce) {
+    .qaap-agent-changes-loading-bar {
+        animation: none;
+    }
+}
