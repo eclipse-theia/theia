@@ -338,3 +338,24 @@
 .qaap-project-bootstrap-port-number {
     font-weight: 500;
 }
+
+/* Respect the user's reduced-motion preference (WCAG 2.3.3). The banner/picker entrance
+ * animations and hover/visibility transitions are decorative, so they are removed. The
+ * `codicon-loading` spinner is kept: it is essential feedback that work is in progress. */
+@media (prefers-reduced-motion: reduce) {
+    .qaap-project-bootstrap-banner,
+    .qaap-project-bootstrap-ports.qaap-mod-floating {
+        animation: none;
+    }
+
+    .qaap-project-bootstrap-action,
+    .qaap-project-bootstrap-chip,
+    .qaap-project-bootstrap-picker,
+    .qaap-project-bootstrap-port-pill {
+        transition: none;
+    }
+
+    .qaap-project-bootstrap-picker.qaap-mod-visible {
+        transform: none;
+    }
+}
