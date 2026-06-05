@@ -67,8 +67,8 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use --log-level flag', async () => {
-        const args: yargs.Arguments = yargs.parse(['--log-level=debug']);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-level=debug']);
+        await cli.setArguments(args as unknown as yargs.Arguments);
 
         expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
     });
@@ -85,8 +85,8 @@ describe('log-level-cli-contribution', () => {
         fs.fsyncSync(file.fd);
         fs.closeSync(file.fd);
 
-        const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({
@@ -96,8 +96,8 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use info as default log level', async () => {
-        const args: yargs.Arguments = yargs.parse([]);
-        await cli.setArguments(args);
+        const args = await yargs.parse([]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({});
@@ -113,8 +113,8 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown default log level in');
     });
 
@@ -128,14 +128,14 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown log level for logger hello in');
     });
 
     it('should reject nonexistent config files', async () => {
-        const args: yargs.Arguments = yargs.parse(['--log-config', '/tmp/cacaca']);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', '/tmp/cacaca']);
+        await cli.setArguments(args as unknown as yargs.Arguments);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'no such file or directory');
     });
 
@@ -150,8 +150,8 @@ describe('log-level-cli-contribution', () => {
         });
         fs.writeFileSync(file.fd, '{' + text);
 
-        const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
@@ -175,8 +175,8 @@ describe('log-level-cli-contribution', () => {
             fs.fsyncSync(file.fd);
             fs.closeSync(file.fd);
 
-            const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-            await cli.setArguments(args);
+            const args = await yargs.parse(['--log-config', file.path]);
+            await cli.setArguments(args as unknown as yargs.Arguments);
         }
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
@@ -224,8 +224,8 @@ describe('log-level-cli-contribution', () => {
         }));
         fs.fsyncSync(file.fd);
 
-        const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args);
+        const args = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args as unknown as yargs.Arguments);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({
@@ -255,6 +255,55 @@ describe('log-level-cli-contribution', () => {
         expect(cli.logLevels).eql({
             hello: LogLevel.DEBUG,
             world: LogLevel.FATAL,
+        });
+    });
+
+    describe('Wildcard Matching', () => {
+
+        it('should respect exact matches if they are evaluated last (or only)', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                'unrelated:Service': LogLevel.DEBUG
+            };
+            expect(cli.logLevelFor('unrelated:Service')).to.equal(LogLevel.DEBUG);
+            expect(cli.logLevelFor('something-else')).to.equal(LogLevel.INFO);
+        });
+
+        it('should match prefix wildcards', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                'ai-core*': LogLevel.ERROR
+            };
+            expect(cli.logLevelFor('ai-core:SomeOtherService')).to.equal(LogLevel.ERROR);
+        });
+
+        it('should match suffix wildcards', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                '*TokenUsageFrontendServiceImpl': LogLevel.WARN
+            };
+            expect(cli.logLevelFor('my-package:MyTokenUsageFrontendServiceImpl')).to.equal(LogLevel.WARN);
+        });
+
+        it('should match middle wildcards', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                '*ai*:*': LogLevel.WARN
+            };
+            expect(cli.logLevelFor('foo-ai-bar:SomeService')).to.equal(LogLevel.WARN);
+        });
+
+        it('should enforce the "last one wins" rule', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                'ai-core:SpecificService': LogLevel.DEBUG,
+                'ai-core*': LogLevel.ERROR,
+                '*ai*:*': LogLevel.WARN
+            };
+            expect(cli.logLevelFor('ai-core:SpecificService')).to.equal(LogLevel.WARN);
+        });
+
+        it('should properly escape regex specifics like periods', () => {
+            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
+                '.*': LogLevel.ERROR
+            };
+            expect(cli.logLevelFor('anything-else')).to.equal(LogLevel.INFO);
+            expect(cli.logLevelFor('.*')).to.equal(LogLevel.ERROR);
         });
     });
 });

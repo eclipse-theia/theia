@@ -1,0 +1,12 @@
+{
+  "defaultLevel": "info",
+  "levels": {
+    "ai-core:DefaultPromptFragmentCustomizationService": "debug",
+    "ai-core:OSNotificationService": "debug",
+    "ai-core*": "error",
+    "*ai*:*": "warn",
+    "*TokenUsageFrontendServiceImpl": "warn",
+    "*Token*": "error",
+    "*Toke": "warn"
+  }
+}

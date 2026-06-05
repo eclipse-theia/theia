@@ -38,6 +38,7 @@ export interface LogLevels {
 export class LogLevelCliContribution implements CliContribution, Disposable {
 
     protected _logLevels: LogLevels = {};
+    protected wildcardRegexCache = new Map<string, RegExp>();
     protected asyncSubscriptions: AsyncSubscription[] = [];
     protected toDispose = new DisposableCollection();
 
@@ -202,10 +203,21 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
     }
 
     logLevelFor(loggerName: string): LogLevel {
-        const level = this._logLevels[loggerName];
+        let resolvedLevel: LogLevel | undefined = undefined;
 
-        if (level !== undefined) {
-            return level;
+        for (const pattern of Object.keys(this._logLevels)) {
+            if (pattern === loggerName) {
+                resolvedLevel = this._logLevels[pattern];
+            } else if (pattern.includes('*')) {
+                const regex = this.getWildcardRegex(pattern);
+                if (regex.test(loggerName)) {
+                    resolvedLevel = this._logLevels[pattern];
+                }
+            }
+        }
+
+        if (resolvedLevel !== undefined) {
+            return resolvedLevel;
         } else {
             return this.defaultLogLevel;
         }
@@ -222,5 +234,21 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
         }
 
         return level;
+    }
+
+    /**
+     * Converts a wildcard string into a strict regular expression and caches it.
+     * Example: "ai-core*" -> /^ai\-core.*$/
+     */
+    protected getWildcardRegex(pattern: string): RegExp {
+        let regex = this.wildcardRegexCache.get(pattern);
+        if (!regex) {
+            const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            const regexString = `^${escapedPattern.replace(/\*/g, '.*')}$`;
+
+            regex = new RegExp(regexString);
+            this.wildcardRegexCache.set(pattern, regex);
+        }
+        return regex;
     }
 }
