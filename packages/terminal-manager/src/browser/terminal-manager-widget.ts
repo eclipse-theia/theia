@@ -35,7 +35,7 @@ import {
 import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
@@ -163,11 +163,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     async createTerminalWidget(options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
         const terminalWidget = await this.terminalFrontendContribution.newTerminal({
-            // passing 'created' here as a millisecond value rather than the default `new Date().toString()` that Theia uses in
-            // its factory (resolves to something like 'Tue Aug 09 2022 13:21:26 GMT-0500 (Central Daylight Time)').
-            // The state restoration system relies on identifying terminals by their unique options, using an ms value ensures we don't
-            // get a duplication since the original date method is only accurate to within 1s.
-            created: new Date().getTime().toString(),
+            created: nextTerminalCreationToken(),
             ...options,
         } as TerminalWidgetOptions);
         terminalWidget.start();
