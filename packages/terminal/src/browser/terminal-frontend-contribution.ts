@@ -765,8 +765,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
         });
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP, {
-            execute: (block: TerminalBlock) => {
-                const terminal = this.shell.activeWidget;
+            execute: (block: TerminalBlock, terminal: TerminalWidget) => {
                 if (terminal instanceof TerminalWidget && block) {
                     terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Top);
                 }
@@ -774,8 +773,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
         });
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM, {
-            execute: (block: TerminalBlock) => {
-                const terminal = this.shell.activeWidget;
+            execute: (block: TerminalBlock, terminal: TerminalWidget) => {
                 if (terminal instanceof TerminalWidget && block) {
                     terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Bottom);
                 }
