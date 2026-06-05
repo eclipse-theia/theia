@@ -67,6 +67,9 @@ const ALLOWED = [
     /^\.nvmrc$/,
     // Examples / branding / deploy (not upstream Theia)
     /^examples\//,
+    // Fork-specific design mockups (static HTML proposals, not shipped product
+    // code and absent from upstream Theia).
+    /^mockups\//,
     // Upstream sample plugins removed in this fork — we ship our own plugin set.
     /^sample-plugins\//,
     // Fork-specific build tooling and dev scripts (not user-facing product code).
