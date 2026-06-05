@@ -471,10 +471,17 @@
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .theia-mobile-work-hub-sessions-sidebar-project-row-wrap .theia-mobile-work-hub-sessions-sidebar-project-row:active {
   background: color-mix(in srgb, var(--theia-foreground) 6%, transparent);
+}
+
+/* Suppress global :focus orange ring (core index.css → --theia-focusBorder) after tap/click. */
+.theia-mobile-work-hub-sessions-sidebar-project-row-wrap .theia-mobile-work-hub-sessions-sidebar-project-row:focus,
+.theia-mobile-work-hub-sessions-sidebar-project-row-wrap .theia-mobile-work-hub-sessions-sidebar-project-row:focus-visible {
+  outline: none;
 }
 
 .theia-mobile-work-hub-sessions-sidebar-project-chevron {

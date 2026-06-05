@@ -3764,7 +3764,12 @@ export class MobileProjectsPanel {
         }
         selectBtn.dataset.tab = spec.id;
         selectBtn.title = spec.label;
+        selectBtn.setAttribute('aria-label', `${spec.label}, ${nls.localize('qaap/mobileProjects/tabOverflow', 'Change view')}`);
         symbol.replaceWith(createExecutionSurfaceIconElement(spec.icon, 'theia-mobile-transcript-tab-icon-select-symbol'));
+        const triggerLabel = strip.querySelector<HTMLElement>('.theia-mobile-transcript-tab-icon-select-label');
+        if (triggerLabel) {
+            triggerLabel.textContent = spec.label;
+        }
         for (const item of Array.from(strip.querySelectorAll<HTMLButtonElement>('.theia-mobile-transcript-tab-icon-select-option'))) {
             const tabId = item.dataset.tab as TranscriptTab | undefined;
             item.classList.toggle('theia-mod-active', tabId === activeTab);
@@ -10602,10 +10607,14 @@ export class MobileProjectsPanel {
         trigger.setAttribute('aria-label', menuLabel);
 
         appendExecutionSurfaceTabIcon(trigger, displaySpec.icon, 'theia-mobile-transcript-tab-icon-select-symbol');
+        const triggerLabel = document.createElement('span');
+        triggerLabel.className = 'theia-mobile-transcript-tab-icon-select-label';
+        triggerLabel.textContent = displaySpec.label;
+        triggerLabel.setAttribute('aria-hidden', 'true');
         const chevron = document.createElement('span');
         chevron.className = 'theia-mobile-transcript-tab-icon-select-chevron codicon codicon-chevron-down';
         chevron.setAttribute('aria-hidden', 'true');
-        trigger.append(chevron);
+        trigger.append(triggerLabel, chevron);
         trigger.addEventListener('click', event => {
             event.stopPropagation();
             if (this.executionTabOverflowMenu?.classList.contains('theia-mod-open')) {

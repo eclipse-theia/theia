@@ -5,6 +5,9 @@
 
 /*-----------------------------------------------------------------------------
 | Desktop welcome page — keep title and body inside the editor tab.
+|
+| Spacing / type values use the q-* design tokens (4px rhythm + role-based type
+| scale). Fallbacks keep rendering identical if the token layer is ever absent.
 |-----------------------------------------------------------------------------*/
 
 .gs-container {
@@ -19,15 +22,15 @@
   box-sizing: border-box;
   width: min(100%, 980px);
   margin: 0 auto;
-  padding: 28px 28px 72px;
+  padding: var(--q-space-14, 28px) var(--q-space-14, 28px) 72px;
 }
 
 .gs-header {
-  margin-bottom: 18px;
+  margin-bottom: var(--q-space-9, 18px);
 }
 
 .gs-header h1 {
-  margin: 0 0 8px;
+  margin: 0 0 var(--q-space-4, 8px);
   font-size: 28px;
   line-height: 1.25;
   font-weight: 600;
@@ -41,17 +44,17 @@
 .gs-quick-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--q-space-5, 10px);
   margin: 0 0 22px;
 }
 
 .gs-quick-action {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--q-space-5, 10px);
   min-width: 0;
   min-height: 50px;
-  padding: 0 12px;
+  padding: 0 var(--q-space-6, 12px);
   /* Borderless, transparent background for a minimal/clean look — only the icon and label show. */
   border: none;
   border-radius: 8px;
@@ -75,7 +78,7 @@
 
 .gs-quick-action i {
   flex: 0 0 auto;
-  font-size: 18px;
+  font-size: var(--q-text-lg, 18px);
   color: var(--theia-focusBorder);
 }
 
@@ -88,7 +91,7 @@
 .gs-workbench-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr);
-  gap: 28px;
+  gap: var(--q-space-14, 28px);
   align-items: start;
 }
 
@@ -114,8 +117,8 @@
 .gs-section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 10px;
+  gap: var(--q-space-4, 8px);
+  margin: 0 0 var(--q-space-5, 10px);
   font-size: var(--theia-ui-font-size2, 16px);
   line-height: 1.35;
   font-weight: 600;
@@ -138,7 +141,7 @@
   align-items: center;
   min-width: 0;
   min-height: 34px;
-  padding: 7px 10px;
+  padding: 7px var(--q-space-5, 10px);
   border: 1px solid transparent;
   border-radius: 6px;
   color: var(--theia-textLink-foreground);
@@ -157,7 +160,7 @@
 
 .gs-action-details {
   min-width: 0;
-  padding-top: 8px;
+  padding-top: var(--q-space-4, 8px);
   overflow: hidden;
   color: var(--theia-descriptionForeground);
   text-overflow: ellipsis;
@@ -193,28 +196,28 @@
 
   .gs-content-container {
     width: 100%;
-    padding: 18px 14px 84px;
+    padding: var(--q-space-9, 18px) var(--q-space-7, 14px) 84px;
   }
 
   .gs-header h1 {
-    font-size: 22px;
+    font-size: var(--q-text-title, 22px);
     line-height: 1.25;
   }
 
   .gs-sub-header {
     display: block;
-    margin-top: 2px;
+    margin-top: var(--q-space-1, 2px);
   }
 
   .gs-quick-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 18px;
+    gap: var(--q-space-4, 8px);
+    margin-bottom: var(--q-space-9, 18px);
   }
 
   .gs-quick-action {
     min-height: 48px;
-    padding: 0 8px;
+    padding: 0 var(--q-space-4, 8px);
   }
 
   .gs-workbench-grid {
@@ -230,7 +233,7 @@
 
   .gs-section .gs-action-container a {
     flex: 1;
-    padding: 10px 8px;
+    padding: var(--q-space-5, 10px) var(--q-space-4, 8px);
     font-size: var(--theia-ui-font-size1, 15px);
   }
 
@@ -240,14 +243,14 @@
 
   .gs-section-header {
     font-size: var(--theia-ui-font-size2, 17px);
-    margin-top: 18px;
-    margin-bottom: 8px;
+    margin-top: var(--q-space-9, 18px);
+    margin-bottom: var(--q-space-4, 8px);
   }
 }
 
 @media (max-width: 360px) {
   .gs-content-container {
-    padding: 14px 12px 20px;
+    padding: var(--q-space-7, 14px) var(--q-space-6, 12px) var(--q-space-10, 20px);
   }
 
   .gs-quick-actions {

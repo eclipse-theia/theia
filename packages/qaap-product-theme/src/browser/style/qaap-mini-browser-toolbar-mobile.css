@@ -9,9 +9,9 @@
   display: flex;
   align-items: center;
   flex: 0 0 auto;
-  gap: 10px;
-  margin: 0 2px 0 8px;
-  padding-left: 12px;
+  gap: var(--q-space-5, 10px);
+  margin: 0 var(--q-space-1, 2px) 0 var(--q-space-4, 8px);
+  padding-left: var(--q-space-6, 12px);
   border-left: 1px solid var(--theia-widget-border, var(--theia-panel-border));
 }
 
@@ -33,7 +33,7 @@
 }
 
 .theia-mini-browser-workbench-button::before {
-  font-size: 18px;
+  font-size: var(--q-text-lg, 18px);
   pointer-events: none;
 }
 
@@ -67,9 +67,9 @@
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
-    gap: 2px;
-    margin-top: 4px;
-    padding: 0 6px;
+    gap: var(--q-space-1, 2px);
+    margin-top: var(--q-space-2, 4px);
+    padding: 0 var(--q-space-3, 6px);
     min-height: 0;
     overflow: hidden;
   }
@@ -77,7 +77,7 @@
   .theia-mini-browser-toolbar > .theia-mini-browser-button,
   .theia-mini-browser-toolbar-read-only > .theia-mini-browser-button {
     flex: 0 0 auto;
-    margin: 0 2px;
+    margin: 0 var(--q-space-1, 2px);
     min-width: 1.25rem;
   }
 
@@ -94,7 +94,7 @@
     flex: 1 1 0;
     min-width: 0;
     width: auto !important;
-    margin: 0 4px;
+    margin: 0 var(--q-space-2, 4px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -106,9 +106,9 @@
     flex: 0 0 auto;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 4px;
-    margin: 0 0 0 4px;
-    padding-left: 6px;
+    gap: var(--q-space-2, 4px);
+    margin: 0 0 0 var(--q-space-2, 4px);
+    padding-left: var(--q-space-3, 6px);
     border-left: 1px solid var(--theia-widget-border, var(--theia-panel-border));
   }
 

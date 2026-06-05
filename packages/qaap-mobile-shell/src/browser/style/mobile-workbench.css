@@ -6725,6 +6725,10 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   overflow: hidden;
 }
 
+.theia-mobile-projects.theia-mod-agents-hub-shell-active .theia-mobile-projects-sessions-menu.theia-mobile-projects-header-back {
+  margin: 0 2px 0 -4px;
+}
+
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-subtitle,
 .theia-mobile-projects.theia-mod-home.theia-mod-agents-hub-inline-active .theia-mobile-projects-subtitle,
 .theia-mobile-agent-transcript-root .theia-mobile-agent-log-title-wrap .theia-mobile-projects-subtitle {
@@ -6774,6 +6778,14 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   touch-action: manipulation;
 }
 
+/* Agents hub shell — keep surface picker on the title row; title ellipsizes instead of clipping tabs. */
+.theia-mobile-projects.theia-mod-agents-hub-shell-active .theia-mobile-projects-header-execution-tabs {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  max-width: none;
+  margin-left: 4px;
+}
+
 /* Projects header: tabs are a sibling of title-block — keep Chat + overflow aligned to the title row. */
 .theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs,
 .theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs {
@@ -6801,6 +6813,12 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   min-width: 0;
   flex: 0 0 auto;
   max-height: var(--theia-mobile-execution-header-text-block);
+}
+
+.theia-mobile-projects.theia-mod-agents-hub-shell-active .theia-mobile-projects-header-main > .theia-mobile-projects-title-block {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .theia-mobile-projects.theia-mod-home.theia-mod-hub-repos.theia-mod-project-detail .theia-mobile-projects-title-row,
@@ -11108,6 +11126,11 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
   line-height: 1;
 }
 
+/* Visually icon-only on the inline header row; label stays in DOM for menu sync / future breakpoints. */
+.theia-mobile-transcript-tab-icon-select-label {
+  display: none !important;
+}
+
 .theia-mobile-transcript-tab-icon-select-chevron {
   font-size: 11px;
   line-height: 1;
@@ -15162,6 +15185,26 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .lm-Widget.dialo
   box-shadow: none;
   overflow: hidden;
   transition: border-color 140ms ease;
+}
+
+/* Light mode — white input zone, tray keeps the default tinted strip (dark mode unchanged). */
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card.theia-mod-codex {
+  --qaap-codex-shell-bg: #ffffff;
+  background: var(--qaap-codex-tray-bg);
+}
+
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex {
+  background: #ffffff !important;
+}
+
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-strip {
+  background: #ffffff;
+}
+
+body.qaap-theme-light .theia-mobile-projects-sticky-composer > .theia-mobile-projects-sticky-composer {
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex:focus-within,
