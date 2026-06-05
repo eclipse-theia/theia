@@ -4,6 +4,11 @@
 // *****************************************************************************
 
 import { buildConversationListMetrics } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-conversation-list-metrics';
+import {
+    DEFAULT_QAAP_CONTEXT_WINDOW,
+    estimateConversationTokensFromMessages,
+    type QaapAgentContextUsage,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task';
 
@@ -106,6 +111,12 @@ export interface QaapAgentConversation {
     readonly gitDiffRemoved?: number;
     /** When set, this thread is tied to a GitHub pull request (Work Hub inbox). */
     readonly linkedPullRequest?: QaapLinkedPullRequest;
+    /** Cumulative token usage when the agent CLI reports stream-json usage. */
+    readonly contextUsage?: QaapAgentContextUsage;
+    /** Denominator for the context meter (defaults to {@link DEFAULT_QAAP_CONTEXT_WINDOW}). */
+    readonly contextWindowSize?: number;
+    /** When true, {@link contextUsage} is absent and the UI may show a transcript-based estimate. */
+    readonly contextUsageEstimated?: boolean;
 }
 
 /** Summary row used by list endpoints — omits messages to keep payloads small. */
@@ -144,6 +155,11 @@ export interface QaapAgentConversationSummary {
     readonly linkedPullRequest?: QaapLinkedPullRequest;
     /** Set when the thread ran `git` or is tied to a PR — used by the Work Hub inbox filter. */
     readonly hasGitOperation?: boolean;
+    readonly contextUsage?: QaapAgentContextUsage;
+    readonly contextWindowSize?: number;
+    readonly contextUsageEstimated?: boolean;
+    /** Cached estimate for list rows when {@link contextUsageEstimated} is set. */
+    readonly estimatedContextTokens?: number;
 }
 
 /** Conversations bucketed by project working directory. */
@@ -265,8 +281,17 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         hasGitOperation,
         ...(conv.gitDiffAdded !== undefined ? { linesAdded: conv.gitDiffAdded } : {}),
         ...(conv.gitDiffRemoved !== undefined ? { linesRemoved: conv.gitDiffRemoved } : {}),
+        ...(conv.contextUsage ? { contextUsage: conv.contextUsage } : {}),
+        ...(conv.contextWindowSize ? { contextWindowSize: conv.contextWindowSize } : {}),
+        ...(conv.contextUsageEstimated ? { contextUsageEstimated: true } : {}),
+        ...(conv.contextUsageEstimated
+            ? { estimatedContextTokens: estimateConversationTokensFromMessages(conv.messages, conv.contextPreamble) }
+            : {}),
     };
 }
+
+export { DEFAULT_QAAP_CONTEXT_WINDOW };
+export type { QaapAgentContextUsage };
 
 function excerpt(text: string): string {
     const clean = text.replace(/\s+/g, ' ').trim();

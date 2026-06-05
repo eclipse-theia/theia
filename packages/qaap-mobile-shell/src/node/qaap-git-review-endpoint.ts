@@ -16,6 +16,7 @@ import {
     type QaapGitChangesResponse,
     type QaapGitCommitWorkflowAction,
     type QaapGitFileDiffResponse,
+    type QaapGitBranchesResponse,
     type QaapGitHistoryCommit,
     type QaapGitHistoryResponse,
 } from '../common/qaap-git-review';
@@ -39,6 +40,12 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         });
         app.get(`${QAAP_GIT_REVIEW_API_PATH}/history`, (req, res) => {
             void this.handleHistory(req, res);
+        });
+        app.get(`${QAAP_GIT_REVIEW_API_PATH}/branches`, (req, res) => {
+            void this.handleBranches(req, res);
+        });
+        app.post(`${QAAP_GIT_REVIEW_API_PATH}/checkout`, (req, res) => {
+            void this.handleCheckout(req, res);
         });
         app.post(`${QAAP_GIT_REVIEW_API_PATH}/stage`, (req, res) => {
             void this.handleStage(req, res);
@@ -252,6 +259,40 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         }
     }
 
+    protected async handleBranches(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepository(req, res);
+        if (!root) {
+            return;
+        }
+        try {
+            const [current, branches] = await Promise.all([
+                this.readCurrentBranch(root),
+                this.listLocalBranches(root),
+            ]);
+            res.json({ root, current, branches } satisfies QaapGitBranchesResponse);
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
+    protected async handleCheckout(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepositoryBody(req, res);
+        if (!root) {
+            return;
+        }
+        const branch = this.sanitizeBranchName(req.body?.branch);
+        if (!branch) {
+            res.status(400).json({ error: 'Missing or invalid "branch" in request body.' });
+            return;
+        }
+        try {
+            await this.git(root, ['checkout', branch]);
+            res.json({ ok: true, branch: await this.readCurrentBranch(root) ?? branch });
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
     protected async collectChangedFiles(root: string): Promise<QaapGitChangedFile[]> {
         const status = await this.git(root, ['status', '--porcelain=v1', '-z']);
         const [unstaged, staged] = await Promise.all([
@@ -326,6 +367,15 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
             return name && name !== 'HEAD' ? name : undefined;
         } catch {
             return undefined;
+        }
+    }
+
+    protected async listLocalBranches(root: string): Promise<string[]> {
+        try {
+            const out = await this.git(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads/']);
+            return out.split('\n').map(line => line.trim()).filter(Boolean);
+        } catch {
+            return [];
         }
     }
 

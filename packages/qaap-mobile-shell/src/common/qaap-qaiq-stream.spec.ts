@@ -90,6 +90,18 @@ describe('QaapQaiqStreamAccumulator', () => {
         expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: 'part1 part2' }]);
     });
 
+    it('captures usage from assistant and result envelopes', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push('{"type":"assistant","message":{"usage":{"input_tokens":1200,"output_tokens":80}}}\n');
+        expect(acc.getTurnUsage()).to.deep.equal({ inputTokens: 1200, outputTokens: 80 });
+        acc.push('{"type":"result","usage":{"input_tokens":1500,"output_tokens":200,"cache_read_input_tokens":100}}\n');
+        expect(acc.getTurnUsage()).to.deep.equal({
+            inputTokens: 1500,
+            outputTokens: 200,
+            cacheReadInputTokens: 100,
+        });
+    });
+
     it('appends error result text when result type is result with is_error', () => {
         const acc = new QaapQaiqStreamAccumulator();
         acc.push('{"type":"result","is_error":true,"result":"fatal error occurred"}\n');

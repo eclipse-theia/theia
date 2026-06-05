@@ -77,7 +77,7 @@
   height: auto;
   min-height: 40px;
   margin: 0;
-  padding: 2px 12px 12px;
+  padding: 2px 6px 12px 12px;
   border-top: none;
   background: transparent;
   box-sizing: border-box;
@@ -107,6 +107,17 @@
   flex-shrink: 0;
   margin-right: 0;
   gap: 2px;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .token-usage-badge,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .qaap-chat-context-usage-indicator {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-right .token-usage-badge:first-child,
+.theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .theia-ChatInputOptions-right .qaap-chat-context-usage-indicator:first-child {
+  margin-right: 0;
 }
 
 .theia-ChatInput-Editor-Box.qaap-codex-input-shell .theia-ChatInputOptions .option {

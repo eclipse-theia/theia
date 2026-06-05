@@ -23,10 +23,20 @@ En viewports estrechos (`max-width: 767px`) y puntero grueso (`pointer: coarse`)
 
 ## Patrones de referencia
 
+- Sidebar de sesiones: `.theia-mobile-work-hub-sessions-sidebar-scroll` (host; lista dentro en `.theia-mobile-work-hub-sessions-sidebar-list`)
 - Sheet compositor (agente / modelo / herramientas): `.theia-mobile-sticky-composer-sheet-list`, `.theia-mobile-sticky-composer-tools-host`
+- Approval policy (Codex / QAIQ / Claude): `.theia-qaap-approval-policy-sheet-list` (también lleva `theia-mobile-sticky-composer-sheet-list`)
 - Quick input Monaco: `qaap-monaco-quick-input-narrow.css`
 - Diálogos Theia: `qaap-dialog-narrow-viewport.css`
 
-## Verificación manual
+## Verificación manual (dispositivo real o emulador táctil)
 
-Tras cambios en overlays o listas: `npm run build:browser`, dispositivo real o emulador táctil, abrir el sheet y deslizar verticalmente toda la lista (p. ej. «Choose model» con muchos proveedores).
+Tras cambios en overlays o listas: `npm run build:browser`, viewport ≤767px o puntero grueso.
+
+| Superficie | Cómo abrir | Qué comprobar |
+|---|---|---|
+| Sidebar de sesiones | ☰ / icono historial en barra superior | Lista larga de tareas/proyectos: el dedo desplaza todo el scroll; no queda «barra visible pero el dedo no mueve». Cerrar con ← no deja ghost-tap en ☰. |
+| Approval policy | Composer Codex/QAIQ → control de política de aprobación | Las 3 opciones (icono + título + descripción) se leen y el sheet responde al pan vertical si el teclado reduce altura. Repetir desde transcript overlay si aplica. |
+| Choose model (regresión) | Sheet de modelo con muchos proveedores | Misma prueba de pan vertical en `.theia-mobile-sticky-composer-sheet-list`. |
+
+Prueba unitaria de registro: `npx lerna run test --scope @theia/qaap-mobile-shell -- --grep mobile-vertical-touch-scroll`.

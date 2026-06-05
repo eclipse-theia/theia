@@ -8,6 +8,7 @@ import {
     isTranscriptContentTall,
     transcriptScrollCompactMaxHeightPx,
 } from '../common/qaap-transcript-scroll-compact';
+import { prefersReducedMotion, resolveScrollBehavior } from '../common/qaap-prefers-reduced-motion';
 import {
     isTranscriptScrollAtTop,
     isTranscriptScrollNearBottom,
@@ -46,11 +47,6 @@ function wrapNaturalScrollTopInScroller(wrap: HTMLElement, scroller: HTMLElement
         wrap.style.top = previousTop;
         wrap.style.zIndex = previousZIndex;
     }
-}
-
-function prefersReducedMotion(): boolean {
-    return typeof window !== 'undefined'
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function syncStickyCompact(entry: TranscriptUserPinEntry): void {
@@ -181,7 +177,7 @@ export function attachTranscriptUserScrollPin(scroller: HTMLElement): Disposable
         scrollToUserMessageTimer = window.setTimeout(onScrollDone, prefersReducedMotion() ? 32 : 700);
         scroller.scrollTo({
             top: targetTop,
-            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+            behavior: resolveScrollBehavior('smooth'),
         });
     };
 

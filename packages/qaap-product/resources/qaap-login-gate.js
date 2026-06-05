@@ -5,6 +5,58 @@
 (function () {
     'use strict';
 
+    /**
+     * Mobile Work Hub boot guard — runs before bundle.js so the IDE shell never flashes
+     * behind the Agents chat while layout + workspace restore finish loading.
+     * Mirrors installMobileWorkHubBootGuard() in @theia/qaap-mobile-shell.
+     */
+    (function installMobileWorkHubBootGuardEarly() {
+        try {
+            var mobile = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+            if (!mobile || !window.sessionStorage) {
+                return;
+            }
+            var ss = window.sessionStorage;
+            if (ss.getItem('qaap.mobileProjects.preferDesktopIde') === '1') {
+                document.body.classList.remove('theia-mobile-mod-workhub-composer-header');
+                return;
+            }
+            if (ss.getItem('qaap.mobileProjects.homeVisible') === '1') {
+                return;
+            }
+            if (ss.getItem('qaap.hub.pendingAction')) {
+                return;
+            }
+            var hash = (window.location.hash || '').replace(/^#/, '').trim();
+            var hasWorkspace = hash.length > 0 && hash !== '/';
+            var dismiss = ss.getItem('qaap.mobileProjects.dismissPanel') === '1';
+            var preferAgents = ss.getItem('qaap.mobileProjects.preferAgentsSurface') === '1';
+            if (hasWorkspace || dismiss || preferAgents) {
+                document.body.classList.add('theia-mobile-mod-workhub-composer-header');
+            }
+            if (!document.getElementById('qaap-mobile-workhub-boot-styles')) {
+                var style = document.createElement('style');
+                style.id = 'qaap-mobile-workhub-boot-styles';
+                style.textContent = [
+                    'html.theia-mobile-workhub-boot,html.theia-mobile-workhub-boot body{',
+                    'background:#f5f5f5!important;background:var(--q-bg,var(--qaap-bg,#f5f5f5))!important}',
+                    'html.theia-mobile-workhub-boot #theia-app-shell,',
+                    'html.theia-mobile-workhub-boot #theia-top-panel,',
+                    'html.theia-mobile-workhub-boot .theia-mobile-workbench-top-bar,',
+                    'html.theia-mobile-workhub-boot .theia-mobile-bottom-chrome-host,',
+                    'html.theia-mobile-workhub-boot #theia-statusBar,',
+                    'html.theia-mobile-workhub-boot .theia-mobile-bottom-bar,',
+                    'html.theia-mobile-workhub-boot #theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel,',
+                    'body.theia-mobile-mod-workhub-composer-header #theia-main-content-panel,',
+                    'body.theia-mobile-mod-workhub-composer-header #theia-top-panel{',
+                    'visibility:hidden!important;pointer-events:none!important}'
+                ].join('');
+                (document.head || document.documentElement).appendChild(style);
+            }
+            document.documentElement.classList.add('theia-mobile-workhub-boot');
+        } catch (e) { /* ignore */ }
+    })();
+
     var SIGNED_IN_SUFFIX = 'qaap.auth.signedIn';
     var PROVIDER_SUFFIX = 'qaap.auth.provider';
     var USER_SUFFIX = 'qaap.auth.user';

@@ -28,6 +28,7 @@ const VARIANT_STATS_POLL_MS = 5000;
 export interface MobileProjectsParallelUiDeps {
     getAgents(): QaapAgentTaskAgentOption[];
     onRunsChanged(): void;
+    onOpenSessionsSidebar?(): void;
     buildVariantTaskRow(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -67,19 +68,33 @@ export class MobileProjectsParallelUi {
         header: HTMLElement,
         title: HTMLElement,
     ): HTMLButtonElement {
-        const titleWrap = document.createElement('div');
-        titleWrap.className = 'theia-mobile-agent-log-title-wrap';
         const titleRow = document.createElement('div');
         titleRow.className = 'theia-mobile-agent-log-title-row';
+        const leading: HTMLElement[] = [];
+        if (this.deps.onOpenSessionsSidebar) {
+            const menuBtn = document.createElement('button');
+            menuBtn.type = 'button';
+            menuBtn.className = 'theia-mobile-agent-log-title-menu theia-mobile-projects-header-back';
+            menuBtn.title = nls.localize('qaap/sessionsSidebar/open', 'Open session history');
+            menuBtn.setAttribute('aria-label', menuBtn.title);
+            menuBtn.innerHTML = '<span class="codicon codicon-menu" aria-hidden="true"></span>';
+            menuBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                this.deps.onOpenSessionsSidebar?.();
+            });
+            leading.push(menuBtn);
+        }
         const backBtn = document.createElement('button');
         backBtn.type = 'button';
         backBtn.className = 'theia-mobile-agent-log-title-back theia-mobile-projects-header-back';
         backBtn.title = nls.localize('qaap/mobileProjects/backFromTranscript', 'Back');
         backBtn.setAttribute('aria-label', backBtn.title);
         backBtn.innerHTML = '<span class="codicon codicon-chevron-left" aria-hidden="true"></span>';
-        titleRow.append(backBtn, title);
-        titleWrap.append(titleRow);
-        header.append(titleWrap);
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'theia-mobile-agent-log-title-wrap';
+        titleWrap.append(title);
+        titleRow.append(...leading, backBtn, titleWrap);
+        header.append(titleRow);
         return backBtn;
     }
 

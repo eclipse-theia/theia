@@ -10,6 +10,8 @@ import { bindCatalogCardTapFeedback } from './qaap-catalog-card-tap-feedback';
 
 export const QAAP_AUTH_SIGN_IN_GITHUB_COMMAND = 'qaap.auth.signInGithub';
 export const QAAP_AUTH_SIGN_OUT_COMMAND = 'qaap.auth.signOut';
+export const QAAP_WORK_HUB_OVERVIEW_COMMAND = 'qaap.workHub.showOverview';
+export const QAAP_MOBILE_OPEN_DESKTOP_IDE_COMMAND = 'qaap.mobile.openDesktopIde';
 
 const WORKBENCH_SHOW_COMMANDS = 'workbench.action.showCommands';
 const WORKBENCH_OPEN_EXTENSIONS = 'workbench.view.extensions';
@@ -24,6 +26,15 @@ export interface QaapAccountMenuEntry {
 export interface QaapAccountMenuGettingStartedOptions {
     readonly section: WorkHubCatalogSection;
     readonly onCatalogAction: (action: WorkHubCatalogAction) => void;
+}
+
+export interface QaapAccountMenuOpenOptions {
+    /** Prefer opening above the anchor (e.g. sessions sidebar footer). */
+    readonly placement?: 'below' | 'above';
+    /** Gap in px between menu and anchor (default 4 above, 8 below). */
+    readonly anchorGap?: number;
+    /** Invoked when the user picks a menu item or catalog card (before dismiss). */
+    readonly onMenuAction?: () => void;
 }
 
 let activeMenu: HTMLElement | undefined;
@@ -51,6 +62,16 @@ export function buildQaapAccountMenuEntries(signedIn: boolean = true): QaapAccou
             kind: 'action',
             label: nls.localize('qaap/accountMenu/commandPalette', 'Command Palette…'),
             commandId: WORKBENCH_SHOW_COMMANDS,
+        },
+        {
+            kind: 'action',
+            label: nls.localize('qaap/accountMenu/workHubOverview', 'Work Hub overview'),
+            commandId: QAAP_WORK_HUB_OVERVIEW_COMMAND,
+        },
+        {
+            kind: 'action',
+            label: nls.localize('qaap/accountMenu/openDesktopIde', 'Open IDE'),
+            commandId: QAAP_MOBILE_OPEN_DESKTOP_IDE_COMMAND,
         },
         { kind: 'separator' },
         {
@@ -117,12 +138,13 @@ export function toggleQaapAccountMenu(
     commands: CommandRegistry,
     entries: QaapAccountMenuEntry[],
     gettingStarted?: QaapAccountMenuGettingStartedOptions,
+    openOptions?: QaapAccountMenuOpenOptions,
 ): void {
     if (isQaapAccountMenuOpen(anchor)) {
         dismissQaapAccountMenu();
         return;
     }
-    openQaapAccountMenu(anchor, commands, entries, gettingStarted);
+    openQaapAccountMenu(anchor, commands, entries, gettingStarted, openOptions);
 }
 
 export function openQaapAccountMenu(
@@ -130,6 +152,7 @@ export function openQaapAccountMenu(
     commands: CommandRegistry,
     entries: QaapAccountMenuEntry[],
     gettingStarted?: QaapAccountMenuGettingStartedOptions,
+    openOptions?: QaapAccountMenuOpenOptions,
 ): void {
     if (activeAnchor !== anchor) {
         dismissQaapAccountMenu();
@@ -145,6 +168,7 @@ export function openQaapAccountMenu(
         panel.appendChild(createAccountMenuGettingStartedBlock(
             gettingStarted.section,
             gettingStarted.onCatalogAction,
+            openOptions?.onMenuAction,
         ));
         const sep = document.createElement('div');
         sep.className = 'theia-qaap-account-menu-separator';
@@ -178,6 +202,7 @@ export function openQaapAccountMenu(
         item.setAttribute('role', 'menuitem');
         item.textContent = entry.label;
         item.addEventListener('click', () => {
+            openOptions?.onMenuAction?.();
             dismissQaapAccountMenu();
             if (isQaapAuthCommand || (commands.getCommand(commandId) && commands.isEnabled(commandId))) {
                 void commands.executeCommand(commandId).catch(() => undefined);
@@ -198,16 +223,28 @@ export function openQaapAccountMenu(
     const positionPanel = (): void => {
         const rect = anchor.getBoundingClientRect();
         const margin = 8;
-        let top = rect.bottom + margin;
-        let left = rect.right - panel.offsetWidth;
+        const gap = openOptions?.anchorGap ?? (openOptions?.placement === 'above' ? 4 : 8);
         const maxLeft = window.innerWidth - panel.offsetWidth - margin;
-        const maxTop = window.innerHeight - panel.offsetHeight - margin;
+        let left = openOptions?.placement === 'above' ? rect.left : rect.right - panel.offsetWidth;
         left = Math.max(margin, Math.min(left, maxLeft));
+        panel.style.left = `${left}px`;
+        if (openOptions?.placement === 'above') {
+            panel.style.top = 'auto';
+            panel.style.bottom = `${window.innerHeight - rect.top + gap}px`;
+            const maxHeight = Math.max(160, rect.top - gap - margin);
+            panel.style.maxHeight = `${maxHeight}px`;
+            panel.style.overflowY = 'auto';
+            return;
+        }
+        panel.style.bottom = 'auto';
+        panel.style.maxHeight = '';
+        panel.style.overflowY = '';
+        let top = rect.bottom + gap;
+        const maxTop = window.innerHeight - panel.offsetHeight - margin;
         if (top > maxTop) {
-            top = Math.max(margin, rect.top - panel.offsetHeight - margin);
+            top = Math.max(margin, rect.top - panel.offsetHeight - gap);
         }
         panel.style.top = `${top}px`;
-        panel.style.left = `${left}px`;
     };
 
     const onPointerDown = (event: PointerEvent): void => {
@@ -255,6 +292,7 @@ export function openQaapAccountMenu(
 function createAccountMenuGettingStartedBlock(
     section: WorkHubCatalogSection,
     onCatalogAction: (action: WorkHubCatalogAction) => void,
+    onMenuAction?: () => void,
 ): HTMLElement {
     const block = document.createElement('div');
     block.className = 'theia-qaap-account-menu-getting-started';
@@ -269,7 +307,7 @@ function createAccountMenuGettingStartedBlock(
     const list = document.createElement('div');
     list.className = 'theia-qaap-account-menu-getting-started-cards';
     for (const item of section.items) {
-        list.appendChild(createAccountMenuCatalogCard(item, onCatalogAction));
+        list.appendChild(createAccountMenuCatalogCard(item, onCatalogAction, onMenuAction));
     }
 
     block.append(head, list);
@@ -279,6 +317,7 @@ function createAccountMenuGettingStartedBlock(
 function createAccountMenuCatalogCard(
     item: WorkHubCatalogItem,
     onCatalogAction: (action: WorkHubCatalogAction) => void,
+    onMenuAction?: () => void,
 ): HTMLElement {
     const card = document.createElement('button');
     card.type = 'button';
@@ -330,6 +369,7 @@ function createAccountMenuCatalogCard(
     card.append(icon, body);
     bindCatalogCardTapFeedback(card);
     card.addEventListener('click', () => {
+        onMenuAction?.();
         dismissQaapAccountMenu();
         onCatalogAction(item.action);
     });

@@ -150,6 +150,7 @@ export class MobileWorkHubAiConfigurationSheet {
         if (!widget) {
             return;
         }
+        this.clearMobileAiConfigurationDetailHeight(widget);
         widget.node.classList.remove('theia-mobile-work-hub-ai-config-embed');
         if (widget.isAttached) {
             UnsafeWidgetUtilities.detach(widget);
@@ -161,8 +162,32 @@ export class MobileWorkHubAiConfigurationSheet {
             return;
         }
         const rect = this.widgetHost.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-            MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+        if (rect.width <= 0 || rect.height <= 0) {
+            return;
+        }
+        MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+        this.applyMobileAiConfigurationDetailHeight(widget.node, rect);
+    }
+
+    protected applyMobileAiConfigurationDetailHeight(root: HTMLElement, hostRect: DOMRectReadOnly): void {
+        const detail = root.querySelector<HTMLElement>('.ai-configuration-detail');
+        if (!detail) {
+            return;
+        }
+        const detailTop = detail.getBoundingClientRect().top - hostRect.top;
+        const detailHeight = Math.max(200, Math.floor(hostRect.height - detailTop));
+        detail.style.height = `${detailHeight}px`;
+        detail.style.minHeight = `${detailHeight}px`;
+        detail.style.maxHeight = `${detailHeight}px`;
+        detail.style.boxSizing = 'border-box';
+    }
+
+    protected clearMobileAiConfigurationDetailHeight(widget: AIConfigurationContainerWidget): void {
+        for (const detail of widget.node.querySelectorAll<HTMLElement>('.ai-configuration-detail')) {
+            detail.style.removeProperty('height');
+            detail.style.removeProperty('min-height');
+            detail.style.removeProperty('max-height');
+            detail.style.removeProperty('box-sizing');
         }
     }
 

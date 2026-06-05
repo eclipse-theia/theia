@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { type ClaudeStreamUsageLike, type QaapAgentContextUsage, usageFromClaudeStream } from './qaap-agent-context-usage';
+
 /** One renderable block in a QAIQ / Claude Code stream-json transcript. */
 export type QaapAgentMessageSegment =
     | { readonly type: 'text'; readonly content: string }
@@ -34,7 +36,9 @@ interface StreamMessageEnvelope {
     readonly timestamp_ms?: number;
     readonly message?: {
         readonly content?: ContentBlock[] | string;
+        readonly usage?: ClaudeStreamUsageLike;
     };
+    readonly usage?: ClaudeStreamUsageLike;
     readonly event?: {
         readonly type?: string;
         readonly delta?: {
@@ -58,6 +62,12 @@ export class QaapQaiqStreamAccumulator {
     /** When true, ignore assistant snapshots without {@code timestamp_ms} (buffered flushes). */
     protected sawTimestampedAssistant = false;
     protected readonly toolsById = new Map<string, number>();
+    /** Latest usage reported for the in-flight turn (assistant snapshot or final result). */
+    protected turnUsage: QaapAgentContextUsage | undefined;
+
+    getTurnUsage(): QaapAgentContextUsage | undefined {
+        return this.turnUsage;
+    }
 
     push(chunk: string): readonly QaapAgentMessageSegment[] {
         if (!chunk) {
@@ -108,11 +118,22 @@ export class QaapQaiqStreamAccumulator {
             return;
         }
         if (type === 'assistant' || type === 'user') {
+            this.captureUsage(envelope.message?.usage);
             this.handleTranscriptMessage(envelope);
             return;
         }
-        if (type === 'result' && envelope.is_error && typeof envelope.result === 'string' && envelope.result.trim()) {
-            this.appendText(`\n\n**Error:** ${envelope.result.trim()}`);
+        if (type === 'result') {
+            this.captureUsage(envelope.usage);
+            if (envelope.is_error && typeof envelope.result === 'string' && envelope.result.trim()) {
+                this.appendText(`\n\n**Error:** ${envelope.result.trim()}`);
+            }
+        }
+    }
+
+    protected captureUsage(usage: ClaudeStreamUsageLike | undefined): void {
+        const parsed = usageFromClaudeStream(usage);
+        if (parsed) {
+            this.turnUsage = parsed;
         }
     }
 

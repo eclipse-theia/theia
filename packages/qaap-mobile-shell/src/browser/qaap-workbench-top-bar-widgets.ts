@@ -7,7 +7,7 @@
 import { CommandRegistry, DisposableCollection, nls } from '@theia/core/lib/common';
 import { ApplicationShell, CommonCommands, Widget } from '@theia/core/lib/browser';
 import { Message } from '@theia/core/lib/browser/widgets/widget';
-import { collapseLeftPanelIfMobileOneColumn, matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { collapseLeftPanelIfMobileOneColumn, matchesMobileNarrowViewport, matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { renderQaapAccountAvatarVisual } from './qaap-account-avatar-visual';
@@ -53,8 +53,8 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
         super({ node });
         this.id = 'theia:workbench-nav';
         this.toggleBtn = createWorkbenchNavBtn(
-            'codicon codicon-layout-sidebar-left',
-            CommonCommands.TOGGLE_LEFT_PANEL.label ?? 'Toggle Left Panel'
+            'codicon codicon-layout-sidebar-left theia-mod-mobile-sessions-sidebar',
+            nls.localize('qaap/sessionsSidebar/open', 'Open session history')
         );
         this.projectNameEl = document.createElement('span');
         this.projectNameEl.className = 'theia-workbench-current-project-name';
@@ -69,7 +69,15 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
         this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.updateProjectName()));
     }
 
-    protected readonly onToggleClick = (): void => this.runIfEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
+    protected readonly onToggleClick = (): void => {
+        if (matchesMobileOneColumnLayout()
+            && this.workspaceService.opened
+            && this.commands.isEnabled('qaap.mobile.toggleSessionsSidebar')) {
+            void this.commands.executeCommand('qaap.mobile.toggleSessionsSidebar');
+            return;
+        }
+        this.runIfEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
+    };
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
@@ -94,6 +102,18 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
     }
 
     protected updateEnabledStates(): void {
+        const mobileSessions = matchesMobileNarrowViewport()
+            && this.workspaceService.opened
+            && this.commands.isEnabled('qaap.mobile.toggleSessionsSidebar');
+        if (mobileSessions) {
+            this.toggleBtn.classList.add('theia-mod-mobile-sessions-sidebar');
+            this.toggleBtn.classList.remove('codicon-layout-sidebar-left');
+            this.toggleBtn.classList.add('codicon-menu');
+            this.toggleBtn.disabled = false;
+            return;
+        }
+        this.toggleBtn.classList.remove('theia-mod-mobile-sessions-sidebar', 'codicon-menu');
+        this.toggleBtn.classList.add('codicon-layout-sidebar-left');
         this.toggleBtn.disabled = !this.commands.isEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
     }
 

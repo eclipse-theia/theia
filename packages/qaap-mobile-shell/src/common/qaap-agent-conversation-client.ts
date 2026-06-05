@@ -6,6 +6,10 @@
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task-client';
 import { buildConversationListMetrics } from './qaap-agent-conversation-list-metrics';
+import {
+    estimateConversationTokensFromMessages,
+    type QaapAgentContextUsage,
+} from './qaap-agent-context-usage';
 import { normalizeAgentMessageContentForDisplay } from './qaap-agent-message-content';
 
 /**
@@ -49,6 +53,10 @@ export interface QaapAgentConversationSummaryDTO {
     readonly linkedPullRequest?: QaapLinkedPullRequest;
     /** Set when the thread ran `git` or is tied to a PR — used by the Work Hub inbox filter. */
     readonly hasGitOperation?: boolean;
+    readonly contextUsage?: QaapAgentContextUsage;
+    readonly contextWindowSize?: number;
+    readonly contextUsageEstimated?: boolean;
+    readonly estimatedContextTokens?: number;
 }
 
 export type QaapAgentMessageSegmentDTO =
@@ -107,6 +115,10 @@ export interface QaapAgentConversationDTO {
     readonly parallelBaseCwd?: string;
     readonly checkpoints?: QaapConversationCheckpointDTO[];
     readonly linkedPullRequest?: QaapLinkedPullRequest;
+    readonly contextPreamble?: string;
+    readonly contextUsage?: QaapAgentContextUsage;
+    readonly contextWindowSize?: number;
+    readonly contextUsageEstimated?: boolean;
 }
 
 function resolveEffectiveConversationStatus(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO['status'] {
@@ -152,6 +164,12 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         linkedPullRequest: conv.linkedPullRequest,
         ...metrics,
         hasGitOperation,
+        ...(conv.contextUsage ? { contextUsage: conv.contextUsage } : {}),
+        ...(conv.contextWindowSize ? { contextWindowSize: conv.contextWindowSize } : {}),
+        ...(conv.contextUsageEstimated ? { contextUsageEstimated: true } : {}),
+        ...(conv.contextUsageEstimated
+            ? { estimatedContextTokens: estimateConversationTokensFromMessages(conv.messages, conv.contextPreamble) }
+            : {}),
     };
 }
 

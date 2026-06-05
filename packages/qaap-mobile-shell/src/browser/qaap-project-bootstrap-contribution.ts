@@ -9,6 +9,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { shouldPreferWorkHubAgentsLayout } from './mobile-projects-open';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
@@ -80,8 +81,8 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
     }
 
     onDidInitializeLayout(): void {
-        // On mobile the shell defers bootstrap until the projects landing is dismissed.
-        if (matchesMobileOneColumnLayout()) {
+        // On mobile / Agents surface the shell defers bootstrap until the projects landing is dismissed.
+        if (matchesMobileOneColumnLayout() || shouldPreferWorkHubAgentsLayout()) {
             return;
         }
         void this.bootstrap.refreshFromCurrentWorkspace();

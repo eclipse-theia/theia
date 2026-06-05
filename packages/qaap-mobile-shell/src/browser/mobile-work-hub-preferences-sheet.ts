@@ -93,6 +93,10 @@ export class MobileWorkHubPreferencesSheet {
         if (typeof query === 'string') {
             await this.applyPreferencesQuery(widget, query);
         }
+        await animationFrame(2);
+        if (this.visible) {
+            this.syncWidgetLayout(widget);
+        }
     }
 
     hide(): void {
@@ -134,6 +138,7 @@ export class MobileWorkHubPreferencesSheet {
         if (!widget) {
             return;
         }
+        this.clearMobilePreferencesEditorHeight(widget);
         widget.node.classList.remove('theia-mobile-work-hub-preferences-embed');
         if (widget.isAttached) {
             UnsafeWidgetUtilities.detach(widget);
@@ -146,10 +151,35 @@ export class MobileWorkHubPreferencesSheet {
                 return;
             }
             const rect = this.widgetHost.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+            if (rect.width <= 0 || rect.height <= 0) {
+                return;
             }
+            MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+            this.applyMobilePreferencesEditorHeight(widget, rect);
         });
+    }
+
+    /** Lumino Panel does not always stretch the editor; fill remaining sheet height for scroll. */
+    protected applyMobilePreferencesEditorHeight(widget: PreferencesWidget, hostRect: DOMRectReadOnly): void {
+        const editorNode = widget.node.querySelector<HTMLElement>('.preferences-editor-widget');
+        if (!editorNode) {
+            return;
+        }
+        editorNode.classList.add('full-pane');
+        const editorTop = editorNode.getBoundingClientRect().top - hostRect.top;
+        const editorHeight = Math.max(200, Math.floor(hostRect.height - editorTop));
+        editorNode.style.height = `${editorHeight}px`;
+        editorNode.style.minHeight = `${editorHeight}px`;
+        editorNode.style.maxHeight = `${editorHeight}px`;
+        editorNode.style.boxSizing = 'border-box';
+    }
+
+    protected clearMobilePreferencesEditorHeight(widget: PreferencesWidget): void {
+        const editorNode = widget.node.querySelector<HTMLElement>('.preferences-editor-widget');
+        editorNode?.style.removeProperty('height');
+        editorNode?.style.removeProperty('min-height');
+        editorNode?.style.removeProperty('max-height');
+        editorNode?.style.removeProperty('box-sizing');
     }
 
     protected observeWidgetHostResize(widget: PreferencesWidget): void {

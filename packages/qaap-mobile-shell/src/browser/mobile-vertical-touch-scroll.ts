@@ -94,8 +94,11 @@ export function installMobileVerticalTouchScroll(element: HTMLElement): Disposab
     });
 }
 
-/** Scroll hosts that should receive the vertical touch fallback on mobile. */
-export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
+/**
+ * Scroll hosts that should receive the vertical touch fallback on mobile.
+ * Keep in sync with `qaap-mobile-touch-scroll.css` (overlay hosts are outside `#theia-app-shell`).
+ */
+export const MOBILE_VERTICAL_SCROLL_SELECTORS = [
     '.theia-Tree',
     '.theia-TreeContainer',
     '.treeContainer',
@@ -106,9 +109,11 @@ export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
     '.chat-view-widget',
     '.chat-tree-view-widget .body',
     '.theia-mobile-projects-scroll',
+    '.theia-mobile-work-hub-sessions-sidebar-scroll',
     '.theia-mobile-pr-stack',
     '.theia-mobile-pr-picker',
     '.theia-mobile-sticky-composer-sheet-list',
+    '.theia-qaap-approval-policy-sheet-list',
     '.theia-mobile-sticky-composer-tools-host',
     '.theia-mobile-routine-sheet-form',
     '.theia-mobile-parallel-body',
@@ -116,6 +121,7 @@ export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
     '.theia-mobile-transcript-review-checks-body',
     '.theia-mobile-open-repo-list',
     '.theia-mobile-agent-transcript',
+    '.theia-mobile-agents-hub-inline-transcript .theia-mobile-agent-transcript-real-chat',
     '.theia-mobile-agent-log-output',
     '.theia-mobile-work-hub-preferences-widget-host .preferences-editor-widget',
     '.theia-mobile-work-hub-preferences-embed .settings-main-scroll-container',
@@ -134,4 +140,6 @@ export const MOBILE_VERTICAL_SCROLL_SELECTOR = [
     '.theia-mobile-pr-diff',
     '.gs-container',
     '.monaco-editor .overflow-guard',
-].join(',');
+] as const;
+
+export const MOBILE_VERTICAL_SCROLL_SELECTOR = MOBILE_VERTICAL_SCROLL_SELECTORS.join(',');

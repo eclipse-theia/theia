@@ -853,5 +853,7 @@ body.qaap-theme-dark #theia-app-shell :focus-visible {
   body.qaap-theme-light *,
   body.qaap-theme-dark * {
     transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

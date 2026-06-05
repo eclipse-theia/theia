@@ -75,7 +75,7 @@ export class MobileProjectsService {
     protected readonly activeTasks: MobileProjectsActiveTasks;
 
     protected filter: MobileProjectFilter = 'all';
-    protected hubView: MobileProjectsHubView = 'home';
+    protected hubView: MobileProjectsHubView = 'tasks';
 
     protected readHiddenProjectIds(): Set<string> {
         if (typeof localStorage === 'undefined') {

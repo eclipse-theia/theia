@@ -31,6 +31,12 @@ import {
     isQaiqAgent,
     resolveQaapAgentMentionToken,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import {
+    DEFAULT_QAAP_CONTEXT_WINDOW,
+    estimateConversationTokensFromMessages,
+    mergeQaapAgentContextUsage,
+    totalTokensFromContextUsage,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
 import { parseOpencodeLog, QaapOpencodeStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-opencode-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
 import { patchConversationAutoApprove } from '../common/qaap-agent-conversation-auto-approve';
@@ -170,6 +176,7 @@ export class QaapAgentConversationStore {
                     ? { agentModel, qaiqModel: agentModel }
                     : {};
             })(),
+            contextWindowSize: DEFAULT_QAAP_CONTEXT_WINDOW,
         };
         this.conversations.set(id, conversation);
         this.fire({ type: 'created', conversation: toConversationSummary(conversation) });
@@ -639,10 +646,41 @@ export class QaapAgentConversationStore {
                 this.fire({ type: 'message', conversationId: conv.id, cwd: conv.cwd, message: updated });
             }
         }
-        const next: QaapAgentConversation = { ...conv, status: 'streaming', updatedAt: now, messages };
+        const next: QaapAgentConversation = {
+            ...conv,
+            status: 'streaming',
+            updatedAt: now,
+            messages,
+            ...(totalTokensFromContextUsage(conv.contextUsage) === 0 ? { contextUsageEstimated: true } : {}),
+            contextWindowSize: conv.contextWindowSize ?? DEFAULT_QAAP_CONTEXT_WINDOW,
+        };
         this.conversations.set(conv.id, next);
         this.fire({ type: 'updated', conversation: toConversationSummary(next) });
         void this.persist();
+    }
+
+    protected finalizeTurnContextUsage(conv: QaapAgentConversation, taskId: string, agentId: string): QaapAgentConversation {
+        let next = conv;
+        if (isQaiqAgent(agentId)) {
+            const turnUsage = this.qaiqStreamByTaskId.get(taskId)?.getTurnUsage();
+            if (turnUsage) {
+                next = {
+                    ...next,
+                    contextUsage: mergeQaapAgentContextUsage(next.contextUsage, turnUsage),
+                    contextUsageEstimated: undefined,
+                };
+            }
+        }
+        if (totalTokensFromContextUsage(next.contextUsage) === 0) {
+            const estimated = estimateConversationTokensFromMessages(next.messages, next.contextPreamble);
+            if (estimated > 0) {
+                next = { ...next, contextUsageEstimated: true };
+            }
+        }
+        return {
+            ...next,
+            contextWindowSize: next.contextWindowSize ?? DEFAULT_QAAP_CONTEXT_WINDOW,
+        };
     }
 
     protected appendQaiqStreamChunk(
@@ -700,14 +738,25 @@ export class QaapAgentConversationStore {
         task: QaapAgentTask,
         startSha?: string,
     ): Promise<void> {
+        const convSnapshot = this.conversations.get(conversationId);
+        if (!convSnapshot) {
+            return;
+        }
+        const usageFinalized = this.finalizeTurnContextUsage(convSnapshot, task.id, convSnapshot.agentId);
         this.qaiqStreamByTaskId.delete(task.id);
         this.opencodeStreamByTaskId.delete(task.id);
         const conv = this.conversations.get(conversationId);
         if (!conv) {
             return;
         }
+        const withUsageBaseline: QaapAgentConversation = {
+            ...conv,
+            contextUsage: usageFinalized.contextUsage,
+            contextUsageEstimated: usageFinalized.contextUsageEstimated,
+            contextWindowSize: usageFinalized.contextWindowSize,
+        };
         if (task.state === 'cancelled') {
-            const next: QaapAgentConversation = { ...conv, status: 'idle', updatedAt: Date.now() };
+            const next: QaapAgentConversation = { ...withUsageBaseline, status: 'idle', updatedAt: Date.now() };
             this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, next);
             return;
         }
@@ -716,7 +765,7 @@ export class QaapAgentConversationStore {
         const structuredParsed = log ? this.parseStructuredLog(conv.agentId, log) : undefined;
         if (task.state !== 'completed') {
             const reason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
-            const errored = this.markUserMessageFailed(conv, userMessageId, reason);
+            const errored = this.markUserMessageFailed(withUsageBaseline, userMessageId, reason);
             const withReply = log && !agentMessageId
                 ? this.appendAgentReply(errored, log)
                 : errored;
@@ -725,7 +774,7 @@ export class QaapAgentConversationStore {
         }
         let withReply: QaapAgentConversation;
         if (agentMessageId && structuredParsed) {
-            const messages = conv.messages.map(message => message.id === agentMessageId
+            const messages = withUsageBaseline.messages.map(message => message.id === agentMessageId
                 ? {
                     ...message,
                     content: structuredParsed.content || message.content,
@@ -733,12 +782,12 @@ export class QaapAgentConversationStore {
                 }
                 : message
             );
-            withReply = { ...conv, status: 'idle', updatedAt: Date.now(), messages };
+            withReply = { ...withUsageBaseline, status: 'idle', updatedAt: Date.now(), messages };
         } else if (agentMessageId) {
-            withReply = { ...conv, status: 'idle' as const, updatedAt: Date.now() };
+            withReply = { ...withUsageBaseline, status: 'idle' as const, updatedAt: Date.now() };
         } else {
             const body = structuredParsed?.content || log || '(agent produced no output)';
-            const reply = this.appendAgentReply({ ...conv, status: 'idle' }, body);
+            const reply = this.appendAgentReply({ ...withUsageBaseline, status: 'idle' }, body);
             if (structuredParsed?.segments?.length) {
                 const messages = reply.messages.map((message, index, all) => {
                     if (index === all.length - 1 && message.role === 'agent') {

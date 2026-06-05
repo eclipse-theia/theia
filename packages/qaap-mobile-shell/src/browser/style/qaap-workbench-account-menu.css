@@ -132,6 +132,11 @@
   display: none;
 }
 
+/* Work Hub landing sheet is 13000; keep the account menu above it when opened from the hub header. */
+body.theia-mobile-mod-landing .theia-qaap-account-menu {
+  z-index: 13200;
+}
+
 .theia-qaap-account-menu {
   position: fixed;
   z-index: 10100;

@@ -13,6 +13,7 @@ import '../../src/browser/style/qaap-chat-mic.css';
 import '../../src/browser/style/qaap-chat-select-dropdown.css';
 import '../../src/browser/style/qaap-diff-review.css';
 import '../../src/browser/style/qaap-work-mission-control.css';
+import '../../src/browser/style/qaap-work-hub-sessions-sidebar.css';
 import '@theia/ai-claude-code/src/browser/style/claude-code-tool-renderers.css';
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
@@ -20,6 +21,8 @@ import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-res
 import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { PreferenceContribution } from '@theia/core/lib/common/preferences/preference-schema';
+import { QaapChatPreferencesContribution } from './qaap-chat-preferences-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
@@ -143,6 +146,8 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(QaapChatMicTranscribeContribution);
     bind(QaapChatInputCodexLayoutContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapChatInputCodexLayoutContribution);
+    bind(QaapChatPreferencesContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(QaapChatPreferencesContribution);
     bind(MobileConnectionStatusContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileConnectionStatusContribution);
     bind(MobileChatSessionRestoreContribution).toSelf().inSingletonScope();

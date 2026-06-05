@@ -24,7 +24,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
     protected static readonly TOOLBAR_SELECTOR = '.theia-ChatInputOptions-right';
     protected static readonly INLINE_WRAP_SELECTOR = '.theia-mobile-projects-inline-input-wrap';
     protected static readonly STICKY_WRAP_SELECTOR = '.theia-mobile-projects-sticky-composer-input-wrap';
-    protected static readonly STICKY_CONTROLS_SELECTOR = '.theia-mobile-projects-sticky-composer-controls-right';
+    protected static readonly STICKY_CONTROLS_SELECTOR = '.theia-mobile-projects-sticky-composer-input-actions';
     protected static readonly PLAIN_INPUT_SELECTOR =
         'textarea.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-sticky-composer-input, input.theia-mobile-projects-inline-input';
     protected static readonly STICKY_FIELD_SELECTOR = '.theia-mobile-projects-sticky-composer-input';
@@ -105,7 +105,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
 
     protected injectStickyButton(wrap: HTMLElement): void {
         const controls = wrap.querySelector<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_CONTROLS_SELECTOR)
-            ?? wrap.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-controls-row');
+            ?? wrap.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-input-body');
         if (controls) {
             this.injectStickyControlsButton(controls);
             return;
@@ -137,7 +137,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
         this.placeMicBeforeSend(row, button);
     }
 
-    /** Mic immediately precedes send (Codex: … mic · send on the right). */
+    /** Mic immediately precedes send (Codex: mic · send on the controls row, right side). */
     protected placeMicBeforeSend(container: HTMLElement, mic: HTMLElement): void {
         const send = this.findSendControl(container);
         if (send) {
@@ -182,7 +182,7 @@ export class QaapChatMicTranscribeContribution implements FrontendApplicationCon
             wrap.classList.add('qaap-has-mic');
         }
         this.wireInlineRecognition(button, input);
-        const sendHost = wrap.querySelector<HTMLElement>('.theia-mobile-projects-sticky-composer-controls-right') ?? wrap;
+        const sendHost = wrap.querySelector<HTMLElement>(QaapChatMicTranscribeContribution.STICKY_CONTROLS_SELECTOR) ?? wrap;
         this.placeMicBeforeSend(sendHost, button);
     }
 

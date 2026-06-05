@@ -44,6 +44,18 @@ export interface QaapGitHistoryResponse {
     commits: QaapGitHistoryCommit[];
 }
 
+export interface QaapGitBranchesResponse {
+    root: string;
+    current?: string;
+    branches: string[];
+}
+
+export interface QaapGitCheckoutRequest {
+    /** Absolute filesystem path of the repository root. */
+    root: string;
+    branch: string;
+}
+
 export type QaapGitHunkLineType = 'ctx' | 'add' | 'del';
 
 export interface QaapGitHunkLine {

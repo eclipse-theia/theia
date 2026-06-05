@@ -68,26 +68,13 @@ export class MobileProjectsHomeUi {
 
     constructor(protected readonly deps: MobileProjectsHomeUiDeps) { }
 
-    renderDashboard(
-        host: HTMLElement,
-        snapshot: WorkHubHomeSnapshot,
-        pinnedProjects: readonly MobileProjectEntry[],
-        projectCount: number,
-    ): void {
+    renderDashboard(host: HTMLElement, snapshot: WorkHubHomeSnapshot): void {
         host.replaceChildren();
         const root = document.createElement('div');
         root.className = 'theia-mobile-work-hub-home';
 
         root.append(this.createOverviewPanel(snapshot));
         root.append(this.createUsageSummaryPanel(snapshot.usageSummary));
-        root.append(this.createShortcutsPanel());
-        if (snapshot.attentionItems.length > 0) {
-            root.append(this.createAttentionPanel(snapshot.attentionItems));
-        }
-        root.append(this.createWorkspacesPanel(pinnedProjects, projectCount));
-        if (snapshot.recentItems.length > 0) {
-            root.append(this.createContinuePanel(snapshot.recentItems));
-        }
 
         host.append(root);
     }

@@ -4,6 +4,27 @@
 // *****************************************************************************
 
 import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import {
+    clearPreferAgentsSurface,
+    clearPreferDesktopIde,
+    hasWorkspaceRouteInUrl,
+    markPreferAgentsSurface,
+    markPreferDesktopIde,
+    peekPreferAgentsSurface,
+    peekPreferDesktopIde,
+} from '../common/qaap-mobile-work-surface-preference';
+
+export {
+    clearPreferAgentsSurface,
+    clearPreferDesktopIde,
+    hasWorkspaceRouteInUrl,
+    markPreferAgentsSurface,
+    markPreferDesktopIde,
+    peekPreferAgentsSurface,
+    peekPreferDesktopIde,
+    QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY,
+    QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY,
+} from '../common/qaap-mobile-work-surface-preference';
 
 /** Set before navigating to a workspace from the mobile Projects panel. */
 export const QAAP_MOBILE_PROJECTS_OPEN_README_KEY = 'qaap.mobileProjects.openReadmeOnReady';
@@ -42,6 +63,10 @@ export function markMobileProjectsPanelDismiss(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
+        if (!peekPreferDesktopIde()) {
+            clearPreferDesktopIde();
+            markPreferAgentsSurface();
+        }
         mobileProjectsPanelDismissConsumed = false;
         markMobileProjectsLeftLanding();
     }
@@ -72,7 +97,6 @@ export function consumeMobileProjectsPanelDismiss(): boolean {
 
 export function requestMobileProjectsPanelDismiss(): void {
     markMobileProjectsPanelDismiss();
-    clearMobileWorkHubBootGuard();
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT));
     }
@@ -83,6 +107,28 @@ export function shouldSkipMobileProjectsLanding(): boolean {
     return peekMobileProjectsPanelDismiss() && !peekMobileProjectsHomeVisible();
 }
 
+/**
+ * Keep the Agents / Work Hub surface after reload and viewport resize until the user explicitly
+ * opens the classic IDE ({@link markPreferDesktopIde}).
+ */
+export function shouldPreferWorkHubAgentsLayout(): boolean {
+    if (peekPreferDesktopIde()) {
+        return false;
+    }
+    return peekPreferAgentsSurface() || shouldSkipMobileProjectsLanding();
+}
+
+/**
+ * Mobile sessions with a workspace already targeted should boot straight into the Agents
+ * execution shell (inline agentic chat), not the IDE main area or the project-list landing.
+ */
+export function shouldBootstrapMobileAgentsChat(): boolean {
+    if (peekPreferDesktopIde() || peekMobileProjectsHomeVisible()) {
+        return false;
+    }
+    return hasWorkspaceRouteInUrl() || shouldPreferWorkHubAgentsLayout();
+}
+
 function isFreshMobileProjectsPanelDismiss(raw: string | null): boolean {
     return raw === '1';
 }
@@ -91,6 +137,7 @@ export function markMobileProjectsHomeVisible(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
+        clearPreferAgentsSurface();
     }
     installMobileWorkHubBootGuard();
 }
@@ -99,7 +146,6 @@ export function clearMobileProjectsHomeVisible(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
     }
-    clearMobileWorkHubBootGuard();
 }
 
 export function peekMobileProjectsHomeVisible(): boolean {
@@ -107,16 +153,18 @@ export function peekMobileProjectsHomeVisible(): boolean {
         && sessionStorage.getItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY) === '1';
 }
 
-function installMobileWorkHubBootGuard(): void {
+/** Hide the IDE shell until Work Hub or Agents chat is mounted (also runs from qaap-login-gate.js). */
+export function installMobileWorkHubBootGuard(): void {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
         return;
     }
     const mobile = matchesMobileOneColumnLayout();
     const hasPendingHubAction = typeof sessionStorage !== 'undefined'
         && sessionStorage.getItem('qaap.hub.pendingAction') !== null;
-    if (mobile && !shouldSkipMobileProjectsLanding() && !hasPendingHubAction) {
-        document.documentElement.classList.add(QAAP_MOBILE_WORK_HUB_BOOT_CLASS);
+    if (!mobile || peekPreferDesktopIde() || peekMobileProjectsHomeVisible() || hasPendingHubAction) {
+        return;
     }
+    document.documentElement.classList.add(QAAP_MOBILE_WORK_HUB_BOOT_CLASS);
 }
 
 export function clearMobileWorkHubBootGuard(): void {
@@ -134,8 +182,25 @@ export function setMobileLandingHubListChrome(visible: boolean): void {
     if (typeof document === 'undefined') {
         return;
     }
+    const alreadyVisible = document.body.classList.contains(QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS);
+    if (alreadyVisible === visible) {
+        return;
+    }
     document.body.classList.toggle(QAAP_MOBILE_LANDING_HUB_LIST_BODY_CLASS, visible);
     window.dispatchEvent(new CustomEvent(QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT, { detail: { visible } }));
+}
+
+/**
+ * Work Hub primary surface (Agents landing, hub list, empty workspace chat): navigation lives in
+ * the sessions sidebar — hide the legacy bottom activity bar and status strip.
+ */
+export const QAAP_MOBILE_WORKHUB_HIDE_BOTTOM_CHROME_BODY_CLASS = 'theia-mobile-mod-workhub-no-bottom-chrome';
+
+export function setMobileWorkHubHideBottomChrome(hidden: boolean): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.body.classList.toggle(QAAP_MOBILE_WORKHUB_HIDE_BOTTOM_CHROME_BODY_CLASS, hidden);
 }
 
 /** Tasks/Chat hub header with composer surface toggle — hide duplicate account control in top bars. */
@@ -146,6 +211,16 @@ export function setMobileWorkHubComposerHeaderChrome(visible: boolean): void {
         return;
     }
     document.body.classList.toggle(QAAP_MOBILE_WORKHUB_COMPOSER_HEADER_BODY_CLASS, visible);
+}
+
+/** Full-screen agent transcript (mockup chat-active): hide hub landing chrome and hub bottom bar. */
+export const QAAP_MOBILE_ACTIVE_TRANSCRIPT_BODY_CLASS = 'theia-mobile-mod-active-transcript';
+
+export function setMobileActiveTranscriptChrome(active: boolean): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.body.classList.toggle(QAAP_MOBILE_ACTIVE_TRANSCRIPT_BODY_CLASS, active);
 }
 
 export function markMobileProjectReadmeForOpen(): void {
