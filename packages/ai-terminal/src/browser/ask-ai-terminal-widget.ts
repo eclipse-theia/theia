@@ -73,13 +73,11 @@ export class AskAITerminalOverlay implements Disposable {
         this.inputWidget.activate();
         this.inputWidget.update();
 
-        this.toDispose.push(Disposable.create(() => {
-            this.containerNode.remove();
-        }));
-        this.toDispose.push(this.terminalWidget.onDidDispose(() => this.dispose()));
-        this.toDispose.push(this.inputWidget);
-
         this.toDispose.pushAll([
+            Disposable.create(() => {
+                this.containerNode.remove();
+            }),
+            this.terminalWidget.onDidDispose(() => this.dispose()),
             this.onSubmitEmitter,
             this.onCancelEmitter,
             this.inputWidget
