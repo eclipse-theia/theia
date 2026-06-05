@@ -17,13 +17,13 @@
 import { Disposable, DisposableCollection } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import { IMarker, Terminal } from 'xterm';
-import { TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
+import { TerminalBlock, TerminalBlockBoundary, TerminalWidget } from './base/terminal-widget';
 import { inject } from '@theia/core/shared/inversify';
 
 export const TerminalBlockOverlayOptions = Symbol('TerminalBlockOverlayOptions');
 export interface TerminalBlockOverlayOptions {
     readonly term: Terminal;
-    readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
+    readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock, term: TerminalWidget) => void;
 }
 
 export interface TerminalBlockOverlay {
@@ -41,7 +41,7 @@ export type TerminalBlockOverlayControllerFactory =
  */
 export class TerminalBlockOverlayController implements Disposable {
     protected readonly term: Terminal;
-    protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
+    protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock, term: TerminalWidget) => void;
 
     protected container: HTMLElement | undefined;
     protected readonly blockOverlays: TerminalBlockOverlay[] = [];
@@ -103,7 +103,7 @@ export class TerminalBlockOverlayController implements Disposable {
     /**
      * Registers a completed terminal block so its overlay can be rendered and tracked.
      */
-    addBlock(block: TerminalBlock, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
+    addBlock(block: TerminalBlock, term: TerminalWidget, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
         if (this.disposed || !this.enabled) {
             return;
         }
@@ -132,14 +132,14 @@ export class TerminalBlockOverlayController implements Disposable {
         const overlay = document.createElement('div');
         overlay.classList.add('terminal-command-overlay');
         overlay.style.display = 'none';
-        overlay.appendChild(this.createButton(block, overlay));
+        overlay.appendChild(this.createButton(block, term, overlay));
         this.container.appendChild(overlay);
 
         this.blockOverlays.push({ element: overlay, startMarker: trackStart, endMarker: trackEnd });
         this.update();
     }
 
-    protected createButton(block: TerminalBlock, overlay: HTMLElement): HTMLElement {
+    protected createButton(block: TerminalBlock, term: TerminalWidget, overlay: HTMLElement): HTMLElement {
         const button = document.createElement('button');
         button.classList.add('terminal-block-actions-button', 'codicon', 'codicon-ellipsis');
         const blockActionsLabel = nls.localize('theia/terminal/blockActions', 'Terminal Block Actions');
@@ -150,7 +150,7 @@ export class TerminalBlockOverlayController implements Disposable {
         button.addEventListener('click', event => {
             event.stopPropagation();
             event.preventDefault();
-            this.renderBlockMenu(event, block);
+            this.renderBlockMenu(event, block, term);
         });
         return button;
     }
