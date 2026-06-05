@@ -60,8 +60,25 @@ import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
-    /* a unique string per terminal */
+    /**
+     * An opaque, unique string per terminal. Historically a date string, but
+     * it should not be interpreted as a date. Callers should use
+     * {@link nextTerminalCreationToken} to obtain a value that is guaranteed
+     * unique within the current process.
+     */
     created: string
+}
+
+let terminalCreationCounter = 0;
+/**
+ * Produce a token suitable for {@link TerminalWidgetFactoryOptions.created}
+ * that is guaranteed unique within the current process. Combines the current
+ * wall-clock time with a monotonically increasing counter so callers cannot
+ * accidentally collide even when constructing terminals within the same
+ * millisecond.
+ */
+export function nextTerminalCreationToken(): string {
+    return `${Date.now()}-${terminalCreationCounter++}`;
 }
 
 export const TerminalContribution = Symbol('TerminalContribution');

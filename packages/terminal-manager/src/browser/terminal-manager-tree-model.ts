@@ -17,7 +17,7 @@
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
-import { TerminalManagerTreeTypes, TASKS_PAGE_ID } from './terminal-manager-types';
+import { TerminalManagerTreeTypes, SpecialPageConfig } from './terminal-manager-types';
 
 @injectable()
 export class TerminalManagerTreeModel extends TreeModelImpl {
@@ -58,6 +58,8 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     }>();
     readonly onDidDeleteTerminalFromGroup = this.onDidDeleteTerminalFromGroupEmitter.event;
 
+    protected readonly specialPageConfigs = new Map<string, SpecialPageConfig>();
+
     @postConstruct()
     protected override init(): void {
         super.init();
@@ -68,6 +70,28 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             }
         }));
         this.root = { id: 'root', parent: undefined, children: [], visible: false } as CompositeTreeNode;
+        this.configureSpecialPages();
+    }
+
+    /**
+     * Register the default special pages. Subclasses can override this to
+     * add, remove, or replace entries before the model is used.
+     */
+    protected configureSpecialPages(): void {
+        this.registerSpecialPage('task', { pageId: 'page-tasks' as TerminalManagerTreeTypes.PageId, label: 'Tasks', icon: 'tasklist' });
+        this.registerSpecialPage('debug', { pageId: 'page-debug' as TerminalManagerTreeTypes.PageId, label: 'Debug', icon: 'debug-alt' });
+    }
+
+    registerSpecialPage(kind: string, config: SpecialPageConfig): void {
+        this.specialPageConfigs.set(kind, config);
+    }
+
+    getSpecialPageConfig(kind: string): SpecialPageConfig | undefined {
+        return this.specialPageConfigs.get(kind);
+    }
+
+    getSpecialPageConfigs(): ReadonlyMap<string, SpecialPageConfig> {
+        return this.specialPageConfigs;
     }
 
     addTerminalPage(
@@ -76,18 +100,19 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         pageId: TerminalManagerTreeTypes.PageId,
         label?: string,
     ): void {
-        const pageNode = this.createPageNode(pageId);
+        const { page: pageNode, isNewlyCreated } = this.getOrCreatePage(pageId);
         const groupNode = this.createGroupNode(groupId, pageId);
         const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
         if (this.root && CompositeTreeNode.is(this.root)) {
             this.activePageNode = pageNode;
             CompositeTreeNode.addChild(groupNode, terminalNode);
             CompositeTreeNode.addChild(pageNode, groupNode);
-            this.root = CompositeTreeNode.addChild(this.root, pageNode);
-            this.onDidAddPageEmitter.fire({ pageId: pageNode.id, terminalKey });
-            setTimeout(() => {
-                this.selectionService.addSelection(terminalNode);
-            });
+            if (isNewlyCreated) {
+                this.root = CompositeTreeNode.addChild(this.root, pageNode);
+                this.onDidAddPageEmitter.fire({ pageId: pageNode.id, terminalKey });
+            }
+            this.onDidAddTerminalGroupEmitter.fire({ groupId: groupNode.id, pageId: pageNode.id, terminalKey });
+            this.refreshWithSelection(pageNode, terminalNode);
         }
     }
 
@@ -115,7 +140,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
             const isActive = this.activePageNode === pageNode;
             this.onDidDeletePageEmitter.fire(pageNode.id);
-            CompositeTreeNode.removeChild(this.root, pageNode);
+            CompositeTreeNode.removeChild(this.root, pageNode, this.tree);
             this.refreshWithSelection(this.root, undefined, isActive ? pageNode : undefined);
         }
     }
@@ -180,7 +205,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
 
     protected doDeleteTerminalGroup(group: TerminalManagerTreeTypes.TerminalGroupNode, page: TerminalManagerTreeTypes.PageNode): void {
         this.onDidDeleteTerminalGroupEmitter.fire(group.id);
-        CompositeTreeNode.removeChild(page, group);
+        CompositeTreeNode.removeChild(page, group, this.tree);
     }
 
     addTerminal(newTerminalId: TerminalManagerTreeTypes.TerminalKey, groupId: TerminalManagerTreeTypes.GroupId, label?: string): void {
@@ -229,7 +254,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             terminalId: node.id,
             groupId: parent.id,
         });
-        CompositeTreeNode.removeChild(parent, node);
+        CompositeTreeNode.removeChild(parent, node, this.tree);
     }
 
     toggleRenameTerminal(entityId: TerminalManagerTreeTypes.TerminalManagerValidId): void {
@@ -349,14 +374,31 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         if (TerminalManagerTreeTypes.isPageNode(start)) { return start.children.at(0)?.children.at(0); }
     }
 
-    getOrCreateTasksPage(): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
-        const existingTasksPage = this.getNode(TASKS_PAGE_ID);
-        if (TerminalManagerTreeTypes.isPageNode(existingTasksPage)) {
-            return { page: existingTasksPage, isNewlyCreated: false };
+    /**
+     * Get or create a page by ID. If a special page config exists for this ID,
+     * its label is used; otherwise an auto-numbered label is generated.
+     *
+     * An existing page is only reused if it is currently attached to the root
+     * of the tree. A page that has been detached (e.g., because its last
+     * terminal was removed) is treated as missing and recreated.
+     */
+    protected getOrCreatePage(pageId: TerminalManagerTreeTypes.PageId): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
+        const existing = this.getNode(pageId);
+        if (TerminalManagerTreeTypes.isPageNode(existing) && existing.parent === this.root) {
+            return { page: existing, isNewlyCreated: false };
         }
-        const tasksPageNode: TerminalManagerTreeTypes.PageNode = {
-            id: TASKS_PAGE_ID,
-            label: nls.localizeByDefault('Tasks'),
+        // Check if this is a special page with a configured label
+        const specialConfig = [...this.specialPageConfigs.values()].find(c => c.pageId === pageId);
+        const pageNode = specialConfig
+            ? this.createSpecialPageNode(pageId, specialConfig.label)
+            : this.createPageNode(pageId);
+        return { page: pageNode, isNewlyCreated: true };
+    }
+
+    protected createSpecialPageNode(pageId: TerminalManagerTreeTypes.PageId, label: string): TerminalManagerTreeTypes.PageNode {
+        return {
+            id: pageId,
+            label: nls.localizeByDefault(label),
             parent: undefined,
             selected: false,
             children: [],
@@ -365,29 +407,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             expanded: true,
             counter: 0,
         };
-        if (this.root && CompositeTreeNode.is(this.root)) {
-            this.root = CompositeTreeNode.addChild(this.root, tasksPageNode);
-        }
-        return { page: tasksPageNode, isNewlyCreated: true };
     }
 
-    addTerminalToTasksPage(
-        terminalKey: TerminalManagerTreeTypes.TerminalKey,
-        groupId: TerminalManagerTreeTypes.GroupId,
-        label?: string,
-    ): void {
-        const { page: tasksPage, isNewlyCreated } = this.getOrCreateTasksPage();
-        const groupNode = this.createGroupNode(groupId, tasksPage.id);
-        const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
-        if (this.root && CompositeTreeNode.is(this.root)) {
-            this.activePageNode = tasksPage;
-            CompositeTreeNode.addChild(groupNode, terminalNode);
-            CompositeTreeNode.addChild(tasksPage, groupNode);
-            if (isNewlyCreated) {
-                this.onDidAddPageEmitter.fire({ pageId: tasksPage.id, terminalKey });
-            }
-            this.onDidAddTerminalGroupEmitter.fire({ groupId: groupNode.id, pageId: tasksPage.id, terminalKey });
-            this.refreshWithSelection(tasksPage, terminalNode);
-        }
-    }
 }

@@ -105,15 +105,14 @@ export namespace TerminalManagerCommands {
 export const TERMINAL_MANAGER_TREE_CONTEXT_MENU = ['terminal-manager-tree-context-menu'];
 
 /**
- * Fixed identifier for the special Tasks page that holds task terminals.
+ * Configuration for special pages in the terminal manager tree.
+ * Each entry maps a terminal `kind` to its page ID, display label, and icon.
  */
-export const TASKS_PAGE_ID: TerminalManagerTreeTypes.PageId = 'page-tasks';
-
-/**
- * Type guard to check if a node is the special Tasks page.
- */
-export const isTasksPageNode = (node: unknown): node is TerminalManagerTreeTypes.PageNode =>
-    TerminalManagerTreeTypes.isPageNode(node) && node.id === TASKS_PAGE_ID;
+export interface SpecialPageConfig {
+    readonly pageId: TerminalManagerTreeTypes.PageId;
+    readonly label: string;
+    readonly icon: string;
+}
 
 export namespace TerminalManagerTreeTypes {
     export type TerminalKey = `terminal-${string}`;

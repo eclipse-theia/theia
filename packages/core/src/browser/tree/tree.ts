@@ -78,6 +78,17 @@ export interface Tree extends Disposable {
     readonly onDidUpdate: Event<TreeNode[]>;
 
     markAsChecked(node: TreeNode, checked: boolean): void;
+
+    /**
+     * Remove the given node and all of its descendants from the tree's internal
+     * id-to-node index. Safe to call on already-detached subtrees.
+     *
+     * Callers that mutate the tree structure directly via
+     * {@link CompositeTreeNode.removeChild} should invoke this (or pass the tree
+     * to `removeChild`) to keep {@link getNode} and {@link validateNode} from
+     * returning orphaned nodes.
+     */
+    removeNode(node: TreeNode | undefined): void;
 }
 
 export interface TreeViewItemCheckboxInfo {
@@ -215,7 +226,17 @@ export namespace CompositeTreeNode {
         return parent;
     }
 
-    export function removeChild(parent: CompositeTreeNode, child: TreeNode): void {
+    /**
+     * Detach the given `child` from the `parent`.
+     *
+     * After this call, the child's `parent`, `previousSibling`, and
+     * `nextSibling` references are cleared, symmetric with `setParent`. If a
+     * `tree` is provided, the child and its descendants are also purged from
+     * the tree's id-to-node index so that {@link Tree.getNode} no longer
+     * returns the detached subtree. Otherwise the index entries persist and
+     * the caller is responsible for cleanup (e.g., via `tree.removeNode`).
+     */
+    export function removeChild(parent: CompositeTreeNode, child: TreeNode, tree?: Tree): void {
         const children = parent.children as TreeNode[];
         const index = children.findIndex(value => value.id === child.id);
         if (index === -1) {
@@ -229,6 +250,8 @@ export namespace CompositeTreeNode {
         if (nextSibling) {
             Object.assign(nextSibling, { previousSibling });
         }
+        Object.assign(child, { parent: undefined, previousSibling: undefined, nextSibling: undefined });
+        tree?.removeNode(child);
     }
 
     export function setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
@@ -354,7 +377,7 @@ export class TreeImpl implements Tree {
         return parent;
     }
 
-    protected removeNode(node: TreeNode | undefined): void {
+    removeNode(node: TreeNode | undefined): void {
         if (CompositeTreeNode.is(node)) {
             node.children.forEach(child => this.removeNode(child));
         }

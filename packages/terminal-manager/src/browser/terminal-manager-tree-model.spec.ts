@@ -20,7 +20,7 @@ const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { TerminalManagerTreeModel } from './terminal-manager-tree-model';
-import { TerminalManagerTreeTypes, TASKS_PAGE_ID } from './terminal-manager-types';
+import { TerminalManagerTreeTypes } from './terminal-manager-types';
 import { TreeImpl, Tree } from '@theia/core/lib/browser/tree/tree';
 import { TreeSelectionServiceImpl } from '@theia/core/lib/browser/tree/tree-selection-impl';
 import { TreeSelectionService } from '@theia/core/lib/browser/tree/tree-selection';
@@ -87,21 +87,22 @@ describe('TerminalManagerTreeModel', () => {
             const groupId = 'group-tasks-1' as TerminalManagerTreeTypes.GroupId;
             const terminalKey = 'terminal-task-1' as TerminalManagerTreeTypes.TerminalKey;
 
-            model.addTerminalToTasksPage(terminalKey, groupId, 'Task Terminal');
+            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal');
 
             // Verify tasks page exists before deletion
-            const tasksPageBefore = model.getNode(TASKS_PAGE_ID);
+            const tasksPageBefore = model.getNode(tasksPageId);
             expect(tasksPageBefore).to.not.be.undefined;
             expect(TerminalManagerTreeTypes.isPageNode(tasksPageBefore)).to.be.true;
 
             // Listen for the delete event to verify the deletion was attempted
             model.onDidDeletePage(deletedPageId => {
-                expect(deletedPageId).to.equal(TASKS_PAGE_ID);
+                expect(deletedPageId).to.equal(tasksPageId);
                 done();
             });
 
             // Delete the tasks page - this should succeed (not be blocked)
-            model.deleteTerminalPage(TASKS_PAGE_ID);
+            model.deleteTerminalPage(tasksPageId);
         });
 
         it('should do nothing when trying to delete a non-existent page', () => {
@@ -112,24 +113,69 @@ describe('TerminalManagerTreeModel', () => {
         });
     });
 
-    describe('getOrCreateTasksPage', () => {
-        it('should create tasks page if it does not exist', () => {
-            const result = model.getOrCreateTasksPage();
+    describe('addTerminalPage with special page', () => {
+        it('should create special page on first use', () => {
+            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+            const groupId = 'group-1' as TerminalManagerTreeTypes.GroupId;
+            const terminalKey = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
 
-            expect(result.isNewlyCreated).to.be.true;
-            expect(result.page.id).to.equal(TASKS_PAGE_ID);
-            expect(TerminalManagerTreeTypes.isPageNode(result.page)).to.be.true;
+            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal');
+
+            const page = model.getNode(tasksPageId);
+            expect(page).to.not.be.undefined;
+            expect(TerminalManagerTreeTypes.isPageNode(page)).to.be.true;
         });
 
-        it('should return existing tasks page if it already exists', () => {
-            // Create tasks page
-            const first = model.getOrCreateTasksPage();
-            expect(first.isNewlyCreated).to.be.true;
+        it('should reuse existing special page', () => {
+            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+            const groupId1 = 'group-1' as TerminalManagerTreeTypes.GroupId;
+            const groupId2 = 'group-2' as TerminalManagerTreeTypes.GroupId;
+            const key1 = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
+            const key2 = 'terminal-2' as TerminalManagerTreeTypes.TerminalKey;
 
-            // Try to get it again
-            const second = model.getOrCreateTasksPage();
-            expect(second.isNewlyCreated).to.be.false;
-            expect(second.page.id).to.equal(first.page.id);
+            model.addTerminalPage(key1, groupId1, tasksPageId, 'Task 1');
+            model.addTerminalPage(key2, groupId2, tasksPageId, 'Task 2');
+
+            const page = model.getNode(tasksPageId);
+            expect(TerminalManagerTreeTypes.isPageNode(page)).to.be.true;
+            if (TerminalManagerTreeTypes.isPageNode(page)) {
+                expect(page.children).to.have.lengthOf(2);
+            }
+        });
+
+        it('should recreate a special page after its last terminal is removed', () => {
+            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+            const firstGroup = 'group-tasks-a' as TerminalManagerTreeTypes.GroupId;
+            const firstTerminal = 'terminal-task-a' as TerminalManagerTreeTypes.TerminalKey;
+            const secondGroup = 'group-tasks-b' as TerminalManagerTreeTypes.GroupId;
+            const secondTerminal = 'terminal-task-b' as TerminalManagerTreeTypes.TerminalKey;
+
+            // Run a task -> Tasks page, group, and terminal appear.
+            model.addTerminalPage(firstTerminal, firstGroup, tasksPageId, 'Task A');
+            expect(model.getNode(tasksPageId)).to.not.be.undefined;
+
+            // Remove the terminal -> cascades up and detaches the Tasks page.
+            const addPageEvents: TerminalManagerTreeTypes.PageId[] = [];
+            model.onDidAddPage(({ pageId }) => addPageEvents.push(pageId));
+            model.deleteTerminalNode(firstTerminal);
+
+            // The Tasks page should be fully cleared from the tree index.
+            expect(model.getNode(tasksPageId)).to.be.undefined;
+            expect(model.getNode(firstGroup)).to.be.undefined;
+            expect(model.getNode(firstTerminal)).to.be.undefined;
+
+            // Run another task -> Tasks page should be re-created and re-attached,
+            // emitting onDidAddPage so the widget can rebuild the page panel.
+            model.addTerminalPage(secondTerminal, secondGroup, tasksPageId, 'Task B');
+
+            expect(addPageEvents).to.deep.equal([tasksPageId]);
+            const reattached = model.getNode(tasksPageId);
+            expect(TerminalManagerTreeTypes.isPageNode(reattached)).to.be.true;
+            if (TerminalManagerTreeTypes.isPageNode(reattached)) {
+                expect(reattached.parent).to.equal(model.root);
+                expect(reattached.children).to.have.lengthOf(1);
+                expect(reattached.children[0].id).to.equal(secondGroup);
+            }
         });
     });
 });
