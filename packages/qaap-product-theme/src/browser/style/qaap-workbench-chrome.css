@@ -41,5 +41,5 @@ html.theia-splash-branded .theia-icon {
   background-size: contain;
   width: 28px;
   height: 28px;
-  margin: 4px 6px 4px 8px;
+  margin: var(--q-space-2, 4px) var(--q-space-3, 6px) var(--q-space-2, 4px) var(--q-space-4, 8px);
 }

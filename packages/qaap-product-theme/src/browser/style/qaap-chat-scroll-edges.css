@@ -210,8 +210,8 @@
   scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
   padding-top: var(--qaap-chat-edge-scroll-padding-top);
   padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom);
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--q-space-8, 16px);
+  padding-right: var(--q-space-8, 16px);
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat > .theia-mobile-agent-transcript {

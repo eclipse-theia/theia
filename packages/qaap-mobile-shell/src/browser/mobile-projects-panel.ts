@@ -602,6 +602,8 @@ export class MobileProjectsPanel {
     protected transcriptComposerFilesExpanded = true;
     protected transcriptComposerPinnedAgentId: string | undefined;
     protected transcriptComposerDraft = '';
+    /** Refreshes transcript sticky-composer send/stop affordance without a full remount. */
+    protected transcriptComposerSendRefresh: (() => void) | undefined;
     protected transcriptComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
     protected transcriptComposerQaiqModels: QaapQaiqModelOption[] = [];
     protected transcriptComposerAgentSheet: HTMLElement | undefined;
@@ -4557,12 +4559,16 @@ export class MobileProjectsPanel {
         approvalPolicyId?: QaapAgentApprovalPolicyId;
         onOpenApprovalPolicySheet?: () => void;
         canSubmit: boolean;
+        isAgentWorking?: () => boolean;
+        onStop?: () => void;
+        stopLabel?: string;
         onAttach: (anchor: HTMLElement) => void;
         onOpenAgentSheet: () => void;
         onSubmit: (draft: string) => void;
         onSubmitBlocked?: () => void;
         afterInputChange?: () => void;
         sendLabel?: string;
+        onSendControlMounted?: (refresh: () => void) => void;
         inputPlaceholder?: string;
         getMentionOptions?: () => readonly StickyComposerTokenOption[];
         getVariableOptions?: () => readonly StickyComposerTokenOption[];
@@ -4701,8 +4707,23 @@ export class MobileProjectsPanel {
 
         const updateSend = (): void => {
             const has = input.value.trim().length > 0;
-            sendBtn.disabled = !has || !options.canSubmit;
-            sendBtn.classList.toggle('theia-mod-ready', has && options.canSubmit);
+            const working = options.isAgentWorking?.() ?? false;
+            const showStop = working && !has;
+            const sendLabel = options.sendLabel ?? nls.localize('qaap/mobileProjects/inlineStart', 'Start');
+            const stopLabel = options.stopLabel ?? nls.localize('qaap/mobileProjects/cancelTaskRun', 'Cancel run');
+            sendBtn.classList.toggle('theia-mod-stop', showStop);
+            sendBtn.classList.toggle('theia-mod-ready', !showStop && has && options.canSubmit);
+            if (showStop) {
+                sendBtn.disabled = false;
+                sendBtn.title = stopLabel;
+                sendBtn.setAttribute('aria-label', stopLabel);
+                sendBtn.innerHTML = '<span class="codicon codicon-debug-stop" aria-hidden="true"></span>';
+            } else {
+                sendBtn.disabled = !has || !options.canSubmit;
+                sendBtn.title = sendLabel;
+                sendBtn.setAttribute('aria-label', sendLabel);
+                sendBtn.innerHTML = '<span class="codicon codicon-send" aria-hidden="true"></span>';
+            }
         };
         input.addEventListener('input', () => {
             options.setDraft(input.value);
@@ -4710,6 +4731,7 @@ export class MobileProjectsPanel {
             updateSend();
         });
         updateSend();
+        options.onSendControlMounted?.(updateSend);
 
         if (options.getMentionOptions) {
             attachStickyComposerMentionUi({
@@ -4746,6 +4768,12 @@ export class MobileProjectsPanel {
         });
         sendBtn.addEventListener('click', ev => {
             ev.preventDefault();
+            const has = input.value.trim().length > 0;
+            const working = options.isAgentWorking?.() ?? false;
+            if (working && !has) {
+                options.onStop?.();
+                return;
+            }
             submit();
         });
 
@@ -12482,6 +12510,31 @@ export class MobileProjectsPanel {
         });
     }
 
+    protected isTranscriptStickyComposerAgentWorking(): boolean {
+        const summary = this.transcriptComposerSummary;
+        if (!summary || !this.transcriptComposerHost?.isConnected) {
+            return false;
+        }
+        if (this.transcriptLastConv?.id === summary.id && this.transcriptLastConv.status === 'streaming') {
+            return true;
+        }
+        if (summary.source === 'theia-chat' && this.chatService) {
+            const sessionId = summary.sessionId ?? this.transcriptTheiaSessionByConversationId.get(summary.id);
+            const session = sessionId ? this.chatService.getSession(sessionId) : undefined;
+            if (session && this.isChatSessionWorking(session)) {
+                return true;
+            }
+        }
+        const project = this.transcriptComposerProject;
+        if (project) {
+            const latest = this.conversationsForProject(project).find(candidate => candidate.id === summary.id);
+            if (latest?.status === 'streaming') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected mountTranscriptStickyComposer(
         host: HTMLElement,
         project: MobileProjectEntry,
@@ -12491,6 +12544,7 @@ export class MobileProjectsPanel {
         this.transcriptComposerHost = host;
         this.transcriptComposerProject = project;
         this.transcriptComposerSummary = summary;
+        this.transcriptComposerSendRefresh = undefined;
         this.stickyComposerContextUsageDispose.dispose();
         host.replaceChildren();
         const shell = document.createElement('div');
@@ -12554,6 +12608,9 @@ export class MobileProjectsPanel {
                 }
                 : undefined,
             canSubmit: true,
+            isAgentWorking: () => this.isTranscriptStickyComposerAgentWorking(),
+            onStop: () => { void this.onCancelConversation(project, summary); },
+            onSendControlMounted: refresh => { this.transcriptComposerSendRefresh = refresh; },
             onAttach: anchor => { void this.onTranscriptComposerAttach(project, anchor); },
             onOpenAgentSheet: isTheiaChat
                 ? () => { /* Chat is Coder-only */ }
@@ -12581,6 +12638,7 @@ export class MobileProjectsPanel {
                 this.transcriptComposerContext = [];
                 if (isAgentsHubIdleConversationSummary(summary)) {
                     this.renderAgentsHubIdleSubmitOptimistic(chatHost, summary, draft, selectedAgentId);
+                    this.transcriptComposerSendRefresh?.();
                     void (async () => {
                         try {
                             await this.submitBackgroundAgentTask(project, draft, {
@@ -13657,17 +13715,14 @@ export class MobileProjectsPanel {
         const isEmptyChat = conv.messages.length === 0 && conv.status !== 'streaming';
         messageHost.classList.toggle('theia-mod-empty-chat', isEmptyChat);
         if (isEmptyChat) {
-            const empty = document.createElement('div');
-            empty.className = 'theia-mobile-agent-transcript-empty';
-            const title = document.createElement('div');
-            title.className = 'theia-mobile-agent-transcript-empty-title';
-            title.textContent = nls.localize('qaap/agentsHub/emptySuggestions', 'Suggestions');
-            empty.append(title, this.createAgentsHubQuickActionsBlock());
-            messageHost.append(empty);
             const project = this.transcriptOpenProject;
             if (project && this.shouldEmbedAgentsHubRecentsInWorkspaceTranscript()) {
                 messageHost.append(this.createAgentsHubRecentsBlock(project));
             }
+            const empty = document.createElement('div');
+            empty.className = 'theia-mobile-agent-transcript-empty';
+            empty.append(this.createAgentsHubQuickActionsBlock());
+            messageHost.append(empty);
             return;
         }
         for (const msg of conv.messages) {
@@ -13696,6 +13751,7 @@ export class MobileProjectsPanel {
         this.transcriptUserScrollPinDispose.dispose();
         this.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
         this.ensureOverlayUi().team.renderTeamSection(host, conv);
+        this.transcriptComposerSendRefresh?.();
     }
 
     protected createTranscriptAgentSegmentsRow(

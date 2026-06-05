@@ -612,8 +612,8 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-card.theia-mod-code
   border-color: color-mix(in srgb, var(--theia-foreground) 8%, transparent) !important;
 }
 
-body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex:focus-within,
-body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-projects-sticky-composer-input-wrap.theia-mod-codex:focus-within {
+body.qaap-theme-dark .theia-mobile-projects-sticky-composer-card:not(.theia-mod-codex) .theia-mobile-projects-sticky-composer-input-wrap:focus-within,
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-card:not(.theia-mod-codex) .theia-mobile-projects-sticky-composer-input-wrap:focus-within {
   border: none !important;
   background: transparent !important;
 }

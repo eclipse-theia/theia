@@ -26,7 +26,7 @@
     width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 100%;
     max-height: 100%;
-    margin: 8px;
+    margin: var(--q-space-4, 8px);
     border-radius: 12px;
     box-sizing: border-box;
   }
@@ -44,7 +44,7 @@
     justify-content: center;
     min-width: 36px;
     min-height: 36px;
-    font-size: 18px;
+    font-size: var(--q-text-lg, 18px);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -64,7 +64,7 @@
        while still wrapping to a vertical stack with the primary action on top
        (closer to the thumb on a phone) when the line is too narrow. */
     flex-direction: row-reverse;
-    gap: 8px;
+    gap: var(--q-space-4, 8px);
     padding: calc(var(--theia-ui-padding) * 1.25);
     min-height: auto;
   }
@@ -92,7 +92,7 @@
     flex: 1 1 calc(50% - 4px);
     margin: 0;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 var(--q-space-7, 14px);
     font-size: var(--theia-ui-font-size1);
   }
 }

@@ -183,6 +183,15 @@
     overflow-y: hidden !important;
   }
 
+  /* Empty-chat suggestion slider — horizontal only (nested inside vertical transcript). */
+  .theia-mobile-agent-transcript-empty-actions {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: contain;
+  }
+
   #theia-app-shell .theia-mobile-bottom-activity-bar,
   #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar {
     touch-action: manipulation !important;

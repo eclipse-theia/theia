@@ -56,6 +56,6 @@
 
   /* Bigger inline padding for label so labels don't crowd the icon. */
   .lm-Menu-itemLabel {
-    padding: 0 32px 0 6px;
+    padding: 0 var(--q-space-16, 32px) 0 var(--q-space-3, 6px);
   }
 }

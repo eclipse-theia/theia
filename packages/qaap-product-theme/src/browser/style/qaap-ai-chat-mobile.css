@@ -41,8 +41,8 @@
   body.theia-mod-mobile-ai-chat-fullwidth .chat-input-widget .qaap-ai-chat-bootstrap-chip {
     display: block;
     width: calc(100% - 16px);
-    margin: 8px 8px 0;
-    padding: 6px 10px;
+    margin: var(--q-space-4, 8px) var(--q-space-4, 8px) 0;
+    padding: var(--q-space-3, 6px) var(--q-space-5, 10px);
     border: 1px solid var(--theia-contrastBorder, var(--theia-widget-border));
     border-radius: 999px;
     background: var(--theia-badge-background);

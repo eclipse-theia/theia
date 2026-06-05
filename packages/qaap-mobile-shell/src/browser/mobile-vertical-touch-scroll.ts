@@ -5,12 +5,16 @@
 // *****************************************************************************
 
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { MOBILE_HORIZONTAL_SCROLL_SELECTOR } from './mobile-horizontal-touch-scroll';
 
 /** Elements that must keep horizontal pan only (see qaap-mobile-touch-scroll.css). */
 const HORIZONTAL_STRIP_SELECTOR =
     '.lm-TabBar-content-container, .lm-DockPanel-tabBar[data-orientation="horizontal"], ' +
     '.theia-mobile-bottom-activity-bar, #theia-statusBar, .theia-mobile-keyboard-accessory-page, ' +
     '.theia-statusBar-track';
+
+const isInsideHorizontalScrollHost = (target: EventTarget | null): boolean =>
+    target instanceof Element && !!target.closest(MOBILE_HORIZONTAL_SCROLL_SELECTOR);
 
 /**
  * Touch fallback for vertically scrollable regions on iOS / coarse pointers when
@@ -39,7 +43,7 @@ export function installMobileVerticalTouchScroll(element: HTMLElement): Disposab
     const canScroll = (): boolean => element.scrollHeight > element.clientHeight + 1;
 
     const onTouchStart = (event: TouchEvent): void => {
-        if (event.touches.length !== 1 || !canScroll()) {
+        if (event.touches.length !== 1 || !canScroll() || isInsideHorizontalScrollHost(event.target)) {
             tracking = false;
             return;
         }

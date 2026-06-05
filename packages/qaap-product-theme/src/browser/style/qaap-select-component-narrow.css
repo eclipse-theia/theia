@@ -21,7 +21,7 @@
 @media (max-width: 767px), (pointer: coarse) {
   .theia-select-component {
     min-height: 36px;
-    padding: 0 12px;
+    padding: 0 var(--q-space-6, 12px);
     font-size: var(--theia-ui-font-size1);
   }
 
@@ -36,7 +36,7 @@
     font-size: var(--theia-ui-font-size1);
     border-radius: 8px;
     /* Lift it slightly above the trigger so the rounded corners are visible. */
-    margin-top: 4px;
+    margin-top: var(--q-space-2, 4px);
     -webkit-overflow-scrolling: touch;
     /* Native momentum scrolling inside the dropdown without bubbling to window
        (which has a global `scroll` listener that would hide the popup). */
@@ -46,7 +46,7 @@
   .theia-select-component-dropdown .theia-select-component-option {
     min-height: 44px;
     line-height: 1.3;
-    padding: 10px 12px;
+    padding: var(--q-space-5, 10px) var(--q-space-6, 12px);
     /* Prevent iOS double-tap zoom on rapid selection. */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -58,13 +58,13 @@
   }
 
   .theia-select-component-dropdown .theia-select-component-description {
-    padding: 10px 12px;
+    padding: var(--q-space-5, 10px) var(--q-space-6, 12px);
     font-size: var(--theia-ui-font-size0);
   }
 
   .theia-select-component-dropdown .theia-select-component-separator {
     width: auto;
-    margin: 4px 8px;
+    margin: var(--q-space-2, 4px) var(--q-space-4, 8px);
   }
 }
 
@@ -81,7 +81,7 @@
 @media (max-width: 767px), (pointer: coarse) {
   /* Premium chat toolbar: extra gutter for send; readable mode selector on phones. */
   .chat-view-widget .theia-ChatInputOptions {
-    padding-right: 14px;
+    padding-right: var(--q-space-7, 14px);
   }
 
   .chat-view-widget .theia-ChatInput-ModeSelector.theia-select-component,

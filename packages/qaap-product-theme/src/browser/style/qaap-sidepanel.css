@@ -101,7 +101,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding-left: 6px;
+  padding-left: var(--q-space-3, 6px);
   background-color: var(--theia-activityBar-background);
 }
 
@@ -112,7 +112,7 @@
   width: calc(var(--theia-private-sidebar-tab-height, 24px) + 4px);
   min-width: calc(var(--theia-private-sidebar-tab-height, 24px) + 4px);
   height: var(--theia-private-sidebar-tab-height, 24px);
-  margin: 2px 0;
+  margin: var(--q-space-1, 2px) 0;
   padding: 0;
   border: none;
   border-radius: 6px;
@@ -148,7 +148,7 @@
 }
 
 .lm-TabBar-content {
-  gap: 4px 0px;
+  gap: var(--q-space-2, 4px) 0;
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .theia-tabBar-tab-row {
@@ -162,7 +162,7 @@
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content {
-  gap: 2px 6px;
+  gap: var(--q-space-1, 2px) var(--q-space-3, 6px);
   flex-wrap: nowrap;
   align-items: center;
   flex-shrink: 0;
@@ -177,11 +177,11 @@
   max-width: none;
   width: 100%;
   box-sizing: border-box;
-  padding-inline: 6px;
+  padding-inline: var(--q-space-3, 6px);
   touch-action: pan-x;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
-  scroll-padding-inline: 6px;
+  scroll-padding-inline: var(--q-space-3, 6px);
   overflow-x: auto !important;
   overflow-y: hidden !important;
   -webkit-overflow-scrolling: touch;
@@ -229,8 +229,8 @@
   min-height: var(--theia-private-sidebar-tab-height);
   height: var(--theia-private-sidebar-tab-height);
   max-height: var(--theia-private-sidebar-tab-height);
-  padding: 0 2px;
-  margin: 2px 0;
+  padding: 0 var(--q-space-1, 2px);
+  margin: var(--q-space-1, 2px) 0;
   box-sizing: border-box;
   border-radius: 6px;
   cursor: pointer;
