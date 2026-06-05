@@ -67,8 +67,8 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use --log-level flag', async () => {
-        const args = await yargs.parse(['--log-level=debug']);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-level=debug']);
+        await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
     });
@@ -85,8 +85,8 @@ describe('log-level-cli-contribution', () => {
         fs.fsyncSync(file.fd);
         fs.closeSync(file.fd);
 
-        const args = await yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({
@@ -96,8 +96,8 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use info as default log level', async () => {
-        const args = await yargs.parse([]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse([]);
+        await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({});
@@ -113,8 +113,8 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args = await yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown default log level in');
     });
 
@@ -128,14 +128,14 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args = await yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown log level for logger hello in');
     });
 
     it('should reject nonexistent config files', async () => {
-        const args = await yargs.parse(['--log-config', '/tmp/cacaca']);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', '/tmp/cacaca']);
+        await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'no such file or directory');
     });
 
@@ -150,8 +150,8 @@ describe('log-level-cli-contribution', () => {
         });
         fs.writeFileSync(file.fd, '{' + text);
 
-        const args = await yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
@@ -175,8 +175,8 @@ describe('log-level-cli-contribution', () => {
             fs.fsyncSync(file.fd);
             fs.closeSync(file.fd);
 
-            const args = await yargs.parse(['--log-config', file.path]);
-            await cli.setArguments(args as unknown as yargs.Arguments);
+            const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+            await cli.setArguments(args);
         }
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
@@ -224,8 +224,8 @@ describe('log-level-cli-contribution', () => {
         }));
         fs.fsyncSync(file.fd);
 
-        const args = await yargs.parse(['--log-config', file.path]);
-        await cli.setArguments(args as unknown as yargs.Arguments);
+        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
         expect(cli.logLevels).eql({

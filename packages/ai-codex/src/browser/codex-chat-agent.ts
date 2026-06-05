@@ -533,6 +533,8 @@ export class CodexChatAgent implements ChatAgent {
         }
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the root URI should be resolved based on the context of the current chat request (e.g., the file being discussed).
     protected async getWorkspaceRootUri(): Promise<URI | undefined> {
         const roots = await this.workspaceService.roots;
         if (roots && roots.length > 0) {
@@ -646,6 +648,11 @@ export class CodexChatAgent implements ChatAgent {
                 outputTokens: usage.output_tokens,
                 cachedInputTokens: usage.cached_input_tokens,
                 requestId: request.id
+            });
+            request.response.setTokenUsage({
+                inputTokens: usage.input_tokens,
+                outputTokens: usage.output_tokens,
+                cacheCreationInputTokens: usage.cached_input_tokens,
             });
         } catch (error) {
             console.error('Failed to report token usage:', error);

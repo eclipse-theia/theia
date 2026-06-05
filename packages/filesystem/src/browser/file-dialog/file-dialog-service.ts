@@ -61,9 +61,9 @@ export class DefaultFileDialogService implements FileDialogService {
             const value = await dialog.open();
             if (value) {
                 if (!Array.isArray(value)) {
-                    return value.uri;
+                    return props.fileScheme ? value.uri.withScheme(props.fileScheme) : value.uri;
                 }
-                return value.map(node => node.uri);
+                return value.map(node => props.fileScheme ? node.uri.withScheme(props.fileScheme) : node.uri);
             }
         }
         return undefined;

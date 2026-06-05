@@ -45,7 +45,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
         this.registerCodeActionProvider();
 
         // Listen to AI activation changes and re-register the provider
-        this.activationService.onDidChangeActiveStatus(() => {
+        this.activationService.onDidChangeCanRun(() => {
             this.toDispose.dispose();
             this.registerCodeActionProvider();
         });
@@ -56,7 +56,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
     }
 
     protected registerCodeActionProvider(): void {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.canRun) {
             // AI is disabled, don't register the provider
             return;
         }
@@ -64,7 +64,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
         const disposable = monaco.languages.registerCodeActionProvider('*', {
             provideCodeActions: (model, range, context, token) => {
                 // Double-check activation status in the provider
-                if (!this.activationService.isActive) {
+                if (!this.activationService.canRun) {
                     return { actions: [], dispose: () => { } };
                 }
 

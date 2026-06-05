@@ -17,13 +17,14 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { ChatAgent, ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
+import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -31,8 +32,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { formatDistance } from 'date-fns';
-import * as locales from 'date-fns/locale';
+import { formatTimeAgo } from './chat-date-utils';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
@@ -43,7 +43,8 @@ import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferen
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
 @injectable()
-export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> implements TabBarToolbarContribution {
+export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
+    implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
@@ -72,12 +73,15 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
-        tooltip: nls.localize('theia/ai/chat-ui/renameChat', 'Rename Chat'),
+        tooltip: nls.localizeByDefault('Rename Chat'),
     };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
+
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
@@ -116,6 +120,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.checkPersistedSessions();
     }
 
+    async initializeLayout(): Promise<void> {
+        try {
+            await this.openView({ activate: false });
+        } catch (error) {
+            console.error('Failed to initialize AI Chat view in default layout', error);
+        }
+    }
+
     protected async checkPersistedSessions(): Promise<void> {
         try {
             this.hasPersistedSessions = await this.chatService.hasPersistedSessions();
@@ -146,7 +158,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
             isVisible: widget => this.activationService.isActive,
-            isEnabled: widget => this.activationService.isActive,
+            isEnabled: widget => this.activationService.canRun,
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
@@ -169,7 +181,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     && !this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
-                if (!this.activationService.isActive) { return false; }
+                if (!this.activationService.canRun) { return false; }
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
@@ -190,7 +202,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return !!activeSession && this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
-                if (!this.activationService.isActive) { return false; }
+                if (!this.activationService.canRun) { return false; }
                 return this.withWidget(widget, () => true);
             }
         });
@@ -204,7 +216,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 newSession.model.context.addVariables({ variable: TASK_CONTEXT_VARIABLE, arg: selectedContextId });
             },
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: async () => {
@@ -212,13 +224,34 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return this.selectChat();
             },
             isEnabled: () => {
-                if (!this.activationService.isActive) {
+                if (!this.activationService.canRun) {
                     return false;
                 }
                 // Enable if there are active sessions with titles OR persisted sessions
                 return this.chatService.getSessions().some(session => !!session.title) || this.hasPersistedSessions;
             },
             isVisible: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_RENAME_SESSION, {
+            execute: (session: ChatSessionMetadata | string) => this.renameSession(typeof session === 'string' ? session : session.sessionId),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.canRun
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_DELETE_SESSION, {
+            execute: (session: ChatSessionMetadata | string, confirm?: boolean) =>
+                this.deleteSession(typeof session === 'string' ? session : session.sessionId, typeof session === 'string' ? confirm : true),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.canRun
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
+            execute: () => this.navigationService.back(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoBack),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_FORWARD, {
+            execute: () => this.navigationService.forward(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoForward),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -264,6 +297,25 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        const navigationChangedEmitter = new Emitter<void>();
+        this.navigationService.onDidChange(() => navigationChangedEmitter.fire());
+
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-back', 'Navigate Back'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-forward', 'Navigate Forward'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
@@ -283,7 +335,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             command: AI_SHOW_SETTINGS_COMMAND.id,
             group: 'ai-settings',
             priority: 3,
-            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
+            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI Settings'),
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
@@ -291,6 +343,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.taskContextService.onDidChange(() => sessionSummarizibilityChangedEmitter.fire());
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeActiveStatus(() => sessionSummarizibilityChangedEmitter.fire());
+        this.activationService.onDidChangeCanRun(() => sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
@@ -371,7 +424,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
                 return <QuickPickItem>({
                     label,
-                    description: formatDistance(new Date(session.lastDate), new Date(), { addSuffix: false, locale: getDateFnsLocale() }),
+                    description: formatTimeAgo(session.lastDate, false),
                     detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
@@ -399,38 +452,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         quickPick.onDidTriggerItemButton(async context => {
             if (context.button === AIChatContribution.RENAME_CHAT_BUTTON) {
                 quickPick.hide();
-                this.quickInputService.input({
-                    placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
-                }).then(name => {
-                    if (name && name.length > 0) {
-                        const session = this.chatService.getSession(context.item.id!);
-                        if (session) {
-                            session.title = name;
-                        }
-                    }
-                });
+                await this.renameSession(context.item.id!);
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
-                const activeSession = this.chatService.getActiveSession();
-
-                // Wait for deletion to complete before refreshing the list
-                this.chatService.deleteSession(context.item.id!).then(() => getItems()).then(items => {
-                    quickPick.items = items;
-                    if (items.length === 0) {
-                        quickPick.hide();
-                    }
-                    // Update persisted sessions flag after deletion
-                    this.checkPersistedSessions();
-
-                    if (activeSession && activeSession.id === context.item.id) {
-                        this.chatService.createSession(ChatAgentLocation.Panel, {
-                            // Auto-focus only when the quick pick is no longer visible
-                            focus: items.length === 0
-                        });
-                    }
-                }).catch(error => {
-                    this.logger.error('Failed to delete chat session', error);
-                    this.messageService.error(nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session'));
-                });
+                await this.deleteSession(context.item.id!);
+                const items = await getItems();
+                quickPick.items = items;
+                if (items.length === 0) {
+                    quickPick.hide();
+                }
             }
         });
 
@@ -460,6 +489,40 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         quickPick.onDidHide(() => defer.resolve(undefined));
 
         return defer.promise;
+    }
+
+    protected async renameSession(sessionId: string): Promise<void> {
+        const name = await this.quickInputService.input({
+            placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
+        });
+        if (name && name.length > 0) {
+            await this.chatService.renameSession(sessionId, name);
+        }
+    }
+
+    protected async deleteSession(sessionId: string, confirm = false): Promise<void> {
+        if (confirm) {
+            const confirmed = await new ConfirmDialog({
+                title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
+                msg: nls.localizeByDefault('Are you sure you want to delete this chat?')
+            }).open();
+            if (!confirmed) {
+                return;
+            }
+        }
+        const activeSession = this.chatService.getActiveSession();
+        try {
+            await this.chatService.deleteSession(sessionId);
+            this.checkPersistedSessions();
+            if (activeSession && activeSession.id === sessionId) {
+                this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+            }
+        } catch (error) {
+            this.logger.error('Failed to delete chat session', error);
+            this.messageService.error(
+                nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session')
+            );
+        }
     }
 
     protected withWidget(
@@ -592,9 +655,4 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
         return { openedIds: openedContextIds, activeId: activeContextId };
     }
-}
-
-function getDateFnsLocale(): locales.Locale {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return nls.locale ? (locales as any)[nls.locale] ?? locales.enUS : locales.enUS;
 }

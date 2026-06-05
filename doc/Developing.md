@@ -52,7 +52,7 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
-- Node.js `>= 20` and `< 24`.
+- Node.js `>= 22` and `<= 24`.
   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
 - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 - Python3 is required for the build due to [`node-gyp`](https://github.com/nodejs/node-gyp/tree/v11.4.0#installation)
@@ -126,7 +126,7 @@ git clone https://github.com/eclipse-theia/theia \
     && npm install \
     && npm run download:plugins \
     && npm run build:browser \
-    && npm run start:browser --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
+    && npm run start:browser -- -- --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
 ```
 
 Start your browser on <https://localhost:3000>.

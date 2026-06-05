@@ -49,6 +49,11 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { ArrayUtils, URI } from '@theia/core';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import { TextEditorChangeKind } from '../../plugin/types-impl';
+import { Change } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
+import { DirtyDiffUpdate } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-decorator';
+import { ScmDecorationsService } from '@theia/scm/lib/browser/decorations/scm-decorations-service';
 import { toNotebookWorspaceEdit } from './notebooks/notebooks-main';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookService } from '@theia/notebook/lib/browser';
@@ -62,6 +67,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     private readonly bulkEditService: MonacoBulkEditService;
     private readonly notebookService: NotebookService;
+    private readonly scmDecorationsService: ScmDecorationsService;
 
     constructor(
         private readonly editorsAndDocuments: EditorsAndDocumentsMain,
@@ -73,10 +79,12 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
         this.bulkEditService = container.get(MonacoBulkEditService);
         this.notebookService = container.get(NotebookService);
+        this.scmDecorationsService = container.get(ScmDecorationsService);
 
         this.toDispose.push(editorsAndDocuments);
         this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
         this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
+        this.toDispose.push(this.scmDecorationsService.onDirtyDiffUpdate(update => this.onDirtyDiffUpdate(update)));
     }
 
     dispose(): void {
@@ -93,6 +101,130 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         );
         this.editorsToDispose.set(id, toDispose);
         this.toDispose.push(toDispose);
+
+        const diffEditor = editor.getDiffEditor();
+        if (diffEditor) {
+            const pushDiffEditorInfo = () => this.pushDiffEditorDiffInformation(id, editor);
+            toDispose.push(diffEditor.diffEditor.onDidUpdateDiff(pushDiffEditorInfo));
+            pushDiffEditorInfo();
+        }
+    }
+
+    private onDirtyDiffUpdate(update: DirtyDiffUpdate): void {
+        const editorUri = update.editor.uri.toString();
+        const editorIds = this.findEditorIdsByUri(editorUri, true);
+        if (editorIds.length === 0) {
+            return;
+        }
+
+        const originalUri = update.previousRevisionUri?.toComponents();
+
+        const changes = update.changes.map(change => {
+            let kind: TextEditorChangeKind;
+            if (Change.isAddition(change)) {
+                kind = TextEditorChangeKind.Addition;
+            } else if (Change.isRemoval(change)) {
+                kind = TextEditorChangeKind.Deletion;
+            } else {
+                kind = TextEditorChangeKind.Modification;
+            }
+            return {
+                original: {
+                    startLineNumber: change.previousRange.start + 1,
+                    endLineNumberExclusive: change.previousRange.end + 1
+                },
+                modified: {
+                    startLineNumber: change.currentRange.start + 1,
+                    endLineNumberExclusive: change.currentRange.end + 1
+                },
+                kind
+            };
+        });
+
+        // Push diff information to all editors with this URI (regular editors and diff editor modified sides).
+        for (const editorId of editorIds) {
+            const editor = this.editorsAndDocuments.getEditor(editorId);
+            if (!editor) {
+                continue;
+            }
+            const model = editor.getModel();
+            const modifiedUri = URI.fromComponents(model.uri).toComponents();
+            this.proxy.$acceptEditorDiffInformation(editorId, [{
+                documentVersion: model.getVersionId(),
+                original: originalUri,
+                modified: modifiedUri,
+                changes,
+                isStale: false
+            }]);
+        }
+    }
+
+    private pushDiffEditorDiffInformation(id: string, editor: TextEditorMain): void {
+        const diffEditor = editor.getDiffEditor();
+        if (!diffEditor) {
+            return;
+        }
+
+        let originalUri: UriComponents | undefined;
+        let modifiedUri: UriComponents;
+
+        try {
+            const [left, right] = DiffUris.decode(diffEditor.uri);
+            originalUri = left.toComponents();
+            modifiedUri = right.toComponents();
+        } catch {
+            // Not a valid DiffUri; fall back to model URIs
+            originalUri = new URI(diffEditor.originalModel.uri).toComponents();
+            modifiedUri = new URI(diffEditor.modifiedModel.uri).toComponents();
+        }
+
+        const lineChanges = diffEditor.diffInformation;
+
+        const changes = lineChanges.map(change => {
+            let kind: TextEditorChangeKind;
+            if (change.originalEndLineNumber === 0) {
+                kind = TextEditorChangeKind.Addition;
+            } else if (change.modifiedEndLineNumber === 0) {
+                kind = TextEditorChangeKind.Deletion;
+            } else {
+                kind = TextEditorChangeKind.Modification;
+            }
+
+            // ILineChange uses 1-based lines where 0 means empty range.
+            // TextEditorLineRange uses 1-based startLineNumber and endLineNumberExclusive.
+            const toLineRange = (start: number, end: number) => end === 0
+                ? { startLineNumber: start + 1, endLineNumberExclusive: start + 1 }
+                : { startLineNumber: start, endLineNumberExclusive: end + 1 };
+
+            return {
+                original: toLineRange(change.originalStartLineNumber, change.originalEndLineNumber),
+                modified: toLineRange(change.modifiedStartLineNumber, change.modifiedEndLineNumber),
+                kind
+            };
+        });
+
+        const model = editor.getModel();
+        this.proxy.$acceptEditorDiffInformation(id, [{
+            documentVersion: model.getVersionId(),
+            original: originalUri,
+            modified: modifiedUri,
+            changes,
+            isStale: false
+        }]);
+    }
+
+    private findEditorIdsByUri(uri: string, excludeDiffEditors = false): string[] {
+        const ids: string[] = [];
+        for (const id of this.editorsToDispose.keys()) {
+            const editor = this.editorsAndDocuments.getEditor(id);
+            if (editor && editor.getModel().uri.toString() === uri) {
+                if (excludeDiffEditors && editor.getDiffEditor()) {
+                    continue;
+                }
+                ids.push(id);
+            }
+        }
+        return ids;
     }
 
     private onTextEditorRemove(id: string): void {

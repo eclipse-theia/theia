@@ -26,11 +26,14 @@ import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionPro
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { ConnectionCloseService, connectionCloseServicePath } from '../../common/messaging/connection-management';
 import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 
 const backendServiceProvider = Symbol('backendServiceProvider2');
 const localServiceProvider = Symbol('localServiceProvider');
 
 export const messagingFrontendModule = new ContainerModule(bind => {
+    // Transient: each connection source gets its own private buffer instance.
+    bind(SocketWriteBuffer).toSelf();
     bind(ConnectionCloseService).toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath)).inSingletonScope();
     bind(ElectronWebSocketConnectionSource).toSelf().inSingletonScope();
     bind(WebSocketConnectionSource).toService(ElectronWebSocketConnectionSource);

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider, CommandContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { VariableRegistry, VariableContribution } from './variable';
 import { VariableQuickOpenService } from './variable-quick-open-service';
@@ -26,7 +26,7 @@ import { CommonVariableContribution } from './common-variable-contribution';
 export default new ContainerModule(bind => {
     bind(VariableRegistry).toSelf().inSingletonScope();
     bind(VariableResolverService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, VariableContribution);
+    bindRootContributionProvider(bind, VariableContribution);
 
     bind(VariableResolverFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [FrontendApplicationContribution, CommandContribution]) {

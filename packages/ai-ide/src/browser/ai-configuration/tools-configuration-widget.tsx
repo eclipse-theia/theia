@@ -20,7 +20,13 @@ import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
+import {
+    DEFAULT_TOOL_CONFIRMATION_PREFERENCE,
+    TOOL_CONFIRMATION_PREFERENCE,
+    ToolConfirmationMode
+} from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '@theia/ai-terminal/lib/common/shell-command-preferences';
 import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
@@ -47,8 +53,17 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(ShellCommandPermissionService)
+    protected readonly shellCommandPermissionService: ShellCommandPermissionService;
+
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
+    protected allowlistPatterns: string[] = [];
+    protected allowlistInputRef = React.createRef<HTMLInputElement>();
+    protected allowlistError: string | undefined;
+    protected denylistPatterns: string[] = [];
+    protected denylistInputRef = React.createRef<HTMLInputElement>();
+    protected denylistError: string | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -60,9 +75,18 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         this.loadData().then(() => this.update());
         this.toDispose.pushAll([
             this.preferenceService.onPreferenceChanged(async e => {
-                if (e.preferenceName === 'ai-features.chat.toolConfirmation') {
+                if (e.preferenceName === TOOL_CONFIRMATION_PREFERENCE
+                    || e.preferenceName === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
                     this.defaultState = await this.loadDefaultConfirmation();
                     this.toolConfirmationModes = await this.loadToolConfigurationModes();
+                    this.update();
+                }
+                if (e.preferenceName === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
+                    this.allowlistPatterns = this.shellCommandPermissionService.getAllowlistPatterns();
+                    this.update();
+                }
+                if (e.preferenceName === SHELL_COMMAND_DENYLIST_PREFERENCE) {
+                    this.denylistPatterns = this.shellCommandPermissionService.getDenylistPatterns();
                     this.update();
                 }
             }),
@@ -77,10 +101,22 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         await this.loadItems();
         this.defaultState = await this.loadDefaultConfirmation();
         this.toolConfirmationModes = await this.loadToolConfigurationModes();
+        this.allowlistPatterns = this.shellCommandPermissionService.getAllowlistPatterns();
+        this.denylistPatterns = this.shellCommandPermissionService.getDenylistPatterns();
     }
 
     protected async loadItems(): Promise<void> {
-        const toolNames = this.toolInvocationRegistry.getAllFunctions().map(func => func.name);
+        const toolNames = this.toolInvocationRegistry.getAllFunctions()
+            .map(func => func.name)
+            .sort((a, b) => {
+                const aIsMcp = a.startsWith('mcp_');
+                const bIsMcp = b.startsWith('mcp_');
+                if (aIsMcp !== bIsMcp) {
+                    // Place names starting with "mcp_" after non-mcp names
+                    return aIsMcp ? 1 : -1;
+                }
+                return a.localeCompare(b);
+            });
         this.items = toolNames.map(name => ({ name }));
     }
 
@@ -88,7 +124,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         return item.name;
     }
     protected async loadDefaultConfirmation(): Promise<ToolConfirmationMode> {
-        return this.confirmationManager.getConfirmationMode('*', 'doesNotMatter');
+        return this.confirmationManager.getDefaultConfirmationMode();
     }
     protected async loadToolConfigurationModes(): Promise<Record<string, ToolConfirmationMode>> {
         return this.confirmationManager.getAllConfirmationSettings();
@@ -97,7 +133,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         await this.confirmationManager.setConfirmationMode(tool, state, toolRequest);
     }
     protected async updateDefaultConfirmation(state: ToolConfirmationMode): Promise<void> {
-        await this.confirmationManager.setConfirmationMode('*', state);
+        await this.confirmationManager.setDefaultConfirmationMode(state);
     }
 
     protected handleToolConfirmationModeChange = async (toolName: string, event: React.ChangeEvent<HTMLSelectElement>): Promise<void> => {
@@ -155,7 +191,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         });
         const shouldReset = await dialog.open();
         if (shouldReset) {
-            this.confirmationManager.resetAllConfirmationModeSettings();
+            await this.confirmationManager.resetAllConfirmationModeSettings();
         }
     }
 
@@ -237,4 +273,176 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         const isDefault = effectiveState === this.defaultState;
         return isDefault ? 'default-mode' : 'custom-mode';
     }
+
+    protected handleAddAllowlistPattern(): void {
+        this.handleAddPatternToList(
+            this.allowlistInputRef,
+            pattern => this.shellCommandPermissionService.addAllowlistPatterns(pattern),
+            () => this.shellCommandPermissionService.getAllowlistPatterns(),
+            patterns => { this.allowlistPatterns = patterns; },
+            error => { this.allowlistError = error; }
+        );
+    }
+
+    protected handleRemoveAllowlistPattern(pattern: string): void {
+        this.shellCommandPermissionService.removeAllowlistPattern(pattern);
+    }
+
+    protected handleAddDenylistPattern(): void {
+        this.handleAddPatternToList(
+            this.denylistInputRef,
+            pattern => this.shellCommandPermissionService.addDenylistPatterns(pattern),
+            () => this.shellCommandPermissionService.getDenylistPatterns(),
+            patterns => { this.denylistPatterns = patterns; },
+            error => { this.denylistError = error; }
+        );
+    }
+
+    protected handleRemoveDenylistPattern(pattern: string): void {
+        this.shellCommandPermissionService.removeDenylistPattern(pattern);
+    }
+
+    protected handleAddPatternToList(
+        inputRef: React.RefObject<HTMLInputElement>,
+        addFn: (pattern: string) => void,
+        getFn: () => string[],
+        setPatterns: (patterns: string[]) => void,
+        setError: (error: string | undefined) => void
+    ): void {
+        const input = inputRef.current;
+        if (!input) {
+            return;
+        }
+
+        const trimmed = input.value.trim();
+        if (trimmed.length === 0) {
+            return;
+        }
+
+        try {
+            addFn(trimmed);
+            input.value = '';
+            setError(undefined);
+            setPatterns(getFn());
+            this.update();
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Invalid pattern');
+            this.update();
+        }
+    }
+
+    protected override renderFooter(): React.ReactNode {
+        return (
+            <>
+                <div className="ai-shell-permission-list-section">
+                    <div className="settings-section-title settings-section-category-title">
+                        {nls.localize('theia/ai/ide/toolsConfiguration/shellAllowlist/title', 'Shell Execute Allowlist')}
+                    </div>
+                    <p className="ai-shell-permission-list-description">
+                        {nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellAllowlist/description',
+                            'Commands matching these patterns will be automatically allowed without confirmation. ' +
+                            'Use * as wildcard: "git log" (exact match), "git log *" (with any arguments). ' +
+                            'Wildcard must be preceded by a space.'
+                        )}
+                    </p>
+                    <div className="ai-shell-permission-list-input-row">
+                        <input
+                            ref={this.allowlistInputRef}
+                            type="text"
+                            className="theia-input"
+                            placeholder={nls.localize(
+                                'theia/ai/ide/shellAllowlist/placeholder',
+                                'e.g., "git log" (exact) or "git log *" (with args)'
+                            )}
+                            onKeyDown={e => e.key === 'Enter' && this.handleAddAllowlistPattern()}
+                        />
+                        <button className="theia-button main" onClick={() => this.handleAddAllowlistPattern()}>
+                            {nls.localizeByDefault('Add')}
+                        </button>
+                    </div>
+                    {this.allowlistError && (
+                        <p className="ai-shell-permission-list-error">
+                            {this.allowlistError}
+                        </p>
+                    )}
+                    <ul className="ai-shell-permission-list-patterns">
+                        {[...this.allowlistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
+                            <li key={pattern} className="ai-shell-permission-list-pattern-item">
+                                <code>{pattern}</code>
+                                <button
+                                    className="theia-button secondary"
+                                    onClick={() => this.handleRemoveAllowlistPattern(pattern)}
+                                >
+                                    {nls.localizeByDefault('Remove')}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                    {this.allowlistPatterns.length === 0 && (
+                        <p className="ai-shell-permission-list-empty">
+                            {nls.localize(
+                                'theia/ai/ide/toolsConfiguration/shellAllowlist/empty',
+                                'No patterns configured. All shell commands will require confirmation.'
+                            )}
+                        </p>
+                    )}
+                </div>
+                <div className="ai-shell-permission-list-section">
+                    <div className="settings-section-title settings-section-category-title">
+                        {nls.localize('theia/ai/ide/toolsConfiguration/shellDenylist/title', 'Shell Execute Denylist')}
+                    </div>
+                    <p className="ai-shell-permission-list-description">
+                        {nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellDenylist/description',
+                            'Commands matching these patterns will be automatically denied without confirmation. ' +
+                            "Use this to block dangerous commands like 'git push *' or 'rm -rf /'."
+                        )}
+                    </p>
+                    <div className="ai-shell-permission-list-input-row">
+                        <input
+                            ref={this.denylistInputRef}
+                            type="text"
+                            className="theia-input"
+                            placeholder={nls.localize(
+                                'theia/ai/ide/shellDenylist/placeholder',
+                                'e.g., "git push *" or "rm -rf /"'
+                            )}
+                            onKeyDown={e => e.key === 'Enter' && this.handleAddDenylistPattern()}
+                        />
+                        <button className="theia-button main" onClick={() => this.handleAddDenylistPattern()}>
+                            {nls.localizeByDefault('Add')}
+                        </button>
+                    </div>
+                    {this.denylistError && (
+                        <p className="ai-shell-permission-list-error">
+                            {this.denylistError}
+                        </p>
+                    )}
+                    <ul className="ai-shell-permission-list-patterns">
+                        {[...this.denylistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
+                            <li key={pattern} className="ai-shell-permission-list-pattern-item">
+                                <code>{pattern}</code>
+                                <button
+                                    className="theia-button secondary"
+                                    onClick={() => this.handleRemoveDenylistPattern(pattern)}
+                                >
+                                    {nls.localizeByDefault('Remove')}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                    {this.denylistPatterns.length === 0 && (
+                        <p className="ai-shell-permission-list-empty">
+                            {nls.localize(
+                                'theia/ai/ide/toolsConfiguration/shellDenylist/empty',
+                                'No patterns configured. No shell commands will be automatically denied.'
+                            )}
+                        </p>
+                    )}
+                </div>
+            </>
+        );
+    }
+
 }

@@ -26,7 +26,7 @@ import { CommandMenuAsToolbarItemWrapper, SubmenuAsToolbarItemWrapper, ToolbarAc
 import { KeybindingRegistry } from '../../keybinding';
 import { LabelParser } from '../../label-parser';
 import { ContextMenuRenderer } from '../../context-menu-renderer';
-import { CommandMenu, CompoundMenuNode, RenderedMenuNode } from '../../../common/menu';
+import { CommandMenu, CompoundMenuNode, MenuNode, RenderedMenuNode } from '../../../common/menu';
 import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from './tab-toolbar-item';
 
 /**
@@ -166,6 +166,45 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
         return result;
+    }
+
+    /**
+     * Collects all context keys referenced by toolbar items and delegated menu nodes
+     * that may participate in rendering for the given widget.
+     */
+    collectContextKeys(widget: Widget): Set<string> {
+        const contextKeys = new Set<string>();
+        if (widget.isDisposed) {
+            return contextKeys;
+        }
+
+        for (const item of this.items.values()) {
+            if (item.when) {
+                this.contextKeyService.parseKeys(item.when)?.forEach(key => contextKeys.add(key));
+            }
+        }
+
+        for (const delegate of this.menuDelegates.values()) {
+            if (!delegate.isVisible(widget)) {
+                continue;
+            }
+            const menu = this.menuRegistry.getMenu(delegate.menuPath);
+            if (menu) {
+                this.collectMenuContextKeys(menu, contextKeys);
+            }
+        }
+        return contextKeys;
+    }
+
+    protected collectMenuContextKeys(menuNode: MenuNode, contextKeys: Set<string>): void {
+        if (menuNode.when) {
+            this.contextKeyService.parseKeys(menuNode.when)?.forEach(key => contextKeys.add(key));
+        }
+        if (CompoundMenuNode.is(menuNode)) {
+            for (const child of menuNode.children) {
+                this.collectMenuContextKeys(child, contextKeys);
+            }
+        }
     }
 
     unregisterItem(id: string): void {

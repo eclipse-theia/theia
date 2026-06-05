@@ -17,7 +17,7 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
-import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
+import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { PreferenceService, PreferenceUtils } from '@theia/core';
@@ -27,57 +27,8 @@ import {
     WorkspaceRestrictionContribution,
     WorkspaceRestriction
 } from '@theia/workspace/lib/browser/workspace-trust-service';
-
-interface BaseMCPServerPreferenceValue {
-    autostart?: boolean;
-}
-
-interface LocalMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
-    command: string;
-    args?: string[];
-    env?: { [key: string]: string };
-}
-
-interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
-    serverUrl: string;
-    serverAuthToken?: string;
-    serverAuthTokenHeader?: string;
-    headers?: { [key: string]: string };
-}
-
-type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
-
-interface MCPServersPreference {
-    [name: string]: MCPServersPreferenceValue
-};
-
-namespace MCPServersPreference {
-    export function isValue(obj: unknown): obj is MCPServersPreferenceValue {
-        return !!obj && typeof obj === 'object' &&
-            ('command' in obj || 'serverUrl' in obj) &&
-            (!('command' in obj) || typeof obj.command === 'string') &&
-            (!('args' in obj) || Array.isArray(obj.args) && obj.args.every(arg => typeof arg === 'string')) &&
-            (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string')) &&
-            (!('autostart' in obj) || typeof obj.autostart === 'boolean') &&
-            (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
-            (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
-            (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
-            (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string'));
-    }
-}
-
-function filterValidValues(servers: unknown): MCPServersPreference {
-    const result: MCPServersPreference = {};
-    if (!servers || typeof servers !== 'object') {
-        return result;
-    }
-    for (const [name, value] of Object.entries(servers)) {
-        if (typeof name === 'string' && MCPServersPreference.isValue(value)) {
-            result[name] = value;
-        }
-    }
-    return result;
-}
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { filterValidValues, MCPServersPreference } from '../common/mcp-servers-preference';
 
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {
@@ -94,6 +45,9 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     @inject(WorkspaceTrustService)
     protected workspaceTrustService: WorkspaceTrustService;
 
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+
     protected prevServers: Map<string, MCPServerDescription> = new Map();
 
     protected blockedUntrustedServers: Set<string> = new Set();
@@ -106,11 +60,21 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             ));
             this.prevServers = this.convertToMap(servers);
             this.syncServers(this.prevServers);
+
+            // Set up workspace roots tracking
+            await this.updateWorkspaceRoots(false);
+            this.workspaceService.onWorkspaceChanged(async () => {
+                await this.updateWorkspaceRoots(false);
+            });
+
             await this.autoStartServers(this.prevServers);
 
-            this.preferenceService.onPreferenceChanged(event => {
+            this.preferenceService.onPreferenceChanged(async event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                    await this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                }
+                if (event.preferenceName === MCP_USE_WORKSPACE_AS_ROOT_PREF) {
+                    await this.updateWorkspaceRoots(true);
                 }
             });
 
@@ -127,6 +91,35 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             });
         });
         this.frontendMCPService.registerToolsForAllStartedServers();
+    }
+
+    protected async updateWorkspaceRoots(restart: boolean): Promise<void> {
+        const startedServerNames = await this.frontendMCPService.getStartedServers();
+        if (restart) {
+            // stop all servers
+            for (const name of startedServerNames) {
+                await this.frontendMCPService.stopServer(name);
+            }
+        }
+
+        // update the roots
+        // either roots are supported or not
+        const useWorkspaceAsRoot = this.preferenceService.get(MCP_USE_WORKSPACE_AS_ROOT_PREF, true);
+        if (!useWorkspaceAsRoot) {
+            this.manager.setWorkspaceRoots(undefined);
+        } else {
+            const roots = this.workspaceService.tryGetRoots().map(root => root.resource.toString());
+            this.manager.setWorkspaceRoots(roots);
+        }
+
+        if (restart) {
+            // restart servers
+            for (const name of startedServerNames) {
+                await this.frontendMCPService.startServer(name).catch(error => {
+                    console.error(`Failed to restart MCP server ${name} after changing workspace root setting`, error);
+                });
+            }
+        }
     }
 
     protected async startPreviouslyBlockedServers(): Promise<void> {
@@ -191,12 +184,13 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.updateBlockedServersStatusBar();
     }
 
-    protected handleServerChanges(newServers: MCPServersPreference): void {
+    protected async handleServerChanges(newServers: MCPServersPreference): Promise<void> {
         const oldServers = this.prevServers;
         const updatedServers = this.convertToMap(newServers);
 
         for (const [name] of oldServers) {
             if (!updatedServers.has(name)) {
+                await this.frontendMCPService.stopServer(name);
                 this.manager.removeServer(name);
                 this.blockedUntrustedServers.delete(name);
             }
@@ -245,6 +239,8 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         Object.entries(servers).forEach(([name, description]) => {
             let filteredDescription: MCPServerDescription;
 
+            const { registryMetadata } = description;
+
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
                 const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
@@ -255,6 +251,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
                     ...(headers && { headers }),
                     autostart: autostart ?? true,
+                    ...(registryMetadata && { registryMetadata }),
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
@@ -265,6 +262,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(args && { args }),
                     ...(env && { env }),
                     autostart: autostart ?? true,
+                    ...(registryMetadata && { registryMetadata }),
                 };
             }
 

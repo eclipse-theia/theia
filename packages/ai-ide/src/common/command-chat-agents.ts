@@ -52,17 +52,18 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     name = 'Command';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'command',
-        identifier: 'default/universal',
+        identifier: 'default/fast',
     }];
+    override iconClass: string = 'codicon codicon-server-process';
     protected defaultLanguageModelPurpose: string = 'command';
 
     override description = nls.localize('theia/ai/ide/commandAgent/description',
-        'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. ' +
+        'This agent is aware of all commands that the user can execute. ' +
         'Based on the user request, it can find the right command and then let the user execute it.');
     override prompts = [commandTemplate];
     override agentSpecificVariables = [{
         name: 'command-ids',
-        description: nls.localize('theia/ai/ide/commandAgent/vars/commandIds/description', 'The list of available commands in Theia.'),
+        description: nls.localize('theia/ai/ide/commandAgent/vars/commandIds/description', 'The list of available commands.'),
         usedInPrompt: true
     }];
 
@@ -71,13 +72,16 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         for (const command of this.commandRegistry.getAllCommands()) {
             knownCommands.push(`${command.id}: ${command.label}`);
         }
+
+        const variantInfo = this.promptService.getPromptVariantInfo(commandTemplate.id);
+
         const systemPrompt = await this.promptService.getResolvedPromptFragment(commandTemplate.id, {
             'command-ids': knownCommands.join('\n')
         }, context);
         if (systemPrompt === undefined) {
             throw new Error('Couldn\'t get prompt ');
         }
-        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt);
+        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt, variantInfo?.variantId, variantInfo?.isCustomized);
     }
 
     /**

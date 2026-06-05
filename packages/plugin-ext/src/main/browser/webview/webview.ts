@@ -475,7 +475,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     protected forwardConsoleLog(log: WebviewConsoleLog): void {
         const message = `[webview: ${this.identifier.id}] ${log.message ? JSON.parse(log.message) : undefined}`;
         if (log.optionalParams !== undefined) {
-            console[log.level](message, JSON.parse(log.optionalParams));
+            console[log.level](message, ...JSON.parse(log.optionalParams));
         } else {
             console[log.level](message);
         }

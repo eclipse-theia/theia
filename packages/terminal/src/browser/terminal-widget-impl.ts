@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Terminal } from 'xterm';
+import { Terminal, IMarker } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -32,7 +32,9 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
-    TerminalBuffer
+    TerminalBuffer,
+    TerminalBlock,
+    TerminalCommandHistoryState
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from '../common/terminal-preferences';
@@ -51,7 +53,8 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { guessShellTypeFromExecutable } from '../common/shell-type';
+import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
+import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -72,11 +75,23 @@ class TerminalBufferImpl implements TerminalBuffer {
     get length(): number {
         return this.term.buffer.active.length;
     };
-    getLines(start: number, length: number): string[] {
+    getLines(start: number, length: number, trimRight: boolean = false): string[] {
         const result: string[] = [];
-        for (let i = 0; i < length && this.length - 1 - i >= 0; i++) {
-            result.push(this.term.buffer.active.getLine(this.length - 1 - i)!.translateToString());
+        const activeBuffer = this.term.buffer.active;
+
+        if (start < 0) {
+            return [];
         }
+
+        const end = Math.min(start + length, activeBuffer.length);
+        for (let i = start; i < end; i++) {
+            const line = activeBuffer.getLine(i);
+            if (!line) {
+                continue;
+            }
+            result.push(line.translateToString(trimRight));
+        }
+
         return result;
     }
 
@@ -111,6 +126,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected enhancedPreviewNode: Node | undefined;
     protected styleElement: HTMLStyleElement | undefined;
     override lastCwd = new URI();
+    override hasUserTitle = false;
+    protected _shellName: string | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(RemoteConnectionProvider) protected readonly connectionProvider: ServiceConnectionProvider;
@@ -129,6 +146,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
+    @inject(TerminalCommandHistoryStateFactory) protected readonly commandHistoryStateFactory: TerminalCommandHistoryStateFactory;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -165,15 +183,32 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
+    protected readonly commandSeparatorDecorations = new DisposableCollection();
+
+    protected readonly toDisposeOnCommandHistory = new DisposableCollection();
+    protected outputStartMarker: IMarker | undefined;
+    protected promptStartMarker: IMarker | undefined;
+
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
         return this._buffer;
     }
 
+    private _currentTerminalOutput: string[];
+
+    private _commandHistoryState?: TerminalCommandHistoryState;
+    override get commandHistoryState(): TerminalCommandHistoryState | undefined {
+        return this._commandHistoryState;
+    }
+
+    protected enableCommandSeparator: boolean;
+
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
-        this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
+        const initialTitle = this.options.title || TerminalWidgetImpl.LABEL;
+        this.title.label = initialTitle;
+        this.title.caption = initialTitle;
         this.setIconClass();
 
         if (this.options.kind) {
@@ -204,9 +239,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            theme: this.themeService.theme
+            theme: this.themeService.theme,
+            // Enables proposed API to allow parsing of OSC 133 sequences for command tracking.
+            allowProposedApi: this.preferences['terminal.integrated.enableCommandHistory']
         });
         this._buffer = new TerminalBufferImpl(this.term);
+        this._currentTerminalOutput = [];
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
@@ -218,9 +256,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
+            if (change.preferenceName === 'terminal.integrated.enableCommandHistory') {
+                this.updateCommandHistoryHandlers();
+            }
             this.needsResize = true;
             this.update();
         }));
+        this.updateCommandHistoryConfig();
+        this.updateCommandHistoryHandlers();
 
         this.toDispose.push(this.themeService.onDidChange(() => {
             this.term.options.theme = this.themeService.theme;
@@ -228,8 +271,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
-            if (this.options.useServerTitle) {
-                this.title.label = title;
+            if (this.options.useServerTitle && !this.hasUserTitle) {
+                const cleaned = cleanTerminalTitle(title);
+                if (cleaned) {
+                    // If the command is a known shell, update the tracked shell name
+                    const shellType = guessShellTypeFromExecutable(cleaned);
+                    if (shellType) {
+                        this._shellName = shellType;
+                    }
+                    this.title.label = cleaned;
+                    this.title.caption = cleaned;
+                } else if (this._shellName) {
+                    // CWD/prompt title, show the current shell name
+                    this.title.label = this._shellName;
+                    this.title.caption = this._shellName;
+                }
             }
         });
         this.toDispose.push(titleChangeListenerDispose);
@@ -250,12 +306,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 } else {
                     this.exitStatus = { code, reason: TerminalExitReason.Process };
                 }
+                // Ensure any in-progress command block is closed even if the process exits
+                // before its OSC prompt_started bytes are flushed from the ring buffer.
+                if (this._commandHistoryState?.currentCommand) {
+                    this.finishCurrentCommand();
+                }
                 if (!attached) {
                     this.dispose();
                 }
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
+        this.toDispose.push(this.commandSeparatorDecorations);
+        this.toDispose.push(this.toDisposeOnCommandHistory);
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
@@ -319,6 +382,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.onKeyEmitter.fire(data);
         }));
 
+        this.toDispose.push(this.term.onWriteParsed(() => {
+            if (this._currentTerminalOutput.length > 0) {
+                const terminalOutput = this._currentTerminalOutput.join('');
+                this._currentTerminalOutput = [];
+                this.onOutputEmitter.fire(terminalOutput);
+            }
+        }));
+
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
@@ -344,6 +415,135 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
+        this.updateCommandHistoryConfig();
+    }
+
+    protected updateCommandHistoryConfig(): void {
+        const enabled = this.preferences.get('terminal.integrated.enableCommandHistory', false);
+        this.term.options.allowProposedApi = enabled;
+        this.enableCommandSeparator = enabled
+            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
+            : false;
+
+        if (enabled && !this._commandHistoryState) {
+            this._commandHistoryState = this.commandHistoryStateFactory();
+            this.toDispose.push(this._commandHistoryState);
+        } else if (!enabled && this._commandHistoryState) {
+            this._commandHistoryState.dispose();
+            this._commandHistoryState = undefined;
+        }
+    }
+
+    /**
+     * Registers or deregisters command history handlers based on the current preference state.
+     *
+     * Manages the OSC 133 handler that tracks command lifecycle events. OSC 133 is an iTerm2
+     * escape-sequence family marking events such as command start and prompt display
+     * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset:
+     *
+     *   - prompt_started: emitted when the prompt is shown (command output ends)
+     *   - command_started;<hex-encoded-command>: emitted when a command begins
+     *
+     * Command output is read directly from xterm's buffer using markers to track line positions,
+     * avoiding the need to intercept and sanitize raw terminal data.
+     */
+    protected updateCommandHistoryHandlers(): void {
+        this.toDisposeOnCommandHistory.dispose();
+        this.resetCommandOutputMarker();
+        this.resetCommandMarker();
+        if (!this._commandHistoryState) {
+            return;
+        }
+        this.toDisposeOnCommandHistory.push(
+            this.term.parser.registerOscHandler(133, (oscPayload: string) => {
+                if (!this._commandHistoryState) {
+                    return false;
+                }
+                if (oscPayload === 'prompt_started') {
+                    if (this._commandHistoryState.currentCommand) {
+                        this.finishCurrentCommand();
+                    }
+                    this.promptStartMarker?.dispose();
+                    this.promptStartMarker = this.term.registerMarker(0);
+                    if (this.enableCommandSeparator) {
+                        this.addCommandSeparator();
+                    }
+                } else if (oscPayload.startsWith('command_started')) {
+                    const command = oscPayload.split(';')[1];
+                    if (!command) {
+                        return false;
+                    }
+                    this.startNewCommand(command);
+                }
+                return true;
+            })
+        );
+    }
+
+    protected resetCommandOutputMarker(): void {
+        this.outputStartMarker?.dispose();
+        this.outputStartMarker = undefined;
+    }
+
+    protected resetCommandMarker(): void {
+        this.promptStartMarker?.dispose();
+        this.promptStartMarker = undefined;
+    }
+
+    protected startNewCommand(hexEncodedCommand: string): void {
+        if (!this._commandHistoryState) {
+            return;
+        }
+        this.outputStartMarker?.dispose();
+        this.outputStartMarker = this.term.registerMarker(0);
+        this._commandHistoryState.startCommand(hexEncodedCommand);
+    }
+
+    protected finishCurrentCommand(): void {
+        if (!this._commandHistoryState) {
+            return;
+        }
+        const startMarker = this.outputStartMarker;
+        const endMarker = this.term.registerMarker(0);
+        const startLine = startMarker?.line ?? -1;
+        const endLine = endMarker?.line ?? -1;
+        endMarker.dispose();
+
+        let output = '';
+        if (startLine >= 0 && endLine >= 0) {
+            output = this._buffer.getLines(startLine, endLine - startLine, true).join('\n');
+        }
+
+        const block: TerminalBlock = {
+            command: this._commandHistoryState.currentCommand,
+            output,
+        };
+
+        this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
+        this._commandHistoryState.finishCommand(block);
+        this.outputStartMarker = undefined;
+        this.promptStartMarker = undefined;
+    }
+
+    private addCommandSeparator(): void {
+        const marker = this.term.registerMarker(0);
+        if (!marker) {
+            return;
+        }
+
+        const deco = this.term.registerDecoration({ marker });
+        if (!deco) {
+            marker.dispose();
+            return;
+        }
+
+        const renderListener = deco.onRender(e => {
+            e.classList.add('terminal-command-separator');
+        });
+
+        this.commandSeparatorDecorations.push(marker);
+        this.commandSeparatorDecorations.push(deco);
+        this.commandSeparatorDecorations.push(renderListener);
     }
 
     protected setIconClass(): void {
@@ -532,6 +732,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.selectAll();
     }
 
+    getSelection(): string {
+        return this.term.getSelection();
+    }
+
+    hasSelection(): boolean {
+        return this.term.hasSelection();
+    }
+
     async hasChildProcesses(): Promise<boolean> {
         return this.shellTerminalServer.hasChildProcesses(await this.processId);
     }
@@ -541,7 +749,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.transient || this.options.isPseudoTerminal) {
             return {};
         }
-        return { terminalId: this.terminalId, titleLabel: this.title.label };
+        return { terminalId: this.terminalId, titleLabel: this.title.label, hasUserTitle: this.hasUserTitle, shellName: this._shellName };
     }
 
     restoreState(oldState: object): void {
@@ -551,10 +759,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         if (this.restored === false) {
-            const state = oldState as { terminalId: number, titleLabel: string };
+            const state = oldState as { terminalId: number, titleLabel: string, hasUserTitle?: boolean, shellName?: string };
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
+            this.hasUserTitle = state.hasUserTitle ?? false;
+            this._shellName = state.shellName;
             this.start(state.terminalId);
         }
     }
@@ -607,13 +817,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             isPseudo: this.options.isPseudoTerminal,
             rootURI,
             cols,
-            rows
+            rows,
+            enableShellIntegration: this.preferences['terminal.integrated.enableCommandHistory'] ?? false,
         });
         if (IBaseTerminalServer.validateId(terminalId)) {
             const processInfo = await this.shellTerminalServer.getProcessInfo(terminalId);
             const shellType = guessShellTypeFromExecutable(processInfo.executable);
             if (shellType) {
+                this._shellName = shellType;
                 this.onShellTypeChangedEmiter.fire(shellType);
+                if (!this.hasUserTitle && this.options.useServerTitle) {
+                    this.title.label = shellType;
+                    this.title.caption = shellType;
+                }
             }
             return terminalId;
         }
@@ -780,7 +996,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
-            this.onOutputEmitter.fire(data);
+            this._currentTerminalOutput.push(data);
         } else {
             this.initialData += data;
         }
@@ -800,6 +1016,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
+        this.resetCommandOutputMarker();
+        if (this._commandHistoryState) {
+            this._commandHistoryState.clearCommandCollectionState();
+        }
     }
 
     scrollLineUp(): void {
@@ -832,7 +1052,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     writeLine(text: string): void {
         this.term.writeln(text);
-        this.onOutputEmitter.fire(text + '\n');
+        this._currentTerminalOutput.push(text + '\n');
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
@@ -856,6 +1076,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.styleElement?.remove();
         this.webglAddon?.dispose();
+        this._commandHistoryState?.dispose();
         super.dispose();
     }
 
@@ -934,6 +1155,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     setTitle(title: string): void {
+        this.hasUserTitle = true;
         this.title.caption = title;
         this.title.label = title;
     }
@@ -1009,4 +1231,5 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         return this.enhancedPreviewNode;
     }
+
 }

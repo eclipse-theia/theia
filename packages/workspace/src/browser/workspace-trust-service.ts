@@ -51,6 +51,14 @@ export interface WorkspaceRestrictionContribution {
      * Called when building the restricted mode status bar tooltip.
      */
     getRestrictions(): WorkspaceRestriction[];
+
+    /**
+     * Returns whether a window reload is required when workspace trust changes to `newTrust`.
+     * Called before reloading on trust change to avoid unnecessary reloads when no
+     * trust-restricted items are actually affected.
+     * If not implemented, the contribution is assumed not to require a reload.
+     */
+    requiresReloadOnTrustChange?(newTrust: boolean): boolean;
 }
 
 export interface WorkspaceRestriction {
@@ -101,6 +109,13 @@ export class WorkspaceTrustService {
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
     protected pendingTrustDialog: Deferred<boolean> | undefined;
+    protected pendingTrustRequest: Deferred<boolean | undefined> | undefined;
+    /**
+     * Effective value of `security.workspace.trust.enabled` at the time trust was last resolved.
+     * Used to distinguish a real user change from the initial-load preference change event
+     * that the User provider emits asynchronously after start-up.
+     */
+    protected lastKnownTrustEnabled: boolean | undefined;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
@@ -151,6 +166,7 @@ export class WorkspaceTrustService {
 
     protected async resolveWorkspaceTrust(givenTrust?: boolean): Promise<void> {
         if (!this.isWorkspaceTrustResolved()) {
+            this.lastKnownTrustEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
             const trust = givenTrust ?? await this.calculateWorkspaceTrust();
             if (trust !== undefined) {
                 await this.storeWorkspaceTrust(trust);
@@ -165,16 +181,28 @@ export class WorkspaceTrustService {
         }
     }
 
-    setWorkspaceTrust(trusted: boolean): void {
+    async setWorkspaceTrust(trusted: boolean, reload = true): Promise<void> {
         if (this.currentTrust === trusted) {
             return;
         }
+        const needsReload = reload && this.shouldReloadForTrustChange(trusted);
+        if (needsReload && !await this.confirmRestart()) {
+            return;
+        }
+        // Must be set before add/removeFromTrustedFolders to prevent handlePreferenceChange from recursing.
         this.currentTrust = trusted;
         this.contextKeyService.setContext('isWorkspaceTrusted', trusted);
-        if (this.workspaceTrustPref[WORKSPACE_TRUST_STARTUP_PROMPT] === WorkspaceTrustPrompt.ONCE) {
-            this.storeWorkspaceTrust(trusted);
-        }
         this.onDidChangeWorkspaceTrustEmitter.fire(trusted);
+        await this.storeWorkspaceTrust(trusted);
+        await (trusted ? this.addToTrustedFolders() : this.removeFromTrustedFolders());
+        if (needsReload) {
+            this.windowService.reload();
+        }
+    }
+
+    protected shouldReloadForTrustChange(newTrust: boolean): boolean {
+        return this.restrictionContributions.getContributions()
+            .some(c => c.requiresReloadOnTrustChange?.(newTrust) ?? false);
     }
 
     protected isWorkspaceTrustResolved(): boolean {
@@ -378,13 +406,19 @@ export class WorkspaceTrustService {
     protected async handlePreferenceChange(change: PreferenceChange): Promise<void> {
         // Handle trustedFolders changes regardless of scope
         if (change.preferenceName === WORKSPACE_TRUST_TRUSTED_FOLDERS) {
+            // When trust is disabled, trust is unconditionally granted: trustedFolders
+            // changes must not flip `currentTrust` (which would trigger a restart dialog
+            // via `setWorkspaceTrust` → `shouldReloadForTrustChange`).
+            if (!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED]) {
+                return;
+            }
             // For empty windows with emptyWindow setting enabled, trust should remain true
             if (await this.isEmptyWorkspace() && this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW]) {
                 return;
             }
             const areAllUrisTrusted = await this.areAllWorkspaceUrisTrusted();
             if (areAllUrisTrusted !== this.currentTrust) {
-                this.setWorkspaceTrust(areAllUrisTrusted);
+                await this.setWorkspaceTrust(areAllUrisTrusted);
             }
             return;
         }
@@ -395,9 +429,16 @@ export class WorkspaceTrustService {
             }
 
             if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
-                if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-                    this.windowService.setSafeToShutDown();
-                    this.windowService.reload();
+                const currentEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
+                // The preference framework emits a User-scope change event when the user
+                // settings file is first loaded (oldValue undefined → current value). Only
+                // prompt for restart when the effective value has actually changed since
+                // trust was last resolved.
+                if (currentEnabled !== this.lastKnownTrustEnabled) {
+                    this.lastKnownTrustEnabled = currentEnabled;
+                    if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
+                        this.windowService.reload();
+                    }
                 }
                 this.resolveWorkspaceTrust();
             }
@@ -407,7 +448,9 @@ export class WorkspaceTrustService {
                 // For empty windows, directly update trust based on the new setting value
                 const shouldTrust = !!this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW];
                 if (this.currentTrust !== shouldTrust) {
-                    this.setWorkspaceTrust(shouldTrust);
+                    // No reload needed: in an empty window there are no workspace folders,
+                    // so no extensions are blocked by trust and no extension host restart is required.
+                    await this.setWorkspaceTrust(shouldTrust, false);
                 }
             }
         }
@@ -457,15 +500,23 @@ export class WorkspaceTrustService {
     }
 
     protected createRestrictedModeTooltip(): MarkdownString {
-        const md = new MarkdownStringImpl('', { supportThemeIcons: true });
+        const manageTrustLink = `[${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.label}](command:${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id})`;
+        const docsLink = `[${nls.localize('theia/workspace/trustLearnMore', "Learn more about Theia's Workspace Trust")}](https://theia-ide.org/docs/workspace_trust/)`;
+
+        const md = new MarkdownStringImpl('', {
+            supportThemeIcons: true,
+            isTrusted: { enabledCommands: [WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id] }
+        });
 
         md.appendMarkdown(`**${nls.localizeByDefault('Restricted Mode')}**\n\n`);
 
         md.appendMarkdown(nls.localize('theia/workspace/restrictedModeDescription',
             'Some features are disabled because this workspace is not trusted.'));
         md.appendMarkdown('\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeNote',
-            '*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*'));
+        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeFeatures',
+            'Features like task execution, debugging, extensions, and AI are disabled to protect against potentially harmful code.'));
+        md.appendMarkdown('\n\n');
+        md.appendMarkdown(manageTrustLink);
 
         const restrictions = this.collectRestrictions();
         if (restrictions.length > 0) {
@@ -482,7 +533,7 @@ export class WorkspaceTrustService {
         }
 
         md.appendMarkdown('\n\n---\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/clickToManageTrust', 'Click to manage trust settings.'));
+        md.appendMarkdown(docsLink);
 
         return md;
     }
@@ -509,11 +560,41 @@ export class WorkspaceTrustService {
         }
     }
 
+    /**
+     * Request workspace trust from the user. This method follows VS Code's pattern:
+     * - If already trusted, returns true immediately
+     * - If there's already a pending trust request, returns the same promise (avoiding duplicate dialogs)
+     * - Otherwise, shows a dialog and waits for the user's response
+     *
+     * Unlike the initial trust resolution, this can be called multiple times and will
+     * prompt the user each time (unless a dialog is already open).
+     */
     async requestWorkspaceTrust(): Promise<boolean | undefined> {
-        if (!this.isWorkspaceTrustResolved()) {
-            const trusted = await this.showTrustPromptDialog();
-            await this.resolveWorkspaceTrust(trusted);
+        // If already trusted, return true immediately
+        if (this.currentTrust === true) {
+            return true;
         }
-        return this.workspaceTrust.promise;
+
+        // If there's already a pending request, return the same promise to avoid duplicate dialogs
+        if (this.pendingTrustRequest) {
+            return this.pendingTrustRequest.promise;
+        }
+
+        // Create a new pending request
+        this.pendingTrustRequest = new Deferred<boolean | undefined>();
+
+        try {
+            const grantedTrust = await this.showTrustPromptDialog();
+            if (grantedTrust) {
+                await this.setWorkspaceTrust(true);
+            }
+            this.pendingTrustRequest.resolve(grantedTrust);
+            return grantedTrust;
+        } catch (e) {
+            this.pendingTrustRequest.resolve(undefined);
+            throw e;
+        } finally {
+            this.pendingTrustRequest = undefined;
+        }
     }
 }

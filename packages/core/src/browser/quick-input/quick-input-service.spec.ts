@@ -23,11 +23,14 @@ describe('quick-input-service', () => {
 
     describe('#findMatches', () => {
 
-        it('should return the proper highlights when matches are found', () => {
+        it('should return a single contiguous range for substring matches', () => {
             expect(findMatches('abc', 'a')).deep.equal([{ start: 0, end: 1 }]);
-            expect(findMatches('abc', 'ab')).deep.equal([{ start: 0, end: 1 }, { start: 1, end: 2 }]);
+            expect(findMatches('abc', 'ab')).deep.equal([{ start: 0, end: 2 }]);
+            expect(findMatches('abc', 'abc')).deep.equal([{ start: 0, end: 3 }]);
+        });
+
+        it('should return per-character ranges for fuzzy-only matches', () => {
             expect(findMatches('abc', 'ac')).deep.equal([{ start: 0, end: 1 }, { start: 2, end: 3 }]);
-            expect(findMatches('abc', 'abc')).deep.equal([{ start: 0, end: 1 }, { start: 1, end: 2 }, { start: 2, end: 3 }]);
         });
 
         it('should fail when out of order', () => {
@@ -67,9 +70,7 @@ describe('quick-input-service', () => {
                 label: 'abc',
                 highlights: {
                     label: [
-                        { start: 0, end: 1 },
-                        { start: 1, end: 2 },
-                        { start: 2, end: 3 }
+                        { start: 0, end: 3 }
                     ]
                 }
             };
@@ -152,9 +153,7 @@ describe('quick-input-service', () => {
                 label: 'abc',
                 highlights: {
                     label: [
-                        { start: 0, end: 1 },
-                        { start: 1, end: 2 },
-                        { start: 2, end: 3 }
+                        { start: 0, end: 3 }
                     ]
                 }
             };
@@ -169,6 +168,56 @@ describe('quick-input-service', () => {
 
         it('should return an empty list when no matches are found', () => {
             expect(filterItems(items, 'yyy')).deep.equal([]);
+        });
+
+        it('should rank substring matches before fuzzy-only matches', () => {
+            const testItems: QuickPickItem[] = [
+                { label: 'reformatting' },
+                { label: 'fontSize' },
+                { label: 'fontFamily' },
+            ];
+            const result = filterItems(testItems, 'font').filter(QuickPickItem.is);
+            expect(result).length(2);
+            expect(result[0].label).equal('fontSize');
+            expect(result[1].label).equal('fontFamily');
+        });
+
+        it('should rank prefix matches before other substring matches', () => {
+            const testItems: QuickPickItem[] = [
+                { label: 'setFont' },
+                { label: 'fontSize' },
+                { label: 'fontFamily' },
+            ];
+            const result = filterItems(testItems, 'font').filter(QuickPickItem.is);
+            expect(result).length(3);
+            expect(result[0].label).equal('fontSize');
+            expect(result[1].label).equal('fontFamily');
+            expect(result[2].label).equal('setFont');
+        });
+
+        it('should treat segmented prefix matches as prefix matches', () => {
+            const testItems: QuickPickItem[] = [
+                { label: 'backend-workspace-service.ts' },
+                { label: 'workspace-backend-service.ts' },
+            ];
+            const result = filterItems(testItems, 'works-ser').filter(QuickPickItem.is);
+            expect(result).length(2);
+            expect(result[0].label).equal('workspace-backend-service.ts');
+            expect(result[1].label).equal('backend-workspace-service.ts');
+        });
+
+        it('should drop separators when their group has no matches', () => {
+            const testItems = [
+                { type: 'separator' as const, label: 'Group A' },
+                { label: 'fontSize' },
+                { type: 'separator' as const, label: 'Group B' },
+                { label: 'xyz' },
+            ];
+            const result = filterItems(testItems, 'font');
+            // Group B's only item "xyz" doesn't match, so Group B separator is dropped
+            expect(result).length(2);
+            expect(result[0]).to.have.property('type', 'separator');
+            expect(result[1]).to.have.property('label', 'fontSize');
         });
 
     });

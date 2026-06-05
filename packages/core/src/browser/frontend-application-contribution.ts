@@ -28,7 +28,7 @@ export interface FrontendApplicationContribution {
     /**
      * Called on application startup before configure is called.
      */
-    initialize?(): void;
+    initialize?(): MaybePromise<void>;
 
     /**
      * Called before commands, key bindings and menus are initialized.
@@ -103,7 +103,7 @@ export namespace OnWillStopAction {
 @injectable()
 export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
 
-    initialize(): void {
+    initialize(): MaybePromise<void> {
         // NOOP
     }
 

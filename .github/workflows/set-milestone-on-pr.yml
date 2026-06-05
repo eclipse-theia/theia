@@ -19,42 +19,64 @@ on:
     branches: [master]
     types: [closed]
 
+permissions:
+  issues: write
+  pull-requests: write
+
 jobs:
   set-milestone:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - id: compute-milestone
-        run: |
-          export THEIA_CORE_VERSION=$(node -p "require(\"./packages/core/package.json\").version")
-          echo "MILESTONE_NUMBER=$(npx -q semver@7 --increment minor $THEIA_CORE_VERSION)" >> $GITHUB_ENV
-      - id: set
-        uses: actions/github-script@ffc2c79a5b2490bd33e0a41c1de74b877714d736 # v3.2.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          result-encoding: string
           script: |
-            // get milestone
-            const milestone = process.env.MILESTONE_NUMBER
-            console.log(`Using milestone with name ${milestone}`)
-            // check if milestone exists ?
-            const issuesGetMilestonesParams = context.repo
+            const { data: file } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: 'packages/core/package.json',
+              ref: context.payload.pull_request.merge_commit_sha,
+            });
+            const pkg = JSON.parse(Buffer.from(file.content, 'base64').toString('utf8'));
 
-            // search if milestone is already defined
-            const response = await github.issues.listMilestones(issuesGetMilestonesParams)
-            let githubMilestone = response.data.find(milestoneResponse => milestoneResponse.title === milestone)
+            // No checkout = no project-local .npmrc, so npx resolves against the
+            // real registry. Same trust boundary as the publish workflow.
+            const { execFileSync } = require('child_process');
+            return execFileSync(
+              'npx', ['-q', 'semver@7.7.2', '--increment', 'minor', pkg.version],
+              { encoding: 'utf8' }
+            ).trim();
 
-            // not defined, create it
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const milestone = ${{ toJSON(steps.compute-milestone.outputs.result) }};
+            console.log(`Using milestone with name ${milestone}`);
+
+            const milestones = await github.paginate(github.rest.issues.listMilestones, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            let githubMilestone = milestones.find(ms => ms.title === milestone);
             if (!githubMilestone) {
-              const issuesCreateMilestoneParams = { owner: context.repo.owner, repo:context.repo.repo, title: milestone }
-              const createMilestoneResponse = await github.issues.createMilestone(issuesCreateMilestoneParams)
-              githubMilestone = createMilestoneResponse.data
+              const { data: created } = await github.rest.issues.createMilestone({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: milestone,
+              });
+              githubMilestone = created;
             }
-
-            // Grab the milestone number
-            const milestoneNumber = githubMilestone.number
-
-            // sets the milestone from the number
-            const issuesUpdateParams = { owner: context.repo.owner, repo: context.repo.repo, milestone: milestoneNumber, issue_number: context.issue.number }
-            await github.issues.update(issuesUpdateParams)
+            await github.graphql(`
+              mutation($pullRequestId: ID!, $milestoneId: ID!) {
+                updatePullRequest(input: { pullRequestId: $pullRequestId, milestoneId: $milestoneId }) {
+                  pullRequest { number }
+                }
+              }
+            `, {
+              pullRequestId: context.payload.pull_request.node_id,
+              milestoneId: githubMilestone.node_id,
+            });

@@ -399,11 +399,14 @@ export class KeybindingRegistry {
      * Get a user visible representation of a key code (a key with modifiers).
      * @returns a string representing the {@link KeyCode}
      * @param keyCode the keycode
-     * @param separator the separator used to separate keys (key and modifiers) in the returning string
+     * @param separator the separator used to separate keys (key and modifiers) in the returning string.
+     * Ignored when rendering macOS symbols (i.e. on macOS with `asciiOnly=false`), as the convention is
+     * to juxtapose modifier symbols without a separator (e.g. `⌃⌘V`).
      * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
      */
     acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false): string {
-        return this.componentsForKeyCode(keyCode, asciiOnly).join(separator);
+        const useSymbols = isOSX && !asciiOnly;
+        return this.componentsForKeyCode(keyCode, asciiOnly).join(useSymbols ? '' : separator);
     }
 
     componentsForKeyCode(keyCode: KeyCode, asciiOnly = false): string[] {

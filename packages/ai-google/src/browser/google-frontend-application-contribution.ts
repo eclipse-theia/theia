@@ -64,9 +64,6 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
         });
     }
 
-    /**
-     * Called when the API key changes. Updates all Google models on the manager to ensure the new key is used.
-     */
     protected handleKeyChange(newApiKey: string | undefined): void {
         if (this.prevModels && this.prevModels.length > 0) {
             this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createGeminiModelDescription(modelId)));
@@ -85,16 +82,14 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
         this.prevModels = newModels;
     }
 
+    /** Reasoning capabilities are resolved by the backend from the Gemini /v1beta/models response. */
     protected createGeminiModelDescription(modelId: string): GoogleModelDescription {
         const id = `${GOOGLE_PROVIDER_ID}/${modelId}`;
-
-        const description: GoogleModelDescription = {
+        return {
             id: id,
             model: modelId,
             apiKey: true,
             enableStreaming: true
         };
-
-        return description;
     }
 }

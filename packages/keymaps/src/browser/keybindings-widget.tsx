@@ -21,6 +21,7 @@ import { injectable, inject, postConstruct, unmanaged } from '@theia/core/shared
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
+import { findSubstringIndex, matchRank } from '@theia/core/lib/common/fuzzy-match-utils';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
     KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
@@ -255,6 +256,19 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             }
             item.visible = matched;
         });
+        if (query) {
+            this.items.sort((a, b) => {
+                if (a.visible !== b.visible) { return a.visible ? -1 : 1; }
+                if (a.visible && b.visible) {
+                    const aRank = matchRank(a.labels.command.value, query);
+                    const bRank = matchRank(b.labels.command.value, query);
+                    if (aRank !== bRank) { return aRank - bRank; }
+                }
+                return 0;
+            });
+        } else {
+            this.sortKeybindings(this.items);
+        }
         this.update();
     }
 
@@ -310,6 +324,19 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected toRenderableLabel(label: string, query: string = this.query): RenderableLabel {
         if (label && query) {
+            // Prefer a contiguous substring highlight over scattered fuzzy character highlights.
+            const substringIndex = findSubstringIndex(label, query);
+            if (substringIndex !== -1) {
+                const segments: RenderableStringSegment[] = [];
+                if (substringIndex > 0) {
+                    segments.push({ value: label.substring(0, substringIndex), match: false });
+                }
+                segments.push({ value: label.substring(substringIndex, substringIndex + query.length), match: true });
+                if (substringIndex + query.length < label.length) {
+                    segments.push({ value: label.substring(substringIndex + query.length), match: false });
+                }
+                return { value: label, segments };
+            }
             const fuzzyMatch = fuzzy.match(query, label, this.fuzzyOptions);
             if (fuzzyMatch) {
                 return {

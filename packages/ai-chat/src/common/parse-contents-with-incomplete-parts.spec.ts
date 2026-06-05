@@ -27,13 +27,13 @@ const TestCodeContentMatcher: ResponseContentMatcher = {
     end: /^```$/m,
     contentFactory: (content: string) => {
         const language = content.match(/^```(\w+)/)?.[1] || '';
-        const code = content.replace(/^```(\w+)\n|```$/g, '');
+        const code = content.replace(/^```(\w+)?\n|```$/g, '');
         return new CodeChatResponseContentImpl(code.trim(), language);
     },
     incompleteContentFactory: (content: string) => {
         const language = content.match(/^```(\w+)/)?.[1] || '';
         // Remove only the start delimiter, since we don't have an end delimiter yet
-        const code = content.replace(/^```(\w+)\n?/g, '');
+        const code = content.replace(/^```(\w+)?\n?/g, '');
         return new CodeChatResponseContentImpl(code.trim(), language);
     }
 };
@@ -92,6 +92,17 @@ describe('parseContents with incomplete parts', () => {
         expect(result.length).to.equal(1);
         expect(result[0]).to.be.instanceOf(MarkdownChatResponseContentImpl);
         expect((result[0] as MarkdownChatResponseContentImpl).content.value).to.equal('<test>\ntest content');
+    });
+
+    it('should handle incomplete code blocks without language identifier', () => {
+        const text = '```\nsome code';
+        const result = parseContents(text, fakeRequest, [TestCodeContentMatcher]);
+
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.be.instanceOf(CodeChatResponseContentImpl);
+        const codeContent = result[0] as CodeChatResponseContentImpl;
+        expect(codeContent.code).to.equal('some code');
+        expect(codeContent.language).to.equal('');
     });
 
     it('should prefer complete matches over incomplete ones', () => {

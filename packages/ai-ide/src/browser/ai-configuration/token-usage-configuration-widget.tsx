@@ -44,7 +44,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
 
         this.toDispose.push(
             this.tokenUsageService.onTokenUsageUpdated(data => {
-                this.items = data;
+                this.items = data.sort((a, b) => a.modelId.localeCompare(b.modelId));
                 this.update();
             })
         );
@@ -52,7 +52,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
 
     protected async loadItems(): Promise<void> {
         try {
-            this.items = await this.tokenUsageService.getTokenUsageData();
+            this.items = (await this.tokenUsageService.getTokenUsageData()).sort((a, b) => a.modelId.localeCompare(b.modelId));
         } catch (error) {
             this.messageService.error(nls.localize('theia/ai/tokenUsage/failedToGetTokenUsageData', 'Failed to fetch token usage data: {0}', error));
         }
@@ -85,7 +85,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
         const columns: TableColumn<ModelTokenUsageData>[] = [
             {
                 id: 'model',
-                label: nls.localize('theia/ai/tokenUsage/model', 'Model'),
+                label: nls.localizeByDefault('Model'),
                 className: 'token-usage-model-column',
                 renderCell: item => <span>{item.modelId}</span>
             },
@@ -137,7 +137,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
             },
             {
                 id: 'total-tokens',
-                label: nls.localize('theia/ai/tokenUsage/totalTokens', 'Total Tokens'),
+                label: nls.localizeByDefault('Total Tokens'),
                 className: 'token-usage-column',
                 renderCell: item => {
                     const totalTokens = item.inputTokens + item.outputTokens + (item.cachedInputTokens ?? 0);

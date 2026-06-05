@@ -109,8 +109,8 @@ Do not ask further questions once the text contains 5 or more "Question/Answer" 
  */
 @injectable()
 export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
-    id = 'AskAndContinue';
-    name = 'AskAndContinue';
+    id = 'AskAndContinueSample';
+    name = 'AskAndContinueSample';
     override description = 'This chat will ask questions related to the input and continues after that.';
     protected defaultLanguageModelPurpose = 'chat';
     override languageModelRequirements = [
@@ -121,6 +121,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
     ];
     override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];
     protected override systemPromptId: string | undefined = systemPrompt.id;
+    override iconClass: string = 'codicon codicon-comment-discussion';
 
     @postConstruct()
     addContentMatchers(): void {
@@ -131,9 +132,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
 
-                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
-                    this.handleAnswer(selectedOption, request);
-                });
+                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => this.handleAnswer(selectedOption, request));
             },
             incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
                 // Display a progress indicator while the question is being parsed

@@ -21,8 +21,17 @@ export const AIActivationService = Symbol('AIActivationService');
  * AIActivationService is used to manage the activation state of AI features in Theia.
  */
 export interface AIActivationService {
+    /** Whether AI features are enabled in preferences. */
     isActive: boolean;
+
+    /** Listen whether AI features are enabled in preferences. */
     onDidChangeActiveStatus: Event<boolean>;
+
+    /** Whether AI features should actually be able to run (isActive + other conditions, e.g. workspace trust). */
+    canRun: boolean;
+
+    /** Listen whether AI features should actually be able to run (isActive + other conditions, e.g. workspace trust). */
+    onDidChangeCanRun: Event<boolean>;
 }
 import { Emitter, Event } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -48,9 +57,16 @@ export class AIActivationServiceImpl implements AIActivationService, FrontendApp
 
     isActive: boolean = true;
 
+    canRun: boolean = true;
+
     protected onDidChangeAIEnabled = new Emitter<boolean>();
     get onDidChangeActiveStatus(): Event<boolean> {
         return this.onDidChangeAIEnabled.event;
+    }
+
+    protected onDidChangeCanRunEmitter = new Emitter<boolean>();
+    get onDidChangeCanRun(): Event<boolean> {
+        return this.onDidChangeCanRunEmitter.event;
     }
 
     initialize(): void {

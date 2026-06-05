@@ -14,16 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import {
+    DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider,
+    RunningContainerInfo, WorkspaceCandidate
+} from '../electron-common/remote-container-connection-provider';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
+import { Command, ILogger, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContainerOutputProvider } from './container-output-provider';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
+import { LocalStorageService } from '@theia/core/lib/browser';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
+import { DevContainerPreferences } from '../electron-common/dev-container-preferences';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
@@ -31,9 +37,28 @@ export namespace RemoteContainerCommands {
         label: 'Reopen in Container',
         category: 'Dev Container'
     }, 'theia/remote/dev-container/connect');
+    export const ATTACH_TO_CONTAINER = Command.toLocalizedCommand({
+        id: 'dev-container:attach-to-container',
+        label: 'Attach to Running Container',
+        category: 'Dev Container'
+    }, 'theia/remote/dev-container/attach');
+
+    export const REBUILD_CONTAINER = Command.toLocalizedCommand({
+        id: 'dev-container:rebuild-container',
+        label: 'Rebuild Container',
+        category: 'Dev Container'
+    }, 'theia/remote/dev-container/rebuild');
 }
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
+const ACTIVE_DEV_CONTAINER_CONTEXT = 'activeDevContainerContext';
+
+interface DevContainerContext {
+    devcontainerFilePath: string;
+    devcontainerFileName: string;
+    hostWorkspacePath: string;
+    containerId: string;
+}
 @injectable()
 export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution implements WorkspaceOpenHandlerContribution {
 
@@ -49,6 +74,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(WorkspaceStorageService)
     protected readonly workspaceStorageService: WorkspaceStorageService;
 
+    @inject(LocalStorageService)
+    protected readonly storageService: LocalStorageService;
+
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
@@ -61,28 +89,91 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(ContainerOutputProvider)
     protected readonly containerOutputProvider: ContainerOutputProvider;
 
+    @inject(DevContainerPreferences)
+    protected readonly devContainerPreferences: DevContainerPreferences;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    protected hasDevContainerFiles = false;
+
+    @postConstruct()
+    protected init(): void {
+        // Mark that we're in a remote session. sessionStorage survives page
+        // reloads (disconnect) but is cleared on window close (restart).
+        // This lets canHandle() distinguish disconnect from restart.
+        if (this.isRemoteSession()) {
+            sessionStorage.setItem('devcontainer:wasRemote', 'true');
+        }
+        this.workspaceService.ready.then(() => this.checkForDevContainerFiles());
+        this.workspaceService.onWorkspaceChanged(() => this.checkForDevContainerFiles());
+    }
+
+    protected async checkForDevContainerFiles(): Promise<void> {
+        if (this.isRemoteSession()) {
+            this.hasDevContainerFiles = true;
+            return;
+        }
+        const workspace = this.workspaceService.workspace;
+        if (!workspace) {
+            this.hasDevContainerFiles = false;
+            return;
+        }
+        try {
+            const files = await this.connectionProvider.getDevContainerFiles(workspace.resource.path.toString());
+            this.hasDevContainerFiles = files.length > 0;
+        } catch (error) {
+            // Failed to check for devcontainer files, assume none exist
+            this.hasDevContainerFiles = false;
+        }
+    }
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
-            execute: () => this.openInContainer()
+            execute: () => this.openInContainer(),
+            isVisible: () => !this.isRemoteSession() && this.hasDevContainerFiles
+        });
+        registry.registerCommand(RemoteContainerCommands.REBUILD_CONTAINER, {
+            execute: () => this.rebuildContainer(),
+            isVisible: () => this.isRemoteSession()
+        });
+        registry.registerCommand(RemoteContainerCommands.ATTACH_TO_CONTAINER, {
+            execute: () => this.attachToRunningContainer()
         });
     }
 
+    protected isRemoteSession(): boolean {
+        return new URLSearchParams(window.location.search).has('localPort');
+    }
+
     canHandle(uri: URI): MaybePromise<boolean> {
-        return uri.scheme === DEV_CONTAINER_WORKSPACE_SCHEME;
+        if (uri.scheme !== DEV_CONTAINER_WORKSPACE_SCHEME) {
+            return false;
+        }
+        // After disconnect (reload), sessionStorage still has the flag from
+        // the remote session's init. Skip auto-reopen so the user gets their
+        // local workspace. After restart (close+open), sessionStorage is
+        // cleared, so auto-reopen works.
+        const wasRemote = sessionStorage.getItem('devcontainer:wasRemote');
+        if (wasRemote) {
+            sessionStorage.removeItem('devcontainer:wasRemote');
+            return false;
+        }
+        return true;
     }
 
     async openWorkspace(uri: URI, options?: WorkspaceInput | undefined): Promise<void> {
         const filePath = new URLSearchParams(uri.query).get(DEV_CONTAINER_PATH_QUERY);
 
         if (!filePath) {
-            throw new Error('No devcontainer file specified for workspace');
+            throw new Error(nls.localize('theia/dev-container/noDevcontainerFileSpecified', 'No devcontainer file specified for workspace'));
         }
 
         const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(uri.path.toString());
         const devcontainerFile = devcontainerFiles.find(file => file.path === filePath);
 
         if (!devcontainerFile) {
-            throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
+            throw new Error(nls.localize('theia/dev-container/devcontainerFileNotFound', 'Devcontainer file at {0} not found in workspace', filePath));
         }
 
         return this.doOpenInContainer(devcontainerFile, uri.path.toString());
@@ -106,28 +197,224 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         this.doOpenInContainer(devcontainerFile);
     }
 
+    async rebuildContainer(): Promise<void> {
+        this.containerOutputProvider.openChannel();
+        const progress = await this.messageService.showProgress({
+            text: nls.localize('theia/remote/dev-container/rebuilding', 'Rebuilding dev container')
+        });
+
+        try {
+            // When inside a remote container, read the stored context instead of
+            // scanning the filesystem (the RPC goes to the local backend which
+            // doesn't have the container's workspace path).
+            const ctx = await this.storageService.getData<DevContainerContext | undefined>(ACTIVE_DEV_CONTAINER_CONTEXT);
+            if (ctx) {
+                progress.report({ message: nls.localize('theia/dev-container/removingOldContainer', 'Removing old container...') });
+                try {
+                    await this.connectionProvider.removeContainer(ctx.containerId);
+                } catch (error) {
+                    this.logger.debug('Container removal failed (may already be gone):', error);
+                }
+                const lastContainerKey = `${LAST_USED_CONTAINER}:${ctx.devcontainerFilePath}`;
+                await this.storageService.setData(lastContainerKey, undefined);
+                progress.cancel();
+                this.doOpenInContainer(
+                    { path: ctx.devcontainerFilePath, name: ctx.devcontainerFileName },
+                    ctx.hostWorkspacePath
+                );
+                return;
+            }
+
+            // Fallback: local workspace — scan for devcontainer files
+            const devcontainerFile = await this.getOrSelectDevcontainerFile();
+            if (!devcontainerFile) {
+                return;
+            }
+            const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
+            const lastContainerInfo = await this.storageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
+            if (lastContainerInfo) {
+                progress.report({ message: nls.localize('theia/dev-container/removingOldContainer', 'Removing old container...') });
+                try {
+                    await this.connectionProvider.removeContainer(lastContainerInfo.id);
+                } catch (error) {
+                    this.logger.debug('Container removal failed (may already be gone):', error);
+                }
+                await this.storageService.setData(lastContainerInfoKey, undefined);
+            }
+            progress.cancel();
+            this.doOpenInContainer(devcontainerFile);
+        } catch (e) {
+            progress.cancel();
+            this.messageService.error(nls.localize('theia/dev-container/failedToRebuild', 'Failed to rebuild container: {0}', (e as Error).message));
+        }
+    }
+
     async doOpenInContainer(devcontainerFile: DevContainerFile, workspacePath?: string): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
-        const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
+        const lastContainerInfo = await this.storageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
         this.containerOutputProvider.openChannel();
+
+        const hostWorkspacePath = workspacePath ?? this.workspaceService.workspace?.resource.path.toString();
 
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
             devcontainerFile: devcontainerFile.path,
-            workspacePath: workspacePath
+            workspacePath: hostWorkspacePath
         });
 
-        this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {
+        await this.storageService.setData<LastContainerInfo>(lastContainerInfoKey, {
             id: connectionResult.containerId,
             lastUsed: Date.now()
         });
 
-        this.workspaceServer.setMostRecentlyUsedWorkspace(
-            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${workspacePath ?? this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
+        // Store full context so rebuild works from inside the container
+        await this.storageService.setData<DevContainerContext>(ACTIVE_DEV_CONTAINER_CONTEXT, {
+            devcontainerFilePath: devcontainerFile.path,
+            devcontainerFileName: devcontainerFile.name,
+            hostWorkspacePath: hostWorkspacePath ?? '',
+            containerId: connectionResult.containerId,
+        });
+
+        await this.workspaceServer.setMostRecentlyUsedWorkspace(
+            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${hostWorkspacePath}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
+    }
+
+    async attachToRunningContainer(): Promise<void> {
+        try {
+            const confirmed = await new ConfirmDialog({
+                title: nls.localize('theia/remote/dev-container/attachWarningTitle', 'Attach to Container'),
+                msg: nls.localize('theia/remote/dev-container/attachWarning',
+                    'Attaching to a container will execute code inside it. Only attach to containers whose origin you trust.'),
+                ok: nls.localizeByDefault('Continue'),
+                cancel: Dialog.CANCEL,
+            }).open();
+            if (!confirmed) {
+                return;
+            }
+
+            const containers = await this.connectionProvider.listRunningContainers();
+            if (containers.length === 0) {
+                this.messageService.info(
+                    nls.localize('theia/remote/dev-container/noRunningContainers', 'No running containers found.')
+                );
+                return;
+            }
+
+            const selectedItem = await this.quickInputService.pick(containers.map(container => ({
+                type: 'item' as const,
+                label: container.name,
+                description: container.image,
+                detail: container.status,
+                container
+            })), {
+                title: nls.localize('theia/remote/dev-container/selectContainer', 'Select a running container to attach to')
+            });
+
+            if (!selectedItem) {
+                return;
+            }
+
+            const selectedContainer: RunningContainerInfo = selectedItem.container;
+
+            const candidates: WorkspaceCandidate[] = await this.connectionProvider.getWorkspaceCandidates(selectedContainer.id);
+
+            const customPathId = '__custom_path__';
+            const pathItem = await this.quickInputService.pick([
+                ...candidates.map(candidate => ({
+                    type: 'item' as const,
+                    label: candidate.path,
+                    description: candidate.source
+                })),
+                {
+                    type: 'item' as const,
+                    id: customPathId,
+                    label: nls.localize('theia/remote/dev-container/enterCustomPath', 'Enter custom path...'),
+                    description: ''
+                }
+            ], {
+                title: nls.localize('theia/remote/dev-container/selectWorkspacePath', 'Select a workspace path inside the container')
+            });
+
+            if (!pathItem) {
+                return;
+            }
+
+            let selectedPath: string | undefined;
+            if ('id' in pathItem && pathItem.id === customPathId) {
+                selectedPath = await this.quickInputService.input({
+                    prompt: nls.localize('theia/remote/dev-container/enterWorkspacePath', 'Enter the workspace path inside the container'),
+                    value: '/'
+                });
+            } else {
+                selectedPath = pathItem.label;
+            }
+
+            if (!selectedPath) {
+                return;
+            }
+
+            let devcontainerFile: string | undefined;
+            const applyConfigPref = this.devContainerPreferences['devcontainer.attach.applyFoundConfig'];
+
+            if (applyConfigPref !== 'never') {
+                const foundConfig = await this.connectionProvider.scanForDevContainerConfig(selectedContainer.id, selectedPath);
+                if (foundConfig) {
+                    if (applyConfigPref === 'always') {
+                        devcontainerFile = foundConfig;
+                    } else {
+                        // 'ask'
+                        const applyConfig = await new ConfirmDialog({
+                            title: nls.localize('theia/remote/dev-container/foundConfigTitle', 'Dev Container Configuration Found'),
+                            msg: nls.localize('theia/remote/dev-container/foundConfigMsg',
+                                'A devcontainer.json was found at {0}. Would you like to apply its post-attach settings (extensions, port forwarding, etc.)?',
+                                foundConfig),
+                            ok: nls.localizeByDefault('Apply'),
+                            cancel: Dialog.CANCEL,
+                        }).open();
+                        if (applyConfig) {
+                            devcontainerFile = foundConfig;
+                        }
+                    }
+                }
+            }
+
+            this.containerOutputProvider.openChannel();
+
+            const progress = await this.messageService.showProgress({
+                text: nls.localize('theia/remote/dev-container/attaching', 'Attaching to container')
+            });
+
+            try {
+                const connectionResult = await this.connectionProvider.attachToContainer({
+                    containerId: selectedContainer.id,
+                    workspacePath: selectedPath,
+                    nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+                    devcontainerFile,
+                });
+
+                // Store context so rebuild works from inside the container
+                await this.storageService.setData<DevContainerContext>(ACTIVE_DEV_CONTAINER_CONTEXT, {
+                    devcontainerFilePath: devcontainerFile ?? '',
+                    devcontainerFileName: devcontainerFile ? URI.fromFilePath(devcontainerFile).path.base : '',
+                    hostWorkspacePath: '',
+                    containerId: connectionResult.containerId,
+                });
+
+                this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
+            } finally {
+                progress.cancel();
+            }
+        } catch (e) {
+            this.messageService.error(nls.localize(
+                'theia/remote/dev-container/attachError',
+                'Failed to attach to container: {0}',
+                e instanceof Error ? e.message : String(e)
+            ));
+        }
     }
 
     async getOrSelectDevcontainerFile(): Promise<DevContainerFile | undefined> {

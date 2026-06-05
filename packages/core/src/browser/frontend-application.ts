@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, MeasurementContext, Stopwatch } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -48,6 +48,8 @@ export class FrontendApplication {
     @inject(BackendStopwatch)
     protected readonly backendStopwatch: BackendStopwatch;
 
+    private settlementContext?: MeasurementContext<FrontendApplicationContribution>;
+
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
@@ -74,6 +76,7 @@ export class FrontendApplication {
      */
     async start(): Promise<void> {
         const startup = this.backendStopwatch.start('frontend');
+        this.settlementContext = new MeasurementContext(this.stopwatch, 'Frontend', TIMER_WARNING_THRESHOLD);
 
         await this.measure('startContributions', () => this.startContributions(), 'Start frontend contributions', false);
         this.stateService.state = 'started_contributions';
@@ -91,8 +94,9 @@ export class FrontendApplication {
         await this.measure('revealShell', () => this.revealShell(host), 'Replace loading indicator with ready workbench UI (animation)', false);
         this.registerEventListeners();
         this.stateService.state = 'ready';
+        this.settlementContext?.armAllSettled();
 
-        startup.then(idToken => this.backendStopwatch.stop(idToken, 'Frontend application start', []));
+        startup.then(idToken => this.backendStopwatch.stop(idToken, 'Frontend application startup sequence completed (async work may still be pending)', []));
     }
 
     /**
@@ -229,9 +233,8 @@ export class FrontendApplication {
     protected async createDefaultLayout(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.initializeLayout) {
-                await this.measure(contribution.constructor.name + '.initializeLayout',
-                    () => contribution.initializeLayout!(this)
-                );
+                await this.measureContribution(contribution, 'initializeLayout',
+                    () => contribution.initializeLayout!(this));
             }
         }
     }
@@ -239,9 +242,8 @@ export class FrontendApplication {
     protected async fireOnDidInitializeLayout(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onDidInitializeLayout) {
-                await this.measure(contribution.constructor.name + '.onDidInitializeLayout',
-                    () => contribution.onDidInitializeLayout!(this)
-                );
+                await this.measureContribution(contribution, 'onDidInitializeLayout',
+                    () => contribution.onDidInitializeLayout!(this));
             }
         }
     }
@@ -253,9 +255,8 @@ export class FrontendApplication {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.initialize) {
                 try {
-                    await this.measure(contribution.constructor.name + '.initialize',
-                        () => contribution.initialize!()
-                    );
+                    await this.measureContribution(contribution, 'initialize',
+                        () => contribution.initialize!());
                 } catch (error) {
                     console.error('Could not initialize contribution', error);
                 }
@@ -265,9 +266,8 @@ export class FrontendApplication {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.configure) {
                 try {
-                    await this.measure(contribution.constructor.name + '.configure',
-                        () => contribution.configure!(this)
-                    );
+                    await this.measureContribution(contribution, 'configure',
+                        () => contribution.configure!(this));
                 } catch (error) {
                     console.error('Could not configure contribution', error);
                 }
@@ -291,9 +291,8 @@ export class FrontendApplication {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {
                 try {
-                    await this.measure(contribution.constructor.name + '.onStart',
-                        () => contribution.onStart!(this)
-                    );
+                    await this.measureContribution(contribution, 'onStart',
+                        () => contribution.onStart!(this));
                 } catch (error) {
                     console.error('Could not start contribution', error);
                 }
@@ -316,6 +315,16 @@ export class FrontendApplication {
             }
         }
         console.info('<<< All frontend contributions have been stopped.');
+    }
+
+    protected async measureContribution<T>(contribution: FrontendApplicationContribution, hook: string, fn: () => MaybePromise<T>): Promise<T> {
+        let innerResult: MaybePromise<T>;
+        this.settlementContext?.ensureEntry(contribution);
+        const result = await this.measure(contribution.constructor.name + '.' + hook,
+            () => (innerResult = fn())
+        );
+        this.settlementContext?.trackSettlement(contribution, innerResult!);
+        return result;
     }
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>, message = `Frontend ${name}`, threshold = true): Promise<T> {

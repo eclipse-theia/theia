@@ -54,8 +54,14 @@ export interface MarkdownRenderOptions extends FormattedTextRenderOptions {
 /** Use this directly if you aren't worried about circular dependencies in the Shell */
 export const MarkdownRenderer = Symbol('MarkdownRenderer');
 export interface MarkdownRenderer {
-    render(markdown: MarkdownString | undefined, options?: MarkdownRenderOptions): MarkdownRenderResult;
+    render(markdown: MarkdownString, options?: MarkdownRenderOptions, outElement?: HTMLElement): MarkdownRenderResult;
 }
+
+/**
+ * Always resolves to the core {@link MarkdownRendererImpl} (markdown-it based),
+ * even when the {@link MarkdownRenderer} symbol has been rebound (e.g. by Monaco).
+ */
+export const CoreMarkdownRenderer = Symbol('CoreMarkdownRenderer');
 
 /** Use this to avoid circular dependencies in the Shell */
 export const MarkdownRendererFactory = Symbol('MarkdownRendererFactory');

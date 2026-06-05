@@ -20,42 +20,47 @@ import {
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectSystemVariants, ARCHITECT_DEFAULT_PROMPT_ID, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID } from '../common/architect-prompt-template';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID, ARCHITECT_PLANNING_NEXT_PROMPT_ID } from './architect-prompt-template';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND, AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
+
+export const ArchitectAgentId = 'Architect';
 
 @injectable()
 export class ArchitectAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
     @inject(TaskContextStorageService) protected readonly taskContextStorageService: TaskContextStorageService;
 
-    name = 'Architect';
-    id = 'Architect';
+    name = ArchitectAgentId;
+    id = ArchitectAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
+    override iconClass: string = 'codicon codicon-map';
 
     override description = nls.localize('theia/ai/workspace/workspaceAgent/description',
-        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-         and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
-         workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
+        'An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files' +
+        ' and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the' +
+        ' workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.',
+        FrontendApplicationConfigProvider.get().applicationName);
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {
-            id: ARCHITECT_DEFAULT_PROMPT_ID,
-            name: nls.localize('theia/ai/ide/architectAgent/mode/default', 'Default Mode')
+            id: ARCHITECT_PLANNING_PROMPT_ID,
+            name: nls.localizeByDefault('Plan Mode')
         },
         {
             id: ARCHITECT_SIMPLE_PROMPT_ID,
             name: nls.localize('theia/ai/ide/architectAgent/mode/simple', 'Simple Mode')
         },
         {
-            id: ARCHITECT_PLANNING_PROMPT_ID,
-            name: nls.localize('theia/ai/ide/architectAgent/mode/plan', 'Plan Mode')
+            id: ARCHITECT_PLANNING_NEXT_PROMPT_ID,
+            name: nls.localize('theia/ai/ide/architectAgent/mode/planNext', 'Plan Mode (Next)')
         },
     ];
 
@@ -72,26 +77,13 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            // Check if we're using the next prompt variant, if so, we show different actions
-            const lastRequest = model.getRequests().at(-1);
-            const isNextVariant = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
-
-            if (isNextVariant) {
-                const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
-                if (taskContexts.length > 0) {
-                    const suggestions = taskContexts.map(tc =>
-                        new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
-                            'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
-                    );
-                    model.setSuggestions(suggestions);
-                }
-            } else {
-                model.setSuggestions([
-                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
-                        'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
-                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/updateTaskContext',
-                        'Update current task context')}](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
-                ]);
+            const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
+            if (taskContexts.length > 0) {
+                const suggestions = taskContexts.map(tc =>
+                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
+                        'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
+                );
+                model.setSuggestions(suggestions);
             }
         }
     }

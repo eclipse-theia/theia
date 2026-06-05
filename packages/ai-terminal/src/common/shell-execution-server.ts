@@ -21,10 +21,8 @@ export const shellExecutionPath = '/services/shell-execution';
 
 export interface ShellExecutionRequest {
     command: string;
-    /** Working directory. Can be absolute or relative to workspaceRoot. */
+    /** Working directory. Resolved to an absolute path on the frontend before sending to the backend. */
     cwd?: string;
-    /** Workspace root path for resolving relative cwd paths */
-    workspaceRoot?: string;
     timeout?: number; // milliseconds
     /** Unique ID for this execution, used for cancellation */
     executionId?: string;

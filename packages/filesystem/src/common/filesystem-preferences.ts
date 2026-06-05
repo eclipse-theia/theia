@@ -36,7 +36,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
     properties: {
         'files.watcherExclude': {
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Configure paths or [glob patterns](https://aka.ms/vscode-glob-patterns) to exclude from file watching. Paths can either be relative to the watched folder or absolute. Glob patterns are matched relative from the watched folder. When you experience the file watcher process consuming a lot of CPU, make sure to exclude large folders that are of less interest (such as build output folders).'),
+            markdownDescription: nls.localizeByDefault('Configure paths or [glob patterns](https://aka.ms/vscode-glob-patterns) to exclude from file watching. Paths can either be relative to the watched folder or absolute. Glob patterns are matched relative from the watched folder. When you experience the file watcher process consuming a lot of CPU, make sure to exclude large folders that are of less interest (such as build output folders).'),
             additionalProperties: {
                 type: 'boolean'
             },
@@ -50,7 +50,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             type: 'object',
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             // eslint-disable-next-line max-len
-            markdownDescription: nls.localize('theia/filesystem/filesExclude', 'Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.'),
+            markdownDescription: nls.localize('theia/filesystem/filesExclude', 'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.'),
             scope: PreferenceScope.Folder
         },
         'files.enableTrash': {

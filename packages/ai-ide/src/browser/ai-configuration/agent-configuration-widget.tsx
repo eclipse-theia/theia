@@ -24,10 +24,18 @@ import {
     LanguageModelRegistry,
     matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
+    ParsedCapability,
+    parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
     PromptService,
+    NotificationType,
+    PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
+    GenericCapabilitySelections,
+    CAPABILITY_TYPE_PROMPT_MAP,
 } from '@theia/ai-core/lib/common';
-import { codicon, QuickInputService } from '@theia/core/lib/browser';
+import { isChatAgent } from '@theia/ai-chat/lib/common';
+import { codicon, CommonCommands, QuickInputService } from '@theia/core/lib/browser';
+import { CommandService } from '@theia/core/lib/common/command';
 import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -38,18 +46,20 @@ import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
+import { AgentNotificationSettings } from './components/agent-notification-settings';
 
 interface ParsedPrompt {
     functions: string[];
     globalVariables: string[];
     agentSpecificVariables: string[];
+    capabilities: ParsedCapability[];
 };
 
 @injectable()
 export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<Agent> {
 
     static readonly ID = 'ai-agent-configuration-container-widget';
-    static readonly LABEL = nls.localize('theia/ai/core/agentConfiguration/label', 'Agents');
+    static readonly LABEL = nls.localizeByDefault('Agents');
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
@@ -78,10 +88,16 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     protected languageModels: LanguageModel[] | undefined;
     protected languageModelAliases: LanguageModelAlias[] = [];
     protected parsedPromptParts: ParsedPrompt | undefined;
     protected isLoadingDetails = false;
+    protected agentCompletionNotificationType?: NotificationType;
+    protected savedCapabilityOverrides: Record<string, boolean> | undefined;
+    protected savedGenericCapabilitySelections: GenericCapabilitySelections | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -166,7 +182,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                 className={
                     `agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`
                 }
-                title={enabled ? 'Enabled' : 'Disabled'}
+                title={enabled ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
             >
             </span>
         );
@@ -186,17 +202,15 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     {this.items.map(agent => {
                         const agentId = this.getItemId(agent);
                         const isSelected = this.selectedItem && this.getItemId(this.selectedItem) === agentId;
-                        return (
-                            <li
-                                key={agentId}
-                                className={`theia-TreeNode theia-CompositeTreeNode${isSelected ? ' theia-mod-selected' : ''} ${this.getItemClassName(agent)}`}
-                                onClick={() => this.handleItemSelect(agent)}
-                            >
-                                {this.renderItemPrefix(agent)}
-                                <span className="ai-configuration-list-item-label">{this.getItemLabel(agent)}</span>
-                                {this.renderItemSuffix(agent)}
-                            </li>
-                        );
+                        return <li
+                            key={agentId}
+                            className={`theia-TreeNode theia-CompositeTreeNode${isSelected ? ' theia-mod-selected' : ''} ${this.getItemClassName(agent)}`}
+                            onClick={() => this.handleItemSelect(agent)}
+                        >
+                            {this.renderItemPrefix(agent)}
+                            <span className="ai-configuration-list-item-label">{this.getItemLabel(agent)}</span>
+                            {this.renderItemSuffix(agent)}
+                        </li>;
                     })}
                 </ul>
                 <div className='configuration-agents-add'>
@@ -215,12 +229,22 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (agent) {
             this.parsedPromptParts = await this.parsePromptFragmentsForVariableAndFunction(agent);
+            const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
+            this.showInChatState = agentSettings?.showInChat ?? true;
+            this.agentCompletionNotificationType = agentSettings?.completionNotification;
+            this.savedCapabilityOverrides = agentSettings?.capabilityOverrides;
+            this.savedGenericCapabilitySelections = agentSettings?.genericCapabilitySelections;
         } else {
             this.parsedPromptParts = undefined;
+            this.agentCompletionNotificationType = undefined;
+            this.savedCapabilityOverrides = undefined;
+            this.savedGenericCapabilitySelections = undefined;
         }
         this.isLoadingDetails = false;
         this.update();
     }
+
+    protected showInChatState: boolean = true;
 
     protected renderItemDetail(agent: Agent): React.ReactNode {
         if (this.isLoadingDetails) {
@@ -239,7 +263,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
         const agentNameWithTags = <>
             {agent.name}
-            {agent.tags?.length && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
+            {agent.tags && agent.tags.length > 0 && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
         </>;
 
         return <div key={agent.id}>
@@ -249,12 +273,25 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                         {agentNameWithTags}
                         <pre className='ai-id-label'>Id: {agent.id}</pre>
                     </div>
-                    <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
-                        <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
-                            <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
-                            <span className='toggle-slider'></span>
-                        </div>
-                    </label>
+                    <div className='agent-toggles'>
+                        <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
+                            <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}</span>
+                            <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
+                                <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
+                                <span className='toggle-slider'></span>
+                            </div>
+                        </label>
+                        {isChatAgent(agent) && (
+                            <label className={`agent-enable-toggle${enabled ? '' : ' disabled'}`}
+                                title={nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}>
+                                <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}</span>
+                                <div className='toggle-switch' onClick={enabled ? this.toggleShowInChat : undefined}>
+                                    <input type="checkbox" checked={this.showInChatState} disabled={!enabled} onChange={this.toggleShowInChat} />
+                                    <span className='toggle-slider'></span>
+                                </div>
+                            </label>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -302,7 +339,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {globalVariables.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedGlobalVariables', 'Used Global Variables')}
                     </div>
                     <AgentGlobalVariables
@@ -314,7 +351,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {this.parsedPromptParts.agentSpecificVariables.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedAgentSpecificVariables', 'Used Agent-Specific Variables')}
                     </div>
                     <ul className='variable-references'>
@@ -328,7 +365,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {functions.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedFunctions', 'Used Functions')}
                     </div>
                     <ul className='function-references'>
@@ -336,11 +373,54 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     </ul>
                 </>
             )}
+
+            {this.parsedPromptParts.capabilities.length > 0 && (
+                <>
+                    <div className="settings-section-subcategory-title">
+                        {nls.localize('theia/ai/core/agentConfiguration/availableCapabilities', 'Available Capabilities')}
+                    </div>
+                    <AgentCapabilitiesSettings
+                        capabilities={this.parsedPromptParts.capabilities}
+                        agentId={agent.id}
+                        savedOverrides={this.savedCapabilityOverrides}
+                        aiSettingsService={this.aiSettingsService}
+                        onSettingsChange={() => this.updateParsedPromptParts()}
+                    />
+                </>
+            )}
+
+            {GenericCapabilitySelections.hasSelections(this.savedGenericCapabilitySelections) && (
+                <>
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                        {nls.localize('theia/ai/ide/agentConfiguration/genericCapabilitiesSettings', 'Generic Capabilities')}
+                    </div>
+                    <AgentGenericCapabilitiesSettings
+                        agentId={agent.id}
+                        savedSelections={this.savedGenericCapabilitySelections}
+                        aiSettingsService={this.aiSettingsService}
+                        onSettingsChange={() => this.updateParsedPromptParts()}
+                    />
+                </>
+            )}
+
+            {isChatAgent(agent) && (
+                <>
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                        {nls.localize('theia/ai/core/agentConfiguration/notificationSettings', 'Notification Settings')}
+                    </div>
+                    <AgentNotificationSettings
+                        agentId={agent.id}
+                        currentNotificationType={this.agentCompletionNotificationType}
+                        onNotificationTypeChange={this.handleNotificationTypeChange}
+                        onOpenNotificationSettings={this.openNotificationSettings}
+                    />
+                </>
+            )}
         </div>;
     }
 
     protected async parsePromptFragmentsForVariableAndFunction(agent: Agent): Promise<ParsedPrompt> {
-        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
+        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [], capabilities: [] };
         const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
         const selectedVariants = agentSettings?.selectedVariants ?? {};
 
@@ -353,16 +433,33 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             }
 
             this.extractVariablesAndFunctions(promptToAnalyze, result, agent);
+            this.extractCapabilities(promptToAnalyze, result);
         }
 
         return result;
+    }
+
+    protected extractCapabilities(promptContent: string, result: ParsedPrompt): void {
+        const capabilities = parseCapabilitiesFromTemplate(promptContent);
+        const existingIds = new Set(result.capabilities.map(c => c.fragmentId));
+        for (const capability of capabilities) {
+            if (!existingIds.has(capability.fragmentId)) {
+                const fragment = this.promptService.getRawPromptFragment(capability.fragmentId);
+                result.capabilities.push({
+                    ...capability,
+                    name: fragment?.name,
+                    description: fragment?.description,
+                });
+                existingIds.add(capability.fragmentId);
+            }
+        }
     }
 
     protected extractVariablesAndFunctions(promptContent: string, result: ParsedPrompt, agent: Agent): void {
         const variableMatches = matchVariablesRegEx(promptContent);
         variableMatches.forEach(match => {
             const variableId = match[1];
-            if (variableId.startsWith('!--')) {
+            if (variableId.startsWith('!--') || variableId.startsWith('capability:')) {
                 return;
             }
 
@@ -433,6 +530,32 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         }
         this.update();
     };
+
+    private toggleShowInChat = async () => {
+        const agent = this.aiConfigurationSelectionService.getActiveAgent();
+        if (!agent) {
+            return;
+        }
+        if (!this.agentService.isEnabled(agent.id)) {
+            return;
+        }
+        const newValue = !this.showInChatState;
+        await this.aiSettingsService.updateAgentSettings(agent.id, { showInChat: newValue });
+        this.showInChatState = newValue;
+        this.update();
+    };
+
+    private handleNotificationTypeChange = async (agentId: string, notificationType: NotificationType | undefined): Promise<void> => {
+        await this.aiSettingsService.updateAgentSettings(agentId, {
+            completionNotification: notificationType
+        });
+        this.agentCompletionNotificationType = notificationType;
+        this.update();
+    };
+
+    private openNotificationSettings = (): void => {
+        this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE);
+    };
 }
 
 interface AgentGlobalVariablesProps {
@@ -492,6 +615,120 @@ const AgentFunctions = ({ functions }: AgentFunctionsProps) => {
     </>;
 };
 
+interface AgentCapabilitiesSettingsProps {
+    capabilities: ParsedCapability[];
+    agentId: string;
+    savedOverrides: Record<string, boolean> | undefined;
+    aiSettingsService: AISettingsService;
+    onSettingsChange: () => void;
+}
+const AgentCapabilitiesSettings = ({ capabilities, agentId, savedOverrides, aiSettingsService, onSettingsChange }: AgentCapabilitiesSettingsProps) => {
+    const [loading, setLoading] = React.useState(false);
+
+    const handleToggle = async (fragmentId: string, currentValue: boolean) => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            const newValue = !currentValue;
+            const capability = capabilities.find(c => c.fragmentId === fragmentId);
+            if (!capability) {
+                return;
+            }
+
+            const newOverrides = { ...savedOverrides };
+
+            // If new value matches default, remove the override
+            if (newValue === capability.defaultEnabled) {
+                delete newOverrides[fragmentId];
+            } else {
+                newOverrides[fragmentId] = newValue;
+            }
+
+            await aiSettingsService.updateAgentSettings(agentId, { capabilityOverrides: newOverrides });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to update capability settings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetAll = async () => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            await aiSettingsService.updateAgentSettings(agentId, { capabilityOverrides: undefined });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to reset all capability settings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getCurrentValue = (capability: ParsedCapability): boolean => {
+        if (savedOverrides && capability.fragmentId in savedOverrides) {
+            return savedOverrides[capability.fragmentId];
+        }
+        return capability.defaultEnabled;
+    };
+
+    const hasOverride = (capability: ParsedCapability): boolean =>
+        savedOverrides !== undefined && capability.fragmentId in savedOverrides;
+
+    const hasAnyOverrides = savedOverrides && Object.keys(savedOverrides).length > 0;
+
+    return (
+        <>
+            {hasAnyOverrides && (
+                <div className="capability-reset-all-container">
+                    <button
+                        className="theia-button secondary"
+                        onClick={handleResetAll}
+                        disabled={loading}
+                        title={nls.localize('theia/ai/ide/agentConfiguration/resetAllCapabilities', 'Reset all capabilities to their default values')}
+                    >
+                        {nls.localize('theia/ai/ide/agentConfiguration/resetAllDefaults', 'Reset All to Defaults')}
+                    </button>
+                </div>
+            )}
+            <table className="ai-templates-table">
+                <thead>
+                    <tr>
+                        <th>{nls.localizeByDefault('ID')}</th>
+                        <th>{nls.localizeByDefault('Name')}</th>
+                        <th>{nls.localizeByDefault('Description')}</th>
+                        <th>{nls.localizeByDefault('Enabled')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {capabilities.map(capability => (
+                        <tr key={capability.fragmentId} className={hasOverride(capability) ? 'capability-modified' : ''}>
+                            <td className="ai-variable-name-cell">{capability.fragmentId}</td>
+                            <td className="ai-variable-name-cell">
+                                {capability.name ?? capability.fragmentId}
+                            </td>
+                            <td className="ai-variable-description-cell">
+                                {capability.description ?? nls.localize('theia/ai/ide/agentConfiguration/noDescription', 'No description available')}
+                            </td>
+                            <td>
+                                <div className='toggle-switch' onClick={!loading ? () => handleToggle(capability.fragmentId, getCurrentValue(capability)) : undefined}>
+                                    <input type="checkbox" checked={getCurrentValue(capability)} disabled={loading} readOnly />
+                                    <span className='toggle-slider'></span>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </>
+    );
+};
+
 interface AgentSpecificVariablesProps {
     promptVariables: string[];
     agent: Agent;
@@ -529,7 +766,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
             <span className="ai-configuration-value-row-value">{variableId}</span>
         </div>
         {undeclared ? (
-            <div className="ai-configuration-value-row">
+            <div className="ai-configuration-value-row"
+                title={nls.localize('theia/ai/core/agentConfiguration/undeclaredTooltip',
+                    'This variable is used in the prompt but has no description declared by the agent.')}>
                 <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                 <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                     {nls.localize('theia/ai/core/agentConfiguration/undeclared', 'Undeclared')}
@@ -542,7 +781,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
                     <span className="ai-configuration-value-row-value">{agentDefinedVariable.description}</span>
                 </div>
                 {notUsed && (
-                    <div className="ai-configuration-value-row">
+                    <div className="ai-configuration-value-row"
+                        title={nls.localize('theia/ai/core/agentConfiguration/notUsedInPromptTooltip',
+                            'This variable is declared by the agent but not referenced in the current prompt template.')}>
                         <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                         <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                             {nls.localize('theia/ai/core/agentConfiguration/notUsedInPrompt', 'Not used in prompt')}
@@ -552,4 +793,79 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
             </>
         )}
     </div>;
+};
+
+interface AgentGenericCapabilitiesSettingsProps {
+    agentId: string;
+    savedSelections: GenericCapabilitySelections | undefined;
+    aiSettingsService: AISettingsService;
+    onSettingsChange: () => void;
+}
+
+const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettingsService, onSettingsChange }: AgentGenericCapabilitiesSettingsProps) => {
+    const [loading, setLoading] = React.useState(false);
+
+    const handleReset = async (capabilityType: keyof GenericCapabilitySelections) => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            const newSelections: GenericCapabilitySelections = {
+                ...savedSelections,
+                [capabilityType]: undefined
+            };
+            await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: newSelections });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to reset generic capability selections:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const capabilityTypes = CAPABILITY_TYPE_PROMPT_MAP.map(m => m.type);
+
+    const getDisplayName = (type: keyof GenericCapabilitySelections): string => ({
+        skills: nls.localizeByDefault('Skills'),
+        mcpFunctions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/mcpFunctions', 'MCP Functions'),
+        functions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/functions', 'Functions'),
+        promptFragments: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/promptFragments', 'Prompt Fragments'),
+        agentDelegation: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/agentDelegation', 'Agent Delegation'),
+        variables: nls.localizeByDefault('Variables')
+    } as const)[type];
+
+    return (
+        <table className="ai-templates-table">
+            <thead>
+                <tr>
+                    <th>{nls.localizeByDefault('Type')}</th>
+                    <th>{nls.localize('theia/ai/ide/agentConfiguration/selections', 'Selections')}</th>
+                    <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {capabilityTypes
+                    .filter(type => (savedSelections?.[type]?.length ?? 0) > 0)
+                    .map(type => (
+                        <tr key={type}>
+                            <td className="ai-variable-name-cell">{getDisplayName(type)}</td>
+                            <td className="ai-variable-description-cell">
+                                {(savedSelections?.[type] ?? []).join(', ')}
+                            </td>
+                            <td className="template-actions-cell">
+                                <button
+                                    className="theia-button secondary"
+                                    onClick={() => handleReset(type)}
+                                    disabled={loading}
+                                    title={nls.localizeByDefault('Reset')}
+                                >
+                                    {nls.localizeByDefault('Reset')}
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+            </tbody>
+        </table>
+    );
 };

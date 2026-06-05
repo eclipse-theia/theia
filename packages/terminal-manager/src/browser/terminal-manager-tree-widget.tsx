@@ -31,7 +31,7 @@ import {
 } from '@theia/core/lib/browser';
 import { CommandRegistry, CompoundMenuNode, Emitter, MenuAction, MenuModelRegistry } from '@theia/core';
 import { TerminalManagerTreeModel } from './terminal-manager-tree-model';
-import { ReactInteraction, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
+import { isTasksPageNode, ReactInteraction, TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
 
 /* eslint-disable no-param-reassign */
 @injectable()
@@ -236,6 +236,10 @@ export class TerminalManagerTreeWidget extends TreeWidget {
             const isVisible = this.commandRegistry.isVisible(commandId, ...args);
             if (isVisible) {
                 const command = this.commandRegistry.getCommand(commandId);
+                const isRenameCommand = commandId === TerminalManagerCommands.MANAGER_RENAME_TERMINAL.id;
+                if (isRenameCommand && isTasksPageNode(node)) {
+                    return;
+                }
                 const icon = command?.iconClass ? command.iconClass : '';
                 const label = command?.label ? command.label : '';
                 inlineActionProps.push({ icon, label, commandId });
@@ -248,7 +252,8 @@ export class TerminalManagerTreeWidget extends TreeWidget {
         if (TerminalManagerTreeTypes.isTerminalNode(node)) {
             return <span className={`${codicon('terminal')}`} />;
         } else if (TerminalManagerTreeTypes.isPageNode(node)) {
-            return <span className={`${codicon('terminal-tmux')}`} />;
+            const icon = isTasksPageNode(node) ? 'tasklist' : 'terminal-tmux';
+            return <span className={`${codicon(icon)}`} />;
         } else if (TerminalManagerTreeTypes.isGroupNode(node)) {
             return <span className={`${codicon('split-horizontal')}`} />;
         }

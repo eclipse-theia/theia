@@ -17,27 +17,28 @@
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { nls, PreferenceSchema } from '@theia/core';
 
-export const COPILOT_MODELS_PREF = 'ai-features.copilot.models';
+export const COPILOT_ENABLED_PREF = 'ai-features.copilot.enabled';
+export const COPILOT_MODEL_OVERRIDES_PREF = 'ai-features.copilot.modelOverrides';
 export const COPILOT_ENTERPRISE_URL_PREF = 'ai-features.copilot.enterpriseUrl';
 
 export const CopilotPreferencesSchema: PreferenceSchema = {
     properties: {
-        [COPILOT_MODELS_PREF]: {
-            type: 'array',
-            description: nls.localize('theia/ai/copilot/models/description',
-                'GitHub Copilot models to use. Available models depend on your Copilot subscription.'),
+        [COPILOT_ENABLED_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/copilot/enabled/mdDescription',
+                'Enable the GitHub Copilot provider. When enabled, a status bar entry '
+                + 'appears for authentication and available models are discovered from your Copilot subscription.'),
             title: AI_CORE_PREFERENCES_TITLE,
-            // https://models.dev/?search=copilot
-            default: [
-                'claude-haiku-4.5',
-                'claude-sonnet-4.5',
-                'claude-opus-4.5',
-                'gemini-2.5-pro',
-                'gpt-4.1',
-                'gpt-4o',
-                'gpt-5-mini',
-                'gpt-5.2',
-            ],
+            default: true
+        },
+        [COPILOT_MODEL_OVERRIDES_PREF]: {
+            type: 'array',
+            markdownDescription: nls.localize('theia/ai/copilot/modelOverrides/mdDescription',
+                'Override the automatically discovered GitHub Copilot models. '
+                + 'When empty (default), available models are discovered from your Copilot subscription. '
+                + 'Set explicit model IDs to override auto-discovery.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+            default: [],
             items: {
                 type: 'string'
             }

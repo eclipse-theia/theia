@@ -1,0 +1,38 @@
+{
+  "name": "@theia/bundle-plugin",
+  "version": "1.72.0",
+  "description": "Contains bundler plugins for Theia.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "dependencies": {
+    "detect-libc": "^2.1.2",
+    "resolve-package-path": "^4.0.3",
+    "tslib": "^2.8.1",
+    "webpack": "^5.106.2"
+  },
+  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+}

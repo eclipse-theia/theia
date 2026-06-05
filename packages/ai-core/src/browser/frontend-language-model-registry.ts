@@ -45,7 +45,8 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
-    ToolCallResult
+    ToolCallResult,
+    ToolInvocationContext
 } from '../common';
 
 @injectable()
@@ -64,8 +65,8 @@ export class LanguageModelDelegateClientImpl
         this.receiver.send(id, token);
     }
 
-    toolCall(requestId: string, toolId: string, args_string: string): Promise<ToolCallResult> {
-        return this.receiver.toolCall(requestId, toolId, args_string);
+    toolCall(requestId: string, toolId: string, args_string: string, toolCallId?: string): Promise<ToolCallResult> {
+        return this.receiver.toolCall(requestId, toolId, args_string, toolCallId);
     }
 
     error(id: string, error: Error): void {
@@ -310,7 +311,7 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     // called by backend once tool is invoked
-    async toolCall(id: string, toolId: string, arg_string: string): Promise<ToolCallResult> {
+    async toolCall(id: string, toolId: string, arg_string: string, toolCallId?: string): Promise<ToolCallResult> {
         if (!this.requests.has(id)) {
             return createToolCallError(`No request found for ID '${id}'. The request may have been cancelled or completed.`);
         }
@@ -318,7 +319,7 @@ export class FrontendLanguageModelRegistryImpl
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
             try {
-                return await tool.handler(arg_string);
+                return await tool.handler(arg_string, ToolInvocationContext.create(toolCallId));
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 return createToolCallError(`Error executing tool '${toolId}': ${errorMessage}`);

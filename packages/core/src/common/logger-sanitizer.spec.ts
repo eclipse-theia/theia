@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DefaultLoggerSanitizer } from './logger-sanitizer';
+import { DefaultLoggerSanitizer, DefaultSanitizationRules } from './logger-sanitizer';
 
 describe('DefaultLoggerSanitizer', () => {
     let sanitizer: DefaultLoggerSanitizer;
@@ -283,6 +283,59 @@ describe('DefaultLoggerSanitizer', () => {
             const message = '"serverAuthToken": "ghp_xxxxxxxxxxxx"';
             const sanitized = sanitizer.sanitize(message);
             expect(sanitized).to.equal('"serverAuthToken": "****"');
+        });
+    });
+
+    describe('precheck optimization', () => {
+        describe('URL precheck', () => {
+            it('should return false when :// is missing', () => {
+                const urlRule = DefaultSanitizationRules[0];
+
+                expect(urlRule.precheck!('user@host')).to.be.false;
+                expect(urlRule.precheck!('email@example.com')).to.be.false;
+                expect(urlRule.precheck!('no url here')).to.be.false;
+            });
+
+            it('should return false when @ is missing even if :// exists', () => {
+                const urlRule = DefaultSanitizationRules[0];
+
+                expect(urlRule.precheck!('https://example.com/path')).to.be.false;
+                expect(urlRule.precheck!('http://localhost:8080')).to.be.false;
+            });
+
+            it('should return true only when both :// and @ exist', () => {
+                const urlRule = DefaultSanitizationRules[0];
+
+                expect(urlRule.precheck!('http://user:pass@host.com')).to.be.true;
+                expect(urlRule.precheck!('https://u:p@example.com')).to.be.true;
+            });
+        });
+
+        describe('API key precheck', () => {
+            it('should return false when patterns are missing', () => {
+                const apiKeyRule = DefaultSanitizationRules[1];
+
+                expect(apiKeyRule.precheck!('normal log message')).to.be.false;
+                expect(apiKeyRule.precheck!('just api without the other word')).to.be.false;
+                expect(apiKeyRule.precheck!('just key without the other word')).to.be.false;
+                expect(apiKeyRule.precheck!('login failed')).to.be.false;
+            });
+
+            it('should return true when api and key patterns exist', () => {
+                const apiKeyRule = DefaultSanitizationRules[1];
+
+                expect(apiKeyRule.precheck!('"api_key": "value"')).to.be.true;
+                expect(apiKeyRule.precheck!('API_KEY=something')).to.be.true;
+                expect(apiKeyRule.precheck!('the apiKey is set')).to.be.true;
+            });
+
+            it('should return true when auth and token patterns exist', () => {
+                const apiKeyRule = DefaultSanitizationRules[1];
+
+                expect(apiKeyRule.precheck!('"auth_token": "value"')).to.be.true;
+                expect(apiKeyRule.precheck!('AUTH_TOKEN=something')).to.be.true;
+                expect(apiKeyRule.precheck!('the authToken is set')).to.be.true;
+            });
         });
     });
 });

@@ -24,6 +24,7 @@ import {
     COPILOT_AUTH_SERVICE_PATH,
     CopilotAuthServiceClient
 } from '../common';
+import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
@@ -54,5 +55,6 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 });
 
 export default new ContainerModule(bind => {
+    bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
     bind(ConnectionContainerModule).toConstantValue(copilotConnectionModule);
 });

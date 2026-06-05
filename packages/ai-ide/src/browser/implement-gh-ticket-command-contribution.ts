@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
-import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
+import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core';
 import { GitHubChatAgentId } from './github-chat-agent';
 
 @injectable()

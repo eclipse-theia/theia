@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core';
 import { ACTION_ITEM, codicon, ConfirmDialog, Dialog, DISABLED_CLASS } from '@theia/core/lib/browser';
-import { ObservableUtils } from '@theia/core/lib/common/observable';
+import { Autorun, ObservableUtils } from '@theia/core/lib/common/observable';
 import { EditorDecoration, Range } from '@theia/editor/lib/browser';
+import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import { MergeEditorPane } from './merge-editor-pane';
 import { MergeEditorPaneToolbarItem } from './merge-editor-pane-header';
 import { LineRange } from '../../model/line-range';
@@ -26,6 +28,9 @@ import { MergeRange } from '../../model/merge-range';
 
 @injectable()
 export class MergeEditorResultPane extends MergeEditorPane {
+
+    @inject(NavigationLocationService)
+    protected readonly navigationLocationService: NavigationLocationService;
 
     constructor() {
         super();
@@ -35,6 +40,16 @@ export class MergeEditorResultPane extends MergeEditorPane {
     protected override initContextKeys(): void {
         super.initContextKeys();
         this.editor.getControl().createContextKey('isMergeResultEditor', true);
+    }
+
+    protected override initSelectionSynchronizer(): void {
+        super.initSelectionSynchronizer();
+        this.toDispose.push(Autorun.create(() => {
+            const selection = this.selectionObservable.get();
+            if (selection?.length === 1) {
+                this.navigationLocationService.navigate(service => service.register(NavigationLocation.create(this.editor, selection[0])));
+            }
+        }));
     }
 
     override getLineRangeForMergeRange(mergeRange: MergeRange): LineRange {

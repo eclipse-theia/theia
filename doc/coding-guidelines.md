@@ -417,6 +417,29 @@ export namespace DirtyDiffModel {
 > * Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness.
 > * `ContributionProvider` supports filtering. See `ContributionFilterRegistry`.
 
+<a name="bind-root-contribution-provider"></a>
+
+* [6.](#bind-root-contribution-provider) Use `bindRootContributionProvider` instead of `bindContributionProvider` when binding contribution providers in the main (root) container.
+
+`bindContributionProvider` captures a reference to whichever container first resolves the provider. If that container is a child (e.g. created for a widget or a transient binding), the provider will permanently retain that child container and everything cached in it, causing a memory leak.
+
+`bindRootContributionProvider` avoids this by walking to the root container before constructing the provider, ensuring that only the long-lived root container is retained.
+
+```ts
+// bad — risks retaining a child container reference
+bindContributionProvider(bind, MyContribution);
+
+// good — always resolves against the root container
+bindRootContributionProvider(bind, MyContribution);
+```
+
+`bindContributionProvider` is still appropriate when the contributions themselves are scoped to a child container rather than the main application container, for example:
+
+* **Connection-scoped containers** created by `ConnectionContainerModule.create(...)`, where services are bound per-connection.
+* **Test containers**, where a standalone container is constructed for a unit test.
+
+See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223>
+
 ## CSS
 
 <a name="css-use-lower-case-with-dashes"></a>
@@ -562,22 +585,81 @@ new Path(absolutePathString).relative(pathString)
 
 ## Logging
 
-<a name="logging-use-console-log"></a>
+<a name="use-named-loggers"></a>
 
-* [1.](#logging-use-console-log) Use `console` instead of `ILogger` for the root (top-level) logging.
+* [1.](#use-named-loggers) Whenever you need to log and you are within an Inversify context, inject a named logger
 
 ```ts
 // bad
 @inject(ILogger)
 protected readonly logger: ILogger;
 
+// without a named logger this is the same call as 'console.info'
 this.logger.info(``);
 
 // good
-console.info(``)
+@inject(ILogger) @named('my-logger')
+this.logger.info(``)
 ```
 
-> Why? All calls to console are intercepted on the frontend and backend and then forwarded to an `ILogger` instance already. The log level can be configured from the CLI: `theia start --log-level=debug`.
+> Why? The log level of all named loggers can be separately configured and even changed at runtime. This is useful for filtering logs to only the use cases the developer is interested in. See [here](https://github.com/eclipse-theia/theia/tree/master/packages/core#logging-configuration) for more information.
+
+<a name="naming-loggers"></a>
+
+* [2.](#naming-loggers) Use the following convention when naming loggers: `[optional-purpose]package-name:class-name#optional-suffix`
+
+```ts
+// bad
+@inject(ILogger) @named('MyClass')
+protected readonly logger: ILogger;
+
+// good
+@inject(ILogger) @named('remote:BackendRemoteServiceImpl');
+```
+
+> Following this convention allows to conveniently configure log levels for purpose, packages and concrete classes.
+
+## Workspace Trust
+
+Theia supports [Workspace Trust](https://theia-ide.org/docs/workspace_trust/) to protect users from potentially harmful code in untrusted repositories. Features that execute code or load external content from the workspace must be gated behind workspace trust.
+
+<a name="workspace-trust-check"></a>
+
+* [1.](#workspace-trust-check) Features that execute workspace-provided code (tasks, debug configurations, scripts) or load workspace-provided content (prompt templates, configuration files that influence behavior) must check workspace trust before proceeding. Use `WorkspaceTrustService` to check or request trust.
+
+```ts
+@inject(WorkspaceTrustService)
+protected readonly workspaceTrustService: WorkspaceTrustService;
+
+// Check current trust state
+if (!this.workspaceTrustService.isWorkspaceTrusted()) {
+    return; // disable the feature
+}
+
+// Or request trust from the user (shows dialog if not yet decided)
+const trusted = await this.workspaceTrustService.requestWorkspaceTrust();
+if (!trusted) {
+    return;
+}
+```
+
+<a name="workspace-trust-restrictions"></a>
+
+* [2.](#workspace-trust-restrictions) When a feature is restricted in untrusted workspaces, register a `WorkspaceRestrictionContribution` so that the Restricted Mode status bar tooltip can inform the user about what is disabled.
+
+```ts
+bind(WorkspaceRestrictionContribution).toDynamicValue((): WorkspaceRestrictionContribution => ({
+    getRestrictions(): WorkspaceRestriction[] {
+        return [{
+            label: nls.localize('theia/myPackage/restricted', 'My Feature is disabled in Restricted Mode')
+        }];
+    }
+})).inSingletonScope();
+```
+
+<a name="workspace-trust-context-key"></a>
+
+* [3.](#workspace-trust-context-key) Use the `isWorkspaceTrusted` context key when workspace trust should control menu or command visibility.
 
 ## "To Do" Tags
 

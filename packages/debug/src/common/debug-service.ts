@@ -26,6 +26,15 @@ export interface DebuggerDescription {
 }
 
 /**
+ * Describes a dynamic debug configuration provider with its label and associated types.
+ * Multiple debug types can share the same label (e.g., "Node.js" for "node", "pwa-node", etc.)
+ */
+export interface DynamicDebugConfigurationProvider {
+    label: string;
+    types: string[];
+}
+
+/**
  * The WS endpoint path to the Debug service.
  */
 export const DebugPath = '/services/debug';
@@ -78,9 +87,33 @@ export interface DebugService extends Disposable {
     provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]>;
 
     /**
+     * Returns dynamic debug configuration providers grouped by label.
+     * Each entry contains a label and all the types that share that label.
+     * This allows the UI to show human-readable labels and group related types.
+     */
+    getDynamicDebugConfigurationProviders?(): DynamicDebugConfigurationProvider[];
+
+    /**
+     * Returns the types of registered dynamic debug configuration providers
+     * without invoking them. This is a lightweight alternative to
+     * provideDynamicDebugConfigurations when you only need to know what
+     * provider types are available.
+     * @deprecated Use getDynamicDebugConfigurationProviders() instead for proper label support.
+     */
+    getDynamicDebugConfigurationProviderTypes?(): string[];
+
+    /**
      * @returns A Record of debug configuration provider types and a corresponding dynamic debug configurations array
      */
     provideDynamicDebugConfigurations?(folder?: string): Promise<Record<string, DebugConfiguration[]>>;
+
+    /**
+     * Provides dynamic debug configurations for a specific provider type only.
+     * @param type The debug configuration provider type
+     * @param folder The workspace folder URI
+     * @returns An array of debug configurations for the specified type
+     */
+    provideDynamicDebugConfigurationsByType?(type: string, folder?: string): Promise<DebugConfiguration[]>;
 
     /**
      * Provides a dynamic debug configuration matching the name and the provider debug type

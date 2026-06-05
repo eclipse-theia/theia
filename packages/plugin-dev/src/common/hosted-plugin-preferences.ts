@@ -62,7 +62,7 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
                     }
                 },
             },
-            default: undefined,
+            default: [],
             description: nls.localize('theia/plugin-dev/debugPorts', 'Port configuration per server for Node.js debug'),
         }
     }

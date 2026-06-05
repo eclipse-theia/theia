@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, bindRootContributionProvider, ResourceProvider } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, NavigatableWidgetOptions } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { PreviewContribution } from './preview-contribution';
@@ -33,7 +33,7 @@ import '../../src/browser/markdown/style/index.css';
 export default new ContainerModule(bind => {
     bindPreviewPreferences(bind);
     bind(PreviewHandlerProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreviewHandler);
+    bindRootContributionProvider(bind, PreviewHandler);
     bind(MarkdownPreviewHandler).toSelf().inSingletonScope();
     bind(PreviewHandler).toService(MarkdownPreviewHandler);
     bind(PreviewLinkNormalizer).toSelf().inSingletonScope();

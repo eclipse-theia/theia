@@ -19,12 +19,10 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
-import {
-    FrontendApplicationContribution, LabelProvider
-} from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProvider, OnWillStopAction } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, environment, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
 import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
@@ -43,6 +41,11 @@ export interface WorkspaceOpenHandlerContribution {
     canHandle(uri: URI): MaybePromise<boolean>;
     openWorkspace(uri: URI, options?: WorkspaceInput): MaybePromise<void>;
     getWorkspaceLabel?(uri: URI): MaybePromise<string | undefined>;
+}
+
+export const WorkspaceHandlingContribution = Symbol('WorkspaceHandlingContribution');
+export interface WorkspaceHandlingContribution {
+    modifyRecentWorkspaces?(workspaces: string[]): MaybePromise<string[]>;
 }
 
 /**
@@ -104,6 +107,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     @inject(ContributionProvider) @named(WorkspaceOpenHandlerContribution)
     protected readonly openHandlerContribution: ContributionProvider<WorkspaceOpenHandlerContribution>;
 
+    @inject(ContributionProvider) @named(WorkspaceHandlingContribution)
+    protected readonly workspaceHandlingContribution: ContributionProvider<WorkspaceHandlingContribution>;
+
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
         return this._ready.promise;
@@ -115,8 +121,48 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected async doInit(): Promise<void> {
-        const wsUriString = await this.getDefaultWorkspaceUri();
-        const wsStat = await this.toFileStat(wsUriString);
+        let wsUriString = await this.getDefaultWorkspaceUri();
+        if (wsUriString) {
+            const wsUri = new URI(wsUriString);
+            if (wsUri.scheme !== 'file') {
+                let handled = false;
+                for (const handler of this.openHandlerContribution.getContributions()) {
+                    if (await handler.canHandle(wsUri)) {
+                        try {
+                            // openWorkspace reloads the window on success, so if we
+                            // reach the timeout the connection attempt is hanging.
+                            await Promise.race([
+                                handler.openWorkspace(wsUri),
+                                new Promise<void>((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
+                            ]);
+                            handled = true;
+                        } catch {
+                            // Failed or timed out — fall through to local workspace
+                        }
+                        break;
+                    }
+                }
+                if (handled) {
+                    this._ready.resolve();
+                    return;
+                }
+                // No handler could open this non-file URI, or it failed/timed out.
+                // Fall back to the most recent local workspace.
+                const recents = await this.server.getRecentWorkspaces();
+                wsUriString = recents.find(r => new URI(r).scheme === 'file');
+            }
+        }
+        let wsStat = await this.toFileStat(wsUriString);
+        if (!wsStat && wsUriString) {
+            // The URI (e.g. from the URL hash after a remote disconnect) points
+            // to a path that doesn't exist locally. Fall back to the most recent
+            // local workspace.
+            const recents = await this.server.getRecentWorkspaces();
+            const fallback = recents.find(r => new URI(r).scheme === 'file');
+            if (fallback) {
+                wsStat = await this.toFileStat(fallback);
+            }
+        }
         await this.setWorkspace(wsStat);
 
         this.fileService.onDidFilesChange(event => {
@@ -159,7 +205,16 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            const workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            let workspaceUri: URI;
+            if (wpPath.startsWith('//')) {
+                const unc = wpPath.slice(2);
+                const firstSlash = unc.indexOf('/');
+                const authority = firstSlash >= 0 ? unc.slice(0, firstSlash) : unc;
+                const path = firstSlash >= 0 ? unc.slice(firstSlash) : '/';
+                workspaceUri = new URI().withPath(path).withAuthority(authority).withScheme('file');
+            } else {
+                workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            }
             let workspaceStat: FileStat | undefined;
             try {
                 workspaceStat = await this.fileService.resolve(workspaceUri);
@@ -181,6 +236,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      */
     protected setURLFragment(workspacePath: string): void {
         window.location.hash = encodeURI(workspacePath);
+    }
+
+    protected getWorkspacePath(resource: URI): string {
+        return resource.authority
+            ? `//${resource.authority}${resource.path.toString()}`
+            : resource.path.toString();
     }
 
     get roots(): Promise<FileStat[]> {
@@ -220,12 +281,14 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
                 this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
             }
-            this.setURLFragment(uri.path.toString());
+            this.setURLFragment(this.getWorkspacePath(uri));
         } else {
             this.setURLFragment('');
         }
         this.updateTitle();
-        await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        if (!this.isRemoteSession()) {
+            await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        }
         await this.updateWorkspace();
     }
 
@@ -325,14 +388,61 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
-     * on unload, we set our workspace root as the last recently used on the backend.
+     * On unload, we set our workspace root as the last recently used on the backend.
+     *
+     * In the browser, we use `onStop` (fire-and-forget) because `onWillStop` actions
+     * are never executed during browser tab close and returning an `OnWillStopAction`
+     * would trigger an unwanted "Leave site?" confirmation dialog.
+     *
+     * In Electron, we use `onWillStop` so the workspace is persisted before the window closes.
      */
     onStop(): void {
-        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        if (!environment.electron.is()) {
+            this.setMostRecentlyUsedWorkspace();
+        }
+    }
+
+    onWillStop(): OnWillStopAction | undefined {
+        if (environment.electron.is() && this.workspace) {
+            return {
+                reason: 'Set workspace root as most recently used',
+                action: async () => {
+                    await this.setMostRecentlyUsedWorkspace();
+                    return true;
+                }
+            };
+        }
+    }
+
+    protected setMostRecentlyUsedWorkspace(): void {
+        if (!this.isRemoteSession()) {
+            this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        }
+    }
+
+    /**
+     * Returns true if the current window is connected to a remote backend.
+     * In remote sessions, we must not overwrite the local MRU with the remote
+     * workspace's file URI, as the local MRU should retain the remote connection
+     * URI (e.g. `devcontainer://...`) so the session can be restored on restart.
+     *
+     * Detection: the backend port is always in `?port=`. When connected to a
+     * remote, the URL also has `?localPort=` (the original backend port).
+     */
+    protected isRemoteSession(): boolean {
+        return new URLSearchParams(window.location.search).has('localPort');
     }
 
     async recentWorkspaces(): Promise<string[]> {
-        return this.server.getRecentWorkspaces();
+        let recentWorkspaces = await this.server.getRecentWorkspaces();
+
+        for (const handler of this.workspaceHandlingContribution.getContributions()) {
+            if (handler.modifyRecentWorkspaces) {
+                recentWorkspaces = await handler.modifyRecentWorkspaces(recentWorkspaces);
+            }
+        }
+
+        return recentWorkspaces;
     }
 
     async removeRecentWorkspace(uri: string): Promise<void> {
@@ -372,7 +482,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         throw new Error(`Could not find a handler to open the workspace with uri ${uri.toString()}.`);
     }
 
-    async canHandle(uri: URI): Promise<boolean> {
+    canHandle(uri: URI): boolean {
         return uri.scheme === 'file';
     }
 
@@ -487,7 +597,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this._workspace = undefined;
             this._roots.length = 0;
 
-            await this.server.setMostRecentlyUsedWorkspace('');
+            if (!this.isRemoteSession()) {
+                await this.server.setMostRecentlyUsedWorkspace('');
+            }
             this.reloadWindow('');
         }
     }
@@ -523,7 +635,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
-        const workspacePath = uri.resource.path.toString();
+        const workspacePath = this.getWorkspacePath(uri.resource);
 
         if (this.shouldPreserveWindow(options)) {
             this.reloadWindow(workspacePath, options);
@@ -610,7 +722,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         let stat = await this.toFileStat(resource);
         Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
         stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData));
-        await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        if (!this.isRemoteSession()) {
+            await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        }
         // If saving a workspace based on an untitled workspace, delete the old file.
         const toDelete = this.isUntitledWorkspace(this.workspace?.resource) && this.workspace!.resource;
         await this.setWorkspace(stat);
@@ -700,6 +814,31 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             }
         }
         return uri.path.fsPath();
+    }
+
+    /**
+     * Returns a workspace-relative path prefixed with the containing root's
+     * directory name, e.g. `backend/src/index.ts`.
+     *
+     * In a single-root workspace the root name is still included so that the
+     * format is consistent regardless of how many roots are open.
+     *
+     * Falls back to the absolute filesystem path if the URI is not contained
+     * in any workspace root.
+     *
+     * @param uri URI of the file
+     */
+    getRootPrefixedPath(uri: URI): string {
+        const rootUri = this.getWorkspaceRootUri(uri);
+        if (!rootUri) {
+            return uri.path.fsPath();
+        }
+        const rootName = rootUri.path.base;
+        const relative = rootUri.relative(uri);
+        if (!relative || relative.toString() === '') {
+            return rootName;
+        }
+        return `${rootName}/${relative.toString()}`;
     }
 
     areWorkspaceRoots(uris: URI[]): boolean {

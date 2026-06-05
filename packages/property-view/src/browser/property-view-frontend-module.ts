@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { EmptyPropertyViewWidgetProvider } from './empty-property-view-widget-provider';
 import { PropertyDataService } from './property-data-service';
@@ -29,8 +29,8 @@ import '../../src/browser/style/property-view.css';
 export default new ContainerModule(bind => {
     bind(PropertyViewService).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, PropertyDataService);
-    bindContributionProvider(bind, PropertyViewWidgetProvider);
+    bindRootContributionProvider(bind, PropertyDataService);
+    bindRootContributionProvider(bind, PropertyViewWidgetProvider);
 
     bind(EmptyPropertyViewWidgetProvider).toSelf().inSingletonScope();
     bind(PropertyViewWidgetProvider).to(EmptyPropertyViewWidgetProvider);

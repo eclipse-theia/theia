@@ -17,6 +17,7 @@
 import { nls, PreferenceSchema } from '@theia/core';
 
 export const MCP_SERVERS_PREF = 'ai-features.mcp.mcpServers';
+export const MCP_USE_WORKSPACE_AS_ROOT_PREF = 'ai-features.mcp.useWorkspaceAsRoot';
 
 export const McpServersPreferenceSchema: PreferenceSchema = {
     properties: {
@@ -29,7 +30,8 @@ or remote with server URL, authentication token and optionally an authentication
 Each server is identified by a unique key, such as "brave-search" or "filesystem". \
 To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server. \
 To stop a server, use the "MCP: Stop MCP Server" command. \
-Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\
+Please note that autostart will only take effect after a restart, you need to start a server manually for the first time. \
+Servers installed from an AI registry carry an additional `registryMetadata` block that is managed automatically and is not meant to be edited manually.\
 \n\
 Example configuration:\n\
 ```\
@@ -108,10 +110,46 @@ Example configuration:\n\
                         title: nls.localize('theia/ai/mcp/servers/headers/title', 'Headers'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
                             'Optional additional headers included with each request to the server.'),
+                    },
+                    registryMetadata: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/mcp/servers/registryMetadata/title', 'Registry Metadata'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/mdDescription',
+                            'Provenance metadata for a server installed from an AI registry. Written by `@theia/ai-registry`; not user-editable.'),
+                        properties: {
+                            serverId: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/title', 'Registry Server Id'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/mdDescription',
+                                    'Identifies the AI registry entry this server was installed from.'),
+                            },
+                            version: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/version/title', 'Registry Version'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/version/mdDescription',
+                                    'The registry-published version recorded at the time of install.'),
+                            },
+                            configHash: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/title', 'Registry Config Hash'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/mdDescription',
+                                    'Content hash of the registry approval used to install this server.'),
+                            }
+                        },
+                        required: ['serverId']
                     }
                 },
                 required: []
             }
+        },
+        [MCP_USE_WORKSPACE_AS_ROOT_PREF]: {
+            title: nls.localize('theia/ai/mcp/useWorkspaceAsRoot/title', 'Use Workspace as Root'),
+            markdownDescription: nls.localize('theia/ai/mcp/useWorkspaceAsRoot/mdDescription',
+                'Roots define the boundaries of where servers can operate within the filesystem. \
+If enabled, the workspace folders will be used as roots, otherwise the MCP servers will have access to the entire filesystem. \
+Changing this setting will restart all running MCP servers to apply the new roots configuration.'),
+            type: 'boolean',
+            default: true
         }
     }
 };

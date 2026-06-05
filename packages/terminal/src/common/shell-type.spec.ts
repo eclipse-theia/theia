@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { OS } from '@theia/core';
-import { GeneralShellType, guessShellTypeFromExecutable, WindowsShellType } from './shell-type';
+import { cleanTerminalTitle, GeneralShellType, guessShellTypeFromExecutable, looksLikeHostPrompt, looksLikePath, WindowsShellType } from './shell-type';
 
 // Save original environment state
 const originalIsWindows = OS.backend.isWindows;
@@ -36,6 +36,130 @@ afterEach(() => {
 });
 
 describe('shell-type', () => {
+
+    describe('cleanTerminalTitle', () => {
+
+        it('should strip noglob prefix', () => {
+            expect(cleanTerminalTitle('noglob git log')).to.equal('git');
+        });
+
+        it('should strip nocorrect prefix', () => {
+            expect(cleanTerminalTitle('nocorrect git status')).to.equal('git');
+        });
+
+        it('should strip command prefix', () => {
+            expect(cleanTerminalTitle('command ls -la')).to.equal('ls');
+        });
+
+        it('should strip builtin prefix', () => {
+            expect(cleanTerminalTitle('builtin cd /tmp')).to.equal('cd');
+        });
+
+        it('should strip exec prefix', () => {
+            expect(cleanTerminalTitle('exec bash')).to.equal('bash');
+        });
+
+        it('should strip multiple prefixes', () => {
+            expect(cleanTerminalTitle('noglob command git push')).to.equal('git');
+        });
+
+        it('should extract basename from path-based commands', () => {
+            expect(cleanTerminalTitle('/usr/bin/git log')).to.equal('git');
+        });
+
+        it('should return command name for simple commands', () => {
+            expect(cleanTerminalTitle('git')).to.equal('git');
+        });
+
+        it('should return command name when arguments are present', () => {
+            expect(cleanTerminalTitle('npm install --save')).to.equal('npm');
+        });
+
+        it('should handle leading/trailing whitespace', () => {
+            expect(cleanTerminalTitle('  git log  ')).to.equal('git');
+        });
+
+        it('should return original title for empty string', () => {
+            expect(cleanTerminalTitle('')).to.equal('');
+        });
+
+        it('should return original title for whitespace-only string', () => {
+            expect(cleanTerminalTitle('   ')).to.equal('   ');
+        });
+
+        it('should handle zsh-style noglob with complex commands', () => {
+            expect(cleanTerminalTitle('noglob git log --oneline --graph')).to.equal('git');
+        });
+
+        describe('CWD/prompt detection (returns empty string)', () => {
+
+            it('should return empty for absolute CWD path', () => {
+                expect(cleanTerminalTitle('/home/user/project')).to.equal('');
+            });
+
+            it('should return empty for home-relative CWD path', () => {
+                expect(cleanTerminalTitle('~/Git/theia')).to.equal('');
+            });
+
+            it('should return empty for user@host:path format', () => {
+                expect(cleanTerminalTitle('user@host:~/Git/theia')).to.equal('');
+            });
+
+            it('should return empty for user@host: path format with space', () => {
+                expect(cleanTerminalTitle('user@myhost: ~/Git/theia')).to.equal('');
+            });
+
+            it('should return empty for cwd-relative path', () => {
+                expect(cleanTerminalTitle('./some/dir')).to.equal('');
+            });
+        });
+
+        it('should extract basename from path-based commands with arguments', () => {
+            expect(cleanTerminalTitle('/usr/bin/git log')).to.equal('git');
+        });
+    });
+
+    describe('looksLikeHostPrompt', () => {
+
+        it('should detect user@host:path format', () => {
+            expect(looksLikeHostPrompt('user@host:~/project')).to.be.true;
+        });
+
+        it('should detect user@host: path with space', () => {
+            expect(looksLikeHostPrompt('user@myhost: ~/Git/theia')).to.be.true;
+        });
+
+        it('should not detect plain commands', () => {
+            expect(looksLikeHostPrompt('git log')).to.be.false;
+        });
+
+        it('should not detect bare paths', () => {
+            expect(looksLikeHostPrompt('/home/user/project')).to.be.false;
+        });
+    });
+
+    describe('looksLikePath', () => {
+
+        it('should detect absolute paths', () => {
+            expect(looksLikePath('/home/user/project')).to.be.true;
+        });
+
+        it('should detect home-relative paths', () => {
+            expect(looksLikePath('~/Git/theia')).to.be.true;
+        });
+
+        it('should detect cwd-relative paths', () => {
+            expect(looksLikePath('./some/dir')).to.be.true;
+        });
+
+        it('should not detect plain commands', () => {
+            expect(looksLikePath('git log')).to.be.false;
+        });
+
+        it('should not detect simple command names', () => {
+            expect(looksLikePath('npm')).to.be.false;
+        });
+    });
 
     describe('guessShellTypeFromExecutable', () => {
 

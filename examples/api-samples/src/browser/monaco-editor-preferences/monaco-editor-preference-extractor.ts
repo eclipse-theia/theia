@@ -92,7 +92,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(MonacoEditorProvider) protected readonly monacoEditorProvider: MonacoEditorProvider;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({ id: 'check-for-unvalidated-editor-preferences', label: 'Check for unvalidated editor preferences in Monaco' }, {
+        commands.registerCommand({ id: 'check-for-unvalidated-editor-preferences', label: 'Check for unvalidated editor preferences in Monaco', category: 'API Samples' }, {
             execute: () => {
                 const firstRootUri = this.workspaceService.tryGetRoots()[0]?.resource;
                 if (firstRootUri) {
@@ -105,7 +105,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                 }
             }
         });
-        commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract editor preference schema from Monaco' }, {
+        commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract editor preference schema from Monaco', category: 'API Samples' }, {
             execute: async () => {
                 const roots = this.workspaceService.tryGetRoots();
                 if (roots.length !== 1 || !(roots[0].resource.path.toString() ?? '').includes('theia')) {

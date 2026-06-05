@@ -16,6 +16,9 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { MessagingListenerContribution } from '@theia/core/lib/node/messaging/messaging-listeners';
+import { RemoteAutoShutdownService } from './remote-auto-shutdown-service';
+import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
@@ -32,7 +35,7 @@ import { RemoteNodeSetupService } from './setup/remote-node-setup-service';
 import { RemotePosixScriptStrategy, RemoteSetupScriptService, RemoteWindowsScriptStrategy } from './setup/remote-setup-script-service';
 import { RemoteStatusService, RemoteStatusServicePath } from '../electron-common/remote-status-service';
 import { RemoteStatusServiceImpl } from './remote-status-service';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core';
 import { RemoteCopyRegistryImpl } from './setup/remote-copy-contribution';
 import { RemoteCopyContribution } from '@theia/core/lib/node/remote/remote-copy-contribution';
 import { MainCopyContribution } from './setup/main-copy-contribution';
@@ -71,8 +74,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(RemoteSetupScriptService).toSelf().inSingletonScope();
     bind(RemoteNativeDependencyService).toSelf().inSingletonScope();
     bind(RemoteCopyRegistryImpl).toSelf().inSingletonScope();
-    bindContributionProvider(bind, RemoteCopyContribution);
-    bindContributionProvider(bind, RemoteNativeDependencyContribution);
+    bindRootContributionProvider(bind, RemoteCopyContribution);
+    bindRootContributionProvider(bind, RemoteNativeDependencyContribution);
     bind(MainCopyContribution).toSelf().inSingletonScope();
     bind(RemoteCopyContribution).toService(MainCopyContribution);
     bind(AppNativeDependencyContribution).toSelf().inSingletonScope();
@@ -86,4 +89,12 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
     bindRemotePreferences(bind);
+
+    bind(RemoteAutoShutdownService).toSelf().inSingletonScope();
+    bind(CliContribution).toService(RemoteAutoShutdownService);
+    bind(MessagingListenerContribution).toService(RemoteAutoShutdownService);
+
+    bind(RemoteCliContribution).toConstantValue({
+        enhanceArgs: () => ['--remote-auto-shutdown']
+    });
 });

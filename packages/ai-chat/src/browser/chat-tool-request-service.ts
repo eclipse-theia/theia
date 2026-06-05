@@ -17,9 +17,10 @@
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ChatToolRequestService } from '../common/chat-tool-request-service';
+import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
+import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
-import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
+import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 
 /**
@@ -38,12 +39,12 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
-
         return {
             ...toolRequest,
             handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
                 const toolCallId = ctx?.toolCallId;
+                const sessionId = request.session.rootSessionId ?? request.session.id;
+                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, sessionId, toolRequest);
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
@@ -63,7 +64,29 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.CONFIRM:
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
-                        const confirmed = await toolCallContent.confirmed;
+
+                        // Check for auto-action hook
+                        const autoAction = toolRequest.checkAutoAction?.(arg_string);
+
+                        let confirmed: boolean;
+                        if (autoAction?.action === 'allow') {
+                            toolCallContent.confirm();
+                            confirmed = await toolCallContent.confirmed;
+                        } else if (autoAction?.action === 'deny') {
+                            toolCallContent.deny(autoAction.reason);
+                            return toolCallContent.result;
+                        } else {
+                            // No auto-action — needs user confirmation
+                            // Session setting overrides global preference
+                            const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
+                            const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
+                                ? sessionTimeout
+                                : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
+                            toolCallContent.confirmationTimeout = timeoutSeconds;
+                            toolCallContent.requestUserConfirmation();
+                            request.response.fireInteractionNeeded(toolCallContent);
+                            confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
+                        }
 
                         if (confirmed) {
                             const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id)));
@@ -79,6 +102,11 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
         };
     }
 
+    /**
+     * Finds the matching ToolCallChatResponseContent for a tool invocation.
+     *
+     * Matches by: 1) toolCallId, 2) tool name + normalized arguments, 3) fallback by name only.
+     */
     protected findToolCallContent(
         toolRequest: ToolRequest,
         arguments_: string,
@@ -98,12 +126,15 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
             }
         }
 
-        // Some LLM providers do not return toolCallIds, so fall back to matching on tool name and arguments
+        // Normalize arguments for comparison to handle differences in empty argument representation
+        const normalizedArguments = normalizeToolArgs(arguments_);
+
+        // Fall back to matching on tool name and normalized arguments
         for (let i = contentArray.length - 1; i >= 0; i--) {
             const content = contentArray[i];
             if (ToolCallChatResponseContent.is(content) &&
                 content.name === toolRequest.id &&
-                content.arguments === arguments_) {
+                normalizeToolArgs(content.arguments) === normalizedArguments) {
                 return content;
             }
         }

@@ -103,6 +103,18 @@ export namespace TerminalManagerCommands {
 }
 
 export const TERMINAL_MANAGER_TREE_CONTEXT_MENU = ['terminal-manager-tree-context-menu'];
+
+/**
+ * Fixed identifier for the special Tasks page that holds task terminals.
+ */
+export const TASKS_PAGE_ID: TerminalManagerTreeTypes.PageId = 'page-tasks';
+
+/**
+ * Type guard to check if a node is the special Tasks page.
+ */
+export const isTasksPageNode = (node: unknown): node is TerminalManagerTreeTypes.PageNode =>
+    TerminalManagerTreeTypes.isPageNode(node) && node.id === TASKS_PAGE_ID;
+
 export namespace TerminalManagerTreeTypes {
     export type TerminalKey = `terminal-${string}`;
     export const generateTerminalKey = (widget: TerminalWidgetImpl): TerminalKey => {

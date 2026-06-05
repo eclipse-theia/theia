@@ -170,14 +170,115 @@ export abstract class Stopwatch {
             }
         }
 
-        const start = options.owner ? `${options.owner} start` : 'start';
-        const timeFromStart = `Finished ${(options.now() / 1000).toFixed(3)} s after ${start}`;
+        const origin = options.owner ?? 'application';
+        const timeFromStart = `${(options.now() / 1000).toFixed(3)} s since ${origin} start`;
         const whatWasMeasured = options.context ? `[${options.context}] ${activity}` : activity;
         this.logger.log(level, `${whatWasMeasured}: ${elapsed.toFixed(1)} ms [${timeFromStart}]`, ...(options.arguments ?? []));
     }
 
     get storedMeasurements(): ReadonlyArray<MeasurementResult> {
         return this._storedMeasurements;
+    }
+
+}
+
+interface SettlementEntry {
+    name: string;
+    measurement: Measurement;
+    pending: number;
+    total: number;
+}
+
+/**
+ * Tracks the settlement of async work initiated by contributions during application startup.
+ *
+ * A contribution "settles" when all promises it returned from lifecycle methods (initialize, configure, onStart, etc.)
+ * have resolved. Individual settlement is only logged when a contribution returned promises from more than one lifecycle
+ * method; otherwise the single lifecycle measurement already describes the work. An aggregate "all settled" message is
+ * logged once all tracked promises across all contributions have resolved.
+ *
+ * Typical usage:
+ * 1. Create the context at the start of the application lifecycle.
+ * 2. Before each lifecycle call, call {@link ensureEntry} to start the per-contribution clock.
+ * 3. After each lifecycle call, call {@link trackSettlement} with the return value.
+ * 4. After the startup sequence completes, call {@link armAllSettled} to enable the aggregate message.
+ */
+export class MeasurementContext<T extends object = object> {
+
+    private readonly entries = new Map<T, SettlementEntry>();
+    private readonly allSettledMeasurement: Measurement;
+    private allSettledPending = 0;
+    private allSettledArmed = false;
+
+    constructor(
+        protected readonly stopwatch: Stopwatch,
+        protected readonly owner: string,
+        protected readonly thresholdMillis: number
+    ) {
+        this.allSettledMeasurement = this.stopwatch.start(`${owner.toLowerCase()}-all-settled`);
+    }
+
+    /**
+     * Ensure that settlement tracking has been started for the given contribution.
+     * Starts the per-contribution measurement clock on the first call for each contribution.
+     */
+    ensureEntry(item: T): void {
+        if (!this.entries.has(item)) {
+            const name = item.constructor.name;
+            this.entries.set(item, {
+                name,
+                measurement: this.stopwatch.start(`${name}.settled`, { thresholdMillis: this.thresholdMillis }),
+                pending: 0,
+                total: 0
+            });
+        }
+    }
+
+    /**
+     * Track a promise returned by a contribution's lifecycle method.
+     * Must be called after the corresponding {@link Stopwatch.startAsync} has completed so that
+     * the settlement log appears after the lifecycle measurement log.
+     */
+    trackSettlement(item: T, result: MaybePromise<unknown>): void {
+        if (result instanceof Promise) {
+            const entry = this.entries.get(item)!;
+            entry.pending++;
+            entry.total++;
+            this.allSettledPending++;
+            const onSettled = (): void => {
+                this.onPromiseSettled(item);
+            };
+            result.then(onSettled, onSettled);
+        }
+    }
+
+    /**
+     * Arm the aggregate "all settled" log message. Call this after the startup sequence has finished
+     * collecting all promises. If all promises have already settled, the message is logged immediately.
+     */
+    armAllSettled(): void {
+        this.allSettledArmed = true;
+        if (this.allSettledPending === 0) {
+            this.allSettledMeasurement.info(`All ${this.owner.toLowerCase()} contributions settled`);
+        }
+    }
+
+    private onPromiseSettled(item: T): void {
+        const entry = this.entries.get(item);
+        if (entry && --entry.pending === 0) {
+            const { name, measurement, total } = entry;
+            this.entries.delete(item);
+            if (total > 1) {
+                if (measurement.stop() > this.thresholdMillis) {
+                    measurement.warn(`${this.owner} ${name} took longer than expected to settle`);
+                } else {
+                    measurement.debug(`${this.owner} ${name} settled`);
+                }
+            }
+        }
+        if (--this.allSettledPending === 0 && this.allSettledArmed) {
+            this.allSettledMeasurement.info(`All ${this.owner.toLowerCase()} contributions settled`);
+        }
     }
 
 }

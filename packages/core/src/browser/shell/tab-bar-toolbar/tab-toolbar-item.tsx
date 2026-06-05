@@ -23,10 +23,12 @@ import { KeybindingRegistry } from '../../keybinding';
 import { ACTION_ITEM } from '../../widgets';
 import { TabBarToolbar } from './tab-bar-toolbar';
 import * as React from 'react';
+import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
 import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu';
 
 export interface TabBarToolbarItem {
     id: string;
+    when?: string;
     isVisible(widget: Widget): boolean;
     isEnabled(widget: Widget): boolean;
     isToggled(widget: Widget): boolean;
@@ -51,6 +53,9 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
 
     get id(): string {
         return this.action.id;
+    }
+    get when(): string | undefined {
+        return this.action.when;
     }
     get group(): string | undefined {
         return this.action.group;
@@ -191,15 +196,23 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
     };
 
     protected executeCommand(e: React.MouseEvent<HTMLElement>, widget: Widget): void {
+        this.doExecuteCommand(e, widget);
+    };
+
+    protected doExecuteCommand(e: React.SyntheticEvent<HTMLElement>, widget: Widget): void {
         e.preventDefault();
         e.stopPropagation();
-
         if (!this.isEnabled(widget)) {
             return;
         }
-
         if (this.action.command) {
             this.commandRegistry.executeCommand(this.action.command, widget);
+        }
+    }
+
+    protected onKeyDownEvent = (e: React.KeyboardEvent<HTMLElement>, widget: Widget) => {
+        if (isActivationKey(e)) {
+            this.doExecuteCommand(e, widget);
         }
     };
 
@@ -245,7 +258,9 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
             onMouseUp={this.onMouseUpEvent}
             onMouseOut={this.onMouseUpEvent} >
             <div id={this.action.id} className={classNames.join(' ')}
+                {...buttonKeyboardProps(tooltip)}
                 onClick={e => this.executeCommand(e, widget)}
+                onKeyDown={e => this.onKeyDownEvent(e, widget)}
                 title={tooltip} > {innerText}
             </div>
         </div>;

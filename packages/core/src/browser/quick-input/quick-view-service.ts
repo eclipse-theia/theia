@@ -22,6 +22,7 @@ import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
 
 export interface QuickViewItem {
     readonly label: string;
+    readonly description?: string;
     readonly when?: string;
     readonly open: () => void;
 }
@@ -42,6 +43,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     registerItem(item: QuickViewItem): Disposable {
         const quickOpenItem = {
             label: item.label,
+            description: item.description,
             execute: () => item.open(),
             when: item.when
         };
@@ -75,6 +77,9 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
 
     getPicks(filter: string, token: CancellationToken): QuickPicks {
         const items = this.items.filter(item =>
+            // Some contributions register entries without a label (e.g. an empty view name);
+            // those would otherwise sort to the top and appear as a blank row.
+            item.label.trim().length > 0 &&
             (item.when === undefined || this.contextKexService.match(item.when)) &&
             (!this.hiddenItemLabels.has(item.label))
         );

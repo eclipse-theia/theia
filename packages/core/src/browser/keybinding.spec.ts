@@ -576,6 +576,30 @@ describe('keybindings', () => {
     });
 });
 
+describe('acceleratorForKeyCode', () => {
+
+    const ctrlV = KeyCode.createKeyCode({ key: Key.KEY_V, ctrl: true });
+    const metaV = KeyCode.createKeyCode({ key: Key.KEY_V, meta: true });
+
+    it('uses ASCII names with the separator on non-macOS', () => {
+        stub.value(false);
+        const accelerator = keybindingRegistry.acceleratorForKeyCode(ctrlV, '+');
+        expect(accelerator).to.equal('Ctrl+V');
+    });
+
+    it('uses macOS symbols without a separator on macOS browser', () => {
+        stub.value(true);
+        const accelerator = keybindingRegistry.acceleratorForKeyCode(metaV, '+');
+        expect(accelerator).to.equal('⌘V');
+    });
+
+    it('uses ASCII names with the separator on macOS Electron (asciiOnly)', () => {
+        stub.value(true);
+        const accelerator = keybindingRegistry.acceleratorForKeyCode(metaV, '+', true);
+        expect(accelerator).to.equal('Cmd+V');
+    });
+});
+
 const TEST_COMMAND: Command = {
     id: 'test.command'
 };

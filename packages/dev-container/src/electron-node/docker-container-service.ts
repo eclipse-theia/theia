@@ -15,15 +15,16 @@
 // *****************************************************************************
 
 import { ContributionProvider, MaybePromise, URI } from '@theia/core';
+import { VariableContext } from './devcontainer-contributions/variable-resolver-contribution';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { ContainerConnectionOptions } from '../electron-common/remote-container-connection-provider';
-import { DevContainerConfiguration } from './devcontainer-file';
+import { DevContainerConfiguration, NonComposeContainerBase } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
-import { RemoteDockerContainerConnection } from './remote-container-connection-provider';
+import { RemoteDockerContainerConnection } from './remote-docker-container-connection';
 import { DockerComposeService } from './docker-compose/compose-service';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
@@ -64,14 +65,12 @@ export class DockerContainerService {
     @inject(DockerComposeService)
     protected readonly dockerComposeService: DockerComposeService;
 
-    container: Docker.Container | undefined;
-
     async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
         const workspace = new URI(options.workspacePath ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
 
-        if (options.lastContainerInfo && fs.statSync(options.devcontainerFile).mtimeMs < options.lastContainerInfo.lastUsed) {
+        if (options.lastContainerInfo && fs.pathExistsSync(options.devcontainerFile) && fs.statSync(options.devcontainerFile).mtimeMs < options.lastContainerInfo.lastUsed) {
             try {
                 container = docker.getContainer(options.lastContainerInfo.id);
                 if ((await container.inspect()).State.Running) {
@@ -87,12 +86,12 @@ export class DockerContainerService {
         if (!container) {
             container = await this.buildContainer(docker, options.devcontainerFile, workspace, outputProvider);
         }
-        this.container = container;
         return container;
     }
 
-    async postConnect(devcontainerFile: string, connection: RemoteDockerContainerConnection, outputProvider?: ContainerOutputProvider): Promise<void> {
-        const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
+    async postConnect(devcontainerFile: string, connection: RemoteDockerContainerConnection, outputProvider?: ContainerOutputProvider,
+        context?: VariableContext): Promise<void> {
+        const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile, context);
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
             await containerCreateContrib.handlePostConnect?.(devcontainerConfig, connection, outputProvider);
@@ -123,6 +122,15 @@ export class DockerContainerService {
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
             await containerCreateContrib.handleContainerCreation?.(containerCreateOptions, devcontainerConfig, docker, outputProvider);
+        }
+
+        // Per the devcontainer spec, overrideCommand defaults to true for non-compose containers.
+        // When true, override the image's CMD with a sleep loop to keep the container alive.
+        if (!devcontainerConfig.dockerComposeFile) {
+            const overrideCommand = (devcontainerConfig as NonComposeContainerBase).overrideCommand;
+            if (overrideCommand !== false) {
+                containerCreateOptions.Cmd = ['/bin/sh', '-c', 'while sleep 1000; do :; done'];
+            }
         }
 
         let container: Docker.Container;

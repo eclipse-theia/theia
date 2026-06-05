@@ -78,10 +78,7 @@
 .theia-vsx-extensions-search-bar {
   display: flex;
   align-content: center;
-  padding: var(--theia-ui-padding) 
-           max(var(--theia-scrollbar-width), var(--theia-ui-padding)) 
-           var(--theia-ui-padding) 
-           calc(var(--theia-ui-padding) * 3);
+  padding: var(--theia-ui-padding) max(var(--theia-scrollbar-width), var(--theia-ui-padding)) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-vsx-extensions-search-bar .theia-input {
@@ -139,6 +136,29 @@
   font-weight: bold;
 }
 
+.theia-vsx-extension.theia-vsx-extension-disabled-by-trust {
+  opacity: 0.6;
+}
+
+.theia-vsx-extension-content .title .restricted {
+  font-size: 80%;
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
+  margin-left: calc(var(--theia-ui-padding) / 3 * 2);
+  white-space: nowrap;
+}
+
+.theia-vsx-extension-restricted-notice {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 2);
+  margin-top: calc(var(--theia-ui-padding) / 2);
+}
+
 .theia-vsx-extension-content .title .version,
 .theia-vsx-extension-content .title .stat {
   opacity: 0.85;
@@ -194,6 +214,9 @@
 
 .theia-vsx-extension-publisher-container {
   display: flex;
+  /* Allow the publisher text to shrink and ellipsis instead of pushing the actions out of view. */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .theia-vsx-extension-action-bar .action {
@@ -217,10 +240,7 @@
 
 .theia-vsx-extension-editor .header {
   display: flex;
-  padding: calc(var(--theia-ui-padding) * 3)
-           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
-           calc(var(--theia-ui-padding) * 3)
-           calc(var(--theia-ui-padding) * 3);
+  padding: calc(var(--theia-ui-padding) * 3) max(var(--theia-ui-padding), var(--theia-scrollbar-width)) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
   flex-shrink: 0;
   border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   width: 100%;
@@ -358,6 +378,17 @@
   margin-left: calc(var(--theia-ui-padding) * 5 / 3);
 }
 
+.theia-vsx-extension-editor .header .details .title .restricted,
+.theia-vsx-extension-editor .header .details .title .disabled {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
+  margin-left: calc(var(--theia-ui-padding) * 5 / 3);
+  white-space: nowrap;
+}
+
 .theia-vsx-extension-editor .header .details .subtitle {
   padding-top: var(--theia-ui-padding);
   white-space: nowrap;
@@ -418,4 +449,52 @@
 .theia-vsx-extension-editor .action.prominent:hover,
 .theia-vsx-extension-action-bar .action.prominent:hover {
   background-color: var(--theia-extensionButton-prominentHoverBackground);
+}
+
+/** Type badge - pill shown next to the version on each entry to indicate which contribution it came from. */
+
+.theia-extensions-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  font-size: var(--theia-ui-font-size0);
+  padding: 0 calc(var(--theia-ui-padding) * 4 / 3);
+  border-radius: 8px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.theia-extensions-type-badge .codicon {
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-extensions-type-badge-icon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.theia-extensions-type-badge-icon--extension {
+  background-image: url("defaultIcon.png");
+}
+
+.theia-extensions-type-badge-label {
+  font-size: 90%;
+  letter-spacing: 0.02em;
+}
+
+.theia-extensions-type-badge--extension {
+  background-color: var(--theia-extensionBadge-remoteBackground, var(--theia-badge-background));
+  color: var(--theia-extensionBadge-remoteForeground, var(--theia-badge-foreground));
+}
+
+.theia-extensions-type-badge--mcp {
+  background-color: var(--theia-inputValidation-infoBackground, var(--theia-badge-background));
+  color: var(--theia-inputValidation-infoForeground, var(--theia-badge-foreground));
 }

@@ -231,7 +231,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         // second cell is selected after creation
         expect(await secondCell.isSelected()).toBe(true);
         // select cell above
-        await editor.page.keyboard.type('second cell');
+        await editor.page.keyboard.insertText('second cell');
         await secondCell.editor.page.keyboard.press('ArrowUp');
         expect(await cell.isSelected()).toBe(true);
 
@@ -306,7 +306,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         await cell.selectCell();
         await cell.page.keyboard.press('l');
         // NOTE: div.line-numbers is not visible
-        await cell.editor.locator.locator('.overflow-guard > div.line-numbers').waitFor({ state: 'attached' });
+        await cell.editor.locator.locator('.margin-view-overlays .line-numbers').waitFor({ state: 'attached' });
     });
 
     test('Check Collapse output switch `o` works', async () => {

@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
+
 export const NOTIFICATION_TYPE_OFF = 'off';
 export const NOTIFICATION_TYPE_OS_NOTIFICATION = 'os-notification';
 export const NOTIFICATION_TYPE_MESSAGE = 'message';
@@ -29,3 +31,17 @@ export const NOTIFICATION_TYPES: NotificationType[] = [
     NOTIFICATION_TYPE_MESSAGE,
     NOTIFICATION_TYPE_BLINK,
 ];
+
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+    [NOTIFICATION_TYPE_OFF]: nls.localizeByDefault('Off'),
+    [NOTIFICATION_TYPE_OS_NOTIFICATION]: nls.localize('theia/ai/core/notification/osNotification', 'OS Notification'),
+    [NOTIFICATION_TYPE_MESSAGE]: nls.localizeByDefault('Message'),
+    [NOTIFICATION_TYPE_BLINK]: nls.localize('theia/ai/core/notification/windowBlink', 'Window Blink'),
+};
+
+export const NOTIFICATION_TYPE_DESCRIPTIONS: Record<NotificationType, string> = {
+    [NOTIFICATION_TYPE_OFF]: nls.localize('theia/ai/core/notification/off/description', 'Disable all notifications'),
+    [NOTIFICATION_TYPE_OS_NOTIFICATION]: nls.localize('theia/ai/core/notification/osNotification/description', 'Show native OS notifications'),
+    [NOTIFICATION_TYPE_MESSAGE]: nls.localize('theia/ai/core/notification/message/description', 'Show a notification message inside the application'),
+    [NOTIFICATION_TYPE_BLINK]: nls.localize('theia/ai/core/notification/windowBlink/description', 'Blink the application title to attract attention'),
+};

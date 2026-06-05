@@ -59,7 +59,13 @@ export class SettingsContribution implements RemoteCliContribution, ContainerCre
             ...(this.currentConfig.customizations?.vscode?.settings ?? [])
         };
         this.currentConfig = undefined;
-        return Object.entries(settings).map(([key, value]) => `--set-preference=${key}=${JSON.stringify(value)}`) ?? [];
+        return Object.entries(settings).map(([key, value]) => {
+            const jsonValue = JSON.stringify(value);
+            if (value && typeof value === 'object') {
+                return `--set-preference=${key}=base64:${Buffer.from(jsonValue).toString('base64')}`;
+            }
+            return `--set-preference=${key}=${jsonValue}`;
+        });
     }
 
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {

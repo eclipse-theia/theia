@@ -179,6 +179,12 @@ export interface TaskConfiguration extends TaskCustomization {
     readonly label: string;
     readonly _scope: TaskConfigurationScope;
     readonly executionType?: 'shell' | 'process' | 'customExecution';
+    /**
+     * Whether to enable command history tracking for this task's terminal.
+     * When enabled, OSC sequences are injected to mark command boundaries.
+     * Defaults to false if not specified.
+     */
+    enableCommandHistory?: boolean;
 }
 
 export interface ContributedTaskConfiguration extends TaskConfiguration {

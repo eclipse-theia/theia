@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
@@ -73,7 +74,11 @@ import { AISettingsService } from '../common/settings-service';
 import { DefaultSkillService, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
-import { PromptVariableContribution } from '../common/prompt-variable-contribution';
+import { PromptVariableContribution } from './prompt-variable-contribution';
+import { ProductNameVariableContribution } from './product-name-variable-contribution';
+import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
+import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
+import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
 import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
@@ -84,8 +89,8 @@ import { OSNotificationService } from './os-notification-service';
 import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, Agent);
-    bindContributionProvider(bind, LanguageModelProvider);
+    bindRootContributionProvider(bind, Agent);
+    bindRootContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(FrontendLanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
@@ -131,7 +136,7 @@ export default new ContainerModule(bind => {
 
     bind(SkillPromptCoordinator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SkillPromptCoordinator);
-    bindContributionProvider(bind, AIVariableContribution);
+    bindRootContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
     bind(AIVariableService).toService(FrontendVariableService);
@@ -140,17 +145,28 @@ export default new ContainerModule(bind => {
     bind(TheiaVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TheiaVariableContribution);
 
-    bind(AIVariableContribution).to(PromptVariableContribution).inSingletonScope();
+    bind(PromptVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(PromptVariableContribution);
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
-    bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
+    bind(AgentsVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(AgentsVariableContribution);
     bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
-    bind(AIVariableContribution).to(SkillsVariableContribution).inSingletonScope();
+    bind(SkillsVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(SkillsVariableContribution);
+    bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ProductNameVariableContribution).inSingletonScope();
+
+    bind(GenericCapabilitiesVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(GenericCapabilitiesVariableContribution);
+
+    bind(GenericCapabilitiesPromptFragmentContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(GenericCapabilitiesPromptFragmentContribution);
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 
     bind(ToolInvocationRegistry).to(ToolInvocationRegistryImpl).inSingletonScope();
-    bindContributionProvider(bind, ToolProvider);
+    bindRootContributionProvider(bind, ToolProvider);
 
     bind(AIActivationServiceImpl).toSelf().inSingletonScope();
     bind(AIActivationService).toService(AIActivationServiceImpl);
@@ -163,7 +179,7 @@ export default new ContainerModule(bind => {
         const activationService = context.container.get<AIActivationService>(AIActivationService);
         return {
             execute: (...args: unknown[]) => handler.execute(...args),
-            isEnabled: (...args: unknown[]) => activationService.isActive && (handler.isEnabled?.(...args) ?? true),
+            isEnabled: (...args: unknown[]) => activationService.canRun && (handler.isEnabled?.(...args) ?? true),
             isVisible: (...args: unknown[]) => activationService.isActive && (handler.isVisible?.(...args) ?? true),
             isToggled: handler.isToggled
         };
@@ -179,6 +195,8 @@ export default new ContainerModule(bind => {
 
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
+    bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
