@@ -53,6 +53,7 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
 import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 
@@ -147,6 +148,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(TerminalCommandHistoryStateFactory) protected readonly commandHistoryStateFactory: TerminalCommandHistoryStateFactory;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -210,6 +212,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.label = initialTitle;
         this.title.caption = initialTitle;
         this.setIconClass();
+
+        // Declare 'terminalFocus' as a local context key on this widget's DOM scope so that
+        // terminal-scoped keybindings (e.g. ctrlcmd+v) take precedence over global bindings
+        // for the same keystroke when focus is inside the terminal.
+        // See KeybindingRegistry.selectBindingByLocalContext.
+        const localContext = this.contextKeyService.createScoped(this.node);
+        localContext.createKey('terminalFocus', true);
+        this.toDispose.push(localContext);
 
         if (this.options.kind) {
             this.terminalKind = this.options.kind;
@@ -738,6 +748,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     hasSelection(): boolean {
         return this.term.hasSelection();
+    }
+
+    paste(text: string): void {
+        this.term.paste(text);
     }
 
     async hasChildProcesses(): Promise<boolean> {

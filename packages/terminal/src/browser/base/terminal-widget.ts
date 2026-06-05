@@ -181,6 +181,13 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract hasSelection(): boolean;
 
+    /**
+     * Paste the given text into the terminal as if it were typed by the user.
+     * Honors bracketed paste mode when enabled by the running program.
+     * @param text the text to paste
+     */
+    abstract paste(text: string): void;
+
     abstract writeLine(line: string): void;
 
     abstract write(data: string): void;
