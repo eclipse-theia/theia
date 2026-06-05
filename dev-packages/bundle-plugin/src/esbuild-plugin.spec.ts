@@ -32,7 +32,9 @@ function createFakeBuild(): { build: unknown, resolvers: Resolvers[] } {
     const resolvers: Resolvers[] = [];
     const build = {
         initialOptions: { outdir: '/tmp/fake-outdir' },
-        onResolve: () => undefined,
+        onResolve: (options: { filter: RegExp }, callback: AnyCallback) => {
+            resolvers.push({ filter: options.filter, callback });
+        },
         onLoad: (options: { filter: RegExp }, callback: AnyCallback) => {
             resolvers.push({ filter: options.filter, callback });
         },
@@ -76,5 +78,33 @@ describe('nativeDependenciesPlugin', () => {
         expect(result.loader, 'result must be emitted as JS').to.equal('js');
         expect(result.contents, 'patched contents must append `.js` to the dynamic require').to.include('require(`./parsers/${name}.js`)');
         expect(result.contents, 'patched contents must no longer contain the bare dynamic require').to.not.include('require(`./parsers/${name}`)');
+    });
+
+    it('resolves the parcel-watcher native binding into the `node-file` namespace so the runtime require wrapper is emitted', () => {
+        // Regression test for #17595: a missing `namespace: 'node-file'` on the
+        // watcher resolver caused esbuild's default `.node: 'file'` loader to emit
+        // the binding path *as a string* instead of wrapping it in a runtime
+        // require(). In packaged apps where the dynamic `require('@parcel/watcher-<platform>')`
+        // first-choice path fails, the fallback then returned a string instead of
+        // the native module, breaking every watch and triggering the misleading
+        // "Unable to watch for file changes in this large workspace" popup.
+        const { build, resolvers } = createFakeBuild();
+
+        const plugin = nativeDependenciesPlugin({
+            trash: false,
+            ripgrep: false,
+            pty: false,
+            nativeBindings: {}
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        plugin.setup(build as any);
+
+        const watcherResolver = resolvers.find(r => r.filter.test('./build/Release/watcher.node'));
+        expect(watcherResolver, 'plugin should register an onResolve for the parcel-watcher native binding').to.not.equal(undefined);
+
+        const result = watcherResolver!.callback({ path: './build/Release/watcher.node' });
+        expect(result, 'callback must return a resolution result').to.be.an('object');
+        expect(result.namespace, 'binding must be routed through the `node-file` namespace').to.equal('node-file');
+        expect(result.path, 'binding must point at a prebuilt watcher.node file').to.match(/watcher\.node$/);
     });
 });
