@@ -23,6 +23,7 @@
     "@theia/core": "1.72.1",
     "@theia/debug": "1.72.1",
     "@theia/editor": "1.72.1",
+    "@theia/file-search": "1.72.1",
     "@theia/filesystem": "1.72.1",
     "@theia/markers": "1.72.1",
     "@theia/monaco": "1.72.1",
