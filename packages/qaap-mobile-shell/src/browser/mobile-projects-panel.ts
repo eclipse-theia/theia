@@ -623,8 +623,6 @@ export class MobileProjectsPanel {
     protected transcriptReviewHost: HTMLElement | undefined;
     protected transcriptReviewDiffHost: HTMLElement | undefined;
     protected transcriptReviewChecksHost: HTMLElement | undefined;
-    protected transcriptReviewComposerHost: HTMLElement | undefined;
-    protected transcriptReviewComposerDraft = '';
     protected transcriptChecksPanelOpen = false;
     protected transcriptHistoryPanelOpen = false;
     protected transcriptHistoryPanelHeightPx: number | undefined;
@@ -696,6 +694,10 @@ export class MobileProjectsPanel {
     protected inboxGithubSignedIn: boolean | undefined;
     /** Bumps when the inbox tab is re-entered so stale PR fetches cannot repaint. */
     protected inboxLoadGeneration = 0;
+    /** True until the first conversations prime resolves, so Tasks shows a skeleton instead of an empty flash. */
+    protected tasksFirstLoadPending = true;
+    /** Safety timer so a rejected initial prime can never strand the Tasks skeleton. */
+    protected tasksFirstLoadFallback: number | undefined;
     protected inboxPullRequestsAbort: AbortController | undefined;
     protected static readonly INBOX_PR_FETCH_TIMEOUT_MS = 20_000;
     protected workHubRoutines: QaapWorkHubRoutine[] = [];
@@ -1430,6 +1432,7 @@ export class MobileProjectsPanel {
     dispose(): void {
         dismissQaapAccountMenu();
         window.clearTimeout(this.routinesRefreshTimer);
+        window.clearTimeout(this.tasksFirstLoadFallback);
         this.closeRoutineEditor();
         window.removeEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
         this.accountBtn.removeEventListener('click', this.onAccountClick);
@@ -1562,7 +1565,11 @@ export class MobileProjectsPanel {
         }
         if (this.conversations) {
             this.conversations.start();
+            if (this.tasksFirstLoadPending && this.tasksFirstLoadFallback === undefined) {
+                this.tasksFirstLoadFallback = window.setTimeout(() => this.markTasksFirstLoadComplete(true), 5000);
+            }
             this.conversationsDispose = this.conversations.onDidChange(() => {
+                this.markTasksFirstLoadComplete(false);
                 if (this.visible && this.isTasksHubView()) {
                     this.renderList();
                 } else if (this.visible && !this.transcriptSheet) {
@@ -6525,7 +6532,11 @@ export class MobileProjectsPanel {
         }
 
         if (!teamRendered && groups.length === 0) {
-            root.append(this.createTasksEmptyState());
+            if (this.tasksFirstLoadPending && !this.query.trim()) {
+                root.append(this.createTasksLoadingState());
+            } else {
+                root.append(this.createTasksEmptyState());
+            }
         }
         this.scroll.append(root);
         this.updateTasksAttentionChrome();
@@ -7799,6 +7810,51 @@ export class MobileProjectsPanel {
         }
         const days = Math.floor(hours / 24);
         return nls.localize('qaap/mobileProjects/inboxDaysAgo', '{0}d ago', String(days));
+    }
+
+    /**
+     * Flips the one-shot "first conversations load" flag once data has arrived (or the safety
+     * timeout fired). Idempotent: clears the fallback timer and only repaints when asked to.
+     */
+    protected markTasksFirstLoadComplete(render: boolean): void {
+        if (this.tasksFirstLoadFallback !== undefined) {
+            window.clearTimeout(this.tasksFirstLoadFallback);
+            this.tasksFirstLoadFallback = undefined;
+        }
+        if (!this.tasksFirstLoadPending) {
+            return;
+        }
+        this.tasksFirstLoadPending = false;
+        if (render && this.visible && this.isTasksHubView()) {
+            this.renderList();
+        }
+    }
+
+    protected createTasksLoadingState(): HTMLElement {
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-tasks-skeleton-list';
+        list.setAttribute('aria-busy', 'true');
+        list.setAttribute('aria-label', nls.localize('qaap/mobileProjects/tasksLoading', 'Loading tasks…'));
+        for (let i = 0; i < 4; i++) {
+            list.append(this.createTaskSkeletonRow());
+        }
+        return list;
+    }
+
+    protected createTaskSkeletonRow(): HTMLElement {
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-tasks-skeleton-row q-card';
+        const avatar = document.createElement('div');
+        avatar.className = 'q-skeleton theia-mobile-tasks-skeleton-avatar';
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-tasks-skeleton-body';
+        const title = document.createElement('div');
+        title.className = 'q-skeleton q-skeleton-text theia-mobile-tasks-skeleton-title';
+        const meta = document.createElement('div');
+        meta.className = 'q-skeleton q-skeleton-text theia-mobile-tasks-skeleton-meta';
+        body.append(title, meta);
+        row.append(avatar, body);
+        return row;
     }
 
     protected createTasksEmptyState(): HTMLElement {
@@ -10868,14 +10924,11 @@ export class MobileProjectsPanel {
         checksHost.className = 'theia-mobile-transcript-review-checks';
         const historyToggleHost = document.createElement('div');
         historyToggleHost.className = 'theia-mobile-transcript-history-toggle-host';
-        const composerHost = document.createElement('div');
-        composerHost.className = 'theia-mobile-transcript-review-composer-host';
         dockControls.append(checksHost, historyToggleHost);
-        dock.append(dockControls, composerHost);
+        dock.append(dockControls);
         host.append(diffHost, historyResizeHandle, historyPanel, dock);
         this.transcriptReviewDiffHost = diffHost;
         this.transcriptReviewChecksHost = checksHost;
-        this.transcriptReviewComposerHost = composerHost;
         this.transcriptHistoryRoot = cwd;
         this.installTranscriptHistoryResize(historyResizeHandle, historyPanel);
 
@@ -10900,7 +10953,6 @@ export class MobileProjectsPanel {
         this.renderChecksSection(checksHost, project, summary, { embedded: true });
         this.renderTranscriptHistoryToggle(historyToggleHost, historyPanel, historyResizeHandle, cwd);
         this.renderTranscriptHistoryPanel(historyPanel, cwd);
-        this.mountTranscriptReviewComposer(composerHost, project, summary);
     }
 
     protected renderTranscriptHistoryToggle(
@@ -11148,54 +11200,10 @@ export class MobileProjectsPanel {
                     modeId: this.transcriptComposerModeId,
                 });
             }
-            this.transcriptReviewComposerDraft = '';
-            this.mountTranscriptReviewComposer(this.transcriptReviewComposerHost, project, summary);
             this.selectTranscriptTab('messages', project, summary);
         } catch (error) {
             this.messageService?.error(error instanceof Error ? error.message : String(error));
         }
-    }
-
-    protected mountTranscriptReviewComposer(
-        host: HTMLElement | undefined,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void {
-        if (!host) {
-            return;
-        }
-        host.replaceChildren();
-        const form = document.createElement('form');
-        form.className = 'qaap-transcript-review-composer';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'qaap-transcript-review-composer-input';
-        input.value = this.transcriptReviewComposerDraft;
-        input.placeholder = nls.localize('qaap/mobileProjects/reviewAskAgent', 'Ask the agent for changes…');
-        input.autocomplete = 'off';
-        input.enterKeyHint = 'send';
-        input.addEventListener('input', () => {
-            this.transcriptReviewComposerDraft = input.value;
-        });
-        const send = document.createElement('button');
-        send.type = 'submit';
-        send.className = 'qaap-transcript-review-composer-send codicon codicon-send';
-        send.title = nls.localize('qaap/mobileProjects/transcriptSend', 'Send');
-        send.setAttribute('aria-label', send.title);
-        send.disabled = !this.transcriptReviewComposerDraft.trim();
-        input.addEventListener('input', () => {
-            send.disabled = !input.value.trim();
-        });
-        form.addEventListener('submit', event => {
-            event.preventDefault();
-            const message = input.value.trim();
-            if (!message) {
-                return;
-            }
-            void this.submitTranscriptReviewFeedback(project, summary, message);
-        });
-        form.append(input, send);
-        host.append(form);
     }
 
     protected refreshTranscriptChecksViews(
@@ -11402,8 +11410,6 @@ export class MobileProjectsPanel {
         }
         this.transcriptReviewDiffHost = undefined;
         this.transcriptReviewChecksHost = undefined;
-        this.transcriptReviewComposerHost = undefined;
-        this.transcriptReviewComposerDraft = '';
         this.transcriptHistoryRoot = undefined;
         this.transcriptHistoryLoading = false;
     }

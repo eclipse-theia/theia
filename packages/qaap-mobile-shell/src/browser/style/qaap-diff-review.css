@@ -991,6 +991,10 @@
     border-top: none;
 }
 
+.qaap-agent-changes-file--collapsed .qaap-agent-changes-filehdr {
+    border-bottom: none;
+}
+
 .qaap-agent-changes-filehdr {
     display: flex;
     align-items: center;
@@ -1003,12 +1007,12 @@
     border-bottom: 1px solid color-mix(in srgb, var(--theia-foreground) 6%, transparent);
 }
 
-.qaap-agent-changes-filehdr-main {
+.qaap-agent-changes-filehdr-toggle {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     border: none;
     background: transparent;
     padding: 0;
@@ -1018,7 +1022,24 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.qaap-agent-changes-filehdr-main > i {
+.qaap-agent-changes-filehdr-toggle:active {
+    opacity: 0.82;
+}
+
+.qaap-agent-changes-filehdr-chevron {
+    flex: none;
+    width: 14px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--theia-descriptionForeground);
+    transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.qaap-agent-changes-file:not(.qaap-agent-changes-file--collapsed) .qaap-agent-changes-filehdr-chevron {
+    transform: rotate(90deg);
+}
+
+.qaap-agent-changes-filehdr-toggle > i:not(.qaap-agent-changes-filehdr-chevron) {
     flex: none;
     width: 16px;
     height: 16px;
@@ -1044,6 +1065,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    margin-left: auto;
     font-family: var(--theia-code-font-family, monospace);
     font-size: 11px;
     font-variant-numeric: tabular-nums;
@@ -1076,6 +1098,10 @@
     font-family: var(--theia-code-font-family, monospace);
     font-size: 12px;
     line-height: 1.45;
+}
+
+.qaap-agent-changes-file--collapsed .qaap-agent-changes-hunks {
+    display: none;
 }
 
 .qaap-agent-changes-hunks .qaap-diff-review-hunk--agent {
@@ -1160,49 +1186,14 @@
     opacity: 0.75;
 }
 
-.qaap-transcript-review-composer {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-}
-
-.qaap-transcript-review-composer-input {
-    flex: 1 1 auto;
-    min-width: 0;
-    border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.28));
-    border-radius: 10px;
-    background: var(--theia-input-background, var(--theia-editor-background));
-    color: var(--theia-foreground);
-    font-size: 13px;
-    padding: 8px 12px;
-}
-
-.qaap-transcript-review-composer-send {
-    flex: 0 0 auto;
-    width: 36px;
-    height: 36px;
-    border: none;
-    border-radius: 50%;
-    background: var(--q-accent, var(--qaap-accent, #E58E40));
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.qaap-transcript-review-composer-send:disabled {
-    opacity: var(--theia-mod-disabled-opacity, 0.4);
-    cursor: default;
-}
-
 /* Reduced-motion (WCAG 2.3.3): drop the looping shimmer; the static gradient bar
  * still indicates that agent changes are loading. */
 @media (prefers-reduced-motion: reduce) {
     .qaap-agent-changes-loading-bar {
         animation: none;
+    }
+
+    .qaap-agent-changes-filehdr-chevron {
+        transition: none;
     }
 }

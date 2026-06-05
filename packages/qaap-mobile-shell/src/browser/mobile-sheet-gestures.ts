@@ -196,6 +196,9 @@ export interface PullToRefreshOptions {
     maxTravel?: number;
 }
 
+/** Fully hides the 36px indicator anchored at `top: 8px` in CSS. */
+const PULL_REFRESH_HIDDEN_OFFSET = 48;
+
 export function installMobilePullToRefresh(options: PullToRefreshOptions): Disposable {
     if (!hasCoarsePointer()) {
         return Disposable.NULL;
@@ -218,9 +221,18 @@ export function installMobilePullToRefresh(options: PullToRefreshOptions): Dispo
     let refreshing = false;
     let armed = false;
 
+    function resetIndicatorVisuals(): void {
+        indicator.classList.remove('theia-mod-pulling', 'theia-mod-armed', 'theia-mod-refreshing');
+        indicator.style.transition = '';
+        indicator.style.transform = '';
+        spinner.style.opacity = '';
+        spinner.style.transform = '';
+    }
+
     function setIndicatorTravel(travelPx: number): void {
         const clamped = Math.max(0, Math.min(maxTravel, travelPx));
-        indicator.style.transform = `translate3d(-50%, ${clamped - 32}px, 0)`;
+        indicator.classList.add('theia-mod-pulling');
+        indicator.style.transform = `translate3d(-50%, ${clamped - PULL_REFRESH_HIDDEN_OFFSET}px, 0)`;
         const progress = Math.min(1, travelPx / threshold);
         spinner.style.opacity = `${Math.max(0.4, progress)}`;
         spinner.style.transform = `rotate(${progress * 360}deg)`;
@@ -236,22 +248,22 @@ export function installMobilePullToRefresh(options: PullToRefreshOptions): Dispo
 
     function settle(commit: boolean): void {
         dragging = false;
+        indicator.classList.remove('theia-mod-pulling');
         if (commit && !refreshing) {
             refreshing = true;
             indicator.classList.add('theia-mod-refreshing');
             indicator.style.transition = 'transform 180ms ease-out';
-            indicator.style.transform = `translate3d(-50%, ${threshold - 32}px, 0)`;
+            indicator.style.transform = `translate3d(-50%, ${threshold - PULL_REFRESH_HIDDEN_OFFSET}px, 0)`;
             const result = onRefresh();
             const done = result instanceof Promise ? result : Promise.resolve();
             done.finally(() => {
                 refreshing = false;
                 armed = false;
-                indicator.classList.remove('theia-mod-armed', 'theia-mod-refreshing');
                 indicator.style.transition = 'transform 220ms ease-in';
                 indicator.style.transform = '';
                 window.setTimeout(() => {
                     if (!dragging && !refreshing) {
-                        indicator.style.transition = '';
+                        resetIndicatorVisuals();
                     }
                 }, 250);
             });
@@ -262,7 +274,7 @@ export function installMobilePullToRefresh(options: PullToRefreshOptions): Dispo
             indicator.style.transform = '';
             window.setTimeout(() => {
                 if (!dragging && !refreshing) {
-                    indicator.style.transition = '';
+                    resetIndicatorVisuals();
                 }
             }, 220);
         }

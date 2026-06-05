@@ -119,6 +119,8 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected commitMenuOpen = false;
     protected readonly agentFileDiffs = new Map<string, QaapGitFileDiffResponse>();
     protected loadingAgentDiffs = false;
+    /** Agent Changes tab: per-file diff sections expanded in the accordion. */
+    protected readonly expandedAgentFiles = new Set<string>();
     protected readonly expandedContextBlocks = new Set<string>();
     protected onTranscriptAgentFeedback: ((message: string) => void | Promise<void>) | undefined;
     protected onReviewStatsChange: ((stats: { fileCount: number; adds: number; dels: number; pending: number }) => void) | undefined;
@@ -143,6 +145,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
         this.transcriptEmbed = true;
         this.transcriptExternalChrome = options?.externalChrome ?? false;
         this.agentFileDiffs.clear();
+        this.expandedAgentFiles.clear();
         this.expandedContextBlocks.clear();
         this.branchName = undefined;
         this.removeClass('qaap-diff-review--work-hub');
@@ -278,6 +281,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
     protected async loadAllAgentDiffs(): Promise<void> {
         this.agentFileDiffs.clear();
         if (this.files.length === 0 || !this.rootFsPath) {
+            this.seedAgentFileAccordionDefaults();
             this.update();
             return;
         }
@@ -296,8 +300,24 @@ export class QaapDiffReviewWidget extends ReactWidget {
             }));
         } finally {
             this.loadingAgentDiffs = false;
+            this.seedAgentFileAccordionDefaults();
             this.update();
         }
+    }
+
+    protected seedAgentFileAccordionDefaults(): void {
+        for (const path of [...this.expandedAgentFiles]) {
+            if (!this.files.some(file => file.path === path)) {
+                this.expandedAgentFiles.delete(path);
+            }
+        }
+        if (this.files.length === 1 && this.expandedAgentFiles.size === 0) {
+            this.expandedAgentFiles.add(this.files[0].path);
+        }
+    }
+
+    protected isAgentFileExpanded(path: string): boolean {
+        return this.expandedAgentFiles.has(path);
     }
 
     protected async selectFile(path: string | undefined): Promise<void> {
@@ -641,19 +661,27 @@ export class QaapDiffReviewWidget extends ReactWidget {
         const diff = this.agentFileDiffs.get(file.path);
         const displayPath = middleTruncatePath(file.path);
         const isNew = isUntrackedFile(file);
+        const expanded = this.isAgentFileExpanded(file.path);
         const fileClass = [
             'qaap-agent-changes-file',
             isNew ? 'qaap-agent-changes-file--new' : '',
+            expanded ? '' : 'qaap-agent-changes-file--collapsed',
         ].filter(Boolean).join(' ');
         return (
             <section key={file.path} className={fileClass}>
                 <div className='qaap-agent-changes-filehdr'>
                     <button
                         type='button'
-                        className='qaap-agent-changes-filehdr-main'
+                        className='qaap-agent-changes-filehdr-toggle'
                         title={file.path}
-                        onClick={() => this.onOpenInEditor(file.path)}
+                        aria-expanded={expanded}
+                        aria-controls={`qaap-agent-changes-hunks-${encodeURIComponent(file.path)}`}
+                        onClick={() => this.onToggleAgentFile(file.path)}
                     >
+                        <i
+                            className={`${codicon('chevron-right')} qaap-agent-changes-filehdr-chevron`}
+                            aria-hidden='true'
+                        />
                         <i className={this.iconFor(file.path)} aria-hidden='true' />
                         <span className='qaap-agent-changes-path'>{displayPath}</span>
                         {isNew && (
@@ -661,12 +689,24 @@ export class QaapDiffReviewWidget extends ReactWidget {
                                 {nls.localize('qaap/diff/newFile', 'New')}
                             </span>
                         )}
+                        <span className='qaap-agent-changes-filehdr-stats'>
+                            <span className='qaap-diff-add'>+{file.adds}</span>
+                            <span className='qaap-diff-del'>−{file.dels}</span>
+                        </span>
                     </button>
-                    <span className='qaap-agent-changes-filehdr-stats'>
-                        <span className='qaap-diff-add'>+{file.adds}</span>
-                        <span className='qaap-diff-del'>−{file.dels}</span>
-                    </span>
                     <span className='qaap-agent-changes-filehdr-actions'>
+                        <button
+                            type='button'
+                            className='qaap-diff-review-icon-btn'
+                            title={nls.localize('qaap/diff/openInEditor', 'Open in editor')}
+                            aria-label={nls.localize('qaap/diff/openInEditor', 'Open in editor')}
+                            onClick={event => {
+                                event.stopPropagation();
+                                this.onOpenInEditor(file.path);
+                            }}
+                        >
+                            <i className={codicon('go-to-file')} />
+                        </button>
                         {this.bulkActionsEnabled && (
                             <>
                                 <button
@@ -675,7 +715,10 @@ export class QaapDiffReviewWidget extends ReactWidget {
                                     title={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
                                     aria-label={nls.localize('qaap/diff/discardFile', 'Discard file changes')}
                                     disabled={this.runningFileAction}
-                                    onClick={() => { void this.rejectFile(file.path); }}
+                                    onClick={event => {
+                                        event.stopPropagation();
+                                        void this.rejectFile(file.path);
+                                    }}
                                 >
                                     <i className={codicon('discard')} />
                                 </button>
@@ -685,7 +728,10 @@ export class QaapDiffReviewWidget extends ReactWidget {
                                     title={nls.localize('qaap/diff/acceptFile', 'Accept file changes')}
                                     aria-label={nls.localize('qaap/diff/acceptFile', 'Accept file changes')}
                                     disabled={this.runningFileAction}
-                                    onClick={() => { void this.acceptFile(file.path); }}
+                                    onClick={event => {
+                                        event.stopPropagation();
+                                        void this.acceptFile(file.path);
+                                    }}
                                 >
                                     <i className={codicon('check')} />
                                 </button>
@@ -693,7 +739,11 @@ export class QaapDiffReviewWidget extends ReactWidget {
                         )}
                     </span>
                 </div>
-                <div className='qaap-agent-changes-hunks'>
+                <div
+                    id={`qaap-agent-changes-hunks-${encodeURIComponent(file.path)}`}
+                    className='qaap-agent-changes-hunks'
+                    hidden={!expanded}
+                >
                     {diff ? this.renderAgentFileDiff(file.path, diff) : (
                         <div className='qaap-diff-review-note qaap-mod-compact'>
                             {this.loadingAgentDiffs
@@ -1084,6 +1134,15 @@ export class QaapDiffReviewWidget extends ReactWidget {
             this.expandedContextBlocks.delete(blockId);
         } else {
             this.expandedContextBlocks.add(blockId);
+        }
+        this.update();
+    };
+
+    protected readonly onToggleAgentFile = (path: string): void => {
+        if (this.expandedAgentFiles.has(path)) {
+            this.expandedAgentFiles.delete(path);
+        } else {
+            this.expandedAgentFiles.add(path);
         }
         this.update();
     };
