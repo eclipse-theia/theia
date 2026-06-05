@@ -82,6 +82,10 @@ import {
     updateConversation,
 } from '../common/qaap-agent-conversation-client';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
+import {
+    isTranscriptErrorOutput,
+    isTranscriptTerminalOutputText,
+} from '../common/qaap-transcript-content-display';
 import { parseOpencodeLog } from '../common/qaap-opencode-stream';
 import {
     approveAgentRequest,
@@ -1867,7 +1871,8 @@ export class MobileProjectsPanel {
             if (this.shouldUseAgentsHubLanding()) {
                 const branchProject = this.transcriptOpenProject ?? this.resolveHomePinnedProject();
                 if (branchProject) {
-                    this.subtitleEl.textContent = this.buildProjectBranchSubtitle(branchProject);
+                    this.subtitleEl.hidden = true;
+                    this.subtitleEl.textContent = '';
                     return;
                 }
             }
@@ -15092,7 +15097,7 @@ export class MobileProjectsPanel {
 
     protected renderTranscriptRichContent(host: HTMLElement, content: string): void {
         const clean = this.cleanTranscriptDisplayText(content).trim();
-        if (this.isTranscriptTerminalOutputText(clean)) {
+        if (isTranscriptTerminalOutputText(clean)) {
             host.append(this.createTranscriptTextTerminalWindow(clean));
             return;
         }
@@ -15102,7 +15107,7 @@ export class MobileProjectsPanel {
 
     protected createTranscriptTextTerminalWindow(content: string): HTMLElement {
         const details = document.createElement('details');
-        const failed = this.isTranscriptErrorOutput(content);
+        const failed = isTranscriptErrorOutput(content);
         details.className = `theia-mobile-agent-shell-window ${failed ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
         details.open = shouldOpenTranscriptToolDetails({ finished: true, resultFailed: failed });
         const cleanContent = this.cleanTranscriptDisplayText(content);
@@ -15220,21 +15225,6 @@ export class MobileProjectsPanel {
         return content
             .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
             .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '');
-    }
-
-    protected isTranscriptTerminalOutputText(content: string): boolean {
-        const lines = content.split('\n').filter(line => line.trim());
-        if (lines.length < 4) {
-            return false;
-        }
-        const signals = lines.filter(line =>
-            /file:\/\/\/|node_modules|^\s*at\s+\S+|\b(?:Error|Exception|Traceback|stack)\b|The above error occurred|React will try to recreate/i.test(line)
-        ).length;
-        return signals >= 2;
-    }
-
-    protected isTranscriptErrorOutput(content: string): boolean {
-        return /\b(?:Error|Exception|Traceback|failed|failure)\b|The above error occurred|React will try to recreate/i.test(content);
     }
 
     protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
