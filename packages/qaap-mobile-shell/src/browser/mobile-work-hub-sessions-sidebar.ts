@@ -10,6 +10,7 @@ import { renderQaapAccountAvatarVisual } from './qaap-account-avatar-visual';
 import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
 import { installMobileVerticalTouchScroll } from './mobile-vertical-touch-scroll';
 import { MobileHaptics } from './mobile-haptics';
+import { hashString } from '../common/qaap-agent-task-client';
 
 export const QAAP_MOBILE_SESSIONS_SIDEBAR_BODY_CLASS = 'theia-mobile-mod-sessions-sidebar-open';
 
@@ -30,6 +31,7 @@ export interface MobileWorkHubSessionsSidebarDelegate {
     renderSessionList(host: HTMLElement): void;
     onNewChat(): void;
     onClose(): void;
+    storageScope?(): string | undefined;
     onAccountMenu?(anchor: HTMLButtonElement): void;
     onSearch?: () => void;
     onExtensions?: () => void;
@@ -192,7 +194,7 @@ export class MobileWorkHubSessionsSidebar {
             return;
         }
         this.visible = true;
-        clearDesktopSessionsSidebarCollapsed();
+        clearDesktopSessionsSidebarCollapsed(this.delegate.storageScope?.());
         this.root.hidden = false;
         this.root.setAttribute('aria-hidden', 'false');
         void this.root.offsetWidth;
@@ -244,7 +246,7 @@ export class MobileWorkHubSessionsSidebar {
         this.edgeSwipeDispose.dispose();
         this.resizeDispose.dispose();
         this.hideDismissHint();
-        markDesktopSessionsSidebarCollapsed();
+        markDesktopSessionsSidebarCollapsed(this.delegate.storageScope?.());
         this.visible = false;
         this.root.classList.remove('theia-mod-visible');
         this.root.setAttribute('aria-hidden', 'true');
@@ -355,7 +357,7 @@ export class MobileWorkHubSessionsSidebar {
         }
         event.preventDefault();
         event.stopPropagation();
-        const current = readDesktopSessionsSidebarWidth();
+        const current = readDesktopSessionsSidebarWidth(this.delegate.storageScope?.());
         if (event.key === 'Home') {
             this.setDesktopWidth(DESKTOP_SIDEBAR_MIN_WIDTH);
         } else if (event.key === 'End') {
@@ -366,14 +368,18 @@ export class MobileWorkHubSessionsSidebar {
     }
 
     protected installDesktopWidthPreference(): void {
-        this.setDesktopWidth(readDesktopSessionsSidebarWidth());
+        this.setDesktopWidth(readDesktopSessionsSidebarWidth(this.delegate.storageScope?.()));
     }
 
     protected setDesktopWidth(widthPx: number): void {
         const width = clampDesktopSessionsSidebarWidth(widthPx);
         document.documentElement.style.setProperty('--qaap-work-hub-desktop-sidebar-width', `${width}px`);
         try {
-            window.localStorage.setItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY, String(width));
+            const scopedKey = scopedDesktopSessionsSidebarStorageKey(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY, this.delegate.storageScope?.());
+            window.localStorage.setItem(scopedKey, String(width));
+            if (scopedKey !== QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY) {
+                window.localStorage.removeItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY);
+            }
         } catch {
             /* private browsing / quota */
         }
@@ -471,34 +477,45 @@ export function markSessionsSidebarDismissHintSeen(): void {
     }
 }
 
-export function hasDesktopSessionsSidebarCollapsed(): boolean {
+export function hasDesktopSessionsSidebarCollapsed(scope?: string): boolean {
     if (typeof window === 'undefined') {
         return false;
     }
     try {
-        return window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY) === '1';
+        const scopedKey = scopedDesktopSessionsSidebarStorageKey(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY, scope);
+        return window.localStorage.getItem(scopedKey) === '1'
+            || (scopedKey !== QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY
+                && window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY) === '1');
     } catch {
         return false;
     }
 }
 
-export function clearDesktopSessionsSidebarCollapsed(): void {
+export function clearDesktopSessionsSidebarCollapsed(scope?: string): void {
     if (typeof window === 'undefined') {
         return;
     }
     try {
-        window.localStorage.removeItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY);
+        const scopedKey = scopedDesktopSessionsSidebarStorageKey(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY, scope);
+        window.localStorage.removeItem(scopedKey);
+        if (scopedKey !== QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY) {
+            window.localStorage.removeItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY);
+        }
     } catch {
         /* private browsing / quota */
     }
 }
 
-export function markDesktopSessionsSidebarCollapsed(): void {
+export function markDesktopSessionsSidebarCollapsed(scope?: string): void {
     if (typeof window === 'undefined' || !isDesktopSessionsSidebarLayout()) {
         return;
     }
     try {
-        window.localStorage.setItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY, '1');
+        const scopedKey = scopedDesktopSessionsSidebarStorageKey(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY, scope);
+        window.localStorage.setItem(scopedKey, '1');
+        if (scopedKey !== QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY) {
+            window.localStorage.removeItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY);
+        }
     } catch {
         /* private browsing / quota */
     }
@@ -509,12 +526,16 @@ function isDesktopSessionsSidebarLayout(): boolean {
         && window.matchMedia?.('(min-width: 768px)').matches === true;
 }
 
-function readDesktopSessionsSidebarWidth(): number {
+function readDesktopSessionsSidebarWidth(scope?: string): number {
     if (typeof window === 'undefined') {
         return DESKTOP_SIDEBAR_DEFAULT_WIDTH;
     }
     try {
-        const raw = window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY);
+        const scopedKey = scopedDesktopSessionsSidebarStorageKey(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY, scope);
+        const raw = window.localStorage.getItem(scopedKey)
+            ?? (scopedKey !== QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY
+                ? window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY)
+                : null);
         const stored = raw === null ? Number.NaN : Number(raw);
         if (Number.isFinite(stored)) {
             return clampDesktopSessionsSidebarWidth(stored);
@@ -527,4 +548,17 @@ function readDesktopSessionsSidebarWidth(): number {
 
 function clampDesktopSessionsSidebarWidth(widthPx: number): number {
     return Math.round(Math.max(DESKTOP_SIDEBAR_MIN_WIDTH, Math.min(DESKTOP_SIDEBAR_MAX_WIDTH, widthPx)));
+}
+
+function scopedDesktopSessionsSidebarStorageKey(baseKey: string, scope?: string): string {
+    const resolvedScope = scope?.trim() || workspaceScopeFromLocation();
+    return resolvedScope ? `${baseKey}.${hashString(resolvedScope)}` : baseKey;
+}
+
+function workspaceScopeFromLocation(): string | undefined {
+    if (typeof window === 'undefined') {
+        return undefined;
+    }
+    const hash = decodeURIComponent(window.location.hash.replace(/^#/, '').trim());
+    return hash.length > 0 && hash !== '/' ? hash : undefined;
 }

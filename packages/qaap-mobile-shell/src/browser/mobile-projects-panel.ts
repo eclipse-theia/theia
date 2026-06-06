@@ -5951,6 +5951,7 @@ export class MobileProjectsPanel {
                 onClose: () => {
                     this.closeCardMenu();
                 },
+                storageScope: () => this.projectsService.getCurrentWorkspaceCwd(),
                 onAccountMenu: anchor => { this.onSessionsSidebarAccountClick(anchor); },
                 onSearch: () => { void this.openSessionsSidebarSearch(); },
                 onExtensions: () => { void this.commands.executeCommand('workbench.view.extensions'); },
@@ -6024,6 +6025,19 @@ export class MobileProjectsPanel {
         if (visibleCount > 0) {
             host.append(sectionHead, list);
         }
+        this.syncSessionsSidebarAnimatedListHeights(host);
+    }
+
+    protected syncSessionsSidebarAnimatedListHeights(host: HTMLElement): void {
+        window.requestAnimationFrame(() => {
+            const lists = host.querySelectorAll<HTMLElement>(
+                '.theia-mobile-work-hub-sessions-sidebar-project-group .theia-mobile-projects-chats-list, '
+                + '.theia-mobile-work-hub-sessions-sidebar-project-group .theia-mobile-work-hub-sessions-sidebar-projects-list',
+            );
+            for (const list of lists) {
+                list.style.setProperty('--qaap-sessions-sidebar-list-height', `${list.scrollHeight}px`);
+            }
+        });
     }
 
     protected isSessionsSidebarPinnedConversation(summary: QaapAgentConversationSummaryDTO): boolean {

@@ -1,6 +1,8 @@
 /* Full-screen mobile sessions sidebar (history + task rows). */
 
 .theia-mobile-work-hub-sessions-sidebar {
+  --qaap-sessions-sidebar-motion-duration: 220ms;
+  --qaap-sessions-sidebar-motion-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
   position: fixed;
   inset: 0;
   z-index: 2147482990;
@@ -13,6 +15,12 @@
   background: var(--qaap-bg, var(--qaap-surface, var(--theia-editor-background)));
   pointer-events: none;
   visibility: hidden;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+    transform var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+    visibility 0s linear var(--qaap-sessions-sidebar-motion-duration);
 }
 
 /* Author `display:flex` above overrides the UA `[hidden]` rule — keep closed sidebar out of layout. */
@@ -25,6 +33,9 @@
 .theia-mobile-work-hub-sessions-sidebar.theia-mod-visible {
   pointer-events: auto;
   visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
 }
 
 /* Mockup: full-screen sheet, no dimmed scrim; close via ← or left-edge swipe-left. */
@@ -344,17 +355,38 @@
   background: transparent;
 }
 
-/* Override inbox orange selection — sidebar stays flat. */
-.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current,
-.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current .theia-mobile-projects-task-item {
-  background: transparent !important;
-}
-
 .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-priority {
   background: transparent;
 }
 
 .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-priority .theia-mobile-projects-task-item {
+  background: transparent;
+}
+
+.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current {
+  background: color-mix(
+    in srgb,
+    var(--q-accent, var(--qaap-accent, #e58e40)) 14%,
+    var(--theia-list-activeSelectionBackground, rgba(127, 127, 127, 0.16))
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--q-accent, var(--qaap-accent, #e58e40)) 30%, transparent),
+    0 1px 4px color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+}
+
+.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--q-accent, var(--qaap-accent, #e58e40));
+  pointer-events: none;
+}
+
+.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current .theia-mobile-projects-task-item {
   background: transparent;
 }
 
@@ -403,6 +435,16 @@
   font-weight: 400;
   color: var(--theia-foreground);
   line-height: 1.35;
+}
+
+.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current .theia-mobile-projects-task-title {
+  font-weight: 650;
+  color: var(--theia-list-activeSelectionForeground, var(--theia-foreground));
+}
+
+.theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current .theia-mobile-projects-task-dot:not(.theia-mod-complete):not(.theia-mod-verified):not(.theia-mod-pr-ready):not(.theia-mod-failed):not(.theia-mod-running):not(.theia-mod-needs-input) {
+  opacity: 0.95;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-accent, var(--qaap-accent, #e58e40)) 18%, transparent);
 }
 
 .theia-mobile-work-hub-sessions-sidebar-list .theia-mod-sidebar-compact .theia-mobile-projects-task-since,
@@ -571,11 +613,27 @@
   flex-direction: column;
 }
 
+.theia-mobile-work-hub-sessions-sidebar-project-group
+  .theia-mobile-projects-chats-list,
+.theia-mobile-work-hub-sessions-sidebar-project-group
+  .theia-mobile-work-hub-sessions-sidebar-projects-list {
+  max-height: var(--qaap-sessions-sidebar-list-height, 1200px);
+  opacity: 1;
+  overflow: hidden;
+  transition:
+    max-height 180ms var(--qaap-sessions-sidebar-motion-easing),
+    opacity 140ms var(--qaap-sessions-sidebar-motion-easing),
+    padding 180ms var(--qaap-sessions-sidebar-motion-easing);
+}
+
 .theia-mobile-work-hub-sessions-sidebar-project-group.theia-mod-collapsed
   .theia-mobile-projects-chats-list,
 .theia-mobile-work-hub-sessions-sidebar-project-group.theia-mod-collapsed
   .theia-mobile-work-hub-sessions-sidebar-projects-list {
-  display: none;
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 button.theia-mod-sessions-sidebar-accordion.theia-mobile-tasks-inbox-section-head {
@@ -757,7 +815,7 @@ button.theia-mod-sessions-sidebar-accordion .theia-mobile-projects-conversation-
   background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
 }
 
-/* Neutralize inbox orange highlights inside the sidebar. */
+/* Keep generic hover quiet; current conversation keeps a stronger selected state. */
 @media (hover: hover) and (pointer: fine) {
   .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row:hover,
   .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row:focus-within,
@@ -766,8 +824,13 @@ button.theia-mod-sessions-sidebar-accordion .theia-mobile-projects-conversation-
   }
 
   .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current:hover,
-  .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current:focus-within {
-    background: color-mix(in srgb, var(--theia-foreground) 6%, transparent);
+  .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current:focus-within,
+  .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-current.theia-mod-menu-open {
+    background: color-mix(
+      in srgb,
+      var(--q-accent, var(--qaap-accent, #e58e40)) 18%,
+      var(--theia-list-activeSelectionBackground, rgba(127, 127, 127, 0.18))
+    );
   }
 }
 
@@ -807,6 +870,18 @@ body.theia-mobile-mod-sessions-sidebar-open .theia-qaap-account-menu {
     width: clamp(240px, var(--qaap-work-hub-desktop-sidebar-width), 460px);
     box-shadow: none;
     border-right: 1px solid color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+    transition:
+      width var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+      opacity var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+      transform var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+      visibility 0s linear var(--qaap-sessions-sidebar-motion-duration);
+  }
+
+  body.theia-mobile-mod-sessions-sidebar-resizing .theia-mobile-work-hub-sessions-sidebar {
+    transition:
+      opacity var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+      transform var(--qaap-sessions-sidebar-motion-duration) var(--qaap-sessions-sidebar-motion-easing),
+      visibility 0s linear var(--qaap-sessions-sidebar-motion-duration);
   }
 
   .theia-mobile-work-hub-sessions-sidebar-panel {
@@ -995,6 +1070,11 @@ body.theia-mobile-mod-sessions-sidebar-open .theia-qaap-account-menu {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .theia-mobile-work-hub-sessions-sidebar,
+  .theia-mobile-work-hub-sessions-sidebar-project-group
+    .theia-mobile-projects-chats-list,
+  .theia-mobile-work-hub-sessions-sidebar-project-group
+    .theia-mobile-work-hub-sessions-sidebar-projects-list,
   .theia-mobile-work-hub-sessions-sidebar-project-chevron,
   .theia-mobile-work-hub-sessions-sidebar-accordion-chevron {
     transition: none;
