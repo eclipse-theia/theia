@@ -5979,7 +5979,7 @@ export class MobileProjectsPanel {
             return;
         }
         const onActivate = (): void => {
-            this.sessionsSidebar?.hide();
+            this.sessionsSidebar?.hideForMobileOverlay();
         };
         this.seedSessionsSidebarAccordionDefaults(projects);
         const pinnedGroups = this.collectSessionsSidebarPinnedGroups(projects, query);

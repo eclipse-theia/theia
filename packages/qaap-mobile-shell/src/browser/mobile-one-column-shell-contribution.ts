@@ -112,6 +112,7 @@ import {
     QAAP_MOBILE_OPEN_DESKTOP_IDE_COMMAND,
     QAAP_WORK_HUB_OVERVIEW_COMMAND,
 } from './qaap-workbench-account-menu';
+import { hasDesktopSessionsSidebarCollapsed } from './mobile-work-hub-sessions-sidebar';
 import { writeStoredComposerSurface } from '../common/qaap-composer-surface';
 
 class MobileBottomBarWidget extends LuminoWidget {
@@ -1080,6 +1081,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.disposeProjectsPanelForDesktopIde();
                 return;
             }
+            this.ensureDesktopWorkHubSessionsSidebarOpen();
             markPreferAgentsSurface();
             await this.collapseMobileSideSheets();
             if (!this.shouldContinueAgentsBootstrap(epoch)) {
@@ -1310,8 +1312,20 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         const isLanding = !!(panel?.isHomeMode() && panel?.isVisible());
         document.body.classList.toggle('theia-mobile-mod-landing', isLanding);
         if (isLanding) {
+            this.ensureDesktopWorkHubSessionsSidebarOpen();
             this.releaseMobileWorkHubBootGuard();
         }
+    }
+
+    protected ensureDesktopWorkHubSessionsSidebarOpen(): void {
+        if (matchesMobileOneColumnLayout() || peekPreferDesktopIde() || hasDesktopSessionsSidebarCollapsed()) {
+            return;
+        }
+        const panel = this.projectsPanel;
+        if (!panel?.isVisible() || !panel.isHomeMode() || panel.isWorkHubSessionsSidebarVisible()) {
+            return;
+        }
+        panel.openWorkHubSessionsSidebar();
     }
 
     /** Lift the boot guard only once Work Hub landing or the Agents chat shell is actually visible. */
@@ -1706,6 +1720,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.syncMobileHubPrimaryBottomChrome();
         this.refreshBottomBar();
         this.refreshWorkbenchTopBar();
+        this.ensureDesktopWorkHubSessionsSidebarOpen();
         return true;
     }
 
@@ -1756,6 +1771,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.syncMobileHubPrimaryBottomChrome();
         this.refreshBottomBar();
         this.refreshWorkbenchTopBar();
+        this.ensureDesktopWorkHubSessionsSidebarOpen();
     }
 
     protected async togglePullRequestPanel(): Promise<void> {

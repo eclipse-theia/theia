@@ -15,11 +15,16 @@ export const QAAP_MOBILE_SESSIONS_SIDEBAR_BODY_CLASS = 'theia-mobile-mod-session
 
 /** localStorage key — first open shows a one-time dismiss hint. */
 export const QAAP_SESSIONS_SIDEBAR_DISMISS_HINT_KEY = 'qaap.sessionsSidebar.dismissHintSeen';
+export const QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY = 'qaap.sessionsSidebar.desktopCollapsed';
+export const QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY = 'qaap.sessionsSidebar.desktopWidthPx';
 
 /** Minimum horizontal delta (px) to close via left-edge swipe-left (symmetric to dashboard open). */
 export const QAAP_SESSIONS_SIDEBAR_EDGE_SWIPE_DISMISS_MIN_DELTA = 40;
 
 const DISMISS_HINT_DURATION_MS = 4200;
+const DESKTOP_SIDEBAR_MIN_WIDTH = 240;
+const DESKTOP_SIDEBAR_MAX_WIDTH = 460;
+const DESKTOP_SIDEBAR_DEFAULT_WIDTH = 328;
 
 export interface MobileWorkHubSessionsSidebarDelegate {
     renderSessionList(host: HTMLElement): void;
@@ -51,7 +56,9 @@ export class MobileWorkHubSessionsSidebar {
     protected readonly accountLabel: HTMLSpanElement;
     protected readonly scrollHost: HTMLElement;
     protected readonly listHost: HTMLElement;
+    protected readonly resizeHandle: HTMLElement;
     protected dismissHint: HTMLElement | undefined;
+    protected resizeDispose: Disposable = Disposable.NULL;
 
     constructor(protected readonly delegate: MobileWorkHubSessionsSidebarDelegate) {
         this.root = document.createElement('aside');
@@ -118,7 +125,7 @@ export class MobileWorkHubSessionsSidebar {
                 'codicon-edit',
                 nls.localize('qaap/sessionsSidebar/newChat', 'New chat'),
                 () => {
-                    this.hide();
+                    this.hideForMobileOverlay();
                     this.delegate.onNewChat();
                 },
             ),
@@ -150,11 +157,21 @@ export class MobileWorkHubSessionsSidebar {
         this.leftEdgeZone.className = 'theia-mobile-work-hub-sessions-sidebar-edge-zone';
         this.leftEdgeZone.setAttribute('aria-hidden', 'true');
 
-        this.root.append(backdrop, this.panel, this.leftEdgeZone);
+        this.resizeHandle = document.createElement('div');
+        this.resizeHandle.className = 'theia-mobile-work-hub-sessions-sidebar-resize-handle';
+        this.resizeHandle.setAttribute('role', 'separator');
+        this.resizeHandle.setAttribute('aria-orientation', 'vertical');
+        this.resizeHandle.setAttribute('aria-label', nls.localize('qaap/sessionsSidebar/resize', 'Resize sidebar'));
+        this.resizeHandle.tabIndex = 0;
+
+        this.root.append(backdrop, this.panel, this.leftEdgeZone, this.resizeHandle);
 
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onLeftEdgeTouchStart = this.onLeftEdgeTouchStart.bind(this);
         this.onLeftEdgeTouchEnd = this.onLeftEdgeTouchEnd.bind(this);
+        this.onResizeHandlePointerDown = this.onResizeHandlePointerDown.bind(this);
+        this.onResizeHandleKeyDown = this.onResizeHandleKeyDown.bind(this);
+        this.installDesktopWidthPreference();
     }
 
     get node(): HTMLElement {
@@ -175,6 +192,7 @@ export class MobileWorkHubSessionsSidebar {
             return;
         }
         this.visible = true;
+        clearDesktopSessionsSidebarCollapsed();
         this.root.hidden = false;
         this.root.setAttribute('aria-hidden', 'false');
         void this.root.offsetWidth;
@@ -183,6 +201,7 @@ export class MobileWorkHubSessionsSidebar {
         document.addEventListener('keydown', this.onKeyDown, true);
         this.guardSidebarCloseButton(this.closeBtn);
         this.installLeftEdgeSwipeDismiss();
+        this.installDesktopResize();
         this.updateAccountAvatar();
         this.refreshList();
         this.maybeShowDismissHint();
@@ -223,7 +242,9 @@ export class MobileWorkHubSessionsSidebar {
         dismissQaapAccountMenu();
         this.scrollTouchDispose.dispose();
         this.edgeSwipeDispose.dispose();
+        this.resizeDispose.dispose();
         this.hideDismissHint();
+        markDesktopSessionsSidebarCollapsed();
         this.visible = false;
         this.root.classList.remove('theia-mod-visible');
         this.root.setAttribute('aria-hidden', 'true');
@@ -235,6 +256,13 @@ export class MobileWorkHubSessionsSidebar {
             }
         }, 280);
         this.delegate.onClose();
+    }
+
+    hideForMobileOverlay(): void {
+        if (isDesktopSessionsSidebarLayout()) {
+            return;
+        }
+        this.hide();
     }
 
     toggle(): void {
@@ -274,6 +302,81 @@ export class MobileWorkHubSessionsSidebar {
             this.leftEdgeZone.removeEventListener('touchend', this.onLeftEdgeTouchEnd);
         }));
         this.edgeSwipeDispose = toDispose;
+    }
+
+    protected installDesktopResize(): void {
+        this.resizeDispose.dispose();
+        const toDispose = new DisposableCollection();
+        this.resizeHandle.addEventListener('pointerdown', this.onResizeHandlePointerDown);
+        this.resizeHandle.addEventListener('keydown', this.onResizeHandleKeyDown);
+        toDispose.push(Disposable.create(() => {
+            this.resizeHandle.removeEventListener('pointerdown', this.onResizeHandlePointerDown);
+            this.resizeHandle.removeEventListener('keydown', this.onResizeHandleKeyDown);
+        }));
+        this.resizeDispose = toDispose;
+    }
+
+    protected onResizeHandlePointerDown(event: PointerEvent): void {
+        if (!isDesktopSessionsSidebarLayout()) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const pointerId = event.pointerId;
+        this.resizeHandle.setPointerCapture?.(pointerId);
+        document.body.classList.add('theia-mobile-mod-sessions-sidebar-resizing');
+        const onPointerMove = (moveEvent: PointerEvent): void => {
+            if (moveEvent.pointerId !== pointerId) {
+                return;
+            }
+            this.setDesktopWidth(moveEvent.clientX);
+        };
+        const onPointerUp = (upEvent: PointerEvent): void => {
+            if (upEvent.pointerId !== pointerId) {
+                return;
+            }
+            this.resizeHandle.releasePointerCapture?.(pointerId);
+            document.body.classList.remove('theia-mobile-mod-sessions-sidebar-resizing');
+            window.removeEventListener('pointermove', onPointerMove, true);
+            window.removeEventListener('pointerup', onPointerUp, true);
+            window.removeEventListener('pointercancel', onPointerUp, true);
+        };
+        window.addEventListener('pointermove', onPointerMove, true);
+        window.addEventListener('pointerup', onPointerUp, true);
+        window.addEventListener('pointercancel', onPointerUp, true);
+    }
+
+    protected onResizeHandleKeyDown(event: KeyboardEvent): void {
+        if (!isDesktopSessionsSidebarLayout()) {
+            return;
+        }
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const current = readDesktopSessionsSidebarWidth();
+        if (event.key === 'Home') {
+            this.setDesktopWidth(DESKTOP_SIDEBAR_MIN_WIDTH);
+        } else if (event.key === 'End') {
+            this.setDesktopWidth(DESKTOP_SIDEBAR_MAX_WIDTH);
+        } else {
+            this.setDesktopWidth(current + (event.key === 'ArrowRight' ? 16 : -16));
+        }
+    }
+
+    protected installDesktopWidthPreference(): void {
+        this.setDesktopWidth(readDesktopSessionsSidebarWidth());
+    }
+
+    protected setDesktopWidth(widthPx: number): void {
+        const width = clampDesktopSessionsSidebarWidth(widthPx);
+        document.documentElement.style.setProperty('--qaap-work-hub-desktop-sidebar-width', `${width}px`);
+        try {
+            window.localStorage.setItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY, String(width));
+        } catch {
+            /* private browsing / quota */
+        }
     }
 
     protected onLeftEdgeTouchStart(event: TouchEvent): void {
@@ -366,4 +469,62 @@ export function markSessionsSidebarDismissHintSeen(): void {
     } catch {
         /* private browsing / quota */
     }
+}
+
+export function hasDesktopSessionsSidebarCollapsed(): boolean {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+    try {
+        return window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+export function clearDesktopSessionsSidebarCollapsed(): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    try {
+        window.localStorage.removeItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY);
+    } catch {
+        /* private browsing / quota */
+    }
+}
+
+export function markDesktopSessionsSidebarCollapsed(): void {
+    if (typeof window === 'undefined' || !isDesktopSessionsSidebarLayout()) {
+        return;
+    }
+    try {
+        window.localStorage.setItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_COLLAPSED_KEY, '1');
+    } catch {
+        /* private browsing / quota */
+    }
+}
+
+function isDesktopSessionsSidebarLayout(): boolean {
+    return typeof window !== 'undefined'
+        && window.matchMedia?.('(min-width: 768px)').matches === true;
+}
+
+function readDesktopSessionsSidebarWidth(): number {
+    if (typeof window === 'undefined') {
+        return DESKTOP_SIDEBAR_DEFAULT_WIDTH;
+    }
+    try {
+        const raw = window.localStorage.getItem(QAAP_SESSIONS_SIDEBAR_DESKTOP_WIDTH_KEY);
+        const stored = raw === null ? Number.NaN : Number(raw);
+        if (Number.isFinite(stored)) {
+            return clampDesktopSessionsSidebarWidth(stored);
+        }
+    } catch {
+        /* private browsing / quota */
+    }
+    return DESKTOP_SIDEBAR_DEFAULT_WIDTH;
+}
+
+function clampDesktopSessionsSidebarWidth(widthPx: number): number {
+    return Math.round(Math.max(DESKTOP_SIDEBAR_MIN_WIDTH, Math.min(DESKTOP_SIDEBAR_MAX_WIDTH, widthPx)));
 }
