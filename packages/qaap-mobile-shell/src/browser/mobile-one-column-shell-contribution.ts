@@ -637,7 +637,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.setSidePanelSize('right', target);
         }
         this.requestFullShellRelayout();
-        await this.desktopTerminalLayout.ensureDesktopTerminalMaximized();
+        await this.desktopTerminalLayout.ensureDesktopTerminalNormal();
     }
 
     protected async setSidePanelSize(side: 'left' | 'right', size: number): Promise<void> {

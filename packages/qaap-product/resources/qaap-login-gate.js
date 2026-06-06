@@ -19,7 +19,7 @@
             if (ss.getItem('qaap.mobileProjects.preferDesktopIde') === '1') {
                 ss.removeItem('qaap.mobileProjects.preferDesktopIde');
             }
-            if (window.__qaapPreferDesktopIdeThisRuntime === true) {
+            if (ss.getItem('qaap.mobileProjects.explicitDesktopIde') === '1') {
                 document.body.classList.remove('theia-mobile-mod-workhub-composer-header');
                 return;
             }

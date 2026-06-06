@@ -17,12 +17,8 @@ import {
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 
-/** Same command as the bottom-panel chevron-up toolbar button in terminal-manager. */
-const MAXIMIZE_BOTTOM_PANEL_COMMAND = 'terminal:manager-maximize-bottom-panel';
-
 /**
- * Desktop default: show the terminal and maximize the bottom panel (same as clicking
- * "Maximize Bottom Panel" in the terminal toolbar).
+ * Desktop default: show the terminal in the normal bottom panel.
  */
 @injectable()
 export class QaapDesktopTerminalLayoutContribution implements FrontendApplicationContribution {
@@ -85,11 +81,11 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
         await this.stateService.reachedState('ready');
         await this.shell.pendingUpdates;
         await animationFrame();
-        await this.ensureDesktopTerminalMaximized();
+        await this.ensureDesktopTerminalNormal();
     }
 
     /** Called from {@link MobileOneColumnShellContribution.ensureDesktopSidePanelSizes} after split restore. */
-    async ensureDesktopTerminalMaximized(): Promise<void> {
+    async ensureDesktopTerminalNormal(): Promise<void> {
         if (matchesMobileOneColumnLayout()) {
             return;
         }
@@ -102,7 +98,7 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
         await animationFrame();
 
         const bottomPanel = this.shell.bottomPanel;
-        if (!this.shell.isExpanded('bottom') || bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+        if (!this.shell.isExpanded('bottom')) {
             return;
         }
 
@@ -113,15 +109,9 @@ export class QaapDesktopTerminalLayoutContribution implements FrontendApplicatio
             await animationFrame();
         }
 
-        if (this.commands.getCommand(MAXIMIZE_BOTTOM_PANEL_COMMAND)) {
-            try {
-                await this.commands.executeCommand(MAXIMIZE_BOTTOM_PANEL_COMMAND);
-            } catch (error) {
-                console.error('[qaap-mobile-shell] failed to maximize desktop bottom panel', error);
-            }
-            return;
+        if (bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+            bottomPanel.toggleMaximized();
         }
-        bottomPanel.toggleMaximized();
     }
 
     protected async ensureBottomTerminalVisible(): Promise<void> {

@@ -32,14 +32,16 @@ describe('qaap-mobile-work-surface-preference', () => {
         (global as unknown as { window: Window }).window = { sessionStorage } as unknown as Window;
     });
 
-    it('keeps the desktop IDE preference only in runtime memory', () => {
+    it('persists an explicit desktop IDE choice for reload', () => {
         expect(peekPreferDesktopIde()).to.equal(false);
         markPreferDesktopIde();
         expect(peekPreferDesktopIde()).to.equal(true);
         expect(storage.has('qaap.mobileProjects.preferDesktopIde')).to.equal(false);
+        expect(storage.get('qaap.mobileProjects.explicitDesktopIde')).to.equal('1');
         expect(peekPreferAgentsSurface()).to.equal(false);
         clearPreferDesktopIde();
         expect(peekPreferDesktopIde()).to.equal(false);
+        expect(storage.has('qaap.mobileProjects.explicitDesktopIde')).to.equal(false);
     });
 
     it('persists the Agents surface after leaving desktop IDE', () => {

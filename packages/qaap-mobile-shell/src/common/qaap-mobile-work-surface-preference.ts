@@ -6,6 +6,9 @@
 /** Legacy key from when the IDE choice survived reloads; kept so stale values can be cleared. */
 export const QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY = 'qaap.mobileProjects.preferDesktopIde';
 
+/** User explicitly chose the classic IDE layout in this browser session. */
+export const QAAP_MOBILE_EXPLICIT_DESKTOP_IDE_KEY = 'qaap.mobileProjects.explicitDesktopIde';
+
 /** User is on the Agents / Work Hub workspace surface (not the project list landing). */
 export const QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY = 'qaap.mobileProjects.preferAgentsSurface';
 
@@ -15,6 +18,7 @@ export function markPreferDesktopIde(): void {
     preferDesktopIdeThisRuntime = true;
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY);
+        sessionStorage.setItem(QAAP_MOBILE_EXPLICIT_DESKTOP_IDE_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY);
     }
 }
@@ -23,11 +27,14 @@ export function clearPreferDesktopIde(): void {
     preferDesktopIdeThisRuntime = false;
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY);
+        sessionStorage.removeItem(QAAP_MOBILE_EXPLICIT_DESKTOP_IDE_KEY);
     }
 }
 
 export function peekPreferDesktopIde(): boolean {
-    return preferDesktopIdeThisRuntime;
+    return preferDesktopIdeThisRuntime
+        || (typeof sessionStorage !== 'undefined'
+            && sessionStorage.getItem(QAAP_MOBILE_EXPLICIT_DESKTOP_IDE_KEY) === '1');
 }
 
 export function markPreferAgentsSurface(): void {
@@ -38,6 +45,7 @@ export function markPreferAgentsSurface(): void {
         }
         sessionStorage.setItem(QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY);
+        sessionStorage.removeItem(QAAP_MOBILE_EXPLICIT_DESKTOP_IDE_KEY);
     }
 }
 
