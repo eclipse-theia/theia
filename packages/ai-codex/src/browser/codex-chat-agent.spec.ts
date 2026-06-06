@@ -39,6 +39,7 @@ import type {
     TodoListItem,
     AgentMessageItem,
     ItemCompletedEvent,
+    ItemUpdatedEvent,
     TurnCompletedEvent,
     ThreadEvent
 } from '@openai/codex-sdk';
@@ -149,6 +150,17 @@ describe('CodexChatAgent', () => {
         };
     }
 
+    function createAgentMessageUpdatedEvent(text: string, id: string = 'msg-1'): ItemUpdatedEvent {
+        return {
+            type: 'item.updated',
+            item: {
+                type: 'agent_message',
+                id,
+                text
+            } as AgentMessageItem
+        };
+    }
+
     function createReasoningEvent(text: string, id: string = 'reason-1'): ItemCompletedEvent {
         return {
             type: 'item.completed',
@@ -241,6 +253,33 @@ describe('CodexChatAgent', () => {
             const addedContent = addContentStub.firstCall.args[0];
             expect(addedContent).to.be.instanceOf(MarkdownChatResponseContentImpl);
             expect(addedContent.content.value).to.equal('Hello, I can help you with that.');
+            expect(completeStub.calledOnce).to.be.true;
+        });
+
+        it('should stream agent_message updates without duplicating completed content', async () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const mockCodexService = container.get<CodexFrontendService>(CodexFrontendService);
+            const requestData = new Map<string, unknown>();
+            (mockRequest.addData as sinon.SinonStub).callsFake((key: string, value: unknown) => requestData.set(key, value));
+            (mockRequest.getDataByKey as sinon.SinonStub).callsFake((key: string) => requestData.get(key));
+
+            const events = [
+                createAgentMessageUpdatedEvent('Hel'),
+                createAgentMessageUpdatedEvent('Hello'),
+                createAgentMessageEvent('Hello'),
+                createTurnCompletedEvent(50, 25)
+            ];
+            (mockCodexService.send as sinon.SinonStub).resolves(createMockStream(events));
+
+            await agent.invoke(mockRequest);
+
+            const addContentStub = (mockRequest.response.response.addContent as sinon.SinonStub);
+            const completeStub = (mockRequest.response.complete as sinon.SinonStub);
+            expect(addContentStub.callCount).to.equal(2);
+            expect(addContentStub.firstCall.args[0]).to.be.instanceOf(MarkdownChatResponseContentImpl);
+            expect(addContentStub.firstCall.args[0].content.value).to.equal('Hel');
+            expect(addContentStub.secondCall.args[0]).to.be.instanceOf(MarkdownChatResponseContentImpl);
+            expect(addContentStub.secondCall.args[0].content.value).to.equal('lo');
             expect(completeStub.calledOnce).to.be.true;
         });
 

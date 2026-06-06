@@ -484,9 +484,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.recreateModelTree(chatModel);
 
         chatModel.getRequests().forEach(request => {
-            if (!request.response.isComplete) {
-                request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
-            }
+            this.trackLiveResponse(request);
         });
         this.toDisposeOnChatModelChange.pushAll([
             Disposable.create(() => {
@@ -510,7 +508,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.recreateModelTree(chatModel);
 
                 if (event.kind === 'addRequest' && !event.request.response.isComplete) {
-                    event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
+                    this.trackLiveResponse(event.request);
                 } else if (event.kind === 'submitEdit') {
                     event.branch.succeedingBranches().forEach(branch => {
                         this.disposeChatInputWidget(branch.get());
@@ -521,6 +519,20 @@ export class ChatViewTreeWidget extends TreeWidget {
                 }
             })
         ]);
+    }
+
+    protected trackLiveResponse(request: ChatRequestModel): void {
+        if (request.response.isComplete) {
+            return;
+        }
+        const disposable = request.response.onDidChange(() => {
+            this.scheduleUpdateScrollToRow();
+            this.update();
+            if (request.response.isComplete) {
+                disposable.dispose();
+            }
+        });
+        this.toDisposeOnChatModelChange.push(disposable);
     }
 
     protected disposeChatInputWidget(request: ChatRequestModel): void {

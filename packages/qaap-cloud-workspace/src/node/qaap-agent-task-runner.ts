@@ -51,7 +51,7 @@ import {
 } from '../common/qaap-qaiq-model-binding';
 import { resolveRequestAgentModel, resolveTaskAgentModel } from '../common/qaap-agent-task';
 import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
-import { prependAgentTaskContextToPrompt } from '../common/qaap-agent-task-context';
+import { prependAgentTaskContextToPrompt, truncateProjectInfo } from '../common/qaap-agent-task-context';
 import {
     applyAntigravityModelSetting,
     isAntigravityCliCommand,
@@ -752,7 +752,7 @@ export class QaapAgentTaskRunner {
             if (!text) {
                 return undefined;
             }
-            return text.length > PROJECT_INFO_MAX_CHARS ? text.slice(0, PROJECT_INFO_MAX_CHARS) : text;
+            return truncateProjectInfo(text, PROJECT_INFO_MAX_CHARS);
         } catch {
             return undefined;
         }
