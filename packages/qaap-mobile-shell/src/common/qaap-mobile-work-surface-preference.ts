@@ -14,6 +14,10 @@ export const QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY = 'qaap.mobileProjects.prefer
 
 let preferDesktopIdeThisRuntime = false;
 
+/**
+ * CRITICAL: "Open IDE" is an in-runtime escape hatch only. It must not survive reload/F5,
+ * because Work Hub is the product default on every boot. Keep desktop-IDE state memory-only.
+ */
 export function markPreferDesktopIde(): void {
     preferDesktopIdeThisRuntime = true;
     if (typeof sessionStorage !== 'undefined') {

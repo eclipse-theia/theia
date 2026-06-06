@@ -22,6 +22,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. `node scripts/qaap-drift-check.js` — drift policy
 3. `npm run build:browser` — only if UI changes need testing in browser
 
+**Critical Qaap product contract:** Work Hub is the default surface after every browser reload. The classic IDE may open only after an explicit in-runtime "Open IDE" action, and that choice must never survive reload/F5. Do not persist desktop-IDE preference in `sessionStorage`, `localStorage`, URL state, or restored layout. See `.cursor/rules/work-hub-reload-default.mdc`.
+
 ## Development Commands
 
 **Essential commands:**
@@ -63,6 +65,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`@theia/mini-browser`** still lists **`@theia/qaap-element-inspector`** directly (DI and imports from that package).
 - Narrow mobile viewport breakpoint for TypeScript: **`MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`** and **`matchesMobileNarrowViewport()`** in `packages/core/src/browser/shell/mobile-layout-state.ts` (keep CSS using the same `767px` breakpoint in sync). Narrow-viewport rules for menus / side panel / dialogs live in **`@theia/qaap-product-theme`** (`qaap-menus-narrow-viewport.css`, `qaap-sidepanel-narrow-viewport.css`, `qaap-dialog-narrow-viewport.css`); apps without that package will not get those overrides.
 - **Mobile touch scroll (critical):** nested lists inside flex overlays must use `min-height: 0` + native overflow and be listed in `qaap-mobile-touch-scroll.css` and `MOBILE_VERTICAL_SCROLL_SELECTOR` (`mobile-vertical-touch-scroll.ts`). See `.cursor/rules/mobile-touch-accessibility.mdc`.
+- **Work Hub reload default (critical):** reload/F5 must land directly in Work Hub, never the IDE, unless the user opens the IDE again in the current runtime. Keep `markPreferDesktopIde()` memory-only and keep `qaap-login-gate.js` clearing stale desktop-IDE keys before boot.
 
 **Platform-specific code organization (per package):**
 - `src/common/` - Shared JavaScript APIs (runs everywhere)

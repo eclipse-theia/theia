@@ -1,0 +1,50 @@
+---
+description: Work Hub por defecto tras reload/F5 — nunca restaurar IDE persistido (CRITICO)
+alwaysApply: true
+---
+
+# Work Hub reload default (critico)
+
+Work Hub es la superficie por defecto de Qaap. Al recargar la pagina, abrir una workspace por URL, volver de OAuth, o restaurar layout, la app debe entrar directo a Work Hub / Agents. El IDE clasico solo puede mostrarse si el usuario pulsa "Open IDE" durante el runtime actual.
+
+## Regla innegociable
+
+No persistir la preferencia de IDE clasico. En particular, no guardar ni leer como estado durable:
+
+- `qaap.mobileProjects.preferDesktopIde`
+- `qaap.mobileProjects.explicitDesktopIde`
+- cualquier reemplazo equivalente en `sessionStorage`, `localStorage`, query/hash, backend, o layout restore
+
+`markPreferDesktopIde()` debe ser memory-only. `peekPreferDesktopIde()` debe limpiar claves legacy y devolver solo la bandera en memoria del runtime actual.
+
+## Puntos criticos
+
+- `packages/qaap-mobile-shell/src/common/qaap-mobile-work-surface-preference.ts`
+- `packages/qaap-mobile-shell/src/browser/mobile-projects-open.ts`
+- `packages/qaap-mobile-shell/src/browser/mobile-one-column-shell-contribution.ts`
+- `packages/qaap-product/resources/qaap-login-gate.js`
+- `packages/qaap-mobile-shell/src/browser/qaap-shell-layout-restore-contribution.ts`
+
+## Contrato esperado
+
+- F5/reload despues de haber usado "Open IDE" vuelve a Work Hub.
+- El guard temprano `qaap-login-gate.js` no debe hacer `return` por una key de IDE persistida.
+- La restauracion de layout puede restaurar widgets internos, pero no puede elegir el IDE como superficie inicial.
+- Las claves legacy de IDE se eliminan al leer/preparar el estado.
+- La preferencia de Agents/Work Hub si puede sobrevivir reload cuando ayuda a evitar flash de IDE.
+
+## Verificacion
+
+Despues de tocar estos archivos, ejecutar:
+
+```sh
+npx lerna run compile --scope @theia/qaap-mobile-shell
+npx lerna run test --scope @theia/qaap-mobile-shell
+```
+
+Y verificar manualmente en browser:
+
+1. Abrir un workspace.
+2. Pulsar "Open IDE".
+3. Recargar la pagina con F5.
+4. Confirmar que aparece Work Hub directamente, sin flash ni restauracion del IDE.
