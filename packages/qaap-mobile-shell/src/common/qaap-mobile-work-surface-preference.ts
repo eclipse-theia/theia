@@ -3,34 +3,37 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/** User explicitly chose the classic IDE layout (explorer + editor tabs). Survives reload in sessionStorage. */
+/** Legacy key from when the IDE choice survived reloads; kept so stale values can be cleared. */
 export const QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY = 'qaap.mobileProjects.preferDesktopIde';
 
 /** User is on the Agents / Work Hub workspace surface (not the project list landing). */
 export const QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY = 'qaap.mobileProjects.preferAgentsSurface';
 
+let preferDesktopIdeThisRuntime = false;
+
 export function markPreferDesktopIde(): void {
+    preferDesktopIdeThisRuntime = true;
     if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY, '1');
+        sessionStorage.removeItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY);
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY);
     }
 }
 
 export function clearPreferDesktopIde(): void {
+    preferDesktopIdeThisRuntime = false;
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY);
     }
 }
 
 export function peekPreferDesktopIde(): boolean {
-    return typeof sessionStorage !== 'undefined'
-        && sessionStorage.getItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY) === '1';
+    return preferDesktopIdeThisRuntime;
 }
 
 export function markPreferAgentsSurface(): void {
     if (typeof sessionStorage !== 'undefined') {
         // Async mobile bootstrap must not clobber an explicit "Open IDE" choice.
-        if (sessionStorage.getItem(QAAP_MOBILE_PREFER_DESKTOP_IDE_KEY) === '1') {
+        if (peekPreferDesktopIde()) {
             return;
         }
         sessionStorage.setItem(QAAP_MOBILE_PREFER_AGENTS_SURFACE_KEY, '1');
@@ -57,4 +60,3 @@ export function hasWorkspaceRouteInUrl(): boolean {
     const hash = decodeURIComponent(window.location.hash.replace(/^#/, '').trim());
     return hash.length > 0 && hash !== '/';
 }
-

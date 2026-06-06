@@ -12,18 +12,19 @@
      */
     (function installMobileWorkHubBootGuardEarly() {
         try {
-            var mobile = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
-            if (!mobile || !window.sessionStorage) {
+            if (!window.sessionStorage) {
                 return;
             }
             var ss = window.sessionStorage;
             if (ss.getItem('qaap.mobileProjects.preferDesktopIde') === '1') {
+                ss.removeItem('qaap.mobileProjects.preferDesktopIde');
+            }
+            if (window.__qaapPreferDesktopIdeThisRuntime === true) {
                 document.body.classList.remove('theia-mobile-mod-workhub-composer-header');
                 return;
             }
-            if (ss.getItem('qaap.mobileProjects.homeVisible') === '1') {
-                return;
-            }
+            // NOTE: `homeVisible` is NOT a skip — the Work Hub Home is a hub surface, so on reload
+            // we must keep hiding the IDE until the hub home mounts (applyLandingChrome releases it).
             if (ss.getItem('qaap.hub.pendingAction')) {
                 return;
             }
@@ -31,9 +32,13 @@
             var hasWorkspace = hash.length > 0 && hash !== '/';
             var dismiss = ss.getItem('qaap.mobileProjects.dismissPanel') === '1';
             var preferAgents = ss.getItem('qaap.mobileProjects.preferAgentsSurface') === '1';
+            // Pre-hide IDE chrome while the Work Hub / Agents surface mounts.
             if (hasWorkspace || dismiss || preferAgents) {
                 document.body.classList.add('theia-mobile-mod-workhub-composer-header');
             }
+            // Boot guard: hide the IDE shell until the Work Hub mounts so it never flashes first.
+            // Mobile and desktop both boot into the hub; the IDE is only shown after an explicit
+            // in-session "Open IDE" action.
             if (!document.getElementById('qaap-mobile-workhub-boot-styles')) {
                 var style = document.createElement('style');
                 style.id = 'qaap-mobile-workhub-boot-styles';
@@ -54,6 +59,10 @@
                 (document.head || document.documentElement).appendChild(style);
             }
             document.documentElement.classList.add('theia-mobile-workhub-boot');
+            // Safety net: never leave the shell hidden if the hub fails to mount for any reason.
+            window.setTimeout(function () {
+                document.documentElement.classList.remove('theia-mobile-workhub-boot');
+            }, 8000);
         } catch (e) { /* ignore */ }
     })();
 

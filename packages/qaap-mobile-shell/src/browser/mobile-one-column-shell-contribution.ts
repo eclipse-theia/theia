@@ -397,6 +397,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         if (!this.shouldActivateMobileLayout()) {
+            // Desktop is showing the classic IDE (a project is open) — reveal the shell so the
+            // boot guard, if it was installed early, never leaves the workbench hidden.
+            clearMobileWorkHubBootGuard();
             void this.ensureWelcomeInMainArea();
             window.requestAnimationFrame(() => this.ensureDesktopSidePanelSizes());
         }
@@ -434,16 +437,22 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
     }
 
-    /** Narrow viewport (or Agents preference): keep mobile shell chrome even in desktop-IDE mode. */
+    /** Work Hub is the default surface on every viewport; desktop IDE requires an explicit choice. */
     protected shouldActivateMobileLayout(): boolean {
         if (Boolean(this.mobileMq?.matches)) {
+            return true;
+        }
+        if (peekPreferDesktopIde()) {
+            return false;
+        }
+        if (shouldBootstrapMobileAgentsChat()) {
             return true;
         }
         if (shouldPreferWorkHubAgentsLayout()) {
             return true;
         }
-        // Wide viewport during this session: user already left the landing in mobile layout.
-        return this.mobileActive && this.landingLeftThisSession && this.workspaceService.opened;
+        // Desktop also starts in Work Hub. The classic IDE is entered only through "Open IDE".
+        return true;
     }
 
     /** Agents / Work Hub surface — not when the user explicitly chose the classic IDE. */
@@ -1471,7 +1480,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             isEnabled: () => this.workspaceService.opened
                 && this.shouldActivateMobileLayout()
                 && !peekPreferDesktopIde(),
-            isVisible: () => this.workspaceService.opened && shouldPreferWorkHubAgentsLayout(),
+            isVisible: () => this.workspaceService.opened && this.shouldActivateWorkHubLayout(),
         });
     }
 
@@ -3045,6 +3054,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Open Welcome when the main dock is empty (layout restore / mobile entry often skip startup). */
     protected async ensureWelcomeInMainArea(): Promise<void> {
+        // The classic IDE / Welcome is taking the main area — make sure the boot guard is lifted.
+        clearMobileWorkHubBootGuard();
         if (toArray(this.shell.mainPanel.widgets()).length > 0) {
             return;
         }

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import {
     clearPreferAgentsSurface,
     clearPreferDesktopIde,
@@ -158,12 +157,15 @@ export function installMobileWorkHubBootGuard(): void {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
         return;
     }
-    const mobile = matchesMobileOneColumnLayout();
     const hasPendingHubAction = typeof sessionStorage !== 'undefined'
         && sessionStorage.getItem('qaap.hub.pendingAction') !== null;
-    if (!mobile || peekPreferDesktopIde() || peekMobileProjectsHomeVisible() || hasPendingHubAction) {
+    // `homeVisible` is intentionally NOT a skip: the Work Hub Home is a hub surface, so the guard
+    // must keep the IDE hidden on reload until the home mounts (applyLandingChrome releases it).
+    if (peekPreferDesktopIde() || hasPendingHubAction) {
         return;
     }
+    // Mobile and desktop both boot into the hub; the IDE is only shown after an explicit in-session
+    // "Open IDE" action.
     document.documentElement.classList.add(QAAP_MOBILE_WORK_HUB_BOOT_CLASS);
 }
 

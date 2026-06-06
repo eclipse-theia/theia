@@ -174,6 +174,7 @@ import {
     type StickyComposerContextChipView,
 } from './qaap-sticky-composer-context-ui';
 import {
+    createStickyComposerWorkspacePill,
     renderStickyComposerWorkspaceBar,
     type StickyComposerWorkspaceBarView,
 } from './qaap-sticky-composer-workspace-bar';
@@ -4058,6 +4059,7 @@ export class MobileProjectsPanel {
                         : undefined,
                 );
             },
+            showWorkspaceBar: this.shouldShowComposerWorkspaceBar(),
         });
         this.stickyComposerHost.append(column);
         this.syncHeaderComposerSurfacePicker();
@@ -4236,14 +4238,8 @@ export class MobileProjectsPanel {
         return undefined;
     }
 
-    protected shouldShowComposerWorkspaceBar(summary?: QaapAgentConversationSummaryDTO): boolean {
-        if (summary && isAgentsHubIdleConversationSummary(summary)) {
-            return true;
-        }
-        if (summary) {
-            return summary.messageCount === 0 && summary.status !== 'streaming';
-        }
-        return false;
+    protected shouldShowComposerWorkspaceBar(_summary?: QaapAgentConversationSummaryDTO): boolean {
+        return true;
     }
 
     protected resolveComposerWorkspaceBranch(project: MobileProjectEntry): string {
@@ -4380,10 +4376,63 @@ export class MobileProjectsPanel {
             list.append(btn);
         }
 
+        const actionsLabel = document.createElement('div');
+        actionsLabel.className = 'theia-mobile-sticky-composer-sheet-section-label';
+        actionsLabel.textContent = nls.localize('qaap/composerWorkspace/projectSheetActions', 'Add');
+        list.append(actionsLabel);
+        list.append(this.createComposerProjectSheetAction({
+            iconClass: 'codicon-repo-clone',
+            label: nls.localize('qaap/mobileProjects/newRepository', 'Add repository'),
+            onSelect: () => {
+                this.closeStickyComposerSheets();
+                void this.onNewClick();
+            },
+        }));
+        list.append(this.createComposerProjectSheetAction({
+            iconClass: 'codicon-add',
+            label: nls.localize('qaap/mobileOpenRepo/startNewProject', 'Start new project'),
+            onSelect: () => {
+                this.closeStickyComposerSheets();
+                void this.onCreateNewProjectFromSheet();
+            },
+        }));
+
         panel.append(header, list);
         sheet.append(backdrop, panel);
         document.body.append(sheet);
         this.stickyComposerWorkspaceSheet = sheet;
+    }
+
+    protected createComposerProjectSheetAction(options: {
+        readonly iconClass: string;
+        readonly label: string;
+        readonly onSelect: () => void;
+    }): HTMLButtonElement {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theia-mobile-sticky-composer-sheet-option theia-mod-action';
+        const content = document.createElement('span');
+        content.className = 'theia-mobile-sticky-composer-sheet-option-content';
+        const icon = document.createElement('span');
+        icon.className = `codicon ${options.iconClass} theia-mobile-sticky-composer-sheet-option-icon`;
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-sticky-composer-sheet-option-label';
+        label.textContent = options.label;
+        content.append(icon, label);
+        btn.append(content);
+        btn.addEventListener('click', () => options.onSelect());
+        return btn;
+    }
+
+    protected async onCreateNewProjectFromSheet(): Promise<void> {
+        const nextProjects = await this.projectsService.createGithubProject();
+        if (!nextProjects) {
+            return;
+        }
+        this.projects = nextProjects;
+        this.render();
+        this.delegate.onProjectsChanged?.();
     }
 
     protected openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
@@ -4674,6 +4723,32 @@ export class MobileProjectsPanel {
             });
         }
 
+        let branchWorkspaceBar: HTMLElement | undefined;
+        if (options.showWorkspaceBar) {
+            wrap.classList.add('theia-mod-workspace-bar-below');
+            const workspaceView = this.resolveComposerWorkspaceBarView(options.project);
+            const projectPill = createStickyComposerWorkspacePill({
+                iconClass: 'codicon-folder',
+                label: workspaceView.projectName,
+                ariaLabel: nls.localize('qaap/composerWorkspace/projectAria', 'Project: {0}', workspaceView.projectName),
+                onClick: () => {
+                    this.openComposerWorkspaceProjectSheet(options.project, options.transcriptOverlay === true);
+                },
+            });
+            toolbarItems.unshift(projectPill);
+            toolbar.classList.add('theia-mod-has-workspace-pill');
+            branchWorkspaceBar = renderStickyComposerWorkspaceBar({
+                view: workspaceView,
+                includeProject: false,
+                onOpenProject: () => {
+                    this.openComposerWorkspaceProjectSheet(options.project, options.transcriptOverlay === true);
+                },
+                onOpenBranch: () => {
+                    this.openComposerWorkspaceBranchSheet(options.project, options.transcriptOverlay === true);
+                },
+            });
+        }
+
         toolbar.append(...toolbarItems);
         const usageBadge = createContextUsageIndicatorBadge();
         usageBadge.classList.add('theia-mobile-projects-sticky-composer-context-usage');
@@ -4822,20 +4897,10 @@ export class MobileProjectsPanel {
         toolbar.classList.add('qaap-codex-context-tray');
         card.append(inputWrap, toolbar);
         wrap.append(card);
-        if (options.showWorkspaceBar) {
-            wrap.classList.add('theia-mod-workspace-bar-below');
-            const workspaceBar = renderStickyComposerWorkspaceBar({
-                view: this.resolveComposerWorkspaceBarView(options.project),
-                onOpenProject: () => {
-                    this.openComposerWorkspaceProjectSheet(options.project, options.transcriptOverlay === true);
-                },
-                onOpenBranch: () => {
-                    this.openComposerWorkspaceBranchSheet(options.project, options.transcriptOverlay === true);
-                },
-            });
-            wrap.append(workspaceBar);
+        if (branchWorkspaceBar) {
+            wrap.append(branchWorkspaceBar);
             void this.refreshComposerWorkspaceBranch(options.project).then(branch => {
-                const label = workspaceBar.querySelector('.theia-mobile-projects-sticky-composer-workspace-pill-label.theia-mod-mono');
+                const label = branchWorkspaceBar!.querySelector('.theia-mobile-projects-sticky-composer-workspace-pill-label.theia-mod-mono');
                 if (label) {
                     label.textContent = branch;
                 }

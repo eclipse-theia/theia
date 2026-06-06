@@ -10,30 +10,47 @@ export interface StickyComposerWorkspaceBarView {
     readonly branchName: string;
 }
 
+export function createStickyComposerWorkspacePill(options: {
+    readonly iconClass: string;
+    readonly label: string;
+    readonly ariaLabel: string;
+    readonly onClick: () => void;
+    readonly mono?: boolean;
+    readonly branch?: boolean;
+}): HTMLButtonElement {
+    return createWorkspacePill(options);
+}
+
 export function renderStickyComposerWorkspaceBar(options: {
     readonly view: StickyComposerWorkspaceBarView;
     readonly onOpenProject: () => void;
     readonly onOpenBranch: () => void;
+    readonly includeProject?: boolean;
+    readonly includeBranch?: boolean;
 }): HTMLElement {
     const bar = document.createElement('div');
     bar.className = 'theia-mobile-projects-sticky-composer-workspace-bar';
 
-    bar.append(
-        createWorkspacePill({
+    const pills: HTMLButtonElement[] = [];
+    if (options.includeProject !== false) {
+        pills.push(createWorkspacePill({
             iconClass: 'codicon-folder',
             label: options.view.projectName,
             ariaLabel: nls.localize('qaap/composerWorkspace/projectAria', 'Project: {0}', options.view.projectName),
             onClick: options.onOpenProject,
-        }),
-        createWorkspacePill({
+        }));
+    }
+    if (options.includeBranch !== false) {
+        pills.push(createWorkspacePill({
             iconClass: 'codicon-git-branch',
             label: options.view.branchName,
             ariaLabel: nls.localize('qaap/composerWorkspace/branchAria', 'Branch: {0}', options.view.branchName),
             onClick: options.onOpenBranch,
             mono: true,
             branch: true,
-        }),
-    );
+        }));
+    }
+    bar.append(...pills);
     return bar;
 }
 
