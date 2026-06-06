@@ -30,17 +30,27 @@ describe('qaap-mobile-work-surface-preference', () => {
         };
         (global as unknown as { sessionStorage: Storage }).sessionStorage = sessionStorage as Storage;
         (global as unknown as { window: Window }).window = { sessionStorage } as unknown as Window;
+        clearPreferDesktopIde();
+        clearPreferAgentsSurface();
     });
 
-    it('persists an explicit desktop IDE choice for reload', () => {
+    it('keeps an explicit desktop IDE choice only for the current runtime', () => {
         expect(peekPreferDesktopIde()).to.equal(false);
         markPreferDesktopIde();
         expect(peekPreferDesktopIde()).to.equal(true);
         expect(storage.has('qaap.mobileProjects.preferDesktopIde')).to.equal(false);
-        expect(storage.get('qaap.mobileProjects.explicitDesktopIde')).to.equal('1');
+        expect(storage.has('qaap.mobileProjects.explicitDesktopIde')).to.equal(false);
         expect(peekPreferAgentsSurface()).to.equal(false);
         clearPreferDesktopIde();
         expect(peekPreferDesktopIde()).to.equal(false);
+        expect(storage.has('qaap.mobileProjects.explicitDesktopIde')).to.equal(false);
+    });
+
+    it('clears stale persisted desktop IDE choices from older builds', () => {
+        storage.set('qaap.mobileProjects.preferDesktopIde', '1');
+        storage.set('qaap.mobileProjects.explicitDesktopIde', '1');
+        expect(peekPreferDesktopIde()).to.equal(false);
+        expect(storage.has('qaap.mobileProjects.preferDesktopIde')).to.equal(false);
         expect(storage.has('qaap.mobileProjects.explicitDesktopIde')).to.equal(false);
     });
 

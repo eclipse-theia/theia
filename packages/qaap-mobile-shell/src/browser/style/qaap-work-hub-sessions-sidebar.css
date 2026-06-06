@@ -620,10 +620,13 @@
   max-height: var(--qaap-sessions-sidebar-list-height, 1200px);
   opacity: 1;
   overflow: hidden;
+  transform: translateY(0);
+  transform-origin: top;
   transition:
     max-height 180ms var(--qaap-sessions-sidebar-motion-easing),
     opacity 140ms var(--qaap-sessions-sidebar-motion-easing),
-    padding 180ms var(--qaap-sessions-sidebar-motion-easing);
+    padding 180ms var(--qaap-sessions-sidebar-motion-easing),
+    transform 180ms var(--qaap-sessions-sidebar-motion-easing);
 }
 
 .theia-mobile-work-hub-sessions-sidebar-project-group.theia-mod-collapsed
@@ -632,6 +635,7 @@
   .theia-mobile-work-hub-sessions-sidebar-projects-list {
   max-height: 0;
   opacity: 0;
+  transform: translateY(-4px);
   padding-top: 0;
   padding-bottom: 0;
 }

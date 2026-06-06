@@ -20,8 +20,7 @@
                 ss.removeItem('qaap.mobileProjects.preferDesktopIde');
             }
             if (ss.getItem('qaap.mobileProjects.explicitDesktopIde') === '1') {
-                document.body.classList.remove('theia-mobile-mod-workhub-composer-header');
-                return;
+                ss.removeItem('qaap.mobileProjects.explicitDesktopIde');
             }
             // NOTE: `homeVisible` is NOT a skip — the Work Hub Home is a hub surface, so on reload
             // we must keep hiding the IDE until the hub home mounts (applyLandingChrome releases it).
