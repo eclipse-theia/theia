@@ -191,6 +191,7 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
 
             this._defaultLogLevel = newDefaultLogLevel;
             this._logLevels = newLogLevels;
+            this.wildcardRegexCache.clear();
 
             console.log(`Successfully read new log config from ${filename}.`);
         } catch (e) {
@@ -202,25 +203,24 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
         return this.logConfigChangedEvent.event;
     }
 
-    logLevelFor(loggerName: string): LogLevel {
-        let resolvedLevel: LogLevel | undefined = undefined;
+    public logLevelFor(name: string): LogLevel {
+        if (name in this._logLevels) {
+            return this._logLevels[name];
+        }
 
-        for (const pattern of Object.keys(this._logLevels)) {
-            if (pattern === loggerName) {
-                resolvedLevel = this._logLevels[pattern];
-            } else if (pattern.includes('*')) {
+        const keys = Object.keys(this._logLevels);
+        for (let i = keys.length - 1; i >= 0; i--) {
+            const pattern = keys[i];
+
+            if (pattern.includes('*')) {
                 const regex = this.getWildcardRegex(pattern);
-                if (regex.test(loggerName)) {
-                    resolvedLevel = this._logLevels[pattern];
+                if (regex.test(name)) {
+                    return this._logLevels[pattern];
                 }
             }
         }
 
-        if (resolvedLevel !== undefined) {
-            return resolvedLevel;
-        } else {
-            return this.defaultLogLevel;
-        }
+        return this.defaultLogLevel;
     }
 
     /**
@@ -238,7 +238,7 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
 
     /**
      * Converts a wildcard string into a strict regular expression and caches it.
-     * Example: "ai-core*" -> /^ai\-core.*$/
+     * Example: "ai-core*" -> /^ai-core.*$/
      */
     protected getWildcardRegex(pattern: string): RegExp {
         let regex = this.wildcardRegexCache.get(pattern);

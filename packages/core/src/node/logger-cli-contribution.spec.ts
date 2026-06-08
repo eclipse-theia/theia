@@ -260,48 +260,64 @@ describe('log-level-cli-contribution', () => {
 
     describe('Wildcard Matching', () => {
 
-        it('should respect exact matches if they are evaluated last (or only)', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                'unrelated:Service': LogLevel.DEBUG
-            };
+        async function setupLogLevels(levels: { [key: string]: string }): Promise<void> {
+            const file = track.openSync();
+            fs.writeFileSync(file.fd, JSON.stringify({
+                defaultLevel: 'info',
+                levels
+            }));
+            fs.fsyncSync(file.fd);
+            fs.closeSync(file.fd);
+
+            const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+            await cli.setArguments(args);
+        }
+
+        it('should respect exact matches if they are evaluated last (or only)', async () => {
+            await setupLogLevels({
+                'unrelated:Service': 'debug'
+            });
             expect(cli.logLevelFor('unrelated:Service')).to.equal(LogLevel.DEBUG);
             expect(cli.logLevelFor('something-else')).to.equal(LogLevel.INFO);
         });
 
-        it('should match prefix wildcards', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                'ai-core*': LogLevel.ERROR
-            };
+        it('should match prefix wildcards', async () => {
+            await setupLogLevels({
+                'ai-core*': 'error'
+            });
             expect(cli.logLevelFor('ai-core:SomeOtherService')).to.equal(LogLevel.ERROR);
         });
 
-        it('should match suffix wildcards', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                '*TokenUsageFrontendServiceImpl': LogLevel.WARN
-            };
+        it('should match suffix wildcards', async () => {
+            await setupLogLevels({
+                '*TokenUsageFrontendServiceImpl': 'warn'
+            });
             expect(cli.logLevelFor('my-package:MyTokenUsageFrontendServiceImpl')).to.equal(LogLevel.WARN);
         });
 
-        it('should match middle wildcards', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                '*ai*:*': LogLevel.WARN
-            };
+        it('should match middle wildcards', async () => {
+            await setupLogLevels({
+                '*ai*:*': 'warn'
+            });
             expect(cli.logLevelFor('foo-ai-bar:SomeService')).to.equal(LogLevel.WARN);
         });
 
-        it('should enforce the "last one wins" rule', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                'ai-core:SpecificService': LogLevel.DEBUG,
-                'ai-core*': LogLevel.ERROR,
-                '*ai*:*': LogLevel.WARN
-            };
-            expect(cli.logLevelFor('ai-core:SpecificService')).to.equal(LogLevel.WARN);
+        it('should enforce perfect match first, then last wildcard wins', async () => {
+            await setupLogLevels({
+                'ai-core*': 'error',
+                '*ai*:*': 'warn',
+                'ai-core:SpecificService': 'debug'
+            });
+
+            expect(cli.logLevelFor('ai-core:SpecificService')).to.equal(LogLevel.DEBUG);
+
+            expect(cli.logLevelFor('ai-core:OtherService')).to.equal(LogLevel.WARN);
         });
 
-        it('should properly escape regex specifics like periods', () => {
-            (cli as unknown as Record<string, unknown>)['_logLevels'] = {
-                '.*': LogLevel.ERROR
-            };
+        it('should properly escape regex specifics like periods', async () => {
+            await setupLogLevels({
+                '.*': 'error'
+            });
             expect(cli.logLevelFor('anything-else')).to.equal(LogLevel.INFO);
             expect(cli.logLevelFor('.*')).to.equal(LogLevel.ERROR);
         });

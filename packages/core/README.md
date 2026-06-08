@@ -136,6 +136,34 @@ can then be specified using the `--log-config` option.  Theia will watch that
 file for changes, so it's possible to change log levels at runtime by
 modifying this file.
 
+### Wildcard Support
+
+You can use wildcards (`*`) in your configuration to target multiple loggers with a single rule. This is highly useful for setting a base log level for a group of related services without explicitly listing every single one.
+
+**Precedence Rules:**
+- **Exact Matches Win:** A perfect string match always takes priority over a wildcard match, regardless of its position in the file.
+- **Last One Wins (Wildcards):** If multiple wildcard patterns match a logger's name, the pattern defined *last* in the JSON object will take precedence.
+
+**Example:**
+```json
+{
+  "defaultLevel": "info",
+  "levels": {
+    "terminal-manager*": "debug",
+    "*TerminalManagerWidget": "error",
+    "terminal-manager:TerminalManagerWidget": "info"
+  }
+}
+```
+
+In this example:
+
+- `terminal-manager:SpecificService` evaluates to `debug` (matches the first wildcard).
+
+- `other-package:MyTerminalManagerWidget` evaluates to `error` (matches the second wildcard).
+
+- `terminal-manager:TerminalManagerWidget` evaluates to `info` (exact match overrides all wildcards, regardless of order).
+
 It's unfortunately currently not possible to query Theia for the list of
 existing loggers.  However, each log message specifies from which logger it
 comes from, which can give an idea, without having to read the code:
