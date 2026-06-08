@@ -18,8 +18,9 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { MessageService, PreferenceService } from '@theia/core';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPFrontendService } from '../common/mcp-server-manager';
+import { MCPFrontendService, MCPServerDescription, RemoteMCPServerDescription } from '../common/mcp-server-manager';
 import { MCPInstallEntry, MCPServerEditDialogFactory, MCPServerEditorImpl } from './mcp-server-editor';
+import type { MCPServerFormData } from './mcp-server-edit-dialog';
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();
@@ -150,5 +151,113 @@ describe('MCPServerEditor.installFromEntry', () => {
         const all = prefs.snapshot<Record<string, unknown>>(MCP_SERVERS_PREF)!;
         expect(Object.keys(all).sort()).to.deep.equal(['example', 'other']);
         expect(all.other).to.deep.equal({ command: 'node', args: ['unrelated.js'] });
+    });
+});
+
+describe('MCPServerEditor OAuth form handling', () => {
+
+    let prefs: FakePreferenceService;
+    let editor: MCPServerEditorImpl;
+
+    beforeEach(() => {
+        const container = new Container();
+        prefs = new FakePreferenceService();
+        container.bind(PreferenceService).toConstantValue(prefs as unknown as PreferenceService);
+        container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
+        container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
+        container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
+            throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
+        });
+        container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+        editor = container.get(MCPServerEditorImpl);
+    });
+
+    function remoteFormData(overrides: Partial<MCPServerFormData>): MCPServerFormData {
+        return {
+            name: 'oauth-server',
+            serverType: 'remote',
+            command: '',
+            args: '',
+            env: '',
+            serverUrl: 'https://mcp.example.com/mcp',
+            serverAuthToken: '',
+            serverAuthTokenHeader: '',
+            headers: '',
+            oauthEnabled: false,
+            oauthClientId: '',
+            oauthScopes: '',
+            oauthAuthorizationServer: '',
+            oauthResource: '',
+            autostart: false,
+            ...overrides
+        };
+    }
+
+    it('persists OAuth fields for a remote MCP server', async () => {
+        await editor.save(remoteFormData({
+            oauthEnabled: true,
+            oauthClientId: 'client-id',
+            oauthScopes: 'mcp.read mcp.write',
+            oauthAuthorizationServer: 'https://auth.example.com',
+            oauthResource: 'https://mcp.example.com/mcp'
+        }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                oauth: {
+                    enabled: true,
+                    clientId: 'client-id',
+                    scopes: ['mcp.read', 'mcp.write'],
+                    authorizationServer: 'https://auth.example.com',
+                    resource: 'https://mcp.example.com/mcp'
+                }
+            }
+        });
+    });
+
+    it('omits OAuth config when OAuth is disabled even if OAuth fields are populated', async () => {
+        await editor.save(remoteFormData({
+            oauthEnabled: false,
+            oauthClientId: 'client-id',
+            oauthScopes: 'mcp.read mcp.write',
+            oauthAuthorizationServer: 'https://auth.example.com',
+            oauthResource: 'https://mcp.example.com/mcp'
+        }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false
+            }
+        });
+    });
+
+    it('pre-populates OAuth fields when converting a remote server to form data', () => {
+        const server: RemoteMCPServerDescription = {
+            name: 'oauth-server',
+            serverUrl: 'https://mcp.example.com/mcp',
+            oauth: {
+                enabled: true,
+                clientId: 'client-id',
+                scopes: ['mcp.read', 'mcp.write'],
+                authorizationServer: 'https://auth.example.com',
+                resource: 'https://mcp.example.com/mcp'
+            }
+        };
+
+        const formData = (editor as unknown as { toFormData(server: MCPServerDescription): MCPServerFormData | undefined }).toFormData(server);
+
+        expect(formData).to.deep.include({
+            name: 'oauth-server',
+            serverType: 'remote',
+            serverUrl: 'https://mcp.example.com/mcp',
+            oauthEnabled: true,
+            oauthClientId: 'client-id',
+            oauthScopes: 'mcp.read mcp.write',
+            oauthAuthorizationServer: 'https://auth.example.com',
+            oauthResource: 'https://mcp.example.com/mcp'
+        });
     });
 });

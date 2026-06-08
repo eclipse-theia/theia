@@ -15,7 +15,8 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/mcp-frontend-module",
-      "backend": "lib/node/mcp-backend-module"
+      "backend": "lib/node/mcp-backend-module",
+      "backendElectron": "lib/electron-node/mcp-electron-node-module"
     }
   ],
   "keywords": [
