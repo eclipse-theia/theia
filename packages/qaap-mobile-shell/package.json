@@ -18,6 +18,7 @@
     "@theia/preferences": "1.71.0",
     "@theia/preview": "1.71.0",
     "@theia/qaap-adapters": "1.71.0",
+    "@theia/qaap-ai-openrouter": "1.71.0",
     "@theia/qaap-element-inspector": "1.71.0",
     "@theia/qaap-shell": "1.71.0",
     "@theia/scm": "1.71.0",

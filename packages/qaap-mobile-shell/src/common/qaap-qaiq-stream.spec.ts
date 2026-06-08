@@ -6,6 +6,7 @@
 import { expect } from 'chai';
 import {
     collapseConsecutiveDuplicateParagraphs,
+    collapseExactRepeatedText,
     dedupeAgentMessageTextSegments,
     mergeIncrementalStreamText,
     QaapQaiqStreamAccumulator,
@@ -47,6 +48,14 @@ describe('mergeIncrementalStreamText', () => {
     });
 });
 
+describe('collapseExactRepeatedText', () => {
+
+    it('collapses a single block repeated twice without a separator', () => {
+        const once = '¡Hola! ¿En qué puedo ayudarte hoy con tu proyecto Mockup?';
+        expect(collapseExactRepeatedText(`${once}${once}`)).to.equal(once);
+    });
+});
+
 describe('dedupeAgentMessageTextSegments', () => {
 
     it('drops a replayed text segment after tool calls', () => {
@@ -70,6 +79,15 @@ describe('dedupeAgentMessageTextSegments', () => {
             { type: 'text', content: intro },
         ])).to.deep.equal([
             { type: 'text', content: intro },
+        ]);
+    });
+
+    it('collapses duplicated prose inside one text segment', () => {
+        const once = '¡Hola! ¿En qué puedo ayudarte hoy con tu proyecto Mockup?';
+        expect(dedupeAgentMessageTextSegments([
+            { type: 'text', content: `${once}${once}` },
+        ])).to.deep.equal([
+            { type: 'text', content: once },
         ]);
     });
 });

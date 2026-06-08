@@ -46,6 +46,9 @@
       "path": "../qaap-adapters"
     },
     {
+      "path": "../qaap-ai-openrouter"
+    },
+    {
       "path": "../qaap-element-inspector"
     },
     {

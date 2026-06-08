@@ -4,22 +4,31 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import {
     filterCatalogSections,
+    QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB,
+    QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND,
+    QAAP_WORK_HUB_AI_FEATURES_COMMAND,
     QAAP_WORK_HUB_WORKFLOWS,
     type WorkHubCatalogAction,
     type WorkHubCatalogItem,
     type WorkHubCatalogSection,
 } from '../common/mobile-work-hub-catalog';
 import { bindCatalogCardTapFeedback } from './qaap-catalog-card-tap-feedback';
+import { MobileOnboardingTutorialContribution } from './mobile-onboarding-tutorial-contribution';
+import type { MobileProjectsHubView } from './mobile-projects-types';
 
 /** Panel surface for the Workflows (catalog) hub tab. */
 export interface MobileProjectsHubCatalogHost {
     query: string;
     scroll: HTMLElement;
+    commands: CommandRegistry;
+    openPreferencesSheet?: (query?: string) => Promise<void>;
+    openAiConfigurationSheet?: (tabId?: string) => Promise<void>;
 
     renderSubtitle(): void;
-    runCatalogAction(action: WorkHubCatalogAction): Promise<void>;
+    selectHubLandingView(view: MobileProjectsHubView): void;
 }
 
 /** Workflows catalog cards grouped by section. */
@@ -120,8 +129,34 @@ export class MobileProjectsHubCatalogUi {
 
         card.append(icon, body, chevron);
         bindCatalogCardTapFeedback(card);
-        card.addEventListener('click', () => { void this.host.runCatalogAction(item.action); });
+        card.addEventListener('click', () => { void this.runCatalogAction(item.action); });
         return card;
+    }
+
+    async runCatalogAction(action: WorkHubCatalogAction): Promise<void> {
+        switch (action.type) {
+            case 'command':
+                if (action.commandId === QAAP_WORK_HUB_AI_FEATURES_COMMAND && this.host.openPreferencesSheet) {
+                    await this.host.openPreferencesSheet('ai-features');
+                    return;
+                }
+                if (action.commandId === QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND && this.host.openAiConfigurationSheet) {
+                    await this.host.openAiConfigurationSheet(QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB);
+                    return;
+                }
+                if (this.host.commands.getCommand(action.commandId)) {
+                    await this.host.commands.executeCommand(action.commandId);
+                }
+                return;
+            case 'hub-view':
+                this.host.selectHubLandingView(action.view);
+                return;
+            case 'replay-tutorial':
+                await this.host.commands.executeCommand(MobileOnboardingTutorialContribution.REPLAY_COMMAND.id);
+                return;
+            default:
+                return;
+        }
     }
 
     createCatalogEmptyState(): HTMLElement {

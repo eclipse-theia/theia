@@ -25,7 +25,7 @@ import {
 } from '../common/qaap-agent-conversation-client';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
-import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
+import { collapseExactRepeatedText, dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
 import {
     formatReadToolDetailFromArgs,
     formatToolActivityLabel,
@@ -2080,8 +2080,8 @@ export class MobileProjectsTranscriptMessagesUi {
 
     cleanTranscriptDisplayText(content: string | undefined | null): string {
         const text = content ?? '';
-        return text
+        return collapseExactRepeatedText(text
             .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
-            .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '');
+            .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, ''));
     }
 }

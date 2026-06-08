@@ -12,14 +12,13 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import type { QuickPick } from '@theia/core/lib/common/quick-pick-service';
-import { ConfirmDialog, QuickInputService, QuickPickItem, QuickPickSeparator, UnsafeWidgetUtilities } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPickItem, QuickPickSeparator, UnsafeWidgetUtilities } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { Widget as LuminoWidget } from '@lumino/widgets';
 import { AIVariable, AIVariableResolutionRequest, GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { ChatAgent, ChatAgentLocation, ChatMode, ChatModel, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import { ChatAgent, ChatAgentLocation, ChatMode, ChatModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { MobileProjectChatViewWidget } from './mobile-project-ai-chat-input-widget';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
@@ -27,9 +26,8 @@ import {
     MobileProjectEntry,
     MobileProjectFilter,
     MobileProjectsHubView,
-    mobileProjectInitials,
 } from './mobile-projects-types';
-import { MobileProjectsActiveTasks, MobileProjectTaskView, cwdMatchesProject } from './mobile-projects-active-tasks';
+import { MobileProjectsActiveTasks, MobileProjectTaskView } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsParallelUi } from './mobile-projects-parallel-ui';
@@ -37,16 +35,12 @@ import { MobileProjectsTeamUi } from './mobile-projects-team-ui';
 import { MobileProjectsTeamHubUi, type WorkHubApprovalItem } from './mobile-projects-team-hub-ui';
 import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import {
-    collectAgentMembers,
     countRunningTeamMembers,
     filterTeamMembersForDisplay,
     type WorkHubTeamMember,
 } from '../common/qaap-work-hub-team';
 import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
 import { MobileProjectsService } from './mobile-projects-service';
-import {
-    conversationTurnProgressRatio,
-} from '../common/qaap-agent-conversation-list-metrics';
 import {
     TranscriptFollowUpQueue,
     type TranscriptFollowUpEntry,
@@ -59,15 +53,8 @@ import {
     QaapAgentConversationSummaryDTO,
     QaapAgentMessageDTO,
     QaapAgentMessageSegmentDTO,
-    cancelConversation,
     conversationToSummary,
-    isConversationAutoApproveEnabled,
     createConversation,
-    deleteConversation,
-    forkConversation,
-    renameConversation,
-    retryConversation,
-    updateConversation,
 } from '../common/qaap-agent-conversation-client';
 import {
     approveAgentRequest,
@@ -94,7 +81,6 @@ import {
     agentUsesSettingsModelCatalog,
     fetchAgentModelsForAgent,
     filterQaapComposerAgents,
-    filterUiSelectableVpsAgents,
     QAAP_PRIMARY_AGENT_ID,
     isSameAgentModel,
     readStoredAgent,
@@ -104,7 +90,6 @@ import {
     reconcileStickyComposerAgent,
     resolveBackendAgentForTurn,
     resolveExplicitAgentForSubmit,
-    QAIQ_AGENT_ID,
     SHELL_AGENT_ID,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
@@ -142,9 +127,7 @@ import {
     type StickyComposerTokenOption,
 } from '../common/qaap-sticky-composer-mention';
 import {
-    createAgentPickerField,
     createAgentSheetOptionButton,
-    createAgentTaskBadge,
     createApprovalPolicySheetOptionButton,
     createToolApprovalRuleToggle,
     createPickerSheetOptionButton,
@@ -180,7 +163,7 @@ import {
     resolveContextUsageWarningThresholdPercentage,
     resolveVpsContextUsageIndicatorState,
 } from './qaap-chat-context-usage-indicator';
-import { createFormFieldLabel, createSegmentedField, type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
+import { createSegmentedField, type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import {
     createMobileSheetGrabber,
     installMobilePullToRefresh,
@@ -193,12 +176,7 @@ import {
     dismissQaapAccountMenu,
     toggleQaapAccountMenu,
 } from './qaap-workbench-account-menu';
-import {
-    fetchQaapAuthConfig,
-    fetchQaapAuthSession,
-    fetchQaapGithubPullRequests,
-} from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
-import { clearQaapAuthSession, readQaapAuthUser, readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { readQaapAuthUser, readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import {
     type EmbeddedAgentPreviewChrome,
 } from '@theia/qaap-adapters/lib/browser/qaap-agent-preview-chrome';
@@ -234,6 +212,18 @@ import { MobileProjectsWorkHubInboxUi, type MobileProjectsWorkHubInboxHost } fro
 import { MobileProjectsTheiaChatSessionUi, type MobileProjectsTheiaChatSessionHost } from './mobile-projects-theia-chat-session-ui';
 import { MobileProjectsHubCatalogUi, type MobileProjectsHubCatalogHost } from './mobile-projects-hub-catalog-ui';
 import { MobileProjectsHubRoutinesUi, type MobileProjectsHubRoutinesHost } from './mobile-projects-hub-routines-ui';
+import { MobileProjectsHubRoutineEditorUi, type MobileProjectsHubRoutineEditorHost } from './mobile-projects-hub-routine-editor-ui';
+import { MobileProjectsReposHubUi, type MobileProjectsReposHubHost } from './mobile-projects-repos-hub-ui';
+import { MobileProjectsProjectActionsUi, type MobileProjectsProjectActionsHost } from './mobile-projects-project-actions-ui';
+import { MobileProjectsInboxPrUi, type MobileProjectsInboxPrHost } from './mobile-projects-inbox-pr-ui';
+import { MobileProjectsCardMenuUi, type MobileProjectsCardMenuHost } from './mobile-projects-card-menu-ui';
+import {
+    MobileProjectsProjectRowsUi,
+    MOBILE_PROJECTS_CONVERSATIONS_COLLAPSED_LIMIT,
+    type MobileProjectsProjectRowsHost,
+} from './mobile-projects-project-rows-ui';
+import { MobileProjectsHubTeamDataUi, type MobileProjectsHubTeamDataHost } from './mobile-projects-hub-team-data-ui';
+import { MobileProjectsConversationActionsUi, type MobileProjectsConversationActionsHost } from './mobile-projects-conversation-actions-ui';
 import { MobileProjectsAgentsHubInlineUi, type MobileProjectsAgentsHubInlineHost } from './mobile-projects-agents-hub-inline-ui';
 import { MobileProjectsTranscriptLiveUi, type MobileProjectsTranscriptLiveHost } from './mobile-projects-transcript-live-ui';
 import { MobileProjectsTranscriptMessagesUi, type MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
@@ -261,41 +251,25 @@ import {
 } from '../common/qaap-work-hub-home';
 import { buildWorkHubHomeUsageSummary } from '../common/qaap-work-hub-usage-summary';
 import {
-    readStoredComposerSurface,
     writeStoredComposerSurface,
     type QaapComposerSurface,
 } from '../common/qaap-composer-surface';
-import { resolveQaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
 import {
     filterCatalogSections,
-    QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB,
-    QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND,
-    QAAP_WORK_HUB_AI_FEATURES_COMMAND,
     QAAP_WORK_HUB_GETTING_STARTED,
     QAAP_WORK_HUB_WORKFLOWS,
     countCatalogItems,
     type WorkHubCatalogAction,
 } from '../common/mobile-work-hub-catalog';
 import {
-    createWorkHubRoutine,
-    deleteWorkHubRoutine,
-    fetchWorkHubRoutines,
-    updateWorkHubRoutine,
-} from '../common/qaap-work-hub-routine-client';
-import {
     filterRoutinesByQuery,
     routineScheduleLabel,
     type QaapWorkHubRoutine,
-    type QaapWorkHubRoutineRunMode,
-    type QaapWorkHubRoutineTrigger,
 } from '../common/qaap-work-hub-routine';
-import { QAAP_ROUTINE_CRON_PRESETS } from '../common/qaap-work-hub-cron';
 import {
     githubRepoKeysForProjects,
-    pullRequestKey,
     type MobileWorkHubInboxItem,
 } from './mobile-work-hub-inbox';
-import { MobileOnboardingTutorialContribution } from './mobile-onboarding-tutorial-contribution';
 import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import {
     QAAP_GIT_REVIEW_API_PATH,
@@ -473,7 +447,7 @@ interface ComposerAgentPickerChrome {
 export class MobileProjectsPanel {
 
     /** Max conversation rows per repo card before "More" expands the list. */
-    protected static readonly CONVERSATIONS_COLLAPSED_LIMIT = 6;
+    protected static readonly CONVERSATIONS_COLLAPSED_LIMIT = MOBILE_PROJECTS_CONVERSATIONS_COLLAPSED_LIMIT;
 
     /** Initial session rows per project in the sessions sidebar before "Mostrar más". */
     protected static readonly SESSIONS_SIDEBAR_CONVERSATIONS_COLLAPSED_LIMIT = 5;
@@ -686,7 +660,6 @@ export class MobileProjectsPanel {
     /** Safety timer so a rejected initial prime can never strand the Tasks skeleton. */
     protected tasksFirstLoadFallback: number | undefined;
     protected inboxPullRequestsAbort: AbortController | undefined;
-    protected static readonly INBOX_PR_FETCH_TIMEOUT_MS = 20_000;
     protected workHubRoutines: QaapWorkHubRoutine[] = [];
     protected workHubRoutinesLoading = false;
     protected workHubRoutinesLoaded = false;
@@ -696,10 +669,6 @@ export class MobileProjectsPanel {
     protected routinesRefreshTimer: number | undefined;
     protected routineInteractionLock = false;
     protected readonly chatServiceSessionSummariesByProjectId = new Map<string, QaapAgentConversationSummaryDTO[]>();
-    protected openMenu: HTMLElement | undefined;
-    protected openMenuAnchor: HTMLElement | undefined;
-    protected openMenuCard: HTMLElement | undefined;
-    protected openMenuRepositionDispose: Disposable = Disposable.NULL;
     protected executionTabOverflowMenu: HTMLElement | undefined;
     protected executionTabOverflowAnchor: HTMLElement | undefined;
     protected executionTabOverflowDispose: Disposable = Disposable.NULL;
@@ -756,24 +725,7 @@ export class MobileProjectsPanel {
     protected transcriptSheetDispose: Disposable = Disposable.NULL;
     protected transcriptUserScrollPinDispose: Disposable = Disposable.NULL;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
-        if (!this.openMenu) {
-            return;
-        }
-        const target = ev.target;
-        if (target instanceof Node && this.openMenu.contains(target)) {
-            return;
-        }
-        this.closeCardMenu();
-    };
-
-    protected readonly onScrollWhileMenuOpen = (): void => {
-        if (this.openMenu && this.openMenuAnchor) {
-            this.positionCardMenu(this.openMenu, this.openMenuAnchor);
-        }
-    };
-
-    protected readonly onWindowResizeWhileMenuOpen = (): void => {
-        this.onScrollWhileMenuOpen();
+        this.cardMenuUi.handleDocumentPointerDown(ev);
     };
 
     protected readonly onAuthSessionChanged = (): void => {
@@ -1605,24 +1557,10 @@ export class MobileProjectsPanel {
             if (!this.visible || this.hubView !== 'review' || this.transcriptSheet) {
                 return;
             }
-            this.inboxPullRequests = this.mergeInboxPullRequests(this.inboxPullRequests);
+            this.inboxPullRequests = this.inboxPrUi.mergeInboxPullRequests(this.inboxPullRequests);
             this.inboxPullRequestsLoaded = true;
             this.renderList();
         });
-    }
-
-    protected mergeInboxPullRequests(polled: QaapGithubPullRequestSummary[]): QaapGithubPullRequestSummary[] {
-        const live = this.inboxStream?.getLivePullRequests() ?? [];
-        const merged = new Map<string, QaapGithubPullRequestSummary>();
-        for (const pullRequest of polled) {
-            merged.set(pullRequestKey(pullRequest), pullRequest);
-        }
-        for (const pullRequest of live) {
-            merged.set(pullRequestKey(pullRequest), pullRequest);
-        }
-        return [...merged.values()].sort(
-            (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-        );
     }
 
     protected subscribeToChatServiceSessions(): void {
@@ -2323,14 +2261,6 @@ export class MobileProjectsPanel {
             return 'child';
         }
         return 'none';
-    }
-
-    /** Fixed 18px slot for task-row leading codicons (status + fork lineage). */
-    protected createTaskLeadingGlyph(codiconClass: string): HTMLElement {
-        const glyph = document.createElement('span');
-        glyph.className = `theia-mobile-projects-task-leading-glyph codicon ${codiconClass}`;
-        glyph.setAttribute('aria-hidden', 'true');
-        return glyph;
     }
 
     /**
@@ -6212,885 +6142,6 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected collectTeamMembersForHub(): WorkHubTeamMember[] {
-        const conversations: Array<{
-            projectId: string;
-            projectName: string;
-            cwd: string;
-            id: string;
-            agentId: string;
-            title: string;
-            status: QaapAgentConversationSummaryDTO['status'];
-            paused?: boolean;
-            activityLabel?: string;
-            turnProgressCurrent?: number;
-            turnProgressTotal?: number;
-            linesAdded?: number;
-            linesRemoved?: number;
-            createdAt: number;
-            updatedAt: number;
-        }> = [];
-        for (const project of this.projects) {
-            for (const summary of this.conversationsForProject(project)) {
-                if (summary.source === 'theia-chat') {
-                    continue;
-                }
-                conversations.push({
-                    projectId: project.id,
-                    projectName: project.name,
-                    cwd: summary.cwd,
-                    id: summary.id,
-                    agentId: summary.agentId,
-                    title: summary.title,
-                    status: summary.status,
-                    paused: summary.paused,
-                    activityLabel: summary.activityLabel,
-                    turnProgressCurrent: summary.turnProgressCurrent,
-                    turnProgressTotal: summary.turnProgressTotal,
-                    linesAdded: summary.linesAdded,
-                    linesRemoved: summary.linesRemoved,
-                    createdAt: summary.createdAt,
-                    updatedAt: summary.updatedAt,
-                });
-            }
-        }
-        return collectAgentMembers({
-            tasks: this.activeTasks?.getAllTasks() ?? [],
-            conversations,
-        }).map(member => ({
-            ...member,
-            projectId: member.projectId ?? this.resolveProjectIdForTeamMember(member),
-        }));
-    }
-
-    protected collectTeamApprovalItems(members: readonly WorkHubTeamMember[]): WorkHubApprovalItem[] {
-        const memberByConversationId = new Map<string, WorkHubTeamMember>();
-        for (const member of members) {
-            if (member.conversationId) {
-                memberByConversationId.set(member.conversationId, member);
-            }
-        }
-        const items: WorkHubApprovalItem[] = [];
-        const seenConversationIds = new Set<string>();
-        for (const approval of this.cachedAgentApprovals) {
-            const member = memberByConversationId.get(approval.conversationId)
-                ?? this.buildApprovalMemberFromRequest(approval, members);
-            if (!member) {
-                continue;
-            }
-            seenConversationIds.add(approval.conversationId);
-            items.push({
-                member,
-                approvalId: approval.id,
-                summary: approval.summary,
-                detail: approval.detail,
-            });
-        }
-        for (const member of members) {
-            if (!member.conversationId || member.kind !== 'conversation' || seenConversationIds.has(member.conversationId)) {
-                continue;
-            }
-            const project = this.resolveProjectForTeamMember(member);
-            const summary = project
-                ? this.conversationsForProject(project).find(c => c.id === member.conversationId)
-                : undefined;
-            if (!summary || summary.source === 'theia-chat' || isConversationAutoApproveEnabled(summary)) {
-                continue;
-            }
-            if (summary.status !== 'streaming' && summary.status !== 'idle') {
-                continue;
-            }
-            items.push({
-                member,
-                hint: summary.status === 'streaming'
-                    ? nls.localize(
-                        'qaap/mobileProjects/teamApprovalHintStreaming',
-                        'Manual tool approval — enable YOLO or approve on the VPS.',
-                    )
-                    : nls.localize(
-                        'qaap/mobileProjects/teamApprovalHintIdle',
-                        'Manual tool approval is on for this task.',
-                    ),
-            });
-        }
-        return items.sort((a, b) => b.member.updatedAt - a.member.updatedAt);
-    }
-
-    protected buildApprovalMemberFromRequest(
-        approval: QaapAgentApprovalRequestDTO,
-        members: readonly WorkHubTeamMember[],
-    ): WorkHubTeamMember | undefined {
-        const existing = members.find(member => member.conversationId === approval.conversationId);
-        if (existing) {
-            return existing;
-        }
-        const project = this.projects.find(p => {
-            const cwd = this.projectsService.getProjectCwd(p);
-            return cwd === approval.cwd;
-        });
-        return {
-            id: `approval:${approval.conversationId}`,
-            cwd: approval.cwd,
-            agentId: approval.agentId,
-            title: approval.conversationTitle,
-            projectName: project?.name ?? approval.cwd.split('/').filter(Boolean).pop() ?? approval.cwd,
-            projectId: project?.id,
-            state: 'streaming',
-            kind: 'conversation',
-            conversationId: approval.conversationId,
-            childCount: 0,
-            createdAt: approval.createdAt,
-            updatedAt: approval.createdAt,
-        };
-    }
-
-    protected resolveProjectIdForTeamMember(member: WorkHubTeamMember): string | undefined {
-        for (const project of this.projects) {
-            const cwd = this.projectsService.getProjectCwd(project);
-            if (cwd === member.cwd || cwdMatchesProject(member.cwd, project)) {
-                return project.id;
-            }
-        }
-        return undefined;
-    }
-
-    protected resolveProjectForTeamMember(member: WorkHubTeamMember): MobileProjectEntry | undefined {
-        if (member.projectId) {
-            return this.projects.find(p => p.id === member.projectId);
-        }
-        return this.projects.find(p => {
-            const cwd = this.projectsService.getProjectCwd(p);
-            return cwd === member.cwd || cwdMatchesProject(member.cwd, p);
-        });
-    }
-
-    protected onTeamMemberClick(member: WorkHubTeamMember): void {
-        if (member.conversationId) {
-            const project = this.resolveProjectForTeamMember(member);
-            const summary = project
-                ? this.conversationsForProject(project).find(c => c.id === member.conversationId)
-                : undefined;
-            if (project && summary) {
-                void this.openTranscriptSheet(project, summary);
-                return;
-            }
-        }
-        if (member.taskId) {
-            const project = this.resolveProjectForTeamMember(member);
-            if (project) {
-                void this.showTaskLog(project, member.taskId);
-                return;
-            }
-        }
-        const project = this.resolveProjectForTeamMember(member);
-        if (project) {
-            this.hubView = 'repos';
-            this.projectsService.setHubView('repos');
-            void this.openProjectDetail(project);
-        }
-    }
-
-    protected async refreshWorkHubRoutines(force = false): Promise<void> {
-        if (this.workHubRoutinesLoading && !force) {
-            return;
-        }
-        this.workHubRoutinesLoading = true;
-        try {
-            const response = await fetchWorkHubRoutines();
-            this.workHubRoutines = response.routines;
-            this.workHubRoutinesDefaultAgent = response.defaultAgent;
-            this.workHubRoutinesLoaded = true;
-        } catch {
-            if (!this.workHubRoutinesLoaded) {
-                this.workHubRoutines = [];
-            }
-        } finally {
-            this.workHubRoutinesLoading = false;
-            if (this.visible && this.hubView === 'routines') {
-                this.renderList();
-            }
-        }
-    }
-
-    protected resolveDefaultRoutineCwd(): string {
-        const current = this.projects.find(p => p.isCurrent);
-        const cwd = current ? this.projectsService.getProjectCwd(current) : undefined;
-        if (cwd) {
-            return cwd;
-        }
-        const withUri = this.projects.find(p => p.uri);
-        if (withUri?.uri) {
-            return withUri.uri.path.toString();
-        }
-        return '';
-    }
-
-    protected openRoutineEditor(routine?: QaapWorkHubRoutine): void {
-        this.closeRoutineEditor();
-        this.editingRoutineId = routine?.id;
-        const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-routine-sheet';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-routine-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.closeRoutineEditor());
-
-        const panel = document.createElement('section');
-        panel.className = 'theia-mobile-routine-sheet-panel q-sheet';
-        panel.addEventListener('click', ev => ev.stopPropagation());
-        panel.addEventListener('pointerdown', ev => ev.stopPropagation());
-
-        const handle = document.createElement('div');
-        handle.className = 'theia-mobile-routine-sheet-handle';
-        handle.setAttribute('aria-hidden', 'true');
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-routine-sheet-header';
-        const heading = document.createElement('h2');
-        heading.textContent = routine
-            ? nls.localize('qaap/mobileProjects/routineEdit', 'Edit routine')
-            : nls.localize('qaap/mobileProjects/routineNew', 'New routine');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-routine-sheet-close q-icon-button codicon codicon-close';
-        close.addEventListener('click', () => this.closeRoutineEditor());
-        header.append(heading, close);
-
-        const form = document.createElement('div');
-        form.className = 'theia-mobile-routine-sheet-form';
-
-        const titleInput = document.createElement('input');
-        titleInput.type = 'text';
-        titleInput.className = 'theia-mobile-routine-field';
-        titleInput.placeholder = nls.localize('qaap/mobileProjects/routineTitlePlaceholder', 'Title');
-        titleInput.value = routine?.title ?? '';
-
-        const promptInput = document.createElement('textarea');
-        promptInput.className = 'theia-mobile-routine-field theia-mod-textarea';
-        promptInput.placeholder = nls.localize('qaap/mobileProjects/routinePromptPlaceholder', 'What should the VPS agent do?');
-        promptInput.value = routine?.prompt ?? '';
-
-        const cwdInput = document.createElement('input');
-        cwdInput.type = 'text';
-        cwdInput.className = 'theia-mobile-routine-field';
-        cwdInput.placeholder = nls.localize('qaap/mobileProjects/routineCwdPlaceholder', 'Working directory (absolute path)');
-        cwdInput.value = routine?.cwd ?? this.resolveDefaultRoutineCwd();
-
-        const agentPicker = createAgentPickerField({
-            label: nls.localize('qaap/mobileProjects/routineAgent', 'Agent'),
-            agents: [],
-            selectedId: routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID,
-        });
-        void fetchAgentTaskListAll().then(snapshot => {
-            agentPicker.setAgents(filterUiSelectableVpsAgents(snapshot.agents).filter(a => a.available));
-            const selected = routine?.agent ?? this.workHubRoutinesDefaultAgent ?? QAIQ_AGENT_ID;
-            agentPicker.setSelectedId(selected);
-        }).catch(() => {
-            agentPicker.setAgents([{ id: QAIQ_AGENT_ID, label: 'QAIQ' }]);
-            agentPicker.setSelectedId(QAIQ_AGENT_ID);
-        });
-
-        const syncScheduleFields = (): void => {
-            const trigger = triggerField.getValue();
-            const isInterval = trigger === 'interval';
-            const isCron = trigger === 'cron';
-            intervalInput.hidden = !isInterval;
-            for (const el of [cronPresetSelect, cronCustomInput, timezoneInput, oneShotLabel]) {
-                (el as HTMLElement).hidden = !isCron;
-            }
-        };
-        const triggerField = createSegmentedField<QaapWorkHubRoutineTrigger>({
-            label: nls.localize('qaap/mobileProjects/routineTrigger', 'Schedule'),
-            segments: [
-                { id: 'manual', label: nls.localize('qaap/mobileProjects/routineTriggerManualShort', 'Manual') },
-                { id: 'interval', label: nls.localize('qaap/mobileProjects/routineTriggerIntervalShort', 'Interval') },
-                { id: 'cron', label: nls.localize('qaap/mobileProjects/routineTriggerCronShort', 'Cron') },
-            ],
-            value: routine?.trigger ?? 'manual',
-            onChange: () => syncScheduleFields(),
-        });
-
-        const intervalInput = document.createElement('input');
-        intervalInput.type = 'number';
-        intervalInput.min = '1';
-        intervalInput.max = '168';
-        intervalInput.className = 'theia-mobile-routine-field theia-mod-interval-field';
-        intervalInput.placeholder = nls.localize('qaap/mobileProjects/routineIntervalHours', 'Interval (hours)');
-        intervalInput.value = String(routine?.intervalHours ?? 24);
-
-        const cronPresetSelect = document.createElement('select');
-        cronPresetSelect.className = 'theia-mobile-routine-field theia-mod-cron-field';
-        for (const preset of QAAP_ROUTINE_CRON_PRESETS) {
-            const option = document.createElement('option');
-            option.value = preset.expression;
-            option.textContent = preset.label;
-            cronPresetSelect.append(option);
-        }
-        const initialCron = routine?.cronExpression ?? QAAP_ROUTINE_CRON_PRESETS[0].expression;
-        cronPresetSelect.value = QAAP_ROUTINE_CRON_PRESETS.some(p => p.expression === initialCron)
-            ? initialCron
-            : QAAP_ROUTINE_CRON_PRESETS[0].expression;
-
-        const cronCustomInput = document.createElement('input');
-        cronCustomInput.type = 'text';
-        cronCustomInput.className = 'theia-mobile-routine-field theia-mod-cron-field';
-        cronCustomInput.placeholder = nls.localize('qaap/mobileProjects/routineCronExpression', 'Cron expression (min hour dom month dow)');
-        cronCustomInput.value = initialCron;
-
-        const timezoneInput = document.createElement('input');
-        timezoneInput.type = 'text';
-        timezoneInput.className = 'theia-mobile-routine-field theia-mod-cron-field';
-        timezoneInput.placeholder = nls.localize('qaap/mobileProjects/routineTimezone', 'Timezone (IANA, e.g. Europe/Madrid)');
-        timezoneInput.value = routine?.timezone
-            ?? Intl.DateTimeFormat().resolvedOptions().timeZone
-            ?? 'UTC';
-
-        const runModeField = createSegmentedField<QaapWorkHubRoutineRunMode>({
-            label: nls.localize('qaap/mobileProjects/routineRunMode', 'Session'),
-            segments: [
-                { id: 'fresh', label: nls.localize('qaap/mobileProjects/routineRunModeFreshShort', 'Fresh') },
-                { id: 'continue', label: nls.localize('qaap/mobileProjects/routineRunModeContinueShort', 'Continue') },
-            ],
-            value: routine?.runMode ?? 'fresh',
-        });
-
-        const oneShotLabel = document.createElement('label');
-        oneShotLabel.className = 'theia-mobile-routine-enabled theia-mod-cron-field';
-        const oneShotInput = document.createElement('input');
-        oneShotInput.type = 'checkbox';
-        oneShotInput.checked = routine?.oneShot ?? false;
-        oneShotLabel.append(oneShotInput, document.createTextNode(
-            nls.localize('qaap/mobileProjects/routineOneShot', 'Run once then disable'),
-        ));
-
-        cronPresetSelect.addEventListener('change', () => {
-            cronCustomInput.value = cronPresetSelect.value;
-        });
-        syncScheduleFields();
-
-        const enabledLabel = document.createElement('label');
-        enabledLabel.className = 'theia-mobile-routine-enabled';
-        const enabledInput = document.createElement('input');
-        enabledInput.type = 'checkbox';
-        enabledInput.checked = routine?.enabled ?? false;
-        enabledLabel.append(enabledInput, document.createTextNode(
-            nls.localize('qaap/mobileProjects/routineEnabled', 'Enabled'),
-        ));
-
-        const autoApproveLabel = document.createElement('label');
-        autoApproveLabel.className = 'theia-mobile-routine-enabled';
-        const autoApproveInput = document.createElement('input');
-        autoApproveInput.type = 'checkbox';
-        autoApproveInput.checked = routine?.autoApprove !== false;
-        autoApproveLabel.append(autoApproveInput, document.createTextNode(
-            nls.localize('qaap/mobileProjects/routineAutoApprove', 'Auto-approve tools (YOLO)'),
-        ));
-        const autoApproveHint = document.createElement('p');
-        autoApproveHint.className = 'theia-mobile-routine-field-hint';
-        autoApproveHint.textContent = nls.localize(
-            'qaap/mobileProjects/routineAutoApproveHint',
-            'Keep on for scheduled runs. Turn off only if you will watch the VPS and approve tool calls manually.',
-        );
-
-        form.append(
-            createFormFieldLabel(nls.localize('qaap/mobileProjects/routineTitle', 'Title')),
-            titleInput,
-            createFormFieldLabel(nls.localize('qaap/mobileProjects/routinePrompt', 'Prompt')),
-            promptInput,
-            createFormFieldLabel(nls.localize('qaap/mobileProjects/routineCwd', 'Working directory')),
-            cwdInput,
-            agentPicker.root,
-            triggerField.root,
-            intervalInput,
-            cronPresetSelect,
-            cronCustomInput,
-            timezoneInput,
-            runModeField.root,
-            oneShotLabel,
-            enabledLabel,
-            autoApproveLabel,
-            autoApproveHint,
-        );
-
-        const footer = document.createElement('footer');
-        footer.className = 'theia-mobile-routine-sheet-footer';
-        if (routine) {
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.className = 'theia-mobile-routine-btn theia-mod-danger';
-            deleteBtn.textContent = nls.localize('qaap/mobileProjects/routineDelete', 'Delete');
-            deleteBtn.addEventListener('click', () => { void this.deleteRoutine(routine.id); });
-            footer.append(deleteBtn);
-        }
-        const saveBtn = document.createElement('button');
-        saveBtn.type = 'button';
-        saveBtn.className = 'theia-mobile-routine-btn theia-mod-primary q-button-primary';
-        saveBtn.textContent = nls.localize('qaap/mobileProjects/routineSave', 'Save');
-        saveBtn.addEventListener('click', () => {
-            const trigger = triggerField.getValue();
-            void this.saveRoutineFromEditor({
-                id: routine?.id,
-                title: titleInput.value,
-                prompt: promptInput.value,
-                cwd: cwdInput.value,
-                agent: agentPicker.getSelectedId(),
-                trigger,
-                intervalHours: Number(intervalInput.value),
-                cronExpression: cronCustomInput.value.trim() || cronPresetSelect.value,
-                timezone: timezoneInput.value.trim(),
-                oneShot: oneShotInput.checked,
-                runMode: runModeField.getValue(),
-                enabled: enabledInput.checked,
-                autoApprove: autoApproveInput.checked,
-            });
-        });
-        footer.append(saveBtn);
-
-        panel.append(handle, header, form, footer);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.routineSheet = sheet;
-    }
-
-    protected closeRoutineEditor(): void {
-        this.routineSheet?.remove();
-        this.routineSheet = undefined;
-        this.editingRoutineId = undefined;
-    }
-
-    protected async saveRoutineFromEditor(fields: {
-        id?: string;
-        title: string;
-        prompt: string;
-        cwd: string;
-        agent: string;
-        trigger: QaapWorkHubRoutineTrigger;
-        intervalHours: number;
-        cronExpression: string;
-        timezone: string;
-        oneShot: boolean;
-        runMode: QaapWorkHubRoutineRunMode;
-        enabled: boolean;
-        autoApprove: boolean;
-    }): Promise<void> {
-        try {
-            const payload = {
-                title: fields.title,
-                prompt: fields.prompt,
-                cwd: fields.cwd,
-                agent: fields.agent,
-                trigger: fields.trigger,
-                intervalHours: fields.intervalHours,
-                ...(fields.trigger === 'cron' ? {
-                    cronExpression: fields.cronExpression,
-                    timezone: fields.timezone,
-                    oneShot: fields.oneShot,
-                } : {}),
-                runMode: fields.runMode,
-                enabled: fields.enabled,
-                autoApprove: fields.autoApprove,
-            };
-            if (fields.id) {
-                await updateWorkHubRoutine(fields.id, payload);
-            } else {
-                await createWorkHubRoutine(payload);
-            }
-            this.closeRoutineEditor();
-            await this.refreshWorkHubRoutines(true);
-            MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/routineSaved', 'Routine saved'),
-                { kind: 'success', duration: 1400 },
-            );
-        } catch (error) {
-            this.messageService?.error(error instanceof Error ? error.message : String(error));
-        }
-    }
-
-    protected async deleteRoutine(id: string): Promise<void> {
-        try {
-            await deleteWorkHubRoutine(id);
-            this.closeRoutineEditor();
-            await this.refreshWorkHubRoutines(true);
-        } catch (error) {
-            this.messageService?.error(error instanceof Error ? error.message : String(error));
-        }
-    }
-
-    protected async runCatalogAction(action: WorkHubCatalogAction): Promise<void> {
-        switch (action.type) {
-            case 'command':
-                if (action.commandId === QAAP_WORK_HUB_AI_FEATURES_COMMAND && this.openPreferencesSheet) {
-                    await this.openPreferencesSheet('ai-features');
-                    return;
-                }
-                if (action.commandId === QAAP_WORK_HUB_AI_CONFIGURATION_COMMAND && this.openAiConfigurationSheet) {
-                    await this.openAiConfigurationSheet(QAAP_WORK_HUB_AI_CONFIGURATION_AGENTS_TAB);
-                    return;
-                }
-                if (this.commands.getCommand(action.commandId)) {
-                    await this.commands.executeCommand(action.commandId);
-                }
-                return;
-            case 'hub-view':
-                this.selectHubLandingView(action.view);
-                return;
-            case 'replay-tutorial':
-                await this.commands.executeCommand(MobileOnboardingTutorialContribution.REPLAY_COMMAND.id);
-                return;
-            default:
-                return;
-        }
-    }
-
-    protected resetInboxPullRequestState(): void {
-        this.inboxPullRequestsAbort?.abort();
-        this.inboxPullRequestsAbort = undefined;
-        this.inboxPullRequests = [];
-        this.inboxPullRequestsLoaded = false;
-        this.inboxPullRequestsLoading = false;
-        this.inboxGithubSignedIn = undefined;
-    }
-
-    protected finishInboxPullRequestLoad(generation: number): void {
-        if (generation !== this.inboxLoadGeneration) {
-            this.inboxPullRequestsLoading = false;
-            return;
-        }
-        this.inboxPullRequestsLoaded = true;
-        this.inboxPullRequestsLoading = false;
-        if (this.visible && (this.hubView === 'review' || this.hubView === 'home')) {
-            this.renderList();
-        }
-    }
-
-    protected async refreshInboxPullRequests(
-        projects: MobileProjectEntry[] = this.projectsForCurrentHubList(),
-        force = false,
-    ): Promise<void> {
-        if (this.inboxPullRequestsLoading && !force) {
-            return;
-        }
-        const generation = this.inboxLoadGeneration;
-        this.inboxPullRequestsAbort?.abort();
-        const abort = new AbortController();
-        this.inboxPullRequestsAbort = abort;
-        const timeout = window.setTimeout(() => abort.abort(), MobileProjectsPanel.INBOX_PR_FETCH_TIMEOUT_MS);
-        this.inboxPullRequestsLoading = true;
-        const repoKeys = githubRepoKeysForProjects(projects);
-        try {
-            const config = await fetchQaapAuthConfig().catch(() => ({ skipAuth: false, githubOAuth: false }));
-            if (config.skipAuth) {
-                this.inboxPullRequests = [];
-                this.inboxGithubSignedIn = undefined;
-                return;
-            }
-            if (repoKeys.length === 0) {
-                this.inboxPullRequests = [];
-                this.inboxGithubSignedIn = undefined;
-                return;
-            }
-            const auth = await fetchQaapAuthSession();
-            if (generation !== this.inboxLoadGeneration || abort.signal.aborted) {
-                return;
-            }
-            if (!auth.signedIn) {
-                if (readQaapSignedIn()) {
-                    clearQaapAuthSession();
-                }
-                this.inboxGithubSignedIn = false;
-                this.inboxPullRequests = [];
-                return;
-            }
-            this.inboxGithubSignedIn = true;
-            const response = await fetchQaapGithubPullRequests(repoKeys);
-            if (generation !== this.inboxLoadGeneration || abort.signal.aborted) {
-                return;
-            }
-            if (response.signedIn === false) {
-                if (readQaapSignedIn()) {
-                    clearQaapAuthSession();
-                }
-                this.inboxGithubSignedIn = false;
-                this.inboxPullRequests = [];
-                return;
-            }
-            this.inboxGithubSignedIn = true;
-            this.inboxPullRequests = this.mergeInboxPullRequests(response.pullRequests);
-        } catch {
-            if (generation !== this.inboxLoadGeneration || abort.signal.aborted) {
-                return;
-            }
-            this.inboxPullRequests = [];
-        } finally {
-            window.clearTimeout(timeout);
-            if (this.inboxPullRequestsAbort === abort) {
-                this.inboxPullRequestsAbort = undefined;
-            }
-            this.finishInboxPullRequestLoad(generation);
-        }
-    }
-
-    protected createEmptyState(): HTMLElement {
-        const empty = document.createElement('div');
-        empty.className = 'theia-mobile-projects-empty';
-        const icon = document.createElement('span');
-        icon.className = 'codicon codicon-repo';
-        const title = document.createElement('strong');
-        title.textContent = this.query
-            ? nls.localize('qaap/mobileProjects/noSearchResults', 'No matching repositories')
-            : nls.localize('qaap/mobileProjects/noRepositories', 'No repositories yet');
-        const body = document.createElement('span');
-        body.textContent = this.query
-            ? nls.localize('qaap/mobileProjects/noSearchResultsBody', 'Try another name, branch, or owner.')
-            : nls.localize('qaap/mobileProjects/noRepositoriesBody', 'Create or clone a GitHub repository to start working.');
-        empty.append(icon, title, body);
-        return empty;
-    }
-
-    protected createSectionLabel(text: string, withDot: boolean): HTMLElement {
-        const row = document.createElement('div');
-        row.className = 'theia-mobile-projects-section';
-        if (withDot) {
-            const dot = document.createElement('span');
-            dot.className = 'theia-mobile-projects-section-dot';
-            row.append(dot);
-        }
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-projects-section-label';
-        label.textContent = text;
-        row.append(label);
-        return row;
-    }
-
-    protected createRow(project: MobileProjectEntry): HTMLElement {
-        const card = document.createElement('div');
-        card.className = 'theia-mobile-projects-card';
-        card.style.setProperty('--qaap-mobile-project-accent', project.color);
-        if (project.isCurrent) {
-            card.classList.add('theia-mod-current');
-        }
-        const isExpanded = !this.homeMode && this.expandedId === project.id;
-        if (isExpanded) {
-            card.classList.add('theia-mod-expanded');
-        }
-
-        const running = this.countRunningTasks(project) > 0;
-        const needsInput = this.countNeedsInputTasks(project) > 0;
-        const failed = this.countFailedTasks(project) > 0;
-        const unreadCount = this.countUnreadTasks(project);
-        const doneCount = this.countDoneTasks(project);
-        const activeInfo = this.activeInfoForProject(project);
-
-        // Collapsed header (always visible) — clicking toggles the expansion.
-        const header = document.createElement('div');
-        header.className = 'theia-mobile-projects-row-head';
-        header.setAttribute('role', 'button');
-        header.setAttribute('tabindex', '0');
-        header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-
-        // Status glyph follows a priority ladder so the most actionable state wins:
-        //   needs-input > failed > running > unread > current workspace > done > idle
-        // The colored dot + animation pair signals intent at a glance from the project list.
-        const glyph = document.createElement('span');
-        glyph.className = 'theia-mobile-projects-row-glyph';
-        if (project.isCurrent) {
-            glyph.classList.add('theia-mod-workspace');
-        }
-        if (needsInput) {
-            glyph.classList.add('theia-mod-needs-input');
-            glyph.title = nls.localize('qaap/mobileProjects/glyphNeedsInput', 'Waiting for your input');
-        } else if (failed) {
-            glyph.classList.add('theia-mod-failed');
-            glyph.title = nls.localize('qaap/mobileProjects/glyphFailed', 'A task failed — review and retry');
-        } else if (running) {
-            glyph.classList.add('theia-mod-running');
-            glyph.title = nls.localize('qaap/mobileProjects/glyphRunning', 'Agent is active');
-        } else if (unreadCount > 0) {
-            glyph.classList.add('theia-mod-unread');
-            glyph.title = unreadCount === 1
-                ? nls.localize('qaap/mobileProjects/glyphUnreadOne', 'New agent reply since you last opened this project')
-                : nls.localize('qaap/mobileProjects/glyphUnreadMany', '{0} tasks with new agent replies', String(unreadCount));
-        } else if (doneCount > 0) {
-            glyph.classList.add('theia-mod-done');
-        }
-
-        const leading = this.homeMode ? this.createHomeRowAvatar(project) : glyph;
-        if (this.homeMode) {
-            for (const cls of glyph.classList) {
-                if (cls !== 'theia-mobile-projects-row-glyph') {
-                    leading.classList.add(cls);
-                }
-            }
-            if (glyph.title) {
-                leading.title = glyph.title;
-            }
-        }
-        header.append(leading);
-
-        const main = document.createElement('div');
-        main.className = 'theia-mobile-projects-row-main';
-
-        const nameRow = document.createElement('div');
-        nameRow.className = 'theia-mobile-projects-row-name-row';
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-projects-row-chevron';
-        chevron.textContent = '›';
-        chevron.setAttribute('aria-hidden', 'true');
-        nameRow.append(chevron);
-        const nameGroup = document.createElement('span');
-        nameGroup.className = 'theia-mobile-projects-row-name-group';
-        const name = document.createElement('span');
-        name.className = 'theia-mobile-projects-row-name';
-        name.textContent = project.name;
-        nameGroup.append(name);
-        if (project.pinned) {
-            const pin = document.createElement('span');
-            pin.className = 'codicon codicon-pin theia-mobile-projects-row-pin';
-            pin.setAttribute('aria-hidden', 'true');
-            nameGroup.append(pin);
-        }
-        nameRow.append(nameGroup);
-        if (this.homeMode) {
-            const homeStatus = this.createHomeRowStatus(project, {
-                unreadCount,
-                running,
-                runningCount: this.countRunningTasks(project),
-                needsInput,
-                failed,
-                failedCount: this.countFailedTasks(project),
-                needsInputCount: this.countNeedsInputTasks(project),
-            });
-            if (isExpanded && homeStatus) {
-                homeStatus.classList.add('theia-mobile-projects-row-status-inline');
-                nameRow.append(homeStatus);
-            }
-            const open = this.createWorkspaceOpenControl(project);
-            open.classList.add('theia-mobile-projects-row-name-open');
-            nameRow.append(open);
-            main.append(nameRow);
-            if (homeStatus && !isExpanded) {
-                const subRow = document.createElement('div');
-                subRow.className = 'theia-mobile-projects-row-sub';
-                homeStatus.classList.add('theia-mobile-projects-row-status-inline');
-                subRow.append(homeStatus);
-                main.append(subRow);
-            }
-        } else {
-            main.append(nameRow);
-        }
-
-        const metaRow = document.createElement('div');
-        metaRow.className = 'theia-mobile-projects-row-meta';
-        const branchSpan = document.createElement('span');
-        branchSpan.textContent = project.branch;
-        metaRow.append(branchSpan);
-        if (project.lastActive && project.lastActive !== '—') {
-            const sep = document.createElement('span');
-            sep.className = 'theia-mobile-projects-row-meta-sep';
-            sep.textContent = '·';
-            const time = document.createElement('span');
-            time.textContent = project.lastActive;
-            metaRow.append(sep, time);
-        }
-        if (running) {
-            const sep = document.createElement('span');
-            sep.className = 'theia-mobile-projects-row-meta-sep';
-            sep.textContent = '·';
-            const run = document.createElement('span');
-            run.className = 'theia-mobile-projects-row-meta-running';
-            const runningCount = this.countRunningTasks(project);
-            run.textContent = runningCount === 1
-                ? nls.localize('qaap/mobileProjects/rowRunning', '1 running')
-                : nls.localize('qaap/mobileProjects/rowRunningMany', '{0} running', String(runningCount));
-            metaRow.append(sep, run);
-        } else if (doneCount > 0) {
-            const sep = document.createElement('span');
-            sep.className = 'theia-mobile-projects-row-meta-sep';
-            sep.textContent = '·';
-            const cluster = document.createElement('span');
-            cluster.className = 'theia-mobile-projects-row-meta-cluster';
-            if (doneCount > 0) {
-                const done = document.createElement('span');
-                done.className = 'theia-mobile-projects-row-meta-done';
-                done.textContent = doneCount === 1
-                    ? nls.localize('qaap/mobileProjects/rowTask', '1 task')
-                    : nls.localize('qaap/mobileProjects/rowTasksMany', '{0} tasks', String(doneCount));
-                cluster.append(done);
-            }
-            metaRow.append(sep, cluster);
-        }
-        // Explicit "open in workspace" icon button on the meta row for non-home list layout.
-        // Home mode always places it on the name row (collapsed and expanded).
-        if (!this.homeMode) {
-            metaRow.append(this.createWorkspaceOpenControl(project));
-        }
-        if (!this.homeMode || isExpanded) {
-            main.append(metaRow);
-        }
-        header.append(main);
-
-        const menu = this.buildProjectOptionsMenu(project);
-        const menuBtn = document.createElement('button');
-        menuBtn.type = 'button';
-        menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-row-menu';
-        menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/cardMenu', 'Project options'));
-        menuBtn.setAttribute('aria-haspopup', 'menu');
-        menuBtn.setAttribute('aria-expanded', 'false');
-        const menuIcon = document.createElement('span');
-        menuIcon.className = 'codicon codicon-kebab-vertical';
-        menuIcon.setAttribute('aria-hidden', 'true');
-        menuBtn.append(menuIcon);
-        menuBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            this.toggleCardMenu(card, menu, menuBtn);
-        });
-        menuBtn.addEventListener('keydown', ev => ev.stopPropagation());
-        header.append(menuBtn);
-
-        const onRowActivate = (): void => {
-            if (this.homeMode) {
-                void this.openProjectDetail(project);
-                return;
-            }
-            void this.toggleRowExpanded(project);
-        };
-        header.addEventListener('click', ev => {
-            ev.stopPropagation();
-            onRowActivate();
-        });
-        header.addEventListener('keydown', ev => {
-            if (ev.key !== 'Enter' && ev.key !== ' ') {
-                return;
-            }
-            ev.preventDefault();
-            ev.stopPropagation();
-            onRowActivate();
-        });
-        header.addEventListener('contextmenu', ev => {
-            ev.preventDefault();
-            onRowActivate();
-        });
-        card.append(header);
-
-        if (!isExpanded) {
-            return card;
-        }
-
-        const body = document.createElement('div');
-        body.className = 'theia-mobile-projects-row-body';
-
-        const workspaceBlock = this.createWorkspaceBlock(project);
-        if (workspaceBlock) {
-            body.append(workspaceBlock);
-        }
-        body.append(this.createTaskBlock(project, activeInfo));
-
-        card.append(body, menu);
-        return card;
-    }
-
     protected async openProjectDetail(project: MobileProjectEntry): Promise<void> {
         this.closeCardMenu();
         if (this.hubView !== 'repos') {
@@ -7118,8 +6169,6 @@ export class MobileProjectsPanel {
         const wasExpanded = this.expandedId === project.id;
         this.expandedId = wasExpanded ? undefined : project.id;
         this.suppressCurrentAutoExpand = wasExpanded && project.isCurrent;
-        // Hide the other rows while the user has a project expanded so the chat list isn't lost in
-        // noise; when the user collapses it again the full list returns.
         this.soloExpanded = this.expandedId !== undefined;
         this.closeStickyComposerSheets();
         disposeComposerContextEntries(this.stickyComposerContext);
@@ -7131,78 +6180,6 @@ export class MobileProjectsPanel {
         }
         await this.refreshChatServiceSessionSummaries();
         this.renderList();
-    }
-
-    protected createHomeRowAvatar(project: MobileProjectEntry): HTMLSpanElement {
-        const avatar = document.createElement('span');
-        avatar.className = 'theia-mobile-projects-row-avatar';
-        avatar.textContent = mobileProjectInitials(project.name);
-        avatar.style.setProperty('--qaap-mobile-project-accent', project.color);
-        return avatar;
-    }
-
-    protected createHomeRowStatus(
-        project: MobileProjectEntry,
-        state: {
-            unreadCount: number;
-            running: boolean;
-            runningCount: number;
-            needsInput: boolean;
-            needsInputCount: number;
-            failed: boolean;
-            failedCount: number;
-        },
-    ): HTMLElement | undefined {
-        const line = document.createElement('div');
-        line.className = 'theia-mobile-projects-row-status';
-        if (state.unreadCount > 0) {
-            line.classList.add('theia-mod-new');
-            line.textContent = state.unreadCount === 1
-                ? nls.localize('qaap/mobileProjects/rowNewOne', '1 new')
-                : nls.localize('qaap/mobileProjects/rowNewMany', '{0} new', String(state.unreadCount));
-            return line;
-        }
-        if (state.needsInput) {
-            line.classList.add('theia-mod-needs-input');
-            line.textContent = state.needsInputCount === 1
-                ? nls.localize('qaap/mobileProjects/rowNeedsInputOne', 'Needs your input')
-                : nls.localize('qaap/mobileProjects/rowNeedsInputMany', '{0} need your input', String(state.needsInputCount));
-            return line;
-        }
-        if (state.failed) {
-            line.classList.add('theia-mod-failed');
-            line.textContent = state.failedCount === 1
-                ? nls.localize('qaap/mobileProjects/rowFailedOne', '1 failed')
-                : nls.localize('qaap/mobileProjects/rowFailedMany', '{0} failed', String(state.failedCount));
-            return line;
-        }
-        if (state.running) {
-            line.classList.add('theia-mod-running');
-            line.textContent = state.runningCount === 1
-                ? nls.localize('qaap/mobileProjects/rowRunning', '1 running')
-                : nls.localize('qaap/mobileProjects/rowRunningMany', '{0} running', String(state.runningCount));
-            return line;
-        }
-        return undefined;
-    }
-
-    protected createWorkspaceOpenControl(project: MobileProjectEntry): HTMLButtonElement {
-        const openBtn = document.createElement('button');
-        openBtn.type = 'button';
-        openBtn.className = 'theia-mobile-projects-row-meta-open';
-        const openLabel = nls.localize('qaap/mobileProjects/workspaceOpenIn', 'Open in workspace');
-        openBtn.setAttribute('aria-label', openLabel);
-        openBtn.title = openLabel;
-        const openIcon = document.createElement('span');
-        openIcon.className = 'codicon codicon-link-external';
-        openIcon.setAttribute('aria-hidden', 'true');
-        openBtn.append(openIcon);
-        openBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            this.delegate.onProjectOpen(project);
-        });
-        openBtn.addEventListener('keydown', ev => ev.stopPropagation());
-        return openBtn;
     }
 
     protected async closeCurrentWorkspace(): Promise<void> {
@@ -7220,736 +6197,6 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected createWorkspaceBlock(project: MobileProjectEntry): HTMLElement | undefined {
-        if (project.isCurrent) {
-            return undefined;
-        }
-        // For non-current projects the "Open in workspace" affordance is rendered as a compact
-        // icon button on the meta row (see createRow) so it doesn't take a full line in the body.
-        return undefined;
-    }
-
-    protected createTaskBlock(
-        project: MobileProjectEntry,
-        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-    ): HTMLElement {
-        const block = document.createElement('div');
-        block.className = 'theia-mobile-projects-tasks-block';
-        const surface = this.detailComposerSurfaceForProject(project);
-        const isChatSurface = surface === 'chat';
-        const allConversations = isChatSurface
-            ? this.localChatsForProject(project)
-            : this.vpsTasksForProject(project);
-        const head = document.createElement('div');
-        head.className = 'theia-mobile-projects-tasks-head';
-        const headLabel = document.createElement('span');
-        headLabel.textContent = isChatSurface
-            ? nls.localize('qaap/mobileProjects/chatsHeading', 'Chats')
-            : nls.localize('qaap/mobileProjects/tasksHeading', 'Tasks');
-        head.append(headLabel);
-
-        if (allConversations.length > 0) {
-            const count = document.createElement('span');
-            count.className = 'theia-mobile-projects-tasks-count';
-            count.textContent = String(allConversations.length);
-            head.append(count);
-        }
-        block.append(head);
-
-        if (allConversations.length === 0) {
-            if (isChatSurface) {
-                const empty = document.createElement('div');
-                empty.className = 'theia-mobile-projects-tasks-empty';
-                empty.textContent = nls.localize(
-                    'qaap/mobileProjects/chatsEmpty', 'No local chats yet. Start one below.'
-                );
-                block.append(empty);
-                return block;
-            }
-            const fallbackTasks = this.fallbackTasksFromProject(project);
-            if (fallbackTasks.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'theia-mobile-projects-tasks-empty';
-                empty.textContent = nls.localize(
-                    'qaap/mobileProjects/tasksEmpty', 'No tasks yet. Create one below.'
-                );
-                block.append(empty);
-                return block;
-            }
-            const list = document.createElement('div');
-            list.className = 'theia-mobile-projects-tasks-list';
-            for (const task of fallbackTasks) {
-                list.append(this.createTaskItem(project, task, activeInfo));
-            }
-            block.append(list);
-            return block;
-        }
-
-        const showAll = this.expandedConversationProjectIds.has(project.id);
-        const limit = MobileProjectsPanel.CONVERSATIONS_COLLAPSED_LIMIT;
-        const visibleConversations = showAll
-            ? allConversations
-            : allConversations.slice(0, limit);
-        const hiddenCount = allConversations.length - visibleConversations.length;
-        const tasks = visibleConversations.map(c => this.summaryToTaskView(c));
-
-        // Pre-compute the set of conversation ids that have at least one descendant fork, so each
-        // row can decide which lineage glyph to render (parent / child / both / standalone).
-        const parentIds = new Set<string>();
-        for (const c of allConversations) {
-            if (c.forkedFromId) {
-                parentIds.add(c.forkedFromId);
-            }
-        }
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-projects-tasks-list';
-        for (const group of this.groupConversationTasks(tasks)) {
-            const section = document.createElement('section');
-            section.className = `theia-mobile-projects-conversation-group theia-mod-${group.id}`;
-            const groupHead = document.createElement('div');
-            groupHead.className = 'theia-mobile-projects-conversation-group-head';
-            const groupLabel = document.createElement('span');
-            groupLabel.className = 'theia-mobile-projects-conversation-group-label';
-            groupLabel.textContent = group.label;
-            const groupCount = document.createElement('span');
-            groupCount.className = 'theia-mobile-projects-conversation-group-count';
-            groupCount.textContent = String(group.tasks.length);
-            groupHead.append(groupLabel, groupCount);
-            section.append(groupHead);
-            for (const task of group.tasks) {
-                const summary = visibleConversations.find(c => c.id === task.id);
-                section.append(this.createTaskItem(project, task, activeInfo, summary, parentIds));
-            }
-            list.append(section);
-        }
-        block.append(list);
-
-        if (hiddenCount > 0) {
-            const moreRow = document.createElement('div');
-            moreRow.className = 'theia-mobile-projects-tasks-more-row';
-            const moreBtn = document.createElement('button');
-            moreBtn.type = 'button';
-            moreBtn.className = 'theia-mobile-projects-tasks-more-btn';
-            const icon = document.createElement('span');
-            icon.className = 'codicon codicon-ellipsis';
-            icon.setAttribute('aria-hidden', 'true');
-            moreBtn.append(
-                icon,
-                document.createTextNode(
-                    isChatSurface
-                        ? nls.localize('qaap/mobileProjects/chatsMore', 'More chats ({0})', String(hiddenCount))
-                        : nls.localize('qaap/mobileProjects/tasksMore', 'More tasks ({0})', String(hiddenCount)),
-                ),
-            );
-            moreBtn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                this.expandedConversationProjectIds.add(project.id);
-                this.renderList();
-            });
-            moreRow.append(moreBtn);
-            block.append(moreRow);
-        }
-
-        return block;
-    }
-
-    protected detailComposerSurfaceForProject(project: MobileProjectEntry): QaapComposerSurface {
-        if (!this.homeMode || this.hubView !== 'repos' || this.expandedId !== project.id) {
-            return 'task';
-        }
-        const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
-        return readStoredComposerSurface(cwd) ?? this.stickyComposerSurface ?? 'task';
-    }
-
-    protected groupConversationTasks(tasks: MobileProjectTaskView[]): Array<{
-        id: 'working' | 'needs-you' | 'recent' | 'done';
-        label: string;
-        tasks: MobileProjectTaskView[];
-    }> {
-        type ConversationGroup = {
-            id: 'working' | 'needs-you' | 'recent' | 'done';
-            label: string;
-            tasks: MobileProjectTaskView[];
-        };
-        const groups = {
-            working: [] as MobileProjectTaskView[],
-            needsYou: [] as MobileProjectTaskView[],
-            recent: [] as MobileProjectTaskView[],
-            done: [] as MobileProjectTaskView[],
-        };
-        const recentWindowMs = 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        for (const task of tasks) {
-            if (task.state === 'running') {
-                groups.working.push(task);
-            } else if (task.state === 'needs-input' || task.state === 'failed' || task.state === 'interrupted') {
-                groups.needsYou.push(task);
-            } else if (now - (task.finishedAt ?? task.createdAt) <= recentWindowMs) {
-                groups.recent.push(task);
-            } else {
-                groups.done.push(task);
-            }
-        }
-        const ordered: ConversationGroup[] = [
-            {
-                id: 'working',
-                label: nls.localize('qaap/mobileProjects/taskGroupWorking', 'Working'),
-                tasks: groups.working,
-            },
-            {
-                id: 'needs-you',
-                label: nls.localize('qaap/mobileProjects/taskGroupNeedsYou', 'Needs you'),
-                tasks: groups.needsYou,
-            },
-            {
-                id: 'recent',
-                label: nls.localize('qaap/mobileProjects/taskGroupRecent', 'Recent'),
-                tasks: groups.recent,
-            },
-            {
-                id: 'done',
-                label: nls.localize('qaap/mobileProjects/taskGroupDone', 'Done'),
-                tasks: groups.done,
-            },
-        ];
-        return ordered.filter(group => group.tasks.length > 0);
-    }
-
-    protected createTaskItem(
-        project: MobileProjectEntry,
-        task: MobileProjectTaskView,
-        _activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-        summary?: QaapAgentConversationSummaryDTO,
-        parentIds: ReadonlySet<string> = new Set<string>(),
-        options?: { onActivate?: () => void; compact?: boolean },
-    ): HTMLElement {
-        const compact = options?.compact === true;
-        const row = document.createElement('div');
-        row.className = 'theia-mobile-projects-task-row';
-        if (compact) {
-            row.classList.add('theia-mod-sidebar-compact');
-        }
-        if (summary && this.transcriptOpenSummaryId === summary.id) {
-            row.classList.add('theia-mod-current');
-        }
-
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'theia-mobile-projects-task-item';
-        const isUnread = summary ? this.isConversationUnread(summary) : false;
-        const visualStatus = resolveQaapAgentTaskVisualStatus(task, summary, isUnread);
-        const isRunning = visualStatus.id === 'running';
-        const needsInput = visualStatus.id === 'needs-you';
-        const isDone = visualStatus.id === 'verified' || visualStatus.id === 'pr-ready';
-        const isFailed = visualStatus.id === 'failed';
-        const stateColor = visualStatus.color;
-        if (this.justAddedTaskId === task.id) {
-            item.classList.add('theia-mod-flash');
-        }
-        if (isDone) {
-            item.classList.add('theia-mod-done');
-        }
-        if (needsInput) {
-            item.classList.add('theia-mod-needs-input');
-        }
-
-        const lineage = summary ? this.resolveConversationLineage(summary, parentIds) : 'none';
-        const taskDot = document.createElement('span');
-        const showLineageGlyph = lineage !== 'none' && !isFailed && !isRunning && !needsInput;
-        if (showLineageGlyph) {
-            // Fork lineage: one glyph size for all roles; color + tooltip carry parent/child/both.
-            taskDot.className = `theia-mobile-projects-task-lineage theia-mod-${lineage}`;
-            taskDot.append(this.createTaskLeadingGlyph('codicon-repo-forked'));
-            taskDot.setAttribute('aria-hidden', 'true');
-            const lineageLabel = lineage === 'parent'
-                ? nls.localize('qaap/mobileProjects/lineageParent', 'Forked into other tasks')
-                : lineage === 'child'
-                    ? nls.localize('qaap/mobileProjects/lineageChild', 'Forked from another task')
-                    : nls.localize('qaap/mobileProjects/lineageBoth', 'Forked from another task and into others');
-            taskDot.title = lineageLabel;
-        } else if (visualStatus.id === 'verified') {
-            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-        } else if (visualStatus.id === 'pr-ready') {
-            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-        } else if (isFailed) {
-            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-        } else if (isRunning) {
-            this.renderConversationTurnProgress(taskDot, summary);
-        } else if (needsInput) {
-            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-            taskDot.append(this.createTaskLeadingGlyph(visualStatus.iconClass!));
-        } else {
-            taskDot.className = `theia-mobile-projects-task-dot ${visualStatus.className}`;
-            taskDot.style.background = stateColor;
-        }
-
-        const taskBody = document.createElement('div');
-        taskBody.className = 'theia-mobile-projects-task-body';
-
-        const taskTitleRow = document.createElement('div');
-        taskTitleRow.className = 'theia-mobile-projects-task-title-row';
-        const taskTitle = document.createElement('span');
-        taskTitle.className = 'theia-mobile-projects-task-title';
-        taskTitle.textContent = task.title;
-        const taskSince = document.createElement('span');
-        taskSince.className = 'theia-mobile-projects-task-since';
-        taskSince.textContent = this.formatTaskSince(task, summary);
-        if (!compact && isRunning && summary?.turnProgressTotal && summary.turnProgressCurrent !== undefined) {
-            const progressCount = document.createElement('span');
-            progressCount.className = 'theia-mobile-projects-task-progress-count';
-            progressCount.textContent = `${summary.turnProgressCurrent}/${summary.turnProgressTotal}`;
-            const progressLabel = nls.localize(
-                'qaap/mobileProjects/taskProgressSteps',
-                '{0} of {1} steps',
-                String(summary.turnProgressCurrent),
-                String(summary.turnProgressTotal),
-            );
-            progressCount.setAttribute('aria-label', progressLabel);
-            progressCount.title = progressLabel;
-            taskTitleRow.append(taskTitle, progressCount, taskSince);
-        } else {
-            taskTitleRow.append(taskTitle, taskSince);
-        }
-        taskBody.append(taskTitleRow);
-
-        if (!compact) {
-            const footRow = document.createElement('div');
-            footRow.className = 'theia-mobile-projects-task-foot';
-            const agentLabel = this.resolveConversationAgentLabel(summary);
-            const agentId = summary?.agentId?.trim()
-                || this.activeTasks?.getDefaultAgent()
-                || SHELL_AGENT_ID;
-            const agentChip = createAgentTaskBadge({
-                agentId,
-                label: agentLabel,
-            });
-            footRow.append(agentChip);
-            if (summary?.linkedPullRequest?.number) {
-                const prChip = document.createElement('span');
-                prChip.className = 'theia-mobile-projects-task-agent theia-mod-linked-pr';
-                prChip.textContent = nls.localize(
-                    'qaap/mobileProjects/inboxLinkedPrShort',
-                    '#{0}',
-                    String(summary.linkedPullRequest.number),
-                );
-                footRow.append(prChip);
-            }
-            this.appendConversationFootMetrics(footRow, summary, isRunning);
-
-            if (summary && summary.messageCount > 0 && !this.hasConversationDiffStats(summary)) {
-                this.appendTaskFootSeparator(footRow);
-                const msgCount = document.createElement('span');
-                msgCount.className = 'theia-mobile-projects-task-message-count';
-                msgCount.textContent = String(summary.messageCount);
-                const msgLabel = summary.messageCount === 1
-                    ? nls.localize('qaap/mobileProjects/taskMessageOne', '1 message')
-                    : nls.localize('qaap/mobileProjects/taskMessageMany', '{0} messages', String(summary.messageCount));
-                msgCount.setAttribute('aria-label', msgLabel);
-                msgCount.title = msgLabel;
-                footRow.append(msgCount);
-            }
-            taskBody.append(footRow);
-            const activityRow = this.createConversationActivityRow(project, summary, {
-                isRunning,
-                needsInput,
-                isDone,
-            });
-            if (activityRow) {
-                taskBody.append(activityRow);
-            }
-        }
-
-        item.append(taskDot, taskBody);
-        item.addEventListener('click', ev => {
-            ev.stopPropagation();
-            options?.onActivate?.();
-            void this.openTaskInAgent(project, task);
-        });
-        row.append(item);
-
-        if (summary && isUnread && !needsInput) {
-            const unread = document.createElement('span');
-            unread.className = 'theia-mobile-projects-task-unread';
-            const unreadLabel = nls.localize('qaap/mobileProjects/unreadBadge', 'New agent reply');
-            unread.setAttribute('aria-label', unreadLabel);
-            unread.title = unreadLabel;
-            row.append(unread);
-        }
-
-        if (summary) {
-            const flags = this.resolveConversationFlags(summary);
-            if (flags.priority && !flags.paused) {
-                row.classList.add('theia-mod-priority');
-                if (!compact) {
-                    const star = document.createElement('span');
-                    star.className = 'codicon codicon-star-full theia-mobile-projects-conversation-priority-badge';
-                    star.setAttribute('aria-label', nls.localize('qaap/mobileProjects/priorityBadge', 'High priority'));
-                    star.title = star.getAttribute('aria-label')!;
-                    taskTitleRow.insertBefore(star, taskTitleRow.firstChild);
-                }
-            }
-            if (flags.paused) {
-                row.classList.add('theia-mod-paused');
-                if (!compact) {
-                    const pause = document.createElement('span');
-                    pause.className = 'codicon codicon-debug-pause theia-mobile-projects-conversation-pause-badge';
-                    pause.setAttribute('aria-label', nls.localize('qaap/mobileProjects/pausedBadge', 'Paused'));
-                    pause.title = pause.getAttribute('aria-label')!;
-                    taskTitleRow.insertBefore(pause, taskTitleRow.firstChild);
-                }
-            }
-            if (summary.source !== 'theia-chat' && !isConversationAutoApproveEnabled(summary)) {
-                row.classList.add('theia-mod-manual-approval');
-                if (!compact) {
-                    const shield = document.createElement('span');
-                    shield.className = 'codicon codicon-shield theia-mobile-projects-conversation-manual-badge';
-                    const manualLabel = nls.localize('qaap/mobileProjects/manualApprovalBadge', 'Manual tool approval');
-                    shield.setAttribute('aria-label', manualLabel);
-                    shield.title = manualLabel;
-                    taskTitleRow.insertBefore(shield, taskTitleRow.firstChild);
-                }
-            }
-            if (isFailed && summary.source !== 'theia-chat') {
-                const retryBtn = document.createElement('button');
-                retryBtn.type = 'button';
-                retryBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-retry-btn';
-                const retryLabel = nls.localize('qaap/mobileProjects/retryTask', 'Retry task');
-                retryBtn.setAttribute('aria-label', retryLabel);
-                retryBtn.title = retryLabel;
-                const retryIcon = document.createElement('span');
-                retryIcon.className = 'codicon codicon-debug-restart';
-                retryIcon.setAttribute('aria-hidden', 'true');
-                retryBtn.append(retryIcon);
-                retryBtn.addEventListener('click', ev => {
-                    ev.stopPropagation();
-                    void this.onRetryConversation(project, summary);
-                });
-                row.append(retryBtn);
-            }
-
-            const menuBtn = document.createElement('button');
-            menuBtn.type = 'button';
-            menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-menu-btn';
-            menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/taskMenu', 'Task options'));
-            menuBtn.setAttribute('aria-haspopup', 'menu');
-            menuBtn.setAttribute('aria-expanded', 'false');
-            const icon = document.createElement('span');
-            icon.className = 'codicon codicon-kebab-vertical';
-            icon.setAttribute('aria-hidden', 'true');
-            menuBtn.append(icon);
-            const menu = this.buildConversationMenu(project, summary);
-            menuBtn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                this.toggleCardMenu(row, menu, menuBtn);
-            });
-            row.append(menuBtn, menu);
-        }
-
-        return row;
-    }
-
-    protected createConversationActivityRow(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO | undefined,
-        state: {
-            readonly isRunning: boolean;
-            readonly needsInput: boolean;
-            readonly isDone: boolean;
-        },
-    ): HTMLElement | undefined {
-        if (!summary) {
-            return undefined;
-        }
-        const chips: HTMLElement[] = [];
-        if (state.needsInput) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-comment-discussion',
-                label: nls.localize('qaap/mobileProjects/activityNeedsUser', 'Waiting for you'),
-                variant: 'needs-you',
-            }));
-        } else if (state.isRunning) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-sync',
-                label: summary.activityLabel?.trim()
-                    || nls.localize('qaap/mobileProjects/activityAgentWorking', 'Agent working'),
-                variant: 'working',
-            }));
-        } else if (state.isDone || this.hasConversationDiffStats(summary)) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-check',
-                label: this.hasConversationDiffStats(summary)
-                    ? nls.localize('qaap/mobileProjects/activityChangesReady', 'Changes ready')
-                    : nls.localize('qaap/mobileProjects/activityDone', 'Done'),
-                variant: 'ready',
-            }));
-        }
-
-        if (summary.linkedPullRequest?.number) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-git-pull-request',
-                label: nls.localize('qaap/mobileProjects/activityPullRequest', 'PR #{0}', String(summary.linkedPullRequest.number)),
-                variant: 'surface',
-            }));
-        }
-
-        if (project.previewUrl) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-open-preview',
-                label: nls.localize('qaap/mobileProjects/activityPreviewReady', 'Preview ready'),
-                variant: 'surface',
-            }));
-        }
-
-        if (summary.source !== 'theia-chat' || state.isRunning) {
-            chips.push(this.createConversationActivityChip({
-                iconClass: 'codicon-terminal',
-                label: nls.localize('qaap/mobileProjects/activityTerminalAvailable', 'Terminal'),
-                variant: 'surface',
-            }));
-        }
-
-        if (chips.length === 0) {
-            return undefined;
-        }
-        const row = document.createElement('div');
-        row.className = 'theia-mobile-projects-task-activity-row';
-        row.append(...chips.slice(0, 4));
-        return row;
-    }
-
-    protected createConversationActivityChip(options: {
-        readonly iconClass: string;
-        readonly label: string;
-        readonly variant: 'working' | 'needs-you' | 'ready' | 'surface';
-    }): HTMLElement {
-        const chip = document.createElement('span');
-        chip.className = `theia-mobile-projects-task-activity-chip theia-mod-${options.variant}`;
-        chip.title = options.label;
-        const icon = document.createElement('span');
-        icon.className = `codicon ${options.iconClass}`;
-        icon.setAttribute('aria-hidden', 'true');
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-projects-task-activity-chip-label';
-        label.textContent = options.label;
-        chip.append(icon, label);
-        return chip;
-    }
-
-    protected renderConversationTurnProgress(
-        host: HTMLElement,
-        summary?: QaapAgentConversationSummaryDTO,
-    ): void {
-        const hasSteps = summary?.turnProgressTotal !== undefined
-            && summary.turnProgressCurrent !== undefined
-            && summary.turnProgressTotal > 0;
-        host.className = 'theia-mobile-projects-task-progress';
-        if (!hasSteps) {
-            host.classList.add('theia-mod-indeterminate');
-            host.setAttribute('aria-label', nls.localize('qaap/mobileProjects/taskProgressWorking', 'Agent working'));
-            return;
-        }
-        const current = summary!.turnProgressCurrent!;
-        const total = summary!.turnProgressTotal!;
-        const ratio = conversationTurnProgressRatio(current, total);
-        host.style.setProperty('--theia-mobile-projects-progress', String(ratio));
-        host.setAttribute('aria-label', nls.localize(
-            'qaap/mobileProjects/taskProgressSteps',
-            '{0} of {1} steps',
-            String(current),
-            String(total),
-        ));
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 22 22');
-        svg.setAttribute('aria-hidden', 'true');
-        const track = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        track.setAttribute('class', 'theia-mobile-projects-task-progress-track');
-        track.setAttribute('cx', '11');
-        track.setAttribute('cy', '11');
-        track.setAttribute('r', '9');
-        const fill = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        fill.setAttribute('class', 'theia-mobile-projects-task-progress-fill');
-        fill.setAttribute('cx', '11');
-        fill.setAttribute('cy', '11');
-        fill.setAttribute('r', '9');
-        const circumference = 2 * Math.PI * 9;
-        fill.style.strokeDasharray = `${circumference}`;
-        fill.style.strokeDashoffset = `${circumference * (1 - ratio)}`;
-        svg.append(track, fill);
-        host.append(svg);
-    }
-
-    protected formatTaskSince(task: MobileProjectTaskView, summary?: QaapAgentConversationSummaryDTO): string {
-        const anchor = task.state === 'running'
-            ? (summary?.updatedAt ?? task.createdAt)
-            : (task.finishedAt ?? summary?.updatedAt ?? task.createdAt);
-        if (!anchor) {
-            return '';
-        }
-        const diff = Math.max(0, Date.now() - anchor);
-        const minute = 60 * 1000;
-        const hour = 60 * minute;
-        const day = 24 * hour;
-        if (task.state === 'running' && diff < 45 * 1000) {
-            return nls.localize('qaap/mobileProjects/taskSinceNow', 'just now');
-        }
-        if (diff < hour) {
-            return nls.localize('qaap/mobileProjects/taskSinceMinutes', '{0} min', String(Math.max(1, Math.round(diff / minute))));
-        }
-        if (diff < day) {
-            return nls.localize('qaap/mobileProjects/taskSinceHours', '{0} h', String(Math.round(diff / hour)));
-        }
-        return nls.localize('qaap/mobileProjects/taskSinceDays', '{0} d', String(Math.round(diff / day)));
-    }
-
-    protected appendTaskFootSeparator(footRow: HTMLElement): void {
-        const sep = document.createElement('span');
-        sep.className = 'theia-mobile-projects-task-foot-sep';
-        sep.textContent = '·';
-        footRow.append(sep);
-    }
-
-    protected appendConversationFootMetrics(
-        footRow: HTMLElement,
-        summary: QaapAgentConversationSummaryDTO | undefined,
-        isRunning: boolean,
-    ): void {
-        if (!summary) {
-            return;
-        }
-        if (isRunning && summary.activityLabel) {
-            this.appendTaskFootSeparator(footRow);
-            const activity = document.createElement('span');
-            activity.className = 'theia-mobile-projects-task-activity';
-            activity.textContent = this.localizeActivityLabel(summary.activityLabel);
-            footRow.append(activity);
-        }
-        if (this.hasConversationDiffStats(summary)) {
-            this.appendConversationDiffFoot(footRow, summary);
-        }
-        const ranLabel = this.formatConversationRunDuration(summary, isRunning);
-        if (ranLabel) {
-            this.appendTaskFootSeparator(footRow);
-            const ran = document.createElement('span');
-            ran.className = 'theia-mobile-projects-task-ran';
-            ran.textContent = ranLabel;
-            footRow.append(ran);
-        }
-    }
-
-    protected localizeActivityLabel(label: string): string {
-        switch (label) {
-            case 'Searching':
-                return nls.localize('qaap/mobileProjects/activitySearching', 'Searching');
-            case 'Thinking':
-                return nls.localize('qaap/mobileProjects/activityThinking', 'Thinking');
-            case 'Reading files':
-                return nls.localize('qaap/mobileProjects/activityReading', 'Reading files');
-            case 'Running command':
-                return nls.localize('qaap/mobileProjects/activityRunningCommand', 'Running command');
-            case 'Editing':
-                return nls.localize('qaap/mobileProjects/activityEditing', 'Editing');
-            case 'Working':
-                return nls.localize('qaap/mobileProjects/taskPreviewWorking', 'Working…');
-            default:
-                return label;
-        }
-    }
-
-    protected hasConversationDiffStats(summary?: QaapAgentConversationSummaryDTO): boolean {
-        if (!summary) {
-            return false;
-        }
-        return (summary.linesAdded ?? 0) > 0 || (summary.linesRemoved ?? 0) > 0;
-    }
-
-    protected appendConversationDiffFoot(footRow: HTMLElement, summary: QaapAgentConversationSummaryDTO): void {
-        const added = summary.linesAdded ?? 0;
-        const removed = summary.linesRemoved ?? 0;
-        this.appendTaskFootSeparator(footRow);
-        const diff = document.createElement('span');
-        diff.className = 'theia-mobile-projects-task-diff';
-        const addedSpan = document.createElement('span');
-        addedSpan.className = 'theia-mobile-projects-task-diff-added';
-        addedSpan.textContent = `+${added}`;
-        const removedSpan = document.createElement('span');
-        removedSpan.className = 'theia-mobile-projects-task-diff-removed';
-        removedSpan.textContent = `−${removed}`;
-        diff.append(addedSpan, removedSpan);
-        footRow.append(diff);
-    }
-
-    protected formatConversationRunDuration(
-        summary: QaapAgentConversationSummaryDTO,
-        isRunning: boolean,
-    ): string | undefined {
-        let durationMs: number | undefined;
-        if (isRunning && summary.turnStartedAt) {
-            durationMs = Math.max(0, Date.now() - summary.turnStartedAt);
-        } else if (summary.lastTurnDurationMs) {
-            durationMs = summary.lastTurnDurationMs;
-        }
-        if (durationMs === undefined || durationMs < 1000) {
-            return undefined;
-        }
-        return this.formatDurationShort(durationMs);
-    }
-
-    protected formatDurationShort(durationMs: number): string {
-        const minute = 60_000;
-        const hour = 60 * minute;
-        const day = 24 * hour;
-        if (durationMs < minute) {
-            return nls.localize(
-                'qaap/mobileProjects/durationSeconds',
-                '{0}s',
-                String(Math.max(1, Math.round(durationMs / 1000))),
-            );
-        }
-        if (durationMs < hour) {
-            return nls.localize(
-                'qaap/mobileProjects/durationMinutes',
-                '{0}m',
-                String(Math.max(1, Math.round(durationMs / minute))),
-            );
-        }
-        if (durationMs < day) {
-            return nls.localize(
-                'qaap/mobileProjects/durationHours',
-                '{0}h',
-                String(Math.round(durationMs / hour)),
-            );
-        }
-        return nls.localize(
-            'qaap/mobileProjects/durationDays',
-            '{0}d',
-            String(Math.round(durationMs / day)),
-        );
-    }
-
-    protected resolveConversationAgentLabel(summary?: QaapAgentConversationSummaryDTO): string {
-        const agentId = summary?.agentId?.trim()
-            || this.activeTasks?.getDefaultAgent()
-            || SHELL_AGENT_ID;
-        const fromList = this.activeTasks?.getAgents().find(a => a.id === agentId)?.label;
-        if (fromList) {
-            return fromList;
-        }
-        if (agentId === 'chat') {
-            return nls.localize('qaap/mobileProjects/agentChat', 'Chat');
-        }
-        return agentId.startsWith('@') ? agentId : `@${agentId}`;
-    }
-
-    /**
-     * Tap on a task in the landing: dismiss the dashboard and ask the hub to bring up the Agent on
-     * this task. The hub action handles the cross-workspace case: if the task lives in a different
-     * project it persists a pending action, switches the workspace (page reload), and replays it
-     * once the new session boots.
-     */
     protected async openTaskInAgent(project: MobileProjectEntry, task?: MobileProjectTaskView): Promise<void> {
         // Task ids now correspond to conversation ids — tap opens the transcript sheet in-place so
         // the user can read/continue the conversation without switching workspaces.
@@ -7976,286 +6223,6 @@ export class MobileProjectsPanel {
         // the project glyph drops the "new replies" treatment on the next render.
         this.conversationFlags?.markRead(summary.id, summary.updatedAt);
         await this.openTranscriptSheet(project, summary);
-    }
-
-    protected buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement {
-        const menu = document.createElement('div');
-        menu.className = 'theia-mobile-projects-card-menu';
-        menu.setAttribute('role', 'menu');
-        menu.hidden = true;
-
-        this.appendCardMenuItem(menu, {
-            label: project.pinned
-                ? nls.localize('qaap/mobileProjects/unpin', 'Unpin')
-                : nls.localize('qaap/mobileProjects/pin', 'Pin'),
-            iconClass: project.pinned ? 'codicon-pinned' : 'codicon-pin',
-            onSelect: () => { void this.onTogglePin(project); },
-        });
-
-        if (project.isCurrent) {
-            this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/closeWorkspace', 'Close workspace'),
-                iconClass: 'codicon-close',
-                onSelect: () => { void this.closeCurrentWorkspace(); },
-            });
-        }
-
-        const canRemove = this.projectsService.canRemove(project);
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/remove', 'Remove'),
-            iconClass: 'codicon-trash',
-            danger: true,
-            disabled: !canRemove,
-            title: !canRemove && project.github
-                ? nls.localize('qaap/mobileProjects/removeGithubDisabled', 'Remove is only for custom or recent projects')
-                : !canRemove
-                    ? nls.localize('qaap/mobileProjects/removeCurrentDisabled', 'Cannot remove the active workspace')
-                    : undefined,
-            onSelect: () => { void this.onRemoveProject(project); },
-        });
-
-        const conversations = this.conversationsForProject(project);
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/clearAllTasks', 'Clear all tasks'),
-            iconClass: 'codicon-clear-all',
-            danger: true,
-            disabled: conversations.length === 0,
-            title: conversations.length === 0
-                ? nls.localize('qaap/mobileProjects/clearAllTasksDisabled', 'No tasks to clear')
-                : undefined,
-            onSelect: () => { void this.onClearProjectChats(project); },
-        });
-
-        return menu;
-    }
-
-    protected buildCardMenu(
-        project: MobileProjectEntry,
-        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-    ): HTMLElement {
-        const canRunTask = !!this.projectsService.getProjectCwd(project) || !!project.github;
-
-        const menu = document.createElement('div');
-        menu.className = 'theia-mobile-projects-card-menu';
-        menu.setAttribute('role', 'menu');
-        menu.hidden = true;
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/runTask', 'Run background task'),
-            disabled: !canRunTask,
-            onSelect: () => { void this.openAgentComposer(project); },
-        });
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/viewActiveLog', 'View active log'),
-            disabled: !activeInfo?.taskId,
-            onSelect: () => {
-                if (activeInfo?.taskId) {
-                    void this.showTaskLog(project, activeInfo.taskId);
-                }
-            },
-        });
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/cancelActiveTask', 'Cancel active task'),
-            danger: true,
-            disabled: !activeInfo?.taskId,
-            onSelect: () => {
-                if (activeInfo?.taskId) {
-                    void this.cancelActiveTask(activeInfo.taskId);
-                }
-            },
-        });
-
-        if (project.previewUrl || project.isCurrent) {
-            this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/openPreview', 'Open preview'),
-                disabled: !this.delegate.onResumePreview,
-                onSelect: () => {
-                    this.closeCardMenu();
-                    void this.delegate.onResumePreview?.(project);
-                },
-            });
-        }
-
-        const taskSeparator = document.createElement('div');
-        taskSeparator.className = 'theia-mobile-projects-card-menu-separator';
-        taskSeparator.setAttribute('role', 'separator');
-        menu.append(taskSeparator);
-
-        this.appendCardMenuItem(menu, {
-            label: project.pinned
-                ? nls.localize('qaap/mobileProjects/unpin', 'Unpin')
-                : nls.localize('qaap/mobileProjects/pin', 'Pin'),
-            onSelect: () => { void this.onTogglePin(project); },
-        });
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/rename', 'Rename'),
-            onSelect: () => { void this.onRenameProject(project); },
-        });
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/duplicate', 'Duplicate'),
-            onSelect: () => { void this.onDuplicateProject(project); },
-        });
-
-        const separator = document.createElement('div');
-        separator.className = 'theia-mobile-projects-card-menu-separator';
-        separator.setAttribute('role', 'separator');
-        menu.append(separator);
-
-        const canRemove = this.projectsService.canRemove(project);
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/remove', 'Remove'),
-            danger: true,
-            disabled: !canRemove,
-            title: !canRemove && project.github
-                ? nls.localize('qaap/mobileProjects/removeGithubDisabled', 'GitHub repositories stay visible in Projects')
-                : !canRemove
-                    ? nls.localize('qaap/mobileProjects/removeCurrentDisabled', 'Cannot remove the active workspace')
-                    : undefined,
-            onSelect: () => { void this.onRemoveProject(project); },
-        });
-
-        // The kebab button itself is built by the caller (createRow) — buildCardMenu only owns the menu.
-        return menu;
-    }
-
-    protected buildConversationMenu(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): HTMLElement {
-        const menu = document.createElement('div');
-        menu.className = 'theia-mobile-projects-card-menu theia-mobile-projects-conversation-menu';
-        menu.setAttribute('role', 'menu');
-        menu.hidden = true;
-
-        if (summary.status === 'failed' && summary.source !== 'theia-chat') {
-            this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/retryTask', 'Retry task'),
-                iconClass: 'codicon-debug-restart',
-                onSelect: () => { void this.onRetryConversation(project, summary); },
-            });
-            const retrySep = document.createElement('div');
-            retrySep.className = 'theia-mobile-projects-card-menu-separator';
-            retrySep.setAttribute('role', 'separator');
-            menu.append(retrySep);
-        }
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/openChat', 'Open chat'),
-            iconClass: 'codicon-comment-discussion',
-            onSelect: () => {
-                void this.openConversationSummary(project, summary);
-            },
-        });
-
-        const isTheiaChat = summary.source === 'theia-chat';
-        const canFork = isTheiaChat
-            ? !!summary.sessionId && !!this.chatService && !!this.conversations
-            : true;
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/forkTask', 'Fork task'),
-            iconClass: 'codicon-git-branch',
-            disabled: !canFork,
-            title: canFork
-                ? nls.localize('qaap/mobileProjects/forkTaskTitle', 'Duplicate this task to try another strategy.')
-                : nls.localize('qaap/mobileProjects/forkTaskUnavailable', 'Only saved workspace tasks can be forked here.'),
-            onSelect: () => { void this.onForkConversation(project, summary); },
-        });
-
-        const canRunVariants = !isTheiaChat && !summary.parallelRunId;
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/runVariants', 'Run variants'),
-            iconClass: 'codicon-layers',
-            disabled: !canRunVariants,
-            title: canRunVariants
-                ? nls.localize(
-                    'qaap/mobileProjects/runVariantsTitle',
-                    'Run the same prompt on multiple agents in parallel.',
-                )
-                : isTheiaChat
-                    ? nls.localize(
-                        'qaap/mobileProjects/runVariantsUnavailable',
-                        'Parallel variants are only available for VPS agent tasks.',
-                    )
-                    : nls.localize(
-                        'qaap/mobileProjects/runVariantsFromParentOnly',
-                        'Start parallel variants from the parent task, not from a variant run.',
-                    ),
-            onSelect: () => {
-                this.closeCardMenu();
-                this.ensureOverlayUi().parallel.openParallelRunsSheet(project, summary);
-            },
-        });
-
-        const canRename = isTheiaChat ? !!summary.sessionId && !!this.chatService : true;
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/renameTask', 'Rename task'),
-            iconClass: 'codicon-edit',
-            disabled: !canRename,
-            title: canRename
-                ? nls.localize('qaap/mobileProjects/renameTaskTitle', 'Change this task name.')
-                : nls.localize('qaap/mobileProjects/renameTaskUnavailable', 'This task cannot be renamed.'),
-            onSelect: () => { void this.onRenameConversation(project, summary); },
-        });
-
-        const flags = this.resolveConversationFlags(summary);
-        const canFlag = isTheiaChat ? !!this.conversationFlags : true;
-        this.appendCardMenuItem(menu, {
-            label: flags.priority
-                ? nls.localize('qaap/mobileProjects/removePriority', 'Remove high priority')
-                : nls.localize('qaap/mobileProjects/markPriority', 'Mark as high priority'),
-            iconClass: flags.priority ? 'codicon-star-full' : 'codicon-star-empty',
-            disabled: !canFlag,
-            title: flags.priority
-                ? nls.localize('qaap/mobileProjects/removePriorityTitle', 'Stop pinning this task at the top.')
-                : nls.localize('qaap/mobileProjects/markPriorityTitle', 'Pin this task at the top of the project list.'),
-            onSelect: () => { void this.onSetConversationPriority(summary, !flags.priority); },
-        });
-        this.appendCardMenuItem(menu, {
-            label: flags.paused
-                ? nls.localize('qaap/mobileProjects/resumeTask', 'Resume task')
-                : nls.localize('qaap/mobileProjects/pauseTask', 'Pause task'),
-            iconClass: flags.paused ? 'codicon-debug-start' : 'codicon-debug-pause',
-            disabled: !canFlag,
-            title: flags.paused
-                ? nls.localize('qaap/mobileProjects/resumeTaskTitle', 'Move this task back to the active list.')
-                : nls.localize(
-                    'qaap/mobileProjects/pauseTaskTitle',
-                    'Stop any active turn and push this task to the bottom of the list.'
-                ),
-            onSelect: () => { void this.onSetConversationPaused(project, summary, !flags.paused); },
-        });
-
-        if (summary.status === 'streaming') {
-            const separator = document.createElement('div');
-            separator.className = 'theia-mobile-projects-card-menu-separator';
-            separator.setAttribute('role', 'separator');
-            menu.append(separator);
-
-            this.appendCardMenuItem(menu, {
-                label: nls.localize('qaap/mobileProjects/cancelTaskRun', 'Cancel run'),
-                iconClass: 'codicon-debug-stop',
-                danger: true,
-                onSelect: () => { void this.onCancelConversation(project, summary); },
-            });
-        }
-
-        const separator = document.createElement('div');
-        separator.className = 'theia-mobile-projects-card-menu-separator';
-        separator.setAttribute('role', 'separator');
-        menu.append(separator);
-
-        this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/deleteTask', 'Delete task'),
-            iconClass: 'codicon-trash',
-            danger: true,
-            disabled: summary.source === 'theia-chat' && !summary.sessionId,
-            onSelect: () => { void this.onDeleteConversation(summary); },
-        });
-
-        return menu;
     }
 
     protected createFootButton(
@@ -8322,464 +6289,9 @@ export class MobileProjectsPanel {
         return row.childElementCount > 0 ? row : undefined;
     }
 
-    /** Menus mount on `document.body` while the sessions sidebar is open (hub panel is visibility-hidden). */
-    protected getCardMenuPortal(): HTMLElement {
-        return this.sessionsSidebar?.isVisible() ? document.body : this.root;
-    }
-
-    protected getCardMenuScrollElement(): HTMLElement {
-        if (this.sessionsSidebar?.isVisible()) {
-            return this.sessionsSidebar.getScrollElement();
-        }
-        return this.scroll;
-    }
-
-    protected toggleCardMenu(card: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void {
-        if (this.openMenu === menu) {
-            this.closeCardMenu();
-            return;
-        }
-        this.closeCardMenu();
-        this.openMenu = menu;
-        this.openMenuAnchor = menuBtn;
-        this.openMenuCard = card;
-        menu.hidden = false;
-        menu.classList.add('theia-mod-open', 'theia-mod-floating');
-        this.getCardMenuPortal().appendChild(menu);
-        menuBtn.setAttribute('aria-expanded', 'true');
-        card.classList.add('theia-mod-menu-open');
-        window.requestAnimationFrame(() => {
-            if (this.openMenu === menu) {
-                this.positionCardMenu(menu, menuBtn);
-            }
-        });
-        const scrollEl = this.getCardMenuScrollElement();
-        scrollEl.addEventListener('scroll', this.onScrollWhileMenuOpen, { passive: true });
-        window.addEventListener('resize', this.onWindowResizeWhileMenuOpen);
-        this.openMenuRepositionDispose.dispose();
-        this.openMenuRepositionDispose = Disposable.create(() => {
-            scrollEl.removeEventListener('scroll', this.onScrollWhileMenuOpen);
-            window.removeEventListener('resize', this.onWindowResizeWhileMenuOpen);
-        });
-    }
-
-    protected closeCardMenu(): void {
-        if (!this.openMenu) {
-            return;
-        }
-        const menu = this.openMenu;
-        const card = this.openMenuCard ?? menu.closest('.theia-mobile-projects-card');
-        const menuBtn = this.openMenuAnchor ?? card?.querySelector('.theia-mobile-projects-card-menu-btn');
-        menu.hidden = true;
-        menu.classList.remove('theia-mod-open', 'theia-mod-floating');
-        this.clearCardMenuPosition(menu);
-        if (card && card.contains(menu) === false) {
-            card.appendChild(menu);
-        }
-        card?.classList.remove('theia-mod-menu-open');
-        if (menuBtn instanceof HTMLButtonElement) {
-            menuBtn.setAttribute('aria-expanded', 'false');
-        }
-        this.openMenuRepositionDispose.dispose();
-        this.openMenuRepositionDispose = Disposable.NULL;
-        this.openMenu = undefined;
-        this.openMenuAnchor = undefined;
-        this.openMenuCard = undefined;
-    }
-
-    /** Fixed layer above the projects panel so overflow on the scroll area does not clip options. */
-    protected positionCardMenu(menu: HTMLElement, anchor: HTMLElement): void {
-        const margin = 8;
-        const gap = 4;
-        const anchorRect = anchor.getBoundingClientRect();
-        const menuWidth = Math.max(menu.offsetWidth, 168);
-        const menuHeight = menu.offsetHeight;
-        let top = anchorRect.bottom + gap;
-        const maxBottom = window.innerHeight - margin;
-        if (top + menuHeight > maxBottom) {
-            const aboveTop = anchorRect.top - gap - menuHeight;
-            top = aboveTop >= margin ? aboveTop : Math.max(margin, maxBottom - menuHeight);
-        }
-        let left = anchorRect.right - menuWidth;
-        left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
-        menu.style.top = `${top}px`;
-        menu.style.left = `${left}px`;
-    }
-
-    protected clearCardMenuPosition(menu: HTMLElement): void {
-        menu.style.top = '';
-        menu.style.left = '';
-        menu.style.right = '';
-        menu.style.bottom = '';
-        menu.style.position = '';
-        menu.style.zIndex = '';
-    }
-
-    protected appendCardMenuItem(
-        menu: HTMLElement,
-        options: {
-            label: string;
-            iconClass?: string;
-            disabled?: boolean;
-            danger?: boolean;
-            title?: string;
-            onSelect: () => void;
-        }
-    ): void {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'theia-mobile-projects-card-menu-item';
-        if (options.danger) {
-            item.classList.add('theia-mod-danger');
-        }
-        item.setAttribute('role', 'menuitem');
-        if (options.iconClass) {
-            const icon = document.createElement('span');
-            icon.className = `codicon ${options.iconClass}`;
-            icon.setAttribute('aria-hidden', 'true');
-            const label = document.createElement('span');
-            label.textContent = options.label;
-            item.append(icon, label);
-        } else {
-            item.textContent = options.label;
-        }
-        item.disabled = !!options.disabled;
-        if (options.title) {
-            item.title = options.title;
-        }
-        item.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            if (!item.disabled) {
-                options.onSelect();
-            }
-        });
-        menu.append(item);
-    }
-
     protected async onTogglePin(project: MobileProjectEntry): Promise<void> {
         this.closeCardMenu();
         this.projectsService.togglePin(project);
-        this.projects = await this.projectsService.loadProjects();
-        this.render();
-        this.delegate.onProjectsChanged?.();
-    }
-
-    protected async onRenameProject(project: MobileProjectEntry): Promise<void> {
-        this.closeCardMenu();
-        const renamed = await this.projectsService.renameProject(project);
-        if (!renamed) {
-            return;
-        }
-        this.projects = await this.projectsService.loadProjects();
-        this.render();
-        this.delegate.onProjectsChanged?.();
-    }
-
-    protected async onDuplicateProject(project: MobileProjectEntry): Promise<void> {
-        this.closeCardMenu();
-        const duplicated = await this.projectsService.duplicateProject(project);
-        if (!duplicated) {
-            return;
-        }
-        this.projects = await this.projectsService.loadProjects();
-        this.render();
-        this.delegate.onProjectsChanged?.();
-    }
-
-    protected async onForkConversation(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        this.closeCardMenu();
-        try {
-            const full = await forkConversation(summary.id);
-            const forked = conversationToSummary(full);
-            this.conversations?.recordSnapshot(forked);
-            this.renderList();
-            await this.openTranscriptSheet(project, forked);
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/forkTaskFailed',
-                'Could not fork task: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onRenameConversation(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        this.closeCardMenu();
-        if (summary.source === 'theia-chat' && (!summary.sessionId || !this.chatService)) {
-            return;
-        }
-        const dialog = new SingleTextInputDialog({
-            title: nls.localize('qaap/mobileProjects/renameTaskDialog', 'Rename task'),
-            initialValue: summary.title,
-            placeholder: nls.localize('qaap/mobileProjects/renameTaskPlaceholder', 'Task name'),
-            validate: (value, mode) => {
-                if (mode !== 'preview' && !value.trim()) {
-                    return nls.localize('qaap/mobileProjects/renameTaskRequired', 'Enter a task name');
-                }
-                return true;
-            },
-        });
-        const value = await dialog.open();
-        const title = value?.trim();
-        if (!title || title === summary.title) {
-            return;
-        }
-        try {
-            if (summary.source === 'theia-chat') {
-                await this.getOrRestoreProjectChatSession(project, summary);
-                await this.chatService!.renameSession(summary.sessionId!, title);
-                await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
-            } else {
-                const full = await renameConversation(summary.id, title);
-                this.conversations?.recordSnapshot(conversationToSummary(full));
-            }
-            this.renderList();
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/renameTaskFailed',
-                'Could not rename task: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onSetConversationPriority(
-        summary: QaapAgentConversationSummaryDTO,
-        priority: boolean,
-    ): Promise<void> {
-        this.closeCardMenu();
-        try {
-            if (summary.source === 'theia-chat') {
-                if (!this.conversationFlags) {
-                    return;
-                }
-                this.conversationFlags.set(summary.id, { priority });
-                this.conversations?.recordSnapshot({ ...summary, priority: priority || undefined });
-            } else {
-                const full = await updateConversation(summary.id, { priority });
-                this.conversations?.recordSnapshot(conversationToSummary(full));
-            }
-            this.renderList();
-            if (this.sessionsSidebar?.isVisible()) {
-                this.sessionsSidebar.refreshList();
-            }
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/priorityFailed',
-                'Could not update task priority: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onSetConversationPaused(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        paused: boolean,
-    ): Promise<void> {
-        this.closeCardMenu();
-        try {
-            if (paused && summary.status === 'streaming') {
-                // Stopping the active turn mirrors what the server does for qaap-agent chats; for
-                // Theia chats we use the same path as the existing "Cancel run" menu item.
-                await this.onCancelConversation(project, summary);
-            }
-            if (summary.source === 'theia-chat') {
-                if (!this.conversationFlags) {
-                    return;
-                }
-                this.conversationFlags.set(summary.id, { paused });
-                this.conversations?.recordSnapshot({ ...summary, paused: paused || undefined });
-            } else {
-                const full = await updateConversation(summary.id, { paused });
-                this.conversations?.recordSnapshot(conversationToSummary(full));
-            }
-            this.renderList();
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/pauseFailed',
-                'Could not change task pause state: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async toggleConversationAutoApproveById(conversationId: string): Promise<void> {
-        const summary = this.conversations?.findSummaryById(conversationId);
-        if (!summary || summary.source === 'theia-chat') {
-            return;
-        }
-        await this.onSetConversationAutoApprove(summary, !isConversationAutoApproveEnabled(summary));
-    }
-
-    protected async onSetConversationAutoApprove(
-        summary: QaapAgentConversationSummaryDTO,
-        autoApprove: boolean,
-    ): Promise<void> {
-        if (this.transcriptAutoApproveBusy) {
-            return;
-        }
-        this.closeCardMenu();
-        this.transcriptAutoApproveBusy = true;
-        try {
-            const full = await updateConversation(summary.id, { autoApprove });
-            const next = conversationToSummary(full);
-            this.conversations?.recordSnapshot(next);
-            this.renderList();
-            MobileSnackbar.show(
-                autoApprove
-                    ? nls.localize('qaap/mobileProjects/taskAutoApproveEnabled', 'Auto-approve enabled for this task')
-                    : nls.localize('qaap/mobileProjects/taskAutoApproveDisabled', 'Auto-approve disabled — tool calls may wait for approval'),
-                { kind: 'success', duration: 2200 },
-            );
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/taskAutoApproveFailed',
-                'Could not update auto-approve: {0}',
-                error instanceof Error ? error.message : String(error),
-            ));
-        } finally {
-            this.transcriptAutoApproveBusy = false;
-        }
-    }
-
-    protected async onCancelConversation(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        this.closeCardMenu();
-        try {
-            if (summary.source === 'theia-chat') {
-                const session = await this.getOrRestoreProjectChatSession(project, summary);
-                const request = [...(session?.model.getRequests() ?? [])]
-                    .reverse()
-                    .find(candidate => ChatRequestModel.isInProgress(candidate));
-                if (session && request) {
-                    await this.chatService?.cancelRequest(session.id, request.id);
-                }
-            } else {
-                await cancelConversation(summary.id);
-            }
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/cancelTaskFailed',
-                'Could not cancel run: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onRetryConversation(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        this.closeCardMenu();
-        try {
-            const retried = await retryConversation(summary.id);
-            this.conversations?.recordSnapshot(conversationToSummary(retried));
-            const retriedTurn = [...retried.messages].reverse().find(message => message.role === 'user');
-            this.applyTaskStartedToProject(retried.cwd, retriedTurn?.content ?? retried.title, retried.id);
-            if (this.isWatchingOpenTranscript(summary.id)) {
-                this.scheduleTranscriptConversationRefresh(project, summary, this.resolveActiveTranscriptChatHost()!);
-            }
-            MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/taskRetried', 'Task restarted'),
-                { kind: 'success', duration: 1400 }
-            );
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/retryTaskFailed',
-                'Could not retry: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onDeleteConversation(summary: QaapAgentConversationSummaryDTO): Promise<void> {
-        this.closeCardMenu();
-        const confirmed = await new ConfirmDialog({
-            title: nls.localize('qaap/mobileProjects/deleteTask', 'Delete task'),
-            msg: nls.localize('qaap/mobileProjects/deleteTaskConfirm', 'Delete this task? This cannot be undone.'),
-        }).open();
-        if (!confirmed) {
-            return;
-        }
-        try {
-            if (summary.source === 'theia-chat') {
-                if (!summary.sessionId || !this.chatService) {
-                    return;
-                }
-                await this.chatService.deleteSession(summary.sessionId);
-                this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
-                await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
-            } else {
-                await deleteConversation(summary.id);
-                this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
-            }
-            this.closeTranscriptSheet();
-            this.renderList();
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/deleteTaskFailed',
-                'Could not delete task: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onClearProjectChats(project: MobileProjectEntry): Promise<void> {
-        this.closeCardMenu();
-        const conversations = this.conversationsForProject(project);
-        if (conversations.length === 0) {
-            return;
-        }
-        const confirmed = await new ConfirmDialog({
-            title: nls.localize('qaap/mobileProjects/clearAllTasks', 'Clear all tasks'),
-            msg: nls.localize(
-                'qaap/mobileProjects/clearAllTasksConfirm',
-                'Clear all tasks for this project? This cannot be undone.'
-            ),
-        }).open();
-        if (!confirmed) {
-            return;
-        }
-        try {
-            for (const summary of conversations) {
-                if (summary.source === 'theia-chat') {
-                    if (summary.sessionId && this.chatService) {
-                        await this.chatService.deleteSession(summary.sessionId);
-                        this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
-                    }
-                } else {
-                    await deleteConversation(summary.id);
-                    this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
-                }
-            }
-            await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
-            this.closeTranscriptSheet();
-            await this.refreshChatServiceSessionSummaries();
-            this.renderList();
-        } catch (error) {
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/clearAllTasksFailed',
-                'Could not clear tasks: {0}',
-                error instanceof Error ? error.message : String(error)
-            ));
-        }
-    }
-
-    protected async onRemoveProject(project: MobileProjectEntry): Promise<void> {
-        this.closeCardMenu();
-        const removed = await this.projectsService.removeProject(project);
-        if (!removed) {
-            return;
-        }
         this.projects = await this.projectsService.loadProjects();
         this.render();
         this.delegate.onProjectsChanged?.();
@@ -9258,6 +6770,118 @@ export class MobileProjectsPanel {
         this.hubCatalogUi.renderCatalogHubView();
     }
 
+    protected async runCatalogAction(action: WorkHubCatalogAction): Promise<void> {
+        return this.hubCatalogUi.runCatalogAction(action);
+    }
+
+    protected readonly reposHubUi = new MobileProjectsReposHubUi(this as unknown as MobileProjectsReposHubHost);
+
+    protected createEmptyState(): HTMLElement {
+        return this.reposHubUi.createEmptyState();
+    }
+
+    protected createSectionLabel(text: string, withDot: boolean): HTMLElement {
+        return this.reposHubUi.createSectionLabel(text, withDot);
+    }
+
+    protected readonly inboxPrUi = new MobileProjectsInboxPrUi(this as unknown as MobileProjectsInboxPrHost);
+
+    protected resetInboxPullRequestState(): void {
+        this.inboxPrUi.resetInboxPullRequestState();
+    }
+
+    protected mergeInboxPullRequests(polled: QaapGithubPullRequestSummary[]): QaapGithubPullRequestSummary[] {
+        return this.inboxPrUi.mergeInboxPullRequests(polled);
+    }
+
+    protected async refreshInboxPullRequests(
+        projects: MobileProjectEntry[] | undefined = undefined,
+        force = false,
+    ): Promise<void> {
+        return this.inboxPrUi.refreshInboxPullRequests(
+            projects ?? this.projectsForCurrentHubList(),
+            force,
+        );
+    }
+
+    protected readonly cardMenuUi = new MobileProjectsCardMenuUi(this as unknown as MobileProjectsCardMenuHost);
+
+    protected buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement {
+        return this.cardMenuUi.buildProjectOptionsMenu(project);
+    }
+
+    protected buildCardMenu(
+        project: MobileProjectEntry,
+        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
+    ): HTMLElement {
+        return this.cardMenuUi.buildCardMenu(project, activeInfo);
+    }
+
+    protected buildConversationMenu(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): HTMLElement {
+        return this.cardMenuUi.buildConversationMenu(project, summary);
+    }
+
+    protected toggleCardMenu(card: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void {
+        this.cardMenuUi.toggleCardMenu(card, menu, menuBtn);
+    }
+
+    protected closeCardMenu(): void {
+        this.cardMenuUi.closeCardMenu();
+    }
+
+    protected readonly projectRowsUi = new MobileProjectsProjectRowsUi(this as unknown as MobileProjectsProjectRowsHost);
+
+    protected createRow(project: MobileProjectEntry): HTMLElement {
+        return this.projectRowsUi.createRow(project);
+    }
+
+    protected createTaskBlock(
+        project: MobileProjectEntry,
+        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
+    ): HTMLElement {
+        return this.projectRowsUi.createTaskBlock(project, activeInfo);
+    }
+
+    protected createTaskItem(
+        project: MobileProjectEntry,
+        task: MobileProjectTaskView,
+        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
+        summary?: QaapAgentConversationSummaryDTO,
+        parentIds: ReadonlySet<string> = new Set<string>(),
+        options?: { onActivate?: () => void; compact?: boolean },
+    ): HTMLElement {
+        return this.projectRowsUi.createTaskItem(project, task, activeInfo, summary, parentIds, options);
+    }
+
+    protected detailComposerSurfaceForProject(project: MobileProjectEntry): QaapComposerSurface {
+        return this.projectRowsUi.detailComposerSurfaceForProject(project);
+    }
+
+    protected createTaskLeadingGlyph(codiconClass: string): HTMLElement {
+        return this.projectRowsUi.createTaskLeadingGlyph(codiconClass);
+    }
+
+    protected resolveConversationAgentLabel(summary?: QaapAgentConversationSummaryDTO): string {
+        return this.projectRowsUi.resolveConversationAgentLabel(summary);
+    }
+
+    protected readonly hubRoutineEditorUi = new MobileProjectsHubRoutineEditorUi(this as unknown as MobileProjectsHubRoutineEditorHost);
+
+    protected async refreshWorkHubRoutines(force = false): Promise<void> {
+        return this.hubRoutineEditorUi.refreshWorkHubRoutines(force);
+    }
+
+    protected openRoutineEditor(routine?: QaapWorkHubRoutine): void {
+        this.hubRoutineEditorUi.openRoutineEditor(routine);
+    }
+
+    protected closeRoutineEditor(): void {
+        this.hubRoutineEditorUi.closeRoutineEditor();
+    }
+
     protected readonly hubRoutinesUi = new MobileProjectsHubRoutinesUi(this as unknown as MobileProjectsHubRoutinesHost);
 
     protected renderRoutinesHubView(): void {
@@ -9281,6 +6905,99 @@ export class MobileProjectsPanel {
 
     protected async runRoutineNow(routine: QaapWorkHubRoutine): Promise<void> {
         return this.hubRoutinesUi.runRoutineNow(routine);
+    }
+
+    protected readonly hubTeamDataUi = new MobileProjectsHubTeamDataUi(this as unknown as MobileProjectsHubTeamDataHost);
+
+    protected collectTeamMembersForHub(): WorkHubTeamMember[] {
+        return this.hubTeamDataUi.collectTeamMembersForHub();
+    }
+
+    protected collectTeamApprovalItems(members: readonly WorkHubTeamMember[]): WorkHubApprovalItem[] {
+        return this.hubTeamDataUi.collectTeamApprovalItems(members);
+    }
+
+    protected onTeamMemberClick(member: WorkHubTeamMember): void {
+        this.hubTeamDataUi.onTeamMemberClick(member);
+    }
+
+    protected readonly conversationActionsUi = new MobileProjectsConversationActionsUi(this as unknown as MobileProjectsConversationActionsHost);
+
+    protected async onForkConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        return this.conversationActionsUi.onForkConversation(project, summary);
+    }
+
+    protected async onRenameConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        return this.conversationActionsUi.onRenameConversation(project, summary);
+    }
+
+    protected async onSetConversationPriority(
+        summary: QaapAgentConversationSummaryDTO,
+        priority: boolean,
+    ): Promise<void> {
+        return this.conversationActionsUi.onSetConversationPriority(summary, priority);
+    }
+
+    protected async onSetConversationPaused(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        paused: boolean,
+    ): Promise<void> {
+        return this.conversationActionsUi.onSetConversationPaused(project, summary, paused);
+    }
+
+    protected async toggleConversationAutoApproveById(conversationId: string): Promise<void> {
+        return this.conversationActionsUi.toggleConversationAutoApproveById(conversationId);
+    }
+
+    protected async onSetConversationAutoApprove(
+        summary: QaapAgentConversationSummaryDTO,
+        autoApprove: boolean,
+    ): Promise<void> {
+        return this.conversationActionsUi.onSetConversationAutoApprove(summary, autoApprove);
+    }
+
+    protected async onCancelConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        return this.conversationActionsUi.onCancelConversation(project, summary);
+    }
+
+    protected async onRetryConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        return this.conversationActionsUi.onRetryConversation(project, summary);
+    }
+
+    protected async onDeleteConversation(summary: QaapAgentConversationSummaryDTO): Promise<void> {
+        return this.conversationActionsUi.onDeleteConversation(summary);
+    }
+
+    protected readonly projectActionsUi = new MobileProjectsProjectActionsUi(this as unknown as MobileProjectsProjectActionsHost);
+
+    protected async onRenameProject(project: MobileProjectEntry): Promise<void> {
+        return this.projectActionsUi.onRenameProject(project);
+    }
+
+    protected async onDuplicateProject(project: MobileProjectEntry): Promise<void> {
+        return this.projectActionsUi.onDuplicateProject(project);
+    }
+
+    protected async onClearProjectChats(project: MobileProjectEntry): Promise<void> {
+        this.sessionsSidebar?.hideForMobileOverlay();
+        return this.projectActionsUi.onClearProjectChats(project);
+    }
+
+    protected async onRemoveProject(project: MobileProjectEntry): Promise<void> {
+        return this.projectActionsUi.onRemoveProject(project);
     }
 
     protected readonly workHubInboxUi = new MobileProjectsWorkHubInboxUi(this as unknown as MobileProjectsWorkHubInboxHost);

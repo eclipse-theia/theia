@@ -32,7 +32,7 @@ export interface MobileProjectsHubRoutinesHost {
     messageService: MessageService | undefined;
 
     refreshWorkHubRoutines(force?: boolean): Promise<void>;
-    openRoutineEditor(routine: QaapWorkHubRoutine): void;
+    openRoutineEditor(routine?: QaapWorkHubRoutine): void;
     renderSubtitle(): void;
     renderList(): void;
 }

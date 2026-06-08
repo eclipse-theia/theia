@@ -866,6 +866,11 @@ body.theia-mobile-mod-sessions-sidebar-open .theia-qaap-account-menu {
   z-index: 2147483010;
 }
 
+/* ConfirmDialog / SingleTextInputDialog must sit above the sessions sidebar sheet. */
+body.theia-mobile-mod-sessions-sidebar-open .lm-Widget.dialogOverlay {
+  z-index: 2147483015 !important;
+}
+
 @media (min-width: 768px) {
   :root {
     --qaap-work-hub-desktop-sidebar-width: 328px;

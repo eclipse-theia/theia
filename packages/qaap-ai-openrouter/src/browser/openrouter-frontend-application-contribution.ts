@@ -10,7 +10,7 @@ import { PreferenceService } from '@theia/core';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '@theia/ai-openai/lib/common';
 import { API_KEY_PREF, BASE_URL_PREF, MODELS_PREF, OPENROUTER_DEFAULT_BASE_URL } from './openrouter-preferences';
-import { OPENROUTER_PROVIDER_ID } from '../common/openrouter-models';
+import { filterOpenRouterModelSlugs, normalizeOpenRouterModelSlug, OPENROUTER_PROVIDER_ID } from '../common/openrouter-models';
 
 /**
  * Registers OpenRouter models as language models. OpenRouter exposes a unified OpenAI-compatible
@@ -75,12 +75,11 @@ export class OpenRouterFrontendApplicationContribution implements FrontendApplic
     /**
      * Strip the `openrouter/` prefix from preference entries that already include it. Users frequently
      * copy ids straight from the model dropdown, which renders the full namespaced id (e.g.
-     * `openrouter/deepseek/deepseek-v4-flash:free`). Without this normalization we'd send the
+     * `openrouter/nvidia/nemotron-3-super-120b-a12b:free`). Without this normalization we'd send the
      * prefixed slug to the OpenRouter API and get `400 ... is not a valid model ID`.
      */
     protected normalizeModelIds(ids: string[]): string[] {
-        const prefix = `${OPENROUTER_PROVIDER_ID}/`;
-        return ids.map(id => id.startsWith(prefix) ? id.slice(prefix.length) : id);
+        return filterOpenRouterModelSlugs(ids.map(id => normalizeOpenRouterModelSlug(id)));
     }
 
     protected createOpenRouterModelDescription(modelId: string): OpenAiModelDescription {

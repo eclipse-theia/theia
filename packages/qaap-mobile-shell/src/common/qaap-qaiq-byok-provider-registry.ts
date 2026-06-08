@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { filterOpenRouterModelSlugs } from '@theia/qaap-ai-openrouter/lib/common/openrouter-models';
 import type { QaapQaiqModelOption } from './qaap-agent-task-client';
 
 export type QaapQaiqProviderId = QaapQaiqModelOption['provider'];
@@ -35,8 +36,8 @@ export interface QaapQaiqByokProviderDescriptor {
 
 const OPENROUTER_FALLBACK_MODELS = [
     'nvidia/nemotron-3-super-120b-a12b:free',
+    'moonshotai/kimi-k2.6:free',
     'google/gemma-4-31b-it:free',
-    'qwen/qwen3-next-80b-a3b-instruct:free',
 ] as const;
 
 const NVIDIA_FALLBACK_MODELS = [
@@ -193,11 +194,15 @@ export function listByokModelIds(
     for (const pref of descriptor.modelListPrefs) {
         models.push(...readStringList(readPref, pref));
     }
-    const unique = [...new Set(models)];
+    let unique = [...new Set(models)];
+    if (descriptor.vendor === 'openrouter') {
+        unique = filterOpenRouterModelSlugs(unique);
+    }
     if (unique.length) {
         return unique;
     }
-    return descriptor.fallbackModels ? [...descriptor.fallbackModels] : [];
+    const fallback = descriptor.fallbackModels ? [...descriptor.fallbackModels] : [];
+    return descriptor.vendor === 'openrouter' ? filterOpenRouterModelSlugs(fallback) : fallback;
 }
 
 export function listByokModelsFromDescriptor(

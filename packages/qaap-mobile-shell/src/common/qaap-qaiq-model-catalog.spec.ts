@@ -45,6 +45,23 @@ describe('listQaiqModelsFromPreferences', () => {
         expect(models.some(m => m.vendor === 'openrouter')).to.be.true;
     });
 
+    it('drops excluded OpenRouter slugs from the QAIQ model picker', () => {
+        const models = listQaiqModelsFromPreferences(key => {
+            if (key === 'ai-features.openrouter.openrouterApiKey') {
+                return 'sk-test';
+            }
+            if (key === 'ai-features.openrouter.openrouterModels') {
+                return [
+                    'deepseek/deepseek-v4-flash:free',
+                    'nvidia/nemotron-3-super-120b-a12b:free',
+                ];
+            }
+            return undefined;
+        });
+        expect(models.some(m => m.modelId === 'deepseek/deepseek-v4-flash:free')).to.be.false;
+        expect(models.some(m => m.modelId === 'nvidia/nemotron-3-super-120b-a12b:free')).to.be.true;
+    });
+
     it('returns Hugging Face models when API key is configured', () => {
         const models = listQaiqModelsFromPreferences(key => {
             if (key === 'ai-features.huggingFace.apiKey') {

@@ -242,15 +242,15 @@ export class QaapQaiqStreamAccumulator {
 
     protected ingestAssistantTextBlock(text: string): void {
         const priorText = collectTextFromTranscriptBlocks(this.transcriptBlocks);
-        const trimmed = text.trim();
+        const trimmed = collapseExactRepeatedText(text.trim());
         if (!trimmed) {
+            return;
+        }
+        if (priorText && (trimmed === priorText || trimmed === priorText + priorText)) {
             return;
         }
         if (!priorText) {
             this.transcriptBlocks.push({ type: 'text', text: trimmed });
-            return;
-        }
-        if (trimmed === priorText || text === priorText) {
             return;
         }
         if (trimmed.startsWith(priorText) && trimmed.length > priorText.length) {
@@ -450,11 +450,26 @@ export function mergeIncrementalStreamText(existing: string, incoming: string): 
     return existing + incoming;
 }
 
+/** Collapse exact back-to-back repetition inside one text block (e.g. `hola…hola…` with no separator). */
+export function collapseExactRepeatedText(text: string): string {
+    let normalized = text.trim();
+    while (normalized.length >= 2 && normalized.length % 2 === 0) {
+        const half = normalized.length / 2;
+        const first = normalized.slice(0, half);
+        const second = normalized.slice(half);
+        if (first !== second) {
+            break;
+        }
+        normalized = first;
+    }
+    return normalized;
+}
+
 /** Remove back-to-back duplicate paragraphs inside one streamed text block. */
 export function collapseConsecutiveDuplicateParagraphs(text: string): string {
     const paragraphs = text.split(/\n\n+/).map(part => part.trim()).filter(Boolean);
     if (paragraphs.length <= 1) {
-        return text.trim();
+        return collapseExactRepeatedText(text.trim());
     }
     const deduped: string[] = [];
     for (const paragraph of paragraphs) {
@@ -527,7 +542,7 @@ export function dedupeAgentMessageTextSegments(
             continue;
         }
 
-        let chunk = collapseConsecutiveDuplicateParagraphs(segment.content.trim());
+        let chunk = collapseExactRepeatedText(collapseConsecutiveDuplicateParagraphs(segment.content.trim()));
         if (!chunk) {
             continue;
         }
