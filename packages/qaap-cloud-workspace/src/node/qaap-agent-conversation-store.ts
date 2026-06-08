@@ -817,7 +817,7 @@ export class QaapAgentConversationStore {
             withReply.cwd,
             conversationId,
             userMessageId,
-            userMessage ? this.checkpointLabel(userMessage.content) : 'Turn',
+            userMessage ? this.checkpointLabel(userMessage.content ?? '') : 'Turn',
             gitStats,
         );
         if (checkpoint) {

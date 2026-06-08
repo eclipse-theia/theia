@@ -4,7 +4,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { normalizeAgentMessageContentForDisplay } from './qaap-agent-message-content';
+import { normalizeAgentMessageContentForDisplay, resolveMessagePreviewText } from './qaap-agent-message-content';
 
 describe('normalizeAgentMessageContentForDisplay', () => {
     it('extracts text from Responses-style user messages', () => {
@@ -45,5 +45,25 @@ describe('normalizeAgentMessageContentForDisplay', () => {
     it('leaves ordinary text and arbitrary JSON unchanged', () => {
         expect(normalizeAgentMessageContentForDisplay('plain **markdown**')).to.equal('plain **markdown**');
         expect(normalizeAgentMessageContentForDisplay('{"command":"npm test"}')).to.equal('{"command":"npm test"}');
+    });
+
+    it('treats missing content as empty text', () => {
+        expect(normalizeAgentMessageContentForDisplay(undefined)).to.equal('');
+        expect(normalizeAgentMessageContentForDisplay(null)).to.equal('');
+    });
+});
+
+describe('resolveMessagePreviewText', () => {
+    it('falls back to the last text segment when content is a placeholder', () => {
+        expect(resolveMessagePreviewText({
+            content: '…',
+            segments: [{ type: 'text', content: 'Streaming answer' }],
+        })).to.equal('Streaming answer');
+    });
+
+    it('does not throw when content is undefined', () => {
+        expect(resolveMessagePreviewText({
+            segments: [{ type: 'thinking', content: 'plan' }],
+        })).to.equal('');
     });
 });

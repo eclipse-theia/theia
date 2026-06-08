@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import type { QaapAgentApprovalRequestDTO } from './qaap-agent-approval-client';
+import type { QaapAgentMessageSegmentDTO } from './qaap-agent-conversation-client';
 
 /** Pending approval for the open QAIQ transcript (newest first). */
 export function resolveTranscriptInlineApproval(
@@ -13,4 +14,15 @@ export function resolveTranscriptInlineApproval(
     return approvals
         .filter(approval => approval.conversationId === conversationId)
         .sort((a, b) => b.createdAt - a.createdAt)[0];
+}
+
+/** Stable id shared with the VPS approval store (`conversationId:tool:toolUseId`). */
+export function buildTranscriptToolApprovalId(conversationId: string, toolUseId: string): string {
+    return `${conversationId}:tool:${toolUseId}`;
+}
+
+export function isPendingTranscriptToolSegment(
+    segment: QaapAgentMessageSegmentDTO,
+): segment is Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> {
+    return segment.type === 'tool' && !segment.finished;
 }

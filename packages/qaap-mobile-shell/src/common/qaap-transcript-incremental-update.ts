@@ -42,10 +42,10 @@ export function buildConversationTranscriptFingerprint(conv: QaapAgentConversati
             for (const segment of message.segments) {
                 if (segment.type === 'tool') {
                     parts.push(
-                        `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args.length}:${segment.result?.length ?? 0}`,
+                        `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}`,
                     );
                 } else {
-                    parts.push(`${segment.type}:${segment.content.length}`);
+                    parts.push(`${segment.type}:${segment.content?.length ?? 0}`);
                 }
             }
         }
@@ -134,8 +134,8 @@ export const TRANSCRIPT_ACTIVITY_ROW_ATTR = 'data-transcript-activity-row';
 export function fingerprintAgentSegments(segments: readonly QaapAgentMessageSegmentDTO[]): string {
     return segments.map(segment => {
         if (segment.type === 'tool') {
-            return `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args.length}:${segment.result?.length ?? 0}`;
+            return `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}`;
         }
-        return `${segment.type}:${segment.content.length}`;
+        return `${segment.type}:${segment.content?.length ?? 0}`;
     }).join('|');
 }

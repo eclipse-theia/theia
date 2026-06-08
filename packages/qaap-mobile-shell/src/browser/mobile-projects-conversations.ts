@@ -16,7 +16,7 @@ import {
     QaapAgentMessageDTO,
     listAllConversationGroups,
 } from '../common/qaap-agent-conversation-client';
-import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
+import { normalizeAgentMessageContentForDisplay, resolveMessagePreviewText } from '../common/qaap-agent-message-content';
 import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
 const STREAM_URL = `${QAAP_AGENT_CONVERSATION_API_PATH}/stream`;
@@ -327,7 +327,7 @@ export class MobileProjectsConversations {
                 messageCount: payload.message.role === existing.lastMessageRole
                     ? existing.messageCount
                     : existing.messageCount + 1,
-                lastMessagePreview: excerpt(normalizeAgentMessageContentForDisplay(payload.message.content)),
+                lastMessagePreview: excerpt(resolveMessagePreviewText(payload.message)),
                 lastMessageRole: payload.message.role,
             };
             this.upsert(updated);
@@ -423,8 +423,8 @@ function uriToFsPath(uri: URI): string {
     return raw;
 }
 
-function excerpt(text: string): string {
-    const clean = text.replace(/\s+/g, ' ').trim();
+function excerpt(text: string | undefined): string {
+    const clean = (text ?? '').replace(/\s+/g, ' ').trim();
     return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
 }
 

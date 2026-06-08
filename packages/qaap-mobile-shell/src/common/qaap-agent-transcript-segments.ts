@@ -88,16 +88,16 @@ export function resolveTranscriptThinkingContent(segments: readonly QaapTranscri
 }
 
 /** One-line preview for the thought-brief body (Cursor-style intent paragraph). */
-export function excerptTranscriptThought(text: string, maxLength = 280): string {
-    const compact = text.replace(/\s+/g, ' ').trim();
+export function excerptTranscriptThought(text: string | undefined, maxLength = 280): string {
+    const compact = (text ?? '').replace(/\s+/g, ' ').trim();
     if (compact.length <= maxLength) {
         return compact;
     }
     return `${compact.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-export function isTranscriptThoughtExcerptTruncated(text: string, maxLength = 280): boolean {
-    return text.replace(/\s+/g, ' ').trim().length > maxLength;
+export function isTranscriptThoughtExcerptTruncated(text: string | undefined, maxLength = 280): boolean {
+    return (text ?? '').replace(/\s+/g, ' ').trim().length > maxLength;
 }
 
 /**
@@ -235,6 +235,6 @@ function resolveTranscriptToolPillLabel(
         case 'editing':
             return file ? `Edit ${file}` : 'Edit file';
         default:
-            return toolName.replace(/_/g, ' ');
+            return (toolName ?? 'tool').replace(/_/g, ' ');
     }
 }

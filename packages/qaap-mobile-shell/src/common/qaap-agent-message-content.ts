@@ -22,13 +22,40 @@ interface AgentMessageLike {
  * Some CLIs persist OpenAI/Responses-style message JSON in stdout. The chat UI should render the
  * human text, while still leaving arbitrary JSON visible when it is genuinely the user's content.
  */
-export function normalizeAgentMessageContentForDisplay(raw: string): string {
-    const trimmed = raw.trim();
+export function normalizeAgentMessageContentForDisplay(raw: string | undefined | null): string {
+    const text = raw ?? '';
+    const trimmed = text.trim();
     if (!looksLikeJson(trimmed)) {
-        return raw;
+        return text;
     }
     const extracted = extractDisplayTextFromJsonString(trimmed);
-    return extracted ?? raw;
+    return extracted ?? text;
+}
+
+type MessagePreviewLike = {
+    readonly content?: string | null;
+    readonly segments?: ReadonlyArray<{
+        readonly type: string;
+        readonly content?: string;
+    }>;
+};
+
+/** Plain preview text for list rows — never throws when {@link content} is missing. */
+export function resolveMessagePreviewText(message: MessagePreviewLike | undefined): string {
+    if (!message) {
+        return '';
+    }
+    const normalized = normalizeAgentMessageContentForDisplay(message.content);
+    const trimmed = normalized.trim();
+    if (trimmed && trimmed !== '…') {
+        return trimmed;
+    }
+    for (const segment of [...(message.segments ?? [])].reverse()) {
+        if (segment.type === 'text' && segment.content?.trim()) {
+            return segment.content.trim();
+        }
+    }
+    return trimmed;
 }
 
 function looksLikeJson(text: string): boolean {

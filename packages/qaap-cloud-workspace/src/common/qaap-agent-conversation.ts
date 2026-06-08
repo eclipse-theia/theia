@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { buildConversationListMetrics } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-conversation-list-metrics';
+import { resolveMessagePreviewText } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-message-content';
 import {
     DEFAULT_QAAP_CONTEXT_WINDOW,
     estimateConversationTokensFromMessages,
@@ -269,7 +270,7 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt,
         messageCount: conv.messages.length,
-        lastMessagePreview: last ? excerpt(last.content) : undefined,
+        lastMessagePreview: last ? excerpt(resolveMessagePreviewText(last)) : undefined,
         lastMessageRole: last?.role,
         priority: conv.priority || undefined,
         paused: conv.paused || undefined,

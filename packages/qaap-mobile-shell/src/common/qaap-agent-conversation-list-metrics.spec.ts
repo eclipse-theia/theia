@@ -127,6 +127,11 @@ describe('formatToolActivityLabel', () => {
         expect(formatToolActivityLabel('')).to.equal('Working');
     });
 
+    it('returns Working when tool name is missing during streaming', () => {
+        expect(formatToolActivityLabel(undefined)).to.equal('Working');
+        expect(formatToolActivityLabel(null)).to.equal('Working');
+    });
+
     it('enriches edit label with last two path segments from JSON args', () => {
         expect(formatToolActivityLabel('str_replace_editor', '{"path":"src/auth/login.ts"}')).to.equal('Editing auth/login.ts');
         expect(formatToolActivityLabel('Edit', '{"path":"packages/core/src/app.ts"}')).to.equal('Editing src/app.ts');

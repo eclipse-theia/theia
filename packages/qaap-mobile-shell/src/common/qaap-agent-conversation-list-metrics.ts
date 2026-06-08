@@ -187,8 +187,9 @@ export function formatReadToolDetailFromArgs(argsJson?: string): string | undefi
     }
 }
 
-export function formatToolActivityLabel(toolName: string, argsJson?: string): string {
-    const name = toolName.trim().toLowerCase();
+export function formatToolActivityLabel(toolName: string | undefined | null, argsJson?: string): string {
+    const safeToolName = toolName ?? '';
+    const name = safeToolName.trim().toLowerCase();
 
     // Try to extract a meaningful detail (file name or command) from the tool args.
     let detail: string | undefined;
@@ -238,7 +239,7 @@ export function formatToolActivityLabel(toolName: string, argsJson?: string): st
     if (name.includes('think')) {
         return 'Thinking';
     }
-    return toolName.replace(/_/g, ' ');
+    return safeToolName.replace(/_/g, ' ');
 }
 
 function sliceLastTurnMessages(
@@ -295,17 +296,19 @@ function collectMessageTexts(
     message: QaapAgentConversationListMetricsInput['messages'][number],
 ): string[] {
     const texts: string[] = [];
-    if (message.content.trim()) {
-        texts.push(message.content);
+    const content = message.content?.trim() ?? '';
+    if (content) {
+        texts.push(content);
     }
     for (const segment of message.segments ?? []) {
         if (segment.type === 'text' || segment.type === 'thinking') {
-            if (segment.content.trim()) {
-                texts.push(segment.content);
+            const segmentText = segment.content?.trim() ?? '';
+            if (segmentText) {
+                texts.push(segmentText);
             }
         } else if (segment.result?.trim()) {
             texts.push(segment.result);
-        } else if (segment.args.trim()) {
+        } else if (segment.args?.trim()) {
             texts.push(segment.args);
         }
     }

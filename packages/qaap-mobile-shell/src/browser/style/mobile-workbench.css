@@ -11239,6 +11239,42 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
   gap: 10px;
 }
 
+.theia-mobile-agent-transcript.theia-mod-virtual-scroll {
+  display: block;
+  gap: 0;
+}
+
+.theia-transcript-virtual-root {
+  width: 100%;
+  min-height: 100%;
+}
+
+.theia-transcript-virtual-spacer {
+  position: relative;
+  width: 100%;
+}
+
+.theia-transcript-virtual-window {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  will-change: transform;
+}
+
+.theia-transcript-virtual-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* Execution-view tab strip (icon-only on phones, icon + label when width allows). */
 .theia-mobile-transcript-tabs {
   display: flex;
@@ -14598,6 +14634,11 @@ body > .theia-mobile-transcript-files-menu {
   font-size: 12px;
 }
 
+.theia-mobile-agent-tool-pill[open] {
+  flex: 1 1 100%;
+  border-radius: 0;
+}
+
 .theia-mobile-agent-tool-pill.theia-mod-running {
   border-color: color-mix(in srgb, var(--q-accent, #E58E40) 35%, var(--theia-panel-border, rgba(128, 128, 128, 0.2)));
 }
@@ -14634,8 +14675,60 @@ body > .theia-mobile-transcript-files-menu {
   max-width: min(100%, 420px);
 }
 
+.theia-mobile-agent-tool-pill[open] .theia-mobile-agent-tool-pill-body {
+  max-width: 100%;
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-view {
+  border-radius: 0;
+  border: none;
+  background: transparent;
+}
+
 .theia-mobile-agent-tool-pill.theia-mod-running .theia-mobile-agent-tool-pill-icon {
   color: var(--q-accent, #E58E40);
+}
+
+.theia-mobile-agent-tool-pill-approval {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 28%, var(--theia-panel-border, rgba(128, 128, 128, 0.2)));
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 8%, transparent);
+}
+
+.theia-mobile-agent-tool-pill-approval-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-tool-pill-approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.theia-mobile-agent-tool-pill-approval-allow,
+.theia-mobile-agent-tool-pill-approval-deny {
+  flex: 1 1 auto;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 70%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theia-mobile-agent-tool-pill-approval-allow {
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 18%, transparent);
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-tool-pill-approval-deny {
+  background: transparent;
+  color: var(--theia-descriptionForeground);
 }
 
 /* Inline diff preview for edit tools (3–6 lines, GitHub-style). */

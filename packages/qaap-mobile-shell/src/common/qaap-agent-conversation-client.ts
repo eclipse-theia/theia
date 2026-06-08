@@ -10,7 +10,7 @@ import {
     estimateConversationTokensFromMessages,
     type QaapAgentContextUsage,
 } from './qaap-agent-context-usage';
-import { normalizeAgentMessageContentForDisplay } from './qaap-agent-message-content';
+import { resolveMessagePreviewText } from './qaap-agent-message-content';
 
 /**
  * HTTP helpers for the persistent VPS agent-conversation API.
@@ -135,7 +135,7 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
     const last = conv.messages[conv.messages.length - 1];
     const status = resolveEffectiveConversationStatus(conv);
     const clean = last
-        ? normalizeAgentMessageContentForDisplay(last.content).replace(/\s+/g, ' ').trim()
+        ? resolveMessagePreviewText(last).replace(/\s+/g, ' ').trim()
         : undefined;
     const preview = clean === undefined
         ? undefined

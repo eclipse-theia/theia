@@ -27,6 +27,22 @@ function conv(partial: Partial<QaapAgentConversationDTO> & Pick<QaapAgentConvers
 
 describe('qaap-transcript-incremental-update', () => {
 
+    it('buildConversationTranscriptFingerprint tolerates missing segment text fields', () => {
+        const snapshot = conv({
+            messages: [{
+                id: 'a1',
+                role: 'agent',
+                content: '',
+                createdAt: 1,
+                segments: [
+                    { type: 'text', content: undefined as unknown as string },
+                    { type: 'tool', toolUseId: 't1', name: 'Read', args: undefined as unknown as string, finished: false },
+                ],
+            }],
+        });
+        expect(() => buildConversationTranscriptFingerprint(snapshot)).to.not.throw();
+    });
+
     it('buildConversationTranscriptFingerprint includes every segment, not only the last', () => {
         const base = conv({
             messages: [{

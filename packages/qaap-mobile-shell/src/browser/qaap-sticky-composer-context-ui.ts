@@ -21,7 +21,7 @@ export function resolveStickyComposerContextChip(
     labelProvider?: LabelProvider,
 ): StickyComposerContextChipView {
     const variable = request.variable;
-    const title = (labelProvider?.getName(request) ?? variable.label ?? variable.name).trim();
+    const title = (labelProvider?.getName(request) ?? variable.label ?? variable.name ?? '').trim();
     const rawDetails = labelProvider?.getDetails(request) ?? request.arg;
     const subtitle = rawDetails?.trim() ? truncateContextDetail(rawDetails.trim()) : undefined;
     const iconFromProvider = labelProvider?.getIcon(request);
@@ -32,7 +32,7 @@ export function resolveStickyComposerContextChip(
         title,
         subtitle,
         iconClasses,
-        kind: variable.name,
+        kind: variable.name ?? 'context',
     };
 }
 
@@ -245,6 +245,6 @@ export function renderStickyComposerContextStrip(options: {
     return strip;
 }
 
-function sanitizeContextKindClass(kind: string): string {
-    return kind.replace(/[^a-zA-Z0-9_-]+/g, '-');
+function sanitizeContextKindClass(kind: string | undefined): string {
+    return (kind ?? 'context').replace(/[^a-zA-Z0-9_-]+/g, '-');
 }
