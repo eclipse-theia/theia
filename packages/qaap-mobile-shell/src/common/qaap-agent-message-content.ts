@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { isQaiqStreamMetadataEnvelope } from './qaap-qaiq-stream';
+
 interface AgentContentBlock {
     readonly type?: string;
     readonly text?: unknown;
@@ -29,7 +31,13 @@ export function normalizeAgentMessageContentForDisplay(raw: string | undefined |
         return text;
     }
     const extracted = extractDisplayTextFromJsonString(trimmed);
-    return extracted ?? text;
+    if (extracted !== undefined) {
+        return extracted;
+    }
+    if (isQaiqStreamMetadataJson(trimmed)) {
+        return '';
+    }
+    return text;
 }
 
 type MessagePreviewLike = {
@@ -56,6 +64,14 @@ export function resolveMessagePreviewText(message: MessagePreviewLike | undefine
         }
     }
     return trimmed;
+}
+
+function isQaiqStreamMetadataJson(text: string): boolean {
+    try {
+        return isQaiqStreamMetadataEnvelope(JSON.parse(text));
+    } catch {
+        return false;
+    }
 }
 
 function looksLikeJson(text: string): boolean {

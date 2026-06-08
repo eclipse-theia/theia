@@ -57,6 +57,7 @@ export class MobileProjectsConversations {
     protected source: EventSource | undefined;
     protected reconnectHandle: number | undefined;
     protected started = false;
+    protected visibilityListenerInstalled = false;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     /** Fires whenever conversation state on the server changes (any project). */
@@ -84,6 +85,30 @@ export class MobileProjectsConversations {
         this.started = true;
         void this.primeFromAll();
         this.openStream();
+        this.installVisibilityReconnect();
+    }
+
+    /** iOS Safari suspends EventSource in background tabs — reconnect when the page is visible again. */
+    protected installVisibilityReconnect(): void {
+        if (this.visibilityListenerInstalled || typeof document === 'undefined' || typeof window === 'undefined') {
+            return;
+        }
+        this.visibilityListenerInstalled = true;
+        const reconnect = (): void => {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+            this.source?.close();
+            this.source = undefined;
+            if (this.reconnectHandle !== undefined) {
+                window.clearTimeout(this.reconnectHandle);
+                this.reconnectHandle = undefined;
+            }
+            this.openStream();
+            void this.primeFromAll();
+        };
+        document.addEventListener('visibilitychange', reconnect);
+        window.addEventListener('pageshow', reconnect);
     }
 
     /** Conversations for one project cwd, sorted newest first. */

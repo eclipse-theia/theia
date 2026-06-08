@@ -8,6 +8,7 @@ import {
     collapseConsecutiveDuplicateParagraphs,
     collapseExactRepeatedText,
     dedupeAgentMessageTextSegments,
+    filterQaiqStreamMetadataLines,
     mergeIncrementalStreamText,
     QaapQaiqStreamAccumulator,
     stripLeadingParagraphsInPriorText,
@@ -93,6 +94,16 @@ describe('dedupeAgentMessageTextSegments', () => {
 });
 
 describe('QaapQaiqStreamAccumulator', () => {
+
+    it('ignores system init metadata envelopes', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push([
+            '{"type":"system","subtype":"init","cwd":"/tmp","session_id":"abc","tools":["Bash"],"model":"moonshotai/kimi-k2.6:free"}',
+            '{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"text","text":"Hola"}]}}',
+        ].join('\n') + '\n');
+        expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: 'Hola' }]);
+        expect(acc.getDisplayText()).to.equal('Hola');
+    });
 
     it('parses assistant text and tool_use blocks', () => {
         const acc = new QaapQaiqStreamAccumulator();
@@ -240,5 +251,18 @@ describe('QaapQaiqStreamAccumulator', () => {
         if (seg.type === 'tool') {
             expect(seg.name).to.equal('Bash');
         }
+    });
+});
+
+describe('filterQaiqStreamMetadataLines', () => {
+
+    it('strips system init lines but keeps assistant output', () => {
+        const input = [
+            '{"type":"system","subtype":"init","cwd":"/tmp","model":"moonshotai/kimi-k2.6:free"}',
+            '{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"text","text":"Hola"}]}}',
+        ].join('\n');
+        expect(filterQaiqStreamMetadataLines(input)).to.equal(
+            '{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"text","text":"Hola"}]}}',
+        );
     });
 });

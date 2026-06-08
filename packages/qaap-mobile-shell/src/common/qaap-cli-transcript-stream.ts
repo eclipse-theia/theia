@@ -53,9 +53,11 @@ export function parseAgentLogForTranscript(
         const acc = new QaapQaiqStreamAccumulator();
         acc.push(log);
         const segments = [...acc.getSegments()];
+        const displayText = acc.getDisplayText().trim();
         if (segments.length > 0) {
-            return { content: acc.getDisplayText() || log.trim(), segments };
+            return { content: displayText || log.trim(), segments };
         }
+        return { content: displayText, segments: [] };
     }
     if (isCodexAgent(agentId)) {
         const parsed = parseCodexLog(log);

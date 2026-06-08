@@ -53,4 +53,14 @@ describe('filterAgentProcessLogChunk', () => {
         ].join('\n');
         expect(filterAgentProcessLogChunk(input)).to.equal('');
     });
+
+    it('strips QAIQ stream-json system init lines', () => {
+        const input = [
+            '{"type":"system","subtype":"init","cwd":"/tmp","model":"moonshotai/kimi-k2.6:free"}',
+            'Task output here',
+        ].join('\n');
+        const result = filterAgentProcessLogChunk(input);
+        expect(result).not.to.include('"type":"system"');
+        expect(result).to.include('Task output here');
+    });
 });

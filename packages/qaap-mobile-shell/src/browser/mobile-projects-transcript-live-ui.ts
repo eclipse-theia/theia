@@ -388,7 +388,8 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         if (shouldSkipStreamingTranscriptRefetch(this.host.transcriptLastConv, this.host.transcriptLastSseDeltaAt)
-            && !options?.forceStatusSettle) {
+            && !options?.forceStatusSettle
+            && !options?.forcePoll) {
             return;
         }
         try {

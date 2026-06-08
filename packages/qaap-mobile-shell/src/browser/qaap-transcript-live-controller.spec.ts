@@ -33,6 +33,10 @@ const conv = (partial: Partial<QaapAgentConversationDTO> = {}): QaapAgentConvers
 });
 
 describe('QaapTranscriptLiveController', () => {
+    beforeEach(() => {
+        (global as unknown as { window: typeof globalThis }).window = globalThis;
+    });
+
     it('handleSummaryUpdated renders locally while SSE deltas are still arriving', () => {
         let rendered = 0;
         let lastConv = conv();
@@ -84,6 +88,36 @@ describe('QaapTranscriptLiveController', () => {
         expect(refreshCalls).to.be.greaterThan(0);
         expect(settled).to.equal(1);
         expect(lastConv.status).to.equal('idle');
+        controller.dispose();
+        changeEmitter.dispose();
+    });
+
+    it('streaming fallback poll refetches when SSE is silent', async function (): Promise<void> {
+        this.timeout(6_000);
+        let refreshCalls = 0;
+        let lastConv = conv();
+        const changeEmitter = new Emitter<void>();
+        const controller = new QaapTranscriptLiveController({
+            isWatching: () => true,
+            getOpenSummary: () => summary(),
+            setOpenSummary: () => undefined,
+            getLastConv: () => lastConv,
+            setLastConv: next => { if (next) { lastConv = next; } },
+            getLastSseDeltaAt: () => undefined,
+            setLastSseDeltaAt: () => undefined,
+            findSummaryById: () => summary(),
+            refreshConversation: async options => {
+                if (options?.forcePoll) {
+                    refreshCalls += 1;
+                }
+            },
+            renderConversation: () => undefined,
+            onApprovalRefresh: () => undefined,
+            conversationsOnDidChange: changeEmitter.event,
+        });
+        controller.watch('conv-1');
+        await new Promise(resolve => setTimeout(resolve, 4_500));
+        expect(refreshCalls).to.be.greaterThan(0);
         controller.dispose();
         changeEmitter.dispose();
     });

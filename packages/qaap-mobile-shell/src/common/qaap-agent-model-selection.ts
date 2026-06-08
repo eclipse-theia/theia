@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { isExcludedOpenRouterModelSlug } from '@theia/qaap-ai-openrouter/lib/common/openrouter-models';
 import { NATIVE_MODEL_CATALOG_EXCLUDED_AGENT_IDS } from './qaap-builtin-agents';
 import {
     hashString,
@@ -62,14 +63,26 @@ function parseStoredModel(raw: string | null | undefined): QaapAgentModelSelecti
         if (!parsed || typeof parsed.provider !== 'string' || typeof parsed.modelId !== 'string') {
             return undefined;
         }
-        return {
+        const model: QaapAgentModelSelection = {
             provider: parsed.provider as QaapAgentModelSelection['provider'],
             vendor: typeof parsed.vendor === 'string' ? parsed.vendor : 'unknown',
             modelId: parsed.modelId,
         };
+        return isStoredAgentModelUsable(model) ? model : undefined;
     } catch {
         return undefined;
     }
+}
+
+/** Drop models removed from the catalog (e.g. offline OpenRouter :free slugs). */
+export function isStoredAgentModelUsable(model: QaapAgentModelSelection | undefined): boolean {
+    if (!model?.modelId?.trim()) {
+        return false;
+    }
+    if (model.vendor === 'openrouter') {
+        return !isExcludedOpenRouterModelSlug(model.modelId);
+    }
+    return true;
 }
 
 export function readStoredAgentModel(cwd: string | undefined, agentId: string | undefined): QaapAgentModelSelection | undefined {
@@ -78,9 +91,14 @@ export function readStoredAgentModel(cwd: string | undefined, agentId: string | 
     }
     try {
         const agent = migrateLegacyBackendAgentId(agentId) ?? agentId;
-        const scoped = parseStoredModel(window.localStorage.getItem(scopedAgentModelStorageKey(cwd, agent)));
+        const scopedKey = scopedAgentModelStorageKey(cwd, agent);
+        const scopedRaw = window.localStorage.getItem(scopedKey);
+        const scoped = parseStoredModel(scopedRaw);
         if (scoped) {
             return scoped;
+        }
+        if (scopedRaw) {
+            window.localStorage.removeItem(scopedKey);
         }
         if (isQaiqAgent(agent)) {
             return readLegacyQaiqModel(cwd);
@@ -92,10 +110,20 @@ export function readStoredAgentModel(cwd: string | undefined, agentId: string | 
 }
 
 function readLegacyQaiqModel(cwd: string): QaapAgentModelSelection | undefined {
-    const raw = window.localStorage.getItem(`${SELECTED_QAIQ_MODEL_STORAGE_KEY}.${hashString(cwd)}`)
-        ?? window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY)
-        ?? undefined;
-    return parseStoredModel(raw ?? undefined);
+    const scopedKey = `${SELECTED_QAIQ_MODEL_STORAGE_KEY}.${hashString(cwd)}`;
+    const scopedRaw = window.localStorage.getItem(scopedKey);
+    const globalRaw = window.localStorage.getItem(SELECTED_QAIQ_MODEL_STORAGE_KEY);
+    const raw = scopedRaw ?? globalRaw ?? undefined;
+    const model = parseStoredModel(raw);
+    if (!model && raw) {
+        if (scopedRaw) {
+            window.localStorage.removeItem(scopedKey);
+        }
+        if (globalRaw) {
+            window.localStorage.removeItem(SELECTED_QAIQ_MODEL_STORAGE_KEY);
+        }
+    }
+    return model;
 }
 
 export function writeStoredAgentModel(

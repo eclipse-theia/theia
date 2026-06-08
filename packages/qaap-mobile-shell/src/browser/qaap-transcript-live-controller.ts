@@ -14,6 +14,8 @@ import { buildConversationTranscriptFingerprint } from '../common/qaap-transcrip
 
 export interface QaapTranscriptLiveRefreshOptions {
     readonly forceStatusSettle?: boolean;
+    /** Bypass SSE grace skip — used by the streaming fallback poll when EventSource is silent. */
+    readonly forcePoll?: boolean;
 }
 
 export interface QaapTranscriptLiveControllerDeps {
@@ -33,15 +35,19 @@ export interface QaapTranscriptLiveControllerDeps {
 }
 
 const REFRESH_DEBOUNCE_MS = 450;
+/** Poll GET /conversation while streaming when SSE is quiet (iOS Safari often drops EventSource). */
+const STREAMING_FALLBACK_POLL_MS = 4_000;
 
 /**
- * SSE-first live transcript coordinator — no interval polling. Message chunks are merged in the
- * panel via {@link applyConversationMessageDelta}; this class debounces refetches and applies
- * lightweight summary updates from SSE `updated` events.
+ * SSE-first live transcript coordinator. Message chunks are merged in the panel via
+ * {@link applyConversationMessageDelta}; this class debounces refetches and applies lightweight
+ * summary updates from SSE `updated` events. A fallback poll runs while streaming so mobile
+ * browsers still advance the transcript when EventSource reconnects slowly or stalls.
  */
 export class QaapTranscriptLiveController implements Disposable {
 
     protected refreshTimer: number | undefined;
+    protected streamingPollTimer: number | undefined;
     protected refreshInFlight = false;
     protected pendingForceSettle = false;
     protected scheduleRefresh: (() => void) | undefined;
@@ -83,6 +89,7 @@ export class QaapTranscriptLiveController implements Disposable {
                 scheduleRefresh();
             }
         });
+        this.startStreamingFallbackPoll(conversationId, scheduleRefresh);
         void this.refreshNow();
     }
 
@@ -90,6 +97,7 @@ export class QaapTranscriptLiveController implements Disposable {
         this.watchedConversationId = undefined;
         this.scheduleRefresh = undefined;
         this.clearRefreshTimer();
+        this.clearStreamingFallbackPoll();
         this.liveUpdatesDispose.dispose();
         this.liveUpdatesDispose = Disposable.NULL;
     }
@@ -142,7 +150,9 @@ export class QaapTranscriptLiveController implements Disposable {
             return;
         }
         const last = this.deps.getLastConv();
-        if (shouldSkipStreamingTranscriptRefetch(last, this.deps.getLastSseDeltaAt()) && !options?.forceStatusSettle) {
+        if (!options?.forcePoll
+            && shouldSkipStreamingTranscriptRefetch(last, this.deps.getLastSseDeltaAt())
+            && !options?.forceStatusSettle) {
             return;
         }
         this.refreshInFlight = true;
@@ -161,6 +171,45 @@ export class QaapTranscriptLiveController implements Disposable {
         if (this.refreshTimer !== undefined) {
             window.clearTimeout(this.refreshTimer);
             this.refreshTimer = undefined;
+        }
+    }
+
+    protected startStreamingFallbackPoll(
+        conversationId: string,
+        scheduleRefresh: () => void,
+    ): void {
+        const setIntervalFn = typeof window !== 'undefined' ? window.setInterval.bind(window) : globalThis.setInterval;
+        if (typeof setIntervalFn !== 'function') {
+            return;
+        }
+        this.clearStreamingFallbackPoll();
+        this.streamingPollTimer = setIntervalFn(() => {
+            if (!this.deps.isWatching(conversationId)) {
+                this.clearStreamingFallbackPoll();
+                return;
+            }
+            const last = this.deps.getLastConv();
+            if (last?.status !== 'streaming') {
+                this.clearStreamingFallbackPoll();
+                return;
+            }
+            const sseAt = this.deps.getLastSseDeltaAt();
+            if (sseAt !== undefined && Date.now() - sseAt < REFRESH_DEBOUNCE_MS) {
+                return;
+            }
+            if (sseAt === undefined || Date.now() - sseAt >= STREAMING_FALLBACK_POLL_MS) {
+                void this.refreshNow({ forcePoll: true });
+                return;
+            }
+            scheduleRefresh();
+        }, STREAMING_FALLBACK_POLL_MS);
+    }
+
+    protected clearStreamingFallbackPoll(): void {
+        if (this.streamingPollTimer !== undefined) {
+            const clearIntervalFn = typeof window !== 'undefined' ? window.clearInterval.bind(window) : globalThis.clearInterval;
+            clearIntervalFn(this.streamingPollTimer);
+            this.streamingPollTimer = undefined;
         }
     }
 }

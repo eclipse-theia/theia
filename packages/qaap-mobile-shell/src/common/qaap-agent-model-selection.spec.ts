@@ -8,6 +8,7 @@ import {
     agentSupportsModelPicker,
     agentUsesNativeModelCatalog,
     agentUsesSettingsModelCatalog,
+    isStoredAgentModelUsable,
     readStoredAgentModel,
     writeStoredAgentModel,
 } from './qaap-agent-model-selection';
@@ -45,6 +46,14 @@ describe('qaap-agent-model-selection', () => {
         expect(agentUsesNativeModelCatalog(QAIQ_AGENT_ID)).to.be.false;
         expect(agentUsesNativeModelCatalog('cursor')).to.be.false;
         expect(agentSupportsModelPicker('cursor')).to.be.false;
+    });
+
+    it('rejects excluded OpenRouter slugs and clears stale localStorage', () => {
+        const cwd = '/repo/a';
+        const bad = { provider: 'openai' as const, vendor: 'openrouter', modelId: 'deepseek/deepseek-v4-flash:free' };
+        expect(isStoredAgentModelUsable(bad)).to.be.false;
+        writeStoredAgentModel(cwd, QAIQ_AGENT_ID, bad);
+        expect(readStoredAgentModel(cwd, QAIQ_AGENT_ID)).to.be.undefined;
     });
 
     it('stores models per agent within the same cwd', () => {

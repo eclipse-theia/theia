@@ -1,0 +1,374 @@
+// *****************************************************************************
+// Copyright (C) 2026 Theia contributors and Qaap product fork.
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import { nls } from '@theia/core/lib/common/nls';
+import { ChatMode } from '@theia/ai-chat';
+import type { QaapComposerSurface } from '../common/qaap-composer-surface';
+import {
+    attachStickyComposerMentionUi,
+    type StickyComposerTokenOption,
+} from '../common/qaap-sticky-composer-mention';
+import {
+    resolveAgentApprovalPolicyOption,
+    type QaapAgentApprovalPolicyId,
+} from '../common/qaap-sticky-composer-approval-policy';
+import {
+    populateAgentToolbarButton,
+    populateApprovalPolicyToolbarButton,
+} from './qaap-agent-ui';
+import {
+    renderStickyComposerContextStrip,
+    type StickyComposerContextChipView,
+} from './qaap-sticky-composer-context-ui';
+import {
+    createStickyComposerWorkspacePill,
+    renderStickyComposerWorkspaceBar,
+    type StickyComposerWorkspaceBarView,
+} from './qaap-sticky-composer-workspace-bar';
+import {
+    createContextUsageIndicatorBadge,
+} from './qaap-chat-context-usage-indicator';
+import type { StickyComposerContextEntry } from '../common/qaap-composer-context-entry';
+import type { AIVariableResolutionRequest } from '@theia/ai-core';
+import type { MobileProjectEntry } from './mobile-projects-types';
+
+export interface MobileProjectsStickyComposerColumnHost {
+resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined;
+resolveComposerWorkspaceBarView(project: MobileProjectEntry): StickyComposerWorkspaceBarView;
+openComposerWorkspaceProjectSheet(project: MobileProjectEntry, transcriptOverlay?: boolean): void;
+openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay?: boolean): void;
+refreshComposerWorkspaceBranch(project: MobileProjectEntry): Promise<string>;
+resolveAttachmentPreview?: (item: AIVariableResolutionRequest) => Promise<string | undefined>;
+}
+
+export class MobileProjectsStickyComposerColumnUi {
+    constructor(protected readonly host: MobileProjectsStickyComposerColumnHost) { }
+
+    buildStickyComposerColumn(options: {
+        project: MobileProjectEntry;
+        surface?: QaapComposerSurface;
+        agentLocked?: boolean;
+        getContext: () => StickyComposerContextEntry[];
+        clearContext: () => void;
+        removeContextItem: (index: number) => void;
+        formatContextChip: (item: StickyComposerContextEntry) => StickyComposerContextChipView;
+        filesExpanded?: boolean;
+        onFilesExpandedChange?: (expanded: boolean) => void;
+        getDraft: () => string;
+        setDraft: (value: string) => void;
+        resolveAgentLabel: () => string;
+        resolveAgentId: () => string;
+        modes?: readonly ChatMode[];
+        resolveModeLabel?: () => string;
+        onOpenModeSheet?: () => void;
+        approvalPolicyId?: QaapAgentApprovalPolicyId;
+        onOpenApprovalPolicySheet?: () => void;
+        canSubmit: boolean;
+        isAgentWorking?: () => boolean;
+        onStop?: () => void;
+        stopLabel?: string;
+        onAttach: (anchor: HTMLElement) => void;
+        onOpenAgentSheet: () => void;
+        onSubmit: (draft: string) => void;
+        onSubmitBlocked?: () => void;
+        afterInputChange?: () => void;
+        sendLabel?: string;
+        onSendControlMounted?: (refresh: () => void) => void;
+        inputPlaceholder?: string;
+        getMentionOptions?: () => readonly StickyComposerTokenOption[];
+        getVariableOptions?: () => readonly StickyComposerTokenOption[];
+        onContextUsageBadgeMounted?: (badge: HTMLElement) => void;
+        showWorkspaceBar?: boolean;
+        transcriptOverlay?: boolean;
+    }): HTMLElement {
+        const column = document.createElement('div');
+        column.className = 'theia-mobile-projects-sticky-composer-column';
+        const contextItems = options.getContext();
+        if (contextItems.length > 0) {
+            column.classList.add('theia-mod-has-context');
+        }
+
+        if (options.surface) {
+            column.classList.add(`theia-mod-surface-${options.surface}`);
+        }
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'theia-mobile-projects-sticky-composer-toolbar';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'theia-mobile-projects-sticky-composer-inner';
+
+        const attachBtn = document.createElement('button');
+        attachBtn.type = 'button';
+        attachBtn.className = 'theia-mobile-projects-sticky-composer-attach';
+        const attachLabel = nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context');
+        attachBtn.title = attachLabel;
+        attachBtn.setAttribute('aria-label', attachLabel);
+        attachBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span>';
+        attachBtn.setAttribute('aria-haspopup', 'menu');
+        attachBtn.setAttribute('aria-expanded', 'false');
+        if (contextItems.length > 0) {
+            attachBtn.classList.add('theia-mod-has-context');
+        }
+        attachBtn.addEventListener('click', ev => {
+            ev.stopPropagation();
+            options.onAttach(attachBtn);
+        });
+
+        const controlsLeftItems: HTMLElement[] = [attachBtn];
+        if (options.approvalPolicyId && options.onOpenApprovalPolicySheet) {
+            const approvalPolicy = resolveAgentApprovalPolicyOption(options.approvalPolicyId);
+            const approvalBtn = document.createElement('button');
+            approvalBtn.type = 'button';
+            approvalBtn.className = 'theia-mobile-projects-sticky-composer-approval-policy';
+            approvalBtn.title = nls.localize(
+                'qaap/mobileProjects/stickyComposerApprovalPolicy',
+                'Approval policy: {0}',
+                approvalPolicy.label,
+            );
+            approvalBtn.setAttribute('aria-label', approvalBtn.title);
+            approvalBtn.setAttribute('aria-haspopup', 'dialog');
+            populateApprovalPolicyToolbarButton(approvalBtn, approvalPolicy);
+            approvalBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                options.onOpenApprovalPolicySheet!();
+            });
+            controlsLeftItems.push(approvalBtn);
+        }
+
+        const agentBtn = document.createElement('button');
+        agentBtn.type = 'button';
+        agentBtn.className = 'theia-mobile-projects-sticky-composer-agent';
+        const agentLabel = options.resolveAgentLabel();
+        const agentId = options.resolveAgentId();
+        const modelLabel = this.host.resolveStickyComposerModelLabel(agentId, options.project);
+        agentBtn.title = modelLabel
+            ? nls.localize('qaap/mobileProjects/stickyComposerAgentWithModel', 'Agent: {0}, model: {1}', agentLabel, modelLabel)
+            : nls.localize('qaap/mobileProjects/stickyComposerAgent', 'Agent: {0}', agentLabel);
+        agentBtn.setAttribute('aria-label', agentBtn.title);
+        populateAgentToolbarButton(agentBtn, {
+            agentId,
+            label: agentLabel,
+            modelLabel,
+        });
+        if (options.agentLocked) {
+            agentBtn.classList.add('theia-mod-locked');
+            agentBtn.disabled = true;
+        } else {
+            agentBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                options.onOpenAgentSheet();
+            });
+        }
+
+        const toolbarItems: HTMLElement[] = [agentBtn];
+        const modes = options.modes ?? [];
+        let modeBtn: HTMLButtonElement | undefined;
+        if (modes.length > 1 && options.onOpenModeSheet && options.resolveModeLabel) {
+            modeBtn = document.createElement('button');
+            modeBtn.type = 'button';
+            modeBtn.className = 'theia-mobile-projects-sticky-composer-mode';
+            const modeLabel = options.resolveModeLabel();
+            modeBtn.title = nls.localize('qaap/mobileProjects/stickyComposerMode', 'Mode: {0}', modeLabel);
+            modeBtn.setAttribute('aria-label', modeBtn.title);
+            modeBtn.innerHTML = `<span class="theia-mobile-projects-sticky-composer-mode-label">${modeLabel}</span>`
+                + '<span class="codicon codicon-chevron-down" aria-hidden="true"></span>';
+            modeBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                options.onOpenModeSheet!();
+            });
+        }
+
+        let branchWorkspaceBar: HTMLElement | undefined;
+        if (options.showWorkspaceBar) {
+            wrap.classList.add('theia-mod-workspace-bar-below');
+            const workspaceView = this.host.resolveComposerWorkspaceBarView(options.project);
+            const projectPill = createStickyComposerWorkspacePill({
+                iconClass: 'codicon-folder',
+                label: workspaceView.projectName,
+                ariaLabel: nls.localize('qaap/composerWorkspace/projectAria', 'Project: {0}', workspaceView.projectName),
+                onClick: () => {
+                    this.host.openComposerWorkspaceProjectSheet(options.project, options.transcriptOverlay === true);
+                },
+            });
+            toolbarItems.unshift(projectPill);
+            toolbar.classList.add('theia-mod-has-workspace-pill');
+            branchWorkspaceBar = renderStickyComposerWorkspaceBar({
+                view: workspaceView,
+                includeProject: false,
+                onOpenProject: () => {
+                    this.host.openComposerWorkspaceProjectSheet(options.project, options.transcriptOverlay === true);
+                },
+                onOpenBranch: () => {
+                    this.host.openComposerWorkspaceBranchSheet(options.project, options.transcriptOverlay === true);
+                },
+            });
+        }
+
+        toolbar.append(...toolbarItems);
+        const usageBadge = createContextUsageIndicatorBadge();
+        usageBadge.classList.add('theia-mobile-projects-sticky-composer-context-usage');
+        toolbar.append(usageBadge);
+        options.onContextUsageBadgeMounted?.(usageBadge);
+
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'theia-mobile-projects-sticky-composer-input-wrap';
+
+        const input = document.createElement('textarea');
+        input.className = 'theia-mobile-projects-sticky-composer-input';
+        input.rows = 1;
+        const placeholderAgent = options.resolveAgentLabel();
+        input.placeholder = options.inputPlaceholder ?? nls.localize(
+            'qaap/mobileProjects/stickyComposerPlaceholder',
+            'Message {0} on {1}',
+            placeholderAgent,
+            options.project.name,
+        );
+        input.value = options.getDraft();
+        input.disabled = !options.canSubmit;
+
+        const sendBtn = document.createElement('button');
+        sendBtn.type = 'button';
+        sendBtn.className = 'theia-mobile-projects-sticky-composer-send';
+        sendBtn.disabled = true;
+        const sendLabel = options.sendLabel ?? nls.localize('qaap/mobileProjects/inlineStart', 'Start');
+        sendBtn.title = sendLabel;
+        sendBtn.setAttribute('aria-label', sendLabel);
+        sendBtn.innerHTML = '<span class="codicon codicon-send" aria-hidden="true"></span>';
+
+        const updateSend = (): void => {
+            const has = input.value.trim().length > 0;
+            const working = options.isAgentWorking?.() ?? false;
+            const showStop = working && !has;
+            const sendLabel = options.sendLabel ?? nls.localize('qaap/mobileProjects/inlineStart', 'Start');
+            const stopLabel = options.stopLabel ?? nls.localize('qaap/mobileProjects/cancelTaskRun', 'Cancel run');
+            sendBtn.classList.toggle('theia-mod-stop', showStop);
+            sendBtn.classList.toggle('theia-mod-ready', !showStop && has && options.canSubmit);
+            if (showStop) {
+                sendBtn.disabled = false;
+                sendBtn.title = stopLabel;
+                sendBtn.setAttribute('aria-label', stopLabel);
+                sendBtn.innerHTML = '<span class="codicon codicon-debug-stop" aria-hidden="true"></span>';
+            } else {
+                sendBtn.disabled = !has || !options.canSubmit;
+                sendBtn.title = sendLabel;
+                sendBtn.setAttribute('aria-label', sendLabel);
+                sendBtn.innerHTML = '<span class="codicon codicon-send" aria-hidden="true"></span>';
+            }
+        };
+        input.addEventListener('input', () => {
+            options.setDraft(input.value);
+            options.afterInputChange?.();
+            updateSend();
+        });
+        updateSend();
+        options.onSendControlMounted?.(updateSend);
+
+        if (options.getMentionOptions) {
+            attachStickyComposerMentionUi({
+                inputWrap,
+                input,
+                getMentionOptions: options.getMentionOptions,
+                getVariableOptions: options.getVariableOptions,
+                onDraftChange: value => {
+                    options.setDraft(value);
+                    updateSend();
+                },
+                afterInputChange: options.afterInputChange,
+                mentionButtonTitle: nls.localize('qaap/mobileProjects/stickyComposerMention', 'Mention agent (@)'),
+                variableButtonTitle: nls.localize('qaap/mobileProjects/stickyComposerVariable', 'Insert variable (#)'),
+            });
+        }
+
+        const submit = (): void => {
+            const draft = input.value.trim();
+            if (!draft || !options.canSubmit) {
+                options.onSubmitBlocked?.();
+                return;
+            }
+            input.value = '';
+            options.setDraft('');
+            updateSend();
+            options.onSubmit(draft);
+        };
+        input.addEventListener('keydown', ev => {
+            if (ev.key === 'Enter' && !ev.shiftKey && !ev.defaultPrevented) {
+                ev.preventDefault();
+                submit();
+            }
+        });
+        sendBtn.addEventListener('click', ev => {
+            ev.preventDefault();
+            const has = input.value.trim().length > 0;
+            const working = options.isAgentWorking?.() ?? false;
+            if (working && !has) {
+                options.onStop?.();
+                return;
+            }
+            submit();
+        });
+
+        const inputActions = document.createElement('div');
+        inputActions.className = 'theia-mobile-projects-sticky-composer-input-actions';
+        inputActions.append(sendBtn);
+
+        const inputBody = document.createElement('div');
+        inputBody.className = 'theia-mobile-projects-sticky-composer-input-body';
+
+        const controlsRow = document.createElement('div');
+        controlsRow.className = 'theia-mobile-projects-sticky-composer-controls-row';
+
+        const controlsLeft = document.createElement('div');
+        controlsLeft.className = 'theia-mobile-projects-sticky-composer-controls-left';
+
+        const controlsRight = document.createElement('div');
+        controlsRight.className = 'theia-mobile-projects-sticky-composer-controls-right';
+
+        inputWrap.classList.add('theia-mod-codex');
+        inputBody.append(input);
+        controlsLeft.append(attachBtn);
+        if (modeBtn) {
+            controlsLeft.append(modeBtn);
+        }
+        for (const item of controlsLeftItems.slice(1)) {
+            controlsLeft.append(item);
+        }
+        controlsRight.append(inputActions);
+        controlsRow.append(controlsLeft, controlsRight);
+        inputWrap.append(inputBody, controlsRow);
+
+        const card = document.createElement('div');
+        card.className = 'theia-mobile-projects-sticky-composer-card theia-mod-codex';
+        if (contextItems.length > 0) {
+            card.classList.add('theia-mod-has-context');
+            card.append(renderStickyComposerContextStrip({
+                items: contextItems,
+                formatChip: options.formatContextChip,
+                onRemoveItem: index => { options.removeContextItem(index); },
+                onClearAll: () => { options.clearContext(); },
+                filesExpanded: options.filesExpanded,
+                onFilesExpandedChange: options.onFilesExpandedChange,
+                resolveAttachmentPreview: this.host.resolveAttachmentPreview,
+            }));
+        }
+        toolbar.classList.add('qaap-codex-context-tray');
+        card.append(inputWrap, toolbar);
+        wrap.append(card);
+        if (branchWorkspaceBar) {
+            wrap.append(branchWorkspaceBar);
+            void this.host.refreshComposerWorkspaceBranch(options.project).then(branch => {
+                const label = branchWorkspaceBar!.querySelector('.theia-mobile-projects-sticky-composer-workspace-pill-label.theia-mod-mono');
+                if (label) {
+                    label.textContent = branch;
+                }
+            });
+        }
+        column.append(wrap);
+        return column;
+    }
+}
+
+export type StickyComposerColumnOptions = Parameters<MobileProjectsStickyComposerColumnUi['buildStickyComposerColumn']>[0];
+

@@ -126,6 +126,9 @@ export class QaapQaiqStreamAccumulator {
             return;
         }
         const type = envelope.type;
+        if (type === 'system') {
+            return;
+        }
         if (type === 'stream_event') {
             this.handleStreamEvent(envelope);
             return;
@@ -575,6 +578,42 @@ export function dedupeAgentMessageTextSegments(
     }
 
     return result;
+}
+
+/** NDJSON envelopes that carry session metadata, not user-visible assistant text. */
+export function isQaiqStreamMetadataEnvelope(value: unknown): boolean {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+    const envelope = value as StreamMessageEnvelope;
+    const type = envelope.type;
+    if (type === 'system' || type === 'stream_event') {
+        return true;
+    }
+    if (type === 'result' && !envelope.is_error) {
+        return true;
+    }
+    return false;
+}
+
+/** Drop QAIQ / Claude Code stream-json metadata lines from stdout chunks. */
+export function filterQaiqStreamMetadataLines(chunk: string): string {
+    if (!chunk) {
+        return '';
+    }
+    const lines = chunk.split('\n');
+    const kept = lines.filter(line => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('{')) {
+            return true;
+        }
+        try {
+            return !isQaiqStreamMetadataEnvelope(JSON.parse(trimmed));
+        } catch {
+            return true;
+        }
+    });
+    return kept.join('\n');
 }
 
 /** Claude Code renderers expect canonical tool ids (e.g. `Bash`, `Read`). */

@@ -47,6 +47,18 @@ describe('normalizeAgentMessageContentForDisplay', () => {
         expect(normalizeAgentMessageContentForDisplay('{"command":"npm test"}')).to.equal('{"command":"npm test"}');
     });
 
+    it('hides QAIQ system init metadata envelopes', () => {
+        const raw = JSON.stringify({
+            type: 'system',
+            subtype: 'init',
+            cwd: '/tmp',
+            session_id: 'abc',
+            model: 'moonshotai/kimi-k2.6:free',
+            tools: ['Bash', 'Read'],
+        });
+        expect(normalizeAgentMessageContentForDisplay(raw)).to.equal('');
+    });
+
     it('treats missing content as empty text', () => {
         expect(normalizeAgentMessageContentForDisplay(undefined)).to.equal('');
         expect(normalizeAgentMessageContentForDisplay(null)).to.equal('');
