@@ -11,7 +11,8 @@ import {
 
 export const TRANSCRIPT_VIRTUAL_DEFAULT_ITEM_HEIGHT = 128;
 export const TRANSCRIPT_VIRTUAL_OVERSCAN_PX = 480;
-export const TRANSCRIPT_VIRTUAL_MIN_MESSAGES = 20;
+/** Virtualize once the thread is long enough to hurt scroll paint on real devices. */
+export const TRANSCRIPT_VIRTUAL_MIN_MESSAGES = 12;
 
 export type TranscriptVirtualListRenderFn = (index: number) => HTMLElement;
 

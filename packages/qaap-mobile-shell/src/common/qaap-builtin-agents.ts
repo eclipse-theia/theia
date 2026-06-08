@@ -19,8 +19,8 @@ export interface QaapBuiltinAgentDefinition {
  * Niche or ACP-only CLIs (Snow, Kiro, Nanobot, vibe-acp, …) stay in `QAAP_AGENT_COMMANDS`.
  */
 export const QAAP_BUILTIN_AGENT_DEFINITIONS: readonly QaapBuiltinAgentDefinition[] = [
-    { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec {model_flags} {prompt}' },
-    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude {model_flags} -p {prompt}' },
+    { id: 'codex', label: 'Codex', bin: 'codex', template: 'codex exec --json {model_flags} {prompt}' },
+    { id: 'claude', label: 'Claude Code', bin: 'claude', template: 'claude --print --output-format stream-json --verbose --include-partial-messages {model_flags} -p {prompt}' },
     { id: 'aider', label: 'Aider', bin: 'aider', template: 'aider --yes-always {model_flags} --message {prompt}' },
     { id: 'opencode', label: 'OpenCode', bin: 'opencode', template: 'opencode run --format json --dangerously-skip-permissions {model_flags} {prompt}' },
     { id: 'goose', label: 'Goose', bin: 'goose', template: 'goose run --no-session -t {prompt}' },
@@ -58,8 +58,8 @@ export function isUiHiddenVpsAgent(agentId: string | undefined): boolean {
  */
 export function resolveQaapCodexTemplate(helpText: string): string {
     return /\bcodex\s+exec\b/.test(helpText) || /^\s+exec\b/m.test(helpText)
-        ? 'codex exec {model_flags} {prompt}'
-        : 'codex -q {model_flags} {prompt}';
+        ? 'codex exec --json {model_flags} {prompt}'
+        : 'codex -q --json {model_flags} {prompt}';
 }
 
 /** Mention / storage alias for {@link QAAP_BUILTIN_AGENT_DEFINITIONS} ids. */

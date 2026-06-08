@@ -36,6 +36,8 @@ import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widg
 import { QuickInputService } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { pickMobileContextVariable } from './qaap-mobile-context-attach-menu';
+import { resolveStickyComposerAttachmentPreview } from './qaap-sticky-composer-attachment-preview';
+import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 import { resolveStickyComposerContextChip } from './qaap-sticky-composer-context-ui';
 import {
     matchesMobileOneColumnLayout,
@@ -227,6 +229,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(FileUploadService)
+    protected readonly fileUploadService: FileUploadService;
 
     @inject(MobileProjectsReadmeContribution)
     protected readonly projectsReadme: MobileProjectsReadmeContribution;
@@ -1244,12 +1249,23 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 chatService: this.chatService,
                 chatAgentService: this.chatAgentService,
                 messageService: this.messageService,
-                pickContextVariable: anchor => pickMobileContextVariable(
+                pickContextVariable: (anchor, handlers) => pickMobileContextVariable(
                     anchor,
                     this.variableService,
                     this.quickInputService,
+                    {
+                        fileUploadService: this.fileUploadService,
+                        fileService: this.fileService,
+                        workspaceService: this.workspaceService,
+                    },
+                    handlers,
                 ),
                 formatContextChip: item => resolveStickyComposerContextChip(item, this.labelProvider),
+                resolveAttachmentPreview: item => resolveStickyComposerAttachmentPreview(
+                    item,
+                    this.fileService,
+                    this.workspaceService,
+                ),
                 getComposerVariables: () => this.variableService.getVariables(),
                 createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
                 resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),

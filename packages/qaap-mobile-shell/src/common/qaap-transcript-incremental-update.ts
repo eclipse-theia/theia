@@ -4,13 +4,33 @@
 // *****************************************************************************
 
 import type { QaapAgentConversationDTO, QaapAgentMessageDTO, QaapAgentMessageSegmentDTO } from './qaap-agent-conversation-client';
-import { isOpencodeAgent, isQaiqAgent } from './qaap-agent-task-client';
+import { usesStructuredAgentTranscript } from './qaap-agent-task-client';
 
-/** How a streaming poll may patch the transcript DOM without a full rebuild. */
+/** How a live SSE update may patch the transcript DOM without a full rebuild. */
 export type QaapTranscriptStreamingPatchKind = 'none' | 'activity-only' | 'last-agent' | 'append-agent';
 
 const STRUCTURED_TRANSCRIPT_AGENTS = (agentId: string | undefined): boolean =>
-    isQaiqAgent(agentId) || isOpencodeAgent(agentId);
+    usesStructuredAgentTranscript(agentId);
+
+function stdoutAgentContentGrew(prev: QaapAgentMessageDTO | undefined, next: QaapAgentMessageDTO | undefined): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    return (next.content?.length ?? 0) > (prev.content?.length ?? 0);
+}
+
+function structuredAgentMessageChanged(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    if (fingerprintAgentSegments(prev.segments ?? []) !== fingerprintAgentSegments(next.segments ?? [])) {
+        return true;
+    }
+    return (prev.content ?? '') !== (next.content ?? '');
+}
 
 function priorMessagesMatch(
     prev: readonly QaapAgentMessageDTO[],
@@ -87,13 +107,11 @@ export function resolveStreamingTranscriptPatchKind(
     if (!prev || prev.id !== next.id || next.status !== 'streaming') {
         return 'none';
     }
-    if (!STRUCTURED_TRANSCRIPT_AGENTS(next.agentId)) {
-        return 'none';
-    }
 
     const prevMessages = prev.messages;
     const nextMessages = next.messages;
     const nextLast = nextMessages[nextMessages.length - 1];
+    const structured = STRUCTURED_TRANSCRIPT_AGENTS(next.agentId);
 
     if (prevMessages.length === nextMessages.length && nextLast?.role === 'user') {
         return priorMessagesMatch(prevMessages, nextMessages, nextMessages.length) ? 'activity-only' : 'none';
@@ -103,19 +121,25 @@ export function resolveStreamingTranscriptPatchKind(
         if (!priorMessagesMatch(prevMessages, nextMessages, nextMessages.length - 1)) {
             return 'none';
         }
-        if (hasRenderableSegments(nextLast)) {
-            return 'last-agent';
+        if (structured) {
+            if (!hasRenderableSegments(nextLast)) {
+                return 'none';
+            }
+            const prevLast = prevMessages[prevMessages.length - 1];
+            return structuredAgentMessageChanged(prevLast, nextLast) ? 'last-agent' : 'none';
         }
-        return 'none';
+        const prevLast = prevMessages[prevMessages.length - 1];
+        return stdoutAgentContentGrew(prevLast, nextLast) ? 'last-agent' : 'none';
     }
 
     if (nextMessages.length === prevMessages.length + 1 && nextLast?.role === 'agent') {
         if (!priorMessagesMatch(prevMessages, nextMessages, prevMessages.length)) {
             return 'none';
         }
-        if (hasRenderableSegments(nextLast)) {
-            return 'append-agent';
+        if (structured) {
+            return hasRenderableSegments(nextLast) ? 'append-agent' : 'none';
         }
+        return !!nextLast.content?.trim() ? 'append-agent' : 'none';
     }
 
     return 'none';
@@ -123,6 +147,28 @@ export function resolveStreamingTranscriptPatchKind(
 
 function hasRenderableSegments(message: QaapAgentMessageDTO | undefined): boolean {
     return !!message?.segments?.length;
+}
+
+/** True when a streaming SSE tick did not change the visible tail of the transcript. */
+export function isStreamingTranscriptTailUnchanged(
+    prev: QaapAgentConversationDTO | undefined,
+    next: QaapAgentConversationDTO,
+): boolean {
+    if (!prev || prev.id !== next.id || next.status !== 'streaming') {
+        return false;
+    }
+    if (prev.messages.length !== next.messages.length) {
+        return false;
+    }
+    const prevLast = prev.messages[prev.messages.length - 1];
+    const nextLast = next.messages[next.messages.length - 1];
+    if (!prevLast || !nextLast || prevLast.id !== nextLast.id || prevLast.role !== nextLast.role) {
+        return false;
+    }
+    if (nextLast.role === 'agent' && STRUCTURED_TRANSCRIPT_AGENTS(next.agentId)) {
+        return !structuredAgentMessageChanged(prevLast, nextLast);
+    }
+    return (prevLast.content ?? '') === (nextLast.content ?? '');
 }
 
 /** Stable selector hook for incremental DOM patches. */

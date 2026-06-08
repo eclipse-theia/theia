@@ -18,12 +18,14 @@ import {
     QaapParallelChooseAction,
     QaapParallelRun,
     QaapParallelRunVariant,
+    type QaapParallelRunVariantStats,
 } from '../common/qaap-parallel-run';
 
 const execFileAsync = promisify(execFile);
 const GIT_MAX_BUFFER = 16 * 1024 * 1024;
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'parallel-runs');
 const INDEX_PATH = path.join(STORE_DIR, 'index.json');
+const LIVE_STATS_DEBOUNCE_MS = 1500;
 
 /**
  * Orchestrates "parallel runs": the same prompt handed to N agents, each working in its own
@@ -38,10 +40,33 @@ export class QaapParallelRunStore {
     protected readonly conversationStore: QaapAgentConversationStore;
 
     protected readonly runs = new Map<string, QaapParallelRun>();
+    protected readonly liveStatsTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     @postConstruct()
     protected init(): void {
         void this.load();
+        this.conversationStore.onDidChange(event => {
+            if (event.type === 'parallel-run') {
+                return;
+            }
+            const conversationId = event.type === 'message'
+                ? event.conversationId
+                : event.type === 'updated' || event.type === 'created'
+                    ? event.conversation.id
+                    : undefined;
+            if (!conversationId) {
+                return;
+            }
+            const summary = event.type === 'updated' || event.type === 'created'
+                ? event.conversation
+                : this.conversationStore.get(conversationId);
+            const runId = summary?.parallelRunId
+                ?? this.conversationStore.get(conversationId)?.parallelRunId;
+            if (!runId || !this.runs.has(runId)) {
+                return;
+            }
+            this.scheduleLiveStatsPush(runId, event.type === 'updated');
+        });
     }
 
     async create(request: QaapCreateParallelRunRequest): Promise<QaapParallelRun> {
@@ -102,6 +127,7 @@ export class QaapParallelRunStore {
         const run: QaapParallelRun = { id, cwd, prompt, createdAt: Date.now(), variants };
         this.runs.set(id, run);
         await this.persist();
+        void this.pushLiveStats(id);
         return run;
     }
 
@@ -126,6 +152,35 @@ export class QaapParallelRunStore {
             }
         }
         return run;
+    }
+
+    protected scheduleLiveStatsPush(runId: string, immediate: boolean): void {
+        const existing = this.liveStatsTimers.get(runId);
+        if (existing) {
+            clearTimeout(existing);
+        }
+        const delay = immediate ? 0 : LIVE_STATS_DEBOUNCE_MS;
+        const timer = setTimeout(() => {
+            this.liveStatsTimers.delete(runId);
+            void this.pushLiveStats(runId);
+        }, delay);
+        this.liveStatsTimers.set(runId, timer);
+    }
+
+    protected async pushLiveStats(runId: string): Promise<void> {
+        const run = await this.get(runId);
+        if (!run) {
+            return;
+        }
+        const variants: QaapParallelRunVariantStats[] = run.variants.map(variant => ({
+            conversationId: variant.conversationId,
+            agentId: variant.agentId,
+            state: variant.state,
+            adds: variant.adds,
+            dels: variant.dels,
+            fileCount: variant.fileCount,
+        }));
+        this.conversationStore.emitParallelRunStats(runId, variants);
     }
 
     async choose(id: string, conversationId: string, action: QaapParallelChooseAction): Promise<QaapChooseParallelVariantResponse> {

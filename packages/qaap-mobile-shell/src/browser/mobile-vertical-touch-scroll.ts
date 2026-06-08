@@ -119,6 +119,7 @@ export const MOBILE_VERTICAL_SCROLL_SELECTORS = [
     '.theia-mobile-sticky-composer-sheet-list',
     '.theia-qaap-approval-policy-sheet-list',
     '.theia-mobile-sticky-composer-tools-host',
+    '.theia-mobile-projects-sticky-composer-context-files.theia-mod-attachments',
     '.theia-mobile-routine-sheet-form',
     '.theia-mobile-parallel-body',
     '.theia-mobile-transcript-checks-panel',

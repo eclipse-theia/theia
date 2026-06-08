@@ -18,12 +18,11 @@ import {
     fetchParallelRun,
     type QaapParallelChooseAction,
     type QaapParallelRunVariantDTO,
+    type QaapParallelRunVariantStatsDTO,
 } from '../common/qaap-parallel-run-client';
 import { filterUiSelectableVpsAgents, type QaapAgentTaskAgentOption } from '../common/qaap-agent-task-client';
 import { createAgentBrandChip, createAgentRowAvatar, createDiffStatsLine } from './qaap-agent-ui';
 import { MobileSnackbar } from './mobile-snackbar';
-
-const VARIANT_STATS_POLL_MS = 5000;
 
 export interface MobileProjectsParallelUiDeps {
     getAgents(): QaapAgentTaskAgentOption[];
@@ -37,13 +36,13 @@ export interface MobileProjectsParallelUiDeps {
     ): HTMLElement;
 }
 
-/** Parallel-run sheets, variant groups in Chats, and live diff stats polling. */
+/** Parallel-run sheets, variant groups in Chats, and live diff stats via conversation SSE. */
 export class MobileProjectsParallelUi {
 
     protected sheetRoot: HTMLElement | undefined;
     protected busy = false;
     protected readonly selectedAgents = new Set<string>();
-    protected readonly statsPolls = new Map<string, number>();
+    protected readonly variantSections = new Map<string, HTMLElement>();
 
     constructor(protected readonly deps: MobileProjectsParallelUiDeps) { }
 
@@ -55,9 +54,16 @@ export class MobileProjectsParallelUi {
 
     dispose(): void {
         this.closeSheet();
-        for (const runId of [...this.statsPolls.keys()]) {
-            this.clearStatsPoll(runId);
+        this.variantSections.clear();
+    }
+
+    applyParallelRunStats(runId: string, variants: readonly QaapParallelRunVariantStatsDTO[]): void {
+        const wrap = this.variantSections.get(runId);
+        if (!wrap?.isConnected) {
+            this.variantSections.delete(runId);
+            return;
         }
+        this.renderVariantStats(wrap, runId, variants);
     }
 
     supportsQaapAgentWorkflow(summary: QaapAgentConversationSummaryDTO): boolean {
@@ -166,77 +172,66 @@ export class MobileProjectsParallelUi {
             list.append(row);
         }
         wrap.append(list);
-        this.attachVariantStatsPolling(wrap, runId);
+        this.variantSections.set(runId, wrap);
+        void this.refreshVariantStatsOnce(runId);
         return wrap;
     }
 
-    protected attachVariantStatsPolling(wrap: HTMLElement, runId: string): void {
-        void this.refreshVariantStats(wrap, runId);
-        this.clearStatsPoll(runId);
-        const timerId = window.setInterval(() => {
-            if (!wrap.isConnected) {
-                this.clearStatsPoll(runId);
-                return;
-            }
-            void this.refreshVariantStats(wrap, runId);
-        }, VARIANT_STATS_POLL_MS);
-        this.statsPolls.set(runId, timerId);
-    }
-
-    protected clearStatsPoll(runId: string): void {
-        const timerId = this.statsPolls.get(runId);
-        if (timerId !== undefined) {
-            window.clearInterval(timerId);
-            this.statsPolls.delete(runId);
+    protected async refreshVariantStatsOnce(runId: string): Promise<void> {
+        try {
+            const run = await fetchParallelRun(runId);
+            this.applyParallelRunStats(runId, run.variants);
+        } catch {
+            /* run discarded or backend unavailable — SSE may still arrive */
         }
     }
 
-    protected async refreshVariantStats(wrap: HTMLElement, runId: string): Promise<void> {
-        try {
-            const run = await fetchParallelRun(runId);
-            if (!wrap.isConnected) {
-                return;
+    protected renderVariantStats(
+        wrap: HTMLElement,
+        runId: string,
+        variants: readonly QaapParallelRunVariantStatsDTO[] | readonly QaapParallelRunVariantDTO[],
+    ): void {
+        if (!wrap.isConnected) {
+            this.variantSections.delete(runId);
+            return;
+        }
+        const runningCount = variants.filter(variant => variant.state === 'running').length;
+        const runStatus = wrap.querySelector('.theia-mobile-projects-variant-run-status');
+        if (runStatus) {
+            runStatus.textContent = runningCount > 0
+                ? nls.localize('qaap/mobileProjects/variantRunActive', '{0} running', String(runningCount))
+                : nls.localize('qaap/mobileProjects/variantRunIdle', 'All idle');
+        }
+        for (const variant of variants) {
+            const meta = wrap.querySelector<HTMLElement>(`[data-parallel-conversation-id="${variant.conversationId}"]`);
+            if (!meta) {
+                continue;
             }
-            const runningCount = run.variants.filter(variant => variant.state === 'running').length;
-            const runStatus = wrap.querySelector('.theia-mobile-projects-variant-run-status');
-            if (runStatus) {
-                runStatus.textContent = runningCount > 0
-                    ? nls.localize('qaap/mobileProjects/variantRunActive', '{0} running', String(runningCount))
-                    : nls.localize('qaap/mobileProjects/variantRunIdle', 'All idle');
+            meta.replaceChildren(createDiffStatsLine({
+                added: variant.adds,
+                removed: variant.dels,
+                fileCount: variant.fileCount,
+            }));
+            if (variant.state === 'running') {
+                const running = document.createElement('span');
+                running.className = 'theia-mobile-projects-variant-running';
+                running.textContent = nls.localize('qaap/mobileProjects/variantRunning', 'Running');
+                meta.append(running);
+            } else if (variant.state === 'failed') {
+                const failed = document.createElement('span');
+                failed.className = 'theia-mobile-projects-variant-failed';
+                failed.textContent = nls.localize('qaap/mobileProjects/variantFailed', 'Failed');
+                meta.append(failed);
             }
-            for (const variant of run.variants) {
-                const meta = wrap.querySelector<HTMLElement>(`[data-parallel-conversation-id="${variant.conversationId}"]`);
-                if (!meta) {
-                    continue;
-                }
-                meta.replaceChildren(createDiffStatsLine({
-                    added: variant.adds,
-                    removed: variant.dels,
-                    fileCount: variant.fileCount,
-                }));
-                if (variant.state === 'running') {
-                    const running = document.createElement('span');
-                    running.className = 'theia-mobile-projects-variant-running';
-                    running.textContent = nls.localize('qaap/mobileProjects/variantRunning', 'Running');
-                    meta.append(running);
-                } else if (variant.state === 'failed') {
-                    const failed = document.createElement('span');
-                    failed.className = 'theia-mobile-projects-variant-failed';
-                    failed.textContent = nls.localize('qaap/mobileProjects/variantFailed', 'Failed');
-                    meta.append(failed);
-                }
-                const row = meta.closest('.theia-mobile-projects-variant-row');
-                const avatar = row?.querySelector('.theia-qaap-agent-row-avatar');
-                if (avatar) {
-                    avatar.className = `theia-qaap-agent-row-avatar theia-mod-${variant.state === 'running' ? 'running' : variant.state === 'failed' ? 'failed' : 'idle'}`;
-                }
-                const choose = row?.querySelector<HTMLButtonElement>('.theia-mobile-projects-variant-choose');
-                if (choose) {
-                    choose.disabled = variant.state === 'running';
-                }
+            const row = meta.closest('.theia-mobile-projects-variant-row');
+            const avatar = row?.querySelector('.theia-qaap-agent-row-avatar');
+            if (avatar) {
+                avatar.className = `theia-qaap-agent-row-avatar theia-mod-${variant.state === 'running' ? 'running' : variant.state === 'failed' ? 'failed' : 'idle'}`;
             }
-        } catch {
-            /* run discarded or backend unavailable — leave last-known UI */
+            const choose = row?.querySelector<HTMLButtonElement>('.theia-mobile-projects-variant-choose');
+            if (choose) {
+                choose.disabled = variant.state === 'running';
+            }
         }
     }
 
@@ -507,6 +502,7 @@ export class MobileProjectsParallelUi {
                     : nls.localize('qaap/mobileProjects/parallelClosed', 'Done');
             MobileSnackbar.show(msg, { kind: 'success', duration: 2200 });
             this.closeSheet();
+            this.variantSections.delete(runId);
             this.deps.onRunsChanged();
         } catch (error) {
             MobileSnackbar.show(error instanceof Error ? error.message : String(error), { kind: 'warning' });
@@ -530,7 +526,7 @@ export class MobileProjectsParallelUi {
         }
         try {
             await deleteParallelRun(runId);
-            this.clearStatsPoll(runId);
+            this.variantSections.delete(runId);
             MobileSnackbar.show(nls.localize('qaap/mobileProjects/parallelDiscarded', 'Variant run discarded'), { kind: 'success', duration: 1800 });
             this.deps.onRunsChanged();
         } catch (error) {

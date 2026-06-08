@@ -23,7 +23,7 @@ import {
     QaapProjectKind,
     isMonorepoDescriptor,
 } from './qaap-project-bootstrap-types';
-import { probeQaapDevPreviewPort, toDevPreviewUrl } from './qaap-dev-preview-client';
+import { probeQaapDevPreviewPort, toDevPreviewUrl, waitForQaapDevPreviewPort } from './qaap-dev-preview-client';
 import {
     getImplicitDevPort,
     getQaapIdeListenPort,
@@ -74,6 +74,13 @@ const PORT_IN_USE_ADDR_REGEX = /(?:127\.0\.0\.1|localhost|0\.0\.0\.0|\[::1\]|::1
 
 /** After this delay, open the hinted preview URL even when stdout never prints a parseable URL. */
 const DEV_PREVIEW_FALLBACK_MS = 6000;
+
+/** Poll the backend probe before opening preview (Replit-style: wait until the port responds). */
+const DEV_PREVIEW_OPEN_PROBE_ATTEMPTS = 30;
+const DEV_PREVIEW_OPEN_PROBE_INTERVAL_MS = 500;
+
+/** Delay before auto-attaching or restarting a remembered dev port after workspace load. */
+const DEV_PREVIEW_WARMUP_DELAY_MS = 800;
 
 export interface QaapBootstrapStateChange {
     readonly phase: QaapBootstrapPhase;
@@ -172,6 +179,7 @@ export class QaapProjectBootstrapService {
     protected devTerminal: TerminalWidget | undefined;
     protected devTerminalListener = Disposable.NULL;
     protected devPreviewFallbackTimers: number[] = [];
+    protected devPreviewWarmupTimer: number | undefined;
     /** Rolling tail of the current dev terminal output for failure diagnostics. */
     protected devOutputTail = '';
 
@@ -468,8 +476,23 @@ export class QaapProjectBootstrapService {
         void this.refreshFromCurrentWorkspace();
     }
 
-    /** Focus the existing preview (or open it if a URL was previously detected). */
+    /** Focus the existing preview; re-probe, attach, or restart the dev server when it is down. */
     async focusPreview(): Promise<void> {
+        const rememberedPort = this._previewUrl ? this.extractPort(this._previewUrl) : this._lastPort;
+        if (rememberedPort !== undefined && !isReservedIdePort(rememberedPort)) {
+            const probe = await probeQaapDevPreviewPort(rememberedPort);
+            if (probe.ready) {
+                await this.openPreview(probe.previewUrl);
+                return;
+            }
+        }
+        if (await this.tryAttachToExistingServer(this.collectProbePorts())) {
+            return;
+        }
+        if (this.resolveDevPlan() && (this._phase === 'ready-to-run' || this._phase === 'run-failed' || this._phase === 'running')) {
+            await this.runDevServer();
+            return;
+        }
         if (this._previewUrl) {
             await this.openPreview(this._previewUrl);
         }
@@ -566,9 +589,11 @@ export class QaapProjectBootstrapService {
             // (or `Install`) action instead of silently restoring a dead `running` state.
             const restored = this.normalizeRestoredPhase(persisted.phase, descriptor);
             this.setPhase(restored);
+            this.scheduleDevPreviewWarmup();
             return;
         }
         this.setPhase(descriptor.nodeModulesPresent ? 'ready-to-run' : 'detected');
+        this.scheduleDevPreviewWarmup();
     }
 
     /**
@@ -666,7 +691,11 @@ export class QaapProjectBootstrapService {
      * user taps them. This mirrors Codespaces' "your dev server printed a URL" behavior while
      * still surfacing all the auxiliary endpoints (websockets, admin UI, mock APIs, …).
      */
-    protected recordForwardedPort(port: number, url: string): void {
+    protected recordForwardedPort(
+        port: number,
+        url: string,
+        options?: { alreadyReady?: boolean },
+    ): void {
         if (isReservedIdePort(port)) {
             return;
         }
@@ -688,8 +717,30 @@ export class QaapProjectBootstrapService {
             // Remember the primary port so the next session can offer a "resume preview · :3001"
             // action instead of a generic "Run & Preview" CTA.
             this._lastPort = port;
-            void this.openPreview(url, /* primary */ true);
+            if (options?.alreadyReady) {
+                void this.openPreview(url, /* primary */ true);
+            } else {
+                void this.openPrimaryPreviewWhenReady(port, url);
+            }
         }
+    }
+
+    /**
+     * Waits until the dev server probe succeeds, then opens preview. Falls back to opening the
+     * proxy URL anyway so the holding page can auto-retry (v0-style).
+     */
+    protected async openPrimaryPreviewWhenReady(port: number, url: string): Promise<void> {
+        if (this._previewUrl) {
+            return;
+        }
+        const ready = await waitForQaapDevPreviewPort(port, {
+            maxAttempts: DEV_PREVIEW_OPEN_PROBE_ATTEMPTS,
+            intervalMs: DEV_PREVIEW_OPEN_PROBE_INTERVAL_MS,
+        });
+        if (this._previewUrl) {
+            return;
+        }
+        await this.openPreview(ready?.previewUrl ?? url, true);
     }
 
     /**
@@ -701,7 +752,7 @@ export class QaapProjectBootstrapService {
         if (port.primary) {
             // Primary ports go through the shared preview widget so users can swap between dev URLs
             // without spawning new tabs by accident.
-            await this.openPreview(port.url, true);
+            await this.openPrimaryPreviewWhenReady(port.port, port.url);
             return;
         }
         try {
@@ -802,7 +853,7 @@ export class QaapProjectBootstrapService {
                 continue;
             }
             this._portConflictPort = port;
-            this.recordForwardedPort(port, probe.previewUrl);
+            this.recordForwardedPort(port, probe.previewUrl, { alreadyReady: true });
             return true;
         }
         return false;
@@ -1033,6 +1084,44 @@ export class QaapProjectBootstrapService {
             window.clearTimeout(timerId);
         }
         this.devPreviewFallbackTimers = [];
+        this.cancelDevPreviewWarmup();
+    }
+
+    /**
+     * After reload, try to attach to a remembered port or restart the dev server (v0 warmup).
+     * Skipped when the user dismissed setup or dependencies are still missing.
+     */
+    protected scheduleDevPreviewWarmup(): void {
+        if (typeof window === 'undefined') {
+            return;
+        }
+        if (this._phase !== 'ready-to-run' || this._lastPort === undefined || !this.resolveDevPlan()) {
+            return;
+        }
+        this.cancelDevPreviewWarmup();
+        this.devPreviewWarmupTimer = window.setTimeout(() => {
+            this.devPreviewWarmupTimer = undefined;
+            void this.warmupDevPreview();
+        }, DEV_PREVIEW_WARMUP_DELAY_MS);
+    }
+
+    protected cancelDevPreviewWarmup(): void {
+        if (typeof window !== 'undefined' && this.devPreviewWarmupTimer !== undefined) {
+            window.clearTimeout(this.devPreviewWarmupTimer);
+            this.devPreviewWarmupTimer = undefined;
+        }
+    }
+
+    protected async warmupDevPreview(): Promise<void> {
+        if (this._phase !== 'ready-to-run' || this._previewUrl || this._lastPort === undefined) {
+            return;
+        }
+        if (await this.tryAttachToExistingServer([this._lastPort])) {
+            return;
+        }
+        if (this.resolveDevPlan()) {
+            await this.runDevServer();
+        }
     }
 
     protected cleanupDevTerminal(): void {

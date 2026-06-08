@@ -11,6 +11,7 @@ import {
     type QaapAgentContextUsage,
 } from './qaap-agent-context-usage';
 import { resolveMessagePreviewText } from './qaap-agent-message-content';
+import type { QaapAgentToolApprovalRules } from './qaap-agent-tool-approval-rules';
 
 /**
  * HTTP helpers for the persistent VPS agent-conversation API.
@@ -110,6 +111,12 @@ export interface QaapAgentConversationDTO {
     readonly priority?: boolean;
     readonly paused?: boolean;
     readonly autoApprove?: boolean;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: QaapAgentToolApprovalRules;
     readonly forkedFromId?: string;
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
@@ -264,6 +271,7 @@ export interface QaapPostConversationMessageOptions {
     readonly autoApprove?: boolean;
     readonly interactionModeId?: string;
     readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: import('./qaap-agent-tool-approval-rules').QaapAgentToolApprovalRules;
 }
 
 export async function postConversationMessage(
@@ -285,6 +293,7 @@ export async function postConversationMessage(
             qaiqModel: agentModel,
             interactionModeId: options.interactionModeId,
             approvalPolicyId: options.approvalPolicyId,
+            toolApprovalRules: options.toolApprovalRules,
             ...(autoApprove === false ? { autoApprove: false } : autoApprove === true ? { autoApprove: true } : {}),
         }),
     });
@@ -304,6 +313,12 @@ export interface QaapUpdateConversationBody {
     readonly paused?: boolean;
     readonly autoApprove?: boolean;
     readonly linkedPullRequest?: QaapLinkedPullRequest | null;
+    /** Composer agent picker — persisted on the conversation thread. */
+    readonly agent?: string;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: import('./qaap-agent-tool-approval-rules').QaapAgentToolApprovalRules;
 }
 
 /** True when YOLO / auto-approve is enabled for a VPS agent conversation. */

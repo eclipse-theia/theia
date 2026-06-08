@@ -155,6 +155,37 @@ export function createApprovalPolicySheetOptionButton(options: {
     return btn;
 }
 
+/** Toggle row for granular tool scopes under the approve-for-me preset. */
+export function createToolApprovalRuleToggle(options: {
+    readonly label: string;
+    readonly description: string;
+    readonly checked: boolean;
+    readonly disabled?: boolean;
+    readonly onChange: (checked: boolean) => void;
+}): HTMLLabelElement {
+    const row = document.createElement('label');
+    row.className = 'theia-mobile-sticky-composer-sheet-option theia-qaap-tool-approval-rule';
+    if (options.disabled) {
+        row.classList.add('theia-mod-disabled');
+    }
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = options.checked;
+    input.disabled = options.disabled === true;
+    input.addEventListener('change', () => options.onChange(input.checked));
+    const text = document.createElement('span');
+    text.className = 'theia-qaap-tool-approval-rule-text';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'theia-qaap-tool-approval-rule-label';
+    labelEl.textContent = options.label;
+    const descriptionEl = document.createElement('span');
+    descriptionEl.className = 'theia-qaap-tool-approval-rule-description';
+    descriptionEl.textContent = options.description;
+    text.append(labelEl, descriptionEl);
+    row.append(input, text);
+    return row;
+}
+
 /** Sticky composer approval trigger — icon + chevron. */
 export function populateApprovalPolicyToolbarButton(
     button: HTMLButtonElement,

@@ -22,6 +22,16 @@ export interface QaapParallelRunVariant {
     fileCount: number;
 }
 
+/** Live diff stats for one parallel-run variant (pushed over conversation SSE). */
+export interface QaapParallelRunVariantStats {
+    readonly conversationId: string;
+    readonly agentId: string;
+    readonly state: QaapParallelVariantState;
+    readonly adds: number;
+    readonly dels: number;
+    readonly fileCount: number;
+}
+
 export interface QaapParallelRun {
     readonly id: string;
     /** Base repository root the worktrees are derived from. */

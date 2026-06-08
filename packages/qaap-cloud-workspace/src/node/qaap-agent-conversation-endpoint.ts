@@ -155,6 +155,12 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             const autoApprove = typeof body.autoApprove === 'boolean' ? body.autoApprove : undefined;
             const interactionModeId = typeof body.interactionModeId === 'string' ? body.interactionModeId.trim() : undefined;
             const approvalPolicyId = typeof body.approvalPolicyId === 'string' ? body.approvalPolicyId.trim() : undefined;
+            const toolApprovalRules = body.toolApprovalRules && typeof body.toolApprovalRules === 'object'
+                ? {
+                    shell: body.toolApprovalRules.shell === true,
+                    network: body.toolApprovalRules.network === true,
+                }
+                : undefined;
             const conv = this.store.postUserMessage(
                 req.params.id,
                 content,
@@ -163,6 +169,7 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 autoApprove,
                 interactionModeId,
                 approvalPolicyId,
+                toolApprovalRules,
             );
             res.status(202).json(conv);
         } catch (error) {
@@ -190,6 +197,28 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         }
         if (typeof body.autoApprove === 'boolean') {
             patch.autoApprove = body.autoApprove;
+        }
+        if (typeof body.agent === 'string' && body.agent.trim()) {
+            patch.agent = body.agent.trim();
+        }
+        const agentModel = body.agentModel ?? body.qaiqModel;
+        if (agentModel && typeof agentModel === 'object' && typeof agentModel.modelId === 'string') {
+            patch.agentModel = agentModel;
+        }
+        if (typeof body.interactionModeId === 'string') {
+            patch.interactionModeId = body.interactionModeId;
+        }
+        if (typeof body.approvalPolicyId === 'string') {
+            patch.approvalPolicyId = body.approvalPolicyId;
+        }
+        if (body.toolApprovalRules && typeof body.toolApprovalRules === 'object') {
+            patch.toolApprovalRules = {
+                shell: body.toolApprovalRules.shell === true,
+                network: body.toolApprovalRules.network === true,
+            };
+        }
+        if (body.linkedPullRequest !== undefined) {
+            patch.linkedPullRequest = body.linkedPullRequest;
         }
         if (Object.keys(patch).length === 0) {
             res.status(400).json({ error: 'No mutable fields supplied.' });

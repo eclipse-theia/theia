@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { QaapAgentConversationDTO, QaapAgentMessageDTO } from './qaap-agent-conversation-client';
-import { isOpencodeAgent, isQaiqAgent } from './qaap-agent-task-client';
+import type { QaapAgentConversationDTO, QaapAgentMessageDTO, QaapAgentConversationSummaryDTO } from './qaap-agent-conversation-client';
 
 export interface QaapTranscriptSseMessageEvent {
     readonly conversationId: string;
@@ -18,16 +17,44 @@ export function canApplySseMessageDelta(
     conversationId: string,
     message: QaapAgentMessageDTO,
 ): conv is QaapAgentConversationDTO {
-    if (!conv || conv.id !== conversationId) {
-        return false;
-    }
-    if (!isQaiqAgent(conv.agentId) && !isOpencodeAgent(conv.agentId)) {
+    if (!conv || conv.id !== conversationId || conv.status !== 'streaming') {
         return false;
     }
     if (message.role === 'agent') {
         return !!message.segments?.length || !!message.content?.trim();
     }
-    return true;
+    return !!message.content?.trim();
+}
+
+/** Apply summary fields from an SSE `updated` event without refetching messages. */
+export function applyConversationSummaryDelta(
+    conv: QaapAgentConversationDTO,
+    summary: QaapAgentConversationSummaryDTO,
+): QaapAgentConversationDTO {
+    return {
+        ...conv,
+        status: summary.status,
+        updatedAt: Math.max(conv.updatedAt, summary.updatedAt),
+        title: summary.title,
+        ...(summary.autoApprove === false ? { autoApprove: false } : {}),
+        ...(summary.linesAdded !== undefined ? { gitDiffAdded: summary.linesAdded } : {}),
+        ...(summary.linesRemoved !== undefined ? { gitDiffRemoved: summary.linesRemoved } : {}),
+        ...(summary.contextUsage ? { contextUsage: summary.contextUsage } : {}),
+        ...(summary.contextWindowSize ? { contextWindowSize: summary.contextWindowSize } : {}),
+        ...(summary.contextUsageEstimated ? { contextUsageEstimated: true } : {}),
+    };
+}
+
+/** Skip a debounced GET while SSE message deltas are still arriving. */
+export function shouldSkipStreamingTranscriptRefetch(
+    conv: QaapAgentConversationDTO | undefined,
+    lastSseDeltaAt: number | undefined,
+    graceMs = 12_000,
+): boolean {
+    if (!conv || conv.status !== 'streaming') {
+        return false;
+    }
+    return lastSseDeltaAt !== undefined && Date.now() - lastSseDeltaAt < graceMs;
 }
 
 /** Merge one live SSE message into the in-memory conversation snapshot. */
@@ -42,7 +69,7 @@ export function applyConversationMessageDelta(
     return {
         ...conv,
         messages,
-        status: 'streaming',
+        status: conv.status === 'streaming' ? 'streaming' : conv.status,
         updatedAt: Math.max(conv.updatedAt, message.createdAt),
     };
 }

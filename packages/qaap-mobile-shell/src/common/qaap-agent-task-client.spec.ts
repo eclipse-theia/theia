@@ -224,8 +224,10 @@ describe('qaap-agent-task-client', () => {
         expect(isOpencodeAgent('aider')).to.be.false;
         expect(usesStructuredAgentTranscript('opencode')).to.be.true;
         expect(usesStructuredAgentTranscript('qaiq')).to.be.true;
-        expect(usesStructuredAgentTranscript('codex')).to.be.false;
-        expect(usesStructuredAgentTranscript('claude')).to.be.false;
+        expect(usesStructuredAgentTranscript('codex')).to.be.true;
+        expect(usesStructuredAgentTranscript('claude')).to.be.true;
+        expect(usesStructuredAgentTranscript('antigravity')).to.be.true;
+        expect(usesStructuredAgentTranscript('aider')).to.be.false;
     });
 
     it('isTheiaCoderMention detects @coder prefix in message text', () => {

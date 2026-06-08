@@ -11,6 +11,15 @@ export const QAAP_PARALLEL_RUN_API_PATH = '/qaap/api/parallel-runs';
 
 export type QaapParallelVariantState = 'running' | 'idle' | 'failed';
 
+export interface QaapParallelRunVariantStatsDTO {
+    readonly conversationId: string;
+    readonly agentId: string;
+    readonly state: QaapParallelVariantState;
+    readonly adds: number;
+    readonly dels: number;
+    readonly fileCount: number;
+}
+
 export interface QaapParallelRunVariantDTO {
     readonly id: string;
     readonly agentId: string;

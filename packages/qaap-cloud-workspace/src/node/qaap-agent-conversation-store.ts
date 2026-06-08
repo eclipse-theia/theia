@@ -27,9 +27,10 @@ import {
 } from '../common/qaap-agent-conversation';
 import {
     agentSupportsModelPicker,
-    isOpencodeAgent,
+    isClaudeCodeAgent,
     isQaiqAgent,
     resolveQaapAgentMentionToken,
+    usesStructuredAgentTranscript,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import {
     DEFAULT_QAAP_CONTEXT_WINDOW,
@@ -37,8 +38,13 @@ import {
     mergeQaapAgentContextUsage,
     totalTokensFromContextUsage,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
-import { parseOpencodeLog, QaapOpencodeStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-opencode-stream';
+import {
+    createAgentStreamAccumulator,
+    parseAgentLogForTranscript,
+    type QaapAgentStreamAccumulator,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-cli-transcript-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
+import { isConversationTurnVisuallySettled } from '@theia/qaap-mobile-shell/lib/common/qaap-transcript-turn-status';
 import { patchConversationAutoApprove } from '../common/qaap-agent-conversation-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
@@ -51,6 +57,7 @@ import {
     isTeamSynthesisUserMessage,
 } from '../common/qaap-team-mailbox';
 import { planConversationRewind } from '../common/qaap-agent-conversation-rewind';
+import type { QaapParallelRunVariantStats } from '../common/qaap-parallel-run';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 
@@ -78,10 +85,8 @@ export class QaapAgentConversationStore {
     protected readonly teamSynthesisTriggeredForLeader = new Set<string>();
     /** Leader turns waiting for the in-flight agent reply before auto-synthesis can run. */
     protected readonly pendingTeamSynthesisForLeader = new Set<string>();
-    /** Per-task parsers for QAIQ stream-json stdout. */
-    protected readonly qaiqStreamByTaskId = new Map<string, QaapQaiqStreamAccumulator>();
-    /** Per-task parsers for OpenCode {@code --format json} stdout. */
-    protected readonly opencodeStreamByTaskId = new Map<string, QaapOpencodeStreamAccumulator>();
+    /** Per-task structured stdout parsers (QAIQ, Claude, Codex JSON, OpenCode, Antigravity). */
+    protected readonly agentStreamByTaskId = new Map<string, QaapAgentStreamAccumulator>();
 
     protected readonly onDidChangeEmitter = new Emitter<QaapAgentConversationEvent>();
     readonly onDidChange: Event<QaapAgentConversationEvent> = this.onDidChangeEmitter.event;
@@ -172,6 +177,7 @@ export class QaapAgentConversationStore {
             ...(request.contextPreamble ? { contextPreamble: request.contextPreamble } : {}),
             ...(request.interactionModeId ? { interactionModeId: request.interactionModeId } : {}),
             ...(request.approvalPolicyId ? { approvalPolicyId: request.approvalPolicyId } : {}),
+            ...(request.toolApprovalRules ? { toolApprovalRules: request.toolApprovalRules } : {}),
             ...(() => {
                 const agentModel = request.agentModel ?? request.qaiqModel;
                 return agentModel && agentSupportsModelPicker(agentId)
@@ -205,13 +211,23 @@ export class QaapAgentConversationStore {
         autoApproveOverride?: boolean,
         interactionModeId?: string,
         approvalPolicyId?: string,
+        toolApprovalRules?: QaapCreateAgentConversationRequest['toolApprovalRules'],
     ): QaapAgentConversation {
-        const conv = this.conversations.get(id);
+        let conv = this.conversations.get(id);
         if (!conv) {
             throw new Error('Conversation not found.');
         }
         if (conv.status === 'streaming') {
-            throw new Error('A turn is already in progress for this conversation.');
+            if (!isConversationTurnVisuallySettled(conv)) {
+                throw new Error('A turn is already in progress for this conversation.');
+            }
+            const lastUser = [...conv.messages].reverse().find(message => message.role === 'user' && message.taskId);
+            if (lastUser?.taskId) {
+                this.taskRunner.cancel(lastUser.taskId);
+            }
+            conv = { ...conv, status: 'idle', updatedAt: Date.now() };
+            this.conversations.set(id, conv);
+            this.fire({ type: 'updated', conversation: toConversationSummary(conv) });
         }
         const turnAgentId = this.resolveTurnAgent(conv, content, agentOverride);
         const userMessage: QaapAgentMessage = {
@@ -236,6 +252,7 @@ export class QaapAgentConversationStore {
                 : {}),
             ...(interactionModeId ? { interactionModeId } : {}),
             ...(approvalPolicyId ? { approvalPolicyId } : {}),
+            ...(toolApprovalRules ? { toolApprovalRules } : {}),
         };
         this.conversations.set(id, next);
         this.fire({ type: 'message', conversationId: id, cwd: next.cwd, message: userMessage });
@@ -395,6 +412,38 @@ export class QaapAgentConversationStore {
         }
         if (request.linkedPullRequest !== undefined) {
             patch.linkedPullRequest = request.linkedPullRequest ?? undefined;
+        }
+        if (request.agent !== undefined) {
+            const normalized = this.taskRunner.normalizeAgentId(request.agent);
+            if (!normalized) {
+                return undefined;
+            }
+            patch.agentId = normalized;
+            if (normalized !== conv.agentId && request.agentModel === undefined) {
+                patch.agentModel = undefined;
+                patch.qaiqModel = undefined;
+            }
+        }
+        if (request.agentModel !== undefined) {
+            const turnAgentId = patch.agentId ?? conv.agentId;
+            if (agentSupportsModelPicker(turnAgentId)) {
+                patch.agentModel = request.agentModel;
+                patch.qaiqModel = request.agentModel;
+            }
+        }
+        if (request.interactionModeId !== undefined) {
+            const modeId = request.interactionModeId.trim();
+            patch.interactionModeId = modeId || undefined;
+        }
+        if (request.approvalPolicyId !== undefined) {
+            const policyId = request.approvalPolicyId.trim();
+            patch.approvalPolicyId = policyId || undefined;
+        }
+        if (request.toolApprovalRules !== undefined) {
+            patch.toolApprovalRules = {
+                shell: request.toolApprovalRules.shell === true,
+                network: request.toolApprovalRules.network === true,
+            };
         }
         if (Object.keys(patch).length === 0) {
             return conv;
@@ -611,13 +660,14 @@ export class QaapAgentConversationStore {
         }
         const now = Date.now();
         const agentId = conv.agentId;
-        const usesSegmentStream = isQaiqAgent(agentId) || isOpencodeAgent(agentId);
+        const usesSegmentStream = usesStructuredAgentTranscript(agentId);
         let content: string;
         let segments: QaapAgentMessage['segments'];
-        if (isQaiqAgent(agentId)) {
-            ({ content, segments } = this.appendQaiqStreamChunk(taskId, filtered));
-        } else if (isOpencodeAgent(agentId)) {
-            ({ content, segments } = this.appendOpencodeStreamChunk(taskId, filtered));
+        const stream = this.ensureAgentStream(taskId, agentId);
+        if (stream) {
+            stream.push(filtered);
+            segments = [...stream.getSegments()];
+            content = stream.getDisplayText();
         } else {
             content = filtered;
             segments = undefined;
@@ -669,8 +719,9 @@ export class QaapAgentConversationStore {
 
     protected finalizeTurnContextUsage(conv: QaapAgentConversation, taskId: string, agentId: string): QaapAgentConversation {
         let next = conv;
-        if (isQaiqAgent(agentId)) {
-            const turnUsage = this.qaiqStreamByTaskId.get(taskId)?.getTurnUsage();
+        if (isQaiqAgent(agentId) || isClaudeCodeAgent(agentId)) {
+            const stream = this.agentStreamByTaskId.get(taskId);
+            const turnUsage = stream instanceof QaapQaiqStreamAccumulator ? stream.getTurnUsage() : undefined;
             if (turnUsage) {
                 next = {
                     ...next,
@@ -691,52 +742,26 @@ export class QaapAgentConversationStore {
         };
     }
 
-    protected appendQaiqStreamChunk(
-        taskId: string,
-        chunk: string,
-    ): { content: string; segments: QaapAgentMessage['segments'] } {
-        let accumulator = this.qaiqStreamByTaskId.get(taskId);
-        if (!accumulator) {
-            accumulator = new QaapQaiqStreamAccumulator();
-            this.qaiqStreamByTaskId.set(taskId, accumulator);
+    protected ensureAgentStream(taskId: string, agentId: string): QaapAgentStreamAccumulator | undefined {
+        let stream = this.agentStreamByTaskId.get(taskId);
+        if (!stream) {
+            stream = createAgentStreamAccumulator(agentId);
+            if (stream) {
+                this.agentStreamByTaskId.set(taskId, stream);
+            }
         }
-        accumulator.push(chunk);
-        const segments = [...accumulator.getSegments()];
-        return { content: accumulator.getDisplayText(), segments };
-    }
-
-    protected appendOpencodeStreamChunk(
-        taskId: string,
-        chunk: string,
-    ): { content: string; segments: QaapAgentMessage['segments'] } {
-        let accumulator = this.opencodeStreamByTaskId.get(taskId);
-        if (!accumulator) {
-            accumulator = new QaapOpencodeStreamAccumulator();
-            this.opencodeStreamByTaskId.set(taskId, accumulator);
-        }
-        accumulator.push(chunk);
-        const segments = [...accumulator.getSegments()];
-        return { content: accumulator.getDisplayText(), segments };
-    }
-
-    protected parseQaiqLog(log: string): { content: string; segments: QaapAgentMessage['segments'] } {
-        const accumulator = new QaapQaiqStreamAccumulator();
-        accumulator.push(log);
-        const segments = [...accumulator.getSegments()];
-        return { content: accumulator.getDisplayText() || log, segments };
+        return stream;
     }
 
     protected parseStructuredLog(
         agentId: string,
         log: string,
     ): { content: string; segments: QaapAgentMessage['segments'] } | undefined {
-        if (isQaiqAgent(agentId)) {
-            return this.parseQaiqLog(log);
+        const parsed = parseAgentLogForTranscript(agentId, log);
+        if (!parsed.segments?.length) {
+            return undefined;
         }
-        if (isOpencodeAgent(agentId)) {
-            return parseOpencodeLog(log);
-        }
-        return undefined;
+        return parsed;
     }
 
     protected async applyTaskOutcome(
@@ -751,8 +776,7 @@ export class QaapAgentConversationStore {
             return;
         }
         const usageFinalized = this.finalizeTurnContextUsage(convSnapshot, task.id, convSnapshot.agentId);
-        this.qaiqStreamByTaskId.delete(task.id);
-        this.opencodeStreamByTaskId.delete(task.id);
+        this.agentStreamByTaskId.delete(task.id);
         const conv = this.conversations.get(conversationId);
         if (!conv) {
             return;
@@ -905,6 +929,7 @@ export class QaapAgentConversationStore {
             ...(conv.contextPreamble ? { contextPreamble: conv.contextPreamble } : {}),
             ...(conv.interactionModeId ? { interactionModeId: conv.interactionModeId } : {}),
             ...(conv.approvalPolicyId ? { approvalPolicyId: conv.approvalPolicyId } : {}),
+            ...(conv.toolApprovalRules ? { toolApprovalRules: conv.toolApprovalRules } : {}),
             ...(() => {
                 const agentModel = conv.agentModel ?? conv.qaiqModel;
                 return agentSupportsModelPicker(turnAgentId) && agentModel
@@ -972,6 +997,11 @@ export class QaapAgentConversationStore {
 
     protected fire(event: QaapAgentConversationEvent): void {
         this.onDidChangeEmitter.fire(event);
+    }
+
+    /** Push live parallel-run diff stats to every connected conversation SSE client. */
+    emitParallelRunStats(runId: string, variants: readonly QaapParallelRunVariantStats[]): void {
+        this.fire({ type: 'parallel-run', runId, variants });
     }
 
     protected tryAutoLinkConversationToGitBranch(conv: QaapAgentConversation): QaapAgentConversation | undefined {
@@ -1161,8 +1191,7 @@ export class QaapAgentConversationStore {
         const plan = planConversationRewind(conv, messageId);
         for (const taskId of plan.taskIdsToCancel) {
             this.taskRunner.cancel(taskId);
-            this.qaiqStreamByTaskId.delete(taskId);
-            this.opencodeStreamByTaskId.delete(taskId);
+            this.agentStreamByTaskId.delete(taskId);
             this.taskToConversation.delete(taskId);
         }
         let next: QaapAgentConversation = {

@@ -5,6 +5,7 @@
 
 import { expect } from 'chai';
 import {
+    buildDevPreviewWaitingHtml,
     buildQaapDevPreviewOpenUrl,
     buildQaapDevPreviewUrl,
     parseQaapDevPreviewRequestPath,
@@ -40,5 +41,12 @@ describe('qaap-dev-preview', () => {
     it('parseQaapDevPreviewPort rejects privileged ports', () => {
         expect(parseQaapDevPreviewPort('80')).to.equal(undefined);
         expect(parseQaapDevPreviewPort('3001')).to.equal(3001);
+    });
+
+    it('buildDevPreviewWaitingHtml embeds the port and auto-reload script', () => {
+        const html = buildDevPreviewWaitingHtml(3001);
+        expect(html).to.contain('3001');
+        expect(html).to.contain('location.reload');
+        expect(html).to.contain('Starting dev server');
     });
 });

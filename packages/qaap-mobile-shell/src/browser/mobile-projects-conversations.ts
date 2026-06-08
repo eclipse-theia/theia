@@ -37,6 +37,11 @@ interface ConversationDeletedEvent {
     readonly conversationId: string;
     readonly cwd: string;
 }
+interface ConversationParallelRunEvent {
+    readonly type: 'parallel-run';
+    readonly runId: string;
+    readonly variants: import('../common/qaap-parallel-run-client').QaapParallelRunVariantStatsDTO[];
+}
 
 /**
  * Cross-project live view of agent conversations on the VPS. The Projects panel subscribes to
@@ -60,6 +65,10 @@ export class MobileProjectsConversations {
     protected readonly onDidReceiveMessageEmitter = new Emitter<ConversationMessageEvent>();
     /** Fires on each live SSE message chunk — includes structured segments for QAIQ/OpenCode. */
     readonly onDidReceiveMessage: Event<ConversationMessageEvent> = this.onDidReceiveMessageEmitter.event;
+
+    protected readonly onDidReceiveParallelRunEmitter = new Emitter<ConversationParallelRunEvent>();
+    /** Fires when parallel-run variant diff stats change on the VPS. */
+    readonly onDidReceiveParallelRun: Event<ConversationParallelRunEvent> = this.onDidReceiveParallelRunEmitter.event;
 
     @inject(FileService)
     protected readonly fileService: FileService;
@@ -280,6 +289,7 @@ export class MobileProjectsConversations {
             source.addEventListener('updated', ev => this.onCreatedOrUpdated(ev as MessageEvent));
             source.addEventListener('message', ev => this.onMessageEvent(ev as MessageEvent));
             source.addEventListener('deleted', ev => this.onDeletedEvent(ev as MessageEvent));
+            source.addEventListener('parallel-run', ev => this.onParallelRunEvent(ev as MessageEvent));
             source.addEventListener('error', () => this.scheduleReconnect());
         } catch {
             this.scheduleReconnect();
@@ -354,6 +364,15 @@ export class MobileProjectsConversations {
             this.onDidChangeEmitter.fire();
         } catch {
             /* drop */
+        }
+    }
+
+    protected onParallelRunEvent(ev: MessageEvent): void {
+        try {
+            const payload = JSON.parse(ev.data) as ConversationParallelRunEvent;
+            this.onDidReceiveParallelRunEmitter.fire(payload);
+        } catch {
+            /* drop malformed payload */
         }
     }
 

@@ -11,6 +11,7 @@ import * as net from 'net';
 import {
     QAAP_DEV_PREVIEW_PREFIX,
     QAAP_DEV_PREVIEW_PROBE_PATH,
+    buildDevPreviewWaitingHtml,
     buildQaapDevPreviewOpenUrl,
     isAllowedDevPreviewPort,
     parseQaapDevPreviewPort,
@@ -158,9 +159,7 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
         });
         proxyReq.on('error', () => {
             if (!outgoing.headersSent) {
-                outgoing.status(502).type('text/plain').send(
-                    `Dev server not reachable on 127.0.0.1:${targetPort}. Start the dev script in the terminal.`,
-                );
+                outgoing.status(503).type('text/html').send(buildDevPreviewWaitingHtml(targetPort));
             } else {
                 outgoing.end();
             }

@@ -12,9 +12,16 @@ import {
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task';
+import type { QaapParallelRunVariantStats } from './qaap-parallel-run';
 
 /** HTTP base path for the persistent agent-conversation endpoints. */
 export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
+
+/** Optional auto-approve scopes under the {@code approve-for-me} preset. File edits are always included. */
+export interface QaapAgentToolApprovalRules {
+    readonly shell?: boolean;
+    readonly network?: boolean;
+}
 
 export type QaapAgentConversationStatus =
     /** No turn is in flight; ready to accept the next user message. */
@@ -100,6 +107,8 @@ export interface QaapAgentConversation {
     readonly interactionModeId?: string;
     /** Last composer approval preset — drives QAIQ permission mode when auto-approve is on. */
     readonly approvalPolicyId?: string;
+    /** Optional scopes under {@code approve-for-me} (shell / network). Edits are always included. */
+    readonly toolApprovalRules?: QaapAgentToolApprovalRules;
     /** Set on conversations created via {@link fork} — points at the parent's id. */
     readonly forkedFromId?: string;
     /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
@@ -201,6 +210,7 @@ export interface QaapCreateAgentConversationRequest {
     readonly contextPreamble?: string;
     readonly interactionModeId?: string;
     readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: QaapAgentToolApprovalRules;
 }
 
 export interface QaapPostAgentMessageRequest {
@@ -216,6 +226,7 @@ export interface QaapPostAgentMessageRequest {
     readonly autoApprove?: boolean;
     readonly interactionModeId?: string;
     readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: QaapAgentToolApprovalRules;
 }
 
 export interface QaapRenameAgentConversationRequest {
@@ -230,6 +241,14 @@ export interface QaapUpdateAgentConversationRequest {
     /** `true` clears an explicit opt-out; `false` requires manual tool approval on future turns. */
     readonly autoApprove?: boolean;
     readonly linkedPullRequest?: QaapLinkedPullRequest | null;
+    /** Composer agent picker — overrides the thread default for future turns. */
+    readonly agent?: string;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
+    readonly toolApprovalRules?: QaapAgentToolApprovalRules;
 }
 
 export interface QaapLinkConversationsByBranchRequest {
@@ -245,7 +264,8 @@ export type QaapAgentConversationEvent =
     | { readonly type: 'created'; readonly conversation: QaapAgentConversationSummary }
     | { readonly type: 'updated'; readonly conversation: QaapAgentConversationSummary }
     | { readonly type: 'message'; readonly conversationId: string; readonly cwd: string; readonly message: QaapAgentMessage }
-    | { readonly type: 'deleted'; readonly conversationId: string; readonly cwd: string };
+    | { readonly type: 'deleted'; readonly conversationId: string; readonly cwd: string }
+    | { readonly type: 'parallel-run'; readonly runId: string; readonly variants: readonly QaapParallelRunVariantStats[] };
 
 /** Status exposed to list rows — keeps `failed` when a user turn still carries an error. */
 export function resolveEffectiveConversationStatus(conv: QaapAgentConversation): QaapAgentConversationStatus {

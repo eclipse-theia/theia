@@ -5408,6 +5408,215 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   transform: translateY(0.5px) scale(0.98);
 }
 
+.theia-mobile-projects-sticky-composer-context-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.theia-mobile-projects-sticky-composer-context-images {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-images::-webkit-scrollbar {
+  display: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-image {
+  position: relative;
+  flex: 0 0 auto;
+  width: 112px;
+  display: flex;
+  flex-direction: column;
+  animation: qaap-sticky-context-chip-in 200ms cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+.theia-mobile-projects-sticky-composer-context-image-preview {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground) 6%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, #000 12%, transparent);
+}
+
+.theia-mobile-projects-sticky-composer-context-image-preview.theia-mod-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--theia-foreground) 4%, transparent) 8%,
+    color-mix(in srgb, var(--theia-foreground) 12%, transparent) 18%,
+    color-mix(in srgb, var(--theia-foreground) 4%, transparent) 33%
+  );
+  background-size: 200% 100%;
+  animation: qaap-sticky-image-preview-shimmer 1.1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-image-preview.theia-mod-pending::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--theia-editor-background) 18%, transparent);
+  pointer-events: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-file.theia-mod-pending {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--theia-focusBorder) 55%, transparent);
+}
+
+.theia-mobile-projects-sticky-composer-context-file-pending {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: var(--theia-descriptionForeground);
+  animation: qaap-sticky-attachment-pending-spin 0.9s linear infinite;
+}
+
+@keyframes qaap-sticky-attachment-pending-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.theia-mobile-projects-sticky-composer-context-image-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.theia-mobile-projects-sticky-composer-context-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 28px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-projects-sticky-composer-context-image-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 18px 8px 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px color-mix(in srgb, #000 55%, transparent);
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, #000 62%, transparent) 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-image .theia-mobile-projects-sticky-composer-context-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theia-editor-background) 72%, #000 28%);
+  color: var(--theia-foreground);
+  opacity: 0.92;
+  box-shadow: 0 1px 4px color-mix(in srgb, #000 24%, transparent);
+}
+
+.theia-mobile-projects-sticky-composer-context-files.theia-mod-attachments {
+  max-height: min(34vh, 168px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  padding-right: 2px;
+}
+
+.theia-mobile-projects-sticky-composer-context-file.theia-mod-document {
+  min-height: 42px;
+  padding: 6px 6px 6px 10px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  background: color-mix(in srgb, var(--theia-editor-background) 90%, var(--theia-foreground) 10%);
+}
+
+.theia-mobile-projects-sticky-composer-context-file.theia-mod-document .theia-mobile-projects-sticky-composer-context-file-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+  font-size: 15px;
+}
+
+.theia-mobile-projects-sticky-composer-context-remove,
+.theia-mobile-projects-sticky-composer-context-chip-remove,
+.theia-mobile-projects-sticky-composer-context-file-remove {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theia-descriptionForeground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.75;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 120ms ease, color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.theia-mobile-projects-sticky-composer-context-remove:hover,
+.theia-mobile-projects-sticky-composer-context-remove:focus-visible,
+.theia-mobile-projects-sticky-composer-context-chip-remove:hover,
+.theia-mobile-projects-sticky-composer-context-chip-remove:focus-visible,
+.theia-mobile-projects-sticky-composer-context-file-remove:hover,
+.theia-mobile-projects-sticky-composer-context-file-remove:focus-visible {
+  opacity: 1;
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  outline: none;
+}
+
+.theia-mobile-projects-sticky-composer-context-remove:active,
+.theia-mobile-projects-sticky-composer-context-chip-remove:active,
+.theia-mobile-projects-sticky-composer-context-file-remove:active {
+  transform: scale(0.9);
+}
+
+.theia-mobile-projects-sticky-composer-context-strip.theia-mod-has-attachments {
+  gap: 10px;
+}
+
 .theia-mobile-projects-sticky-composer-context-chips {
   display: flex;
   flex-wrap: nowrap;
@@ -5629,6 +5838,15 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   }
 }
 
+@keyframes qaap-sticky-image-preview-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 @keyframes qaap-sticky-context-chip-in {
   from {
     opacity: 0;
@@ -5762,6 +5980,12 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   line-height: 1.3;
   color: var(--theia-descriptionForeground);
   opacity: 0.9;
+}
+
+.theia-mobile-projects-sticky-composer-attach-menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--theia-panel-border, rgba(128, 128, 128, 0.22));
 }
 
 .theia-mobile-projects-sticky-composer-mention {
@@ -14616,43 +14840,64 @@ body > .theia-mobile-transcript-files-menu {
   color: color-mix(in srgb, var(--theia-foreground) 92%, var(--theia-descriptionForeground));
 }
 
-/* Compact collapsed tool pills — replaces the heavy activity timeline card. */
+/* Compact tool pills — minimal chips that expand into flat output panels. */
 .theia-mobile-agent-tool-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .theia-mobile-agent-tool-pill {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 55%, transparent);
-  background: color-mix(in srgb, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)) 45%, transparent);
-  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  background: color-mix(in srgb, var(--theia-foreground, #ccc) 4%, transparent);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease;
+}
+
+.theia-mobile-agent-tool-pill:not([open]):active {
+  background: color-mix(in srgb, var(--theia-foreground, #ccc) 7%, transparent);
 }
 
 .theia-mobile-agent-tool-pill[open] {
   flex: 1 1 100%;
   border-radius: 0;
+  background: transparent;
 }
 
-.theia-mobile-agent-tool-pill.theia-mod-running {
-  border-color: color-mix(in srgb, var(--q-accent, #E58E40) 35%, var(--theia-panel-border, rgba(128, 128, 128, 0.2)));
+.theia-mobile-agent-tool-pill.theia-mod-running:not([open]) {
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 7%, transparent);
 }
 
 .theia-mobile-agent-tool-pill > summary {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
+  gap: 6px;
+  padding: 5px 8px;
   cursor: pointer;
   list-style: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: color-mix(in srgb, var(--theia-foreground) 72%, var(--theia-descriptionForeground));
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-agent-tool-pill[open] > summary {
+  padding: 4px 0 6px;
+  color: color-mix(in srgb, var(--theia-descriptionForeground) 88%, var(--theia-foreground));
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 42%, transparent);
 }
 
 .theia-mobile-agent-tool-pill > summary::-webkit-details-marker {
@@ -14661,8 +14906,12 @@ body > .theia-mobile-transcript-files-menu {
 
 .theia-mobile-agent-tool-pill-icon {
   flex: none;
-  font-size: 12px;
-  opacity: 0.78;
+  font-size: 11px;
+  opacity: 0.62;
+}
+
+.theia-mobile-agent-tool-pill[open] .theia-mobile-agent-tool-pill-icon {
+  opacity: 0.72;
 }
 
 .theia-mobile-agent-tool-pill-label {
@@ -14671,11 +14920,7 @@ body > .theia-mobile-transcript-files-menu {
 }
 
 .theia-mobile-agent-tool-pill-body {
-  padding: 0 10px 8px;
-  max-width: min(100%, 420px);
-}
-
-.theia-mobile-agent-tool-pill[open] .theia-mobile-agent-tool-pill-body {
+  padding: 8px 0 2px;
   max-width: 100%;
 }
 
@@ -14683,10 +14928,45 @@ body > .theia-mobile-transcript-files-menu {
   border-radius: 0;
   border: none;
   background: transparent;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-view.theia-mod-plain .theia-mobile-agent-code-gutter,
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-view.theia-mod-shell .theia-mobile-agent-code-gutter {
+  display: none;
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-view.theia-mod-plain .theia-mobile-agent-code-line,
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-view.theia-mod-shell .theia-mobile-agent-code-line {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  min-height: 1.5em;
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-line:hover {
+  background: transparent;
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--theia-foreground) 90%, var(--theia-descriptionForeground));
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-code-gutter {
+  font-size: 10px;
+  opacity: 0.5;
 }
 
 .theia-mobile-agent-tool-pill.theia-mod-running .theia-mobile-agent-tool-pill-icon {
   color: var(--q-accent, #E58E40);
+  opacity: 0.9;
+}
+
+.theia-mobile-agent-tool-pill.theia-mod-running[open] > summary {
+  color: color-mix(in srgb, var(--q-accent, #E58E40) 55%, var(--theia-descriptionForeground));
 }
 
 .theia-mobile-agent-tool-pill-approval {
@@ -16232,6 +16512,57 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-
   font-size: 12px;
 }
 
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-body {
+  gap: 6px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-images {
+  gap: 6px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-image {
+  width: 96px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-image-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-image-caption {
+  font-size: 10px;
+  padding-top: 14px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-image .theia-mobile-projects-sticky-composer-context-remove {
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file.theia-mod-document {
+  min-height: 30px;
+  padding: 3px 4px 3px 7px;
+  border-radius: 8px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-file.theia-mod-document .theia-mobile-projects-sticky-composer-context-file-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.theia-mobile-projects-sticky-composer-card.theia-mod-codex .theia-mobile-projects-sticky-composer-context-remove {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+}
+
 .theia-mobile-projects-sticky-composer-card.theia-mod-codex > .qaap-codex-context-tray {
   display: flex;
   align-items: center;
@@ -16455,6 +16786,48 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-card .theia-mobile-
 
 .theia-qaap-approval-policy-sheet-option.theia-mod-selected .theia-qaap-approval-policy-sheet-label {
   color: inherit;
+}
+
+.theia-qaap-tool-approval-rules-list {
+  border-top: 1px solid var(--theia-widget-border, rgba(128, 128, 128, 0.35));
+  padding-top: 8px;
+}
+
+.theia-qaap-tool-approval-rules-heading {
+  padding: 8px 16px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.72;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.theia-qaap-tool-approval-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.theia-qaap-tool-approval-rule input {
+  margin-top: 4px;
+}
+
+.theia-qaap-tool-approval-rule-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.theia-qaap-tool-approval-rule-label {
+  font-weight: 600;
+}
+
+.theia-qaap-tool-approval-rule-description {
+  font-size: 12px;
+  opacity: 0.78;
+  line-height: 1.35;
 }
 
 .theia-mobile-projects-sticky-composer-column .theia-mobile-projects-sticky-composer-inner {

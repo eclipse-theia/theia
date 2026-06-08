@@ -34,7 +34,6 @@ import {
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
 import {
     formatQaiqInteractionFlags,
-    qaiqCommandUsesInteractionFlags,
     type QaapQaiqInteractionFlagOptions,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-interaction-flags';
 import type { QaapAgentApprovalPolicyId } from '@theia/qaap-mobile-shell/lib/common/qaap-sticky-composer-approval-policy';
@@ -42,7 +41,9 @@ import { agentUsesSettingsModelCatalog } from '../common/qaap-agent-native-model
 import { listNativeAgentModels } from './qaap-agent-native-models';
 import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
 import {
-    applyAutoApproveToCommand,
+    applyAgentApprovalPolicyToCommand,
+} from '../common/qaap-agent-approval-flags';
+import {
     resolveAgentAutoApprove,
 } from '../common/qaap-agent-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
@@ -723,6 +724,7 @@ export class QaapAgentTaskRunner {
         contextPreamble?: string,
         interactionModeId?: string,
         approvalPolicyId?: string,
+        toolApprovalRules?: QaapCreateAgentTaskRequest['toolApprovalRules'],
     ): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
@@ -751,10 +753,13 @@ export class QaapAgentTaskRunner {
                 command = agentPrompt;
             }
         }
-        if (autoApprove && id !== QAIQ_AGENT_ID && !qaiqCommandUsesInteractionFlags(command)) {
-            command = applyAutoApproveToCommand(command, id);
-        }
-        return command;
+        return applyAgentApprovalPolicyToCommand(command, {
+            agentId: id,
+            approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
+            autoApprove,
+            interactionModeId,
+            toolApprovalRules,
+        });
     }
 
     /** Best-effort read of the workspace per-project info artifact (`.prompts/project-info.prompttemplate`). */
@@ -1000,6 +1005,7 @@ export class QaapAgentTaskRunner {
                     request.contextPreamble,
                     request.interactionModeId,
                     request.approvalPolicyId,
+                    request.toolApprovalRules,
                 );
                 const next: QaapAgentTask = {
                     ...task,

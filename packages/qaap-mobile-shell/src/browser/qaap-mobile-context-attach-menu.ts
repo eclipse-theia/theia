@@ -10,9 +10,39 @@ import {
     AIVariableService,
     PromptText,
 } from '@theia/ai-core';
-import { QuickInputService } from '@theia/core';
+import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
+import { IMAGE_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/common/image-context-variable';
+import { QuickInputService, nls } from '@theia/core';
+import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import {
+    attachDeviceFilesOptimistic,
+    attachDeviceImagesOptimistic,
+    attachDeviceImagesFromPicker,
+    attachDeviceFilesFromPicker,
+    pickFilesFromDevice,
+    type MobileComposerAttachHandlers,
+} from './qaap-mobile-composer-device-attach';
+import { MobileSnackbar } from './mobile-snackbar';
 
 const QUERY_CONTEXT = { type: 'context-variable-picker' };
+
+const WORKSPACE_CONTEXT_VARIABLE_NAMES = new Set([
+    FILE_VARIABLE.name,
+    IMAGE_CONTEXT_VARIABLE.name,
+]);
+
+export interface MobileContextAttachServices {
+    readonly fileUploadService: FileUploadService;
+    readonly fileService: FileService;
+    readonly workspaceService: WorkspaceService;
+}
+
+type MobileContextAttachMenuSelection =
+    | { kind: 'device-files' }
+    | { kind: 'device-images' }
+    | { kind: 'variable'; variable: AIContextVariable };
 
 let activeMenu: HTMLElement | undefined;
 let activeAnchor: HTMLElement | undefined;
@@ -40,11 +70,57 @@ function positionAttachMenu(menu: HTMLElement, anchor: HTMLElement): void {
     menu.style.left = `${left}px`;
 }
 
-function showContextVariableMenu(
+function createAttachMenuItem(options: {
+    iconClasses: string;
+    label: string;
+    hint?: string;
+    onSelect: () => void;
+}): HTMLButtonElement {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'theia-mobile-projects-sticky-composer-attach-menu-item';
+    item.setAttribute('role', 'menuitem');
+
+    const icon = document.createElement('span');
+    icon.className = options.iconClasses;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const body = document.createElement('span');
+    body.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-body';
+
+    const label = document.createElement('span');
+    label.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-label';
+    label.textContent = options.label;
+    body.append(label);
+
+    if (options.hint?.trim()) {
+        const hint = document.createElement('span');
+        hint.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-hint';
+        hint.textContent = options.hint.trim();
+        body.append(hint);
+    }
+
+    item.append(icon, body);
+    item.addEventListener('click', ev => {
+        ev.stopPropagation();
+        options.onSelect();
+    });
+    return item;
+}
+
+function createAttachMenuSeparator(): HTMLElement {
+    const separator = document.createElement('div');
+    separator.className = 'theia-mobile-projects-sticky-composer-attach-menu-separator';
+    separator.setAttribute('role', 'separator');
+    return separator;
+}
+
+function showContextAttachMenu(
     anchor: HTMLElement,
     variables: readonly AIContextVariable[],
-): Promise<AIContextVariable | undefined> {
-    if (!variables.length) {
+    includeDeviceAttach: boolean,
+): Promise<MobileContextAttachMenuSelection | undefined> {
+    if (!includeDeviceAttach && !variables.length) {
         return Promise.resolve(undefined);
     }
     if (activeAnchor === anchor && activeMenu) {
@@ -59,37 +135,48 @@ function showContextVariableMenu(
         menu.setAttribute('role', 'menu');
         menu.tabIndex = -1;
 
-        for (const variable of variables) {
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'theia-mobile-projects-sticky-composer-attach-menu-item';
-            item.setAttribute('role', 'menuitem');
-            if (variable.iconClasses?.length) {
-                const icon = document.createElement('span');
-                icon.className = variable.iconClasses.join(' ');
-                icon.setAttribute('aria-hidden', 'true');
-                const body = document.createElement('span');
-                body.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-body';
-                const label = document.createElement('span');
-                label.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-label';
-                label.textContent = variable.label ?? variable.name;
-                body.append(label);
-                if (variable.description?.trim()) {
-                    const hint = document.createElement('span');
-                    hint.className = 'theia-mobile-projects-sticky-composer-attach-menu-item-hint';
-                    hint.textContent = variable.description.trim();
-                    body.append(hint);
-                }
-                item.append(icon, body);
-            } else {
-                item.textContent = variable.label ?? variable.name;
+        const finish = (selection: MobileContextAttachMenuSelection | undefined): void => {
+            dismissMobileContextAttachMenu();
+            resolve(selection);
+        };
+
+        if (includeDeviceAttach) {
+            menu.append(createAttachMenuItem({
+                iconClasses: 'codicon codicon-file',
+                label: nls.localize(
+                    'qaap/mobileProjects/stickyComposerAttachDeviceFile',
+                    'Add file from device',
+                ),
+                hint: nls.localize(
+                    'qaap/mobileProjects/stickyComposerAttachDeviceFileHint',
+                    'Upload a file from this phone or tablet',
+                ),
+                onSelect: () => finish({ kind: 'device-files' }),
+            }));
+            menu.append(createAttachMenuItem({
+                iconClasses: 'codicon codicon-file-media',
+                label: nls.localize(
+                    'qaap/mobileProjects/stickyComposerAttachDeviceImage',
+                    'Add image from device',
+                ),
+                hint: nls.localize(
+                    'qaap/mobileProjects/stickyComposerAttachDeviceImageHint',
+                    'Attach a photo or screenshot from this device',
+                ),
+                onSelect: () => finish({ kind: 'device-images' }),
+            }));
+            if (variables.length > 0) {
+                menu.append(createAttachMenuSeparator());
             }
-            item.addEventListener('click', ev => {
-                ev.stopPropagation();
-                dismissMobileContextAttachMenu();
-                resolve(variable);
-            });
-            menu.append(item);
+        }
+
+        for (const variable of variables) {
+            menu.append(createAttachMenuItem({
+                iconClasses: variable.iconClasses?.join(' ') ?? 'codicon codicon-symbol-variable',
+                label: variable.label ?? variable.name,
+                hint: variable.description?.trim(),
+                onSelect: () => finish({ kind: 'variable', variable }),
+            }));
         }
 
         document.body.appendChild(menu);
@@ -103,15 +190,13 @@ function showContextVariableMenu(
             if (target && (menu.contains(target) || anchor.contains(target))) {
                 return;
             }
-            dismissMobileContextAttachMenu();
-            resolve(undefined);
+            finish(undefined);
         };
         const onKeyDown = (event: KeyboardEvent): void => {
             if (event.key === 'Escape') {
                 event.preventDefault();
-                dismissMobileContextAttachMenu();
+                finish(undefined);
                 anchor.focus();
-                resolve(undefined);
             }
         };
 
@@ -188,16 +273,64 @@ async function useGenericArgumentPicker(
     return { variable, arg: args.join(PromptText.VARIABLE_SEPARATOR_CHAR) };
 }
 
-/** Mobile attach control: context variables in a menu anchored to the button (not top quick pick). */
+function filterMobileContextVariables(variables: readonly AIContextVariable[]): AIContextVariable[] {
+    return variables.filter(variable => !WORKSPACE_CONTEXT_VARIABLE_NAMES.has(variable.name));
+}
+
+async function resolveDeviceAttachSelection(
+    selection: MobileContextAttachMenuSelection,
+    attachServices: MobileContextAttachServices,
+    handlers?: MobileComposerAttachHandlers,
+): Promise<AIVariableResolutionRequest[]> {
+    try {
+        if (selection.kind === 'device-images') {
+            const files = await pickFilesFromDevice({ accept: 'image/*', multiple: true });
+            if (files.length === 0) {
+                return [];
+            }
+            if (handlers) {
+                attachDeviceImagesOptimistic(files, handlers);
+                return [];
+            }
+            return attachDeviceImagesFromPicker();
+        }
+        const files = await pickFilesFromDevice({ multiple: true });
+        if (files.length === 0) {
+            return [];
+        }
+        if (handlers) {
+            attachDeviceFilesOptimistic(files, attachServices, handlers);
+            return [];
+        }
+        return attachDeviceFilesFromPicker(attachServices);
+    } catch (error) {
+        const message = error instanceof Error && error.message
+            ? error.message
+            : nls.localize(
+                'qaap/mobileProjects/stickyComposerAttachDeviceFailed',
+                'Could not attach files from this device.',
+            );
+        MobileSnackbar.show(message, { kind: 'warning', duration: 3200 });
+        return [];
+    }
+}
+
+/** Mobile attach control: device files/images plus context variables in a menu anchored to the button. */
 export async function pickMobileContextVariable(
     anchor: HTMLElement,
     variableService: AIVariableService,
     quickInputService: QuickInputService,
-): Promise<AIVariableResolutionRequest | undefined> {
-    const variables = variableService.getContextVariables();
-    const selected = await showContextVariableMenu(anchor, variables);
+    attachServices?: MobileContextAttachServices,
+    handlers?: MobileComposerAttachHandlers,
+): Promise<AIVariableResolutionRequest[]> {
+    const variables = filterMobileContextVariables(variableService.getContextVariables());
+    const selected = await showContextAttachMenu(anchor, variables, !!attachServices);
     if (!selected) {
-        return undefined;
+        return [];
     }
-    return resolveVariableArguments(selected, variableService, quickInputService);
+    if (selected.kind === 'device-files' || selected.kind === 'device-images') {
+        return resolveDeviceAttachSelection(selected, attachServices!, handlers);
+    }
+    const resolved = await resolveVariableArguments(selected.variable, variableService, quickInputService);
+    return resolved ? [resolved] : [];
 }

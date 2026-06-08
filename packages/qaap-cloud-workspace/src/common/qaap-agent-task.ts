@@ -102,6 +102,8 @@ export interface QaapCreateAgentTaskRequest {
     readonly interactionModeId?: string;
     /** Composer approval preset (`request-approval`, `approve-for-me`, `full-access`). */
     readonly approvalPolicyId?: string;
+    /** Optional scopes under {@code approve-for-me} (shell / network). */
+    readonly toolApprovalRules?: import('./qaap-agent-conversation').QaapAgentToolApprovalRules;
 }
 
 /** A coding agent the runner knows how to invoke. */

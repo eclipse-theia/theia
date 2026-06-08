@@ -4,7 +4,75 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { QaapQaiqStreamAccumulator } from './qaap-qaiq-stream';
+import {
+    collapseConsecutiveDuplicateParagraphs,
+    dedupeAgentMessageTextSegments,
+    mergeIncrementalStreamText,
+    QaapQaiqStreamAccumulator,
+    stripLeadingParagraphsInPriorText,
+} from './qaap-qaiq-stream';
+
+describe('mergeIncrementalStreamText', () => {
+
+    it('appends token deltas', () => {
+        expect(mergeIncrementalStreamText('Hi', ' there')).to.equal('Hi there');
+    });
+
+    it('skips exact duplicate snapshots', () => {
+        const text = '¡Hola! Estoy bien.';
+        expect(mergeIncrementalStreamText(text, text)).to.equal(text);
+    });
+
+    it('adopts cumulative snapshots', () => {
+        expect(mergeIncrementalStreamText('part1', 'part1 part2')).to.equal('part1 part2');
+    });
+
+    it('ignores shorter duplicate snapshots', () => {
+        expect(mergeIncrementalStreamText('part1 part2', 'part1')).to.equal('part1 part2');
+    });
+
+    it('collapses a single-chunk doubled snapshot', () => {
+        expect(mergeIncrementalStreamText('msg', 'msgmsg')).to.equal('msg');
+    });
+
+    it('collapses consecutive duplicate paragraphs', () => {
+        const text = 'Hola.\n\nHola.\n\nAhora sigo.';
+        expect(collapseConsecutiveDuplicateParagraphs(text)).to.equal('Hola.\n\nAhora sigo.');
+    });
+
+    it('strips replayed paragraphs after prior text', () => {
+        const prior = 'Hola. Disculpa la confusión anterior.';
+        const replay = `${prior}\n\nAhora entiendo el problema.`;
+        expect(stripLeadingParagraphsInPriorText(replay, prior)).to.equal('Ahora entiendo el problema.');
+    });
+});
+
+describe('dedupeAgentMessageTextSegments', () => {
+
+    it('drops a replayed text segment after tool calls', () => {
+        const intro = 'Hola. Disculpa la confusión anterior.';
+        const deduped = dedupeAgentMessageTextSegments([
+            { type: 'text', content: intro },
+            { type: 'tool', toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+            { type: 'text', content: `${intro}\n\nAhora entiendo el problema.` },
+        ]);
+        expect(deduped).to.deep.equal([
+            { type: 'text', content: intro },
+            { type: 'tool', toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+            { type: 'text', content: 'Ahora entiendo el problema.' },
+        ]);
+    });
+
+    it('drops identical adjacent text segments', () => {
+        const intro = 'Hola. Disculpa la confusión anterior.';
+        expect(dedupeAgentMessageTextSegments([
+            { type: 'text', content: intro },
+            { type: 'text', content: intro },
+        ])).to.deep.equal([
+            { type: 'text', content: intro },
+        ]);
+    });
+});
 
 describe('QaapQaiqStreamAccumulator', () => {
 
@@ -26,6 +94,39 @@ describe('QaapQaiqStreamAccumulator', () => {
         acc.push('{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hi"}}}\n');
         acc.push('{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":" there"}}}\n');
         expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: 'Hi there' }]);
+    });
+
+    it('skips duplicate timestamped assistant snapshot after stream_event deltas', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        const reply = '¡Hola! Estoy bien, gracias por preguntar. ¿En qué puedo ayudarte hoy?';
+        acc.push(`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":${JSON.stringify(reply)}}}}\n`);
+        acc.push(`{"type":"assistant","timestamp_ms":2,"message":{"content":[{"type":"text","text":${JSON.stringify(reply)}}]}}\n`);
+        expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: reply }]);
+        expect(acc.getDisplayText()).to.equal(reply);
+    });
+
+    it('adopts cumulative timestamped assistant snapshots', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push('{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"text","text":"part1"}]}}\n');
+        acc.push('{"type":"assistant","timestamp_ms":2,"message":{"content":[{"type":"text","text":"part1 part2"}]}}\n');
+        expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: 'part1 part2' }]);
+    });
+
+    it('skips replayed prose after tool_use blocks in assistant snapshots', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        const intro = 'Hola. Disculpa la confusión anterior.';
+        acc.push([
+            `{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"text","text":${JSON.stringify(intro)}}]}}`,
+            '{"type":"assistant","timestamp_ms":2,"message":{"content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"a.ts"}}]}}',
+            '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":"ok"}]}}',
+            `{"type":"assistant","timestamp_ms":3,"message":{"content":[{"type":"text","text":${JSON.stringify(`${intro}\n\nAhora entiendo el problema.`)}},{"type":"tool_use","id":"t2","name":"Read","input":{"file_path":"b.ts"}}]}}`,
+        ].join('\n') + '\n');
+        expect(acc.getSegments()).to.deep.equal([
+            { type: 'text', content: intro },
+            { type: 'tool', toolUseId: 't1', name: 'Read', args: '{"file_path":"a.ts"}', finished: true, result: 'ok' },
+            { type: 'text', content: 'Ahora entiendo el problema.' },
+            { type: 'tool', toolUseId: 't2', name: 'Read', args: '{"file_path":"b.ts"}', finished: false },
+        ]);
     });
 
     it('skips buffered assistant flushes after timestamped deltas', () => {

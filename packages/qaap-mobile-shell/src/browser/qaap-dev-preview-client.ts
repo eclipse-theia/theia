@@ -31,6 +31,30 @@ export function toDevPreviewUrl(port: number, origin: string = getQaapPublicOrig
  * Asks the Qaap backend whether a dev server is listening inside the workspace host.
  * Never uses `127.0.0.1` from the browser (that would target the user's device, not the VPS).
  */
+export interface WaitForDevPreviewOptions {
+    readonly maxAttempts?: number;
+    readonly intervalMs?: number;
+}
+
+/** Polls the backend probe until the dev server responds or attempts are exhausted. */
+export async function waitForQaapDevPreviewPort(
+    port: number,
+    options: WaitForDevPreviewOptions = {},
+): Promise<QaapDevPreviewProbeResponse | undefined> {
+    const maxAttempts = options.maxAttempts ?? 30;
+    const intervalMs = options.intervalMs ?? 500;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const probe = await probeQaapDevPreviewPort(port);
+        if (probe.ready) {
+            return probe;
+        }
+        if (attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+        }
+    }
+    return undefined;
+}
+
 export async function probeQaapDevPreviewPort(port: number): Promise<QaapDevPreviewProbeResponse> {
     const origin = getQaapPublicOrigin();
     const fallback: QaapDevPreviewProbeResponse = {

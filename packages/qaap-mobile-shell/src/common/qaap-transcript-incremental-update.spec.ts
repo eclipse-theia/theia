@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client';
 import {
     buildConversationTranscriptFingerprint,
+    isStreamingTranscriptTailUnchanged,
     resolveStreamingTranscriptPatchKind,
     shouldForceTranscriptRenderOnStatusSettle,
     transcriptFingerprintChanged,
@@ -139,7 +140,7 @@ describe('qaap-transcript-incremental-update', () => {
         expect(resolveStreamingTranscriptPatchKind(prev, next)).to.equal('none');
     });
 
-    it('resolveStreamingTranscriptPatchKind returns none for codex stdout agents', () => {
+    it('resolveStreamingTranscriptPatchKind returns append-agent for codex stdout agents with segments', () => {
         const prev = conv({
             id: 'c1',
             agentId: 'codex',
@@ -150,10 +151,16 @@ describe('qaap-transcript-incremental-update', () => {
             agentId: 'codex',
             messages: [
                 { id: 'u1', role: 'user', content: 'hi', createdAt: 1 },
-                { id: 'a1', role: 'agent', content: 'log chunk', createdAt: 2 },
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: 'Done.',
+                    createdAt: 2,
+                    segments: [{ type: 'text', content: 'Done.' }],
+                },
             ],
         });
-        expect(resolveStreamingTranscriptPatchKind(prev, next)).to.equal('none');
+        expect(resolveStreamingTranscriptPatchKind(prev, next)).to.equal('append-agent');
     });
 
     it('shouldForceTranscriptRenderOnStatusSettle forces render when a turn settles', () => {
@@ -198,5 +205,37 @@ describe('qaap-transcript-incremental-update', () => {
             }],
         });
         expect(transcriptFingerprintChanged(prev, next)).to.equal(true);
+    });
+
+    it('resolveStreamingTranscriptPatchKind returns none when structured segments are unchanged', () => {
+        const messages = [
+            { id: 'u1', role: 'user' as const, content: 'hi', createdAt: 1 },
+            {
+                id: 'a1',
+                role: 'agent' as const,
+                content: 'Hello',
+                createdAt: 2,
+                segments: [{ type: 'text' as const, content: 'Hello' }],
+            },
+        ];
+        const prev = conv({ updatedAt: 2, messages });
+        const next = conv({ updatedAt: 3, messages });
+        expect(resolveStreamingTranscriptPatchKind(prev, next)).to.equal('none');
+    });
+
+    it('isStreamingTranscriptTailUnchanged ignores metadata-only SSE ticks', () => {
+        const messages = [
+            { id: 'u1', role: 'user' as const, content: 'hi', createdAt: 1 },
+            {
+                id: 'a1',
+                role: 'agent' as const,
+                content: 'Hello',
+                createdAt: 2,
+                segments: [{ type: 'text' as const, content: 'Hello' }],
+            },
+        ];
+        const prev = conv({ updatedAt: 2, messages });
+        const next = conv({ updatedAt: 99, messages });
+        expect(isStreamingTranscriptTailUnchanged(prev, next)).to.equal(true);
     });
 });

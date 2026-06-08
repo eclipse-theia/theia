@@ -5,7 +5,11 @@
 
 import { expect } from 'chai';
 import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client';
-import { applyConversationMessageDelta, canApplySseMessageDelta } from './qaap-transcript-sse-delta';
+import {
+    applyConversationMessageDelta,
+    canApplySseMessageDelta,
+    shouldSkipStreamingTranscriptRefetch,
+} from './qaap-transcript-sse-delta';
 
 const baseConv = (): QaapAgentConversationDTO => ({
     id: 'conv-1',
@@ -43,14 +47,32 @@ describe('canApplySseMessageDelta', () => {
         })).to.equal(false);
     });
 
-    it('rejects codex stdout agents without structured segments', () => {
+    it('rejects stale deltas after the turn has settled', () => {
+        const idle = { ...baseConv(), status: 'idle' as const };
+        expect(canApplySseMessageDelta(idle, 'conv-1', {
+            id: 'agent-1',
+            role: 'agent',
+            content: 'late chunk',
+            createdAt: 30,
+        })).to.equal(false);
+    });
+
+    it('accepts codex stdout agent chunks with plain content', () => {
         const conv = { ...baseConv(), agentId: 'codex' };
         expect(canApplySseMessageDelta(conv, 'conv-1', {
             id: 'agent-1',
             role: 'agent',
             content: 'plain stdout',
             createdAt: 12,
-        })).to.equal(false);
+        })).to.equal(true);
+    });
+});
+
+describe('shouldSkipStreamingTranscriptRefetch', () => {
+    it('returns true while streaming and a recent SSE delta was applied', () => {
+        const conv = { ...baseConv(), status: 'streaming' as const };
+        expect(shouldSkipStreamingTranscriptRefetch(conv, Date.now())).to.equal(true);
+        expect(shouldSkipStreamingTranscriptRefetch(conv, Date.now() - 20_000)).to.equal(false);
     });
 });
 

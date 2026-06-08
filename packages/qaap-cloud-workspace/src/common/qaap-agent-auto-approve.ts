@@ -44,7 +44,7 @@ export function resolveConversationAutoApprove(explicit?: boolean): boolean {
 
 export function commandHasAutoApproveFlags(command: string): boolean {
     return /--dangerously-skip-permissions\b/.test(command)
-        || /--permission-mode\s+(?:bypassPermissions|dontAsk)\b/.test(command)
+        || /--permission-mode\s+(?:bypassPermissions|dontAsk|acceptEdits)\b/.test(command)
         || /--full-auto\b/.test(command)
         || /--approval-mode\s+full-auto\b/.test(command)
         || /--auto-edit\b/.test(command)
