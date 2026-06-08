@@ -194,6 +194,21 @@ export class MobileProjectsTranscriptHeaderUi {
         return nls.localize('qaap/mobileProjects/chatLastActivityUnknown', 'No recent activity');
     }
 
+    isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean {
+        return summary.id.startsWith('pending-new-chat-');
+    }
+
+    resolveTranscriptHeaderTitle(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): string {
+        const title = summary.title?.trim();
+        if (!title || title === project.name) {
+            return project.name;
+        }
+        return nls.localize('qaap/mobileProjects/chatHeaderProjectTitle', '{0} · {1}', project.name, title);
+    }
+
     formatActiveChatSince(timestamp: number): string {
         const diff = Math.max(0, Date.now() - timestamp);
         const minute = 60 * 1000;

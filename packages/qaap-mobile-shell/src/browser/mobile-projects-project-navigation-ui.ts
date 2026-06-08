@@ -19,6 +19,18 @@ export interface MobileProjectsProjectNavigationHost {
     stickyComposerPinnedAgentId: string | undefined;
     stickyComposerModeId: string | undefined;
     stickyComposerDraft: string;
+    projectDetailExpandedId: string | undefined;
+    projectDetailTabStrip: HTMLElement | undefined;
+    projectDetailSurfaceTargets: {
+        readonly chatHost: HTMLElement;
+        readonly planHost: HTMLElement;
+        readonly reviewHost: HTMLElement;
+        readonly previewHost: HTMLElement;
+        readonly filesHost: HTMLElement;
+        readonly terminalHost: HTMLElement;
+    } | undefined;
+    headerExecutionTabsProjectId: string | undefined;
+    headerExecutionTabsHost: HTMLElement;
     projects: MobileProjectEntry[];
     projectsService: MobileProjectsService;
     commands: CommandRegistry;
@@ -27,6 +39,7 @@ export interface MobileProjectsProjectNavigationHost {
 
     closeCardMenu(): void;
     closeStickyComposerSheets(): void;
+    closeExecutionTabOverflowMenu(): void;
     refreshChatServiceSessionSummaries(): Promise<void>;
     render(): void;
     syncLandingHubListChrome(): void;
@@ -76,6 +89,37 @@ export class MobileProjectsProjectNavigationUi {
         }
         await this.host.refreshChatServiceSessionSummaries();
         this.host.renderList();
+    }
+
+    closeProjectDetail(): void {
+        if (!this.host.expandedId) {
+            return;
+        }
+        const wasCurrent = this.host.projects.some(p => p.id === this.host.expandedId && p.isCurrent);
+        this.host.expandedId = undefined;
+        this.host.soloExpanded = false;
+        if (wasCurrent) {
+            this.host.suppressCurrentAutoExpand = true;
+        }
+        this.host.closeStickyComposerSheets();
+        disposeComposerContextEntries(this.host.stickyComposerContext);
+        this.host.stickyComposerContext = [];
+        this.host.stickyComposerPinnedAgentId = undefined;
+        this.host.stickyComposerModeId = undefined;
+        this.resetProjectDetailSurfaces();
+        this.host.render();
+        this.host.syncLandingHubListChrome();
+        this.host.delegate.onProjectsChanged?.();
+    }
+
+    resetProjectDetailSurfaces(): void {
+        this.host.closeExecutionTabOverflowMenu();
+        this.host.projectDetailExpandedId = undefined;
+        this.host.projectDetailTabStrip = undefined;
+        this.host.projectDetailSurfaceTargets = undefined;
+        this.host.headerExecutionTabsProjectId = undefined;
+        this.host.headerExecutionTabsHost.hidden = true;
+        this.host.headerExecutionTabsHost.replaceChildren();
     }
 
     async closeCurrentWorkspace(): Promise<void> {

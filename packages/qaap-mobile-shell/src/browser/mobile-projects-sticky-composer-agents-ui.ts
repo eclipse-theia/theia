@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { ChatAgent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import {
     agentSupportsModelPicker,
@@ -33,12 +34,20 @@ chatAgentService?: ChatAgentService;
 activeTasks?: MobileProjectsActiveTasks;
 renderStickyComposer(): void;
 loadBackendAgentSnapshot(): Promise<QaapAgentTaskListSnapshot>;
-getOfferableCoderAgent(): import('@theia/ai-chat').ChatAgent | undefined;
 resolveConversationAgentLabel(agentId: string | undefined): string;
 }
 
 export class MobileProjectsStickyComposerAgentsUi {
     constructor(protected readonly host: MobileProjectsStickyComposerAgentsHost) { }
+
+    /**
+     * The local Theia Coder agent runs in the browser tab and stops when the mobile app is closed,
+     * so it is not agentic. It is no longer offered or defaulted to in the mobile agent pickers —
+     * only VPS-backed agents (QAIQ, Codex, …) are selectable.
+     */
+    getOfferableCoderAgent(): ChatAgent | undefined {
+        return undefined;
+    }
 
     resolveStickyComposerPinnedAgentId(project: MobileProjectEntry): string {
         const cwd = this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id);
@@ -79,7 +88,7 @@ export class MobileProjectsStickyComposerAgentsUi {
             agents,
             defaultAgent,
             cwd,
-            !!this.host.getOfferableCoderAgent(),
+            !!this.getOfferableCoderAgent(),
         );
     }
     filterSelectableComposerAgents(

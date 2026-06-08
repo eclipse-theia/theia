@@ -89,7 +89,8 @@ export interface MobileProjectsExecutionSurfaceTabsHost {
     resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO;
     resolveSelectedProject(): MobileProjectEntry | undefined;
     isProjectDetailView(): boolean;
-    resolveExecutionSurfaceProject(): MobileProjectEntry | undefined;
+    projects: MobileProjectEntry[];
+    projectsForCurrentHubList(): MobileProjectEntry[];
     closeCardMenu(): void;
 }
 
@@ -97,6 +98,20 @@ export interface MobileProjectsExecutionSurfaceTabsHost {
 export class MobileProjectsExecutionSurfaceTabsUi {
 
     constructor(protected readonly host: MobileProjectsExecutionSurfaceTabsHost) { }
+
+    resolveExecutionSurfaceProject(): MobileProjectEntry | undefined {
+        const projectId = this.host.projectDetailExpandedId ?? this.host.expandedId;
+        if (!projectId) {
+            return undefined;
+        }
+        return this.host.projects.find(p => p.id === projectId)
+            ?? this.host.projectsForCurrentHubList().find(p => p.id === projectId);
+    }
+
+    activeExecutionTab(project?: MobileProjectEntry): TranscriptTab {
+        const resolved = project ?? this.resolveExecutionSurfaceProject();
+        return resolved ? this.executionSurfaceTabForProject(resolved) : 'messages';
+    }
 
     executionSurfaceTabForProject(project: MobileProjectEntry): TranscriptTab {
         return this.host.executionSurfaceTabByProjectId.get(project.id) ?? 'messages';
@@ -310,7 +325,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
     }
 
     syncProjectDetailTabStrip(): void {
-        const project = this.host.resolveExecutionSurfaceProject();
+        const project = this.resolveExecutionSurfaceProject();
         if (!project) {
             return;
         }

@@ -8,6 +8,7 @@ import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
 import { setMobileWorkHubComposerHeaderChrome } from './mobile-projects-open';
 import { createSegmentedField, type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import { writeStoredComposerSurface, type QaapComposerSurface } from '../common/qaap-composer-surface';
+import { QAAP_PRIMARY_AGENT_ID, writeStoredAgent } from '../common/qaap-agent-task-client';
 import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectEntry, MobileProjectFilter } from './mobile-projects-types';
 
@@ -28,13 +29,15 @@ export interface MobileProjectsComposerHeaderHost {
     syncAgentsHubAccountChrome(): void;
     applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[];
     applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
-    resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined;
     projectsService: import('./mobile-projects-service').MobileProjectsService;
-    pinStickyComposerToQaiq(cwd: string | undefined): void;
+    stickyComposerPinnedAgentId: string | undefined;
     renderStickyComposer(): void;
     renderList(): void;
     renderSubtitle(): void;
     isTasksHubView(): boolean;
+    shouldUseAgentsHubLanding(): boolean;
+    resolveHomePinnedProject(): MobileProjectEntry | undefined;
+    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
 }
 
 export class MobileProjectsComposerHeaderUi {
@@ -99,14 +102,14 @@ export class MobileProjectsComposerHeaderUi {
     onHeaderComposerSurfaceChange(surface: QaapComposerSurface): void {
         if (this.host.isProjectDetailView()) {
             const filtered = this.host.applySearch(this.host.applyFilter(this.host.projects, this.host.filter));
-            const project = this.host.resolveStickyComposerProject(filtered);
+            const project = this.resolveStickyComposerProject(filtered);
             const cwd = project
                 ? (this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id))
                 : undefined;
             this.host.stickyComposerSurface = surface;
             writeStoredComposerSurface(cwd, surface);
             if (surface === 'chat') {
-                this.host.pinStickyComposerToQaiq(cwd);
+                this.pinStickyComposerToQaiq(cwd);
             }
             this.host.renderStickyComposer();
             this.host.renderList();
@@ -137,6 +140,18 @@ export class MobileProjectsComposerHeaderUi {
 
     shouldShowComposerWorkspaceBar(_summary?: QaapAgentConversationSummaryDTO): boolean {
         return true;
+    }
+
+    pinStickyComposerToQaiq(cwd: string | undefined): void {
+        this.host.stickyComposerPinnedAgentId = QAAP_PRIMARY_AGENT_ID;
+        writeStoredAgent(cwd, QAAP_PRIMARY_AGENT_ID);
+    }
+
+    resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined {
+        if (this.host.shouldUseAgentsHubLanding()) {
+            return this.host.resolveHomePinnedProject();
+        }
+        return this.host.resolveSelectedProject(projects);
     }
 
 }

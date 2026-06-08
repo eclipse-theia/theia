@@ -213,8 +213,11 @@ export class MobileProjectsStickyComposerColumnUi {
         toolbar.append(usageBadge);
         options.onContextUsageBadgeMounted?.(usageBadge);
 
-        const inputWrap = document.createElement('div');
-        inputWrap.className = 'theia-mobile-projects-sticky-composer-input-wrap';
+        const stage = document.createElement('div');
+        stage.className = 'theia-mobile-projects-sticky-composer-stage';
+
+        const inputPanel = document.createElement('div');
+        inputPanel.className = 'theia-mobile-projects-sticky-composer-input-wrap theia-mobile-projects-sticky-composer-input-panel theia-mod-codex';
 
         const input = document.createElement('textarea');
         input.className = 'theia-mobile-projects-sticky-composer-input';
@@ -268,7 +271,7 @@ export class MobileProjectsStickyComposerColumnUi {
 
         if (options.getMentionOptions) {
             attachStickyComposerMentionUi({
-                inputWrap,
+                inputWrap: inputPanel,
                 input,
                 getMentionOptions: options.getMentionOptions,
                 getVariableOptions: options.getVariableOptions,
@@ -326,7 +329,6 @@ export class MobileProjectsStickyComposerColumnUi {
         const controlsRight = document.createElement('div');
         controlsRight.className = 'theia-mobile-projects-sticky-composer-controls-right';
 
-        inputWrap.classList.add('theia-mod-codex');
         inputBody.append(input);
         controlsLeft.append(attachBtn);
         if (modeBtn) {
@@ -337,7 +339,8 @@ export class MobileProjectsStickyComposerColumnUi {
         }
         controlsRight.append(inputActions);
         controlsRow.append(controlsLeft, controlsRight);
-        inputWrap.append(inputBody, controlsRow);
+        inputPanel.append(inputBody, controlsRow);
+        stage.append(inputPanel, toolbar);
 
         const card = document.createElement('div');
         card.className = 'theia-mobile-projects-sticky-composer-card theia-mod-codex';
@@ -354,7 +357,8 @@ export class MobileProjectsStickyComposerColumnUi {
             }));
         }
         toolbar.classList.add('qaap-codex-context-tray');
-        card.append(inputWrap, toolbar);
+        card.append(stage);
+        this.installCodexComposerExpandBehavior(card, stage, inputBody, input);
         wrap.append(card);
         if (branchWorkspaceBar) {
             wrap.append(branchWorkspaceBar);
@@ -367,6 +371,37 @@ export class MobileProjectsStickyComposerColumnUi {
         }
         column.append(wrap);
         return column;
+    }
+
+    /**
+     * Codex lip: the input panel (textarea + controls) stays fixed. Only the context tray slides
+     * behind the panel on focus; blur brings the tray back.
+     */
+    protected installCodexComposerExpandBehavior(
+        card: HTMLElement,
+        _stage: HTMLElement,
+        inputBody: HTMLElement,
+        input: HTMLTextAreaElement,
+    ): void {
+        const syncExpanded = (): void => {
+            card.classList.toggle('theia-mod-input-expanded', document.activeElement === input);
+        };
+
+        const expandFromTextarea = (): void => {
+            card.classList.add('theia-mod-input-expanded');
+        };
+
+        input.addEventListener('focus', expandFromTextarea);
+        input.addEventListener('click', expandFromTextarea);
+        input.addEventListener('blur', () => {
+            window.requestAnimationFrame(syncExpanded);
+        });
+        inputBody.addEventListener('click', () => {
+            if (document.activeElement !== input) {
+                input.focus();
+            }
+            expandFromTextarea();
+        });
     }
 }
 

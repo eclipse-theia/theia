@@ -9,6 +9,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import {
     ChatAgent,
+    ChatAgentLocation,
     ChatAgentService,
     ChatRequestModel,
     ChatService,
@@ -24,6 +25,7 @@ import {
 } from '../common/qaap-agent-conversation-client';
 import {
     extractBackendAgentMention,
+    isTheiaCoderAgent,
     isTheiaCoderMention,
     migrateLegacyBackendAgentId,
     normalizeBackendAgentId,
@@ -67,16 +69,45 @@ export interface MobileProjectsTheiaChatSessionHost {
     transcriptChatInputWidget: AIChatInputWidget | undefined;
     transcriptSheet: HTMLElement | undefined;
     agentChatInputMountSeq: number;
+    agentChatInputSession: ChatSession | undefined;
     messageService: MessageService | undefined;
-
-    chatAgentForBackendId(agentId: string | undefined): ChatAgent | undefined;
-    ensureAgentChatSession(cwd?: string): ChatSession;
 }
 
 /** Theia ChatService session restore/fork and pinned-agent resolution for local chat rows. */
 export class MobileProjectsTheiaChatSessionUi {
 
     constructor(protected readonly host: MobileProjectsTheiaChatSessionHost) { }
+
+    chatAgentForBackendId(agentId: string | undefined): ChatAgent | undefined {
+        const normalized = migrateLegacyBackendAgentId(agentId?.trim());
+        if (!normalized || !this.host.chatAgentService) {
+            return undefined;
+        }
+        if (isTheiaCoderAgent(normalized)) {
+            return this.host.chatAgentService.getAgent(THEIA_CODER_AGENT_ID);
+        }
+        return this.host.chatAgentService.getAgent(normalized);
+    }
+
+    resolvePinnedAgentForCwd(cwd: string | undefined): ChatAgent | undefined {
+        const stored = readStoredAgent(cwd);
+        return this.chatAgentForBackendId(stored)
+            ?? this.host.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
+    }
+
+    ensureAgentChatSession(cwd?: string): ChatSession {
+        if (this.host.agentChatInputSession) {
+            const pinned = this.resolvePinnedAgentForCwd(cwd);
+            if (pinned) {
+                this.host.agentChatInputSession.pinnedAgent = pinned;
+            }
+            return this.host.agentChatInputSession;
+        }
+        const pinned = this.resolvePinnedAgentForCwd(cwd);
+        const session = this.host.chatService!.createSession(ChatAgentLocation.Panel, { focus: false }, pinned);
+        this.host.agentChatInputSession = session;
+        return session;
+    }
 
     /** Local chat always routes to Coder — strip VPS @mentions and ensure a Coder prefix. */
     formatTheiaChatRequestText(content: string, _pinnedAgentId?: string): string {
@@ -304,7 +335,7 @@ export class MobileProjectsTheiaChatSessionUi {
         const restoredSession = summary.sessionId && summary.id.startsWith('theia-chat')
             ? await this.host.chatService.getOrRestoreSession(summary.sessionId)
             : undefined;
-        const session = restoredSession ?? this.host.ensureAgentChatSession(summary.cwd);
+        const session = restoredSession ?? this.ensureAgentChatSession(summary.cwd);
         widget.chatModel = session.model;
         const convMessages = summary.source === 'theia-chat'
             ? (await this.host.conversations?.getTheiaConversation(summary.id))?.messages
@@ -415,7 +446,7 @@ export class MobileProjectsTheiaChatSessionUi {
         session?: ChatSession,
         messages?: ReadonlyArray<{ readonly content?: string }>,
     ): ChatAgent | undefined {
-        return this.host.chatAgentForBackendId(this.resolveBackendAgentIdForTranscript(summary, session, messages));
+        return this.chatAgentForBackendId(this.resolveBackendAgentIdForTranscript(summary, session, messages));
     }
 
     protected applyTranscriptPinnedAgent(

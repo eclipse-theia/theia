@@ -4,7 +4,8 @@
 // *****************************************************************************
 
 import type { QaapComposerSurface } from '../common/qaap-composer-surface';
-import type { MobileProjectsHubView } from './mobile-projects-types';
+import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
+import type { QaapDiffProjectTab } from './mobile-projects-diff-hub-ui';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
@@ -20,6 +21,10 @@ export interface MobileProjectsHubLandingHost {
     diffPendingPreferredProjectId: string | undefined;
     diffScopedToProject: boolean;
     diffReturnProjectId: string | undefined;
+    diffProjectTabs: QaapDiffProjectTab[];
+    projects: MobileProjectEntry[];
+    diffActiveProjectId: string | undefined;
+    visible: boolean;
     inboxLoadGeneration: number;
     inboxPullRequestsLoaded: boolean;
     scroll: HTMLElement;
@@ -27,9 +32,14 @@ export interface MobileProjectsHubLandingHost {
     conversations: MobileProjectsConversations | undefined;
     activeTasks: MobileProjectsActiveTasks | undefined;
     inboxStream: MobileWorkHubInboxStream | undefined;
-    delegate: { onHubLandingViewChanged?(): void };
+    delegate: {
+        onHubLandingViewChanged?(): void;
+        onProjectsChanged?(): void;
+    };
 
     closeTranscriptSheet(): void;
+    isProjectDiffView(): boolean;
+    show(options?: { preferredHubView?: MobileProjectsHubView }): Promise<void>;
     redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView;
     refreshHomeHubData(force?: boolean): void;
     scheduleChatHubListRefreshAfterSummaries(): void;
@@ -159,4 +169,52 @@ export class MobileProjectsHubLandingUi {
     }
 
     /** Bottom-bar hub tabs: switch landing view without reloading from persisted hub state. */
+    navigateHubTab(view: MobileProjectsHubView): void {
+        if (view === 'tasks') {
+            this.host.agentsHubLegacyInbox = false;
+            this.host.tasksHubSurface = 'task';
+        }
+        this.selectHubLandingView(view, undefined, { force: true });
+    }
+
+    async openDiffView(preferredProjectId?: string): Promise<void> {
+        if (!this.host.visible) {
+            await this.host.show();
+        }
+        this.host.diffScopedToProject = false;
+        this.host.diffReturnProjectId = undefined;
+        this.selectHubLandingView('diff', preferredProjectId);
+    }
+
+    async openProjectDiffView(preferredProjectId?: string): Promise<void> {
+        if (!this.host.visible) {
+            await this.host.show();
+        }
+        const projectId = preferredProjectId
+            ?? this.host.projects.find(p => p.isCurrent)?.id;
+        this.host.diffScopedToProject = true;
+        this.host.diffReturnProjectId = projectId;
+        this.selectHubLandingView('diff', projectId);
+    }
+
+    closeProjectDiffView(): void {
+        if (!this.host.isProjectDiffView()) {
+            return;
+        }
+        this.host.diffScopedToProject = false;
+        this.host.hubView = 'repos';
+        this.host.projectsService.setHubView('repos');
+        this.host.diffPendingPreferredProjectId = undefined;
+        this.host.diffProjectTabs = [];
+        this.host.diffActiveProjectId = undefined;
+        if (this.host.diffReturnProjectId) {
+            this.host.expandedId = this.host.diffReturnProjectId;
+            this.host.soloExpanded = true;
+        }
+        this.host.diffReturnProjectId = undefined;
+        this.host.detachDiffReviewWidget();
+        this.host.render();
+        this.host.syncLandingHubListChrome();
+        this.host.delegate.onProjectsChanged?.();
+    }
 }
