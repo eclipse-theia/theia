@@ -19,6 +19,7 @@ import { nls } from '@theia/core';
 import { DialogProps } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
+import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator';
 
 /** Server type discriminator the dialog edits - stdio launch vs remote URL. */
 export type MCPServerType = 'local' | 'remote';
@@ -34,6 +35,11 @@ export interface MCPServerFormData {
     serverAuthToken: string;
     serverAuthTokenHeader: string;
     headers: string;
+    oauthEnabled: boolean;
+    oauthClientId: string;
+    oauthScopes: string;
+    oauthAuthorizationServer: string;
+    oauthResource: string;
     autostart: boolean;
 }
 
@@ -47,6 +53,11 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     serverAuthToken: '',
     serverAuthTokenHeader: '',
     headers: '',
+    oauthEnabled: false,
+    oauthClientId: '',
+    oauthScopes: '',
+    oauthAuthorizationServer: '',
+    oauthResource: '',
     autostart: true
 };
 
@@ -93,7 +104,18 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 errors.push(nls.localize('theia/ai/mcpConfiguration/form/commandRequired', 'Command is required for local servers'));
             }
         } else if (!this.formData.serverUrl.trim()) {
-            errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
+                errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
+        } else if (this.formData.oauthEnabled) {
+            const authorizationServer = this.formData.oauthAuthorizationServer.trim();
+            if (authorizationServer && !isHttpOrHttpsUrl(authorizationServer)) {
+                errors.push(nls.localize('theia/ai/mcpConfiguration/form/oauthAuthorizationServerInvalid',
+                    'OAuth Authorization Server must be a valid http(s) URL'));
+            }
+            const resource = this.formData.oauthResource.trim();
+            if (resource && !isHttpOrHttpsUrl(resource)) {
+                errors.push(nls.localize('theia/ai/mcpConfiguration/form/oauthResourceInvalid',
+                    'OAuth Resource must be a valid http(s) URL'));
+            }
         }
         return errors.join('. ');
     }
@@ -241,6 +263,82 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                         spellCheck={false}
                     />
                 </div>
+
+                <div className="mcp-form-section-title">
+                    {nls.localize('theia/ai/mcpConfiguration/oauth', 'OAuth')}
+                </div>
+
+                <div className="mcp-form-field mcp-form-checkbox">
+                    <label>
+                        <input
+                            type="checkbox"
+                            className='theia-input'
+                            checked={this.formData.oauthEnabled}
+                            onChange={e => this.handleFormChange('oauthEnabled', e.target.checked)}
+                        />
+                        {nls.localize('theia/ai/mcpConfiguration/form/oauthEnabled', 'Enable OAuth authorization')}
+                    </label>
+                    <div className="mcp-form-description">
+                        {nls.localize('theia/ai/mcpConfiguration/form/oauthPublicClientDescription',
+                            'Theia uses public OAuth clients with PKCE. Do not configure client secrets in preferences.')}
+                    </div>
+                    <div className="mcp-form-description">
+                        {nls.localize('theia/ai/mcpConfiguration/form/oauthSharedCredentialsDescription',
+                            'Stored OAuth sessions are shared across workspaces that use the same server name and URL (or resource).')}
+                    </div>
+                </div>
+
+                {this.formData.oauthEnabled && (
+                    <>
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}:</label>
+                            <input
+                                type="text"
+                                className="theia-input"
+                                value={this.formData.oauthClientId}
+                                onChange={e => this.handleFormChange('oauthClientId', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthClientIdPlaceholder', 'Optional static client ID')}
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/oauthScopes', 'OAuth Scopes')}:</label>
+                            <input
+                                type="text"
+                                className="theia-input"
+                                value={this.formData.oauthScopes}
+                                onChange={e => this.handleFormChange('oauthScopes', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthScopesPlaceholder', 'Space-separated scopes')}
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/oauthAuthorizationServer', 'Authorization Server')}:</label>
+                            <input
+                                type="text"
+                                className="theia-input"
+                                value={this.formData.oauthAuthorizationServer}
+                                onChange={e => this.handleFormChange('oauthAuthorizationServer', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthAuthorizationServerPlaceholder', 'Optional authorization server URL')}
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/oauthResource', 'OAuth Resource')}:</label>
+                            <input
+                                type="text"
+                                className="theia-input"
+                                value={this.formData.oauthResource}
+                                onChange={e => this.handleFormChange('oauthResource', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthResourcePlaceholder', 'Optional resource URI')}
+                                spellCheck={false}
+                            />
+                        </div>
+                    </>
+                )}
             </>
         );
     }

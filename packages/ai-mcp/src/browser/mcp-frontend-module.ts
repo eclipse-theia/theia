@@ -31,6 +31,8 @@ import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
 import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
 import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
+import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth';
+import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { GenericCapabilitiesContribution } from '@theia/ai-core';
 import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
@@ -76,6 +78,13 @@ export default new ContainerModule(bind => {
     bind(MCPGenericCapabilitiesContribution).toSelf().inSingletonScope();
     bind(GenericCapabilitiesContribution).toService(MCPGenericCapabilitiesContribution);
     bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();
+    bind(MCPOAuthFrontendDelegateClient).to(MCPOAuthFrontendDelegateClientImpl).inSingletonScope();
+
+    bind(MCPOAuthFrontendDelegate).toDynamicValue(ctx => {
+        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        const client = ctx.container.get<MCPOAuthFrontendDelegateClient>(MCPOAuthFrontendDelegateClient);
+        return connection.createProxy<MCPOAuthFrontendDelegate>(mcpOAuthFrontendDelegatePath, client);
+    }).inSingletonScope();
 
     bind(MCPServerManagerServer).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
@@ -101,7 +110,7 @@ export default new ContainerModule(bind => {
         // We proxy the MCPServerManager to override addOrUpdateServer and getServerDescription
         // to handle the resolve functions via the MCPServerManagerServerClient.
         return new Proxy(backendServerManager, {
-            get(target: MCPServerManager, prop: PropertyKey, receiver: unknown): unknown {
+            get(target: MCPServerManager, prop: PropertyKey): unknown {
                 // override addOrUpdateServer to store the original description in the MCPServerManagerServerClient
                 // to be used in resolveServerDescription if a resolve function is provided
                 if (prop === 'addOrUpdateServer') {
@@ -126,7 +135,7 @@ export default new ContainerModule(bind => {
                         return description;
                     };
                 }
-                return Reflect.get(target, prop, receiver);
+                return Reflect.get(target, prop, target);
             }
         });
     }).inSingletonScope();

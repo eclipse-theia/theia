@@ -27,6 +27,7 @@ import {
     RemoteMCPServerDescription
 } from '../common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
+import { MCPOAuthConfig } from '../common/mcp-oauth';
 import type { DialogProps } from '@theia/core/lib/browser/dialogs';
 import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog';
 
@@ -240,6 +241,11 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 serverAuthToken: '',
                 serverAuthTokenHeader: '',
                 headers: '',
+                oauthEnabled: false,
+                oauthClientId: '',
+                oauthScopes: '',
+                oauthAuthorizationServer: '',
+                oauthResource: '',
                 autostart: server.autostart ?? true
             };
         }
@@ -256,6 +262,11 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 headers: server.headers
                     ? Object.entries(server.headers).map(([k, v]) => `${k}=${v}`).join('\n')
                     : '',
+                oauthEnabled: server.oauth?.enabled ?? false,
+                oauthClientId: server.oauth?.clientId ?? '',
+                oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
+                oauthAuthorizationServer: server.oauth?.authorizationServer ?? '',
+                oauthResource: server.oauth?.resource ?? '',
                 autostart: server.autostart ?? true
             };
         }
@@ -292,6 +303,10 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         if (headers) {
             config.headers = headers;
         }
+        const oauth = toOAuthConfig(formData);
+        if (oauth) {
+            config.oauth = oauth;
+        }
         return config;
     }
 }
@@ -312,4 +327,18 @@ function parseKeyValuePairs(input: string): Record<string, string> | undefined {
         }
     }
     return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function toOAuthConfig(formData: MCPServerFormData): MCPOAuthConfig | undefined {
+    if (!formData.oauthEnabled) {
+        return undefined;
+    }
+    const scopes = formData.oauthScopes.trim() ? formData.oauthScopes.trim().split(/\s+/) : undefined;
+    return {
+        enabled: formData.oauthEnabled,
+        ...(formData.oauthClientId.trim() && { clientId: formData.oauthClientId.trim() }),
+        ...(scopes && { scopes }),
+        ...(formData.oauthAuthorizationServer.trim() && { authorizationServer: formData.oauthAuthorizationServer.trim() }),
+        ...(formData.oauthResource.trim() && { resource: formData.oauthResource.trim() })
+    };
 }
