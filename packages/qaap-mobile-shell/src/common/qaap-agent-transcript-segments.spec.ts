@@ -7,10 +7,12 @@ import { expect } from 'chai';
 import {
     classifyTranscriptToolActivityKind,
     excerptTranscriptThought,
+    extractInlineDiffPreview,
     hasTranscriptActivityTimeline,
     isTranscriptThoughtExcerptTruncated,
     resolveTranscriptActivityStats,
     resolveTranscriptThinkingContent,
+    resolveTranscriptToolPillDescriptors,
     shouldOpenTranscriptToolDetails,
     shouldRenderTranscriptToolSegmentInline,
 } from './qaap-agent-transcript-segments';
@@ -130,6 +132,41 @@ describe('resolveTranscriptThinkingContent', () => {
 
     it('returns undefined when no thinking is present', () => {
         expect(resolveTranscriptThinkingContent([{ type: 'tool', name: 'Read' }])).to.equal(undefined);
+    });
+});
+
+describe('extractInlineDiffPreview', () => {
+    it('parses unified diff hunks into add/remove lines', () => {
+        const text = [
+            '--- a/src/foo.ts',
+            '+++ b/src/foo.ts',
+            '@@ -1,3 +1,3 @@',
+            '-const old = 1;',
+            '+const next = 2;',
+            ' context line',
+        ].join('\n');
+        expect(extractInlineDiffPreview(text)).to.deep.equal([
+            { kind: 'remove', text: 'const old = 1;' },
+            { kind: 'add', text: 'const next = 2;' },
+            { kind: 'context', text: 'context line' },
+        ]);
+    });
+});
+
+describe('resolveTranscriptToolPillDescriptors', () => {
+    it('builds compact labels from tool segments', () => {
+        expect(resolveTranscriptToolPillDescriptors([
+            { type: 'tool', toolUseId: 't1', name: 'Read', args: '{"path":"src/auth.ts"}', finished: true },
+            { type: 'tool', toolUseId: 't2', name: 'Edit', args: '{"path":"src/auth.ts"}', finished: true, result: '+added\n-removed' },
+        ], {
+            resolvePath: args => {
+                try {
+                    return JSON.parse(args).path as string;
+                } catch {
+                    return undefined;
+                }
+            },
+        }).map(pill => pill.label)).to.deep.equal(['Read auth.ts', 'Edit auth.ts']);
     });
 });
 

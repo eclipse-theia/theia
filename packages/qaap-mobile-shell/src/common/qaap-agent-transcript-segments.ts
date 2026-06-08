@@ -147,3 +147,94 @@ export function shouldOpenTranscriptToolDetails(options: {
     }
     return options.resultFailed;
 }
+
+export type QaapTranscriptInlineDiffLineKind = 'add' | 'remove' | 'context';
+
+export interface QaapTranscriptInlineDiffLine {
+    readonly kind: QaapTranscriptInlineDiffLineKind;
+    readonly text: string;
+}
+
+/** Extract a compact unified-diff preview for inline transcript rendering. */
+export function extractInlineDiffPreview(text: string, maxLines = 6): QaapTranscriptInlineDiffLine[] | undefined {
+    const lines = text.split('\n');
+    const preview: QaapTranscriptInlineDiffLine[] = [];
+    for (const line of lines) {
+        if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) {
+            continue;
+        }
+        if (line.startsWith('+')) {
+            preview.push({ kind: 'add', text: line.slice(1) });
+        } else if (line.startsWith('-')) {
+            preview.push({ kind: 'remove', text: line.slice(1) });
+        } else if (preview.length > 0 && line.startsWith(' ')) {
+            preview.push({ kind: 'context', text: line.slice(1) });
+        }
+        if (preview.length >= maxLines) {
+            break;
+        }
+    }
+    return preview.length > 0 ? preview : undefined;
+}
+
+export interface QaapTranscriptToolPillDescriptor {
+    readonly toolUseId: string;
+    readonly label: string;
+    readonly kind: QaapTranscriptToolActivityKind;
+    readonly finished: boolean;
+    readonly resultFailed: boolean;
+    readonly hasInlineDiff: boolean;
+}
+
+export interface QaapTranscriptToolPillSegment {
+    readonly type: 'tool';
+    readonly toolUseId: string;
+    readonly name: string;
+    readonly args: string;
+    readonly finished: boolean;
+    readonly result?: string;
+}
+
+/** Compact labels for collapsed tool pills in the transcript. */
+export function resolveTranscriptToolPillDescriptors(
+    segments: readonly QaapTranscriptToolPillSegment[],
+    options?: { readonly resolvePath?: (args: string) => string | undefined },
+): QaapTranscriptToolPillDescriptor[] {
+    const pills: QaapTranscriptToolPillDescriptor[] = [];
+    for (const segment of segments) {
+        const kind = classifyTranscriptToolActivityKind(segment.name);
+        const path = options?.resolvePath?.(segment.args);
+        const label = resolveTranscriptToolPillLabel(kind, segment.name, path);
+        const result = segment.result ?? '';
+        const resultFailed = result.toLowerCase().includes('error') || result.toLowerCase().includes('failed');
+        pills.push({
+            toolUseId: segment.toolUseId,
+            label,
+            kind,
+            finished: segment.finished,
+            resultFailed,
+            hasInlineDiff: kind === 'editing' && !!extractInlineDiffPreview(result),
+        });
+    }
+    return pills;
+}
+
+function resolveTranscriptToolPillLabel(
+    kind: QaapTranscriptToolActivityKind,
+    toolName: string,
+    path?: string,
+): string {
+    const file = path ? path.split('/').pop() ?? path : undefined;
+    switch (kind) {
+        case 'reading':
+            return file ? `Read ${file}` : 'Read file';
+        case 'searching':
+            return file ? `Search ${file}` : 'Search';
+        case 'terminal':
+            return 'Run command';
+        case 'editing':
+            return file ? `Edit ${file}` : 'Edit file';
+        default:
+            return toolName.replace(/_/g, ' ');
+    }
+}

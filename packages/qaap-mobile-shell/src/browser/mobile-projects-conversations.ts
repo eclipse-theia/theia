@@ -58,6 +58,10 @@ export class MobileProjectsConversations {
     /** Fires whenever conversation state on the server changes (any project). */
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
+    protected readonly onDidReceiveMessageEmitter = new Emitter<ConversationMessageEvent>();
+    /** Fires on each live SSE message chunk — includes structured segments for QAIQ/OpenCode. */
+    readonly onDidReceiveMessage: Event<ConversationMessageEvent> = this.onDidReceiveMessageEmitter.event;
+
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -378,6 +382,7 @@ export class MobileProjectsConversations {
     protected onMessageEvent(ev: MessageEvent): void {
         try {
             const payload = JSON.parse(ev.data) as ConversationMessageEvent;
+            this.onDidReceiveMessageEmitter.fire(payload);
             // We don't store full transcripts here (transcript sheet fetches its own copy);
             // we just refresh the preview/updatedAt on the summary so the card reflects activity.
             const list = lookupByCwd(this.byCwd, payload.cwd) ?? [];

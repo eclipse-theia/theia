@@ -14384,12 +14384,41 @@ body > .theia-mobile-transcript-files-menu {
   border-top: none;
 }
 
-/* Cursor-style thought header — title, exploration meta, intent paragraph. */
+/* Cursor-style thought header — collapsed by default (Codex / Claude Code pattern). */
 .theia-mobile-agent-thought-brief {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   padding: 2px 0 6px;
+  border: none;
+  background: transparent;
+}
+
+.theia-mobile-agent-thought-brief > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  padding: 0;
+}
+
+.theia-mobile-agent-thought-brief > summary::-webkit-details-marker {
+  display: none;
+}
+
+.theia-mobile-agent-thought-brief > summary::before {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid color-mix(in srgb, var(--theia-descriptionForeground) 70%, transparent);
+  margin-right: 2px;
+  transition: transform 120ms ease;
+}
+
+.theia-mobile-agent-thought-brief[open] > summary::before {
+  transform: rotate(90deg);
 }
 
 .theia-mobile-agent-thought-brief-title {
@@ -14403,6 +14432,11 @@ body > .theia-mobile-transcript-files-menu {
   font-size: 12px;
   line-height: 1.35;
   color: color-mix(in srgb, var(--theia-descriptionForeground) 88%, var(--theia-foreground));
+}
+
+.theia-mobile-agent-thought-brief-body-wrap {
+  margin-top: 6px;
+  padding-left: 11px;
 }
 
 .theia-mobile-agent-thought-brief-body {
@@ -14434,14 +14468,117 @@ body > .theia-mobile-transcript-files-menu {
 }
 
 .theia-mobile-agent-thought-brief-more-body {
-  margin: 0;
-  padding: 0 10px 10px;
+  margin: 8px 0 0;
+  padding: 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--theia-ui-font-family, sans-serif);
   font-size: 12.5px;
   line-height: 1.45;
   color: color-mix(in srgb, var(--theia-foreground) 92%, var(--theia-descriptionForeground));
+}
+
+/* Compact collapsed tool pills — replaces the heavy activity timeline card. */
+.theia-mobile-agent-tool-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.theia-mobile-agent-tool-pill {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 55%, transparent);
+  background: color-mix(in srgb, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)) 45%, transparent);
+  font-size: 12px;
+}
+
+.theia-mobile-agent-tool-pill.theia-mod-running {
+  border-color: color-mix(in srgb, var(--q-accent, #E58E40) 35%, var(--theia-panel-border, rgba(128, 128, 128, 0.2)));
+}
+
+.theia-mobile-agent-tool-pill > summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mobile-agent-tool-pill > summary::-webkit-details-marker {
+  display: none;
+}
+
+.theia-mobile-agent-tool-pill-icon {
+  flex: none;
+  font-size: 12px;
+  opacity: 0.78;
+}
+
+.theia-mobile-agent-tool-pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mobile-agent-tool-pill-body {
+  padding: 0 10px 8px;
+  max-width: min(100%, 420px);
+}
+
+.theia-mobile-agent-tool-pill.theia-mod-running .theia-mobile-agent-tool-pill-icon {
+  color: var(--q-accent, #E58E40);
+}
+
+/* Inline diff preview for edit tools (3–6 lines, GitHub-style). */
+.theia-mobile-agent-inline-diff {
+  margin: 4px 0 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 60%, transparent);
+  overflow: hidden;
+  font-family: var(--theia-monospace-font-family, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.theia-mobile-agent-inline-diff-head {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theia-descriptionForeground);
+  background: color-mix(in srgb, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 50%, transparent);
+}
+
+.theia-mobile-agent-inline-diff-lines {
+  margin: 0;
+  padding: 4px 0;
+}
+
+.theia-mobile-agent-inline-diff-line {
+  padding: 0 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.theia-mobile-agent-inline-diff-line.theia-mod-add {
+  background: color-mix(in srgb, #3fb950 14%, transparent);
+  color: color-mix(in srgb, #3fb950 88%, var(--theia-foreground));
+}
+
+.theia-mobile-agent-inline-diff-line.theia-mod-remove {
+  background: color-mix(in srgb, #f85149 12%, transparent);
+  color: color-mix(in srgb, #f85149 88%, var(--theia-foreground));
+}
+
+.theia-mobile-agent-inline-diff-line.theia-mod-context {
+  color: color-mix(in srgb, var(--theia-descriptionForeground) 90%, var(--theia-foreground));
 }
 
 .theia-mobile-agent-premium-card {
