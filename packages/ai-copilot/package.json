@@ -3,6 +3,7 @@
   "version": "1.72.0",
   "description": "Theia - GitHub Copilot Integration",
   "dependencies": {
+    "@github/copilot-sdk": "^1.0.0",
     "@theia/ai-core": "1.72.0",
     "@theia/ai-openai": "1.72.0",
     "@theia/core": "1.72.0",
