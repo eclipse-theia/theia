@@ -8,6 +8,7 @@ import { Application, Request, Response } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import * as http from 'http';
 import * as https from 'https';
+import { WebSocketServer, WebSocket as WsClient } from 'ws';
 import {
     QAAP_AGENT_TASK_API_PATH,
     type QaapAgentTaskAllResponse,
@@ -18,6 +19,9 @@ import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 
 /** Keep SSE connections warm through proxies that idle-kill silent sockets. */
 const SSE_HEARTBEAT_MS = 25_000;
+/** Ping interval for WebSocket connections — keeps the socket alive through proxies. */
+const WS_PING_MS = 25_000;
+const WS_PATH = `${QAAP_AGENT_TASK_API_PATH}/ws`;
 
 /** Header carrying the helper-CLI token when an agent calls back to spawn a sub-task. */
 const HELPER_TOKEN_HEADER = 'x-qaap-task-token';
@@ -84,6 +88,65 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
         if (address && typeof address === 'object') {
             this.runner.bindHelperApiUrl(address.port);
         }
+        this.attachWebSocketServer(server);
+    }
+
+    /**
+     * WebSocket endpoint at `WS_PATH`. On connect the server immediately sends a `snapshot`
+     * message (equivalent to GET `/all`) so the client never needs a separate HTTP prime request.
+     * Incremental task-change messages follow using the same `QaapAgentTaskEvent` shapes.
+     */
+    protected attachWebSocketServer(server: http.Server | https.Server): void {
+        const wss = new WebSocketServer({ noServer: true });
+
+        server.on('upgrade', (request, socket, head) => {
+            try {
+                const pathname = new URL(request.url ?? '', `http://${request.headers.host}`).pathname;
+                if (pathname === WS_PATH) {
+                    wss.handleUpgrade(request, socket as import('net').Socket, head, client => {
+                        wss.emit('connection', client, request);
+                    });
+                }
+            } catch {
+                socket.destroy();
+            }
+        });
+
+        wss.on('connection', (client: WsClient) => {
+            const snapshot = {
+                type: 'snapshot',
+                groups: this.runner.listAllGroupedByCwd(),
+                agentConfigured: this.runner.isAgentConfigured(),
+                agents: this.runner.listAgents(),
+                defaultAgent: this.runner.defaultAgent(),
+            };
+            client.send(JSON.stringify(snapshot));
+
+            const subscription = this.runner.onDidChangeTask(event => {
+                if (client.readyState !== WsClient.OPEN) {
+                    return;
+                }
+                const msg = event.type === 'output'
+                    ? { type: event.type, task: event.task, chunk: event.chunk }
+                    : { type: event.type, task: event.task };
+                client.send(JSON.stringify(msg));
+            });
+
+            const ping = setInterval(() => {
+                if (client.readyState === WsClient.OPEN) {
+                    client.ping();
+                } else {
+                    clearInterval(ping);
+                }
+            }, WS_PING_MS);
+
+            const cleanup = (): void => {
+                clearInterval(ping);
+                subscription.dispose();
+            };
+            client.on('close', cleanup);
+            client.on('error', cleanup);
+        });
     }
 
     protected handleCreate(req: Request, res: Response): void {
