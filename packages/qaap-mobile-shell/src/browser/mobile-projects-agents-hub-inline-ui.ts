@@ -94,7 +94,7 @@ export interface MobileProjectsAgentsHubInlineHost {
         summary: QaapAgentConversationSummaryDTO,
         chatHost: HTMLElement,
     ): void;
-    renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void;
+    transcriptMessagesUi: import('./mobile-projects-transcript-messages-ui').MobileProjectsTranscriptMessagesUi;
     summaryToTranscriptPlaceholder(summary: QaapAgentConversationSummaryDTO): QaapAgentConversationDTO;
     createTranscriptSheetSurfaceHosts(): {
         planHost: HTMLElement;
@@ -279,7 +279,7 @@ export class MobileProjectsAgentsHubInlineUi {
             && this.host.transcriptLastConv.id === activeSummary.id
             ? this.host.transcriptLastConv
             : this.host.summaryToTranscriptPlaceholder(activeSummary);
-        this.host.renderTranscriptMessages(chatHost, conv);
+        this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, conv);
     }
 
     renderAgentsHubIdleSubmitOptimistic(
@@ -292,7 +292,7 @@ export class MobileProjectsAgentsHubInlineUi {
         if (!outbound) {
             return;
         }
-        this.host.renderTranscriptMessages(chatHost, {
+        this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, {
             id: summary.id,
             cwd: summary.cwd,
             agentId,

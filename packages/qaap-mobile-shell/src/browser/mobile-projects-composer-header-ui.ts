@@ -13,6 +13,8 @@ import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conve
 import type { MobileProjectEntry, MobileProjectFilter } from './mobile-projects-types';
 
 export interface MobileProjectsComposerHeaderHost {
+    visible: boolean;
+    hubView: import('./mobile-projects-types').MobileProjectsHubView;
     root: HTMLElement;
     stickyComposerHost: HTMLElement;
     headerSurfacePickerHost: HTMLElement;
@@ -152,6 +154,15 @@ export class MobileProjectsComposerHeaderUi {
             return this.host.resolveHomePinnedProject();
         }
         return this.host.resolveSelectedProject(projects);
+    }
+
+    preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void {
+        void surface;
+        writeStoredComposerSurface(projectCwd, 'task');
+        this.host.stickyComposerSurface = 'task';
+        if (this.host.visible && this.host.hubView === 'repos') {
+            this.host.renderStickyComposer();
+        }
     }
 
 }

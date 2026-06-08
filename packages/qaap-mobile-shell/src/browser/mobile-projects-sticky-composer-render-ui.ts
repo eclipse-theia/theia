@@ -74,6 +74,7 @@ stickyComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
 stickyComposerPinnedAgentId: string | undefined;
 preparedCwdByProjectId: Map<string, string>;
 chatService?: ChatService;
+chatServiceSessionSummariesByProjectId: Map<string, QaapAgentConversationSummaryDTO[]>;
 chatAgentService?: ChatAgentService;
 conversations?: MobileProjectsConversations;
             readPreference?: (key: string) => unknown;
@@ -103,7 +104,6 @@ formatComposerContextEntry(entry: StickyComposerContextEntry): import('./qaap-st
 resolveComposerMentionOptions(agents: readonly import('../common/qaap-agent-task-client').QaapAgentTaskAgentOption[], coderOnly?: boolean): readonly import('../common/qaap-sticky-composer-mention').StickyComposerTokenOption[];
 resolveComposerVariableOptions(): readonly import('../common/qaap-sticky-composer-mention').StickyComposerTokenOption[];
 mountStickyComposerContextUsage(badge: HTMLElement, resolveTarget: () => unknown): Disposable;
-resolveProjectTheiaChatModel(project: MobileProjectEntry): ChatModel | undefined;
 shouldShowComposerWorkspaceBar(summary?: QaapAgentConversationSummaryDTO): boolean;
 submitBackgroundAgentTask(project: MobileProjectEntry, draft: string, options: Record<string, unknown>): Promise<void>;
 buildStickyComposerColumn(options: StickyComposerColumnOptions): HTMLElement;
@@ -114,6 +114,24 @@ transcriptComposerSendRefresh: (() => void) | undefined;
 
 export class MobileProjectsStickyComposerRenderUi {
     constructor(protected readonly host: MobileProjectsStickyComposerRenderHost) { }
+
+    resolveProjectTheiaChatModel(project: MobileProjectEntry): ChatModel | undefined {
+        if (!this.host.chatService) {
+            return undefined;
+        }
+        const summaries = this.host.chatServiceSessionSummariesByProjectId.get(project.id) ?? [];
+        for (let i = summaries.length - 1; i >= 0; i--) {
+            const sessionId = summaries[i].sessionId;
+            if (!sessionId) {
+                continue;
+            }
+            const model = this.host.chatService.getSession(sessionId)?.model;
+            if (model) {
+                return model;
+            }
+        }
+        return undefined;
+    }
 
     renderStickyComposer(): void {
         this.host.stickyComposerContextUsageDispose.dispose();
@@ -309,7 +327,7 @@ export class MobileProjectsStickyComposerRenderUi {
                     badge,
                     () => isChatSurface
                         ? (() => {
-                            const chatModel = this.host.resolveProjectTheiaChatModel(project);
+                            const chatModel = this.resolveProjectTheiaChatModel(project);
                             return chatModel ? { chatModel } : undefined;
                         })()
                         : undefined,

@@ -4,7 +4,6 @@
 // *****************************************************************************
 
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
-import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -13,8 +12,6 @@ import * as markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import type { QuickPick } from '@theia/core/lib/common/quick-pick-service';
 import { QuickInputService, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser';
-import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
-import { Widget as LuminoWidget } from '@lumino/widgets';
 import { AIVariable, AIVariableResolutionRequest, GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatAgent, ChatMode, ChatModel, ChatService, ChatSession } from '@theia/ai-chat';
@@ -43,21 +40,13 @@ import {
     type TranscriptFollowUpEntry,
 } from '../common/qaap-transcript-follow-up-queue';
 import {
-    resolveTranscriptEffectiveStatus,
-} from '../common/qaap-transcript-turn-status';
-import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
     QaapAgentMessageDTO,
-    QaapAgentMessageSegmentDTO,
 } from '../common/qaap-agent-conversation-client';
 import {
     type QaapAgentApprovalRequestDTO,
 } from '../common/qaap-agent-approval-client';
-import {
-    markMobileProjectReadmeForOpen,
-    markMobileProjectsPanelDismiss,
-} from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
     readStoredAgentModel,
@@ -78,7 +67,6 @@ import {
     type StickyComposerContextChipView,
 } from './qaap-sticky-composer-context-ui';
 import {
-    createComposerContextEntry,
     type StickyComposerContextEntry,
 } from '../common/qaap-composer-context-entry';
 import type { MobileComposerAttachHandlers } from './qaap-mobile-composer-device-attach';
@@ -87,12 +75,6 @@ import {
 } from './qaap-sticky-composer-workspace-bar';
 import { type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import {
-    createMobileSheetGrabber,
-    installMobilePullToRefresh,
-    installMobileSheetDragDismiss,
-} from './mobile-sheet-gestures';
-import { MobileSnackbar } from './mobile-snackbar';
-import {
     buildQaapAccountMenuEntries,
     toggleQaapAccountMenu,
 } from './qaap-workbench-account-menu';
@@ -100,17 +82,12 @@ import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-ses
 import {
     type EmbeddedAgentPreviewChrome,
 } from '@theia/qaap-adapters/lib/browser/qaap-agent-preview-chrome';
-import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
 import type { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
 import type { QaapPreviewInspectorDeps } from '@theia/qaap-adapters/lib/browser/qaap-preview-inline-inspector';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     type ExecutionSurfaceTabId,
 } from '../common/qaap-execution-surface-tabs';
-import { scrollElementTo } from '../common/qaap-prefers-reduced-motion';
-import {
-    buildConversationTranscriptFingerprint,
-} from '../common/qaap-transcript-incremental-update';
 import { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
 import {
     MobileProjectsTranscriptHistoryUi,
@@ -232,6 +209,14 @@ import {
     type MobileProjectsPanelLifecycleHost,
 } from './mobile-projects-panel-lifecycle-ui';
 import {
+    MobileProjectsPanelChromeUi,
+    type MobileProjectsPanelChromeHost,
+} from './mobile-projects-panel-chrome-ui';
+import {
+    MobileProjectsActiveTaskActionsUi,
+    type MobileProjectsActiveTaskActionsHost,
+} from './mobile-projects-active-task-actions-ui';
+import {
     MobileProjectsWorkHubSearchUi,
     type MobileProjectsWorkHubSearchHost,
 } from './mobile-projects-work-hub-search-ui';
@@ -265,9 +250,6 @@ import {
     type QaapTranscriptLiveRefreshOptions,
 } from './qaap-transcript-live-controller';
 import {
-    normalizeWorkHubViewId,
-} from '../common/qaap-work-hub-surfaces';
-import {
     MobileProjectsSessionsSidebarUi,
     type MobileProjectsSessionsSidebarHost,
 } from './mobile-projects-sessions-sidebar-ui';
@@ -278,7 +260,6 @@ import {
     type WorkHubHomeSnapshot,
 } from '../common/qaap-work-hub-home';
 import {
-    writeStoredComposerSurface,
     type QaapComposerSurface,
 } from '../common/qaap-composer-surface';
 import {
@@ -451,7 +432,6 @@ export class MobileProjectsPanel {
     /** Max conversation rows per repo card before "More" expands the list. */
     protected static readonly CONVERSATIONS_COLLAPSED_LIMIT = MOBILE_PROJECTS_CONVERSATIONS_COLLAPSED_LIMIT;
 
-
     /** Max automatic verify→fix loops before the closed loop gives up (avoids runaway turns/cost). */
     protected readonly transcriptMarkdownIt = markdownit({ linkify: false }).use(markdownitemoji.full);
 
@@ -586,6 +566,8 @@ export class MobileProjectsPanel {
     protected readonly hubRenderUi = new MobileProjectsHubRenderUi(this as unknown as MobileProjectsHubRenderHost);
     protected readonly overlayFactoryUi = new MobileProjectsOverlayFactoryUi(this as unknown as MobileProjectsOverlayFactoryHost);
     protected readonly panelLifecycleUi = new MobileProjectsPanelLifecycleUi(this as unknown as MobileProjectsPanelLifecycleHost);
+    protected readonly panelChromeUi = new MobileProjectsPanelChromeUi(this as unknown as MobileProjectsPanelChromeHost);
+    protected readonly activeTaskActionsUi = new MobileProjectsActiveTaskActionsUi(this as unknown as MobileProjectsActiveTaskActionsHost);
     protected readonly projectDetailUi = new MobileProjectsProjectDetailUi(this as unknown as MobileProjectsProjectDetailHost);
     protected readonly projectNavigationUi = new MobileProjectsProjectNavigationUi(this as unknown as MobileProjectsProjectNavigationHost);
     protected readonly renderListUi = new MobileProjectsRenderListUi(this as unknown as MobileProjectsRenderListHost);
@@ -600,6 +582,31 @@ export class MobileProjectsPanel {
     protected readonly stickyComposerWorkspaceUi = new MobileProjectsStickyComposerWorkspaceUi(this as unknown as MobileProjectsStickyComposerWorkspaceHost);
     protected readonly stickyComposerColumnUi = new MobileProjectsStickyComposerColumnUi(this as unknown as MobileProjectsStickyComposerColumnHost);
     protected readonly stickyComposerRenderUi = new MobileProjectsStickyComposerRenderUi(this as unknown as MobileProjectsStickyComposerRenderHost);
+    protected readonly executionSurfaceTabsUi = new MobileProjectsExecutionSurfaceTabsUi(this as unknown as MobileProjectsExecutionSurfaceTabsHost);
+    protected readonly transcriptSheetUi = new MobileProjectsTranscriptSheetUi(this as unknown as MobileProjectsTranscriptSheetHost);
+    protected readonly transcriptSurfacesUi = new MobileProjectsTranscriptSurfacesUi(
+        this as unknown as MobileProjectsTranscriptSurfacesHost,
+        this.transcriptHistoryUi,
+    );
+    protected readonly transcriptHeaderUi = new MobileProjectsTranscriptHeaderUi(this as unknown as MobileProjectsTranscriptHeaderHost);
+    protected readonly transcriptSubmitUi = new MobileProjectsTranscriptSubmitUi(this as unknown as MobileProjectsTranscriptSubmitHost);
+    protected readonly transcriptMessagesUi = new MobileProjectsTranscriptMessagesUi(this as unknown as MobileProjectsTranscriptMessagesHost);
+    protected readonly transcriptLiveUi = new MobileProjectsTranscriptLiveUi(this as unknown as MobileProjectsTranscriptLiveHost);
+    protected readonly transcriptVerifyUi = new MobileProjectsTranscriptVerifyUi(this as unknown as MobileProjectsTranscriptVerifyHost);
+    protected readonly tasksHubUi = new MobileProjectsTasksHubUi(this as unknown as MobileProjectsTasksHubHost);
+    protected readonly hubCatalogUi = new MobileProjectsHubCatalogUi(this as unknown as MobileProjectsHubCatalogHost);
+    protected readonly reposHubUi = new MobileProjectsReposHubUi(this as unknown as MobileProjectsReposHubHost);
+    protected readonly inboxPrUi = new MobileProjectsInboxPrUi(this as unknown as MobileProjectsInboxPrHost);
+    protected readonly cardMenuUi = new MobileProjectsCardMenuUi(this as unknown as MobileProjectsCardMenuHost);
+    protected readonly projectRowsUi = new MobileProjectsProjectRowsUi(this as unknown as MobileProjectsProjectRowsHost);
+    protected readonly hubRoutineEditorUi = new MobileProjectsHubRoutineEditorUi(this as unknown as MobileProjectsHubRoutineEditorHost);
+    protected readonly hubRoutinesUi = new MobileProjectsHubRoutinesUi(this as unknown as MobileProjectsHubRoutinesHost);
+    protected readonly hubTeamDataUi = new MobileProjectsHubTeamDataUi(this as unknown as MobileProjectsHubTeamDataHost);
+    protected readonly conversationActionsUi = new MobileProjectsConversationActionsUi(this as unknown as MobileProjectsConversationActionsHost);
+    protected readonly projectActionsUi = new MobileProjectsProjectActionsUi(this as unknown as MobileProjectsProjectActionsHost);
+    protected readonly workHubInboxUi = new MobileProjectsWorkHubInboxUi(this as unknown as MobileProjectsWorkHubInboxHost);
+    protected readonly theiaChatSessionUi = new MobileProjectsTheiaChatSessionUi(this as unknown as MobileProjectsTheiaChatSessionHost);
+    protected readonly agentsHubInlineUi = new MobileProjectsAgentsHubInlineUi(this as unknown as MobileProjectsAgentsHubInlineHost);
     /** Last successful SSE message delta applied to the open transcript (ms). */
     protected transcriptLastSseDeltaAt: number | undefined;
     protected transcriptApprovalRefreshTimer: number | undefined;
@@ -817,194 +824,16 @@ export class MobileProjectsPanel {
         this.root.setAttribute('aria-hidden', 'true');
         this.root.hidden = true;
 
-        const grabber = createMobileSheetGrabber();
+        const grabber = this.panelChromeUi.constructPanelShell();
+        this.panelChromeUi.wirePanelInteractions(grabber, this.onAuthSessionChanged);
+    }
 
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-projects-header';
-
-        const headerMainRow = document.createElement('div');
-        headerMainRow.className = 'theia-mobile-projects-header-main';
-
-        this.titleBlock = document.createElement('div');
-        this.titleBlock.className = 'theia-mobile-projects-title-block';
-        this.titleRow = document.createElement('div');
-        this.titleRow.className = 'theia-mobile-projects-title-row';
-        this.headerBackBtn = document.createElement('button');
-        this.headerBackBtn.type = 'button';
-        this.headerBackBtn.className = 'theia-mobile-projects-header-back';
-        this.headerBackBtn.hidden = true;
-        this.headerBackBtn.setAttribute('aria-hidden', 'true');
-        this.headerBackBtn.title = nls.localize('qaap/mobileProjects/backToProjects', 'Back to projects');
-        this.headerBackBtn.setAttribute('aria-label', this.headerBackBtn.title);
-        this.headerBackBtn.innerHTML = '<span class="codicon codicon-chevron-left" aria-hidden="true"></span>';
-        this.headerBackBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            if (this.agentsHubInlineActive && this.shouldUseAgentsHubLanding()) {
-                this.closeAgentsHubSession();
-                return;
-            }
-            if (this.agentsHubInlineActive) {
-                this.closeTranscriptSheet();
-                return;
-            }
-            if (this.isSidebarSecondaryHubView()) {
-                this.navigateBackFromSidebarSecondaryHub();
-                return;
-            }
-            if (this.isProjectDiffView()) {
-                this.closeProjectDiffView();
-                return;
-            }
-            const project = this.resolveSelectedProject();
-            if (project && this.navigateExecutionSurfaceBack(project)) {
-                return;
-            }
-            this.closeProjectDetail();
-        });
-        this.sessionsMenuBtn = document.createElement('button');
-        this.sessionsMenuBtn.type = 'button';
-        this.sessionsMenuBtn.className = 'theia-mobile-projects-sessions-menu theia-mobile-projects-header-back';
-        this.sessionsMenuBtn.hidden = true;
-        this.sessionsMenuBtn.setAttribute('aria-hidden', 'true');
-        this.sessionsMenuBtn.title = nls.localize('qaap/sessionsSidebar/open', 'Open session history');
-        this.sessionsMenuBtn.setAttribute('aria-label', this.sessionsMenuBtn.title);
-        this.sessionsMenuBtn.innerHTML = '<span class="codicon codicon-menu" aria-hidden="true"></span>';
-        this.sessionsMenuBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            this.openWorkHubSessionsSidebar();
-        });
-        this.titleEl = document.createElement('h1');
-        this.titleEl.className = 'theia-mobile-projects-title';
-        this.titleEl.textContent = nls.localize('qaap/mobileProjects/title', 'Work Hub');
-        this.titleAttentionEl = document.createElement('span');
-        this.titleAttentionEl.className = 'theia-mobile-projects-title-attention';
-        this.titleAttentionEl.hidden = true;
-        this.titleAttentionEl.setAttribute('aria-hidden', 'true');
-        this.headerExecutionTabsHost = document.createElement('div');
-        this.headerExecutionTabsHost.className = 'theia-mobile-projects-header-execution-tabs';
-        this.headerExecutionTabsHost.hidden = true;
-        this.subtitleEl = document.createElement('div');
-        this.subtitleEl.className = this.homeMode ? 'theia-mobile-projects-subtitle' : 'theia-mobile-projects-meta';
-        this.titleRow.append(this.sessionsMenuBtn, this.headerBackBtn, this.titleEl, this.titleAttentionEl);
-        this.titleBlock.append(this.titleRow, this.subtitleEl);
-
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-projects-header-actions';
-
-        this.accountBtn = document.createElement('button');
-        this.accountBtn.type = 'button';
-        this.accountBtn.className = 'theia-workbench-nav-btn theia-workbench-account-btn';
-        this.accountBtn.title = nls.localize('qaap/accountMenu/title', 'Account');
-        this.accountBtn.setAttribute('aria-haspopup', 'menu');
-        this.accountAvatar = document.createElement('span');
-        this.accountAvatar.className = 'theia-workbench-account-avatar';
-        this.accountAvatar.setAttribute('aria-hidden', 'true');
-        this.accountBtn.appendChild(this.accountAvatar);
-        this.accountBtn.addEventListener('click', this.onAccountClick);
-        this.headerSurfacePickerHost = document.createElement('div');
-        this.headerSurfacePickerHost.className = 'theia-mobile-projects-header-surface-picker';
-        this.headerSurfacePickerHost.hidden = true;
-
-        this.searchToggleBtn = document.createElement('button');
-        this.searchToggleBtn.type = 'button';
-        this.searchToggleBtn.className = 'theia-workbench-nav-btn theia-mobile-projects-search-toggle';
-        this.searchToggleBtn.title = nls.localize('qaap/mobileProjects/searchToggle', 'Search');
-        this.searchToggleBtn.setAttribute('aria-label', this.searchToggleBtn.title);
-        this.searchToggleBtn.innerHTML = '<span class="codicon codicon-search" aria-hidden="true"></span>';
-        this.searchToggleBtn.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopPropagation();
-            this.openWorkHubSearchQuickPick();
-        });
-
-        actions.append(this.headerSurfacePickerHost, this.searchToggleBtn, this.accountBtn);
-        headerMainRow.append(this.titleBlock, this.headerExecutionTabsHost, actions);
-        header.append(headerMainRow);
-
-        this.filtersHost = document.createElement('div');
-        this.filtersHost.className = 'theia-mobile-projects-filters-host';
-        this.filtersHost.hidden = true;
-
-        this.scroll = document.createElement('div');
-        this.scroll.className = 'theia-mobile-projects-scroll';
-
-        this.diffProjectTabsHost = document.createElement('div');
-        this.diffProjectTabsHost.className = 'theia-mobile-projects-diff-tabs';
-        this.diffProjectTabsHost.hidden = true;
-        this.diffWidgetHost = document.createElement('div');
-        this.diffWidgetHost.className = 'theia-mobile-projects-diff-widget-host';
-        this.diffWidgetHost.hidden = true;
-
-        this.stickyComposerHost = document.createElement('div');
-        this.stickyComposerHost.className = 'theia-mobile-projects-sticky-composer';
-        this.stickyComposerHost.hidden = true;
-
-        this.newFabBtn = document.createElement('button');
-        this.newFabBtn.type = 'button';
-        this.newFabBtn.className = 'theia-mobile-projects-fab';
-        this.newFabBtn.title = nls.localize('qaap/mobileProjects/new', 'New');
-        this.newFabBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/new', 'New'));
-        this.newFabBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span>';
-        this.newFabBtn.hidden = true;
-        this.newFabBtn.addEventListener('click', () => { void this.onNewClick(); });
-
-        this.root.append(
-            grabber,
-            header,
-            this.filtersHost,
-            this.scroll,
-            this.stickyComposerHost,
-            this.newFabBtn,
-        );
-
-        if (typeof ResizeObserver !== 'undefined') {
-            this.stickyComposerFabLiftObserver = new ResizeObserver(() => {
-                if (!this.stickyComposerHost.hidden) {
-                    this.updateStickyComposerFabLift();
-                }
-            });
-            this.stickyComposerFabLiftObserver.observe(this.stickyComposerHost);
-        }
-
-        this.titleBlock.addEventListener('click', () => this.onTitleTap());
-        window.addEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
-        this.panelLifecycleUi.updateAccountAvatar();
-
-        if (!this.homeMode) {
-            this.dragDismissDispose = installMobileSheetDragDismiss({
-                target: this.root,
-                grip: grabber,
-                onDismiss: () => {
-                    this.hide();
-                    this.delegate.onDismiss();
-                },
-            });
-        }
-
-        this.pullToRefreshDispose = installMobilePullToRefresh({
-            scroller: this.scroll,
-            host: this.root,
-            onRefresh: async () => {
-                if (this.hubView === 'review') {
-                    await this.refreshInboxPullRequests(undefined, true);
-                }
-                await this.refreshProjects();
-                MobileSnackbar.show(
-                    nls.localize('qaap/mobileProjects/refreshed', 'Work Hub refreshed'),
-                    { kind: 'success', duration: 1400 }
-                );
-            },
-        });
+    protected handleHeaderBackClick(): void {
+        this.hubHeaderUi.handleHeaderBackClick();
     }
 
     protected onTitleTap(): void {
-        const now = Date.now();
-        if (now - this.lastTitleTap < 320) {
-            scrollElementTo(this.scroll, 0, 'smooth');
-            this.lastTitleTap = 0;
-        } else {
-            this.lastTitleTap = now;
-        }
+        this.hubHeaderUi.onTitleTap();
     }
 
     get node(): HTMLElement {
@@ -1031,12 +860,7 @@ export class MobileProjectsPanel {
 
     /** Apply the composer surface. The local Chat surface was removed, so this always resolves to Task. */
     preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void {
-        void surface;
-        writeStoredComposerSurface(projectCwd, 'task');
-        this.stickyComposerSurface = 'task';
-        if (this.visible && this.hubView === 'repos') {
-            this.renderStickyComposer();
-        }
+        this.composerHeaderUi.preferComposerSurface(surface, projectCwd);
     }
 
     protected pinStickyComposerToQaiq(cwd: string | undefined): void {
@@ -1064,9 +888,6 @@ export class MobileProjectsPanel {
     protected resetProjectDetailSurfaces(): void {
         this.projectNavigationUi.resetProjectDetailSurfaces();
     }
-
-
-    protected readonly executionSurfaceTabsUi = new MobileProjectsExecutionSurfaceTabsUi(this as unknown as MobileProjectsExecutionSurfaceTabsHost);
 
     protected executionSurfaceTabForProject(project: MobileProjectEntry): TranscriptTab {
         return this.executionSurfaceTabsUi.executionSurfaceTabForProject(project);
@@ -1135,26 +956,11 @@ export class MobileProjectsPanel {
     }
 
     appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement {
-        return this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title);
-    }
-
-    /**
-     * Shared execution header for VPS and Theia-chat transcript sheets: back · title/subtitle · tabs.
-     */
-
-
-    protected readonly transcriptSheetUi = new MobileProjectsTranscriptSheetUi(this as unknown as MobileProjectsTranscriptSheetHost);
-
-    onEnterActiveTranscript(): void {
-        this.delegate.onEnterActiveTranscript?.();
-    }
-
-    onExitActiveTranscript(): void {
-        this.delegate.onExitActiveTranscript?.();
+        return this.overlayFactoryUi.appendTranscriptHeaderActions(header, title);
     }
 
     closeParallelSheet(): void {
-        this.ensureOverlayUi().parallel.closeSheet();
+        this.overlayFactoryUi.closeParallelSheet();
     }
 
     protected createTranscriptSheetSurfaceHosts(): {
@@ -1186,7 +992,6 @@ export class MobileProjectsPanel {
         this.transcriptSheetUi.closeTranscriptSheet();
     }
 
-
     protected resolveExecutionSurfaceProject(): MobileProjectEntry | undefined {
         return this.executionSurfaceTabsUi.resolveExecutionSurfaceProject();
     }
@@ -1196,7 +1001,7 @@ export class MobileProjectsPanel {
     }
 
     protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
-        return normalizeWorkHubViewId(view) as MobileProjectsHubView;
+        return this.hubQueryUi.redirectHubView(view);
     }
 
     /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
@@ -1207,8 +1012,6 @@ export class MobileProjectsPanel {
     ): void {
         this.hubLandingUi.selectHubLandingView(view, preferredDiffProjectId, options);
     }
-
-
 
     navigateHubTab(view: MobileProjectsHubView): void {
         this.hubLandingUi.navigateHubTab(view);
@@ -1236,6 +1039,18 @@ export class MobileProjectsPanel {
 
     hide(): void {
         this.panelLifecycleUi.hide();
+    }
+
+    protected updateAccountAvatar(): void {
+        this.panelLifecycleUi.updateAccountAvatar();
+    }
+
+    protected localizeActivityLabel(label: string): string {
+        return this.projectRowsUi.localizeActivityLabel(label);
+    }
+
+    protected hasConversationDiffStats(summary?: QaapAgentConversationSummaryDTO): boolean {
+        return this.projectRowsUi.hasConversationDiffStats(summary);
     }
 
     protected subscribeToActiveTasks(): void {
@@ -1274,52 +1089,35 @@ export class MobileProjectsPanel {
         this.hubHeaderUi.renderHeader();
     }
 
-
-
     /** Agents hub: account lives in the sessions sidebar Settings control, not the header. */
     protected syncAgentsHubAccountChrome(): void {
         this.hubHeaderUi.syncAgentsHubAccountChrome();
     }
 
-
-
     protected renderSubtitle(): void {
         this.subtitleUi.renderSubtitle();
     }
-
-
 
     protected buildProjectBranchSubtitle(project: MobileProjectEntry): string {
         return this.subtitleUi.buildProjectBranchSubtitle(project);
     }
 
-
-
     protected projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string {
         return this.hubHeaderUi.projectDetailHeaderTitle(project);
     }
-
-
-
 
     protected isProjectRunning(project: MobileProjectEntry): boolean {
         return this.conversationIndexUi.isProjectRunning(project);
     }
 
-
-
     protected countRunningTasks(project: MobileProjectEntry): number {
         return this.conversationIndexUi.countRunningTasks(project);
     }
-
-
 
     /** VPS agent conversations/tasks for one project (excludes local Theia chat). */
     protected vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
         return this.conversationIndexUi.vpsTasksForProject(project);
     }
-
-
 
     /**
      * Local Theia chat sessions. The Chat surface was removed from the mobile shell, so these are
@@ -1329,31 +1127,21 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.localChatsForProject(project);
     }
 
-
-
     protected countDoneTasks(project: MobileProjectEntry): number {
         return this.conversationIndexUi.countDoneTasks(project);
     }
-
-
 
     protected countNeedsInputTasks(project: MobileProjectEntry): number {
         return this.conversationIndexUi.countNeedsInputTasks(project);
     }
 
-
-
     protected countFailedTasks(project: MobileProjectEntry): number {
         return this.conversationIndexUi.countFailedTasks(project);
     }
 
-
-
     protected countUnreadTasks(project: MobileProjectEntry): number {
         return this.conversationIndexUi.countUnreadTasks(project);
     }
-
-
 
     /**
      * A conversation is "unread" when the agent has produced new activity since the user last
@@ -1364,50 +1152,34 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.isConversationUnread(summary);
     }
 
-
-
     /** All persistent agent conversations the panel knows about for this project. */
     protected conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
         return this.conversationIndexUi.conversationsForProject(project);
     }
 
-
-
     protected async refreshChatServiceSessionSummaries(): Promise<void> {
         await this.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
     }
-
-
 
     protected projectForChatSession(sessionId: string, fallback: MobileProjectEntry): MobileProjectEntry {
         return this.chatServiceSummariesUi.projectForChatSession(sessionId, fallback);
     }
 
-
-
     protected rememberChatSessionProject(sessionId: string | undefined, project: MobileProjectEntry): void {
         this.chatServiceSummariesUi.rememberChatSessionProject(sessionId, project);
     }
-
-
 
     protected isChatSessionWorking(session: ChatSession): boolean {
         return this.chatServiceSummariesUi.isChatSessionWorking(session);
     }
 
-
-
     protected isChatSessionWaitingForInput(session: ChatSession): boolean {
         return this.chatServiceSummariesUi.isChatSessionWaitingForInput(session);
     }
 
-
-
     protected chatSessionPreview(session: ChatSession | undefined): string | undefined {
         return this.chatServiceSummariesUi.chatSessionPreview(session);
     }
-
-
 
     protected mergeConversationSummaries(
         first: QaapAgentConversationSummaryDTO[],
@@ -1415,8 +1187,6 @@ export class MobileProjectsPanel {
     ): QaapAgentConversationSummaryDTO[] {
         return this.conversationIndexUi.mergeConversationSummaries(first, second);
     }
-
-
 
     /**
      * Order conversations within a project card. Highest first: priority chats (and never paused),
@@ -1429,8 +1199,6 @@ export class MobileProjectsPanel {
     ): number {
         return this.conversationIndexUi.compareConversationOrder(a, b);
     }
-
-
 
     /**
      * Position of a conversation in the fork tree:
@@ -1446,8 +1214,6 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.resolveConversationLineage(summary, parentIds);
     }
 
-
-
     /**
      * Effective priority/paused state for a conversation. VPS-backed conversations carry the
      * flags on the summary itself; Theia-chat summaries pick them up from the local override store.
@@ -1459,8 +1225,6 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.resolveConversationFlags(summary);
     }
 
-
-
     protected preferConversationSummary(
         current: QaapAgentConversationSummaryDTO,
         next: QaapAgentConversationSummaryDTO,
@@ -1468,13 +1232,9 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.preferConversationSummary(current, next);
     }
 
-
-
     protected chatServiceConversationId(sessionId: string): string {
         return this.chatServiceSummariesUi.chatServiceConversationId(sessionId);
     }
-
-
 
     /**
      * Legacy adapter — projects the conversation list as `MobileProjectTaskView[]` so existing
@@ -1485,62 +1245,42 @@ export class MobileProjectsPanel {
         return this.conversationIndexUi.summaryToTaskView(conversation);
     }
 
-
-
     protected tasksForProject(project: MobileProjectEntry): MobileProjectTaskView[] {
         return this.conversationIndexUi.tasksForProject(project);
     }
-
-
 
     protected conversationTaskState(conversation: QaapAgentConversationSummaryDTO): string {
         return this.conversationIndexUi.conversationTaskState(conversation);
     }
 
-
-
     protected fallbackTasksFromProject(project: MobileProjectEntry): MobileProjectTaskView[] {
         return this.conversationIndexUi.fallbackTasksFromProject(project);
     }
-
-
 
     protected async onNewClick(): Promise<void> {
         await this.repoLifecycleUi.onNewClick();
     }
 
-
-
     protected async onCloneClick(): Promise<void> {
         await this.repoLifecycleUi.onCloneClick();
     }
-
-
 
     protected async refreshProjects(): Promise<void> {
         await this.repoLifecycleUi.refreshProjects();
     }
 
-
-
     protected render(): void {
         this.hubRenderUi.render();
     }
-
-
 
     protected syncHubViewAvailability(): void {
         this.hubRenderUi.syncHubViewAvailability();
     }
 
-
-
     /** Projects included in the current hub list (inbox ignores Active/Pinned filters). */
     protected projectsForCurrentHubList(): MobileProjectEntry[] {
         return this.hubQueryUi.projectsForCurrentHubList();
     }
-
-
 
     protected static readonly REPO_FILTER_ORDER: readonly MobileProjectFilter[] = ['all', 'active', 'pinned'];
 
@@ -1548,91 +1288,61 @@ export class MobileProjectsPanel {
         this.repoFiltersUi.renderFilters();
     }
 
-
-
     protected repoFilterLabel(id: MobileProjectFilter): string {
         return this.repoFiltersUi.repoFilterLabel(id);
     }
-
-
 
     protected isSearchChromeHidden(): boolean {
         return this.repoFiltersUi.isSearchChromeHidden();
     }
 
-
-
     protected syncSearchChrome(): void {
         this.repoFiltersUi.syncSearchChrome();
     }
-
-
 
     protected workHubSearchPlaceholder(): string {
         return this.repoFiltersUi.workHubSearchPlaceholder();
     }
 
-
-
     protected openWorkHubSearchQuickPick(): void {
         this.workHubSearchUi.openWorkHubSearchQuickPick();
     }
-
-
 
     protected closeWorkHubSearchQuickPick(): void {
         this.workHubSearchUi.closeWorkHubSearchQuickPick();
     }
 
-
-
     protected buildWorkHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildWorkHubSearchPickItems();
     }
-
-
 
     protected buildProjectDetailSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildProjectDetailSearchPickItems();
     }
 
-
-
     protected buildReposSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildReposSearchPickItems();
     }
-
-
 
     protected buildTasksHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildTasksHubSearchPickItems();
     }
 
-
-
     protected buildChatHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildChatHubSearchPickItems();
     }
-
-
 
     protected buildReviewSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildReviewSearchPickItems();
     }
 
-
-
     protected buildWorkflowSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildWorkflowSearchPickItems();
     }
 
-
-
     protected buildRoutineSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         return this.workHubSearchUi.buildRoutineSearchPickItems();
     }
-
-
 
     protected conversationToSearchPickItem(
         project: MobileProjectEntry,
@@ -1641,13 +1351,9 @@ export class MobileProjectsPanel {
         return this.workHubSearchUi.conversationToSearchPickItem(project, conversation);
     }
 
-
-
     protected async activateWorkHubSearchTarget(target: WorkHubSearchTarget): Promise<void> {
         await this.workHubSearchUi.activateWorkHubSearchTarget(target);
     }
-
-
 
     /**
      * SSE conversation ticks call {@link renderList} to refresh sidebar dots, but must not
@@ -1655,19 +1361,14 @@ export class MobileProjectsPanel {
      * and aborts live refresh until the user reopens the conversation.
      */
 
-
     protected renderList(): void {
         this.renderListUi.renderList();
     }
-
-
 
     /** FAB opens "new repository"; hide while a repo row is expanded (conversations + composer). */
     protected updateNewFabVisibility(): void {
         this.hubListChromeUi.updateNewFabVisibility();
     }
-
-
 
     /**
      * Landing hub list (no expanded project): show the global bottom nav. Hide it while a project
@@ -1677,126 +1378,77 @@ export class MobileProjectsPanel {
         this.hubListChromeUi.syncLandingHubListChrome();
     }
 
-
-
     protected renderDiffHubView(): void {
         this.diffHubUi.renderDiffHubView();
     }
-
-
 
     protected renderDiffProjectTabs(): void {
         this.diffHubUi.renderDiffProjectTabs();
     }
 
-
-
     protected async refreshDiffHubView(): Promise<void> {
         await this.diffHubUi.refreshDiffHubView();
     }
-
-
 
     protected async scanSingleProjectWithChanges(preferredProjectId?: string): Promise<QaapDiffProjectTab | undefined> {
         return this.diffHubUi.scanSingleProjectWithChanges(preferredProjectId);
     }
 
-
-
     protected async scanProjectsWithChanges(): Promise<QaapDiffProjectTab[]> {
         return this.diffHubUi.scanProjectsWithChanges();
     }
-
-
 
     protected async mountDiffReviewWidget(): Promise<void> {
         await this.diffHubUi.mountDiffReviewWidget();
     }
 
-
-
     protected async applyDiffTabToWidget(tab: QaapDiffProjectTab): Promise<void> {
         await this.diffHubUi.applyDiffTabToWidget(tab);
     }
-
-
 
     protected detachDiffReviewWidget(): void {
         this.diffHubUi.detachDiffReviewWidget();
     }
 
-
-
     protected attachDiffReviewWidget(host: HTMLElement): void {
         this.diffHubUi.attachDiffReviewWidget(host);
     }
-
-
 
     protected detachDiffReviewWidgetFromHost(): void {
         this.diffHubUi.detachDiffReviewWidgetFromHost();
     }
 
-
-
     protected resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined {
         return this.composerHeaderUi.resolveStickyComposerProject(projects);
     }
-
 
     /** Sidebar drill-downs (Routines, overview, workflows) when Agents is the default shell. */
     protected isSidebarSecondaryHubView(): boolean {
         return this.hubQueryUi.isSidebarSecondaryHubView();
     }
 
-
-
     protected navigateBackFromSidebarSecondaryHub(): void {
-        this.closeRoutineEditor();
-        this.selectHubLandingView('tasks');
+        this.hubQueryUi.navigateBackFromSidebarSecondaryHub();
     }
-
 
     protected resolveSelectedProject(
         projects: MobileProjectEntry[] = this.projectsForCurrentHubList(),
     ): MobileProjectEntry | undefined {
-        if (this.expandedId === undefined) {
-            return undefined;
-        }
-        return projects.find(p => p.id === this.expandedId)
-            ?? this.projects.find(p => p.id === this.expandedId);
+        return this.projectNavigationUi.resolveSelectedProject(projects);
     }
 
     protected createProjectDetailView(project: MobileProjectEntry): HTMLElement {
         return this.projectDetailUi.createProjectDetailView(project);
     }
 
-
-
     /** Synthetic conversation scope for project-level Files/Terminal/Preview surfaces. */
     protected projectDetailSurfaceSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO {
         return this.projectDetailUi.projectDetailSurfaceSummary(project);
     }
 
-
-
     protected selectProjectDetailTab(tab: TranscriptTab, project: MobileProjectEntry): void {
         this.projectDetailUi.selectProjectDetailTab(tab, project);
     }
-
-
-
-
-    /**
-     * Single tab switch: hide every execution surface, show only the chosen one, then mount its content.
-     */
-
-    /**
-     * Header back: leave Plan/Files/etc. for Chat before closing the project or transcript sheet.
-     */
-
-
-    protected readonly transcriptSurfacesUi = new MobileProjectsTranscriptSurfacesUi(this as unknown as MobileProjectsTranscriptSurfacesHost);
 
     protected mountProjectDetailSurfaceTab(
         project: MobileProjectEntry,
@@ -1895,67 +1547,45 @@ export class MobileProjectsPanel {
         await this.stickyComposerContextUi.onStickyComposerAttach(_project, anchor);
     }
 
-
-
     protected createStickyComposerAttachHandlers(): MobileComposerAttachHandlers {
         return this.stickyComposerContextUi.createStickyComposerAttachHandlers();
     }
-
-
 
     protected createTranscriptComposerAttachHandlers(): MobileComposerAttachHandlers {
         return this.stickyComposerContextUi.createTranscriptComposerAttachHandlers();
     }
 
-
-
     protected hasPendingComposerAttachments(): boolean {
         return this.stickyComposerContextUi.hasPendingComposerAttachments();
     }
-
-
 
     protected notifyPendingComposerAttachments(): void {
         this.stickyComposerContextUi.notifyPendingComposerAttachments();
     }
 
-
-
     protected renderStickyComposer(): void {
         this.stickyComposerRenderUi.renderStickyComposer();
     }
-
-
 
     protected composerSurfaceSegmentOptions(): Array<{ id: QaapComposerSurface; label: string; iconClass: string }> {
         return this.composerHeaderUi.composerSurfaceSegmentOptions();
     }
 
-
-
     protected shouldShowHeaderComposerSurfacePicker(): boolean {
         return this.composerHeaderUi.shouldShowHeaderComposerSurfacePicker();
     }
-
-
 
     protected syncHeaderComposerSurfacePicker(): void {
         this.composerHeaderUi.syncHeaderComposerSurfacePicker();
     }
 
-
-
     protected onHeaderComposerSurfaceChange(surface: QaapComposerSurface): void {
         this.composerHeaderUi.onHeaderComposerSurfaceChange(surface);
     }
 
-
-
     protected updateStickyComposerFabLift(): void {
         this.composerHeaderUi.updateStickyComposerFabLift();
     }
-
-
 
     protected mountStickyComposerContextUsage(
         badge: HTMLElement,
@@ -1968,8 +1598,6 @@ export class MobileProjectsPanel {
         return this.stickyComposerRenderUi.mountStickyComposerContextUsage(badge, resolveTarget);
     }
 
-
-
     protected resolveTranscriptContextUsageTarget(
         summary: QaapAgentConversationSummaryDTO,
     ): {
@@ -1977,82 +1605,36 @@ export class MobileProjectsPanel {
         readonly chatModel?: ChatModel;
         readonly full?: QaapAgentConversationDTO;
     } {
-        if (summary.source === 'theia-chat') {
-            const chatModel = this.resolveTranscriptTheiaChatModel(summary);
-            return chatModel ? { chatModel } : {};
-        }
-        const cwd = summary.cwd;
-        const live = this.conversations?.getConversationsForCwd(cwd).find(c => c.id === summary.id) ?? summary;
-        if (this.transcriptLastConv?.id === summary.id) {
-            const effectiveStatus = resolveTranscriptEffectiveStatus(this.transcriptLastConv);
-            return {
-                summary: { ...live, status: effectiveStatus },
-                full: this.transcriptLastConv,
-            };
-        }
-        return { summary: live };
-    }
-
-    protected resolveTranscriptTheiaChatModel(summary: QaapAgentConversationSummaryDTO): ChatModel | undefined {
-        if (summary.source !== 'theia-chat' || !summary.sessionId || !this.chatService) {
-            return undefined;
-        }
-        return this.chatService.getSession(summary.sessionId)?.model;
+        return this.transcriptStickyComposerUi.resolveTranscriptContextUsageTarget(summary);
     }
 
     protected resolveProjectTheiaChatModel(project: MobileProjectEntry): ChatModel | undefined {
-        if (!this.chatService) {
-            return undefined;
-        }
-        const summaries = this.chatServiceSessionSummariesByProjectId.get(project.id) ?? [];
-        for (let i = summaries.length - 1; i >= 0; i--) {
-            const sessionId = summaries[i].sessionId;
-            if (!sessionId) {
-                continue;
-            }
-            const model = this.chatService.getSession(sessionId)?.model;
-            if (model) {
-                return model;
-            }
-        }
-        return undefined;
+        return this.stickyComposerRenderUi.resolveProjectTheiaChatModel(project);
     }
 
     protected shouldShowComposerWorkspaceBar(_summary?: QaapAgentConversationSummaryDTO): boolean {
         return this.composerHeaderUi.shouldShowComposerWorkspaceBar(_summary);
     }
 
-
-
     protected resolveComposerWorkspaceBranch(project: MobileProjectEntry): string {
         return this.stickyComposerWorkspaceUi.resolveComposerWorkspaceBranch(project);
     }
-
-
 
     protected async refreshComposerWorkspaceBranch(project: MobileProjectEntry): Promise<string> {
         return this.stickyComposerWorkspaceUi.refreshComposerWorkspaceBranch(project);
     }
 
-
-
     protected resolveComposerWorkspaceBarView(project: MobileProjectEntry): StickyComposerWorkspaceBarView {
         return this.stickyComposerWorkspaceUi.resolveComposerWorkspaceBarView(project);
     }
-
-
 
     protected remountComposerWithWorkspaceBar(project: MobileProjectEntry): void {
         this.stickyComposerWorkspaceUi.remountComposerWithWorkspaceBar(project);
     }
 
-
-
     protected openComposerWorkspaceProjectSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
         this.stickyComposerWorkspaceUi.openComposerWorkspaceProjectSheet(project, transcriptOverlay);
     }
-
-
 
     protected createComposerProjectSheetAction(options: {
         readonly iconClass: string;
@@ -2062,19 +1644,13 @@ export class MobileProjectsPanel {
         return this.stickyComposerWorkspaceUi.createComposerProjectSheetAction(options);
     }
 
-
-
     protected async onCreateNewProjectFromSheet(): Promise<void> {
         await this.stickyComposerWorkspaceUi.onCreateNewProjectFromSheet();
     }
 
-
-
     protected openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
         this.stickyComposerWorkspaceUi.openComposerWorkspaceBranchSheet(project, transcriptOverlay);
     }
-
-
 
     protected async loadComposerWorkspaceBranchSheet(
         project: MobileProjectEntry,
@@ -2083,16 +1659,12 @@ export class MobileProjectsPanel {
         await this.stickyComposerWorkspaceUi.loadComposerWorkspaceBranchSheet(project, list);
     }
 
-
-
     protected async checkoutComposerWorkspaceBranch(
         project: MobileProjectEntry,
         branch: string,
     ): Promise<void> {
         await this.stickyComposerWorkspaceUi.checkoutComposerWorkspaceBranch(project, branch);
     }
-
-
 
     protected buildStickyComposerColumn(options: {
         project: MobileProjectEntry;
@@ -2134,19 +1706,13 @@ export class MobileProjectsPanel {
         return this.stickyComposerColumnUi.buildStickyComposerColumn(options);
     }
 
-
-
     protected formatComposerContextEntry(entry: StickyComposerContextEntry): StickyComposerContextChipView {
         return this.stickyComposerContextUi.formatComposerContextEntry(entry);
     }
 
-
-
     protected formatComposerContextChip(item: AIVariableResolutionRequest): StickyComposerContextChipView {
         return this.stickyComposerContextUi.formatComposerContextChip(item);
     }
-
-
 
     protected resolveComposerMentionOptions(
         backendAgents: readonly QaapAgentTaskAgentOption[],
@@ -2155,31 +1721,21 @@ export class MobileProjectsPanel {
         return this.stickyComposerContextUi.resolveComposerMentionOptions(backendAgents, coderOnly);
     }
 
-
-
     protected resolveComposerVariableOptions(): StickyComposerTokenOption[] {
         return this.stickyComposerContextUi.resolveComposerVariableOptions();
     }
-
-
 
     protected resolveStickyComposerPinnedAgentId(project: MobileProjectEntry): string {
         return this.stickyComposerAgentsUi.resolveStickyComposerPinnedAgentId(project);
     }
 
-
-
     protected resolveStickyComposerAgentLabel(project?: MobileProjectEntry): string {
         return this.stickyComposerAgentsUi.resolveStickyComposerAgentLabel(project);
     }
 
-
-
     protected resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined {
         return this.stickyComposerAgentsUi.resolveStickyComposerModelLabel(agentId, project);
     }
-
-
 
     protected reconcileStickyComposerPinnedAgent(
         current: string | undefined,
@@ -2190,33 +1746,23 @@ export class MobileProjectsPanel {
         return this.stickyComposerAgentsUi.reconcileStickyComposerPinnedAgent(current, agents, defaultAgent, cwd);
     }
 
-
-
     protected filterSelectableComposerAgents(
         agents: readonly QaapAgentTaskAgentOption[],
     ): QaapAgentTaskAgentOption[] {
         return this.stickyComposerAgentsUi.filterSelectableComposerAgents(agents);
     }
 
-
-
     protected async refreshStickyComposerAgents(project: MobileProjectEntry): Promise<void> {
         await this.stickyComposerAgentsUi.refreshStickyComposerAgents(project);
     }
-
-
 
     protected showComposerAgentPickerLoading(chrome: ComposerAgentPickerChrome): void {
         this.stickyComposerAgentsUi.showComposerAgentPickerLoading(chrome);
     }
 
-
-
     protected async ensureStickyComposerAgentsLoaded(project: MobileProjectEntry): Promise<readonly QaapAgentTaskAgentOption[]> {
         return this.stickyComposerAgentsUi.ensureStickyComposerAgentsLoaded(project);
     }
-
-
 
     protected async ensureTranscriptComposerAgentsLoaded(project: MobileProjectEntry): Promise<readonly QaapAgentTaskAgentOption[]> {
         return this.transcriptComposerUi.ensureTranscriptComposerAgentsLoaded(project);
@@ -2226,19 +1772,13 @@ export class MobileProjectsPanel {
         this.stickyComposerSheetsUi.openStickyComposerAgentSheet(project);
     }
 
-
-
     protected openStickyComposerModeSheet(project: MobileProjectEntry, modes: readonly ChatMode[]): void {
         this.stickyComposerSheetsUi.openStickyComposerModeSheet(project, modes);
     }
 
-
-
     protected openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void {
         this.stickyComposerSheetsUi.openStickyComposerApprovalPolicySheet(project, agentLabel);
     }
-
-
 
     protected openTranscriptComposerApprovalPolicySheet(
         project: MobileProjectEntry,
@@ -2263,8 +1803,6 @@ export class MobileProjectsPanel {
         this.stickyComposerSheetsUi.openApprovalPolicySheet(options);
     }
 
-
-
     protected createModeSheetOption(
         label: string,
         modeId: string,
@@ -2273,8 +1811,6 @@ export class MobileProjectsPanel {
     ): HTMLElement {
         return this.stickyComposerSheetsUi.createModeSheetOption(label, modeId, selectedModeId, onSelect);
     }
-
-
 
     protected createAgentSheetOption(
         label: string,
@@ -2286,13 +1822,9 @@ export class MobileProjectsPanel {
         return this.stickyComposerSheetsUi.createAgentSheetOption(label, agentId, cwd, selectedAgentId, onSelect);
     }
 
-
-
     protected async resolveModelsForAgentPicker(agentId: string): Promise<QaapQaiqModelOption[]> {
         return this.stickyComposerSheetsUi.resolveModelsForAgentPicker(agentId);
     }
-
-
 
     protected createComposerAgentPickerChrome(options: {
         readonly sheetClassName: string;
@@ -2301,8 +1833,6 @@ export class MobileProjectsPanel {
     }): ComposerAgentPickerChrome {
         return this.stickyComposerSheetsUi.createComposerAgentPickerChrome(options);
     }
-
-
 
     protected async renderComposerAgentPicker(
         chrome: ComposerAgentPickerChrome,
@@ -2319,8 +1849,6 @@ export class MobileProjectsPanel {
         await this.stickyComposerSheetsUi.renderComposerAgentPicker(chrome, options);
     }
 
-
-
     protected appendAgentModelPickerList(
         list: HTMLElement,
         agentId: string,
@@ -2331,31 +1859,21 @@ export class MobileProjectsPanel {
         this.stickyComposerSheetsUi.appendAgentModelPickerList(list, agentId, models, storedModel, onSelect);
     }
 
-
-
     protected closeStickyComposerSheets(): void {
         this.stickyComposerSheetsUi.closeStickyComposerSheets();
     }
-
-
 
     protected applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[] {
         return this.hubQueryUi.applyFilter(projects, filter);
     }
 
-
-
     protected applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[] {
         return this.hubQueryUi.applySearch(projects);
     }
 
-
-
     protected projectMatchesSearch(project: MobileProjectEntry, query: string): boolean {
         return this.hubQueryUi.projectMatchesSearch(project, query);
     }
-
-
 
     protected conversationMatchesQuery(
         conversation: QaapAgentConversationSummaryDTO,
@@ -2364,121 +1882,81 @@ export class MobileProjectsPanel {
         return this.hubQueryUi.conversationMatchesQuery(conversation, query);
     }
 
-
-
     protected isReviewHubView(): boolean {
         return this.hubQueryUi.isReviewHubView();
     }
-
-
 
     protected isHomeHubView(): boolean {
         return this.hubQueryUi.isHomeHubView();
     }
 
-
-
     protected isTasksHubView(): boolean {
         return this.hubQueryUi.isTasksHubView();
     }
-
-
 
     protected refreshHomeHubData(forceRender: boolean): void {
         this.homeHubUi.refreshHomeHubData(forceRender);
     }
 
-
-
     protected buildHomeSnapshot(): WorkHubHomeSnapshot {
         return this.homeHubUi.buildHomeSnapshot();
     }
-
-
 
     protected resolveHomeFavoriteModelLabel(): string | undefined {
         return this.homeHubUi.resolveHomeFavoriteModelLabel();
     }
 
-
-
     protected buildHomeGreeting(): string {
         return this.homeHubUi.buildHomeGreeting();
     }
-
-
 
     protected formatHomeRelativeTime(updatedAt: number): string {
         return this.homeHubUi.formatHomeRelativeTime(updatedAt);
     }
 
-
-
     protected buildHomeWorkspaceActivity(project: MobileProjectEntry): string {
         return this.homeHubUi.buildHomeWorkspaceActivity(project);
     }
-
-
 
     protected getHomeWorkspaceStatus(project: MobileProjectEntry): 'idle' | 'running' | 'open' {
         return this.homeHubUi.getHomeWorkspaceStatus(project);
     }
 
-
-
     protected buildHomeSubtitle(snapshot: WorkHubHomeSnapshot): string {
         return this.homeHubUi.buildHomeSubtitle(snapshot);
     }
-
-
 
     protected resolveHomeAgentLabel(agentId: string): string {
         return this.homeHubUi.resolveHomeAgentLabel(agentId);
     }
 
-
-
     protected renderHomeHubView(): void {
         this.homeHubUi.renderHomeHubView();
     }
-
-
 
     protected resolveHomePinnedProject(): MobileProjectEntry | undefined {
         return this.homeHubUi.resolveHomePinnedProject();
     }
 
-
-
     protected onHomeNavigate(target: WorkHubHomeNavigateTarget): void {
         this.homeHubUi.onHomeNavigate(target);
     }
-
-
 
     protected async onHomeOpenProject(project: MobileProjectEntry): Promise<void> {
         await this.homeHubUi.onHomeOpenProject(project);
     }
 
-
-
     protected async onHomeOpenRecent(item: WorkHubHomeRecentItem): Promise<void> {
         await this.homeHubUi.onHomeOpenRecent(item);
     }
-
-
 
     protected onHomeOpenAttention(item: WorkHubHomeAttentionItem): void {
         this.homeHubUi.onHomeOpenAttention(item);
     }
 
-
-
     protected async onHomeQuickAction(action: WorkHubHomeQuickActionId): Promise<void> {
         await this.homeHubUi.onHomeQuickAction(action);
     }
-
-
 
     protected countTasksAttention(): { needsYou: number; running: number } {
         return this.tasksHubAttentionUi.countTasksAttention();
@@ -2499,56 +1977,38 @@ export class MobileProjectsPanel {
         this.sessionsSidebarUi.openWorkHubSessionsSidebar();
     }
 
-
-
     toggleWorkHubSessionsSidebar(): void {
         this.sessionsSidebarUi.toggleWorkHubSessionsSidebar();
     }
-
-
 
     /** Carga proyectos + sesiones antes de pintar filas `createTaskItem` en el sidebar (mockup). */
     protected async prepareSessionsSidebarData(): Promise<void> {
         await this.sessionsSidebarUi.prepareSessionsSidebarData();
     }
 
-
-
     isWorkHubSessionsSidebarVisible(): boolean {
         return this.sessionsSidebarUi.isWorkHubSessionsSidebarVisible();
     }
-
-
 
     protected ensureWorkHubSessionsSidebar(): MobileWorkHubSessionsSidebar {
         return this.sessionsSidebarUi.ensureWorkHubSessionsSidebar();
     }
 
-
-
     protected resolveWorkHubSessionsSidebarProject(): MobileProjectEntry | undefined {
         return this.sessionsSidebarUi.resolveWorkHubSessionsSidebarProject();
     }
-
-
 
     protected renderWorkHubSessionsSidebarList(host: HTMLElement): void {
         this.sessionsSidebarUi.renderWorkHubSessionsSidebarList(host);
     }
 
-
-
     protected syncSessionsSidebarAnimatedListHeights(host: HTMLElement): void {
         this.sessionsSidebarUi.syncSessionsSidebarAnimatedListHeights(host);
     }
 
-
-
     protected isSessionsSidebarPinnedConversation(summary: QaapAgentConversationSummaryDTO): boolean {
         return this.sessionsSidebarUi.isSessionsSidebarPinnedConversation(summary);
     }
-
-
 
     protected collectSessionsSidebarPinnedGroups(
         projects: MobileProjectEntry[],
@@ -2565,8 +2025,6 @@ export class MobileProjectsPanel {
         return this.sessionsSidebarUi.createSessionsSidebarPinnedSection(groups, onActivate, bypassConversationLimit);
     }
 
-
-
     protected getSessionsSidebarConversationDisplayLimit(
         project: MobileProjectEntry,
         totalCount: number,
@@ -2574,8 +2032,6 @@ export class MobileProjectsPanel {
     ): number {
         return this.sessionsSidebarUi.getSessionsSidebarConversationDisplayLimit(project, totalCount, bypassLimit);
     }
-
-
 
     protected resolveSessionsSidebarVisibleConversations(
         project: MobileProjectEntry,
@@ -2595,8 +2051,6 @@ export class MobileProjectsPanel {
         this.sessionsSidebarUi.appendSessionsSidebarConversationItems(listHost, project, conversations, onActivate, bypassLimit);
     }
 
-
-
     protected createSessionsSidebarShowMoreControl(
         project: MobileProjectEntry,
         hiddenCount: number,
@@ -2605,13 +2059,9 @@ export class MobileProjectsPanel {
         return this.sessionsSidebarUi.createSessionsSidebarShowMoreControl(project, hiddenCount, totalCount);
     }
 
-
-
     protected createSessionsSidebarShowLessControl(project: MobileProjectEntry): HTMLButtonElement {
         return this.sessionsSidebarUi.createSessionsSidebarShowLessControl(project);
     }
-
-
 
     protected createSessionsSidebarPinnedProjectGroup(
         project: MobileProjectEntry,
@@ -2622,14 +2072,10 @@ export class MobileProjectsPanel {
         return this.sessionsSidebarUi.createSessionsSidebarPinnedProjectGroup(project, conversations, onActivate, bypassConversationLimit);
     }
 
-
-
     /** Expand current workspace (+ running) by default; user toggles persist for the session. */
     protected seedSessionsSidebarAccordionDefaults(projects: MobileProjectEntry[]): void {
         this.sessionsSidebarUi.seedSessionsSidebarAccordionDefaults(projects);
     }
-
-
 
     protected createSessionsSidebarProjectGroup(
         project: MobileProjectEntry,
@@ -2640,8 +2086,6 @@ export class MobileProjectsPanel {
         return this.sessionsSidebarUi.createSessionsSidebarProjectGroup(project, conversations, onActivate, bypassConversationLimit);
     }
 
-
-
     protected createSessionsSidebarProjectRowHead(
         project: MobileProjectEntry,
         expanded: boolean,
@@ -2650,32 +2094,22 @@ export class MobileProjectsPanel {
         return this.sessionsSidebarUi.createSessionsSidebarProjectRowHead(project, expanded, onToggleExpand);
     }
 
-
-
     protected createSessionsSidebarIdeOpenControl(project: MobileProjectEntry): HTMLButtonElement {
         return this.sessionsSidebarUi.createSessionsSidebarIdeOpenControl(project);
     }
-
-
 
     protected createSessionsSidebarIdeOpenBadge(): HTMLSpanElement {
         return this.sessionsSidebarUi.createSessionsSidebarIdeOpenBadge();
     }
 
-
-
     protected async onWorkHubSessionsSidebarNewChat(): Promise<void> {
         await this.sessionsSidebarUi.onWorkHubSessionsSidebarNewChat();
     }
-
-
 
     /** Mockup `newChat()`: misma vista vacía que Agents (idle), no una sesión paralela. */
     protected async openEmptyMobileChatSheet(project: MobileProjectEntry): Promise<void> {
         await this.sessionsSidebarUi.openEmptyMobileChatSheet(project);
     }
-
-
 
     protected isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean {
         return this.transcriptHeaderUi.isPendingNewChatSummary(summary);
@@ -2692,49 +2126,33 @@ export class MobileProjectsPanel {
         await this.sessionsSidebarUi.onWorkHubSessionsSidebarAutomations();
     }
 
-
-
     protected onSessionsSidebarAccountClick(anchor: HTMLButtonElement): void {
         this.sessionsSidebarUi.onSessionsSidebarAccountClick(anchor);
     }
-
-
 
     protected async openSessionsSidebarSearch(): Promise<void> {
         await this.sessionsSidebarUi.openSessionsSidebarSearch();
     }
 
-
-
     protected notifyWorkspaceHubBottomBarRefresh(): void {
         this.repoLifecycleUi.notifyWorkspaceHubBottomBarRefresh();
     }
-
-
 
     protected async openProjectDetail(project: MobileProjectEntry): Promise<void> {
         await this.projectNavigationUi.openProjectDetail(project);
     }
 
-
-
     protected async toggleRowExpanded(project: MobileProjectEntry): Promise<void> {
         await this.projectNavigationUi.toggleRowExpanded(project);
     }
-
-
 
     protected async closeCurrentWorkspace(): Promise<void> {
         await this.projectNavigationUi.closeCurrentWorkspace();
     }
 
-
-
     protected async openTaskInAgent(project: MobileProjectEntry, task?: MobileProjectTaskView): Promise<void> {
         await this.conversationOpenUi.openTaskInAgent(project, task);
     }
-
-
 
     protected async openConversationSummary(
         project: MobileProjectEntry,
@@ -2743,89 +2161,17 @@ export class MobileProjectsPanel {
         await this.conversationOpenUi.openConversationSummary(project, summary);
     }
 
-
-
-    protected createFootButton(
-        label: string,
-        iconClass: string,
-        modifier: 'theia-mod-primary' | 'theia-mod-secondary' | 'theia-mod-accent',
-        onClick: () => void,
-        disabled = false,
-    ): HTMLButtonElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `theia-mobile-projects-foot-btn ${modifier}`;
-        btn.disabled = disabled;
-        const icon = document.createElement('span');
-        icon.className = `codicon ${iconClass}`;
-        icon.setAttribute('aria-hidden', 'true');
-        const text = document.createElement('span');
-        text.className = 'theia-mobile-projects-foot-btn-label';
-        text.textContent = label;
-        btn.title = label;
-        btn.setAttribute('aria-label', label);
-        btn.append(icon, text);
-        btn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            onClick();
-        });
-        return btn;
-    }
-
-    protected createQuickActions(project: MobileProjectEntry): HTMLElement | undefined {
-        const showPreview = !!project.previewUrl || project.isCurrent;
-        const showAgent = !!project.task?.trim() && project.task !== '—';
-        if (!showPreview && !showAgent) {
-            return undefined;
-        }
-        const row = document.createElement('div');
-        row.className = 'theia-mobile-projects-quick';
-        row.addEventListener('click', ev => ev.stopPropagation());
-
-        if (showPreview && this.delegate.onResumePreview) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'theia-mobile-projects-quick-btn';
-            btn.innerHTML = '<span class="codicon codicon-preview" aria-hidden="true"></span> ' +
-                nls.localize('qaap/mobileProjects/resumePreview', 'Resume preview');
-            btn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                void this.delegate.onResumePreview?.(project);
-            });
-            row.append(btn);
-        }
-        if (showAgent && this.delegate.onOpenAgentOnTask) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'theia-mobile-projects-quick-btn theia-mod-secondary';
-            btn.innerHTML = '<span class="codicon codicon-comment-discussion" aria-hidden="true"></span> ' +
-                nls.localize('qaap/mobileProjects/openAgent', 'Open agent');
-            btn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                void this.delegate.onOpenAgentOnTask?.(project);
-            });
-            row.append(btn);
-        }
-        return row.childElementCount > 0 ? row : undefined;
-    }
-
     protected async onTogglePin(project: MobileProjectEntry): Promise<void> {
         await this.repoLifecycleUi.onTogglePin(project);
     }
-
-
 
     protected async openAgentComposer(project: MobileProjectEntry, draft?: string): Promise<void> {
         await this.repoLifecycleUi.openAgentComposer(project, draft);
     }
 
-
-
     protected async ensureInlineComposerCwd(project: MobileProjectEntry): Promise<string | undefined> {
         return this.backgroundTaskUi.ensureInlineComposerCwd(project);
     }
-
-
 
     protected async submitBackgroundAgentTask(
         project: MobileProjectEntry,
@@ -2845,8 +2191,6 @@ export class MobileProjectsPanel {
         await this.backgroundTaskUi.submitBackgroundAgentTask(project, draft, options);
     }
 
-
-
     protected async createProjectChatSession(
         project: MobileProjectEntry,
         cwd: string,
@@ -2865,19 +2209,13 @@ export class MobileProjectsPanel {
         return this.backgroundTaskUi.createProjectChatSession(project, cwd, draft, options);
     }
 
-
-
     protected shouldUseTheiaCoder(content: string, selectedAgentId?: string): boolean {
         return this.backgroundTaskUi.shouldUseTheiaCoder(content, selectedAgentId);
     }
 
-
-
     protected async loadBackendAgentSnapshot(): Promise<QaapAgentTaskListSnapshot> {
         return this.backgroundTaskUi.loadBackendAgentSnapshot();
     }
-
-
 
     protected async selectBackendConversationAgent(
         cwd: string,
@@ -2888,135 +2226,24 @@ export class MobileProjectsPanel {
         return this.backgroundTaskUi.selectBackendConversationAgent(cwd, prompt, selectedAgentId, conversationAgentId);
     }
 
-
-
-    protected chatServiceSessionToSummary(
-        session: ChatSession,
-        project: MobileProjectEntry,
-        cwd: string,
-        fallbackTitle: string,
-        fallbackStatus?: QaapAgentConversationSummaryDTO['status'],
-    ): QaapAgentConversationSummaryDTO {
-        const now = session.lastInteraction?.getTime?.() ?? Date.now();
-        return {
-            id: this.chatServiceConversationId(session.id),
-            source: 'theia-chat',
-            cwd,
-            workspacePath: cwd,
-            sessionId: session.id,
-            agentId: session.pinnedAgent?.id ?? 'chat',
-            title: session.title ?? fallbackTitle,
-            status: fallbackStatus ?? (this.isChatSessionWorking(session) ? 'streaming' : 'idle'),
-            createdAt: now,
-            updatedAt: now,
-            messageCount: Math.max(1, session.model.getRequests().length),
-            lastMessagePreview: this.chatSessionPreview(session) ?? fallbackTitle,
-            lastMessageRole: 'user',
-        };
-    }
-
-    protected upsertProjectChatServiceSummary(projectId: string, summary: QaapAgentConversationSummaryDTO): void {
-        const list = [...(this.chatServiceSessionSummariesByProjectId.get(projectId) ?? [])];
-        const index = list.findIndex(item => item.id === summary.id || (!!item.sessionId && item.sessionId === summary.sessionId));
-        if (index >= 0) {
-            list[index] = summary;
-        } else {
-            list.unshift(summary);
-        }
-        this.chatServiceSessionSummariesByProjectId.set(projectId, list);
-    }
-
     protected applyTaskStartedToProject(cwd: string, title: string, taskId: string): void {
         this.backgroundTaskUi.applyTaskStartedToProject(cwd, title, taskId);
     }
-
-
 
     protected ensureAgentChatSession(cwd?: string): ChatSession {
         return this.theiaChatSessionUi.ensureAgentChatSession(cwd);
     }
 
     protected activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']> {
-        const cwd = this.projectsService.getProjectCwd(project);
-        return cwd && this.activeTasks ? this.activeTasks.getForCwd(cwd) : undefined;
+        return this.conversationIndexUi.activeInfoForProject(project);
     }
 
     protected async cancelActiveTask(taskId: string): Promise<void> {
-        this.closeCardMenu();
-        try {
-            const response = await fetch(`/qaap/api/agent-tasks/${encodeURIComponent(taskId)}/cancel`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-            if (response.ok) {
-                this.activeTasks?.recordTaskEnded(await response.json());
-                MobileSnackbar.show(
-                    nls.localize('qaap/mobileProjects/taskCancelled', 'Task cancelled'),
-                    { duration: 1400 }
-                );
-            }
-        } finally {
-            this.projects = await this.projectsService.loadProjects();
-            this.render();
-            this.delegate.onProjectsChanged?.();
-        }
+        await this.activeTaskActionsUi.cancelActiveTask(taskId);
     }
 
     protected async showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void> {
-        this.closeCardMenu();
-        const root = document.createElement('div');
-        root.className = 'theia-mobile-agent-log theia-mod-visible';
-        root.setAttribute('role', 'dialog');
-        root.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-agent-log-backdrop';
-        const sheet = document.createElement('section');
-        sheet.className = 'theia-mobile-agent-log-sheet';
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-agent-log-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/mobileProjects/activeLogTitle', '{0} log', project.name);
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-agent-log-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileProjects/closeLog', 'Close');
-        close.setAttribute('aria-label', close.title);
-        const pre = document.createElement('pre');
-        pre.className = 'theia-mobile-agent-log-output';
-        pre.textContent = nls.localize('qaap/mobileProjects/loadingLog', 'Loading...');
-        const dispose = (): void => root.remove();
-        close.addEventListener('click', dispose);
-        backdrop.addEventListener('click', dispose);
-        header.append(title, close);
-        sheet.append(header, pre);
-        root.append(backdrop, sheet);
-        this.root.append(root);
-        try {
-            const response = await fetch(`/qaap/api/agent-tasks/${encodeURIComponent(taskId)}`, { credentials: 'include' });
-            if (response.ok) {
-                const detail = await response.json() as { log?: string };
-                pre.textContent = detail.log || nls.localize('qaap/mobileProjects/noLogOutput', '(no output yet)');
-            } else {
-                pre.textContent = response.statusText;
-            }
-        } catch (error) {
-            pre.textContent = error instanceof Error ? error.message : String(error);
-        }
-    }
-
-    protected createAgentStack(agents: MobileProjectEntry['agents']): HTMLElement {
-        const stack = document.createElement('span');
-        stack.className = 'theia-mobile-projects-agents';
-        agents.forEach((agent, i) => {
-            const chip = document.createElement('span');
-            chip.className = 'theia-mobile-projects-agent';
-            chip.style.background = agent.color;
-            chip.style.marginLeft = i > 0 ? '-4px' : '0';
-            chip.textContent = agent.role[0]?.toUpperCase() ?? '?';
-            stack.append(chip);
-        });
-        return stack;
+        await this.activeTaskActionsUi.showTaskLog(project, taskId);
     }
 
     async showOpenRepositoryDialog(): Promise<void> {
@@ -3024,38 +2251,7 @@ export class MobileProjectsPanel {
     }
 
     async openProject(project: MobileProjectEntry): Promise<void> {
-        if (project.isCurrent) {
-            // Active workspace: dismiss the landing/sheet entirely so the user transitions into the
-            // workspace view. Even in home/landing mode the user is explicitly opting in here.
-            this.hide();
-            this.delegate.onDismiss();
-            await this.delegate.onCurrentProjectActivated?.(project);
-            return;
-        }
-        // Persist before any async clone/open so a reload always skips the landing dashboard.
-        markMobileProjectsPanelDismiss();
-        let openedViaReload = false;
-        try {
-            if (project.github || project.uri) {
-                openedViaReload = true;
-                await this.projectsService.openInCurrentWindowAsync(project);
-            } else {
-                const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
-                if (this.commands.getCommand(openFolder)) {
-                    markMobileProjectReadmeForOpen();
-                    await this.commands.executeCommand(openFolder);
-                }
-            }
-        } finally {
-            if (openedViaReload) {
-                // Home landing stays up during clone; sessionStorage + reload dismiss it.
-                return;
-            }
-            this.dismissPanelIfSheet();
-            if (this.homeMode) {
-                this.delegate.onWorkspaceOpened?.();
-            }
-        }
+        await this.projectNavigationUi.openProject(project);
     }
 
     /**
@@ -3064,14 +2260,6 @@ export class MobileProjectsPanel {
      * even when the user is in a different project's workspace — that is the whole point of the
      * persistent-conversations model.
      */
-
-
-
-
-
-
-
-    protected readonly transcriptHeaderUi = new MobileProjectsTranscriptHeaderUi(this as unknown as MobileProjectsTranscriptHeaderHost);
 
     protected createExecutionHeaderSubtitle(
         project: MobileProjectEntry,
@@ -3098,8 +2286,6 @@ export class MobileProjectsPanel {
         return this.transcriptHeaderUi.resolveActiveChatEffectiveStatus(summary);
     }
 
-    protected readonly transcriptSubmitUi = new MobileProjectsTranscriptSubmitUi(this as unknown as MobileProjectsTranscriptSubmitHost);
-
     protected async submitTranscriptViaBackendConversation(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -3117,8 +2303,6 @@ export class MobileProjectsPanel {
     ): Promise<void> {
         return this.transcriptSubmitUi.submitTranscriptViaBackendConversation(project, summary, content, options);
     }
-
-    protected readonly tasksHubUi = new MobileProjectsTasksHubUi(this as unknown as MobileProjectsTasksHubHost);
 
     protected collectAgentsHubRecentItems(
         projects: MobileProjectEntry[],
@@ -3156,8 +2340,6 @@ export class MobileProjectsPanel {
         this.tasksHubUi.markTasksFirstLoadComplete(render);
     }
 
-    protected readonly hubCatalogUi = new MobileProjectsHubCatalogUi(this as unknown as MobileProjectsHubCatalogHost);
-
     protected renderCatalogHubView(): void {
         this.hubCatalogUi.renderCatalogHubView();
     }
@@ -3166,8 +2348,6 @@ export class MobileProjectsPanel {
         return this.hubCatalogUi.runCatalogAction(action);
     }
 
-    protected readonly reposHubUi = new MobileProjectsReposHubUi(this as unknown as MobileProjectsReposHubHost);
-
     protected createEmptyState(): HTMLElement {
         return this.reposHubUi.createEmptyState();
     }
@@ -3175,8 +2355,6 @@ export class MobileProjectsPanel {
     protected createSectionLabel(text: string, withDot: boolean): HTMLElement {
         return this.reposHubUi.createSectionLabel(text, withDot);
     }
-
-    protected readonly inboxPrUi = new MobileProjectsInboxPrUi(this as unknown as MobileProjectsInboxPrHost);
 
     protected resetInboxPullRequestState(): void {
         this.inboxPrUi.resetInboxPullRequestState();
@@ -3195,8 +2373,6 @@ export class MobileProjectsPanel {
             force,
         );
     }
-
-    protected readonly cardMenuUi = new MobileProjectsCardMenuUi(this as unknown as MobileProjectsCardMenuHost);
 
     protected buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement {
         return this.cardMenuUi.buildProjectOptionsMenu(project);
@@ -3223,8 +2399,6 @@ export class MobileProjectsPanel {
     protected closeCardMenu(): void {
         this.cardMenuUi.closeCardMenu();
     }
-
-    protected readonly projectRowsUi = new MobileProjectsProjectRowsUi(this as unknown as MobileProjectsProjectRowsHost);
 
     protected createRow(project: MobileProjectEntry): HTMLElement {
         return this.projectRowsUi.createRow(project);
@@ -3260,8 +2434,6 @@ export class MobileProjectsPanel {
         return this.projectRowsUi.resolveConversationAgentLabel(summary);
     }
 
-    protected readonly hubRoutineEditorUi = new MobileProjectsHubRoutineEditorUi(this as unknown as MobileProjectsHubRoutineEditorHost);
-
     protected async refreshWorkHubRoutines(force = false): Promise<void> {
         return this.hubRoutineEditorUi.refreshWorkHubRoutines(force);
     }
@@ -3273,8 +2445,6 @@ export class MobileProjectsPanel {
     protected closeRoutineEditor(): void {
         this.hubRoutineEditorUi.closeRoutineEditor();
     }
-
-    protected readonly hubRoutinesUi = new MobileProjectsHubRoutinesUi(this as unknown as MobileProjectsHubRoutinesHost);
 
     protected renderRoutinesHubView(): void {
         this.hubRoutinesUi.renderRoutinesHubView();
@@ -3299,8 +2469,6 @@ export class MobileProjectsPanel {
         return this.hubRoutinesUi.runRoutineNow(routine);
     }
 
-    protected readonly hubTeamDataUi = new MobileProjectsHubTeamDataUi(this as unknown as MobileProjectsHubTeamDataHost);
-
     protected collectTeamMembersForHub(): WorkHubTeamMember[] {
         return this.hubTeamDataUi.collectTeamMembersForHub();
     }
@@ -3312,8 +2480,6 @@ export class MobileProjectsPanel {
     protected onTeamMemberClick(member: WorkHubTeamMember): void {
         this.hubTeamDataUi.onTeamMemberClick(member);
     }
-
-    protected readonly conversationActionsUi = new MobileProjectsConversationActionsUi(this as unknown as MobileProjectsConversationActionsHost);
 
     protected async onForkConversation(
         project: MobileProjectEntry,
@@ -3373,8 +2539,6 @@ export class MobileProjectsPanel {
         return this.conversationActionsUi.onDeleteConversation(summary);
     }
 
-    protected readonly projectActionsUi = new MobileProjectsProjectActionsUi(this as unknown as MobileProjectsProjectActionsHost);
-
     protected async onRenameProject(project: MobileProjectEntry): Promise<void> {
         return this.projectActionsUi.onRenameProject(project);
     }
@@ -3391,8 +2555,6 @@ export class MobileProjectsPanel {
     protected async onRemoveProject(project: MobileProjectEntry): Promise<void> {
         return this.projectActionsUi.onRemoveProject(project);
     }
-
-    protected readonly workHubInboxUi = new MobileProjectsWorkHubInboxUi(this as unknown as MobileProjectsWorkHubInboxHost);
 
     protected renderReviewHubView(projects: MobileProjectEntry[]): void {
         this.workHubInboxUi.renderReviewHubView(projects);
@@ -3447,8 +2609,6 @@ export class MobileProjectsPanel {
         return this.workHubInboxUi.createChatEmptyState();
     }
 
-    protected readonly theiaChatSessionUi = new MobileProjectsTheiaChatSessionUi(this as unknown as MobileProjectsTheiaChatSessionHost);
-
     protected formatTheiaChatRequestText(content: string, pinnedAgentId?: string): string {
         return this.theiaChatSessionUi.formatTheiaChatRequestText(content, pinnedAgentId);
     }
@@ -3480,8 +2640,6 @@ export class MobileProjectsPanel {
     ): Promise<void> {
         return this.theiaChatSessionUi.mountTranscriptChatInput(project, summary, host, submit);
     }
-
-    protected readonly agentsHubInlineUi = new MobileProjectsAgentsHubInlineUi(this as unknown as MobileProjectsAgentsHubInlineHost);
 
     protected shouldUseAgentsHubLanding(): boolean {
         return this.agentsHubInlineUi.shouldUseAgentsHubLanding();
@@ -3534,8 +2692,6 @@ export class MobileProjectsPanel {
     protected closeAgentsHubSession(): void {
         this.agentsHubInlineUi.closeAgentsHubSession();
     }
-
-    protected readonly transcriptLiveUi = new MobileProjectsTranscriptLiveUi(this as unknown as MobileProjectsTranscriptLiveHost);
 
     findConversationSummaryById(id: string): QaapAgentConversationSummaryDTO | undefined {
         return this.conversations?.findSummaryById(id);
@@ -3594,8 +2750,6 @@ export class MobileProjectsPanel {
         return this.transcriptLiveUi.isWatchingOpenTranscript(conversationId);
     }
 
-    protected readonly transcriptVerifyUi = new MobileProjectsTranscriptVerifyUi(this as unknown as MobileProjectsTranscriptVerifyHost);
-
     protected isAutoVerifyEnabled(cwd: string | undefined): boolean {
         return this.transcriptVerifyUi.isAutoVerifyEnabled(cwd);
     }
@@ -3636,8 +2790,6 @@ export class MobileProjectsPanel {
     } {
         return this.overlayFactoryUi.ensureOverlayUi();
     }
-
-
 
     protected enqueueTranscriptFollowUp(
         conversationId: string,
@@ -3746,20 +2898,10 @@ export class MobileProjectsPanel {
     }
 
     protected async onTranscriptComposerAttach(
-        _project: MobileProjectEntry,
+        project: MobileProjectEntry,
         anchor: HTMLElement,
     ): Promise<void> {
-        if (!this.pickContextVariable) {
-            return;
-        }
-        const variables = await this.pickContextVariable(anchor, this.createTranscriptComposerAttachHandlers());
-        if (variables.length === 0) {
-            return;
-        }
-        for (const request of variables) {
-            this.transcriptComposerContext.push(createComposerContextEntry(request));
-        }
-        this.remountTranscriptStickyComposer();
+        return this.transcriptStickyComposerUi.onTranscriptComposerAttach(project, anchor);
     }
 
     protected attachTranscriptChatViewWidget(
@@ -3767,43 +2909,7 @@ export class MobileProjectsPanel {
         chatHost: HTMLElement,
         session: ChatSession,
     ): boolean {
-        if (session.model.getRequests().length === 0) {
-            return false;
-        }
-        chatHost.classList.add('theia-mobile-agent-transcript-real-chat');
-        chatHost.replaceChildren();
-        widget.bindTranscriptSession(session);
-        if (widget.node.parentElement && widget.node.parentElement !== chatHost) {
-            LuminoWidget.detach(widget);
-        }
-        if (!widget.node.parentElement) {
-            LuminoWidget.attach(widget, chatHost);
-        }
-        widget.show();
-        widget.update();
-        widget.activate();
-        return true;
-    }
-
-    /** Lightweight placeholder until GET /agent-conversations/:id returns the full thread. */
-
-    /**
-     * Scrollable message list inside {@link openTranscriptSheet}'s real-chat host. Keeps
-     * `theia-mobile-agent-transcript-real-chat` on the outer host so flex layout does not collapse.
-     */
-    protected resolveTranscriptMessageHost(host: HTMLElement): HTMLElement {
-        if (!host.classList.contains('theia-mobile-agent-transcript-real-chat')) {
-            host.className = 'theia-mobile-agent-transcript';
-            return host;
-        }
-        const existing = host.querySelector(':scope > .theia-mobile-agent-transcript');
-        if (existing instanceof HTMLElement) {
-            return existing;
-        }
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-agent-transcript';
-        host.replaceChildren(list);
-        return list;
+        return this.theiaChatSessionUi.attachTranscriptChatViewWidget(widget, chatHost, session);
     }
 
     protected chatAgentForBackendId(agentId: string | undefined): ChatAgent | undefined {
@@ -3814,89 +2920,9 @@ export class MobileProjectsPanel {
         return this.theiaChatSessionUi.resolvePinnedAgentForCwd(cwd);
     }
 
-    protected readonly transcriptMessagesUi = new MobileProjectsTranscriptMessagesUi(this as unknown as MobileProjectsTranscriptMessagesHost);
-
-    protected resolveTranscriptAgentSegments(
-        conv: QaapAgentConversationDTO,
-        msg: QaapAgentMessageDTO,
-    ): QaapAgentMessageSegmentDTO[] | undefined {
-        return this.transcriptMessagesUi.resolveTranscriptAgentSegments(conv, msg);
-    }
-
-    protected renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
-        this.transcriptMessagesUi.renderTranscriptMessages(host, conv);
-    }
-
     protected renderTranscriptInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void {
         this.transcriptLiveUi.renderTranscriptInlineApproval(host, conv);
     }
-
-    protected focusTranscriptComposerInput(): void {
-        this.transcriptMessagesUi.focusTranscriptComposerInput();
-    }
-
-    protected resolveTranscriptActivityItems(
-        segments: QaapAgentMessageSegmentDTO[],
-        includeThinkingSteps = true,
-    ): Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }> {
-        return this.transcriptMessagesUi.resolveTranscriptActivityItems(segments, includeThinkingSteps);
-    }
-
-    protected cleanTranscriptDisplayText(content: string | undefined | null): string {
-        return this.transcriptMessagesUi.cleanTranscriptDisplayText(content);
-    }
-
-    protected normalizeTranscriptPreviewLink(href: string): string | undefined {
-        const trimmed = href.trim();
-        if (!trimmed) {
-            return undefined;
-        }
-        if (/^\/qaap-dev\/\d{2,5}(?:\/.*)?$/i.test(trimmed)) {
-            return window.location.origin + trimmed;
-        }
-        if (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):\d{2,5}(?:\/.*)?$/i.test(trimmed)) {
-            return normalizePreviewUrlForSameOrigin(trimmed);
-        }
-        try {
-            const parsed = new URL(trimmed, window.location.origin);
-            if (parsed.origin === window.location.origin && parsed.pathname.startsWith('/qaap-dev/')) {
-                return normalizePreviewUrlForSameOrigin(parsed.toString());
-            }
-        } catch {
-            return undefined;
-        }
-        return undefined;
-    }
-
-    protected async openTranscriptPreviewUrlFromLink(href: string): Promise<boolean> {
-        const previewUrl = this.normalizeTranscriptPreviewLink(href);
-        const summary = this.transcriptComposerSummary ?? this.transcriptOpenSummary;
-        const project = this.transcriptOpenProject;
-        if (!previewUrl || !summary || !project) {
-            return false;
-        }
-
-        this.transcriptPreviewRequestPending = false;
-        this.transcriptPreviewRequestRunning = false;
-        const latestProject = { ...project, previewUrl };
-        this.transcriptOpenProject = latestProject;
-        this.projects = this.projects.map(candidate => candidate.id === latestProject.id
-            ? { ...candidate, previewUrl }
-            : candidate);
-        await this.projectsService.recordProjectPreviewUrl(latestProject, previewUrl).catch(() => undefined);
-
-        this.selectTranscriptTab('preview', latestProject, summary);
-        MobileSnackbar.show(nls.localize('qaap/mobileProjects/previewLinkOpened', 'Preview opened'), { kind: 'success', duration: 1400 });
-        return true;
-    }
-
-    protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
-        return buildConversationTranscriptFingerprint(conv);
-    }
-
-    /** Close the open Agents session but keep the in-panel execution shell (tabs + surfaces). */
-
-
 
     protected dismissPanelIfSheet(): void {
         this.panelLifecycleUi.dismissPanelIfSheet();

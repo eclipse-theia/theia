@@ -43,6 +43,8 @@ import {
     TranscriptWorkspaceSurfacesCache,
     type TranscriptWorkspaceSurfaceKey,
 } from './qaap-transcript-workspace-surfaces-cache';
+import type { MobileProjectsTranscriptHistoryUi } from './mobile-projects-transcript-history-ui';
+import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
 
 type TranscriptTab = ExecutionSurfaceTabId;
 
@@ -104,6 +106,7 @@ export interface MobileProjectsTranscriptSurfacesHost {
     previewClipboard: ClipboardService;
     previewSurfaceRegistry: QaapPreviewSurfaceRegistry | undefined;
     previewInspectorDeps: QaapPreviewInspectorDeps | undefined;
+    transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
 
     renderChecksSection(
         host: HTMLElement | undefined,
@@ -111,9 +114,6 @@ export interface MobileProjectsTranscriptSurfacesHost {
         summary: QaapAgentConversationSummaryDTO,
         options?: { readonly embedded?: boolean },
     ): void;
-    renderTranscriptHistoryToggle(host: HTMLElement, panel: HTMLElement, resizeHandle: HTMLElement, root: string): void;
-    renderTranscriptHistoryPanel(panel: HTMLElement, root: string): void;
-    installTranscriptHistoryResize(handle: HTMLElement, panel: HTMLElement): void;
     attachDiffReviewWidget(host: HTMLElement): void;
     detachDiffReviewWidgetFromHost(): void;
     selectTranscriptTab(tab: TranscriptTab, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
@@ -137,15 +137,6 @@ export interface MobileProjectsTranscriptSurfacesHost {
         project: MobileProjectEntry,
         summary?: QaapAgentConversationSummaryDTO,
     ): void;
-    resolveTranscriptAgentSegments(
-        conv: QaapAgentConversationDTO,
-        msg: QaapAgentConversationDTO['messages'][number],
-    ): QaapAgentMessageSegmentDTO[] | undefined;
-    resolveTranscriptActivityItems(
-        segments: QaapAgentMessageSegmentDTO[],
-        includeThinkingSteps?: boolean,
-    ): Array<{ readonly label: string; readonly state: 'done' | 'running' | 'thinking' }>;
-    cleanTranscriptDisplayText(content: string | undefined | null): string;
     activeExecutionTab(project?: MobileProjectEntry): TranscriptTab;
     refreshTranscriptChecksViews(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     setAutoVerifyEnabled(cwd: string | undefined, on: boolean): void;
@@ -155,7 +146,10 @@ export interface MobileProjectsTranscriptSurfacesHost {
 /** Execution-surface tab content: plan, review, preview, files, and terminal. */
 export class MobileProjectsTranscriptSurfacesUi {
 
-    constructor(protected readonly host: MobileProjectsTranscriptSurfacesHost) { }
+    constructor(
+        protected readonly host: MobileProjectsTranscriptSurfacesHost,
+        protected readonly transcriptHistoryUi: MobileProjectsTranscriptHistoryUi,
+    ) { }
 
     mountProjectDetailSurfaceTab(
         project: MobileProjectEntry,
@@ -271,7 +265,7 @@ export class MobileProjectsTranscriptSurfacesUi {
             return;
         }
 
-        const items = this.host.resolveTranscriptActivityItems(segments);
+        const items = this.host.transcriptMessagesUi.resolveTranscriptActivityItems(segments);
         if (items.length === 0) {
             const note = document.createElement('div');
             note.className = 'theia-mobile-transcript-plan-note';
@@ -339,7 +333,7 @@ export class MobileProjectsTranscriptSurfacesUi {
             if (msg.role !== 'agent') {
                 continue;
             }
-            const segments = this.host.resolveTranscriptAgentSegments(conv, msg);
+            const segments = this.host.transcriptMessagesUi.resolveTranscriptAgentSegments(conv, msg);
             if (segments && segments.length > 0) {
                 return segments;
             }
@@ -420,7 +414,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         this.host.transcriptReviewDiffHost = diffHost;
         this.host.transcriptReviewChecksHost = checksHost;
         this.host.transcriptHistoryRoot = cwd;
-        this.host.installTranscriptHistoryResize(historyResizeHandle, historyPanel);
+        this.transcriptHistoryUi.installTranscriptHistoryResize(historyResizeHandle, historyPanel);
 
         const rootUri = project.uri?.toString() ?? `file://${cwd}`;
         if (!this.host.diffReviewWidget) {
@@ -441,8 +435,8 @@ export class MobileProjectsTranscriptSurfacesUi {
             isActiveWorkspace: project.isCurrent,
         });
         this.host.renderChecksSection(checksHost, project, summary, { embedded: true });
-        this.host.renderTranscriptHistoryToggle(historyToggleHost, historyPanel, historyResizeHandle, cwd);
-        this.host.renderTranscriptHistoryPanel(historyPanel, cwd);
+        this.transcriptHistoryUi.renderTranscriptHistoryToggle(historyToggleHost, historyPanel, historyResizeHandle, cwd);
+        this.transcriptHistoryUi.renderTranscriptHistoryPanel(historyPanel, cwd);
     }
 
     async submitTranscriptReviewFeedback(
@@ -726,7 +720,7 @@ export class MobileProjectsTranscriptSurfacesUi {
             renderMarkdownPreview: services.renderMarkdownPreview
                 ? (resourcePath, markdown) => services.renderMarkdownPreview!(
                     resourcePath,
-                    this.host.cleanTranscriptDisplayText(markdown),
+                    this.host.transcriptMessagesUi.cleanTranscriptDisplayText(markdown),
                 )
                 : undefined,
         };

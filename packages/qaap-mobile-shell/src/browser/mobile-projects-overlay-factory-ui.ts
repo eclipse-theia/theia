@@ -152,4 +152,12 @@ export class MobileProjectsOverlayFactoryUi {
         };
         return this.host.overlayUi;
     }
+
+    appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement {
+        return this.ensureOverlayUi().parallel.appendTranscriptHeaderActions(header, title);
+    }
+
+    closeParallelSheet(): void {
+        this.ensureOverlayUi().parallel.closeSheet();
+    }
 }

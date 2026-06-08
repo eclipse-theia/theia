@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { QAAP_AGENTS_HUB_LANDING_ENABLED } from '../common/qaap-agents-hub-landing';
+import { normalizeWorkHubViewId } from '../common/qaap-work-hub-surfaces';
 import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectEntry, MobileProjectFilter, MobileProjectsHubView } from './mobile-projects-types';
 
@@ -16,6 +17,8 @@ export interface MobileProjectsHubQueryHost {
 
     isProjectRunning(project: MobileProjectEntry): boolean;
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
+    closeRoutineEditor(): void;
+    selectHubLandingView(view: MobileProjectsHubView): void;
 }
 
 export class MobileProjectsHubQueryUi {
@@ -86,6 +89,15 @@ export class MobileProjectsHubQueryUi {
         return QAAP_AGENTS_HUB_LANDING_ENABLED
             && this.host.homeMode
             && (this.host.hubView === 'routines' || this.host.hubView === 'home' || this.host.hubView === 'workflows');
+    }
+
+    navigateBackFromSidebarSecondaryHub(): void {
+        this.host.closeRoutineEditor();
+        this.host.selectHubLandingView('tasks');
+    }
+
+    redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
+        return normalizeWorkHubViewId(view) as MobileProjectsHubView;
     }
 
 }

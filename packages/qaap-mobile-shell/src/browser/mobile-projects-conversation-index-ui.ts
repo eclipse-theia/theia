@@ -20,17 +20,22 @@ export interface MobileProjectsConversationIndexHost {
     preparedCwdByProjectId: Map<string, string>;
     projectsService: MobileProjectsService;
     conversations: MobileProjectsConversations | undefined;
+    activeTasks: MobileProjectsActiveTasks | undefined;
     chatServiceSessionSummariesByProjectId: Map<string, QaapAgentConversationSummaryDTO[]>;
 
     isChatSessionWaitingForInput(session: import('@theia/ai-chat').ChatSession): boolean;
     isChatSessionWorking(session: import('@theia/ai-chat').ChatSession): boolean;
-    activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']>;
 }
 
 /** Conversation list queries, ordering, flags, and legacy task-view projection. */
 export class MobileProjectsConversationIndexUi {
 
     constructor(protected readonly host: MobileProjectsConversationIndexHost) { }
+
+    activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']> {
+        const cwd = this.host.projectsService.getProjectCwd(project);
+        return cwd && this.host.activeTasks ? this.host.activeTasks.getForCwd(cwd) : undefined;
+    }
 
     isProjectRunning(project: MobileProjectEntry): boolean {
         return this.countRunningTasks(project) > 0;
@@ -255,7 +260,7 @@ export class MobileProjectsConversationIndexUi {
     }
 
     fallbackTasksFromProject(project: MobileProjectEntry): MobileProjectTaskView[] {
-        const activeInfo = this.host.activeInfoForProject(project);
+        const activeInfo = this.activeInfoForProject(project);
         if (!activeInfo?.taskId && project.status !== 'working') {
             return [];
         }

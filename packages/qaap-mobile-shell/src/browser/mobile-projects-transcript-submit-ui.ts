@@ -29,6 +29,7 @@ import {
 import { isConversationTurnVisuallySettled } from '../common/qaap-transcript-turn-status';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectEntry } from './mobile-projects-types';
+import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
 
 /** Panel surface for VPS/backend transcript message submit and optimistic render. */
 export interface MobileProjectsTranscriptSubmitHost {
@@ -39,6 +40,7 @@ export interface MobileProjectsTranscriptSubmitHost {
     transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
     conversations: MobileProjectsConversations | undefined;
+    transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
 
     isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean;
     createProjectChatSession(
@@ -54,7 +56,6 @@ export interface MobileProjectsTranscriptSubmitHost {
         },
     ): Promise<QaapAgentConversationSummaryDTO>;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
-    renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void;
     ensureTranscriptConversationRefresh(): void;
     applyTaskStartedToProject(cwd: string, title: string, taskId: string): void;
 }
@@ -94,7 +95,7 @@ export class MobileProjectsTranscriptSubmitUi {
             if (activeChatHost) {
                 const full = await getConversation(created.id);
                 this.host.transcriptLastFingerprint = undefined;
-                this.host.renderTranscriptMessages(activeChatHost, full);
+                this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
                 this.host.ensureTranscriptConversationRefresh();
             }
             this.host.applyTaskStartedToProject(created.cwd, content, created.id);
@@ -122,7 +123,7 @@ export class MobileProjectsTranscriptSubmitUi {
         const activeChatHost = this.host.resolveActiveTranscriptChatHost();
         if (activeChatHost && this.host.transcriptOpenSummaryId === summary.id) {
             this.host.transcriptLastFingerprint = undefined;
-            this.host.renderTranscriptMessages(activeChatHost, optimistic);
+            this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, optimistic);
         }
         try {
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
@@ -145,7 +146,7 @@ export class MobileProjectsTranscriptSubmitUi {
             const refreshedChatHost = this.host.resolveActiveTranscriptChatHost();
             if (refreshedChatHost && this.host.transcriptOpenSummaryId === summary.id) {
                 this.host.transcriptLastFingerprint = undefined;
-                this.host.renderTranscriptMessages(refreshedChatHost, updated);
+                this.host.transcriptMessagesUi.renderTranscriptMessages(refreshedChatHost, updated);
             }
             this.host.applyTaskStartedToProject(summary.cwd, content, summary.id);
             this.host.ensureTranscriptConversationRefresh();
@@ -153,7 +154,7 @@ export class MobileProjectsTranscriptSubmitUi {
             const rollbackChatHost = this.host.resolveActiveTranscriptChatHost();
             if (rollbackChatHost && this.host.transcriptOpenSummaryId === summary.id) {
                 this.host.transcriptLastFingerprint = undefined;
-                this.host.renderTranscriptMessages(rollbackChatHost, base);
+                this.host.transcriptMessagesUi.renderTranscriptMessages(rollbackChatHost, base);
             }
             throw error;
         }

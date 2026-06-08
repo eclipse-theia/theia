@@ -26,7 +26,10 @@ import {
     shouldSkipStreamingTranscriptRefetch,
 } from '../common/qaap-transcript-sse-delta';
 import { resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
-import { shouldForceTranscriptRenderOnStatusSettle } from '../common/qaap-transcript-incremental-update';
+import {
+    buildConversationTranscriptFingerprint,
+    shouldForceTranscriptRenderOnStatusSettle,
+} from '../common/qaap-transcript-incremental-update';
 import { resolveTranscriptEffectiveStatus, isConversationTurnVisuallySettled } from '../common/qaap-transcript-turn-status';
 import {
     QaapTranscriptLiveController,
@@ -36,6 +39,7 @@ import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
+import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
 
 /** Panel surface for SSE live watch, debounced refetch, and inline approval refresh. */
 export interface MobileProjectsTranscriptLiveHost {
@@ -59,11 +63,11 @@ export interface MobileProjectsTranscriptLiveHost {
     cachedAgentApprovals: import('../common/qaap-agent-approval-client').QaapAgentApprovalRequestDTO[];
     projectsService: MobileProjectsService;
     conversations: MobileProjectsConversations | undefined;
+    transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
 
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     findConversationSummaryById(id: string): QaapAgentConversationSummaryDTO | undefined;
     readonly conversationsOnDidChange: TheiaEvent<void>;
-    renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void;
     remountTranscriptStickyComposer(): void;
     refreshTranscriptExecutionChrome(): void;
     flushTranscriptFollowUpQueue(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
@@ -90,7 +94,6 @@ export interface MobileProjectsTranscriptLiveHost {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void;
-    conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string;
     isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean;
     resolveActiveChatEffectiveStatus(summary?: QaapAgentConversationSummaryDTO): QaapAgentConversationSummaryDTO['status'];
     ensureTranscriptConversationRefresh(): void;
@@ -104,6 +107,10 @@ export class MobileProjectsTranscriptLiveUi {
     protected transcriptTurnVisuallySettledActive = false;
 
     constructor(protected readonly host: MobileProjectsTranscriptLiveHost) { }
+
+    conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
+        return buildConversationTranscriptFingerprint(conv);
+    }
 
     handleTranscriptSseMessage(event: {
         readonly conversationId: string;
@@ -122,8 +129,8 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         this.ensureTranscriptLiveController().markSseDeltaApplied();
-        this.host.renderTranscriptMessages(chatHost, next);
-        this.host.transcriptLastFingerprint = this.host.conversationTranscriptFingerprint(next);
+        this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, next);
+        this.host.transcriptLastFingerprint = this.conversationTranscriptFingerprint(next);
         if (!isConversationAutoApproveEnabled(conversationToSummary(next))) {
             this.renderTranscriptInlineApproval(chatHost, next);
         }
@@ -294,7 +301,7 @@ export class MobileProjectsTranscriptLiveUi {
                 renderConversation: conv => {
                     const chatHost = this.resolveActiveTranscriptChatHost();
                     if (chatHost) {
-                        this.host.renderTranscriptMessages(chatHost, conv);
+                        this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, conv);
                     }
                 },
                 onApprovalRefresh: () => this.scheduleTranscriptApprovalRefresh(),
@@ -397,7 +404,7 @@ export class MobileProjectsTranscriptLiveUi {
             if (!this.isActiveTranscriptConversation(activeSummary.id) || !activeChatHost.isConnected) {
                 return;
             }
-            const fingerprint = this.host.conversationTranscriptFingerprint(full);
+            const fingerprint = this.conversationTranscriptFingerprint(full);
             await this.host.syncTranscriptPreviewFromConversation(activeProject, activeSummary, full);
             const fingerprintUnchanged = fingerprint === this.host.transcriptLastFingerprint;
             const forceStatusSettle = options?.forceStatusSettle
@@ -420,7 +427,7 @@ export class MobileProjectsTranscriptLiveUi {
                 return;
             }
             this.host.transcriptLastFingerprint = fingerprint;
-            this.host.renderTranscriptMessages(activeChatHost, full);
+            this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
             if (this.host.transcriptSheet) {
                 const surfaceTab = this.host.executionSurfaceTabForProject(activeProject);
                 this.host.showOnlyExecutionSurfaceTab(surfaceTab);

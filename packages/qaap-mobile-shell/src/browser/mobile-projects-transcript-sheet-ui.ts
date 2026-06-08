@@ -81,12 +81,14 @@ export interface MobileProjectsTranscriptSheetHost {
     transcriptUi: MobileProjectsTranscriptUi;
     agentsHubInlineActive: boolean;
     visible: boolean;
+    delegate: {
+        onEnterActiveTranscript?(): void;
+        onExitActiveTranscript?(): void;
+    };
 
     shouldUseAgentsHubLanding(): boolean;
     isProjectDetailView(): boolean;
     openAgentsHubInlineTranscript(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
-    onEnterActiveTranscript(): void;
-    onExitActiveTranscript(): void;
     resolveTranscriptHeaderTitle(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): string;
     mountTranscriptExecutionHeader(
         header: HTMLElement,
@@ -94,7 +96,6 @@ export interface MobileProjectsTranscriptSheetHost {
         summary: QaapAgentConversationSummaryDTO,
         titleText: string,
     ): { back: HTMLButtonElement; tabStrip: HTMLElement };
-    renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void;
     renderHeader(): void;
     renderSubtitle(): void;
     renderList(): void;
@@ -171,7 +172,7 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.replacingTranscriptSheet = true;
         this.closeTranscriptSheet();
         this.host.replacingTranscriptSheet = false;
-        this.host.onEnterActiveTranscript();
+        this.host.delegate.onEnterActiveTranscript?.();
         const root = document.createElement('div');
         root.className = 'theia-mobile-agent-log theia-mobile-agent-transcript-root theia-mod-visible';
         root.setAttribute('role', 'dialog');
@@ -384,7 +385,7 @@ export class MobileProjectsTranscriptSheetUi {
         if (sheetWasOnBody) {
             if (!this.host.replacingTranscriptSheet) {
                 setMobileActiveTranscriptChrome(false);
-                this.host.onExitActiveTranscript();
+                this.host.delegate.onExitActiveTranscript?.();
             }
             this.host.notifyWorkspaceHubBottomBarRefresh();
         } else if (wasAgentsHubInline && !this.host.replacingTranscriptSheet) {

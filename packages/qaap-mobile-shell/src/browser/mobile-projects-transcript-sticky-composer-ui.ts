@@ -6,7 +6,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { ChatMode, ChatSession } from '@theia/ai-chat';
+import { ChatMode, ChatModel, ChatSession } from '@theia/ai-chat';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import {
     conversationToSummary,
@@ -24,6 +24,9 @@ import {
     writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
 } from '../common/qaap-agent-task-client';
+import { createComposerContextEntry } from '../common/qaap-composer-context-entry';
+import { resolveTranscriptEffectiveStatus } from '../common/qaap-transcript-turn-status';
+import type { MobileComposerAttachHandlers } from './qaap-mobile-composer-device-attach';
 import {
     buildUpdateConversationComposerPatch,
     clearConversationComposerDraft,
@@ -50,9 +53,6 @@ import {
     writeStoredAgentToolApprovalRules,
     type QaapAgentToolApprovalRules,
 } from '../common/qaap-agent-tool-approval-rules';
-import {
-    resolveTranscriptEffectiveStatus,
-} from '../common/qaap-transcript-turn-status';
 import {
     MAX_TRANSCRIPT_FOLLOW_UP_QUEUE,
     TranscriptFollowUpQueue,
@@ -140,6 +140,10 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     messageService?: MessageService;
     conversations?: MobileProjectsConversations;
     getComposerVariables?: unknown;
+    pickContextVariable?: (
+        anchor: HTMLElement,
+        handlers: MobileComposerAttachHandlers,
+    ) => Promise<import('@theia/ai-core').AIVariableResolutionRequest[]>;
 
     buildStickyComposerColumn(options: TranscriptStickyComposerColumnOptions): HTMLElement;
     formatComposerContextEntry(entry: StickyComposerContextEntry): StickyComposerContextChipView;
@@ -150,11 +154,10 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     openTranscriptComposerApprovalPolicySheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, agentLabel: string): void;
     openTranscriptComposerAgentSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     onCancelConversation(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
-    onTranscriptComposerAttach(project: MobileProjectEntry, anchor: HTMLElement): Promise<void>;
+    createTranscriptComposerAttachHandlers(): MobileComposerAttachHandlers;
     resolveComposerMentionOptions(agents: readonly QaapAgentTaskAgentOption[], includeCoder: boolean): readonly StickyComposerTokenOption[];
     resolveComposerVariableOptions(): readonly StickyComposerTokenOption[];
     mountStickyComposerContextUsage(badge: HTMLElement, target: () => unknown): Disposable;
-    resolveTranscriptContextUsageTarget(summary: QaapAgentConversationSummaryDTO): unknown;
     shouldShowComposerWorkspaceBar(summary: QaapAgentConversationSummaryDTO): boolean;
     submitBackgroundAgentTask(
         project: MobileProjectEntry,
@@ -182,6 +185,53 @@ export interface MobileProjectsTranscriptStickyComposerHost {
 export class MobileProjectsTranscriptStickyComposerUi {
 
     constructor(protected readonly host: MobileProjectsTranscriptStickyComposerHost) { }
+
+    async onTranscriptComposerAttach(
+        _project: MobileProjectEntry,
+        anchor: HTMLElement,
+    ): Promise<void> {
+        if (!this.host.pickContextVariable) {
+            return;
+        }
+        const variables = await this.host.pickContextVariable(anchor, this.host.createTranscriptComposerAttachHandlers());
+        if (variables.length === 0) {
+            return;
+        }
+        for (const request of variables) {
+            this.host.transcriptComposerContext.push(createComposerContextEntry(request));
+        }
+        this.remountTranscriptStickyComposer();
+    }
+
+    resolveTranscriptContextUsageTarget(
+        summary: QaapAgentConversationSummaryDTO,
+    ): {
+        readonly summary?: QaapAgentConversationSummaryDTO;
+        readonly chatModel?: ChatModel;
+        readonly full?: QaapAgentConversationDTO;
+    } {
+        if (summary.source === 'theia-chat') {
+            const chatModel = this.resolveTranscriptTheiaChatModel(summary);
+            return chatModel ? { chatModel } : {};
+        }
+        const cwd = summary.cwd;
+        const live = this.host.conversations?.getConversationsForCwd(cwd).find(c => c.id === summary.id) ?? summary;
+        if (this.host.transcriptLastConv?.id === summary.id) {
+            const effectiveStatus = resolveTranscriptEffectiveStatus(this.host.transcriptLastConv);
+            return {
+                summary: { ...live, status: effectiveStatus },
+                full: this.host.transcriptLastConv,
+            };
+        }
+        return { summary: live };
+    }
+
+    resolveTranscriptTheiaChatModel(summary: QaapAgentConversationSummaryDTO): ChatModel | undefined {
+        if (summary.source !== 'theia-chat' || !summary.sessionId || !this.host.chatService) {
+            return undefined;
+        }
+        return this.host.chatService.getSession(summary.sessionId)?.model;
+    }
 
     enqueueTranscriptFollowUp(
         conversationId: string,
@@ -531,7 +581,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
             isAgentWorking: () => this.isTranscriptStickyComposerAgentWorking(),
             onStop: () => { void this.host.onCancelConversation(project, summary); },
             onSendControlMounted: refresh => { this.host.transcriptComposerSendRefresh = refresh; },
-            onAttach: anchor => { void this.host.onTranscriptComposerAttach(project, anchor); },
+            onAttach: anchor => { void this.onTranscriptComposerAttach(project, anchor); },
             onOpenAgentSheet: isLegacyTheiaChat
                 ? () => { /* Legacy Theia chat is not agent-switchable */ }
                 : () => { this.host.openTranscriptComposerAgentSheet(project, summary); },
@@ -653,7 +703,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
             onContextUsageBadgeMounted: badge => {
                 this.host.stickyComposerContextUsageDispose = this.host.mountStickyComposerContextUsage(
                     badge,
-                    () => this.host.resolveTranscriptContextUsageTarget(summary),
+                    () => this.resolveTranscriptContextUsageTarget(summary),
                 );
             },
             showWorkspaceBar: this.host.shouldShowComposerWorkspaceBar(summary),

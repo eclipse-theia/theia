@@ -6,6 +6,10 @@
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { disposeComposerContextEntries } from '../common/qaap-composer-context-entry';
+import {
+    markMobileProjectReadmeForOpen,
+    markMobileProjectsPanelDismiss,
+} from './mobile-projects-open';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
 import type { TranscriptWorkspaceSurfacesCache } from './qaap-transcript-workspace-surfaces-cache';
@@ -35,7 +39,13 @@ export interface MobileProjectsProjectNavigationHost {
     projectsService: MobileProjectsService;
     commands: CommandRegistry;
     transcriptWorkspaceSurfaces: TranscriptWorkspaceSurfacesCache;
-    delegate: { onProjectsChanged?(): void };
+    homeMode: boolean;
+    delegate: {
+        onProjectsChanged?(): void;
+        onDismiss(): void;
+        onCurrentProjectActivated?(project: MobileProjectEntry): void | Promise<void>;
+        onWorkspaceOpened?(): void;
+    };
 
     closeCardMenu(): void;
     closeStickyComposerSheets(): void;
@@ -44,8 +54,11 @@ export interface MobileProjectsProjectNavigationHost {
     render(): void;
     syncLandingHubListChrome(): void;
     renderList(): void;
+    projectsForCurrentHubList(): MobileProjectEntry[];
     disposeTranscriptTerminalSlides(workspaceKey?: import('./qaap-transcript-workspace-surfaces-cache').TranscriptWorkspaceSurfaceKey): void;
     refreshProjects(): Promise<void>;
+    hide(): void;
+    dismissPanelIfSheet(): void;
 }
 
 export class MobileProjectsProjectNavigationUi {
@@ -120,6 +133,47 @@ export class MobileProjectsProjectNavigationUi {
         this.host.headerExecutionTabsProjectId = undefined;
         this.host.headerExecutionTabsHost.hidden = true;
         this.host.headerExecutionTabsHost.replaceChildren();
+    }
+
+    resolveSelectedProject(
+        projects: MobileProjectEntry[] = this.host.projectsForCurrentHubList(),
+    ): MobileProjectEntry | undefined {
+        if (this.host.expandedId === undefined) {
+            return undefined;
+        }
+        return projects.find(p => p.id === this.host.expandedId)
+            ?? this.host.projects.find(p => p.id === this.host.expandedId);
+    }
+
+    async openProject(project: MobileProjectEntry): Promise<void> {
+        if (project.isCurrent) {
+            this.host.hide();
+            this.host.delegate.onDismiss();
+            await this.host.delegate.onCurrentProjectActivated?.(project);
+            return;
+        }
+        markMobileProjectsPanelDismiss();
+        let openedViaReload = false;
+        try {
+            if (project.github || project.uri) {
+                openedViaReload = true;
+                await this.host.projectsService.openInCurrentWindowAsync(project);
+            } else {
+                const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
+                if (this.host.commands.getCommand(openFolder)) {
+                    markMobileProjectReadmeForOpen();
+                    await this.host.commands.executeCommand(openFolder);
+                }
+            }
+        } finally {
+            if (openedViaReload) {
+                return;
+            }
+            this.host.dismissPanelIfSheet();
+            if (this.host.homeMode) {
+                this.host.delegate.onWorkspaceOpened?.();
+            }
+        }
     }
 
     async closeCurrentWorkspace(): Promise<void> {

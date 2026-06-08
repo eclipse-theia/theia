@@ -17,6 +17,7 @@ import {
     MutableChatModel,
 } from '@theia/ai-chat';
 import type { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { MobileProjectChatViewWidget } from './mobile-project-ai-chat-input-widget';
 import { Widget as LuminoWidget } from '@lumino/widgets';
 import {
     getConversation,
@@ -107,6 +108,29 @@ export class MobileProjectsTheiaChatSessionUi {
         const session = this.host.chatService!.createSession(ChatAgentLocation.Panel, { focus: false }, pinned);
         this.host.agentChatInputSession = session;
         return session;
+    }
+
+    attachTranscriptChatViewWidget(
+        widget: MobileProjectChatViewWidget,
+        chatHost: HTMLElement,
+        session: ChatSession,
+    ): boolean {
+        if (session.model.getRequests().length === 0) {
+            return false;
+        }
+        chatHost.classList.add('theia-mobile-agent-transcript-real-chat');
+        chatHost.replaceChildren();
+        widget.bindTranscriptSession(session);
+        if (widget.node.parentElement && widget.node.parentElement !== chatHost) {
+            LuminoWidget.detach(widget);
+        }
+        if (!widget.node.parentElement) {
+            LuminoWidget.attach(widget, chatHost);
+        }
+        widget.show();
+        widget.update();
+        widget.activate();
+        return true;
     }
 
     /** Local chat always routes to Coder — strip VPS @mentions and ensure a Coder prefix. */

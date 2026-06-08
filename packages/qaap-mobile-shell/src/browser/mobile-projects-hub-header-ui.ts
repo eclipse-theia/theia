@@ -5,6 +5,7 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { scrollElementTo } from '../common/qaap-prefers-reduced-motion';
 import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
 import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
@@ -31,6 +32,16 @@ export interface MobileProjectsHubHeaderHost {
     buildHomeGreeting(): string;
     projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string;
     resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
+    scroll: HTMLElement;
+    lastTitleTap: number;
+
+    closeAgentsHubSession(): void;
+    closeTranscriptSheet(): void;
+    navigateBackFromSidebarSecondaryHub(): void;
+    closeProjectDiffView(): void;
+    navigateExecutionSurfaceBack(project: MobileProjectEntry): boolean;
+    closeProjectDetail(): void;
+    openWorkHubSessionsSidebar(): void;
 }
 
 export class MobileProjectsHubHeaderUi {
@@ -144,5 +155,38 @@ export class MobileProjectsHubHeaderUi {
         return project.name;
     }
 
+    onTitleTap(): void {
+        const now = Date.now();
+        if (now - this.host.lastTitleTap < 320) {
+            scrollElementTo(this.host.scroll, 0, 'smooth');
+            this.host.lastTitleTap = 0;
+        } else {
+            this.host.lastTitleTap = now;
+        }
+    }
+
+    handleHeaderBackClick(): void {
+        if (this.host.agentsHubInlineActive && this.host.shouldUseAgentsHubLanding()) {
+            this.host.closeAgentsHubSession();
+            return;
+        }
+        if (this.host.agentsHubInlineActive) {
+            this.host.closeTranscriptSheet();
+            return;
+        }
+        if (this.host.isSidebarSecondaryHubView()) {
+            this.host.navigateBackFromSidebarSecondaryHub();
+            return;
+        }
+        if (this.host.isProjectDiffView()) {
+            this.host.closeProjectDiffView();
+            return;
+        }
+        const project = this.host.resolveSelectedProject();
+        if (project && this.host.navigateExecutionSurfaceBack(project)) {
+            return;
+        }
+        this.host.closeProjectDetail();
+    }
 
 }
