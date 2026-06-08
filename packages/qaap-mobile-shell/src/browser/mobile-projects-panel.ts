@@ -72,6 +72,11 @@ import {
 } from '../common/qaap-transcript-sse-delta';
 import { resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
 import {
+    MAX_TRANSCRIPT_FOLLOW_UP_QUEUE,
+    TranscriptFollowUpQueue,
+    type TranscriptFollowUpEntry,
+} from '../common/qaap-transcript-follow-up-queue';
+import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
     QaapAgentMessageDTO,
@@ -624,6 +629,8 @@ export class MobileProjectsPanel {
     protected transcriptComposerFilesExpanded = true;
     protected transcriptComposerPinnedAgentId: string | undefined;
     protected transcriptComposerDraft = '';
+    protected readonly transcriptFollowUpQueue = new TranscriptFollowUpQueue();
+    protected transcriptFollowUpFlushInFlight = false;
     /** Refreshes transcript sticky-composer send/stop affordance without a full remount. */
     protected transcriptComposerSendRefresh: (() => void) | undefined;
     protected transcriptComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
@@ -4190,7 +4197,6 @@ export class MobileProjectsPanel {
 
         const cwd = this.projectsService.getProjectCwd(project) ?? this.preparedCwdByProjectId.get(project.id);
         this.stickyComposerSurface = 'task';
-        this.pinStickyComposerToQaiq(cwd);
         const isChatSurface = false;
         const canRunTask = !!project && (!!cwd || !!project.github);
         const canRunChat = !!this.chatService && !!project;
@@ -10819,6 +10825,10 @@ export class MobileProjectsPanel {
                     this.syncExecutionSurfaceChrome(activeProject);
                 }
                 this.handleTranscriptStatusForAutoVerify(activeProject, activeSummary, full.status);
+                const settledSummary = conversationToSummary(full);
+                if (full.status !== 'streaming') {
+                    void this.flushTranscriptFollowUpQueue(activeProject, settledSummary);
+                }
                 if (full.status === 'streaming' || this.transcriptPreviewRequestPending) {
                     this.watchOpenTranscriptUntilIdle(activeProject, activeSummary.id);
                 } else {
@@ -13013,6 +13023,91 @@ export class MobileProjectsPanel {
         });
     }
 
+    protected enqueueTranscriptFollowUp(
+        conversationId: string,
+        entry: TranscriptFollowUpEntry,
+    ): boolean {
+        const ok = this.transcriptFollowUpQueue.enqueue(conversationId, entry);
+        if (!ok) {
+            MobileSnackbar.show(
+                nls.localize(
+                    'qaap/mobileProjects/transcriptFollowUpQueueFull',
+                    'Queue is full ({0} messages). Wait for the agent to finish.',
+                    String(MAX_TRANSCRIPT_FOLLOW_UP_QUEUE),
+                ),
+                { kind: 'warning', duration: 2800 },
+            );
+            return false;
+        }
+        const count = this.transcriptFollowUpQueue.size(conversationId);
+        MobileSnackbar.show(
+            nls.localize(
+                'qaap/mobileProjects/transcriptFollowUpQueued',
+                '{0} message(s) queued — will send when the agent finishes',
+                String(count),
+            ),
+            { kind: 'success', duration: 1600 },
+        );
+        return true;
+    }
+
+    protected appendTranscriptFollowUpQueueBanner(shell: HTMLElement, conversationId: string): void {
+        const count = this.transcriptFollowUpQueue.size(conversationId);
+        const existing = shell.querySelector('.theia-mobile-transcript-follow-up-queue');
+        if (!count) {
+            existing?.remove();
+            return;
+        }
+        const banner = existing ?? document.createElement('div');
+        banner.className = 'theia-mobile-transcript-follow-up-queue';
+        banner.textContent = count === 1
+            ? nls.localize('qaap/mobileProjects/transcriptFollowUpQueueOne', '1 follow-up queued')
+            : nls.localize(
+                'qaap/mobileProjects/transcriptFollowUpQueueMany',
+                '{0} follow-ups queued',
+                String(count),
+            );
+        if (!existing) {
+            const column = shell.querySelector('.theia-mobile-projects-sticky-composer-column');
+            if (column) {
+                shell.insertBefore(banner, column);
+            } else {
+                shell.append(banner);
+            }
+        }
+    }
+
+    protected async flushTranscriptFollowUpQueue(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        if (summary.status === 'streaming' || this.transcriptFollowUpFlushInFlight) {
+            return;
+        }
+        const next = this.transcriptFollowUpQueue.shift(summary.id);
+        if (!next) {
+            return;
+        }
+        this.transcriptFollowUpFlushInFlight = true;
+        try {
+            await this.submitTranscriptViaBackendConversation(project, summary, next.draft, {
+                selectedAgentId: next.selectedAgentId,
+                modeId: next.modeId,
+                autoApprove: next.autoApprove,
+                approvalPolicyId: next.approvalPolicyId,
+            });
+        } catch (error) {
+            this.transcriptFollowUpQueue.unshift(summary.id, next);
+            const detail = error instanceof Error ? error.message : String(error);
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/transcriptSendFailed', 'Could not send: {0}', detail,
+            ));
+        } finally {
+            this.transcriptFollowUpFlushInFlight = false;
+            this.remountTranscriptStickyComposer();
+        }
+    }
+
     protected isTranscriptStickyComposerAgentWorking(): boolean {
         const summary = this.transcriptComposerSummary;
         if (!summary || !this.transcriptComposerHost?.isConnected) {
@@ -13076,7 +13171,7 @@ export class MobileProjectsPanel {
         const column = this.buildStickyComposerColumn({
             project,
             surface: 'task',
-            agentLocked: true,
+            agentLocked: isLegacyTheiaChat,
             getContext: () => this.transcriptComposerContext,
             clearContext: () => {
                 this.transcriptComposerContext = [];
@@ -13113,8 +13208,12 @@ export class MobileProjectsPanel {
             onStop: () => { void this.onCancelConversation(project, summary); },
             onSendControlMounted: refresh => { this.transcriptComposerSendRefresh = refresh; },
             onAttach: anchor => { void this.onTranscriptComposerAttach(project, anchor); },
-            onOpenAgentSheet: () => { /* QAIQ is the only product agent */ },
-            sendLabel: nls.localize('qaap/mobileProjects/transcriptSend', 'Send'),
+            onOpenAgentSheet: isLegacyTheiaChat
+                ? () => { /* Legacy Theia chat is not agent-switchable */ }
+                : () => { this.openTranscriptComposerAgentSheet(project, summary); },
+            sendLabel: this.isTranscriptStickyComposerAgentWorking()
+                ? nls.localize('qaap/mobileProjects/transcriptQueue', 'Queue')
+                : nls.localize('qaap/mobileProjects/transcriptSend', 'Send'),
             onSubmit: draft => {
                 const resolvedPinnedId = this.resolveTranscriptComposerPinnedAgentId(project, summary);
                 const selectedAgentId = resolveExplicitAgentForSubmit(draft, {
@@ -13130,6 +13229,22 @@ export class MobileProjectsPanel {
                     summary.cwd,
                 );
                 this.transcriptComposerContext = [];
+                if (this.isTranscriptStickyComposerAgentWorking() && !isAgentsHubIdleConversationSummary(summary)) {
+                    const queued = this.enqueueTranscriptFollowUp(summary.id, {
+                        draft,
+                        selectedAgentId,
+                        modeId,
+                        autoApprove,
+                        approvalPolicyId: reconcileAgentApprovalPolicyId(
+                            this.transcriptComposerApprovalPolicyId,
+                            summary.cwd,
+                        ),
+                    });
+                    if (queued) {
+                        this.remountTranscriptStickyComposer();
+                    }
+                    return;
+                }
                 if (isAgentsHubIdleConversationSummary(summary)) {
                     this.renderAgentsHubIdleSubmitOptimistic(chatHost, summary, draft, selectedAgentId);
                     this.transcriptComposerSendRefresh?.();
@@ -13226,6 +13341,7 @@ export class MobileProjectsPanel {
             );
             shell.append(legacyBanner);
         }
+        this.appendTranscriptFollowUpQueueBanner(shell, summary.id);
         shell.append(column);
         host.append(shell);
     }
@@ -15888,6 +16004,10 @@ export class MobileProjectsPanel {
         this.transcriptComposerPinnedAgentId = undefined;
         this.transcriptComposerModeId = undefined;
         this.transcriptComposerDraft = '';
+        if (this.transcriptOpenSummaryId) {
+            this.transcriptFollowUpQueue.clear(this.transcriptOpenSummaryId);
+        }
+        this.transcriptFollowUpFlushInFlight = false;
 
         const wasAgentsHubInline = this.agentsHubInlineActive;
         const preserveAgentsShell = wasAgentsHubInline && this.shouldUseAgentsHubLanding();

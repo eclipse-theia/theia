@@ -71,18 +71,19 @@ describe('qaap-agent-task-client', () => {
         expect(migrateLegacyBackendAgentId('codex')).to.equal('codex');
     });
 
-    it('migrateQaapProductAgentId maps retired defaults to QAIQ', () => {
+    it('migrateQaapProductAgentId maps retired Coder defaults to QAIQ', () => {
         expect(migrateQaapProductAgentId('Coder')).to.equal(QAAP_PRIMARY_AGENT_ID);
-        expect(migrateQaapProductAgentId('codex')).to.equal(QAAP_PRIMARY_AGENT_ID);
+        expect(migrateQaapProductAgentId('codex')).to.equal('codex');
         expect(migrateQaapProductAgentId('opencode')).to.equal('opencode');
     });
 
-    it('filterQaapComposerAgents exposes only QAIQ when available', () => {
+    it('filterQaapComposerAgents exposes selectable VPS agents', () => {
         const agents = [
             { id: 'qaiq', label: 'QAIQ', available: true },
             { id: 'codex', label: 'Codex', available: true },
+            shellAgentFallback(),
         ];
-        expect(filterQaapComposerAgents(agents).map(agent => agent.id)).to.deep.equal(['qaiq']);
+        expect(filterQaapComposerAgents(agents).map(agent => agent.id)).to.deep.equal(['qaiq', 'codex']);
     });
 
     it('reconcileSelectedAgent prefers QAIQ as the product default', () => {
@@ -143,7 +144,7 @@ describe('qaap-agent-task-client', () => {
         })).to.equal('qaiq');
     });
 
-    it('reconcileStickyComposerAgent resolves to QAIQ for the Qaap product', () => {
+    it('reconcileStickyComposerAgent defaults to QAIQ but honors an explicit VPS pick', () => {
         const agents = [
             { id: 'qaiq', label: 'QAIQ', available: true },
             { id: 'codex', label: 'Codex', available: true },
@@ -151,7 +152,7 @@ describe('qaap-agent-task-client', () => {
         expect(reconcileStickyComposerAgent(THEIA_CODER_AGENT_ID, agents, 'codex', undefined, true))
             .to.equal(QAAP_PRIMARY_AGENT_ID);
         expect(reconcileStickyComposerAgent('codex', agents, 'codex', undefined, true))
-            .to.equal(QAAP_PRIMARY_AGENT_ID);
+            .to.equal('codex');
         expect(reconcileStickyComposerAgent(undefined, agents, 'codex', undefined, false))
             .to.equal(QAAP_PRIMARY_AGENT_ID);
     });

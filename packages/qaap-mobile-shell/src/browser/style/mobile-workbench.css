@@ -5215,6 +5215,17 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   box-sizing: border-box;
 }
 
+.theia-mobile-transcript-follow-up-queue {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 12%, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)));
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 28%, transparent);
+}
+
 .theia-mobile-sticky-composer-mode-banner,
 .theia-mobile-sticky-composer-legacy-banner {
   margin: 0 0 8px;
