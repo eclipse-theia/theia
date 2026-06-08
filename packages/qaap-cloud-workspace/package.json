@@ -14,7 +14,8 @@
     "@theia/workspace": "1.71.0",
     "dockerode": "^4.0.12",
     "tslib": "^2.8.1",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "ws": "^8.20.0"
   },
   "publishConfig": {
     "access": "public"
@@ -54,7 +55,8 @@
     "@theia/dev-container": "1.71.0",
     "@theia/ext-scripts": "1.71.0",
     "@types/dockerode": "^3.3.47",
-    "@types/web-push": "^3.6.4"
+    "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.18.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
