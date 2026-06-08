@@ -223,6 +223,14 @@ import {
     type ExecutionSurfaceTabId,
 } from '../common/qaap-execution-surface-tabs';
 import { scrollElementTo, scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
+import {
+    buildConversationTranscriptFingerprint,
+    resolveStreamingTranscriptPatchKind,
+    shouldForceTranscriptRenderOnStatusSettle,
+    TRANSCRIPT_ACTIVITY_ROW_ATTR,
+    TRANSCRIPT_MESSAGE_ID_ATTR,
+} from '../common/qaap-transcript-incremental-update';
+import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin';
 import {
     appendExecutionSurfaceTabIcon,
@@ -618,6 +626,7 @@ export class MobileProjectsPanel {
     protected transcriptChatInputWidget: AIChatInputWidget | undefined;
     protected transcriptChatViewWidget: MobileProjectChatViewWidget | undefined;
     protected transcriptRefreshTimer: number | undefined;
+    protected transcriptPollInterval: number | undefined;
     protected transcriptScheduleRefresh: (() => void) | undefined;
     protected transcriptLastRenderedConversationId: string | undefined;
     protected transcriptLastRenderedMessageId: string | undefined;
@@ -1578,6 +1587,9 @@ export class MobileProjectsPanel {
                 this.markTasksFirstLoadComplete(false);
                 if (this.visible && this.isTasksHubView()) {
                     this.renderList();
+                    if (this.agentsHubInlineActive && this.transcriptOpenSummaryId) {
+                        this.ensureTranscriptConversationRefresh();
+                    }
                 } else if (this.visible && !this.transcriptSheet) {
                     void this.applyActiveTasksRefresh();
                 }
@@ -2987,6 +2999,20 @@ export class MobileProjectsPanel {
         }
     }
 
+    /**
+     * SSE conversation ticks call {@link renderList} to refresh sidebar dots, but must not
+     * `replaceChildren()` the inline transcript shell — that disconnects the chat host mid-stream
+     * and aborts live refresh until the user reopens the conversation.
+     */
+    protected shouldPreserveAgentsHubInlineTranscriptShell(): boolean {
+        return this.hubView === 'tasks'
+            && this.shouldUseAgentsHubLanding()
+            && this.agentsHubInlineActive
+            && !!this.transcriptOpenSummaryId
+            && !!this.agentsHubInlineExecutionRoot?.isConnected
+            && this.agentsHubInlineExecutionRoot.parentElement === this.scroll;
+    }
+
     protected renderList(): void {
         if ((this.hubView !== 'tasks' || !this.shouldUseAgentsHubLanding()) && this.agentsHubShellActive) {
             this.teardownAgentsHubExecutionShell();
@@ -2994,7 +3020,9 @@ export class MobileProjectsPanel {
         this.closeCardMenu();
         this.projectDetailSurfaceTargets = undefined;
         this.projectDetailTabStrip = undefined;
-        this.scroll.replaceChildren();
+        if (!this.shouldPreserveAgentsHubInlineTranscriptShell()) {
+            this.scroll.replaceChildren();
+        }
         try {
             if (this.hubView === 'diff') {
                 this.renderDiffHubView();
@@ -3441,12 +3469,18 @@ export class MobileProjectsPanel {
             this.agentsHubInlineExecutionRoot?.isConnected
             && this.agentsHubInlineChatHost?.isConnected
         ) {
-            this.renderAgentsHubShellChat(this.agentsHubInlineChatHost, project, summary);
+            const liveTranscriptOpen = this.agentsHubInlineActive && !!this.transcriptOpenSummaryId;
+            if (!liveTranscriptOpen) {
+                this.renderAgentsHubShellChat(this.agentsHubInlineChatHost, project, summary);
+            }
             this.syncAgentsHubInlineExecutionHeader(project, summary);
             this.updateTasksAttentionChrome();
             this.renderSubtitle();
             void this.refreshTranscriptComposerAgents(project);
             this.renderStickyComposer();
+            if (liveTranscriptOpen) {
+                this.ensureTranscriptConversationRefresh();
+            }
             return;
         }
         const executionRoot = document.createElement('div');
@@ -3488,6 +3522,9 @@ export class MobileProjectsPanel {
         this.syncAgentsHubInlineExecutionHeader(project, summary);
         void this.refreshTranscriptComposerAgents(project);
         this.renderStickyComposer();
+        if (this.agentsHubInlineActive && this.transcriptOpenSummaryId) {
+            this.ensureTranscriptConversationRefresh();
+        }
     }
 
     /** Same transcript host for idle and active sessions; idle shows starter chips in the scroll area. */
@@ -10609,50 +10646,115 @@ export class MobileProjectsPanel {
             && (this.transcriptSheet !== undefined || this.agentsHubInlineActive);
     }
 
+    protected resolveActiveTranscriptChatHost(): HTMLElement | undefined {
+        const host = this.agentsHubInlineChatHost ?? this.transcriptChatHost;
+        return host?.isConnected ? host : undefined;
+    }
+
+    protected resolveTranscriptRefreshContext(): {
+        project: MobileProjectEntry;
+        summary: QaapAgentConversationSummaryDTO;
+        chatHost: HTMLElement;
+    } | undefined {
+        const project = this.transcriptOpenProject;
+        const summaryId = this.transcriptOpenSummaryId;
+        const chatHost = this.resolveActiveTranscriptChatHost();
+        if (!project || !summaryId || !chatHost) {
+            return undefined;
+        }
+        const summary = this.conversationsForProject(project).find(c => c.id === summaryId)
+            ?? this.transcriptOpenSummary;
+        if (!summary) {
+            return undefined;
+        }
+        return { project, summary, chatHost };
+    }
+
+    protected stopTranscriptPolling(): void {
+        if (this.transcriptPollInterval !== undefined) {
+            window.clearInterval(this.transcriptPollInterval);
+            this.transcriptPollInterval = undefined;
+        }
+    }
+
+    protected ensureTranscriptConversationRefresh(): void {
+        const context = this.resolveTranscriptRefreshContext();
+        if (!context || !this.isWatchingOpenTranscript(context.summary.id)) {
+            return;
+        }
+        if (!this.transcriptScheduleRefresh) {
+            this.scheduleTranscriptConversationRefresh(context.project, context.summary, context.chatHost);
+            return;
+        }
+        this.watchOpenTranscriptUntilIdle(context.project, context.summary.id);
+        this.transcriptScheduleRefresh();
+    }
+
     protected scheduleTranscriptConversationRefresh(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
         chatHost: HTMLElement,
     ): void {
+        this.stopTranscriptPolling();
         let refreshInFlight = false;
         const refresh = async (): Promise<void> => {
-            if (this.isPendingNewChatSummary(summary)) {
+            const context = this.resolveTranscriptRefreshContext();
+            if (!context) {
                 return;
             }
-            if (refreshInFlight || !this.isActiveTranscriptConversation(summary.id) || !chatHost.isConnected) {
+            const activeProject = context.project;
+            const activeSummary = context.summary;
+            const activeChatHost = context.chatHost;
+            if (this.isPendingNewChatSummary(activeSummary)) {
+                return;
+            }
+            if (refreshInFlight || !this.isActiveTranscriptConversation(activeSummary.id)) {
                 return;
             }
             refreshInFlight = true;
             try {
-                const full = await getConversation(summary.id);
-                if (!this.isActiveTranscriptConversation(summary.id) || !chatHost.isConnected) {
+                const full = await getConversation(activeSummary.id);
+                if (!this.isActiveTranscriptConversation(activeSummary.id) || !activeChatHost.isConnected) {
                     return;
                 }
                 const fingerprint = this.conversationTranscriptFingerprint(full);
+                await this.syncTranscriptPreviewFromConversation(activeProject, activeSummary, full);
+                const fingerprintUnchanged = fingerprint === this.transcriptLastFingerprint;
+                const forceStatusSettle = shouldForceTranscriptRenderOnStatusSettle(
+                    this.transcriptLastConv,
+                    full,
+                    fingerprintUnchanged,
+                );
                 this.transcriptLastConv = full;
-                await this.syncTranscriptPreviewFromConversation(project, summary, full);
-                if (fingerprint === this.transcriptLastFingerprint) {
+                this.transcriptOpenSummary = conversationToSummary(full);
+                if (fingerprintUnchanged && !forceStatusSettle) {
+                    if (full.status !== 'streaming' && !this.transcriptPreviewRequestPending) {
+                        this.stopTranscriptPolling();
+                        this.setTranscriptLiveUpdates(Disposable.NULL);
+                    }
                     return;
                 }
                 this.transcriptLastFingerprint = fingerprint;
-                this.renderTranscriptMessages(chatHost, full);
+                this.renderTranscriptMessages(activeChatHost, full);
                 if (this.transcriptSheet) {
-                    const surfaceTab = this.executionSurfaceTabForProject(project);
+                    const surfaceTab = this.executionSurfaceTabForProject(activeProject);
                     this.showOnlyExecutionSurfaceTab(surfaceTab);
-                    this.mountTranscriptSurfaceTab(project, summary, surfaceTab);
-                    this.syncExecutionSurfaceChrome(project);
+                    this.mountTranscriptSurfaceTab(activeProject, activeSummary, surfaceTab);
+                    this.syncExecutionSurfaceChrome(activeProject);
                 }
-                this.handleTranscriptStatusForAutoVerify(project, summary, full.status);
+                this.handleTranscriptStatusForAutoVerify(activeProject, activeSummary, full.status);
                 if (full.status === 'streaming' || this.transcriptPreviewRequestPending) {
-                    this.watchOpenTranscriptUntilIdle(project, summary.id);
+                    this.watchOpenTranscriptUntilIdle(activeProject, activeSummary.id);
                 } else {
+                    this.stopTranscriptPolling();
                     this.setTranscriptLiveUpdates(Disposable.NULL);
                 }
             } catch (error) {
-                if (!chatHost.isConnected) {
+                const connectedHost = this.resolveActiveTranscriptChatHost();
+                if (!connectedHost) {
                     return;
                 }
-                const messageHost = this.resolveTranscriptMessageHost(chatHost);
+                const messageHost = this.resolveTranscriptMessageHost(connectedHost);
                 messageHost.replaceChildren();
                 const err = document.createElement('div');
                 err.className = 'theia-mobile-agent-transcript-error';
@@ -10663,7 +10765,8 @@ export class MobileProjectsPanel {
             }
         };
         const scheduleRefresh = (): void => {
-            if (!this.isActiveTranscriptConversation(summary.id)) {
+            const context = this.resolveTranscriptRefreshContext();
+            if (!context || !this.isActiveTranscriptConversation(context.summary.id)) {
                 return;
             }
             if (this.transcriptRefreshTimer !== undefined) {
@@ -10675,6 +10778,22 @@ export class MobileProjectsPanel {
             }, 450);
         };
         this.transcriptScheduleRefresh = scheduleRefresh;
+        this.transcriptPollInterval = window.setInterval(() => {
+            const context = this.resolveTranscriptRefreshContext();
+            if (!context || !this.isWatchingOpenTranscript(context.summary.id)) {
+                this.stopTranscriptPolling();
+                return;
+            }
+            const streaming = context.summary.status === 'streaming'
+                || this.transcriptLastConv?.status === 'streaming'
+                || this.conversationsForProject(context.project).find(c => c.id === context.summary.id)?.status === 'streaming';
+            if (streaming || this.transcriptPreviewRequestPending) {
+                scheduleRefresh();
+            } else {
+                this.stopTranscriptPolling();
+            }
+        }, 1500);
+        this.watchOpenTranscriptUntilIdle(project, summary.id);
         void refresh();
     }
 
@@ -13450,11 +13569,12 @@ export class MobileProjectsPanel {
             this.transcriptOpenSummaryId = created.id;
             this.transcriptOpenSummary = created;
             this.transcriptComposerSummary = created;
-            if (this.transcriptChatHost) {
+            const activeChatHost = this.resolveActiveTranscriptChatHost();
+            if (activeChatHost) {
                 const full = await getConversation(created.id);
                 this.transcriptLastFingerprint = undefined;
-                this.renderTranscriptMessages(this.transcriptChatHost, full);
-                this.watchOpenTranscriptUntilIdle(project, created.id);
+                this.renderTranscriptMessages(activeChatHost, full);
+                this.ensureTranscriptConversationRefresh();
             }
             this.applyTaskStartedToProject(created.cwd, content, created.id);
             return;
@@ -13474,9 +13594,10 @@ export class MobileProjectsPanel {
                 createdAt: Date.now(),
             }],
         };
-        if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
+        const activeChatHost = this.resolveActiveTranscriptChatHost();
+        if (activeChatHost && this.transcriptOpenSummaryId === summary.id) {
             this.transcriptLastFingerprint = undefined;
-            this.renderTranscriptMessages(this.transcriptChatHost, optimistic);
+            this.renderTranscriptMessages(activeChatHost, optimistic);
         }
         try {
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
@@ -13489,16 +13610,18 @@ export class MobileProjectsPanel {
             );
             const nextSummary = conversationToSummary(updated);
             this.conversations?.recordSnapshot(nextSummary);
-            if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
+            const refreshedChatHost = this.resolveActiveTranscriptChatHost();
+            if (refreshedChatHost && this.transcriptOpenSummaryId === summary.id) {
                 this.transcriptLastFingerprint = undefined;
-                this.renderTranscriptMessages(this.transcriptChatHost, updated);
+                this.renderTranscriptMessages(refreshedChatHost, updated);
             }
             this.applyTaskStartedToProject(summary.cwd, content, summary.id);
-            this.watchOpenTranscriptUntilIdle(project, summary.id);
+            this.ensureTranscriptConversationRefresh();
         } catch (error) {
-            if (this.transcriptChatHost && this.transcriptOpenSummaryId === summary.id) {
+            const rollbackChatHost = this.resolveActiveTranscriptChatHost();
+            if (rollbackChatHost && this.transcriptOpenSummaryId === summary.id) {
                 this.transcriptLastFingerprint = undefined;
-                this.renderTranscriptMessages(this.transcriptChatHost, base);
+                this.renderTranscriptMessages(rollbackChatHost, base);
             }
             throw error;
         }
@@ -14033,6 +14156,9 @@ export class MobileProjectsPanel {
     }
 
     protected renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
+        if (this.tryPatchStreamingTranscriptMessages(host, conv)) {
+            return;
+        }
         this.transcriptLastConv = conv;
         const messageHost = this.resolveTranscriptMessageHost(host);
         const sameConversation = this.transcriptLastRenderedConversationId === conv.id;
@@ -14061,6 +14187,9 @@ export class MobileProjectsPanel {
                 row = this.createTranscriptUserMessageRow(msg, conv);
             } else if (agentSegments && agentSegments.length > 0) {
                 row = this.createTranscriptAgentSegmentsRow(agentSegments, msg.error);
+                if (msg.id) {
+                    row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, msg.id);
+                }
             } else {
                 row = this.createTranscriptMessageRow(
                     msg.role,
@@ -14088,6 +14217,89 @@ export class MobileProjectsPanel {
         this.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
         this.ensureOverlayUi().team.renderTeamSection(host, conv);
         this.transcriptComposerSendRefresh?.();
+    }
+
+    /**
+     * QAIQ/OpenCode streaming: patch only the tail of the transcript instead of rebuilding the
+     * whole list so tool expand state and scroll position stay stable between SSE polls.
+     */
+    protected tryPatchStreamingTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): boolean {
+        const patchKind = resolveStreamingTranscriptPatchKind(this.transcriptLastConv, conv);
+        if (patchKind === 'none') {
+            return false;
+        }
+        const messageHost = this.resolveTranscriptMessageHost(host);
+        const wasNearBottom = isTranscriptScrollNearBottom(
+            messageHost.scrollTop,
+            messageHost.clientHeight,
+            messageHost.scrollHeight,
+        );
+
+        if (patchKind === 'activity-only') {
+            this.syncTranscriptActivityRow(messageHost, conv);
+            this.transcriptLastConv = conv;
+            this.transcriptLastRenderedConversationId = conv.id;
+            this.transcriptLastRenderedMessageId = conv.messages.at(-1)?.id;
+            if (wasNearBottom) {
+                scrollElementToEnd(messageHost);
+            }
+            return true;
+        }
+
+        const lastAgent = conv.messages[conv.messages.length - 1];
+        const segments = lastAgent ? this.resolveTranscriptAgentSegments(conv, lastAgent) : undefined;
+        if (!lastAgent || !segments?.length || !lastAgent.id) {
+            return false;
+        }
+
+        this.removeTranscriptActivityRow(messageHost);
+        messageHost.querySelectorAll('.theia-mod-streaming').forEach(element => {
+            element.classList.remove('theia-mod-streaming');
+        });
+
+        const row = this.createTranscriptAgentSegmentsRow(segments, lastAgent.error);
+        this.markTranscriptMessageRow(row, lastAgent.id, true);
+
+        if (patchKind === 'last-agent') {
+            const existing = messageHost.querySelector<HTMLElement>(
+                `[${TRANSCRIPT_MESSAGE_ID_ATTR}="${CSS.escape(lastAgent.id)}"]`,
+            );
+            if (existing) {
+                existing.replaceWith(row);
+            } else {
+                messageHost.append(row);
+            }
+        } else {
+            messageHost.append(row);
+        }
+
+        this.transcriptLastConv = conv;
+        this.transcriptLastRenderedConversationId = conv.id;
+        this.transcriptLastRenderedMessageId = lastAgent.id;
+        if (wasNearBottom) {
+            scrollElementToEnd(messageHost);
+        }
+        this.transcriptComposerSendRefresh?.();
+        return true;
+    }
+
+    protected markTranscriptMessageRow(row: HTMLElement, messageId: string, streaming: boolean): void {
+        row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, messageId);
+        row.classList.toggle('theia-mod-streaming', streaming);
+    }
+
+    protected removeTranscriptActivityRow(messageHost: HTMLElement): void {
+        messageHost.querySelector(`[${TRANSCRIPT_ACTIVITY_ROW_ATTR}]`)?.remove();
+    }
+
+    protected syncTranscriptActivityRow(messageHost: HTMLElement, conv: QaapAgentConversationDTO): void {
+        this.removeTranscriptActivityRow(messageHost);
+        messageHost.querySelectorAll('.theia-mod-streaming').forEach(element => {
+            element.classList.remove('theia-mod-streaming');
+        });
+        if (conv.status === 'streaming' && conv.messages.at(-1)?.role === 'user') {
+            messageHost.append(this.createTranscriptStreamingActivityRow(conv));
+        }
     }
 
     protected createTranscriptAgentSegmentsRow(
@@ -15196,6 +15408,7 @@ export class MobileProjectsPanel {
 
     protected createTranscriptStreamingActivityRow(conv: QaapAgentConversationDTO): HTMLElement {
         const row = document.createElement('div');
+        row.setAttribute(TRANSCRIPT_ACTIVITY_ROW_ATTR, 'true');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent theia-mod-streaming theia-mobile-agent-activity';
         const state = this.resolveTranscriptStreamingActivity(conv);
 
@@ -15635,36 +15848,26 @@ export class MobileProjectsPanel {
     }
 
     protected conversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
-        const last = conv.messages[conv.messages.length - 1];
-        const segmentCount = last?.segments?.length ?? 0;
-        const lastSegment = last?.segments?.[segmentCount - 1];
-        const segmentTail = lastSegment && 'content' in lastSegment ? lastSegment.content.length : 0;
-        const segmentState = lastSegment?.type === 'tool'
-            ? `${lastSegment.name}:${lastSegment.finished ? '1' : '0'}:${lastSegment.args.length}:${lastSegment.result?.length ?? 0}`
-            : lastSegment?.type === 'thinking' || lastSegment?.type === 'text'
-                ? `${lastSegment.type}:${lastSegment.content.length}`
-                : '';
-        return `${conv.autoApprove === false ? '0' : '1'}|${conv.status}|${conv.updatedAt}|${conv.messages.length}|${last?.id ?? ''}|${last?.content?.length ?? 0}|${segmentCount}|${segmentTail}|${segmentState}`;
+        return buildConversationTranscriptFingerprint(conv);
     }
 
-    protected shouldRefreshOpenTranscript(project: MobileProjectEntry, conversationId: string): boolean {
-        if (this.transcriptOpenSummaryId !== conversationId) {
-            return false;
-        }
-        const latest = this.conversationsForProject(project).find(c => c.id === conversationId);
-        return latest?.status === 'streaming' || (!!latest && this.transcriptPreviewRequestPending);
+    protected isWatchingOpenTranscript(conversationId: string): boolean {
+        return this.transcriptOpenSummaryId === conversationId
+            && this.isActiveTranscriptConversation(conversationId);
     }
 
     protected watchOpenTranscriptUntilIdle(project: MobileProjectEntry, conversationId: string): void {
-        if (!this.conversations || !this.transcriptScheduleRefresh || this.transcriptOpenSummaryId !== conversationId) {
+        if (!this.conversations || !this.transcriptScheduleRefresh || !this.isWatchingOpenTranscript(conversationId)) {
             return;
         }
         this.setTranscriptLiveUpdates(this.conversations.onDidChange(() => {
-            if (this.shouldRefreshOpenTranscript(project, conversationId)) {
-                this.transcriptScheduleRefresh?.();
-            } else {
+            if (!this.isWatchingOpenTranscript(conversationId)) {
                 this.setTranscriptLiveUpdates(Disposable.NULL);
+                return;
             }
+            // Always refetch while the transcript is open — including the terminal idle/failed
+            // update. The old guard only refreshed during streaming and dropped the final payload.
+            this.transcriptScheduleRefresh?.();
         }));
         this.transcriptScheduleRefresh();
     }
@@ -15692,6 +15895,7 @@ export class MobileProjectsPanel {
             window.clearTimeout(this.transcriptRefreshTimer);
             this.transcriptRefreshTimer = undefined;
         }
+        this.stopTranscriptPolling();
         this.transcriptScheduleRefresh = undefined;
         this.setTranscriptLiveUpdates(Disposable.NULL);
         const chatHost = this.agentsHubInlineChatHost;
@@ -15775,6 +15979,7 @@ export class MobileProjectsPanel {
             window.clearTimeout(this.transcriptRefreshTimer);
             this.transcriptRefreshTimer = undefined;
         }
+        this.stopTranscriptPolling();
         this.transcriptScheduleRefresh = undefined;
         this.setTranscriptLiveUpdates(Disposable.NULL);
         this.transcriptUserScrollPinDispose.dispose();
