@@ -5215,6 +5215,69 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   box-sizing: border-box;
 }
 
+.theia-mobile-sticky-composer-mode-banner,
+.theia-mobile-sticky-composer-legacy-banner {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--theia-descriptionForeground);
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 10%, var(--theia-editorWidget-background));
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 22%, transparent);
+}
+
+.theia-mobile-sticky-composer-legacy-banner {
+  background: color-mix(in srgb, var(--theia-descriptionForeground) 8%, var(--theia-editorWidget-background));
+  border-color: color-mix(in srgb, var(--theia-panel-border) 70%, transparent);
+}
+
+.theia-mobile-agent-transcript-inline-approval {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--q-accent, #E58E40) 35%, transparent);
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 8%, var(--theia-editor-background));
+}
+
+.theia-mobile-agent-transcript-inline-approval-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theia-mobile-agent-transcript-inline-approval-summary {
+  margin: 6px 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-transcript-inline-approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.theia-mobile-agent-transcript-inline-approval-approve,
+.theia-mobile-agent-transcript-inline-approval-reject {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border) 60%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theia-mobile-agent-transcript-inline-approval-approve {
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 18%, transparent);
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-transcript-inline-approval-reject {
+  background: transparent;
+  color: var(--theia-descriptionForeground);
+}
+
 .theia-mobile-projects-sticky-composer-card {
   display: flex;
   flex-direction: column;
@@ -11862,9 +11925,10 @@ button.theia-mobile-transcript-team-row:focus-visible {
   height: 8px;
   margin: -4px 0;
   position: relative;
-  z-index: 2;
+  z-index: 3;
   cursor: row-resize;
   touch-action: none;
+  pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -11880,6 +11944,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
   right: 0;
   top: -12px;
   bottom: -12px;
+  pointer-events: auto;
 }
 
 .theia-mobile-transcript-history-resize::after {
@@ -12773,7 +12838,8 @@ button.theia-mobile-transcript-team-row:focus-visible {
   cursor: col-resize;
   touch-action: none;
   position: relative;
-  z-index: 1;
+  z-index: 3;
+  pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -12784,6 +12850,7 @@ button.theia-mobile-transcript-team-row:focus-visible {
   bottom: 0;
   left: -6px;
   right: -6px;
+  pointer-events: auto;
 }
 
 .theia-mobile-transcript-files-split-handle::after {
@@ -12835,26 +12902,48 @@ button.theia-mobile-transcript-team-row:focus-visible {
 }
 
 @media (pointer: coarse), (max-width: 767px) {
+  .theia-mobile-transcript-files-layout.theia-mod-tree-side {
+    grid-template-columns: minmax(0, 1fr) 20px var(--qaap-files-tree-width, minmax(148px, 38%));
+  }
+
+  .theia-mobile-transcript-files-layout.theia-mod-tree-bottom {
+    grid-template-rows: minmax(0, 1fr) 20px var(--qaap-files-tree-height, minmax(180px, 36vh));
+  }
+
   .theia-mobile-transcript-files-split-handle {
-    width: 12px;
-    margin: 0 -4px;
+    width: 20px;
+    margin: 0;
+    z-index: 4;
   }
 
   .theia-mobile-transcript-files-split-handle::before {
-    left: -16px;
-    right: -16px;
+    left: 0;
+    right: 0;
   }
 
   .theia-mobile-transcript-files-layout.theia-mod-tree-bottom .theia-mobile-transcript-files-split-handle {
-    height: 12px;
-    margin: -4px 0;
+    width: auto;
+    height: 20px;
+    margin: 0;
   }
 
   .theia-mobile-transcript-files-layout.theia-mod-tree-bottom .theia-mobile-transcript-files-split-handle::before {
-    top: -16px;
-    bottom: -16px;
+    top: 0;
+    bottom: 0;
     left: 0;
     right: 0;
+  }
+
+  .theia-mobile-transcript-history-resize {
+    flex: 0 0 20px;
+    height: 20px;
+    margin: 0;
+    z-index: 4;
+  }
+
+  .theia-mobile-transcript-history-resize::before {
+    top: 0;
+    bottom: 0;
   }
 
   .theia-mobile-transcript-files-layout.theia-mod-resizing .theia-mobile-transcript-files-preview,
@@ -13867,6 +13956,8 @@ body > .theia-mobile-transcript-files-menu {
   border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.18));
   font-size: 13px;
   line-height: 1.45;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
 }
 
 .theia-mobile-agent-transcript-msg.theia-mod-new-message,

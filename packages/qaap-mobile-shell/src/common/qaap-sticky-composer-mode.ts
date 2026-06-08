@@ -6,16 +6,28 @@
 import { ChatMode } from '@theia/ai-chat/lib/common/chat-agents';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { hashString, isTheiaCoderAgent, QAIQ_AGENT_ID, THEIA_CODER_AGENT_ID } from './qaap-agent-task-client';
+import { hashString } from './qaap-agent-task-client';
 
 const SELECTED_MODE_STORAGE_KEY = 'qaap.mobile.projects.selectedMode';
 
-/** Cursor-style interaction modes for VPS agents (QAIQ, Aider, …). */
+/** QAIQ interaction modes — Agent executes; Plan drafts only; Ask is read-only. */
 export const QAAP_BACKEND_INTERACTION_MODES: readonly ChatMode[] = [
-    { id: 'agent', name: nls.localize('qaap/mobileProjects/modeAgent', 'Agent'), isDefault: true },
-    { id: 'plan', name: nls.localize('qaap/mobileProjects/modePlan', 'Plan') },
-    { id: 'ask', name: nls.localize('qaap/mobileProjects/modeAsk', 'Ask') },
+    {
+        id: 'agent',
+        name: nls.localize('qaap/mobileProjects/modeAgent', 'Agent'),
+        isDefault: true,
+    },
+    {
+        id: 'plan',
+        name: nls.localize('qaap/mobileProjects/modePlan', 'Plan'),
+    },
+    {
+        id: 'ask',
+        name: nls.localize('qaap/mobileProjects/modeAsk', 'Ask'),
+    },
 ];
+
+export type QaapComposerInteractionModeId = 'agent' | 'plan' | 'ask';
 
 export function scopedModeStorageKey(cwd: string): string {
     return `${SELECTED_MODE_STORAGE_KEY}.${hashString(cwd)}`;
@@ -68,38 +80,44 @@ export function reconcileComposerModeId(
     return defaultComposerModeId(modes);
 }
 
-/**
- * Modes shown in the mobile sticky composer toolbar.
- * Coder uses Theia prompt variants; VPS agents use {@link QAAP_BACKEND_INTERACTION_MODES}.
- */
+/** Modes shown in the Qaap mobile composer — always QAIQ product modes. */
 export function resolveStickyComposerModes(
-    pinnedAgentId: string | undefined,
-    chatAgentService: ChatAgentService | undefined,
+    _pinnedAgentId: string | undefined,
+    _chatAgentService: ChatAgentService | undefined,
 ): readonly ChatMode[] {
-    if (isTheiaCoderAgent(pinnedAgentId)) {
-        const modes = chatAgentService?.getAgent(THEIA_CODER_AGENT_ID)?.modes;
-        return modes && modes.length > 0 ? modes : [];
+    return QAAP_BACKEND_INTERACTION_MODES;
+}
+
+export function describeComposerInteractionMode(modeId: string | undefined): string | undefined {
+    if (!modeId || modeId === 'agent') {
+        return undefined;
     }
-    if (pinnedAgentId === QAIQ_AGENT_ID) {
-        const modes = chatAgentService?.getAgent(QAIQ_AGENT_ID)?.modes;
-        if (modes && modes.length > 0) {
-            return modes;
-        }
+    if (modeId === 'plan') {
+        return nls.localize(
+            'qaap/mobileProjects/modePlanActive',
+            'Plan mode — QAIQ will draft a plan only. No edits or commands until you switch to Agent.',
+        );
     }
-    if (pinnedAgentId && !isTheiaCoderAgent(pinnedAgentId)) {
-        return QAAP_BACKEND_INTERACTION_MODES;
+    if (modeId === 'ask') {
+        return nls.localize(
+            'qaap/mobileProjects/modeAskActive',
+            'Ask mode — read-only answers about the codebase. No file edits or shell commands.',
+        );
     }
-    return [];
+    return undefined;
 }
 
 const PLAN_MODE_PREFIX = nls.localize(
     'qaap/mobileProjects/planModePrefix',
-    '[Plan mode — respond with a concise markdown plan only. Do not edit files or run commands until the user approves.]',
+    '[QAIQ Plan mode] Respond with a concise markdown plan only: goals, steps, risks, and open questions. '
+        + 'Do not edit files, run shell commands, or invoke tools until the user explicitly approves the plan '
+        + 'and switches to Agent mode.',
 );
 
 const ASK_MODE_PREFIX = nls.localize(
     'qaap/mobileProjects/askModePrefix',
-    '[Ask mode — read-only: answer questions about the codebase. Do not modify files or run shell commands.]',
+    '[QAIQ Ask mode] Read-only: answer questions about the codebase using search/read tools only when needed. '
+        + 'Do not modify files, run destructive shell commands, or propose edits.',
 );
 
 export function applyBackendInteractionModeToPrompt(prompt: string, modeId: string | undefined): string {

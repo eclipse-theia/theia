@@ -8,6 +8,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { renderQaapAccountAvatarVisual } from './qaap-account-avatar-visual';
 import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
+import { installMobilePanelResizeDrag } from './mobile-panel-resize-drag';
 import { installMobileVerticalTouchScroll } from './mobile-vertical-touch-scroll';
 import { MobileHaptics } from './mobile-haptics';
 import { hashString } from '../common/qaap-agent-task-client';
@@ -171,7 +172,6 @@ export class MobileWorkHubSessionsSidebar {
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onLeftEdgeTouchStart = this.onLeftEdgeTouchStart.bind(this);
         this.onLeftEdgeTouchEnd = this.onLeftEdgeTouchEnd.bind(this);
-        this.onResizeHandlePointerDown = this.onResizeHandlePointerDown.bind(this);
         this.onResizeHandleKeyDown = this.onResizeHandleKeyDown.bind(this);
         this.installDesktopWidthPreference();
     }
@@ -309,43 +309,24 @@ export class MobileWorkHubSessionsSidebar {
     protected installDesktopResize(): void {
         this.resizeDispose.dispose();
         const toDispose = new DisposableCollection();
-        this.resizeHandle.addEventListener('pointerdown', this.onResizeHandlePointerDown);
+        toDispose.push(installMobilePanelResizeDrag({
+            handle: this.resizeHandle,
+            enabled: () => isDesktopSessionsSidebarLayout(),
+            onStart: () => {
+                document.body.classList.add('theia-mobile-mod-sessions-sidebar-resizing');
+            },
+            onMove: ({ clientX }) => {
+                this.setDesktopWidth(clientX);
+            },
+            onEnd: () => {
+                document.body.classList.remove('theia-mobile-mod-sessions-sidebar-resizing');
+            },
+        }));
         this.resizeHandle.addEventListener('keydown', this.onResizeHandleKeyDown);
         toDispose.push(Disposable.create(() => {
-            this.resizeHandle.removeEventListener('pointerdown', this.onResizeHandlePointerDown);
             this.resizeHandle.removeEventListener('keydown', this.onResizeHandleKeyDown);
         }));
         this.resizeDispose = toDispose;
-    }
-
-    protected onResizeHandlePointerDown(event: PointerEvent): void {
-        if (!isDesktopSessionsSidebarLayout()) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        const pointerId = event.pointerId;
-        this.resizeHandle.setPointerCapture?.(pointerId);
-        document.body.classList.add('theia-mobile-mod-sessions-sidebar-resizing');
-        const onPointerMove = (moveEvent: PointerEvent): void => {
-            if (moveEvent.pointerId !== pointerId) {
-                return;
-            }
-            this.setDesktopWidth(moveEvent.clientX);
-        };
-        const onPointerUp = (upEvent: PointerEvent): void => {
-            if (upEvent.pointerId !== pointerId) {
-                return;
-            }
-            this.resizeHandle.releasePointerCapture?.(pointerId);
-            document.body.classList.remove('theia-mobile-mod-sessions-sidebar-resizing');
-            window.removeEventListener('pointermove', onPointerMove, true);
-            window.removeEventListener('pointerup', onPointerUp, true);
-            window.removeEventListener('pointercancel', onPointerUp, true);
-        };
-        window.addEventListener('pointermove', onPointerMove, true);
-        window.addEventListener('pointerup', onPointerUp, true);
-        window.addEventListener('pointercancel', onPointerUp, true);
     }
 
     protected onResizeHandleKeyDown(event: KeyboardEvent): void {

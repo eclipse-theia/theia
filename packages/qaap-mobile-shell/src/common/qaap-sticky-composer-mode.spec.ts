@@ -7,8 +7,10 @@ import { expect } from 'chai';
 import {
     applyBackendInteractionModeToPrompt,
     defaultComposerModeId,
+    describeComposerInteractionMode,
     QAAP_BACKEND_INTERACTION_MODES,
     reconcileComposerModeId,
+    resolveStickyComposerModes,
 } from './qaap-sticky-composer-mode';
 
 describe('qaap-sticky-composer-mode', () => {
@@ -19,9 +21,20 @@ describe('qaap-sticky-composer-mode', () => {
     });
 
     it('applyBackendInteractionModeToPrompt prefixes plan and ask modes', () => {
-        expect(applyBackendInteractionModeToPrompt('refactor auth', 'plan')).to.contain('[Plan mode');
+        expect(applyBackendInteractionModeToPrompt('refactor auth', 'plan')).to.contain('[QAIQ Plan mode]');
         expect(applyBackendInteractionModeToPrompt('refactor auth', 'plan')).to.contain('refactor auth');
-        expect(applyBackendInteractionModeToPrompt('what is X?', 'ask')).to.contain('[Ask mode');
+        expect(applyBackendInteractionModeToPrompt('what is X?', 'ask')).to.contain('[QAIQ Ask mode]');
+    });
+
+    it('resolveStickyComposerModes always exposes QAIQ product modes', () => {
+        expect(resolveStickyComposerModes('qaiq', undefined).map(mode => mode.id))
+            .to.deep.equal(['agent', 'plan', 'ask']);
+    });
+
+    it('describeComposerInteractionMode explains active plan/ask modes', () => {
+        expect(describeComposerInteractionMode('agent')).to.equal(undefined);
+        expect(describeComposerInteractionMode('plan')).to.contain('Plan mode');
+        expect(describeComposerInteractionMode('ask')).to.contain('Ask mode');
     });
 
     it('reconcileComposerModeId falls back to default', () => {

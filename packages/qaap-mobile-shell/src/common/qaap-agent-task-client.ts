@@ -33,8 +33,17 @@ export const SHELL_AGENT_ID = 'shell';
 export const THEIA_CODER_AGENT_ID = 'Coder';
 export const QAIQ_AGENT_ID = 'qaiq';
 
+/** Primary VPS agent for the Qaap product (composer default, new sessions). */
+export const QAAP_PRIMARY_AGENT_ID = QAIQ_AGENT_ID;
+
 /** UI/storage id before the QAIQ rename; still accepted when resolving selection. */
 export const LEGACY_OPENCLAUDE_AGENT_ID = 'openclaude';
+
+const QAAP_RETIRED_DEFAULT_AGENT_IDS = new Set([
+    THEIA_CODER_AGENT_ID.toLowerCase(),
+    'coder',
+    'codex',
+]);
 
 /** Normalize a mention token (lowercase); does not validate availability. */
 export function resolveQaapAgentMentionToken(token: string): string {
@@ -124,12 +133,24 @@ export function migrateLegacyBackendAgentId(agentId: string | undefined): string
     return agentId === LEGACY_OPENCLAUDE_AGENT_ID ? QAIQ_AGENT_ID : agentId;
 }
 
+/** Map retired defaults (Coder, Codex, …) to {@link QAAP_PRIMARY_AGENT_ID} for Qaap product UI. */
+export function migrateQaapProductAgentId(agentId: string | undefined): string | undefined {
+    const migrated = migrateLegacyBackendAgentId(agentId);
+    if (!migrated) {
+        return undefined;
+    }
+    if (isTheiaCoderAgent(migrated) || QAAP_RETIRED_DEFAULT_AGENT_IDS.has(migrated.trim().toLowerCase())) {
+        return QAAP_PRIMARY_AGENT_ID;
+    }
+    return migrated;
+}
+
 export function readStoredAgent(cwd: string | undefined): string | undefined {
     try {
         const raw = cwd
             ? window.localStorage.getItem(scopedAgentStorageKey(cwd)) ?? window.localStorage.getItem(SELECTED_AGENT_STORAGE_KEY) ?? undefined
             : window.localStorage.getItem(SELECTED_AGENT_STORAGE_KEY) ?? undefined;
-        return migrateLegacyBackendAgentId(raw ?? undefined);
+        return migrateQaapProductAgentId(raw ?? undefined);
     } catch {
         return undefined;
     }
@@ -188,7 +209,7 @@ export function reconcileSelectedAgent(
 ): string {
     const selectable = filterUiSelectableVpsAgents(agents);
     const ids = new Set(selectable.map(agent => agent.id));
-    const normalizedCurrent = migrateLegacyBackendAgentId(current);
+    const normalizedCurrent = migrateQaapProductAgentId(current);
     if (normalizedCurrent && ids.has(normalizedCurrent)) {
         return normalizedCurrent;
     }
@@ -196,39 +217,46 @@ export function reconcileSelectedAgent(
     if (stored && ids.has(stored)) {
         return stored;
     }
-    const normalizedDefault = migrateLegacyBackendAgentId(defaultAgent);
+    const normalizedDefault = migrateQaapProductAgentId(defaultAgent);
     if (normalizedDefault && ids.has(normalizedDefault)) {
         return normalizedDefault;
+    }
+    if (ids.has(QAAP_PRIMARY_AGENT_ID)) {
+        return QAAP_PRIMARY_AGENT_ID;
     }
     return selectable[0]?.id ?? SHELL_AGENT_ID;
 }
 
+/** Composer pickers expose only the Qaap primary agent when it is available on the VPS. */
+export function filterQaapComposerAgents(
+    agents: readonly QaapAgentTaskAgentOption[],
+): QaapAgentTaskAgentOption[] {
+    const qaiq = agents.find(agent => isQaiqAgent(agent.id) && agent.available !== false);
+    if (qaiq) {
+        return [qaiq];
+    }
+    const selectable = filterUiSelectableVpsAgents(agents);
+    return selectable.length > 0 ? [selectable[0]!] : [];
+}
+
 /**
- * Sticky/transcript composer agent picker: same as {@link reconcileSelectedAgent} but preserves
- * {@link THEIA_CODER_AGENT_ID}, which is offered in the UI but is not part of the VPS task list.
+ * Sticky/transcript composer agent picker — Qaap product always resolves to {@link QAAP_PRIMARY_AGENT_ID}.
  */
 export function reconcileStickyComposerAgent(
     current: string | undefined,
     agents: readonly QaapAgentTaskAgentOption[],
     defaultAgent: string | undefined,
     cwd: string | undefined,
-    coderAgentAvailable: boolean,
+    _coderAgentAvailable = false,
 ): string {
-    const normalizedCurrent = migrateLegacyBackendAgentId(current);
-    if (isTheiaCoderAgent(normalizedCurrent)) {
-        return coderAgentAvailable
-            ? THEIA_CODER_AGENT_ID
-            : reconcileSelectedAgent(undefined, agents, defaultAgent, cwd);
-    }
-    const ids = new Set(agents.map(agent => agent.id));
-    if (normalizedCurrent && ids.has(normalizedCurrent)) {
-        return normalizedCurrent;
-    }
-    const stored = migrateLegacyBackendAgentId(readStoredAgent(cwd));
-    if (isTheiaCoderAgent(stored) && coderAgentAvailable) {
-        return THEIA_CODER_AGENT_ID;
-    }
-    return reconcileSelectedAgent(current, agents, defaultAgent, cwd);
+    void _coderAgentAvailable;
+    const composerAgents = filterQaapComposerAgents(agents);
+    return reconcileSelectedAgent(
+        migrateQaapProductAgentId(current),
+        composerAgents,
+        defaultAgent,
+        cwd,
+    );
 }
 
 export function isStickyComposerAgentSelected(
@@ -380,7 +408,7 @@ export function resolveBackendAgentForTurn(
         return fromConversation;
     }
     return reconcileSelectedAgent(
-        options.storedAgentId,
+        migrateQaapProductAgentId(options.storedAgentId),
         agents,
         options.defaultAgentId,
         undefined,

@@ -12,6 +12,7 @@ import {
     type TranscriptPreviewMonacoEditor,
     type TranscriptPreviewMonacoEditorOptions,
 } from './qaap-transcript-monaco-editor';
+import { installMobilePanelResizeDrag } from './mobile-panel-resize-drag';
 
 export interface TranscriptFileTreeEntry {
     readonly name: string;
@@ -1162,171 +1163,49 @@ export function mountTranscriptFilesView(
 
     let splitDragSession: {
         readonly stacked: boolean;
-        readonly startCoord: number;
         readonly startSize: number;
-        readonly pointerId?: number;
-        readonly touchId?: number;
     } | undefined;
 
-    const supportsPointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
-
-    const updateSplitDrag = (clientX: number, clientY: number): void => {
-        if (!splitDragSession) {
-            return;
-        }
-        const { stacked, startCoord, startSize } = splitDragSession;
-        const layoutRect = layout.getBoundingClientRect();
-        const maxSize = Math.max(
-            FILES_TREE_MIN_PX,
-            (stacked ? layoutRect.height : layoutRect.width) * FILES_TREE_MAX_RATIO,
-        );
-        const delta = stacked
-            ? clientY - startCoord
-            : clientX - startCoord;
-        const nextSize = Math.min(maxSize, Math.max(FILES_TREE_MIN_PX, startSize - delta));
-        if (stacked) {
-            state.treePaneHeightPx = nextSize;
-        } else {
-            state.treePaneWidthPx = nextSize;
-        }
-        applyTreePaneSize();
-    };
-
-    const onSplitPointerMove = (event: PointerEvent): void => {
-        if (!splitDragSession || splitDragSession.pointerId !== event.pointerId) {
-            return;
-        }
-        event.preventDefault();
-        updateSplitDrag(event.clientX, event.clientY);
-    };
-
-    const onSplitPointerEnd = (event: PointerEvent): void => {
-        if (!splitDragSession || splitDragSession.pointerId !== event.pointerId) {
-            return;
-        }
-        endSplitResize();
-    };
-
-    const onSplitTouchMove = (event: TouchEvent): void => {
-        if (!splitDragSession || splitDragSession.touchId === undefined) {
-            return;
-        }
-        const touch = Array.from(event.touches).find(entry => entry.identifier === splitDragSession?.touchId);
-        if (!touch) {
-            return;
-        }
-        if (event.cancelable) {
-            event.preventDefault();
-        }
-        updateSplitDrag(touch.clientX, touch.clientY);
-    };
-
-    const onSplitTouchEnd = (event: TouchEvent): void => {
-        if (!splitDragSession || splitDragSession.touchId === undefined) {
-            return;
-        }
-        const ended = Array.from(event.changedTouches).some(entry => entry.identifier === splitDragSession?.touchId);
-        if (ended) {
-            endSplitResize();
-        }
-    };
-
-    const endSplitResize = (): void => {
-        if (!splitDragSession) {
-            return;
-        }
-        const session = splitDragSession;
-        splitDragSession = undefined;
-        layout.classList.remove('theia-mod-resizing');
-        if (session.pointerId !== undefined) {
-            try {
-                splitHandle.releasePointerCapture(session.pointerId);
-            } catch {
-                /* Safari may already have released capture */
+    disposables.push(installMobilePanelResizeDrag({
+        handle: splitHandle,
+        enabled: () => state.treeVisible,
+        onStart: () => {
+            const stacked = isTreeStacked();
+            const measured = stacked ? treePane.getBoundingClientRect().height : treePane.getBoundingClientRect().width;
+            splitDragSession = {
+                stacked,
+                startSize: stacked
+                    ? (state.treePaneHeightPx ?? measured)
+                    : (state.treePaneWidthPx ?? measured),
+            };
+            layout.classList.add('theia-mod-resizing');
+        },
+        onMove: ({ clientX, clientY, startClientX, startClientY }) => {
+            if (!splitDragSession) {
+                return;
             }
-        }
-        document.removeEventListener('pointermove', onSplitPointerMove, true);
-        document.removeEventListener('pointerup', onSplitPointerEnd, true);
-        document.removeEventListener('pointercancel', onSplitPointerEnd, true);
-        document.removeEventListener('touchmove', onSplitTouchMove, true);
-        document.removeEventListener('touchend', onSplitTouchEnd, true);
-        document.removeEventListener('touchcancel', onSplitTouchEnd, true);
-    };
-
-    const beginSplitResize = (
-        clientX: number,
-        clientY: number,
-        pointerId?: number,
-        touchId?: number,
-    ): void => {
-        if (splitDragSession) {
-            return;
-        }
-        const stacked = isTreeStacked();
-        const measured = stacked ? treePane.getBoundingClientRect().height : treePane.getBoundingClientRect().width;
-        const startSize = stacked
-            ? (state.treePaneHeightPx ?? measured)
-            : (state.treePaneWidthPx ?? measured);
-        splitDragSession = {
-            stacked,
-            startCoord: stacked ? clientY : clientX,
-            startSize,
-            pointerId,
-            touchId,
-        };
-        layout.classList.add('theia-mod-resizing');
-        if (pointerId !== undefined) {
-            try {
-                splitHandle.setPointerCapture(pointerId);
-            } catch {
-                /* ignore capture failures; document listeners still handle the drag */
+            const { stacked, startSize } = splitDragSession;
+            const startCoord = stacked ? startClientY : startClientX;
+            const layoutRect = layout.getBoundingClientRect();
+            const maxSize = Math.max(
+                FILES_TREE_MIN_PX,
+                (stacked ? layoutRect.height : layoutRect.width) * FILES_TREE_MAX_RATIO,
+            );
+            const delta = stacked
+                ? clientY - startCoord
+                : clientX - startCoord;
+            const nextSize = Math.min(maxSize, Math.max(FILES_TREE_MIN_PX, startSize - delta));
+            if (stacked) {
+                state.treePaneHeightPx = nextSize;
+            } else {
+                state.treePaneWidthPx = nextSize;
             }
-            document.addEventListener('pointermove', onSplitPointerMove, { capture: true, passive: false });
-            document.addEventListener('pointerup', onSplitPointerEnd, { capture: true });
-            document.addEventListener('pointercancel', onSplitPointerEnd, { capture: true });
-        }
-        if (touchId !== undefined) {
-            document.addEventListener('touchmove', onSplitTouchMove, { capture: true, passive: false });
-            document.addEventListener('touchend', onSplitTouchEnd, { capture: true });
-            document.addEventListener('touchcancel', onSplitTouchEnd, { capture: true });
-        }
-    };
-
-    const onSplitPointerDown = (event: PointerEvent): void => {
-        if (!state.treeVisible) {
-            return;
-        }
-        if (event.pointerType === 'mouse' && event.button !== 0) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        beginSplitResize(event.clientX, event.clientY, event.pointerId);
-    };
-
-    const onSplitTouchStart = (event: TouchEvent): void => {
-        if (!state.treeVisible || splitDragSession) {
-            return;
-        }
-        if (event.touches.length !== 1) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        const touch = event.touches[0];
-        beginSplitResize(touch.clientX, touch.clientY, undefined, touch.identifier);
-    };
-
-    splitHandle.addEventListener('pointerdown', onSplitPointerDown);
-    if (!supportsPointerEvents) {
-        splitHandle.addEventListener('touchstart', onSplitTouchStart, { passive: false });
-    }
-    disposables.push(Disposable.create(() => {
-        splitHandle.removeEventListener('pointerdown', onSplitPointerDown);
-        if (!supportsPointerEvents) {
-            splitHandle.removeEventListener('touchstart', onSplitTouchStart);
-        }
-        endSplitResize();
+            applyTreePaneSize();
+        },
+        onEnd: () => {
+            splitDragSession = undefined;
+            layout.classList.remove('theia-mod-resizing');
+        },
     }));
 
     const onMorePointerDown = (event: PointerEvent): void => {

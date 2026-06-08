@@ -18,7 +18,10 @@ import {
     migrateLegacyBackendAgentId,
     QAIQ_AGENT_ID,
     readStoredQaiqModel,
+    filterQaapComposerAgents,
     filterUiSelectableVpsAgents,
+    migrateQaapProductAgentId,
+    QAAP_PRIMARY_AGENT_ID,
     reconcileSelectedAgent,
     reconcileStickyComposerAgent,
     resolveAgentOptionId,
@@ -66,6 +69,28 @@ describe('qaap-agent-task-client', () => {
     it('migrateLegacyBackendAgentId maps openclaude storage to qaiq', () => {
         expect(migrateLegacyBackendAgentId('openclaude')).to.equal('qaiq');
         expect(migrateLegacyBackendAgentId('codex')).to.equal('codex');
+    });
+
+    it('migrateQaapProductAgentId maps retired defaults to QAIQ', () => {
+        expect(migrateQaapProductAgentId('Coder')).to.equal(QAAP_PRIMARY_AGENT_ID);
+        expect(migrateQaapProductAgentId('codex')).to.equal(QAAP_PRIMARY_AGENT_ID);
+        expect(migrateQaapProductAgentId('opencode')).to.equal('opencode');
+    });
+
+    it('filterQaapComposerAgents exposes only QAIQ when available', () => {
+        const agents = [
+            { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'codex', label: 'Codex', available: true },
+        ];
+        expect(filterQaapComposerAgents(agents).map(agent => agent.id)).to.deep.equal(['qaiq']);
+    });
+
+    it('reconcileSelectedAgent prefers QAIQ as the product default', () => {
+        const agents = [
+            { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'codex', label: 'Codex', available: true },
+        ];
+        expect(reconcileSelectedAgent(undefined, agents, 'codex', undefined)).to.equal('qaiq');
     });
 
     it('reconcileSelectedAgent upgrades a stored openclaude pick to qaiq', () => {
@@ -118,17 +143,17 @@ describe('qaap-agent-task-client', () => {
         })).to.equal('qaiq');
     });
 
-    it('reconcileStickyComposerAgent keeps Coder off the VPS agent list', () => {
+    it('reconcileStickyComposerAgent resolves to QAIQ for the Qaap product', () => {
         const agents = [
             { id: 'qaiq', label: 'QAIQ', available: true },
             { id: 'codex', label: 'Codex', available: true },
         ];
-        expect(reconcileStickyComposerAgent(THEIA_CODER_AGENT_ID, agents, 'qaiq', undefined, true))
-            .to.equal(THEIA_CODER_AGENT_ID);
-        expect(reconcileStickyComposerAgent('codex', agents, 'qaiq', undefined, true))
-            .to.equal('codex');
-        expect(reconcileStickyComposerAgent(THEIA_CODER_AGENT_ID, agents, 'qaiq', undefined, false))
-            .to.equal('qaiq');
+        expect(reconcileStickyComposerAgent(THEIA_CODER_AGENT_ID, agents, 'codex', undefined, true))
+            .to.equal(QAAP_PRIMARY_AGENT_ID);
+        expect(reconcileStickyComposerAgent('codex', agents, 'codex', undefined, true))
+            .to.equal(QAAP_PRIMARY_AGENT_ID);
+        expect(reconcileStickyComposerAgent(undefined, agents, 'codex', undefined, false))
+            .to.equal(QAAP_PRIMARY_AGENT_ID);
     });
 
     it('isStickyComposerAgentSelected matches Coder case-insensitively', () => {
