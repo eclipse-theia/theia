@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChatAgent, ChatAgentLocation } from '@theia/ai-chat/lib/common/chat-agents';
@@ -12,13 +13,14 @@ import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableC
 import { Agent, AgentService } from '@theia/ai-core';
 import { QAAP_AGENT_TASK_API_PATH } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt, QAAP_BACKEND_INTERACTION_MODES } from '../common/qaap-sticky-composer-mode';
+import { reconcileAgentApprovalPolicyId } from '../common/qaap-sticky-composer-approval-policy';
 import { QaapBackgroundContextProvider } from './qaap-background-context-provider';
 import { QaapQaiqStreamAccumulator } from '../common/qaap-qaiq-stream';
 import { QaapQaiqChatStreamSync } from './qaap-qaiq-chat-stream-sync';
 
 const QAIQ_CHAT_AGENT_ID = 'qaiq';
 /** Max time to wait for the task to complete before resolving with a "still running" message. */
-const STREAM_TIMEOUT_MS = 90_000;
+const STREAM_TIMEOUT_MS = 600_000;
 /** Delay before re-checking task state after an SSE disconnect, giving the browser time to reconnect. */
 const RECONNECT_CHECK_DELAY_MS = 2_000;
 
@@ -59,7 +61,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     protected readonly activeFinishCallbacks = new Set<(state: string) => void>();
 
     onStart(): void {
-        if (this.registered) {
+        if (this.registered || matchesMobileNarrowViewport()) {
             return;
         }
         this.agentService.registerAgent(this.createAgentDescriptor());
@@ -139,7 +141,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
             // context fragment here and forward it as `contextPreamble`; the backend runner prepends
             // it plus the per-project `project-info` artifact (read from cwd) for every agent.
             const contextPreamble = await this.backgroundContext.resolve(request);
-            const task = await this.startTask(userPrompt, cwd, contextPreamble);
+            const task = await this.startTask(userPrompt, cwd, contextPreamble, request.request.modeId);
             const accumulator = new QaapQaiqStreamAccumulator();
             const sync = new QaapQaiqChatStreamSync(request);
             await this.streamTask(task.id, accumulator, sync, request);
@@ -332,12 +334,25 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         return text.replace(/^@qaiq\b\s*/i, '').trim();
     }
 
-    protected async startTask(prompt: string, cwd: string, contextPreamble?: string): Promise<{ id: string }> {
+    protected async startTask(
+        prompt: string,
+        cwd: string,
+        contextPreamble?: string,
+        interactionModeId?: string,
+    ): Promise<{ id: string }> {
+        const approvalPolicyId = reconcileAgentApprovalPolicyId(undefined, cwd);
         const response = await fetch(QAAP_AGENT_TASK_API_PATH, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, agent: QAIQ_CHAT_AGENT_ID, cwd, contextPreamble }),
+            body: JSON.stringify({
+                prompt,
+                agent: QAIQ_CHAT_AGENT_ID,
+                cwd,
+                contextPreamble,
+                interactionModeId,
+                approvalPolicyId,
+            }),
         });
         if (!response.ok) {
             const detail = await response.text();

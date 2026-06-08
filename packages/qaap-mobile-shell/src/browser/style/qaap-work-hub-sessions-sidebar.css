@@ -353,6 +353,8 @@
   padding: 0 4px 0 8px;
   border-radius: 8px;
   background: transparent;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 44px;
 }
 
 .theia-mobile-work-hub-sessions-sidebar-list .theia-mobile-projects-task-row.theia-mod-priority {

@@ -14921,6 +14921,30 @@ body > .theia-mobile-transcript-files-menu {
   background: color-mix(in srgb, var(--theia-foreground, #fff) 14%, transparent);
 }
 
+.theia-mobile-agent-turn-review-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--qaap-mobile-radius-card, 12px);
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.3)) 85%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 4%, var(--theia-editorWidget-background, rgba(127, 127, 127, 0.08)));
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
+}
+
+.theia-mobile-agent-turn-review-cta-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theia-mobile-agent-turn-review-cta-btn.theia-mobile-agent-changed-files-review {
+  margin-left: auto;
+}
+
 .theia-mobile-agent-changed-files-list {
   display: grid;
   gap: 0;
