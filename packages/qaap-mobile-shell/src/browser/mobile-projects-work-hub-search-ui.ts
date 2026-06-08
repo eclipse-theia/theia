@@ -49,7 +49,7 @@ export interface MobileProjectsWorkHubSearchHost {
     applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
     sortRoutinesForDisplay(routines: QaapWorkHubRoutine[]): QaapWorkHubRoutine[];
     openProjectDetail(project: MobileProjectEntry): void | Promise<void>;
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     runCatalogAction(action: WorkHubCatalogAction): Promise<void>;
     selectHubLandingView(view: MobileProjectsHubView, preferredDiffProjectId?: string, options?: { force?: boolean }): void;
     openRoutineEditor(routine: QaapWorkHubRoutine): void;
@@ -253,7 +253,7 @@ export class MobileProjectsWorkHubSearchUi {
                 if (this.host.expandedId !== project.id) {
                     await this.host.openProjectDetail(project);
                 }
-                await this.host.openTranscriptSheet(project, summary);
+                await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
                 return;
             }
             case 'pullRequest':

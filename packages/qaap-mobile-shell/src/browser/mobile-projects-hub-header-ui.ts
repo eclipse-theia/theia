@@ -9,6 +9,9 @@ import { scrollElementTo } from '../common/qaap-prefers-reduced-motion';
 import { dismissQaapAccountMenu } from './qaap-workbench-account-menu';
 import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
 
 export interface MobileProjectsHubHeaderHost {
     sessionsMenuBtn: HTMLButtonElement;
@@ -27,7 +30,9 @@ export interface MobileProjectsHubHeaderHost {
     isProjectDiffView(): boolean;
     shouldUseAgentsHubLanding(): boolean;
     isSidebarSecondaryHubView(): boolean;
-    resolveTranscriptHeaderTitle(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): string;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    transcriptSheetUi: MobileProjectsTranscriptSheetUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     updateTasksAttentionChrome(): void;
     buildHomeGreeting(): string;
     projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string;
@@ -36,10 +41,8 @@ export interface MobileProjectsHubHeaderHost {
     lastTitleTap: number;
 
     closeAgentsHubSession(): void;
-    closeTranscriptSheet(): void;
     navigateBackFromSidebarSecondaryHub(): void;
     closeProjectDiffView(): void;
-    navigateExecutionSurfaceBack(project: MobileProjectEntry): boolean;
     closeProjectDetail(): void;
     openWorkHubSessionsSidebar(): void;
 }
@@ -85,7 +88,7 @@ export class MobileProjectsHubHeaderUi {
         }
         if (this.host.hubView === 'tasks') {
             if (this.host.agentsHubInlineActive && this.host.transcriptOpenProject && this.host.transcriptOpenSummary) {
-                this.host.titleEl.textContent = this.host.resolveTranscriptHeaderTitle(
+                this.host.titleEl.textContent = this.host.transcriptHeaderUi.resolveTranscriptHeaderTitle(
                     this.host.transcriptOpenProject,
                     this.host.transcriptOpenSummary,
                 );
@@ -171,7 +174,7 @@ export class MobileProjectsHubHeaderUi {
             return;
         }
         if (this.host.agentsHubInlineActive) {
-            this.host.closeTranscriptSheet();
+            this.host.transcriptSheetUi.closeTranscriptSheet();
             return;
         }
         if (this.host.isSidebarSecondaryHubView()) {
@@ -183,7 +186,7 @@ export class MobileProjectsHubHeaderUi {
             return;
         }
         const project = this.host.resolveSelectedProject();
-        if (project && this.host.navigateExecutionSurfaceBack(project)) {
+        if (project && this.host.executionSurfaceTabsUi.navigateExecutionSurfaceBack(project)) {
             return;
         }
         this.host.closeProjectDetail();

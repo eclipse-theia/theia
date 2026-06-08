@@ -40,6 +40,9 @@ import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
 
 /** Panel surface for SSE live watch, debounced refetch, and inline approval refresh. */
 export interface MobileProjectsTranscriptLiveHost {
@@ -64,13 +67,13 @@ export interface MobileProjectsTranscriptLiveHost {
     projectsService: MobileProjectsService;
     conversations: MobileProjectsConversations | undefined;
     transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
+    transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
 
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     findConversationSummaryById(id: string): QaapAgentConversationSummaryDTO | undefined;
     readonly conversationsOnDidChange: TheiaEvent<void>;
-    remountTranscriptStickyComposer(): void;
-    refreshTranscriptExecutionChrome(): void;
-    flushTranscriptFollowUpQueue(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
     syncTranscriptPreviewFromConversation(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -81,21 +84,7 @@ export interface MobileProjectsTranscriptLiveHost {
         summary: QaapAgentConversationSummaryDTO,
         status: QaapAgentConversationSummaryDTO['status'],
     ): void;
-    showOnlyExecutionSurfaceTab(tab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId): void;
-    mountTranscriptSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId,
-    ): void;
-    syncExecutionSurfaceChrome(project: MobileProjectEntry): void;
-    executionSurfaceTabForProject(project: MobileProjectEntry): import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId;
-    applyTranscriptComposerPrefsFromConversation(
-        conv: QaapAgentConversationDTO,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void;
     isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean;
-    resolveActiveChatEffectiveStatus(summary?: QaapAgentConversationSummaryDTO): QaapAgentConversationSummaryDTO['status'];
     ensureTranscriptConversationRefresh(): void;
 }
 
@@ -169,20 +158,20 @@ export class MobileProjectsTranscriptLiveUi {
         const previousStatus = this.host.transcriptLastStatus;
         if (backendStreaming) {
             this.host.transcriptComposerSendRefresh?.();
-            this.host.refreshTranscriptExecutionChrome();
+            this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
         } else if (previousStatus === 'streaming') {
-            this.host.remountTranscriptStickyComposer();
-            this.host.refreshTranscriptExecutionChrome();
+            this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
+            this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
         } else {
             this.host.transcriptComposerSendRefresh?.();
-            this.host.refreshTranscriptExecutionChrome();
+            this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
         }
         if (this.host.transcriptLastConv?.id === summary.id) {
             this.host.transcriptLastStatus = resolveTranscriptEffectiveStatus(this.host.transcriptLastConv);
         }
         const settled = this.host.transcriptOpenSummary;
-        if (settled && this.host.resolveActiveChatEffectiveStatus(settled) !== 'streaming') {
-            void this.host.flushTranscriptFollowUpQueue(project, settled);
+        if (settled && this.host.transcriptHeaderUi.resolveActiveChatEffectiveStatus(settled) !== 'streaming') {
+            void this.host.transcriptStickyComposerUi.flushTranscriptFollowUpQueue(project, settled);
         }
     }
 
@@ -200,7 +189,7 @@ export class MobileProjectsTranscriptLiveUi {
                 this.transcriptTurnVisuallySettledActive = true;
             }
             this.host.transcriptComposerSendRefresh?.();
-            this.host.refreshTranscriptExecutionChrome();
+            this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
             return;
         }
         if (conv.messages.at(-1)?.role !== 'agent' || !isConversationTurnVisuallySettled(conv)) {
@@ -388,7 +377,7 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         const { project: activeProject, summary: activeSummary, chatHost: activeChatHost } = context;
-        if (this.host.isPendingNewChatSummary(activeSummary)) {
+        if (this.host.transcriptHeaderUi.isPendingNewChatSummary(activeSummary)) {
             return;
         }
         if (!this.isActiveTranscriptConversation(activeSummary.id)) {
@@ -417,7 +406,7 @@ export class MobileProjectsTranscriptLiveUi {
             this.host.transcriptOpenSummary = conversationToSummary(full);
             if (this.host.transcriptComposerSummary?.id === full.id
                 && this.host.transcriptComposerPrefsConvId !== full.id) {
-                this.host.applyTranscriptComposerPrefsFromConversation(full, activeProject, activeSummary);
+                this.host.transcriptStickyComposerUi.applyTranscriptComposerPrefsFromConversation(full, activeProject, activeSummary);
                 this.host.transcriptComposerSendRefresh?.();
             }
             if (fingerprintUnchanged && !forceStatusSettle) {
@@ -429,10 +418,10 @@ export class MobileProjectsTranscriptLiveUi {
             this.host.transcriptLastFingerprint = fingerprint;
             this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
             if (this.host.transcriptSheet) {
-                const surfaceTab = this.host.executionSurfaceTabForProject(activeProject);
-                this.host.showOnlyExecutionSurfaceTab(surfaceTab);
-                this.host.mountTranscriptSurfaceTab(activeProject, activeSummary, surfaceTab);
-                this.host.syncExecutionSurfaceChrome(activeProject);
+                const surfaceTab = this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(activeProject);
+                this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(surfaceTab);
+                this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(activeProject, activeSummary, surfaceTab);
+                this.host.executionSurfaceTabsUi.syncExecutionSurfaceChrome(activeProject);
             }
             this.host.handleTranscriptStatusForAutoVerify(activeProject, activeSummary, full.status);
             if (full.status !== 'streaming') {

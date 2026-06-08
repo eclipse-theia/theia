@@ -78,10 +78,17 @@ chatAgentService?: import('@theia/ai-chat/lib/common/chat-agent-service').ChatAg
     showComposerAgentPickerLoading(chrome: ComposerAgentPickerChrome): void;
     getOfferableCoderAgent(): import('@theia/ai-chat').ChatAgent | undefined;
 closeTranscriptComposerSheets(): void;
+agentsHubShellActive?: boolean;
 }
 
 export class MobileProjectsStickyComposerSheetsUi {
     constructor(protected readonly host: MobileProjectsStickyComposerSheetsHost) { }
+
+    protected shouldElevateComposerSheets(): boolean {
+        return this.host.agentsHubShellActive === true
+            || document.body.classList.contains('theia-mobile-mod-workhub-composer-header')
+            || document.body.classList.contains('theia-mobile-mod-workhub-no-bottom-chrome');
+    }
 
     closeStickyComposerSheets(): void {
         if (this.host.stickyComposerAgentSheet) {
@@ -101,16 +108,23 @@ export class MobileProjectsStickyComposerSheetsUi {
             this.host.stickyComposerWorkspaceSheet = undefined;
         }
     }
+
+    closeAllComposerSheets(): void {
+        this.closeStickyComposerSheets();
+        this.host.closeTranscriptComposerSheets();
+    }
     openStickyComposerAgentSheet(project: MobileProjectEntry): void {
         if (this.host.stickyComposerSurface === 'chat') {
             return;
         }
-        this.closeStickyComposerSheets();
+        this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id);
         const chrome = this.createComposerAgentPickerChrome({
-            sheetClassName: 'theia-mobile-sticky-composer-sheet theia-mod-agent',
+            sheetClassName: this.shouldElevateComposerSheets()
+                ? 'theia-mobile-sticky-composer-sheet theia-mod-agent theia-mod-transcript-overlay'
+                : 'theia-mobile-sticky-composer-sheet theia-mod-agent',
             closeTitle: nls.localize('qaap/mobileAgentComposer/close', 'Close'),
-            onClose: () => this.closeStickyComposerSheets(),
+            onClose: () => this.closeAllComposerSheets(),
         });
         document.body.append(chrome.sheet);
         this.host.stickyComposerAgentSheet = chrome.sheet;
@@ -138,23 +152,25 @@ export class MobileProjectsStickyComposerSheetsUi {
                     if (cwd && this.host.stickyComposerModeId) {
                         writeStoredComposerMode(cwd, this.host.stickyComposerModeId);
                     }
-                    this.closeStickyComposerSheets();
+                    this.closeAllComposerSheets();
                     this.host.renderStickyComposer();
                 },
             });
         });
     }
     openStickyComposerModeSheet(project: MobileProjectEntry, modes: readonly ChatMode[]): void {
-        this.closeStickyComposerSheets();
+        this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id);
         const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-mode';
+        sheet.className = this.shouldElevateComposerSheets()
+            ? 'theia-mobile-sticky-composer-sheet theia-mod-mode theia-mod-transcript-overlay'
+            : 'theia-mobile-sticky-composer-sheet theia-mod-mode';
         sheet.setAttribute('role', 'dialog');
         sheet.setAttribute('aria-modal', 'true');
 
         const backdrop = document.createElement('div');
         backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.closeStickyComposerSheets());
+        backdrop.addEventListener('click', () => this.closeAllComposerSheets());
 
         const panel = document.createElement('section');
         panel.className = 'theia-mobile-sticky-composer-sheet-panel';
@@ -168,7 +184,7 @@ export class MobileProjectsStickyComposerSheetsUi {
         close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
         close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
         close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.closeStickyComposerSheets());
+        close.addEventListener('click', () => this.closeAllComposerSheets());
         header.append(title, close);
 
         const list = document.createElement('div');
@@ -183,7 +199,7 @@ export class MobileProjectsStickyComposerSheetsUi {
                     if (cwd) {
                         writeStoredComposerMode(cwd, id);
                     }
-                    this.closeStickyComposerSheets();
+                    this.closeAllComposerSheets();
                     this.host.renderStickyComposer();
                 },
             ));
@@ -195,11 +211,12 @@ export class MobileProjectsStickyComposerSheetsUi {
         this.host.stickyComposerModeSheet = sheet;
     }
     openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void {
-        this.closeStickyComposerSheets();
+        this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id);
         this.openApprovalPolicySheet({
             agentLabel,
             cwd,
+            transcriptOverlay: this.shouldElevateComposerSheets(),
             selectedId: reconcileAgentApprovalPolicyId(this.host.stickyComposerApprovalPolicyId, cwd),
             toolRules: reconcileAgentToolApprovalRules(
                 reconcileAgentApprovalPolicyId(this.host.stickyComposerApprovalPolicyId, cwd),
@@ -217,7 +234,7 @@ export class MobileProjectsStickyComposerSheetsUi {
                     writeStoredAgentApprovalPolicy(cwd, policyId);
                     writeStoredAgentToolApprovalRules(cwd, this.host.stickyComposerToolApprovalRules);
                 }
-                this.closeStickyComposerSheets();
+                this.closeAllComposerSheets();
                 this.host.renderStickyComposer();
             },
             onToolRulesChange: rules => {
@@ -226,7 +243,7 @@ export class MobileProjectsStickyComposerSheetsUi {
                     writeStoredAgentToolApprovalRules(cwd, rules);
                 }
             },
-            onClose: () => this.closeStickyComposerSheets(),
+            onClose: () => this.closeAllComposerSheets(),
             assignSheet: sheet => { this.host.stickyComposerApprovalSheet = sheet; },
         });
     }
@@ -357,17 +374,13 @@ export class MobileProjectsStickyComposerSheetsUi {
         selectedModeId: string | undefined,
         onSelect: (modeId: string) => void,
     ): HTMLElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'theia-mobile-sticky-composer-sheet-option';
-        if (selectedModeId === modeId) {
-            btn.classList.add('theia-mod-selected');
-        }
-        btn.textContent = label;
-        btn.addEventListener('click', () => {
-            onSelect(modeId);
+        return createPickerSheetOptionButton({
+            label,
+            selected: selectedModeId === modeId,
+            onSelect: () => {
+                onSelect(modeId);
+            },
         });
-        return btn;
     }
     createAgentSheetOption(
         label: string,

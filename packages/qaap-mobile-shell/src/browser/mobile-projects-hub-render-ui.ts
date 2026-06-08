@@ -5,6 +5,7 @@
 
 import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
 import type { MobileWorkHubSessionsSidebar } from './mobile-work-hub-sessions-sidebar';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 
 export interface MobileProjectsHubRenderHost {
     root: HTMLElement;
@@ -17,12 +18,10 @@ export interface MobileProjectsHubRenderHost {
     shouldUseAgentsHubLanding(): boolean;
     isProjectDetailView(): boolean;
     resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
-    executionSurfaceTabForProject(project: MobileProjectEntry): import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     renderHeader(): void;
     renderSubtitle(): void;
     syncHeaderComposerSurfacePicker(): void;
-    syncHeaderExecutionTabStrip(): void;
-    syncExecutionSurfaceChrome(project: MobileProjectEntry): void;
     syncHubViewAvailability(): void;
     renderFilters(): void;
     renderList(): void;
@@ -45,7 +44,7 @@ export class MobileProjectsHubRenderUi {
         this.host.root.classList.toggle('theia-mod-agents-hub-landing', this.host.shouldUseAgentsHubLanding());
         this.host.root.classList.toggle('theia-mod-project-detail', this.host.isProjectDetailView());
         const detailProject = this.host.resolveSelectedProject();
-        const detailTab = detailProject ? this.host.executionSurfaceTabForProject(detailProject) : 'messages';
+        const detailTab = detailProject ? this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(detailProject) : 'messages';
         this.host.root.classList.toggle(
             'theia-mod-project-surface-chat',
             this.host.isProjectDetailView() && detailTab === 'messages',
@@ -57,9 +56,9 @@ export class MobileProjectsHubRenderUi {
         this.host.renderHeader();
         this.host.renderSubtitle();
         this.host.syncHeaderComposerSurfacePicker();
-        this.host.syncHeaderExecutionTabStrip();
+        this.host.executionSurfaceTabsUi.syncHeaderExecutionTabStrip();
         if (this.host.transcriptSheet && this.host.transcriptOpenProject) {
-            this.host.syncExecutionSurfaceChrome(this.host.transcriptOpenProject);
+            this.host.executionSurfaceTabsUi.syncExecutionSurfaceChrome(this.host.transcriptOpenProject);
         }
         this.host.syncHubViewAvailability();
         this.host.renderFilters();

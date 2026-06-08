@@ -22,6 +22,8 @@ import {
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
 import type { MobileWorkHubSessionsSidebar } from './mobile-work-hub-sessions-sidebar';
 import type { MobileProjectEntry } from './mobile-projects-types';
 
@@ -36,20 +38,15 @@ export interface MobileProjectsConversationActionsHost {
     transcriptAutoApproveBusy: boolean;
 
     closeCardMenu(): void;
-    closeTranscriptSheet(): void;
     renderList(): void;
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    transcriptSheetUi: MobileProjectsTranscriptSheetUi;
     getOrRestoreProjectChatSession(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<ChatSession | undefined>;
     applyTaskStartedToProject(cwd: string, title: string, taskId: string): void;
     isWatchingOpenTranscript(conversationId: string): boolean;
-    scheduleTranscriptConversationRefresh(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
 }
 
@@ -68,7 +65,7 @@ export class MobileProjectsConversationActionsUi {
             const forked = conversationToSummary(full);
             this.host.conversations?.recordSnapshot(forked);
             this.host.renderList();
-            await this.host.openTranscriptSheet(project, forked);
+            await this.host.transcriptSheetUi.openTranscriptSheet(project, forked);
         } catch (error) {
             this.host.messageService?.error(nls.localize(
                 'qaap/mobileProjects/forkTaskFailed',
@@ -258,7 +255,7 @@ export class MobileProjectsConversationActionsUi {
             if (this.host.isWatchingOpenTranscript(summary.id)) {
                 const chatHost = this.host.resolveActiveTranscriptChatHost();
                 if (chatHost) {
-                    this.host.scheduleTranscriptConversationRefresh(project, summary, chatHost);
+                    this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
                 }
             }
             MobileSnackbar.show(
@@ -295,7 +292,7 @@ export class MobileProjectsConversationActionsUi {
                 await deleteConversation(summary.id);
                 this.host.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
             }
-            this.host.closeTranscriptSheet();
+            this.host.transcriptSheetUi.closeTranscriptSheet();
             this.host.renderList();
         } catch (error) {
             this.host.messageService?.error(nls.localize(

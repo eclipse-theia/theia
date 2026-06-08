@@ -16,6 +16,7 @@ import type { WorkHubHomeSnapshot } from '../common/qaap-work-hub-home';
 import type { QaapWorkHubRoutine } from '../common/qaap-work-hub-routine';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import type { MobileProjectEntry, MobileProjectsHubView } from './mobile-projects-types';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
 
 /** Panel surface for hub subtitle and meta chips. */
 export interface MobileProjectsSubtitleHost {
@@ -41,7 +42,7 @@ export interface MobileProjectsSubtitleHost {
 
     buildHomeSubtitle(snapshot: WorkHubHomeSnapshot): string;
     buildHomeSnapshot(): WorkHubHomeSnapshot;
-    renderActiveChatHeaderSubtitle(host: HTMLElement, project: MobileProjectEntry, summary?: QaapAgentConversationSummaryDTO): void;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
     shouldUseAgentsHubLanding(): boolean;
     resolveHomePinnedProject(): MobileProjectEntry | undefined;
     localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
@@ -132,7 +133,7 @@ export class MobileProjectsSubtitleUi {
         if (this.host.homeMode && this.host.hubView === 'tasks') {
             this.host.subtitleEl.className = 'theia-mobile-projects-subtitle';
             if (this.host.agentsHubInlineActive && this.host.transcriptOpenProject) {
-                this.host.renderActiveChatHeaderSubtitle(
+                this.host.transcriptHeaderUi.renderActiveChatHeaderSubtitle(
                     this.host.subtitleEl,
                     this.host.transcriptOpenProject,
                     this.host.transcriptOpenSummary,

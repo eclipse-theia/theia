@@ -117,7 +117,7 @@ export class MobileProjectsStickyComposerColumnUi {
             options.onAttach(attachBtn);
         });
 
-        const controlsLeftItems: HTMLElement[] = [attachBtn];
+        const controlsLeftItems: HTMLElement[] = [];
         if (options.approvalPolicyId && options.onOpenApprovalPolicySheet) {
             const approvalPolicy = resolveAgentApprovalPolicyOption(options.approvalPolicyId);
             const approvalBtn = document.createElement('button');
@@ -132,8 +132,7 @@ export class MobileProjectsStickyComposerColumnUi {
             approvalBtn.setAttribute('aria-haspopup', 'dialog');
             populateApprovalPolicyToolbarButton(approvalBtn, approvalPolicy);
             approvalBtn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                options.onOpenApprovalPolicySheet!();
+                this.openComposerControlSheet(ev, input, () => options.onOpenApprovalPolicySheet!());
             });
             controlsLeftItems.push(approvalBtn);
         }
@@ -156,14 +155,9 @@ export class MobileProjectsStickyComposerColumnUi {
         if (options.agentLocked) {
             agentBtn.classList.add('theia-mod-locked');
             agentBtn.disabled = true;
-        } else {
-            agentBtn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                options.onOpenAgentSheet();
-            });
         }
 
-        const toolbarItems: HTMLElement[] = [agentBtn];
+        const toolbarItems: HTMLElement[] = [];
         const modes = options.modes ?? [];
         let modeBtn: HTMLButtonElement | undefined;
         if (modes.length > 1 && options.onOpenModeSheet && options.resolveModeLabel) {
@@ -176,8 +170,7 @@ export class MobileProjectsStickyComposerColumnUi {
             modeBtn.innerHTML = `<span class="theia-mobile-projects-sticky-composer-mode-label">${modeLabel}</span>`
                 + '<span class="codicon codicon-chevron-down" aria-hidden="true"></span>';
             modeBtn.addEventListener('click', ev => {
-                ev.stopPropagation();
-                options.onOpenModeSheet!();
+                this.openComposerControlSheet(ev, input, () => options.onOpenModeSheet!());
             });
         }
 
@@ -210,7 +203,10 @@ export class MobileProjectsStickyComposerColumnUi {
         toolbar.append(...toolbarItems);
         const usageBadge = createContextUsageIndicatorBadge();
         usageBadge.classList.add('theia-mobile-projects-sticky-composer-context-usage');
-        toolbar.append(usageBadge);
+        const trayRight = document.createElement('div');
+        trayRight.className = 'theia-mobile-projects-sticky-composer-tray-right';
+        trayRight.append(agentBtn, usageBadge);
+        toolbar.append(trayRight);
         options.onContextUsageBadgeMounted?.(usageBadge);
 
         const stage = document.createElement('div');
@@ -334,8 +330,13 @@ export class MobileProjectsStickyComposerColumnUi {
         if (modeBtn) {
             controlsLeft.append(modeBtn);
         }
-        for (const item of controlsLeftItems.slice(1)) {
+        for (const item of controlsLeftItems) {
             controlsLeft.append(item);
+        }
+        if (!options.agentLocked) {
+            agentBtn.addEventListener('click', ev => {
+                this.openComposerControlSheet(ev, input, () => options.onOpenAgentSheet());
+            });
         }
         controlsRight.append(inputActions);
         controlsRow.append(controlsLeft, controlsRight);
@@ -371,6 +372,16 @@ export class MobileProjectsStickyComposerColumnUi {
         }
         column.append(wrap);
         return column;
+    }
+
+    /** Blur textarea before opening a bottom sheet so tray state and hit targets stay consistent. */
+    protected openComposerControlSheet(ev: Event, input: HTMLTextAreaElement, open: () => void): void {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (document.activeElement === input) {
+            input.blur();
+        }
+        open();
     }
 
     /**

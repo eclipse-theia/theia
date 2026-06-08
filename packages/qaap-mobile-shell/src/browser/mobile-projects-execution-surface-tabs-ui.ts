@@ -20,6 +20,9 @@ import {
 } from '../common/qaap-scm-changes-icon';
 import { applyExecutionSurfaceHeaderChrome } from './qaap-execution-surface-header-chrome';
 import type { MobileProjectEntry } from './mobile-projects-types';
+import type { MobileProjectsProjectDetailUi } from './mobile-projects-project-detail-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsTranscriptSurfacesUi } from './mobile-projects-transcript-surfaces-ui';
 
 type TranscriptTab = ExecutionSurfaceTabId;
 
@@ -62,30 +65,14 @@ export interface MobileProjectsExecutionSurfaceTabsHost {
     executionTabOverflowDispose: Disposable;
     expandedId: string | undefined;
     projectDetailExpandedId: string | undefined;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    transcriptSurfacesUi: MobileProjectsTranscriptSurfacesUi;
+    projectDetailUi: MobileProjectsProjectDetailUi;
 
     appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement;
-    createExecutionHeaderSubtitle(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): HTMLElement;
-    updateTranscriptHeader(project: MobileProjectEntry, summary?: QaapAgentConversationSummaryDTO): void;
     renderHeader(): void;
     renderSubtitle(): void;
     renderStickyComposer(): void;
-    selectProjectDetailTab(tab: TranscriptTab, project: MobileProjectEntry): void;
-    mountProjectDetailSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: TranscriptTab,
-    ): void;
-    renderPlanTab(host: HTMLElement | undefined, conv: QaapAgentConversationDTO | undefined): void;
-    mountTranscriptReviewWidget(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void>;
-    renderPreviewTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    ensureTranscriptFilesTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    ensureTranscriptTerminalTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
     resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO;
     resolveSelectedProject(): MobileProjectEntry | undefined;
     isProjectDetailView(): boolean;
@@ -176,11 +163,11 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         const title = document.createElement('h2');
         title.textContent = titleText;
         const back = this.host.appendTranscriptHeaderActions(header, title);
-        const subtitle = this.host.createExecutionHeaderSubtitle(project, summary);
+        const subtitle = this.host.transcriptHeaderUi.createExecutionHeaderSubtitle(project, summary);
         header.querySelector('.theia-mobile-agent-log-title-wrap')?.append(subtitle);
         this.host.transcriptHeaderSubtitle = subtitle;
         this.setExecutionSurfaceTab(project, 'messages');
-        this.host.updateTranscriptHeader(project, summary);
+        this.host.transcriptSurfacesUi.updateTranscriptHeader(project, summary);
         const activeTab = this.executionSurfaceTabForProject(project);
         const tabStrip = this.buildTranscriptTabStrip(project, summary);
         const titleRow = header.querySelector('.theia-mobile-agent-log-title-row');
@@ -221,7 +208,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
             this.setExecutionSurfaceTab(project, tab);
             this.rebuildExecutionSurfaceTabStrips(project, tab);
             if (origin === 'transcript') {
-                this.host.updateTranscriptHeader(project);
+                this.host.transcriptSurfacesUi.updateTranscriptHeader(project);
             } else {
                 this.host.renderHeader();
                 this.host.renderSubtitle();
@@ -289,7 +276,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
             this.mountTranscriptSurfaceTab(project, summary, tab);
             return;
         }
-        this.host.mountProjectDetailSurfaceTab(project, summary, tab);
+        this.host.transcriptSurfacesUi.mountProjectDetailSurfaceTab(project, summary, tab);
     }
 
     syncHeaderExecutionTabStrip(): void {
@@ -313,7 +300,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
             this.host.headerExecutionTabsProjectId = project.id;
             const tabStrip = this.buildExecutionViewTabStrip(
                 activeTab,
-                tab => this.host.selectProjectDetailTab(tab, project),
+                tab => this.host.projectDetailUi.selectProjectDetailTab(tab, project),
             );
             this.host.headerExecutionTabsHost.replaceChildren(tabStrip);
             this.host.projectDetailTabStrip = tabStrip;
@@ -354,7 +341,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         } else if (this.host.projectDetailTabStrip && this.host.headerExecutionTabsHost.contains(this.host.projectDetailTabStrip)) {
             const strip = this.buildExecutionViewTabStrip(
                 activeTab,
-                tab => this.host.selectProjectDetailTab(tab, project),
+                tab => this.host.projectDetailUi.selectProjectDetailTab(tab, project),
             );
             this.host.headerExecutionTabsHost.replaceChildren(strip);
             this.host.projectDetailTabStrip = strip;
@@ -399,7 +386,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
             return true;
         }
         if (this.host.isProjectDetailView() && this.host.expandedId === project.id) {
-            this.host.selectProjectDetailTab('messages', project);
+            this.host.projectDetailUi.selectProjectDetailTab('messages', project);
             return true;
         }
         return false;
@@ -660,15 +647,15 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         tab: TranscriptTab,
     ): void {
         if (tab === 'plan') {
-            this.host.renderPlanTab(this.host.transcriptPlanHost, this.host.transcriptLastConv);
+            this.host.transcriptSurfacesUi.renderPlanTab(this.host.transcriptPlanHost, this.host.transcriptLastConv);
         } else if (tab === 'review') {
-            void this.host.mountTranscriptReviewWidget(project, summary);
+            void this.host.transcriptSurfacesUi.mountTranscriptReviewWidget(project, summary);
         } else if (tab === 'preview') {
-            this.host.renderPreviewTab(project, summary);
+            this.host.transcriptSurfacesUi.renderPreviewTab(project, summary);
         } else if (tab === 'files') {
-            this.host.ensureTranscriptFilesTab(project, summary);
+            this.host.transcriptSurfacesUi.ensureTranscriptFilesTab(project, summary);
         } else if (tab === 'terminal') {
-            void this.host.ensureTranscriptTerminalTab(project, summary);
+            void this.host.transcriptSurfacesUi.ensureTranscriptTerminalTab(project, summary);
         }
         if (this.host.transcriptOpenProject) {
             this.syncExecutionSurfaceChrome(this.host.transcriptOpenProject);

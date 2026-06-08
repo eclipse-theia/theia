@@ -30,6 +30,8 @@ import { isConversationTurnVisuallySettled } from '../common/qaap-transcript-tur
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
 
 /** Panel surface for VPS/backend transcript message submit and optimistic render. */
 export interface MobileProjectsTranscriptSubmitHost {
@@ -41,6 +43,8 @@ export interface MobileProjectsTranscriptSubmitHost {
     transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
     conversations: MobileProjectsConversations | undefined;
     transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
 
     isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean;
     createProjectChatSession(
@@ -56,7 +60,6 @@ export interface MobileProjectsTranscriptSubmitHost {
         },
     ): Promise<QaapAgentConversationSummaryDTO>;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
-    ensureTranscriptConversationRefresh(): void;
     applyTaskStartedToProject(cwd: string, title: string, taskId: string): void;
 }
 
@@ -80,7 +83,7 @@ export class MobileProjectsTranscriptSubmitUi {
             widget?: AIChatInputWidget;
         } = {},
     ): Promise<void> {
-        if (this.host.isPendingNewChatSummary(summary)) {
+        if (this.host.transcriptHeaderUi.isPendingNewChatSummary(summary)) {
             const created = await this.host.createProjectChatSession(project, summary.cwd, content, {
                 selectedAgentId: options.selectedAgentId,
                 modeId: options.modeId,
@@ -96,7 +99,7 @@ export class MobileProjectsTranscriptSubmitUi {
                 const full = await getConversation(created.id);
                 this.host.transcriptLastFingerprint = undefined;
                 this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
-                this.host.ensureTranscriptConversationRefresh();
+                this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
             }
             this.host.applyTaskStartedToProject(created.cwd, content, created.id);
             return;
@@ -149,7 +152,7 @@ export class MobileProjectsTranscriptSubmitUi {
                 this.host.transcriptMessagesUi.renderTranscriptMessages(refreshedChatHost, updated);
             }
             this.host.applyTaskStartedToProject(summary.cwd, content, summary.id);
-            this.host.ensureTranscriptConversationRefresh();
+            this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
         } catch (error) {
             const rollbackChatHost = this.host.resolveActiveTranscriptChatHost();
             if (rollbackChatHost && this.host.transcriptOpenSummaryId === summary.id) {

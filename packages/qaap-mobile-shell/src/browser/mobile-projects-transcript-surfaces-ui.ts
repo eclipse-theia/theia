@@ -44,6 +44,9 @@ import {
     type TranscriptWorkspaceSurfaceKey,
 } from './qaap-transcript-workspace-surfaces-cache';
 import type { MobileProjectsTranscriptHistoryUi } from './mobile-projects-transcript-history-ui';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
 
 type TranscriptTab = ExecutionSurfaceTabId;
@@ -107,6 +110,9 @@ export interface MobileProjectsTranscriptSurfacesHost {
     previewSurfaceRegistry: QaapPreviewSurfaceRegistry | undefined;
     previewInspectorDeps: QaapPreviewInspectorDeps | undefined;
     transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
+    transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
 
     renderChecksSection(
         host: HTMLElement | undefined,
@@ -131,13 +137,6 @@ export interface MobileProjectsTranscriptSurfacesHost {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): string | undefined;
-    resolveTranscriptHeaderTitle(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): string;
-    renderActiveChatHeaderSubtitle(
-        host: HTMLElement,
-        project: MobileProjectEntry,
-        summary?: QaapAgentConversationSummaryDTO,
-    ): void;
-    activeExecutionTab(project?: MobileProjectEntry): TranscriptTab;
     refreshTranscriptChecksViews(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     setAutoVerifyEnabled(cwd: string | undefined, on: boolean): void;
     onResumePreview?(project: MobileProjectEntry): void | Promise<void>;
@@ -359,10 +358,10 @@ export class MobileProjectsTranscriptSurfacesUi {
             return;
         }
         titleEl.textContent = summary
-            ? this.host.resolveTranscriptHeaderTitle(project, summary)
+            ? this.host.transcriptHeaderUi.resolveTranscriptHeaderTitle(project, summary)
             : project.name;
         subtitle.hidden = false;
-        this.host.renderActiveChatHeaderSubtitle(subtitle, project, summary);
+        this.host.transcriptHeaderUi.renderActiveChatHeaderSubtitle(subtitle, project, summary);
     }
 
     async mountTranscriptReviewWidget(
@@ -450,14 +449,14 @@ export class MobileProjectsTranscriptSurfacesUi {
         }
         try {
             await this.host.submitTranscriptViaBackendConversation(project, summary, message, {
-                selectedAgentId: this.host.resolveTranscriptComposerPinnedAgentId(project, summary),
+                selectedAgentId: this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary),
                 modeId: this.host.transcriptComposerModeId,
                 approvalPolicyId: reconcileAgentApprovalPolicyId(
                     this.host.transcriptComposerApprovalPolicyId,
                     summary.cwd,
                 ),
             });
-            this.host.selectTranscriptTab('messages', project, summary);
+            this.host.executionSurfaceTabsUi.selectTranscriptTab('messages', project, summary);
         } catch (error) {
             this.host.messageService?.error(error instanceof Error ? error.message : String(error));
         }
@@ -587,7 +586,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         }
         this.host.transcriptPreviewRecoveryRequests.add(summary.id);
         void this.refreshTranscriptPreviewProject(project, summary).then(latestProject => {
-            if (!latestProject.previewUrl || this.host.transcriptOpenSummaryId !== summary.id || this.host.activeExecutionTab(project) !== 'preview') {
+            if (!latestProject.previewUrl || this.host.transcriptOpenSummaryId !== summary.id || this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
                 return;
             }
             this.host.projects = this.host.projects.map(candidate => candidate.id === latestProject.id ? latestProject : candidate);
@@ -687,7 +686,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         const workspaceKey = this.resolveTranscriptWorkspaceKey(project, summary);
         if (!workspaceKey && project.github && this.host.projectsService) {
             void this.host.projectsService.prepareProjectCwd(project).then(prepared => {
-                if (!prepared || !this.executionFilesHost()?.isConnected || this.host.activeExecutionTab(project) !== 'files') {
+                if (!prepared || !this.executionFilesHost()?.isConnected || this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'files') {
                     return;
                 }
                 this.host.preparedCwdByProjectId.set(project.id, prepared);
@@ -753,7 +752,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         const workspaceKey = this.resolveTranscriptWorkspaceKey(project, summary);
         if (!workspaceKey && project.github && this.host.projectsService) {
             void this.host.projectsService.prepareProjectCwd(project).then(prepared => {
-                if (!prepared || !this.executionTerminalHost()?.isConnected || this.host.activeExecutionTab(project) !== 'terminal') {
+                if (!prepared || !this.executionTerminalHost()?.isConnected || this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'terminal') {
                     return;
                 }
                 this.host.preparedCwdByProjectId.set(project.id, prepared);
@@ -853,7 +852,7 @@ export class MobileProjectsTranscriptSurfacesUi {
             state.surfaces.push(surface);
             state.activeIndex = activateNewest ? state.surfaces.length - 1 : Math.max(0, state.activeIndex);
             this.host.transcriptTerminalSlidesByWorkspace.set(workspaceKey, state);
-            if (this.host.activeExecutionTab(project) === 'terminal'
+            if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) === 'terminal'
                 && this.resolveTranscriptWorkspaceKey(project, summary) === workspaceKey) {
                 this.renderTranscriptTerminalSlides(workspaceKey);
             }
@@ -1061,14 +1060,14 @@ export class MobileProjectsTranscriptSurfacesUi {
         summary: QaapAgentConversationSummaryDTO,
         conv: QaapAgentConversationDTO,
     ): Promise<void> {
-        if (this.host.activeExecutionTab(project) !== 'preview' && !this.host.transcriptPreviewRequestPending) {
+        if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview' && !this.host.transcriptPreviewRequestPending) {
             return;
         }
         const latestProject = await this.refreshTranscriptPreviewProject(project, summary);
         if (this.resolveTranscriptPreviewUrl(latestProject, conv) || conv.status !== 'streaming') {
             this.host.transcriptPreviewRequestPending = false;
         }
-        if (this.host.activeExecutionTab(project) === 'preview' && (this.host.transcriptOpenSummaryId === summary.id || this.host.projectDetailSurfaceTargets)) {
+        if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) === 'preview' && (this.host.transcriptOpenSummaryId === summary.id || this.host.projectDetailSurfaceTargets)) {
             this.renderPreviewTab(latestProject, summary);
         }
     }
@@ -1207,7 +1206,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         this.renderPreviewTab(project, summary);
         try {
             await this.host.submitTranscriptViaBackendConversation(project, summary, message, {
-                selectedAgentId: this.host.resolveTranscriptComposerPinnedAgentId(project, summary),
+                selectedAgentId: this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary),
                 modeId: this.host.transcriptComposerModeId,
                 approvalPolicyId: reconcileAgentApprovalPolicyId(
                     this.host.transcriptComposerApprovalPolicyId,

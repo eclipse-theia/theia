@@ -27,7 +27,7 @@ export interface MobileProjectsHubTeamDataHost {
     projectsService: MobileProjectsService;
 
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void>;
     openProjectDetail(project: MobileProjectEntry): Promise<void>;
 }
@@ -196,7 +196,7 @@ export class MobileProjectsHubTeamDataUi {
                 ? this.host.conversationsForProject(project).find(c => c.id === member.conversationId)
                 : undefined;
             if (project && summary) {
-                void this.host.openTranscriptSheet(project, summary);
+                void this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
                 return;
             }
         }

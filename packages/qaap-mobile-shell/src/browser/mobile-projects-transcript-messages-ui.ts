@@ -13,7 +13,6 @@ import {
     type QaapAgentMessageDTO,
     type QaapAgentMessageSegmentDTO,
 } from '../common/qaap-agent-conversation-client';
-import type { ExecutionSurfaceTabId } from '../common/qaap-execution-surface-tabs';
 import { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
@@ -24,6 +23,10 @@ import { MobileProjectsTranscriptMessagesRenderUi } from './mobile-projects-tran
 import { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import { MobileProjectsTranscriptMessagesToolUi } from './mobile-projects-transcript-messages-tool-ui';
 import { MobileProjectsTranscriptMessagesUserUi } from './mobile-projects-transcript-messages-user-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 
 /** Panel surface consumed by transcript message rendering (keeps deps narrow vs. the full panel). */
 export interface MobileProjectsTranscriptMessagesHost {
@@ -58,11 +61,11 @@ export interface MobileProjectsTranscriptMessagesHost {
     createAgentsHubQuickActionsBlock(): HTMLElement;
     ensureOverlayUi(): { team: { renderTeamSection(host: HTMLElement, conv: QaapAgentConversationDTO): void } };
     renderTranscriptInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void;
-    refreshTranscriptExecutionChrome(): void;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
+    transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     maybeSyncTranscriptVisuallySettledChrome(conv: QaapAgentConversationDTO): void;
-    ensureTranscriptConversationRefresh(): void;
-    selectTranscriptTab(tab: ExecutionSurfaceTabId, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
-    remountTranscriptStickyComposer(): void;
 }
 
 /** Transcript message list rendering: rows, streaming patches, and rich segment UI. */

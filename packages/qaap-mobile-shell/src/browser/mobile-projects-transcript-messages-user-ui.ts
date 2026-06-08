@@ -136,7 +136,7 @@ export class MobileProjectsTranscriptMessagesUserUi {
         }
         if (summary.source === 'theia-chat') {
             this.host.transcriptComposerDraft = plainText;
-            this.host.remountTranscriptStickyComposer();
+            this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             this.focusTranscriptComposerInput();
             return;
         }
@@ -148,7 +148,7 @@ export class MobileProjectsTranscriptMessagesUserUi {
                 this.renderMessages(this.host.transcriptChatHost, updated);
             }
             this.host.transcriptComposerDraft = plainText;
-            this.host.remountTranscriptStickyComposer();
+            this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             this.focusTranscriptComposerInput();
         } catch (error) {
             MobileSnackbar.show(error instanceof Error ? error.message : String(error), { kind: 'warning' });

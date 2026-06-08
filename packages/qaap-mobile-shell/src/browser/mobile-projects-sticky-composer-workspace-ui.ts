@@ -8,6 +8,8 @@ import { QAAP_GIT_REVIEW_API_PATH, type QaapGitBranchesResponse } from '../commo
 import type { StickyComposerWorkspaceBarView } from './qaap-sticky-composer-workspace-bar';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 import { MobileSnackbar } from './mobile-snackbar';
 
 export interface MobileProjectsStickyComposerWorkspaceHost {
@@ -22,14 +24,14 @@ transcriptComposerProject: MobileProjectEntry | undefined;
 transcriptComposerSummary: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO | undefined;
 projectsService: MobileProjectsService;
 delegate: { onProjectsChanged?: () => void };
+transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
 renderStickyComposer(): void;
 render(): void;
 renderAgentsHubExecutionShell(): void;
 openProject(project: MobileProjectEntry): Promise<void>;
 onNewClick(): Promise<void>;
-remountTranscriptStickyComposer(): void;
 closeStickyComposerSheets(): void;
-closeTranscriptComposerSheets(): void;
 }
 
 export class MobileProjectsStickyComposerWorkspaceUi {
@@ -73,13 +75,13 @@ export class MobileProjectsStickyComposerWorkspaceUi {
     }
     remountComposerWithWorkspaceBar(project: MobileProjectEntry): void {
         if (this.host.transcriptComposerHost?.isConnected && this.host.transcriptComposerProject && this.host.transcriptComposerSummary) {
-            this.host.remountTranscriptStickyComposer();
+            this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             return;
         }
         this.host.renderStickyComposer();
         void this.refreshComposerWorkspaceBranch(project).then(() => {
             if (this.host.transcriptComposerHost?.isConnected) {
-                this.host.remountTranscriptStickyComposer();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             } else {
                 this.host.renderStickyComposer();
             }
@@ -87,7 +89,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
     }
     openComposerWorkspaceProjectSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
         this.host.closeStickyComposerSheets();
-        this.host.closeTranscriptComposerSheets();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         const sheet = document.createElement('div');
         sheet.className = transcriptOverlay
             ? 'theia-mobile-sticky-composer-sheet theia-mod-workspace theia-mod-transcript-overlay'
@@ -223,7 +225,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
     }
     openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
         this.host.closeStickyComposerSheets();
-        this.host.closeTranscriptComposerSheets();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         const sheet = document.createElement('div');
         sheet.className = transcriptOverlay
             ? 'theia-mobile-sticky-composer-sheet theia-mod-workspace theia-mod-transcript-overlay'

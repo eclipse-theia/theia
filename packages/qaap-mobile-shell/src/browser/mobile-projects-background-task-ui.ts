@@ -46,7 +46,7 @@ export interface MobileProjectsBackgroundTaskHost {
     activeTasks?: MobileProjectsActiveTasks;
     sessionsSidebar?: MobileWorkHubSessionsSidebar;
     delegate: { onProjectsChanged?: () => void };
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     shouldUseAgentsHubLanding(): boolean;
     renderSubtitle(): void;
     renderList(): void;
@@ -97,7 +97,7 @@ export class MobileProjectsBackgroundTaskUi {
         try {
             const summary = await this.createProjectChatSession(project, cwd, draft, options);
             if (options.openConversation ?? true) {
-                await this.host.openTranscriptSheet(project, summary);
+                await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
             }
             this.applyTaskStartedToProject(cwd, draft, summary.id);
             MobileSnackbar.show(

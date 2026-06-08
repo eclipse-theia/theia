@@ -23,6 +23,9 @@ import type { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog
 import type { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import type { MobileWorkHubSessionsSidebar } from './mobile-work-hub-sessions-sidebar';
 import type { TranscriptWorkspaceSurfacesCache } from './qaap-transcript-workspace-surfaces-cache';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
 
 /** Panel surface for show/hide/dispose and live subscription wiring. */
 export interface MobileProjectsPanelLifecycleHost {
@@ -67,12 +70,13 @@ export interface MobileProjectsPanelLifecycleHost {
     chatService: ChatService | undefined;
     projectsService: MobileProjectsService;
     delegate: { onDismiss(): void };
+    transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
+    transcriptSheetUi: MobileProjectsTranscriptSheetUi;
 
     closeRoutineEditor(): void;
     closeCardMenu(): void;
     closeStickyComposerSheets(): void;
-    closeTranscriptComposerSheets(): void;
-    closeTranscriptSheet(): void;
     closeWorkHubSearchQuickPick(): void;
     disposeTranscriptTerminalSlides(): void;
     detachDiffReviewWidget(): void;
@@ -93,8 +97,6 @@ export interface MobileProjectsPanelLifecycleHost {
     isTasksHubView(): boolean;
     shouldSkipFullRenderListOnConversationTick(): boolean;
     refreshWorkHubConversationChrome(): void;
-    ensureTranscriptConversationRefresh(): void;
-    handleTranscriptSseMessage(payload: { readonly conversationId: string; readonly message: import('../common/qaap-agent-conversation-client').QaapAgentMessageDTO }): void;
     mergeInboxPullRequests(polled: QaapGithubPullRequestSummary[]): QaapGithubPullRequestSummary[];
     updateTasksAttentionChrome(): void;
 }
@@ -115,7 +117,7 @@ export class MobileProjectsPanelLifecycleUi {
         this.host.accountBtn.removeEventListener('click', this.host.onAccountClick);
         this.host.closeCardMenu();
         this.host.closeStickyComposerSheets();
-        this.host.closeTranscriptComposerSheets();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         this.host.dragDismissDispose.dispose();
         this.host.dragDismissDispose = Disposable.NULL;
         this.host.pullToRefreshDispose.dispose();
@@ -129,7 +131,7 @@ export class MobileProjectsPanelLifecycleUi {
         this.host.chatServiceDispose.dispose();
         this.host.chatServiceDispose = Disposable.NULL;
         this.disposeChatSessionModelListeners();
-        this.host.closeTranscriptSheet();
+        this.host.transcriptSheetUi.closeTranscriptSheet();
         if (this.host.sessionsSidebar) {
             this.host.sessionsSidebar.hide();
             this.host.sessionsSidebar.node.remove();
@@ -208,7 +210,7 @@ export class MobileProjectsPanelLifecycleUi {
         this.host.chatServiceDispose.dispose();
         this.host.chatServiceDispose = Disposable.NULL;
         this.disposeChatSessionModelListeners();
-        this.host.closeTranscriptSheet();
+        this.host.transcriptSheetUi.closeTranscriptSheet();
         this.host.visible = false;
         this.host.root.hidden = true;
         this.host.root.setAttribute('aria-hidden', 'true');
@@ -252,19 +254,19 @@ export class MobileProjectsPanelLifecycleUi {
                     if (this.host.visible && this.host.isTasksHubView()) {
                         if (this.host.shouldSkipFullRenderListOnConversationTick()) {
                             this.host.refreshWorkHubConversationChrome();
-                            this.host.ensureTranscriptConversationRefresh();
+                            this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
                             return;
                         }
                         this.host.renderList();
                         if (this.host.agentsHubInlineActive && this.host.transcriptOpenSummaryId) {
-                            this.host.ensureTranscriptConversationRefresh();
+                            this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
                         }
                     } else if (this.host.visible && !this.host.transcriptSheet) {
                         void this.applyActiveTasksRefresh();
                     }
                 }),
                 this.host.conversations.onDidReceiveMessage(payload => {
-                    this.host.handleTranscriptSseMessage(payload);
+                    this.host.transcriptLiveUi.handleTranscriptSseMessage(payload);
                 }),
                 this.host.conversations.onDidReceiveParallelRun(payload => {
                     this.host.ensureOverlayUi().parallel.applyParallelRunStats(payload.runId, payload.variants);

@@ -9,6 +9,7 @@
  */
 import {
     isUiHiddenVpsAgent,
+    QAAP_BUILTIN_AGENT_DEFINITIONS,
     resolveQaapBuiltinAgentMentionId,
 } from './qaap-builtin-agents';
 import {
@@ -229,11 +230,37 @@ export function reconcileSelectedAgent(
     return selectable[0]?.id ?? SHELL_AGENT_ID;
 }
 
+/**
+ * Composer pickers list VPS-backed agents from the server plus built-in CLI runners so users can
+ * switch away from QAIQ even when `/all` only reports a subset as detected on PATH.
+ */
+export function mergeComposerAgentPickerOptions(
+    agents: readonly QaapAgentTaskAgentOption[],
+): QaapAgentTaskAgentOption[] {
+    const merged = new Map<string, QaapAgentTaskAgentOption>();
+    for (const agent of filterUiSelectableVpsAgents(agents)) {
+        merged.set(agent.id.toLowerCase(), agent);
+    }
+    const ensureAgent = (id: string, label: string): void => {
+        const key = id.toLowerCase();
+        if (!merged.has(key)) {
+            merged.set(key, { id, label, available: true });
+        }
+    };
+    ensureAgent(QAIQ_AGENT_ID, 'QAIQ');
+    for (const definition of QAAP_BUILTIN_AGENT_DEFINITIONS) {
+        if (!isUiHiddenVpsAgent(definition.id)) {
+            ensureAgent(definition.id, definition.label);
+        }
+    }
+    return Array.from(merged.values()).sort((left, right) => left.label.localeCompare(right.label));
+}
+
 /** Composer pickers expose VPS-backed agents (QAIQ, Codex, …) but hide shell and UI-hidden runners. */
 export function filterQaapComposerAgents(
     agents: readonly QaapAgentTaskAgentOption[],
 ): QaapAgentTaskAgentOption[] {
-    return filterUiSelectableVpsAgents(agents);
+    return mergeComposerAgentPickerOptions(agents);
 }
 
 /**

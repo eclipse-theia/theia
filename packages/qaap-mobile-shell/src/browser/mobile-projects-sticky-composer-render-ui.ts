@@ -48,6 +48,8 @@ import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { StickyComposerColumnOptions } from './mobile-projects-sticky-composer-column-ui';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 
 export interface MobileProjectsStickyComposerRenderHost {
 root: HTMLElement;
@@ -84,9 +86,9 @@ applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): Mobile
 resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined;
 resolveAgentsHubShellProject(): MobileProjectEntry | undefined;
 resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO | undefined;
-executionSurfaceTabForProject(project: MobileProjectEntry): import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId;
-refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void>;
-mountTranscriptStickyComposer(host: HTMLElement, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, chatHost: HTMLElement): void;
+executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
+transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
 syncHeaderComposerSurfacePicker(): void;
 updateNewFabVisibility(): void;
 updateStickyComposerFabLift(): void;
@@ -142,7 +144,7 @@ export class MobileProjectsStickyComposerRenderUi {
             const shellSummary = shellProject ? this.host.resolveAgentsHubShellSummary(shellProject) : undefined;
             const chatHost = this.host.agentsHubInlineChatHost ?? this.host.transcriptChatHost;
             const showMessagesComposer = shellProject
-                ? this.host.executionSurfaceTabForProject(shellProject) === 'messages'
+                ? this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(shellProject) === 'messages'
                 : false;
             const showComposer = !!(shellProject && shellSummary && chatHost?.isConnected && showMessagesComposer);
             this.host.stickyComposerHost.hidden = !showComposer;
@@ -155,9 +157,9 @@ export class MobileProjectsStickyComposerRenderUi {
                 if (!composerStable) {
                     this.host.stickyComposerHost.replaceChildren();
                     if (this.host.transcriptComposerBackendAgents.length === 0) {
-                        void this.host.refreshTranscriptComposerAgents(shellProject!);
+                        void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(shellProject!);
                     }
-                    this.host.mountTranscriptStickyComposer(this.host.stickyComposerHost, shellProject!, shellSummary!, chatHost!);
+                    this.host.transcriptStickyComposerUi.mountTranscriptStickyComposer(this.host.stickyComposerHost, shellProject!, shellSummary!, chatHost!);
                 } else {
                     this.host.transcriptComposerSendRefresh?.();
                 }
@@ -175,7 +177,7 @@ export class MobileProjectsStickyComposerRenderUi {
         const showReposComposer = this.host.homeMode && !!this.host.conversations && !!project && this.host.hubView === 'repos';
         const showSurface = showReposComposer;
         const showComposer = showSurface
-            && (!this.host.isProjectDetailView() || (project && this.host.executionSurfaceTabForProject(project) === 'messages'));
+            && (!this.host.isProjectDetailView() || (project && this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(project) === 'messages'));
         this.host.stickyComposerHost.hidden = !showComposer;
         this.host.root.classList.toggle('theia-mod-sticky-composer', showComposer);
         if (!showSurface || !project) {

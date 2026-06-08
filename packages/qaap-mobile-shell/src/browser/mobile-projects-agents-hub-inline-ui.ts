@@ -17,6 +17,12 @@ import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
+import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 import { disposeComposerContextEntries, type StickyComposerContextEntry } from '../common/qaap-composer-context-entry';
 
 /** Panel surface for the Agents Hub inline execution shell (tasks landing). */
@@ -70,47 +76,22 @@ export interface MobileProjectsAgentsHubInlineHost {
     preparedCwdByProjectId: Map<string, string>;
     projectsService: MobileProjectsService;
 
-    closeTranscriptSheet(): void;
-    closeExecutionTabOverflowMenu(): void;
-    closeTranscriptComposerSheets(): void;
+    transcriptSheetUi: MobileProjectsTranscriptSheetUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
+    transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
+    transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
     renderHeader(): void;
     renderSubtitle(): void;
-    refreshTranscriptExecutionChrome(): void;
     renderList(): void;
-    refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void>;
-    executionSurfaceTabForProject(project: MobileProjectEntry): import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId;
-    buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement;
-    refreshExecutionSurfaceTabStripState(strip: HTMLElement, activeTab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId): void;
-    showOnlyExecutionSurfaceTab(tab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId): void;
-    mountTranscriptSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId,
-    ): void;
-    syncExecutionSurfaceChrome(project: MobileProjectEntry): void;
     renderStickyComposer(): void;
-    scheduleTranscriptConversationRefresh(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void;
-    transcriptMessagesUi: import('./mobile-projects-transcript-messages-ui').MobileProjectsTranscriptMessagesUi;
-    summaryToTranscriptPlaceholder(summary: QaapAgentConversationSummaryDTO): QaapAgentConversationDTO;
-    createTranscriptSheetSurfaceHosts(): {
-        planHost: HTMLElement;
-        reviewHost: HTMLElement;
-        previewHost: HTMLElement;
-        filesHost: HTMLElement;
-        terminalHost: HTMLElement;
-    };
     detachTranscriptReviewWidget(): void;
     disposeTranscriptEmbeddedPreview(): void;
-    stopTranscriptLiveWatch(): void;
     notifyWorkspaceHubBottomBarRefresh(): void;
     resolveHomePinnedProject(): MobileProjectEntry | undefined;
     updateTasksAttentionChrome(): void;
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    ensureTranscriptConversationRefresh(): void;
 }
 
 /** Agents Hub inline transcript shell: open/close session, execution surfaces, idle chat. */
@@ -153,7 +134,7 @@ export class MobileProjectsAgentsHubInlineUi {
             }
         }
         this.host.updateTasksAttentionChrome();
-        this.host.refreshTranscriptExecutionChrome();
+        this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
     }
 
     shouldUseAgentsHubLanding(): boolean {
@@ -212,10 +193,10 @@ export class MobileProjectsAgentsHubInlineUi {
             this.syncAgentsHubInlineExecutionHeader(project, summary);
             this.host.updateTasksAttentionChrome();
             this.host.renderSubtitle();
-            void this.host.refreshTranscriptComposerAgents(project);
+            void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
             this.host.renderStickyComposer();
             if (liveTranscriptOpen) {
-                this.host.ensureTranscriptConversationRefresh();
+                this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
             }
             return;
         }
@@ -224,7 +205,7 @@ export class MobileProjectsAgentsHubInlineUi {
         this.host.agentsHubInlineExecutionRoot = executionRoot;
 
         if (!this.host.transcriptPlanHost) {
-            const surfaces = this.host.createTranscriptSheetSurfaceHosts();
+            const surfaces = this.host.transcriptSheetUi.createTranscriptSheetSurfaceHosts();
             this.host.transcriptPlanHost = surfaces.planHost;
             this.host.transcriptReviewHost = surfaces.reviewHost;
             this.host.transcriptPreviewHost = surfaces.previewHost;
@@ -258,10 +239,10 @@ export class MobileProjectsAgentsHubInlineUi {
         this.host.updateTasksAttentionChrome();
         this.host.renderSubtitle();
         this.syncAgentsHubInlineExecutionHeader(project, summary);
-        void this.host.refreshTranscriptComposerAgents(project);
+        void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
         this.host.renderStickyComposer();
         if (this.host.agentsHubInlineActive && this.host.transcriptOpenSummaryId) {
-            this.host.ensureTranscriptConversationRefresh();
+            this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
         }
     }
 
@@ -278,7 +259,7 @@ export class MobileProjectsAgentsHubInlineUi {
             && this.host.transcriptLastConv
             && this.host.transcriptLastConv.id === activeSummary.id
             ? this.host.transcriptLastConv
-            : this.host.summaryToTranscriptPlaceholder(activeSummary);
+            : this.host.transcriptSheetUi.summaryToTranscriptPlaceholder(activeSummary);
         this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, conv);
     }
 
@@ -313,28 +294,28 @@ export class MobileProjectsAgentsHubInlineUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): void {
-        const activeTab = this.host.executionSurfaceTabForProject(project);
+        const activeTab = this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(project);
         const existingStrip = this.host.agentsHubInlineTabStrip;
         if (existingStrip?.isConnected && this.host.transcriptOpenSummaryId === summary.id) {
-            this.host.refreshExecutionSurfaceTabStripState(existingStrip, activeTab);
-            this.host.showOnlyExecutionSurfaceTab(activeTab);
+            this.host.executionSurfaceTabsUi.refreshExecutionSurfaceTabStripState(existingStrip, activeTab);
+            this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(activeTab);
             if (activeTab !== 'messages') {
-                this.host.mountTranscriptSurfaceTab(project, summary, activeTab);
+                this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, activeTab);
             }
-            this.host.syncExecutionSurfaceChrome(project);
+            this.host.executionSurfaceTabsUi.syncExecutionSurfaceChrome(project);
             this.host.root.classList.add('theia-mod-agents-hub-inline-active');
             this.host.root.classList.add('theia-mod-agents-hub-shell-active');
             return;
         }
-        const tabStrip = this.host.buildTranscriptTabStrip(project, summary);
+        const tabStrip = this.host.executionSurfaceTabsUi.buildTranscriptTabStrip(project, summary);
         this.host.headerExecutionTabsHost.hidden = false;
         this.host.headerExecutionTabsHost.replaceChildren(tabStrip);
         this.host.agentsHubInlineTabStrip = tabStrip;
         this.host.transcriptTabStrip = tabStrip;
-        this.host.refreshExecutionSurfaceTabStripState(tabStrip, activeTab);
-        this.host.showOnlyExecutionSurfaceTab(activeTab);
-        this.host.mountTranscriptSurfaceTab(project, summary, activeTab);
-        this.host.syncExecutionSurfaceChrome(project);
+        this.host.executionSurfaceTabsUi.refreshExecutionSurfaceTabStripState(tabStrip, activeTab);
+        this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(activeTab);
+        this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, activeTab);
+        this.host.executionSurfaceTabsUi.syncExecutionSurfaceChrome(project);
         this.host.root.classList.add('theia-mod-agents-hub-inline-active');
         this.host.root.classList.add('theia-mod-agents-hub-shell-active');
     }
@@ -390,7 +371,7 @@ export class MobileProjectsAgentsHubInlineUi {
             this.host.replacingTranscriptSheet = false;
         } else {
             this.host.replacingTranscriptSheet = true;
-            this.host.closeTranscriptSheet();
+            this.host.transcriptSheetUi.closeTranscriptSheet();
             this.host.replacingTranscriptSheet = false;
         }
         this.host.agentsHubShellActive = true;
@@ -406,29 +387,29 @@ export class MobileProjectsAgentsHubInlineUi {
         }
         this.host.transcriptComposerPrefsConvId = undefined;
         this.host.transcriptComposerMountKey = undefined;
-        void this.host.refreshTranscriptComposerAgents(project);
-        const surfaceTab = this.host.executionSurfaceTabForProject(project);
+        void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
+        const surfaceTab = this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(project);
         const chatHost = this.host.agentsHubInlineChatHost;
         if (this.host.agentsHubInlineExecutionRoot?.isConnected && chatHost?.isConnected) {
             this.syncAgentsHubInlineExecutionHeader(project, summary);
             this.host.renderStickyComposer();
-            this.host.scheduleTranscriptConversationRefresh(project, summary, chatHost);
+            this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
             return;
         }
         if (this.host.visible) {
             this.host.renderList();
         }
-        this.host.showOnlyExecutionSurfaceTab(surfaceTab);
-        this.host.mountTranscriptSurfaceTab(project, summary, surfaceTab);
+        this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(surfaceTab);
+        this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, surfaceTab);
         this.host.renderStickyComposer();
         if (chatHost) {
-            this.host.scheduleTranscriptConversationRefresh(project, summary, chatHost);
+            this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
         }
     }
 
     closeAgentsHubSession(): void {
-        this.host.closeExecutionTabOverflowMenu();
-        this.host.closeTranscriptComposerSheets();
+        this.host.executionSurfaceTabsUi.closeExecutionTabOverflowMenu();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         this.host.transcriptComposerHost = undefined;
         this.host.transcriptComposerProject = undefined;
         this.host.transcriptComposerSummary = undefined;
@@ -457,7 +438,7 @@ export class MobileProjectsAgentsHubInlineUi {
         this.host.transcriptComposerMountKey = undefined;
         this.host.transcriptUi.disposeList();
         this.host.transcriptTheiaSessionByConversationId.clear();
-        this.host.stopTranscriptLiveWatch();
+        this.host.transcriptLiveUi.stopTranscriptLiveWatch();
         const chatHost = this.host.agentsHubInlineChatHost;
         const project = this.resolveAgentsHubShellProject();
         if (chatHost && project && this.host.agentsHubShellActive) {

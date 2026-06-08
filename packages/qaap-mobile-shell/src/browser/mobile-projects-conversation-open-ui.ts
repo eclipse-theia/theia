@@ -5,10 +5,11 @@
 
 import type { QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
 import type { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectTaskView } from './mobile-projects-active-tasks';
-import type { ExecutionSurfaceTabId } from '../common/qaap-execution-surface-tabs';
 
 export interface MobileProjectsConversationOpenHost {
     conversations: MobileProjectsConversations | undefined;
@@ -20,8 +21,8 @@ export interface MobileProjectsConversationOpenHost {
 
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     closeCardMenu(): void;
-    setExecutionSurfaceTab(project: MobileProjectEntry, tab: ExecutionSurfaceTabId): void;
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
+    transcriptSheetUi: MobileProjectsTranscriptSheetUi;
     hide(): void;
 }
 
@@ -49,11 +50,11 @@ export class MobileProjectsConversationOpenUi {
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
         this.host.closeCardMenu();
-        this.host.setExecutionSurfaceTab(project, 'messages');
+        this.host.executionSurfaceTabsUi.setExecutionSurfaceTab(project, 'messages');
         // Opening a chat clears its unread badge — record the high-water mark before navigating so
         // the project glyph drops the "new replies" treatment on the next render.
         this.host.conversationFlags?.markRead(summary.id, summary.updatedAt);
-        await this.host.openTranscriptSheet(project, summary);
+        await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
     }
 
 }

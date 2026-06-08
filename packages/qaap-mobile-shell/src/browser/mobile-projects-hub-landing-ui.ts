@@ -37,7 +37,7 @@ export interface MobileProjectsHubLandingHost {
         onProjectsChanged?(): void;
     };
 
-    closeTranscriptSheet(): void;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     isProjectDiffView(): boolean;
     show(options?: { preferredHubView?: MobileProjectsHubView }): Promise<void>;
     redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView;
@@ -63,7 +63,7 @@ export class MobileProjectsHubLandingUi {
         preferredDiffProjectId?: string,
         options?: { force?: boolean },
     ): void {
-        this.host.closeTranscriptSheet();
+        this.host.transcriptSheetUi.closeTranscriptSheet();
         if (view === 'chat' || view === 'tasks') {
             // Chat surface removed — both legacy entry points land on the agentic Task surface.
             this.host.tasksHubSurface = 'task';

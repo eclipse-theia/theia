@@ -22,7 +22,7 @@ export interface MobileProjectsProjectActionsHost {
     delegate: { onProjectsChanged?: () => void };
 
     closeCardMenu(): void;
-    closeTranscriptSheet(): void;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     render(): void;
     renderList(): void;
     conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
@@ -85,7 +85,7 @@ export class MobileProjectsProjectActionsUi {
                 }
             }
             await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-            this.host.closeTranscriptSheet();
+            this.host.transcriptSheetUi.closeTranscriptSheet();
             await this.host.refreshChatServiceSessionSummaries();
             this.host.renderList();
         } catch (error) {

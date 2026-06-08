@@ -63,13 +63,12 @@ isProjectDetailView(): boolean;
 transcriptSheet: HTMLElement | undefined;
 agentsHubInlineActive: boolean;
 visible: boolean;
-closeTranscriptSheet(): void;
+transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
+executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
 closeAgentsHubSession(): void;
-setExecutionSurfaceTab(project: MobileProjectEntry, tab: import('../common/qaap-execution-surface-tabs').ExecutionSurfaceTabId): void;
 renderHeader(): void;
 renderSubtitle(): void;
 renderStickyComposer(): void;
-openTranscriptSheet(project: MobileProjectEntry, summary: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): Promise<void>;
 closeCurrentWorkspace(): Promise<void>;
 openConversationSummary(project: MobileProjectEntry, summary: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): Promise<void>;
 runCatalogAction(action: import('../common/mobile-work-hub-catalog').WorkHubCatalogAction): Promise<void>;
@@ -531,12 +530,12 @@ export class MobileProjectsSessionsSidebarUi {
         this.host.sessionsSidebar?.hide();
         if (this.host.shouldUseAgentsHubLanding() && !this.host.isProjectDetailView()) {
             if (this.host.transcriptSheet) {
-                this.host.closeTranscriptSheet();
+                this.host.transcriptSheetUi.closeTranscriptSheet();
             }
             if (this.host.agentsHubInlineActive) {
                 this.host.closeAgentsHubSession();
             }
-            this.host.setExecutionSurfaceTab(project, 'messages');
+            this.host.executionSurfaceTabsUi.setExecutionSurfaceTab(project, 'messages');
             if (this.host.visible) {
                 this.host.renderHeader();
                 this.host.renderSubtitle();
@@ -559,7 +558,7 @@ export class MobileProjectsSessionsSidebarUi {
             updatedAt: Date.now(),
             messageCount: 0,
         };
-        await this.host.openTranscriptSheet(project, summary);
+        await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
     }
     async onWorkHubSessionsSidebarAutomations(): Promise<void> {
         this.host.sessionsSidebar?.hide();

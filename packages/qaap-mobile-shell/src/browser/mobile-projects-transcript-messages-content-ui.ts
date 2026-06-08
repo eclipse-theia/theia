@@ -53,7 +53,7 @@ export class MobileProjectsTranscriptMessagesContentUi {
             : candidate);
         await this.host.projectsService.recordProjectPreviewUrl(latestProject, previewUrl).catch(() => undefined);
 
-        this.host.selectTranscriptTab('preview', latestProject, summary);
+        this.host.executionSurfaceTabsUi.selectTranscriptTab('preview', latestProject, summary);
         MobileSnackbar.show(nls.localize('qaap/mobileProjects/previewLinkOpened', 'Preview opened'), { kind: 'success', duration: 1400 });
         return true;
     }

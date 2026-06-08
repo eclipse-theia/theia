@@ -26,6 +26,7 @@ import { type QaapAgentTaskAgentOption } from '../common/qaap-agent-task-client'
 import type { MobileComposerAttachHandlers } from './qaap-mobile-composer-device-attach';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import { MobileSnackbar } from './mobile-snackbar';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 
 export interface MobileProjectsStickyComposerContextHost {
 stickyComposerContext: StickyComposerContextEntry[];
@@ -33,8 +34,8 @@ transcriptComposerContext: StickyComposerContextEntry[];
 pickContextVariable?: (anchor: HTMLElement, handlers: MobileComposerAttachHandlers) => Promise<AIVariableResolutionRequest[]>;
 formatContextChip?: (item: AIVariableResolutionRequest) => StickyComposerContextChipView | undefined;
             getComposerVariables?: () => readonly import('@theia/ai-core').AIVariable[];
+transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
 renderStickyComposer(): void;
-remountTranscriptStickyComposer(): void;
 getOfferableCoderAgent(): ChatAgent | undefined;
 }
 
@@ -97,7 +98,7 @@ export class MobileProjectsStickyComposerContextUi {
         return {
             appendOptimistic: entry => {
                 this.host.transcriptComposerContext.push(entry);
-                this.host.remountTranscriptStickyComposer();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             },
             finalizeOptimistic: (id, request) => {
                 const entry = this.host.transcriptComposerContext.find(item => item.id === id);
@@ -109,7 +110,7 @@ export class MobileProjectsStickyComposerContextUi {
                 entry.pending = false;
                 entry.localPreviewSrc = undefined;
                 entry.displayName = undefined;
-                this.host.remountTranscriptStickyComposer();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             },
             removeOptimistic: id => {
                 const index = this.host.transcriptComposerContext.findIndex(item => item.id === id);
@@ -118,7 +119,7 @@ export class MobileProjectsStickyComposerContextUi {
                 }
                 revokeComposerContextPreview(this.host.transcriptComposerContext[index]);
                 this.host.transcriptComposerContext.splice(index, 1);
-                this.host.remountTranscriptStickyComposer();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
                 MobileSnackbar.show(
                     nls.localize(
                         'qaap/mobileProjects/stickyComposerAttachDeviceFailed',

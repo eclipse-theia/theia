@@ -49,7 +49,7 @@ export interface MobileProjectsProjectNavigationHost {
 
     closeCardMenu(): void;
     closeStickyComposerSheets(): void;
-    closeExecutionTabOverflowMenu(): void;
+    executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
     refreshChatServiceSessionSummaries(): Promise<void>;
     render(): void;
     syncLandingHubListChrome(): void;
@@ -126,7 +126,7 @@ export class MobileProjectsProjectNavigationUi {
     }
 
     resetProjectDetailSurfaces(): void {
-        this.host.closeExecutionTabOverflowMenu();
+        this.host.executionSurfaceTabsUi.closeExecutionTabOverflowMenu();
         this.host.projectDetailExpandedId = undefined;
         this.host.projectDetailTabStrip = undefined;
         this.host.projectDetailSurfaceTargets = undefined;

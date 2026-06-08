@@ -19,6 +19,7 @@ import {
     QAIQ_AGENT_ID,
     readStoredQaiqModel,
     filterQaapComposerAgents,
+    mergeComposerAgentPickerOptions,
     filterUiSelectableVpsAgents,
     migrateQaapProductAgentId,
     QAAP_PRIMARY_AGENT_ID,
@@ -83,7 +84,20 @@ describe('qaap-agent-task-client', () => {
             { id: 'codex', label: 'Codex', available: true },
             shellAgentFallback(),
         ];
-        expect(filterQaapComposerAgents(agents).map(agent => agent.id)).to.deep.equal(['qaiq', 'codex']);
+        const ids = filterQaapComposerAgents(agents).map(agent => agent.id);
+        expect(ids).to.include('qaiq');
+        expect(ids).to.include('codex');
+        expect(ids).to.not.include('shell');
+    });
+
+    it('mergeComposerAgentPickerOptions adds built-in agents when the server only reports QAIQ', () => {
+        const agents = [{ id: 'qaiq', label: 'QAIQ', available: true }];
+        const ids = mergeComposerAgentPickerOptions(agents).map(agent => agent.id);
+        expect(ids).to.include('qaiq');
+        expect(ids).to.include('codex');
+        expect(ids).to.include('claude');
+        expect(ids).to.not.include('shell');
+        expect(ids).to.not.include('cursor');
     });
 
     it('reconcileSelectedAgent prefers QAIQ as the product default', () => {

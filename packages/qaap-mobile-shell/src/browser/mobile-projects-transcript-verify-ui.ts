@@ -17,6 +17,7 @@ import {
 } from '../common/qaap-agent-task-client';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectEntry } from './mobile-projects-types';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 
 interface VerifyCheck {
     readonly label: string;
@@ -45,12 +46,7 @@ export interface MobileProjectsTranscriptVerifyHost {
     verifyRunning: boolean;
     verifyResults: VerifyCheckResult[];
     resolveVerifyChecks: ((cwd: string) => Promise<VerifyCheck[]>) | undefined;
-
-    selectTranscriptTab(
-        tab: 'messages',
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
 }
 
 /** Verify checks UI, run loop, and auto-verify after agent turns. */
@@ -458,7 +454,7 @@ export class MobileProjectsTranscriptVerifyUi {
                 await postConversationMessage(summary.id, report, { agentModel });
                 if (!auto) {
                     // Manual send: jump to Chat so the user watches the agent react.
-                    this.host.selectTranscriptTab('messages', project, summary);
+                    this.host.executionSurfaceTabsUi.selectTranscriptTab('messages', project, summary);
                     MobileSnackbar.show(nls.localize('qaap/mobileProjects/verifySent', 'Failure sent to agent'), { kind: 'success', duration: 1600 });
                 }
             } catch (error) {

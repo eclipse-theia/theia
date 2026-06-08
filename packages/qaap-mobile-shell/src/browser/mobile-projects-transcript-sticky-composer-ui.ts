@@ -71,6 +71,7 @@ import type { StickyComposerTokenOption } from '../common/qaap-sticky-composer-m
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectsService } from './mobile-projects-service';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
 import { MobileSnackbar } from './mobile-snackbar';
 
 export interface TranscriptStickyComposerColumnOptions {
@@ -144,15 +145,11 @@ export interface MobileProjectsTranscriptStickyComposerHost {
         anchor: HTMLElement,
         handlers: MobileComposerAttachHandlers,
     ) => Promise<import('@theia/ai-core').AIVariableResolutionRequest[]>;
+    transcriptComposerUi: MobileProjectsTranscriptComposerUi;
 
     buildStickyComposerColumn(options: TranscriptStickyComposerColumnOptions): HTMLElement;
     formatComposerContextEntry(entry: StickyComposerContextEntry): StickyComposerContextChipView;
     notifyPendingComposerAttachments(): void;
-    resolveTranscriptComposerPinnedAgentId(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): string;
-    resolveTranscriptComposerAgentLabel(): string;
-    openTranscriptComposerModeSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, modes: readonly ChatMode[]): void;
-    openTranscriptComposerApprovalPolicySheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO, agentLabel: string): void;
-    openTranscriptComposerAgentSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     onCancelConversation(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
     createTranscriptComposerAttachHandlers(): MobileComposerAttachHandlers;
     resolveComposerMentionOptions(agents: readonly QaapAgentTaskAgentOption[], includeCoder: boolean): readonly StickyComposerTokenOption[];
@@ -446,7 +443,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         if (summary.source === 'theia-chat' || isAgentsHubIdleConversationSummary(summary)) {
             return;
         }
-        const agentId = this.host.resolveTranscriptComposerPinnedAgentId(project, summary);
+        const agentId = this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
         const patch = buildUpdateConversationComposerPatch({
             agentId,
@@ -514,7 +511,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         const shell = document.createElement('div');
         shell.className = 'theia-mobile-projects-sticky-composer';
         const isLegacyTheiaChat = summary.source === 'theia-chat';
-        const pinnedId = this.host.resolveTranscriptComposerPinnedAgentId(project, summary);
+        const pinnedId = this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
         const modes = resolveStickyComposerModes(pinnedId, this.host.chatAgentService);
         this.host.transcriptComposerModeId = reconcileComposerModeId(
@@ -560,20 +557,20 @@ export class MobileProjectsTranscriptStickyComposerUi {
                 this.host.transcriptComposerDraft = value;
                 this.schedulePersistTranscriptComposerDraft(summary.id);
             },
-            resolveAgentLabel: () => this.host.resolveTranscriptComposerAgentLabel(),
-            resolveAgentId: () => this.host.resolveTranscriptComposerPinnedAgentId(project, summary),
+            resolveAgentLabel: () => this.host.transcriptComposerUi.resolveTranscriptComposerAgentLabel(),
+            resolveAgentId: () => this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.host.transcriptComposerModeId),
             onOpenModeSheet: modes.length > 1
-                ? () => { this.host.openTranscriptComposerModeSheet(project, summary, modes); }
+                ? () => { this.host.transcriptComposerUi.openTranscriptComposerModeSheet(project, summary, modes); }
                 : undefined,
             approvalPolicyId: showApprovalPolicy ? this.host.transcriptComposerApprovalPolicyId : undefined,
             onOpenApprovalPolicySheet: showApprovalPolicy
                 ? () => {
-                    this.host.openTranscriptComposerApprovalPolicySheet(
+                    this.host.transcriptComposerUi.openTranscriptComposerApprovalPolicySheet(
                         project,
                         summary,
-                        this.host.resolveTranscriptComposerAgentLabel(),
+                        this.host.transcriptComposerUi.resolveTranscriptComposerAgentLabel(),
                     );
                 }
                 : undefined,
@@ -584,7 +581,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
             onAttach: anchor => { void this.onTranscriptComposerAttach(project, anchor); },
             onOpenAgentSheet: isLegacyTheiaChat
                 ? () => { /* Legacy Theia chat is not agent-switchable */ }
-                : () => { this.host.openTranscriptComposerAgentSheet(project, summary); },
+                : () => { this.host.transcriptComposerUi.openTranscriptComposerAgentSheet(project, summary); },
             sendLabel: this.isTranscriptStickyComposerAgentWorking()
                 ? nls.localize('qaap/mobileProjects/transcriptQueue', 'Queue')
                 : nls.localize('qaap/mobileProjects/transcriptSend', 'Send'),
@@ -593,7 +590,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
                     this.host.notifyPendingComposerAttachments();
                     return;
                 }
-                const resolvedPinnedId = this.host.resolveTranscriptComposerPinnedAgentId(project, summary);
+                const resolvedPinnedId = this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
                 const selectedAgentId = resolveExplicitAgentForSubmit(draft, {
                     pinnedChatAgentId: resolvedPinnedId,
                 }) ?? resolvedPinnedId;

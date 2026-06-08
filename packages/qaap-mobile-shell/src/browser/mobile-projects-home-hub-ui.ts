@@ -55,7 +55,7 @@ export interface MobileProjectsHomeHubHost {
     ensureOverlayUi(): { home: MobileProjectsHomeUi };
     navigateHubTab(view: import('./mobile-projects-types').MobileProjectsHubView): void;
     openProjectDetail(project: MobileProjectEntry): void | Promise<void>;
-    openTranscriptSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     selectHubLandingView(view: import('./mobile-projects-types').MobileProjectsHubView, preferredDiffProjectId?: string, options?: { force?: boolean }): void;
     preferComposerSurface(surface: import('../common/qaap-composer-surface').QaapComposerSurface, projectCwd?: string): void;
 }
@@ -299,7 +299,7 @@ export class MobileProjectsHomeHubUi {
         if (!summary) {
             return;
         }
-        await this.host.openTranscriptSheet(project, summary);
+        await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
     }
 
     onHomeOpenAttention(item: WorkHubHomeAttentionItem): void {

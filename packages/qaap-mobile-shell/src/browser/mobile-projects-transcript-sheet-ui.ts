@@ -8,11 +8,15 @@ import {
     type QaapAgentConversationDTO,
     type QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
-import type { ExecutionSurfaceTabId } from '../common/qaap-execution-surface-tabs';
 import type { QaapGitHistoryCommit } from '../common/qaap-git-review';
 import { setMobileActiveTranscriptChrome } from './mobile-projects-open';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
+import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
+import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
+import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
 import { TranscriptFollowUpQueue } from '../common/qaap-transcript-follow-up-queue';
 import type { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import type { MobileProjectChatViewWidget } from './mobile-project-ai-chat-input-widget';
@@ -79,6 +83,11 @@ export interface MobileProjectsTranscriptSheetHost {
     transcriptUserScrollPinDispose: Disposable;
     transcriptTheiaSessionByConversationId: Map<string, string>;
     transcriptUi: MobileProjectsTranscriptUi;
+    transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+    transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
+    transcriptLiveUi: MobileProjectsTranscriptLiveUi;
+    transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     agentsHubInlineActive: boolean;
     visible: boolean;
     delegate: {
@@ -89,46 +98,17 @@ export interface MobileProjectsTranscriptSheetHost {
     shouldUseAgentsHubLanding(): boolean;
     isProjectDetailView(): boolean;
     openAgentsHubInlineTranscript(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
-    resolveTranscriptHeaderTitle(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): string;
-    mountTranscriptExecutionHeader(
-        header: HTMLElement,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        titleText: string,
-    ): { back: HTMLButtonElement; tabStrip: HTMLElement };
     renderHeader(): void;
     renderSubtitle(): void;
     renderList(): void;
-    syncHeaderExecutionTabStrip(): void;
-    scheduleTranscriptConversationRefresh(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void;
-    refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void>;
-    mountTranscriptStickyComposer(
-        host: HTMLElement,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void;
-    showOnlyExecutionSurfaceTab(tab: ExecutionSurfaceTabId): void;
-    mountTranscriptSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: ExecutionSurfaceTabId,
-    ): void;
     closeExecutionTabOverflowMenu(): void;
     closeParallelSheet(): void;
-    closeTranscriptComposerSheets(): void;
     closeAgentsHubSession(): void;
     teardownAgentsHubExecutionShell(): void;
     detachTranscriptReviewWidget(): void;
     disposeTranscriptEmbeddedPreview(): void;
     detachTranscriptWorkspaceSurfacesFromSheet(): void;
-    stopTranscriptLiveWatch(): void;
     notifyWorkspaceHubBottomBarRefresh(): void;
-    navigateExecutionSurfaceBack(project: MobileProjectEntry): boolean;
 }
 
 /** Full-screen transcript sheet overlay: open, dismiss bindings, and teardown. */
@@ -184,8 +164,8 @@ export class MobileProjectsTranscriptSheetUi {
         sheet.className = 'theia-mobile-agent-log-sheet theia-mod-transcript';
         const header = document.createElement('header');
         header.className = 'theia-mobile-agent-log-header';
-        const headerTitle = this.host.resolveTranscriptHeaderTitle(project, summary);
-        const { back, tabStrip } = this.host.mountTranscriptExecutionHeader(header, project, summary, headerTitle);
+        const headerTitle = this.host.transcriptHeaderUi.resolveTranscriptHeaderTitle(project, summary);
+        const { back, tabStrip } = this.host.executionSurfaceTabsUi.mountTranscriptExecutionHeader(header, project, summary, headerTitle);
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-agent-transcript-real-chat';
@@ -232,17 +212,17 @@ export class MobileProjectsTranscriptSheetUi {
             this.host.renderHeader();
             this.host.renderSubtitle();
             this.host.renderList();
-            this.host.syncHeaderExecutionTabStrip();
+            this.host.executionSurfaceTabsUi.syncHeaderExecutionTabStrip();
         }
         this.bindTranscriptSheetDismiss(back, backdrop);
 
-        this.host.scheduleTranscriptConversationRefresh(project, summary, chatHost);
+        this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
 
         this.host.transcriptComposerPrefsConvId = undefined;
-        void this.host.refreshTranscriptComposerAgents(project);
-        this.host.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
-        this.host.showOnlyExecutionSurfaceTab('messages');
-        this.host.mountTranscriptSurfaceTab(project, summary, 'messages');
+        void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
+        this.host.transcriptStickyComposerUi.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
+        this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab('messages');
+        this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, 'messages');
     }
 
     bindTranscriptSheetDismiss(back: HTMLButtonElement, backdrop: HTMLElement): void {
@@ -250,7 +230,7 @@ export class MobileProjectsTranscriptSheetUi {
             ev?.preventDefault();
             ev?.stopPropagation();
             const project = this.host.transcriptOpenProject;
-            if (project && this.host.navigateExecutionSurfaceBack(project)) {
+            if (project && this.host.executionSurfaceTabsUi.navigateExecutionSurfaceBack(project)) {
                 return;
             }
             this.closeTranscriptSheet();
@@ -297,9 +277,9 @@ export class MobileProjectsTranscriptSheetUi {
     }
 
     closeTranscriptSheet(): void {
-        this.host.closeExecutionTabOverflowMenu();
+        this.host.executionSurfaceTabsUi.closeExecutionTabOverflowMenu();
         this.host.closeParallelSheet();
-        this.host.closeTranscriptComposerSheets();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         this.host.transcriptComposerHost = undefined;
         this.host.transcriptComposerMountKey = undefined;
         this.host.transcriptComposerProject = undefined;
@@ -373,7 +353,7 @@ export class MobileProjectsTranscriptSheetUi {
             this.host.renderList();
         }
 
-        this.host.stopTranscriptLiveWatch();
+        this.host.transcriptLiveUi.stopTranscriptLiveWatch();
         this.host.transcriptUserScrollPinDispose.dispose();
         this.host.transcriptUserScrollPinDispose = Disposable.NULL;
         this.host.transcriptUi.disposeList();

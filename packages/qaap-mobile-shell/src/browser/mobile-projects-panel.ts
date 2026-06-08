@@ -37,12 +37,10 @@ import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQ
 import { MobileProjectsService } from './mobile-projects-service';
 import {
     TranscriptFollowUpQueue,
-    type TranscriptFollowUpEntry,
 } from '../common/qaap-transcript-follow-up-queue';
 import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
-    QaapAgentMessageDTO,
 } from '../common/qaap-agent-conversation-client';
 import {
     type QaapAgentApprovalRequestDTO,
@@ -889,117 +887,6 @@ export class MobileProjectsPanel {
         this.projectNavigationUi.resetProjectDetailSurfaces();
     }
 
-    protected executionSurfaceTabForProject(project: MobileProjectEntry): TranscriptTab {
-        return this.executionSurfaceTabsUi.executionSurfaceTabForProject(project);
-    }
-
-    protected setExecutionSurfaceTab(project: MobileProjectEntry, tab: TranscriptTab): void {
-        this.executionSurfaceTabsUi.setExecutionSurfaceTab(project, tab);
-    }
-
-    protected syncExecutionSurfaceChrome(project: MobileProjectEntry): void {
-        this.executionSurfaceTabsUi.syncExecutionSurfaceChrome(project);
-    }
-
-    protected mountTranscriptExecutionHeader(
-        header: HTMLElement,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        titleText: string,
-    ): { back: HTMLButtonElement; tabStrip: HTMLElement } {
-        return this.executionSurfaceTabsUi.mountTranscriptExecutionHeader(header, project, summary, titleText);
-    }
-
-    protected selectTranscriptTab(tab: TranscriptTab, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
-        this.executionSurfaceTabsUi.selectTranscriptTab(tab, project, summary);
-    }
-
-    protected activateExecutionSurfaceTab(
-        tab: TranscriptTab,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        origin: 'transcript' | 'project-detail',
-    ): void {
-        this.executionSurfaceTabsUi.activateExecutionSurfaceTab(tab, project, summary, origin);
-    }
-
-    protected showOnlyExecutionSurfaceTab(tab: TranscriptTab): void {
-        this.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(tab);
-    }
-
-    protected syncHeaderExecutionTabStrip(): void {
-        this.executionSurfaceTabsUi.syncHeaderExecutionTabStrip();
-    }
-
-    protected navigateExecutionSurfaceBack(project: MobileProjectEntry): boolean {
-        return this.executionSurfaceTabsUi.navigateExecutionSurfaceBack(project);
-    }
-
-    protected closeExecutionTabOverflowMenu(): void {
-        this.executionSurfaceTabsUi.closeExecutionTabOverflowMenu();
-    }
-
-    protected buildTranscriptTabStrip(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement {
-        return this.executionSurfaceTabsUi.buildTranscriptTabStrip(project, summary);
-    }
-
-    protected mountTranscriptSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: TranscriptTab,
-    ): void {
-        this.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, tab);
-    }
-
-    protected refreshExecutionSurfaceTabStripState(strip: HTMLElement, activeTab: TranscriptTab): void {
-        this.executionSurfaceTabsUi.refreshExecutionSurfaceTabStripState(strip, activeTab);
-    }
-
-    appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement {
-        return this.overlayFactoryUi.appendTranscriptHeaderActions(header, title);
-    }
-
-    closeParallelSheet(): void {
-        this.overlayFactoryUi.closeParallelSheet();
-    }
-
-    protected createTranscriptSheetSurfaceHosts(): {
-        planHost: HTMLElement;
-        reviewHost: HTMLElement;
-        previewHost: HTMLElement;
-        filesHost: HTMLElement;
-        terminalHost: HTMLElement;
-    } {
-        return this.transcriptSheetUi.createTranscriptSheetSurfaceHosts();
-    }
-
-    protected async openTranscriptSheet(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptSheetUi.openTranscriptSheet(project, summary);
-    }
-
-    protected bindTranscriptSheetDismiss(back: HTMLButtonElement, backdrop: HTMLElement): void {
-        this.transcriptSheetUi.bindTranscriptSheetDismiss(back, backdrop);
-    }
-
-    protected summaryToTranscriptPlaceholder(summary: QaapAgentConversationSummaryDTO): QaapAgentConversationDTO {
-        return this.transcriptSheetUi.summaryToTranscriptPlaceholder(summary);
-    }
-
-    protected closeTranscriptSheet(): void {
-        this.transcriptSheetUi.closeTranscriptSheet();
-    }
-
-    protected resolveExecutionSurfaceProject(): MobileProjectEntry | undefined {
-        return this.executionSurfaceTabsUi.resolveExecutionSurfaceProject();
-    }
-
-    protected activeExecutionTab(project?: MobileProjectEntry): TranscriptTab {
-        return this.executionSurfaceTabsUi.activeExecutionTab(project);
-    }
-
     protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
         return this.hubQueryUi.redirectHubView(view);
     }
@@ -1446,57 +1333,12 @@ export class MobileProjectsPanel {
         return this.projectDetailUi.projectDetailSurfaceSummary(project);
     }
 
-    protected selectProjectDetailTab(tab: TranscriptTab, project: MobileProjectEntry): void {
-        this.projectDetailUi.selectProjectDetailTab(tab, project);
-    }
-
-    protected mountProjectDetailSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: TranscriptTab,
-    ): void {
-        this.transcriptSurfacesUi.mountProjectDetailSurfaceTab(project, summary, tab);
-    }
-
-    protected renderPlanTab(host: HTMLElement | undefined, conv: QaapAgentConversationDTO | undefined): void {
-        this.transcriptSurfacesUi.renderPlanTab(host, conv);
-    }
-
-    protected updateTranscriptHeader(
-        project: MobileProjectEntry,
-        summary = this.transcriptOpenSummary,
-    ): void {
-        this.transcriptSurfacesUi.updateTranscriptHeader(project, summary);
-    }
-
-    protected async mountTranscriptReviewWidget(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptSurfacesUi.mountTranscriptReviewWidget(project, summary);
-    }
-
     protected detachTranscriptReviewWidget(): void {
         this.transcriptSurfacesUi.detachTranscriptReviewWidget();
     }
 
     protected disposeTranscriptEmbeddedPreview(): void {
         this.transcriptSurfacesUi.disposeTranscriptEmbeddedPreview();
-    }
-
-    protected renderPreviewTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
-        this.transcriptSurfacesUi.renderPreviewTab(project, summary);
-    }
-
-    protected ensureTranscriptFilesTab(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void {
-        this.transcriptSurfacesUi.ensureTranscriptFilesTab(project, summary);
-    }
-
-    protected async ensureTranscriptTerminalTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptSurfacesUi.ensureTranscriptTerminalTab(project, summary);
     }
 
     protected detachTranscriptWorkspaceSurfacesFromSheet(): void {
@@ -1764,10 +1606,6 @@ export class MobileProjectsPanel {
         return this.stickyComposerAgentsUi.ensureStickyComposerAgentsLoaded(project);
     }
 
-    protected async ensureTranscriptComposerAgentsLoaded(project: MobileProjectEntry): Promise<readonly QaapAgentTaskAgentOption[]> {
-        return this.transcriptComposerUi.ensureTranscriptComposerAgentsLoaded(project);
-    }
-
     protected openStickyComposerAgentSheet(project: MobileProjectEntry): void {
         this.stickyComposerSheetsUi.openStickyComposerAgentSheet(project);
     }
@@ -1778,14 +1616,6 @@ export class MobileProjectsPanel {
 
     protected openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void {
         this.stickyComposerSheetsUi.openStickyComposerApprovalPolicySheet(project, agentLabel);
-    }
-
-    protected openTranscriptComposerApprovalPolicySheet(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        agentLabel: string,
-    ): void {
-        this.transcriptComposerUi.openTranscriptComposerApprovalPolicySheet(project, summary, agentLabel);
     }
 
     protected openApprovalPolicySheet(options: {
@@ -1861,6 +1691,10 @@ export class MobileProjectsPanel {
 
     protected closeStickyComposerSheets(): void {
         this.stickyComposerSheetsUi.closeStickyComposerSheets();
+    }
+
+    closeTranscriptComposerSheets(): void {
+        this.transcriptComposerUi.closeTranscriptComposerSheets();
     }
 
     protected applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[] {
@@ -2111,17 +1945,6 @@ export class MobileProjectsPanel {
         await this.sessionsSidebarUi.openEmptyMobileChatSheet(project);
     }
 
-    protected isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean {
-        return this.transcriptHeaderUi.isPendingNewChatSummary(summary);
-    }
-
-    protected resolveTranscriptHeaderTitle(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): string {
-        return this.transcriptHeaderUi.resolveTranscriptHeaderTitle(project, summary);
-    }
-
     protected async onWorkHubSessionsSidebarAutomations(): Promise<void> {
         await this.sessionsSidebarUi.onWorkHubSessionsSidebarAutomations();
     }
@@ -2260,31 +2083,6 @@ export class MobileProjectsPanel {
      * even when the user is in a different project's workspace — that is the whole point of the
      * persistent-conversations model.
      */
-
-    protected createExecutionHeaderSubtitle(
-        project: MobileProjectEntry,
-        summary?: QaapAgentConversationSummaryDTO,
-    ): HTMLDivElement {
-        return this.transcriptHeaderUi.createExecutionHeaderSubtitle(project, summary);
-    }
-
-    protected renderActiveChatHeaderSubtitle(
-        host: HTMLElement,
-        project: MobileProjectEntry,
-        summary?: QaapAgentConversationSummaryDTO,
-    ): void {
-        this.transcriptHeaderUi.renderActiveChatHeaderSubtitle(host, project, summary);
-    }
-
-    protected refreshTranscriptExecutionChrome(): void {
-        this.transcriptHeaderUi.refreshTranscriptExecutionChrome();
-    }
-
-    protected resolveActiveChatEffectiveStatus(
-        summary?: QaapAgentConversationSummaryDTO,
-    ): QaapAgentConversationSummaryDTO['status'] | undefined {
-        return this.transcriptHeaderUi.resolveActiveChatEffectiveStatus(summary);
-    }
 
     protected async submitTranscriptViaBackendConversation(
         project: MobileProjectEntry,
@@ -2701,13 +2499,6 @@ export class MobileProjectsPanel {
         return this.conversations?.onDidChange ?? TheiaEvent.None;
     }
 
-    protected handleTranscriptSseMessage(event: {
-        readonly conversationId: string;
-        readonly message: QaapAgentMessageDTO;
-    }): void {
-        this.transcriptLiveUi.handleTranscriptSseMessage(event);
-    }
-
     protected syncTranscriptConversationSettledChrome(): void {
         this.transcriptLiveUi.syncTranscriptConversationSettledChrome();
     }
@@ -2722,22 +2513,6 @@ export class MobileProjectsPanel {
 
     protected resolveActiveTranscriptChatHost(): HTMLElement | undefined {
         return this.transcriptLiveUi.resolveActiveTranscriptChatHost();
-    }
-
-    protected stopTranscriptLiveWatch(): void {
-        this.transcriptLiveUi.stopTranscriptLiveWatch();
-    }
-
-    protected ensureTranscriptConversationRefresh(): void {
-        this.transcriptLiveUi.ensureTranscriptConversationRefresh();
-    }
-
-    protected scheduleTranscriptConversationRefresh(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void {
-        this.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
     }
 
     protected async refreshOpenTranscriptConversation(
@@ -2789,119 +2564,6 @@ export class MobileProjectsPanel {
         home: MobileProjectsHomeUi;
     } {
         return this.overlayFactoryUi.ensureOverlayUi();
-    }
-
-    protected enqueueTranscriptFollowUp(
-        conversationId: string,
-        entry: TranscriptFollowUpEntry,
-    ): boolean {
-        return this.transcriptStickyComposerUi.enqueueTranscriptFollowUp(conversationId, entry);
-    }
-
-    protected appendTranscriptFollowUpQueueBanner(shell: HTMLElement, conversationId: string): void {
-        this.transcriptStickyComposerUi.appendTranscriptFollowUpQueueBanner(shell, conversationId);
-    }
-
-    protected isTranscriptFollowUpReady(summary: QaapAgentConversationSummaryDTO): boolean {
-        return this.transcriptStickyComposerUi.isTranscriptFollowUpReady(summary);
-    }
-
-    protected async flushTranscriptFollowUpQueue(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptStickyComposerUi.flushTranscriptFollowUpQueue(project, summary);
-    }
-
-    protected isTranscriptStickyComposerAgentWorking(): boolean {
-        return this.transcriptStickyComposerUi.isTranscriptStickyComposerAgentWorking();
-    }
-
-    protected applyTranscriptComposerPrefsFromConversation(
-        conv: QaapAgentConversationDTO,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void {
-        this.transcriptStickyComposerUi.applyTranscriptComposerPrefsFromConversation(conv, project, summary);
-    }
-
-    protected async hydrateTranscriptComposerPrefs(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<boolean> {
-        return this.transcriptStickyComposerUi.hydrateTranscriptComposerPrefs(project, summary);
-    }
-
-    protected schedulePersistTranscriptComposerDraft(conversationId: string | undefined): void {
-        this.transcriptStickyComposerUi.schedulePersistTranscriptComposerDraft(conversationId);
-    }
-
-    protected schedulePersistTranscriptComposerPrefs(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void {
-        this.transcriptStickyComposerUi.schedulePersistTranscriptComposerPrefs(project, summary);
-    }
-
-    protected async persistTranscriptComposerPrefs(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptStickyComposerUi.persistTranscriptComposerPrefs(project, summary);
-    }
-
-    protected mountTranscriptStickyComposer(
-        host: HTMLElement,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        chatHost: HTMLElement,
-    ): void {
-        this.transcriptStickyComposerUi.mountTranscriptStickyComposer(host, project, summary, chatHost);
-    }
-
-    protected remountTranscriptStickyComposer(): void {
-        this.transcriptStickyComposerUi.remountTranscriptStickyComposer();
-    }
-
-    protected resolveTranscriptComposerPinnedAgentId(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): string {
-        return this.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
-    }
-
-    protected resolveTranscriptComposerAgentLabel(): string {
-        return this.transcriptComposerUi.resolveTranscriptComposerAgentLabel();
-    }
-
-    protected async refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void> {
-        await this.transcriptComposerUi.refreshTranscriptComposerAgents(project);
-    }
-
-    protected openTranscriptComposerAgentSheet(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): void {
-        this.transcriptComposerUi.openTranscriptComposerAgentSheet(project, summary);
-    }
-
-    protected openTranscriptComposerModeSheet(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        modes: readonly ChatMode[],
-    ): void {
-        this.transcriptComposerUi.openTranscriptComposerModeSheet(project, summary, modes);
-    }
-
-    protected closeTranscriptComposerSheets(): void {
-        this.transcriptComposerUi.closeTranscriptComposerSheets();
-    }
-
-    protected async onTranscriptComposerAttach(
-        project: MobileProjectEntry,
-        anchor: HTMLElement,
-    ): Promise<void> {
-        return this.transcriptStickyComposerUi.onTranscriptComposerAttach(project, anchor);
     }
 
     protected attachTranscriptChatViewWidget(

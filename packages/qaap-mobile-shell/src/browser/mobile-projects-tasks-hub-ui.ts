@@ -42,8 +42,8 @@ export interface MobileProjectsTasksHubHost {
     localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     conversationMatchesQuery(summary: QaapAgentConversationSummaryDTO, query: string): boolean;
-    remountTranscriptStickyComposer(): void;
     transcriptMessagesUi: import('./mobile-projects-transcript-messages-ui').MobileProjectsTranscriptMessagesUi;
+    transcriptStickyComposerUi: import('./mobile-projects-transcript-sticky-composer-ui').MobileProjectsTranscriptStickyComposerUi;
     renderStickyComposer(): void;
     activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']>;
     summaryToTaskView(conversation: QaapAgentConversationSummaryDTO): MobileProjectTaskView;
@@ -161,7 +161,7 @@ export class MobileProjectsTasksHubUi {
         }
         if (this.host.transcriptComposerHost?.isConnected) {
             this.host.transcriptComposerDraft = trimmed;
-            this.host.remountTranscriptStickyComposer();
+            this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             this.host.transcriptMessagesUi.focusTranscriptComposerInput();
             return;
         }

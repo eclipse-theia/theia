@@ -8,6 +8,8 @@ import type { ExecutionSurfaceTabId } from '../common/qaap-execution-surface-tab
 import type { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectEntry } from './mobile-projects-types';
+import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { MobileProjectsTranscriptSurfacesUi } from './mobile-projects-transcript-surfaces-ui';
 
 type TranscriptTab = ExecutionSurfaceTabId;
 
@@ -28,25 +30,14 @@ export interface MobileProjectsProjectDetailHost {
     projectsService: MobileProjectsService;
     preparedCwdByProjectId: Map<string, string>;
 
-    executionSurfaceTabForProject(project: MobileProjectEntry): TranscriptTab;
+    executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
+    transcriptSurfacesUi: MobileProjectsTranscriptSurfacesUi;
     activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']>;
     createTaskBlock(
         project: MobileProjectEntry,
         activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
     ): HTMLElement;
-    mountProjectDetailSurfaceTab(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        tab: TranscriptTab,
-    ): void;
-    selectTranscriptTab(tab: TranscriptTab, project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO;
-    activateExecutionSurfaceTab(
-        tab: TranscriptTab,
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        context: 'project-detail' | 'transcript-sheet' | 'agents-hub-inline',
-    ): void;
 }
 
 /** Expanded repo row: task block + execution surface hosts. */
@@ -59,7 +50,7 @@ export class MobileProjectsProjectDetailUi {
             this.host.projectDetailExpandedId = project.id;
         }
 
-        const activeTab = this.host.executionSurfaceTabForProject(project);
+        const activeTab = this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(project);
         const detail = document.createElement('div');
         detail.className = 'theia-mobile-projects-detail theia-mod-surfaces';
         detail.style.setProperty('--qaap-mobile-project-accent', project.color);
@@ -106,7 +97,7 @@ export class MobileProjectsProjectDetailUi {
             filesHost,
             terminalHost,
         };
-        this.host.mountProjectDetailSurfaceTab(project, summary, activeTab);
+        this.host.transcriptSurfacesUi.mountProjectDetailSurfaceTab(project, summary, activeTab);
         return detail;
     }
 
@@ -130,10 +121,10 @@ export class MobileProjectsProjectDetailUi {
 
     selectProjectDetailTab(tab: TranscriptTab, project: MobileProjectEntry): void {
         if (this.host.agentsHubShellActive) {
-            this.host.selectTranscriptTab(tab, project, this.host.resolveAgentsHubShellSummary(project));
+            this.host.executionSurfaceTabsUi.selectTranscriptTab(tab, project, this.host.resolveAgentsHubShellSummary(project));
             return;
         }
-        this.host.activateExecutionSurfaceTab(tab, project, this.projectDetailSurfaceSummary(project), 'project-detail');
+        this.host.executionSurfaceTabsUi.activateExecutionSurfaceTab(tab, project, this.projectDetailSurfaceSummary(project), 'project-detail');
     }
 
 

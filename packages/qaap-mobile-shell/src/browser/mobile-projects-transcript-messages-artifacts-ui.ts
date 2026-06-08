@@ -232,7 +232,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         approve.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalAllow', 'Allow');
         approve.addEventListener('click', event => {
             event.stopPropagation();
-            void approveAgentRequest(approvalId).then(() => this.host.ensureTranscriptConversationRefresh());
+            void approveAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
         });
         const reject = document.createElement('button');
         reject.type = 'button';
@@ -240,7 +240,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         reject.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalDeny', 'Deny');
         reject.addEventListener('click', event => {
             event.stopPropagation();
-            void rejectAgentRequest(approvalId).then(() => this.host.ensureTranscriptConversationRefresh());
+            void rejectAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
         });
         actions.append(approve, reject);
         wrap.append(title, actions);
@@ -541,7 +541,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             const project = this.host.transcriptComposerProject;
             const convSummary = this.host.transcriptComposerSummary;
             if (project && convSummary) {
-                this.host.selectTranscriptTab('review', project, convSummary);
+                this.host.executionSurfaceTabsUi.selectTranscriptTab('review', project, convSummary);
             }
         });
         return review;

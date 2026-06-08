@@ -122,7 +122,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
         this.host.ensureOverlayUi().team.renderTeamSection(host, conv);
         this.host.renderTranscriptInlineApproval(host, conv);
-        this.host.refreshTranscriptExecutionChrome();
+        this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
     }
 
     renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
@@ -183,7 +183,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
         this.host.ensureOverlayUi().team.renderTeamSection(host, conv);
         this.host.renderTranscriptInlineApproval(host, conv);
-        this.host.refreshTranscriptExecutionChrome();
+        this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
     }
 
     /**
