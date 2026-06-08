@@ -98,6 +98,10 @@ export interface QaapCreateAgentTaskRequest {
      * for background tasks; set `false` to require manual CLI approval (will hang if unattended).
      */
     readonly autoApprove?: boolean;
+    /** Composer interaction mode for QAIQ (`agent`, `plan`, `ask`). */
+    readonly interactionModeId?: string;
+    /** Composer approval preset (`request-approval`, `approve-for-me`, `full-access`). */
+    readonly approvalPolicyId?: string;
 }
 
 /** A coding agent the runner knows how to invoke. */

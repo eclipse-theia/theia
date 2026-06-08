@@ -170,6 +170,8 @@ export class QaapAgentConversationStore {
             ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
             ...(request.autoApprove === false ? { autoApprove: false } : {}),
             ...(request.contextPreamble ? { contextPreamble: request.contextPreamble } : {}),
+            ...(request.interactionModeId ? { interactionModeId: request.interactionModeId } : {}),
+            ...(request.approvalPolicyId ? { approvalPolicyId: request.approvalPolicyId } : {}),
             ...(() => {
                 const agentModel = request.agentModel ?? request.qaiqModel;
                 return agentModel && agentSupportsModelPicker(agentId)
@@ -188,6 +190,8 @@ export class QaapAgentConversationStore {
                 undefined,
                 undefined,
                 request.autoApprove === false ? false : request.autoApprove === true ? true : undefined,
+                request.interactionModeId,
+                request.approvalPolicyId,
             );
         }
         return this.conversations.get(id)!;
@@ -199,6 +203,8 @@ export class QaapAgentConversationStore {
         agentOverride?: string,
         agentModelOverride?: QaapCreateAgentTaskRequest['agentModel'],
         autoApproveOverride?: boolean,
+        interactionModeId?: string,
+        approvalPolicyId?: string,
     ): QaapAgentConversation {
         const conv = this.conversations.get(id);
         if (!conv) {
@@ -228,6 +234,8 @@ export class QaapAgentConversationStore {
             ...(agentModelOverride && agentSupportsModelPicker(turnAgentId)
                 ? { agentModel: agentModelOverride, qaiqModel: agentModelOverride }
                 : {}),
+            ...(interactionModeId ? { interactionModeId } : {}),
+            ...(approvalPolicyId ? { approvalPolicyId } : {}),
         };
         this.conversations.set(id, next);
         this.fire({ type: 'message', conversationId: id, cwd: next.cwd, message: userMessage });
@@ -895,6 +903,8 @@ export class QaapAgentConversationStore {
             title: conv.title,
             ...(conv.autoApprove === false ? { autoApprove: false } : {}),
             ...(conv.contextPreamble ? { contextPreamble: conv.contextPreamble } : {}),
+            ...(conv.interactionModeId ? { interactionModeId: conv.interactionModeId } : {}),
+            ...(conv.approvalPolicyId ? { approvalPolicyId: conv.approvalPolicyId } : {}),
             ...(() => {
                 const agentModel = conv.agentModel ?? conv.qaiqModel;
                 return agentSupportsModelPicker(turnAgentId) && agentModel

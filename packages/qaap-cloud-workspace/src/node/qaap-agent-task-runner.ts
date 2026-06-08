@@ -32,6 +32,12 @@ import {
     resolveQaapCodexTemplate,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-builtin-agents';
 import { LEGACY_OPENCLAUDE_AGENT_ID, resolveQaapAgentMentionToken } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import {
+    formatQaiqInteractionFlags,
+    qaiqCommandUsesInteractionFlags,
+    type QaapQaiqInteractionFlagOptions,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-interaction-flags';
+import type { QaapAgentApprovalPolicyId } from '@theia/qaap-mobile-shell/lib/common/qaap-sticky-composer-approval-policy';
 import { agentUsesSettingsModelCatalog } from '../common/qaap-agent-native-model-catalog';
 import { listNativeAgentModels } from './qaap-agent-native-models';
 import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
@@ -390,7 +396,7 @@ export class QaapAgentTaskRunner {
             id: QAIQ_AGENT_ID,
             label: 'QAIQ',
             bin,
-            template: `${bin} --bare --print --output-format stream-json --verbose --include-partial-messages --dangerously-skip-permissions {qaiq_flags} {prompt}`,
+            template: `${bin} --bare --print --output-format stream-json --verbose --include-partial-messages {qaiq_flags} {prompt}`,
         });
     }
 
@@ -715,6 +721,8 @@ export class QaapAgentTaskRunner {
         agentModel?: QaapCreateAgentTaskQaiqModel,
         cwd?: string,
         contextPreamble?: string,
+        interactionModeId?: string,
+        approvalPolicyId?: string,
     ): string {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
@@ -728,17 +736,22 @@ export class QaapAgentTaskRunner {
         this.assertQaiqConfigured(id);
         const detected = this.detectedAgents.get(id);
         let command: string;
+        const interaction: QaapQaiqInteractionFlagOptions = {
+            interactionModeId,
+            approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
+            autoApprove: autoApprove ? true : false,
+        };
         if (detected) {
-            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, agentModel));
+            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, agentModel, interaction));
         } else {
             const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
             if (envTemplate) {
-                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id, agentModel));
+                command = this.applyTemplate(envTemplate, agentPrompt, this.buildTemplateVars(id, agentModel, interaction));
             } else {
                 command = agentPrompt;
             }
         }
-        if (autoApprove) {
+        if (autoApprove && id !== QAIQ_AGENT_ID && !qaiqCommandUsesInteractionFlags(command)) {
             command = applyAutoApproveToCommand(command, id);
         }
         return command;
@@ -823,18 +836,26 @@ export class QaapAgentTaskRunner {
         return prompt.trim();
     }
 
-    protected buildTemplateVars(agentId: string, agentModel?: QaapCreateAgentTaskQaiqModel): Record<string, string> {
+    protected buildTemplateVars(
+        agentId: string,
+        agentModel?: QaapCreateAgentTaskQaiqModel,
+        interaction?: QaapQaiqInteractionFlagOptions,
+    ): Record<string, string> {
         const empty = { qaiq_flags: '', model_flags: '' };
+        const qaiqInteractionFlags = agentId === QAIQ_AGENT_ID
+            ? formatQaiqInteractionFlags(interaction ?? {})
+            : '';
+        const joinQaiqFlags = (...parts: string[]): string => parts.map(part => part.trim()).filter(Boolean).join(' ');
         if (agentModel?.provider && agentModel.modelId?.trim()) {
             const binding = bindingFromQaiqModelSelection(agentModel);
             const flags = formatModelFlagsForAgent(agentId, binding);
             if (agentId === QAIQ_AGENT_ID) {
-                return { qaiq_flags: flags, model_flags: '' };
+                return { qaiq_flags: joinQaiqFlags(qaiqInteractionFlags, flags), model_flags: '' };
             }
             return { qaiq_flags: '', model_flags: flags };
         }
         if (agentId === QAIQ_AGENT_ID) {
-            return { qaiq_flags: this.resolveQaiqProviderFlags(), model_flags: '' };
+            return { qaiq_flags: joinQaiqFlags(qaiqInteractionFlags, this.resolveQaiqProviderFlags()), model_flags: '' };
         }
         return empty;
     }
@@ -970,7 +991,16 @@ export class QaapAgentTaskRunner {
             try {
                 const autoApprove = task.autoApprove !== false;
                 const agentModel = resolveRequestAgentModel(request);
-                const command = this.buildAgentCommand(prompt, request.agent, autoApprove, agentModel, task.cwd, request.contextPreamble);
+                const command = this.buildAgentCommand(
+                    prompt,
+                    request.agent,
+                    autoApprove,
+                    agentModel,
+                    task.cwd,
+                    request.contextPreamble,
+                    request.interactionModeId,
+                    request.approvalPolicyId,
+                );
                 const next: QaapAgentTask = {
                     ...task,
                     command,

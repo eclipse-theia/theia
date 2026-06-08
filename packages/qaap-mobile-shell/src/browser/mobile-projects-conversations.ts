@@ -16,7 +16,6 @@ import {
     QaapAgentMessageDTO,
     listAllConversationGroups,
 } from '../common/qaap-agent-conversation-client';
-import { buildConversationListMetrics } from '../common/qaap-agent-conversation-list-metrics';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
@@ -131,84 +130,15 @@ export class MobileProjectsConversations {
      * same sessions shown as "Recent Chats" in the workspace Chat welcome view, stored under
      * `$CONFIGDIR/workspace-metadata/<workspace-uuid>/chatSessions`.
      */
-    async refreshTheiaChatSessionsForProjects(projects: ReadonlyArray<{
+    async refreshTheiaChatSessionsForProjects(_projects: ReadonlyArray<{
         readonly name: string;
         readonly uri?: URI;
         readonly github?: { readonly owner: string; readonly name: string };
         readonly isCurrent?: boolean;
     }>): Promise<void> {
-        try {
-            const configRoot = new URI(await this.envServer.getConfigDirUri());
-            const metadataRoot = configRoot.resolve('workspace-metadata');
-            const workspaceIndex = await this.readJson<Record<string, string>>(metadataRoot.resolve('index.json'));
-            if (!workspaceIndex) {
-                this.theiaByCwd.clear();
-                this.theiaSessionFiles.clear();
-                return;
-            }
-
-            const next = new Map<string, QaapAgentConversationSummaryDTO[]>();
-            const nextFiles = new Map<string, URI>();
-            for (const project of projects) {
-                const cwd = this.resolveWorkspaceMetadataCwd(project, workspaceIndex);
-                if (!cwd) {
-                    continue;
-                }
-                const uuid = workspaceIndex[cwd];
-                if (!uuid) {
-                    continue;
-                }
-                const chatRoot = metadataRoot.resolve(uuid).resolve('chatSessions');
-                const chatIndex = await this.readJson<TheiaChatSessionIndex>(chatRoot.resolve('index.json'));
-                if (!chatIndex) {
-                    continue;
-                }
-                const summaries: QaapAgentConversationSummaryDTO[] = [];
-                for (const metadata of Object.values(chatIndex)) {
-                    if (!isTheiaChatMetadata(metadata)) {
-                        continue;
-                    }
-                    const id = makeTheiaConversationId(cwd, metadata.sessionId);
-                    const sessionFile = chatRoot.resolve(`${metadata.sessionId}.json`);
-                    const detail = await this.readJson<TheiaSerializedChatData>(sessionFile);
-                    const preview = detail ? previewFromTheiaChat(detail) : undefined;
-                    const theiaMessages = detail ? theiaMessagesToConversationMessages(detail) : [];
-                    const metrics = detail
-                        ? buildConversationListMetrics({ status: 'idle', messages: theiaMessages })
-                        : {};
-                    summaries.push({
-                        id,
-                        source: 'theia-chat',
-                        cwd,
-                        workspacePath: cwd,
-                        sessionId: metadata.sessionId,
-                        agentId: detail?.pinnedAgentId ?? 'chat',
-                        title: metadata.title || detail?.title || project.name,
-                        status: 'idle',
-                        createdAt: metadata.saveDate,
-                        updatedAt: metadata.saveDate,
-                        messageCount: detail ? countTheiaMessages(detail) : 0,
-                        lastMessagePreview: preview,
-                        lastMessageRole: preview ? 'user' : undefined,
-                        ...metrics,
-                    });
-                    nextFiles.set(id, sessionFile);
-                }
-                if (summaries.length > 0) {
-                    next.set(cwd, sortConversations(summaries));
-                }
-            }
-            this.theiaByCwd.clear();
-            for (const [cwd, summaries] of next) {
-                this.theiaByCwd.set(cwd, summaries);
-            }
-            this.theiaSessionFiles.clear();
-            for (const [id, file] of nextFiles) {
-                this.theiaSessionFiles.set(id, file);
-            }
-        } catch {
-            /* Workspace chat metadata is best-effort; VPS conversation stream still works. */
-        }
+        // Qaap product: Work Hub uses VPS QAIQ conversations only — do not merge Theia Coder sessions.
+        this.theiaByCwd.clear();
+        this.theiaSessionFiles.clear();
     }
 
     protected resolveWorkspaceMetadataCwd(
@@ -498,17 +428,6 @@ function excerpt(text: string): string {
     return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
 }
 
-interface TheiaChatSessionMetadata {
-    readonly sessionId: string;
-    readonly title: string;
-    readonly saveDate: number;
-    readonly location: string;
-}
-
-interface TheiaChatSessionIndex {
-    readonly [sessionId: string]: TheiaChatSessionMetadata;
-}
-
 interface TheiaSerializedChatData {
     readonly title?: string;
     readonly pinnedAgentId?: string;
@@ -528,32 +447,6 @@ interface TheiaSerializedChatResponsePart {
     readonly kind: string;
     readonly fallbackMessage?: string;
     readonly data?: { readonly content?: string; readonly code?: string };
-}
-
-function isTheiaChatMetadata(candidate: unknown): candidate is TheiaChatSessionMetadata {
-    const value = candidate as Partial<TheiaChatSessionMetadata> | undefined;
-    return typeof value?.sessionId === 'string'
-        && typeof value.title === 'string'
-        && typeof value.saveDate === 'number';
-}
-
-function makeTheiaConversationId(cwd: string, sessionId: string): string {
-    return `theia-chat:${encodeURIComponent(normalizeCwd(cwd))}:${encodeURIComponent(sessionId)}`;
-}
-
-function previewFromTheiaChat(data: TheiaSerializedChatData): string | undefined {
-    const requests = data.model.requests ?? [];
-    for (let i = requests.length - 1; i >= 0; i--) {
-        const text = requests[i].text?.trim();
-        if (text) {
-            return excerpt(text);
-        }
-    }
-    return undefined;
-}
-
-function countTheiaMessages(data: TheiaSerializedChatData): number {
-    return (data.model.requests?.length ?? 0) + (data.model.responses?.filter(response => responseToText(response).trim()).length ?? 0);
 }
 
 function theiaMessagesToConversationMessages(data: TheiaSerializedChatData): QaapAgentMessageDTO[] {

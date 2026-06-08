@@ -133,6 +133,8 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
                 qaiqModel: body.agentModel ?? body.qaiqModel,
                 autoApprove: body.autoApprove,
                 contextPreamble: body.contextPreamble,
+                interactionModeId: body.interactionModeId,
+                approvalPolicyId: body.approvalPolicyId,
             });
             res.status(201).json(conv);
         } catch (error) {
@@ -151,12 +153,16 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         const agentModel = body.agentModel ?? body.qaiqModel;
         try {
             const autoApprove = typeof body.autoApprove === 'boolean' ? body.autoApprove : undefined;
+            const interactionModeId = typeof body.interactionModeId === 'string' ? body.interactionModeId.trim() : undefined;
+            const approvalPolicyId = typeof body.approvalPolicyId === 'string' ? body.approvalPolicyId.trim() : undefined;
             const conv = this.store.postUserMessage(
                 req.params.id,
                 content,
                 agent || undefined,
                 agentModel,
                 autoApprove,
+                interactionModeId,
+                approvalPolicyId,
             );
             res.status(202).json(conv);
         } catch (error) {

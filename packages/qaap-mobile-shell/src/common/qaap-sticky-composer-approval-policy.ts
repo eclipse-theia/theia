@@ -55,7 +55,7 @@ export const QAAP_AGENT_APPROVAL_POLICIES: readonly QaapAgentApprovalPolicyOptio
     },
 ];
 
-export const DEFAULT_AGENT_APPROVAL_POLICY_ID: QaapAgentApprovalPolicyId = 'full-access';
+export const DEFAULT_AGENT_APPROVAL_POLICY_ID: QaapAgentApprovalPolicyId = 'approve-for-me';
 
 /** VPS / background agents expose the approval picker; local Coder chat does not. */
 export function agentSupportsApprovalPolicy(agentId: string | undefined): boolean {

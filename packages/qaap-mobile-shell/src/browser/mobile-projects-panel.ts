@@ -4273,9 +4273,14 @@ export class MobileProjectsPanel {
                     variables,
                     autoApprove,
                 };
-                const done = isChatSurface
-                    ? this.submitLocalChatFromComposer(project, draft, submitOptions)
-                    : this.submitBackgroundAgentTask(project, draft, { ...submitOptions, openConversation: false, forceVps: true });
+                const done = this.submitBackgroundAgentTask(project, draft, {
+                    ...submitOptions,
+                    openConversation: false,
+                    forceVps: true,
+                    approvalPolicyId: showApprovalPolicy
+                        ? reconcileAgentApprovalPolicyId(this.stickyComposerApprovalPolicyId, cwd)
+                        : undefined,
+                });
                 void done.finally(() => this.renderStickyComposer());
             },
             onSubmitBlocked: () => {
@@ -6011,10 +6016,6 @@ export class MobileProjectsPanel {
         }
         const summary = this.conversationsForProject(project).find(entry => entry.id === item.id);
         if (!summary) {
-            return;
-        }
-        if (item.surface === 'chat') {
-            await this.openTheiaChatTranscriptSheet(project, summary);
             return;
         }
         await this.openTranscriptSheet(project, summary);
@@ -9460,10 +9461,6 @@ export class MobileProjectsPanel {
         // Opening a chat clears its unread badge — record the high-water mark before navigating so
         // the project glyph drops the "new replies" treatment on the next render.
         this.conversationFlags?.markRead(summary.id, summary.updatedAt);
-        if (summary.source === 'theia-chat') {
-            await this.openTheiaChatTranscriptSheet(project, summary);
-            return;
-        }
         await this.openTranscriptSheet(project, summary);
     }
 
@@ -9981,35 +9978,11 @@ export class MobileProjectsPanel {
     ): Promise<void> {
         this.closeCardMenu();
         try {
-            if (summary.source !== 'theia-chat') {
-                const full = await forkConversation(summary.id);
-                const forked = conversationToSummary(full);
-                this.conversations?.recordSnapshot(forked);
-                this.renderList();
-                await this.openTranscriptSheet(project, forked);
-                return;
-            }
-            const session = await this.forkTheiaConversation(project, summary);
-            if (!session) {
-                this.messageService?.error(nls.localize(
-                    'qaap/mobileProjects/forkTaskFailedUnavailable',
-                    'Could not fork this task because its saved transcript is unavailable.'
-                ));
-                return;
-            }
-            this.rememberChatSessionProject(session.id, project);
-            this.trackChatServiceSessionModels();
-            await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
+            const full = await forkConversation(summary.id);
+            const forked = conversationToSummary(full);
+            this.conversations?.recordSnapshot(forked);
             this.renderList();
-            this.messageService?.info(nls.localize('qaap/mobileProjects/forkTaskCreated', 'Forked task created'));
-            await this.openTheiaChatTranscriptSheet(project, {
-                ...summary,
-                id: `theia-chat:fork:${session.id}`,
-                sessionId: session.id,
-                title: session.title ?? summary.title,
-                updatedAt: Date.now(),
-                status: 'idle',
-            });
+            await this.openTranscriptSheet(project, forked);
         } catch (error) {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/forkTaskFailed',
@@ -10346,6 +10319,7 @@ export class MobileProjectsPanel {
             selectedAgentId?: string;
             modeId?: string;
             autoApprove?: boolean;
+            approvalPolicyId?: string;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
@@ -10358,11 +10332,7 @@ export class MobileProjectsPanel {
         try {
             const summary = await this.createProjectChatSession(project, cwd, draft, options);
             if (options.openConversation ?? true) {
-                if (summary.source === 'theia-chat') {
-                    await this.openTheiaChatTranscriptSheet(project, summary);
-                } else {
-                    await this.openTranscriptSheet(project, summary);
-                }
+                await this.openTranscriptSheet(project, summary);
             }
             this.applyTaskStartedToProject(cwd, draft, summary.id);
             MobileSnackbar.show(
@@ -10379,54 +10349,6 @@ export class MobileProjectsPanel {
         }
     }
 
-    protected async submitLocalChatFromComposer(
-        project: MobileProjectEntry,
-        draft: string,
-        options: {
-            openConversation?: boolean;
-            selectedAgentId?: string;
-            modeId?: string;
-            capabilityOverrides?: Record<string, boolean>;
-            genericCapabilitySelections?: GenericCapabilitySelections;
-            variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
-        } = {},
-    ): Promise<void> {
-        if (!this.chatService) {
-            MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'),
-                { duration: 2400 },
-            );
-            return;
-        }
-        const cwd = this.projectsService.getProjectCwd(project)
-            ?? this.preparedCwdByProjectId.get(project.id)
-            ?? project.name;
-        try {
-            const summary = await this.createProjectTheiaChatSession(
-                project,
-                cwd,
-                stripNonCoderAgentMention(draft),
-                options,
-            );
-            this.stickyComposerDraft = '';
-            MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/chatStarted', 'Chat started'),
-                { kind: 'success', duration: 1400 },
-            );
-            await this.refreshChatServiceSessionSummaries();
-            if (options.openConversation ?? true) {
-                void this.openTheiaChatTranscriptSheet(project, summary);
-            }
-        } catch (error) {
-            const detail = error instanceof Error ? error.message : String(error);
-            this.messageService?.error(nls.localize(
-                'qaap/mobileProjects/chatStartFailed',
-                'Could not start chat: {0}',
-                detail,
-            ));
-        }
-    }
-
     protected async createProjectChatSession(
         project: MobileProjectEntry,
         cwd: string,
@@ -10436,6 +10358,7 @@ export class MobileProjectsPanel {
             selectedAgentId?: string;
             modeId?: string;
             autoApprove?: boolean;
+            approvalPolicyId?: string;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
@@ -10444,6 +10367,8 @@ export class MobileProjectsPanel {
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId ?? QAAP_PRIMARY_AGENT_ID);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
         const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
+        const approvalPolicyId = options.approvalPolicyId
+            ?? reconcileAgentApprovalPolicyId(undefined, cwd);
         const contextPreamble = await this.backgroundContext?.resolve({
             text: draft,
             variables: options.variables,
@@ -10453,6 +10378,8 @@ export class MobileProjectsPanel {
             agent,
             title: draft,
             message,
+            interactionModeId: options.modeId,
+            approvalPolicyId,
             ...(contextPreamble ? { contextPreamble } : {}),
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
             ...(options.autoApprove === false
@@ -11808,14 +11735,14 @@ export class MobileProjectsPanel {
             return;
         }
         try {
-            if (summary.source === 'theia-chat') {
-                await this.submitTranscriptViaTheiaChat(project, summary, message, chatHost);
-            } else {
-                await this.submitTranscriptViaBackendConversation(project, summary, message, {
-                    selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
-                    modeId: this.transcriptComposerModeId,
-                });
-            }
+            await this.submitTranscriptViaBackendConversation(project, summary, message, {
+                selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
+                modeId: this.transcriptComposerModeId,
+                approvalPolicyId: reconcileAgentApprovalPolicyId(
+                    this.transcriptComposerApprovalPolicyId,
+                    summary.cwd,
+                ),
+            });
             this.selectTranscriptTab('messages', project, summary);
         } catch (error) {
             this.messageService?.error(error instanceof Error ? error.message : String(error));
@@ -12757,17 +12684,14 @@ export class MobileProjectsPanel {
         }
         this.renderPreviewTab(project, summary);
         try {
-            if (summary.source === 'theia-chat') {
-                if (!this.transcriptChatHost) {
-                    throw new Error(nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.'));
-                }
-                await this.submitTranscriptViaTheiaChat(project, summary, message, this.transcriptChatHost, this.transcriptComposerModeId);
-            } else {
-                await this.submitTranscriptViaBackendConversation(project, summary, message, {
-                    selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
-                    modeId: this.transcriptComposerModeId,
-                });
-            }
+            await this.submitTranscriptViaBackendConversation(project, summary, message, {
+                selectedAgentId: this.resolveTranscriptComposerPinnedAgentId(project, summary),
+                modeId: this.transcriptComposerModeId,
+                approvalPolicyId: reconcileAgentApprovalPolicyId(
+                    this.transcriptComposerApprovalPolicyId,
+                    summary.cwd,
+                ),
+            });
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/previewRequestSent', 'Preview request sent to agent'),
                 { kind: 'success', duration: 1600 },
@@ -12929,7 +12853,7 @@ export class MobileProjectsPanel {
         if (summary.source !== 'theia-chat') {
             try {
                 const agentModel = resolveStoredAgentModelForSubmit(summary.agentId, summary.cwd);
-                await postConversationMessage(summary.id, report, undefined, agentModel);
+                await postConversationMessage(summary.id, report, { agentModel });
                 if (!auto) {
                     // Manual send: jump to Chat so the user watches the agent react.
                     this.selectTranscriptTab('messages', project, summary);
@@ -13218,6 +13142,10 @@ export class MobileProjectsPanel {
                                 modeId,
                                 variables,
                                 autoApprove,
+                                approvalPolicyId: reconcileAgentApprovalPolicyId(
+                                    this.transcriptComposerApprovalPolicyId,
+                                    summary.cwd,
+                                ),
                             });
                         } catch {
                             /* submitBackgroundAgentTask surfaces errors */
@@ -13237,6 +13165,10 @@ export class MobileProjectsPanel {
                                 modeId,
                                 variables,
                                 autoApprove,
+                                approvalPolicyId: reconcileAgentApprovalPolicyId(
+                                    this.transcriptComposerApprovalPolicyId,
+                                    summary.cwd,
+                                ),
                             });
                         } else {
                             await this.submitTranscriptViaBackendConversation(project, summary, draft, {
@@ -13244,6 +13176,10 @@ export class MobileProjectsPanel {
                                 modeId,
                                 variables,
                                 autoApprove,
+                                approvalPolicyId: reconcileAgentApprovalPolicyId(
+                                    this.transcriptComposerApprovalPolicyId,
+                                    summary.cwd,
+                                ),
                             });
                         }
                     } catch (error) {
@@ -13693,6 +13629,7 @@ export class MobileProjectsPanel {
             selectedAgentId?: string;
             modeId?: string;
             autoApprove?: boolean;
+            approvalPolicyId?: string;
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: AIVariableResolutionRequest[];
@@ -13704,6 +13641,7 @@ export class MobileProjectsPanel {
                 selectedAgentId: options.selectedAgentId,
                 modeId: options.modeId,
                 autoApprove: options.autoApprove,
+                approvalPolicyId: options.approvalPolicyId,
                 variables: options.variables,
             });
             this.transcriptOpenSummaryId = created.id;
@@ -13741,13 +13679,14 @@ export class MobileProjectsPanel {
         }
         try {
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
-            const updated = await postConversationMessage(
-                summary.id,
-                outbound,
+            const updated = await postConversationMessage(summary.id, outbound, {
                 agent,
                 agentModel,
-                options.autoApprove,
-            );
+                autoApprove: options.autoApprove,
+                interactionModeId: options.modeId,
+                approvalPolicyId: options.approvalPolicyId
+                    ?? reconcileAgentApprovalPolicyId(this.transcriptComposerApprovalPolicyId, summary.cwd),
+            });
             const nextSummary = conversationToSummary(updated);
             this.conversations?.recordSnapshot(nextSummary);
             const refreshedChatHost = this.resolveActiveTranscriptChatHost();
@@ -13764,258 +13703,6 @@ export class MobileProjectsPanel {
                 this.renderTranscriptMessages(rollbackChatHost, base);
             }
             throw error;
-        }
-    }
-
-    protected async createProjectTheiaChatSession(
-        project: MobileProjectEntry,
-        cwd: string,
-        draft: string,
-        options: {
-            modeId?: string;
-            capabilityOverrides?: Record<string, boolean>;
-            genericCapabilitySelections?: GenericCapabilitySelections;
-            variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
-        },
-    ): Promise<QaapAgentConversationSummaryDTO> {
-        if (!this.chatService) {
-            throw new Error(nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'));
-        }
-        const previousActiveSessionId = this.chatService.getActiveSession()?.id;
-        const coderAgent = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
-        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: false }, coderAgent);
-        this.rememberChatSessionProject(session.id, project);
-        if (cwd) {
-            writeStoredAgent(cwd, THEIA_CODER_AGENT_ID);
-        }
-        this.trackChatServiceSessionModels();
-        const summary = this.chatServiceSessionToSummary(session, project, cwd, draft, 'streaming');
-        this.upsertProjectChatServiceSummary(project.id, summary);
-        if (previousActiveSessionId && this.chatService.getSession(previousActiveSessionId)) {
-            this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
-        }
-        const pinnedId = THEIA_CODER_AGENT_ID;
-        const invocation = await this.chatService.sendRequest(session.id, {
-            text: this.formatTheiaChatRequestText(stripNonCoderAgentMention(draft), pinnedId),
-            modeId: options.modeId,
-            capabilityOverrides: options.capabilityOverrides,
-            genericCapabilitySelections: options.genericCapabilitySelections,
-            ...(options.variables && options.variables.length > 0 ? { variables: options.variables } : {}),
-        });
-        this.scheduleChatServiceRefresh();
-        void invocation?.responseCompleted.finally(() => this.scheduleChatServiceRefresh());
-        return summary;
-    }
-
-    protected async submitTranscriptViaTheiaChat(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        content: string,
-        transcript: HTMLElement,
-        modeId?: string,
-        capabilityOverrides?: Record<string, boolean>,
-        genericCapabilitySelections?: GenericCapabilitySelections,
-        widget?: AIChatInputWidget,
-    ): Promise<void> {
-        if (!this.chatService) {
-            throw new Error(nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'));
-        }
-        let sessionId = this.transcriptTheiaSessionByConversationId.get(summary.id);
-        let session = sessionId ? this.chatService.getSession(sessionId) : undefined;
-        if (!session) {
-            session = await this.getOrRestoreProjectChatSession(project, summary)
-                ?? this.chatService.createSession(
-                    ChatAgentLocation.Panel,
-                    { focus: false },
-                    this.resolveTranscriptPinnedAgent(summary),
-                );
-            this.transcriptTheiaSessionByConversationId.set(summary.id, session.id);
-            sessionId = session.id;
-        }
-        this.applyTranscriptPinnedAgent(summary, session, widget);
-        const base = summary.source === 'theia-chat'
-            ? await this.conversations?.getTheiaConversation(summary.id)
-            : await getConversation(summary.id);
-        if (!base) {
-            throw new Error(nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.'));
-        }
-        const userMessage = {
-            id: `${session.id}:${Date.now()}:user`,
-            role: 'user' as const,
-            content,
-            createdAt: Date.now(),
-        };
-        this.renderTranscriptMessages(transcript, {
-            ...base,
-            status: 'streaming',
-            messages: [...base.messages, userMessage],
-        });
-        const invocation = await this.chatService.sendRequest(session.id, {
-            text: this.formatTheiaChatRequestText(stripNonCoderAgentMention(content)),
-            modeId,
-            capabilityOverrides,
-            genericCapabilitySelections,
-        });
-        if (!invocation) {
-            throw new Error(nls.localize('qaap/mobileProjects/transcriptSendFailed', 'Could not send: {0}', 'no agent'));
-        }
-        await invocation.responseCompleted;
-        const coderConversation = await this.getChatServiceConversation({ ...summary, sessionId: session.id });
-        this.renderTranscriptMessages(transcript, {
-            ...base,
-            status: 'idle',
-            messages: [
-                ...base.messages,
-                ...(coderConversation?.messages ?? []),
-            ],
-        });
-        this.upsertProjectChatServiceSummary(project.id, this.chatServiceSessionToSummary(session, project, summary.cwd, summary.title, 'idle'));
-    }
-
-    protected async mountCoderChatView(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        host: HTMLElement,
-    ): Promise<void> {
-        try {
-            if (!this.createChatViewWidget || !this.chatService) {
-                throw new Error(nls.localize('qaap/mobileProjects/agentViewUnavailable', 'Agent chat is unavailable.'));
-            }
-            let sessionId = this.transcriptTheiaSessionByConversationId.get(summary.id);
-            let session = sessionId ? this.chatService.getSession(sessionId) : undefined;
-            if (!session) {
-                const coderAgent = this.chatAgentService?.getAgent(THEIA_CODER_AGENT_ID);
-                session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: false }, coderAgent);
-                session.title = summary.title || project.name;
-                this.transcriptTheiaSessionByConversationId.set(summary.id, session.id);
-                sessionId = session.id;
-                this.rememberChatSessionProject(session.id, project);
-                this.trackChatServiceSessionModels();
-            }
-            const previousActiveSessionId = this.chatService.getActiveSession()?.id;
-            this.chatService.setActiveSession(session.id, { focus: false });
-            const uniqueId = `transcript-coder-${project.id}-${summary.id}-${++this.agentChatInputMountSeq}-${Date.now()}`;
-            const widget = await this.createChatViewWidget(uniqueId) as MobileProjectChatViewWidget;
-            if (!this.transcriptSheet || !host.isConnected) {
-                widget.dispose();
-                return;
-            }
-            if (this.attachTranscriptChatViewWidget(widget, host, session)) {
-                this.transcriptChatViewWidget = widget;
-            } else {
-                widget.dispose();
-            }
-            const previousDispose = this.transcriptSheetDispose;
-            this.transcriptSheetDispose = Disposable.create(() => {
-                previousDispose.dispose();
-                if (previousActiveSessionId && this.chatService?.getSession(previousActiveSessionId)) {
-                    this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
-                }
-            });
-        } catch (error) {
-            const messageHost = this.resolveTranscriptMessageHost(host);
-            messageHost.replaceChildren();
-            const err = document.createElement('div');
-            err.className = 'theia-mobile-agent-transcript-error';
-            err.textContent = error instanceof Error ? error.message : String(error);
-            messageHost.append(err);
-        }
-    }
-
-    protected async openTheiaChatTranscriptSheet(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        this.setExecutionSurfaceTab(project, 'messages');
-        this.replacingTranscriptSheet = true;
-        this.closeTranscriptSheet();
-        this.replacingTranscriptSheet = false;
-        this.delegate.onEnterActiveTranscript?.();
-        const root = document.createElement('div');
-        root.className = 'theia-mobile-agent-log theia-mobile-agent-transcript-root theia-mod-visible';
-        root.setAttribute('role', 'dialog');
-        root.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-agent-log-backdrop';
-        const sheet = document.createElement('section');
-        sheet.className = 'theia-mobile-agent-log-sheet theia-mod-transcript';
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-agent-log-header';
-        const headerTitle = this.resolveTranscriptHeaderTitle(project, summary);
-        const { back, tabStrip } = this.mountTranscriptExecutionHeader(header, project, summary, headerTitle);
-
-        const chatHost = document.createElement('div');
-        chatHost.className = 'theia-mobile-agent-transcript-real-chat';
-        chatHost.hidden = false;
-        this.renderTranscriptMessages(chatHost, this.summaryToTranscriptPlaceholder(summary));
-
-        const chatInputHost = document.createElement('div');
-        chatInputHost.className = 'theia-mobile-agent-transcript-chat-input';
-        chatInputHost.hidden = false;
-
-        const { planHost, reviewHost, previewHost, filesHost, terminalHost } = this.createTranscriptSheetSurfaceHosts();
-
-        sheet.append(header, chatHost, planHost, reviewHost, previewHost, filesHost, terminalHost, chatInputHost);
-        root.append(backdrop, sheet);
-        document.body.append(root);
-        this.transcriptSheet = root;
-        this.notifyWorkspaceHubBottomBarRefresh();
-
-        const previousActiveSessionId = this.chatService?.getActiveSession()?.id;
-
-        this.transcriptChatHost = chatHost;
-        this.transcriptChatInputHost = chatInputHost;
-        this.transcriptTabStrip = tabStrip;
-        this.transcriptPlanHost = planHost;
-        this.transcriptReviewHost = reviewHost;
-        this.transcriptPreviewHost = previewHost;
-        this.transcriptFilesHost = filesHost;
-        this.transcriptTerminalHost = terminalHost;
-        this.transcriptOpenSummaryId = summary.id;
-        this.transcriptOpenSummary = summary;
-        this.transcriptOpenProject = project;
-        if (this.visible) {
-            this.renderHeader();
-            this.renderSubtitle();
-            this.renderList();
-            this.syncHeaderExecutionTabStrip();
-        }
-        this.bindTranscriptSheetDismiss(back, backdrop);
-        this.transcriptComposerPinnedAgentId = migrateLegacyBackendAgentId(summary.agentId)
-            ?? readStoredAgent(summary.cwd);
-        void this.refreshTranscriptComposerAgents(project);
-        this.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
-        this.showOnlyExecutionSurfaceTab('messages');
-        this.mountTranscriptSurfaceTab(project, summary, 'messages');
-        try {
-            if (!this.chatService || !summary.sessionId) {
-                throw new Error(nls.localize('qaap/mobileProjects/agentViewUnavailable', 'Agent chat is unavailable.'));
-            }
-            const theiaConversation = summary.id.startsWith('theia-chat')
-                ? await this.conversations?.getTheiaConversation(summary.id)
-                : await this.getChatServiceConversation(summary);
-            if (theiaConversation) {
-                this.transcriptLastFingerprint = this.conversationTranscriptFingerprint(theiaConversation);
-                this.renderTranscriptMessages(chatHost, theiaConversation);
-                const surfaceTab = this.executionSurfaceTabForProject(project);
-                this.showOnlyExecutionSurfaceTab(surfaceTab);
-                this.mountTranscriptSurfaceTab(project, summary, surfaceTab);
-                this.syncExecutionSurfaceChrome(project);
-            }
-            this.transcriptSheetDispose = Disposable.create(() => {
-                if (previousActiveSessionId && this.chatService?.getSession(previousActiveSessionId)) {
-                    this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
-                }
-            });
-        } catch (error) {
-            const messageHost = this.resolveTranscriptMessageHost(chatHost);
-            messageHost.replaceChildren();
-            const err = document.createElement('div');
-            err.className = 'theia-mobile-agent-transcript-error';
-            err.textContent = error instanceof Error ? error.message : String(error);
-            messageHost.append(err);
-            this.transcriptSheetDispose = Disposable.NULL;
         }
     }
 

@@ -95,6 +95,10 @@ export interface QaapAgentConversation {
     readonly autoApprove?: boolean;
     /** Resolved cross-project context (frontend PromptService), prepended to each agent turn's prompt. */
     readonly contextPreamble?: string;
+    /** Last composer interaction mode (`agent`, `plan`, `ask`) — drives QAIQ CLI flags. */
+    readonly interactionModeId?: string;
+    /** Last composer approval preset — drives QAIQ permission mode when auto-approve is on. */
+    readonly approvalPolicyId?: string;
     /** Set on conversations created via {@link fork} — points at the parent's id. */
     readonly forkedFromId?: string;
     /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
@@ -194,6 +198,8 @@ export interface QaapCreateAgentConversationRequest {
     readonly autoApprove?: boolean;
     /** Resolved cross-project context (frontend PromptService), stored on the conversation. */
     readonly contextPreamble?: string;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
 }
 
 export interface QaapPostAgentMessageRequest {
@@ -207,6 +213,8 @@ export interface QaapPostAgentMessageRequest {
      * When set, applies the composer approval policy for this turn (`true` → YOLO / auto-approve CLI flags).
      */
     readonly autoApprove?: boolean;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
 }
 
 export interface QaapRenameAgentConversationRequest {

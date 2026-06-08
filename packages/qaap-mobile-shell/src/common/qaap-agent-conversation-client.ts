@@ -192,6 +192,8 @@ export interface QaapCreateConversationBody {
     readonly autoApprove?: boolean;
     /** Resolved cross-project context, stored on the conversation and prepended to each agent turn. */
     readonly contextPreamble?: string;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
 }
 
 export async function listConversationsForCwd(cwd: string): Promise<QaapAgentConversationSummaryDTO[]> {
@@ -256,13 +258,22 @@ export async function createConversation(body: QaapCreateConversationBody): Prom
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
+export interface QaapPostConversationMessageOptions {
+    readonly agent?: string;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    readonly autoApprove?: boolean;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
+}
+
 export async function postConversationMessage(
     id: string,
     content: string,
-    agent?: string,
-    agentModel?: QaapCreateAgentTaskQaiqModel,
-    autoApprove?: boolean,
+    options: QaapPostConversationMessageOptions = {},
 ): Promise<QaapAgentConversationDTO> {
+    const agent = options.agent;
+    const agentModel = options.agentModel;
+    const autoApprove = options.autoApprove;
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/messages`, {
         method: 'POST',
         credentials: 'include',
@@ -272,6 +283,8 @@ export async function postConversationMessage(
             agent,
             agentModel,
             qaiqModel: agentModel,
+            interactionModeId: options.interactionModeId,
+            approvalPolicyId: options.approvalPolicyId,
             ...(autoApprove === false ? { autoApprove: false } : autoApprove === true ? { autoApprove: true } : {}),
         }),
     });
