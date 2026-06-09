@@ -126,13 +126,22 @@ export class ToolConfirmationManager {
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
         const next: Record<string, ToolConfirmationMode> = { ...current };
+        let changed = false;
         for (const { toolId, mode, toolRequest } of updates) {
             const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest);
             if (mode === effectiveDefault) {
-                delete next[toolId];
-            } else {
+                if (toolId in next) {
+                    delete next[toolId];
+                    changed = true;
+                }
+            } else if (next[toolId] !== mode) {
                 next[toolId] = mode;
+                changed = true;
             }
+        }
+        // Avoid a redundant preference write (and the change event it fires) when nothing changed.
+        if (!changed) {
+            return Promise.resolve();
         }
         return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, next);
     }

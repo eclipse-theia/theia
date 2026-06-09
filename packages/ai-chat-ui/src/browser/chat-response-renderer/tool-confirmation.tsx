@@ -490,8 +490,10 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({
     response, toolRequest, onAllow, onDeny, contextMenuRenderer, openerService, pendingTracker, keybindingHints, chatId, markdownRenderer
 }) => {
     const [state, setState] = React.useState<ToolConfirmationState>('waiting');
+    // Pure initializer (no side effects): decide whether the intro should render. Marking the chat
+    // as "intro shown" happens in the effect below to keep the initializer pure for StrictMode.
     const [showIntro] = React.useState<boolean>(
-        () => !!(pendingTracker && chatId && markdownRenderer && pendingTracker.shouldShowIntro(chatId))
+        () => !!(pendingTracker && chatId && markdownRenderer && !pendingTracker.hasShownIntro(chatId))
     );
 
     const handleAllow = React.useCallback((scope: ConfirmationScope) => {
@@ -505,16 +507,23 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({
     }, [onDeny]);
 
     React.useEffect(() => {
-        if (!pendingTracker || state !== 'waiting') {
+        if (showIntro && pendingTracker && chatId) {
+            pendingTracker.markIntroShown(chatId);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        if (!pendingTracker || !chatId || state !== 'waiting') {
             return;
         }
         const disposable = pendingTracker.register({
+            chatId,
             response,
             allow: () => handleAllow('once'),
             deny: () => handleDeny('once')
         });
         return () => disposable.dispose();
-    }, [pendingTracker, response, handleAllow, handleDeny, state]);
+    }, [pendingTracker, chatId, response, handleAllow, handleDeny, state]);
 
     if (state === 'allowed') {
         return (

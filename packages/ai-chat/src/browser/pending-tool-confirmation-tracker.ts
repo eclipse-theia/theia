@@ -19,6 +19,7 @@ import { Disposable, Emitter, Event } from '@theia/core';
 import { ToolCallChatResponseContent } from '../common';
 
 export interface PendingToolConfirmation {
+    readonly chatId: string;
     readonly response: ToolCallChatResponseContent;
     allow(): void;
     deny(): void;
@@ -28,7 +29,8 @@ export interface PendingToolConfirmation {
  * Tracks tool confirmations that are currently awaiting user input across all chats.
  *
  * Used to drive keyboard shortcuts that approve or deny the most recently surfaced
- * pending confirmation without requiring the user to click on the confirmation card.
+ * pending confirmation. Queries are scoped by chat id so a shortcut only ever targets a
+ * confirmation in the chat the user is interacting with, never one in a different chat.
  */
 @injectable()
 export class PendingToolConfirmationTracker {
@@ -40,18 +42,21 @@ export class PendingToolConfirmationTracker {
     readonly onChanged: Event<void> = this.onChangedEmitter.event;
 
     /**
-     * Returns `true` the first time it is called for a given chat id (and `false` thereafter),
-     * marking the chat as having had the tool-confirmation intro shown.
+     * Whether the one-time tool-confirmation intro has already been shown for the given chat.
      *
-     * Used by the UI to decide whether to render a one-time explainer above the first
-     * tool-confirmation card in a chat session.
+     * Pure query - call {@link markIntroShown} to record that it was shown. Kept separate so it
+     * can be used from a React render without side effects.
      */
-    shouldShowIntro(chatId: string): boolean {
-        if (this.introShownChats.has(chatId)) {
-            return false;
-        }
+    hasShownIntro(chatId: string): boolean {
+        return this.introShownChats.has(chatId);
+    }
+
+    /**
+     * Marks the tool-confirmation intro as shown for the given chat, so it is only rendered once
+     * per chat session.
+     */
+    markIntroShown(chatId: string): void {
         this.introShownChats.add(chatId);
-        return true;
     }
 
     register(entry: PendingToolConfirmation): Disposable {
@@ -69,13 +74,26 @@ export class PendingToolConfirmationTracker {
     }
 
     /**
-     * Returns the most recently registered pending confirmation, or `undefined` if none are pending.
+     * Returns the most recently registered pending confirmation, optionally restricted to a single
+     * chat. Without a `chatId` it considers all chats (e.g. to drive a global context key); with a
+     * `chatId` it only returns a confirmation belonging to that chat.
      */
-    getLatest(): PendingToolConfirmation | undefined {
-        return this.pending[this.pending.length - 1];
+    getLatest(chatId?: string): PendingToolConfirmation | undefined {
+        for (let i = this.pending.length - 1; i >= 0; i--) {
+            if (chatId === undefined || this.pending[i].chatId === chatId) {
+                return this.pending[i];
+            }
+        }
+        return undefined;
     }
 
-    hasPending(): boolean {
-        return this.pending.length > 0;
+    /**
+     * Whether there is a pending confirmation, optionally restricted to a single chat.
+     */
+    hasPending(chatId?: string): boolean {
+        if (chatId === undefined) {
+            return this.pending.length > 0;
+        }
+        return this.pending.some(entry => entry.chatId === chatId);
     }
 }
