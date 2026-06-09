@@ -105,6 +105,7 @@ export class CustomEditorOpener implements OpenHandler {
                     try {
                         w.viewType = this.editor.viewType;
                         w.resource = uri;
+                        w.updateID();
                         await this.editorRegistry.resolveWidget(w);
                         if (options?.widgetOptions) {
                             await this.shell.addWidget(w, options.widgetOptions);
