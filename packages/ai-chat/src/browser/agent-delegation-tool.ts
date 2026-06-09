@@ -105,10 +105,10 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             // Check if the specified agent exists
-            const agent = this.getChatAgentService().getAgent(agentId);
+            const agent = this.getChatAgentService().getAgent(agentId, true);
             if (!agent) {
                 const availableAgents = this.getChatAgentService()
-                    .getAgents()
+                    .getAgents(true)
                     .map(a => a.id);
                 const errorMsg = `Agent '${agentId}' not found or not enabled. Available agents: ${availableAgents.join(', ')}`;
                 console.error(errorMsg);
