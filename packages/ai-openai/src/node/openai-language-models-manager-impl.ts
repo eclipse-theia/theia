@@ -111,7 +111,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     useResponseApi: modelDescription.useResponseApi ?? false,
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
-                    maxInputTokens: metadata.maxInputTokens
+                    maxInputTokens: metadata.maxInputTokens,
+                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -132,7 +133,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.useResponseApi ?? false,
                         proxyUrl,
                         metadata.reasoningSupport,
-                        metadata.maxInputTokens
+                        metadata.maxInputTokens,
+                        modelDescription.serverSideCompactionEnabledByDefault ?? false
                     )
                 ]);
             }
