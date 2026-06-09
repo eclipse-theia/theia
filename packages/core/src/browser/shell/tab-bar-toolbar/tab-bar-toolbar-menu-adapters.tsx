@@ -98,7 +98,7 @@ abstract class AbstractToolbarMenuWrapper {
         const className = `${icon} ${ACTION_ITEM}`;
         if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={className}
+                <div id={this.id} className={className}
                     title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(widget, e)}
                 />
@@ -108,7 +108,7 @@ abstract class AbstractToolbarMenuWrapper {
             </div>;
         } else {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={className}
+                <div id={this.id} className={className}
                     title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(widget, e)}
                 />
