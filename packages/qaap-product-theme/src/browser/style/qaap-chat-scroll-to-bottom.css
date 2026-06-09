@@ -15,9 +15,11 @@
 .theia-mobile-agent-transcript-scroll-to-bottom,
 .theia-ChatTree-ScrollToBottom {
   position: absolute;
-  right: calc(16px + env(safe-area-inset-right, 0px));
+  left: 50%;
+  right: auto;
   bottom: calc(12px + var(--theia-mobile-projects-fab-lift, 0px));
   z-index: 6;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -62,12 +64,12 @@
   border-color: color-mix(in srgb, var(--theia-foreground) 28%, transparent);
   background: color-mix(in srgb, var(--theia-editor-background) 68%, transparent);
   color: var(--theia-foreground);
-  transform: translateY(-1px);
+  transform: translateX(-50%) translateY(-1px);
 }
 
 .theia-mobile-agent-transcript-scroll-to-bottom:active,
 .chat-view-widget .theia-ChatTree-ScrollToBottom:active {
-  transform: scale(0.96);
+  transform: translateX(-50%) scale(0.96);
 }
 
 /* Desktop AI chat tree — chevron instead of arrow-down. */
@@ -88,7 +90,9 @@
 /* Classic IDE chat panel — no composer lift token; beat upstream flat button styles. */
 .chat-view-widget .theia-ChatTree-ScrollToBottom {
   bottom: 16px;
-  right: 16px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   width: 40px;
   height: 40px;
   border-radius: 50%;
