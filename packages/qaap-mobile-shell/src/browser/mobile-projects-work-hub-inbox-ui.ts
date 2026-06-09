@@ -63,6 +63,9 @@ export interface MobileProjectsWorkHubInboxHost {
             ): HTMLElement;
         };
     };
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Shared inbox project groups for Tasks, Review, and Chat Work Hub tabs. */
@@ -132,9 +135,9 @@ export class MobileProjectsWorkHubInboxUi {
         const groups: Array<{ project: MobileProjectEntry; summaries: QaapAgentConversationSummaryDTO[] }> = [];
         const query = this.host.query.trim().toLowerCase();
         for (const project of projects) {
-            let summaries = this.host.localChatsForProject(project);
+            let summaries = this.host.conversationIndexUi.localChatsForProject(project);
             if (query) {
-                summaries = summaries.filter(c => this.host.conversationMatchesQuery(c, query));
+                summaries = summaries.filter(c => this.host.hubQueryUi.conversationMatchesQuery(c, query));
             }
             if (summaries.length === 0) {
                 continue;
@@ -152,10 +155,10 @@ export class MobileProjectsWorkHubInboxUi {
         const query = this.host.query.trim().toLowerCase();
         for (const project of projects) {
             let conversations = this.host.conversations
-                ? this.host.vpsTasksForProject(project)
+                ? this.host.conversationIndexUi.vpsTasksForProject(project)
                 : [];
             if (query) {
-                conversations = conversations.filter(c => this.host.conversationMatchesQuery(c, query));
+                conversations = conversations.filter(c => this.host.hubQueryUi.conversationMatchesQuery(c, query));
             }
             const items = buildWorkHubInboxItems(project, conversations);
             if (items.length === 0) {
@@ -180,7 +183,7 @@ export class MobileProjectsWorkHubInboxUi {
                 return true;
             });
             const conversations = this.host.conversations
-                ? this.host.vpsTasksForProject(project)
+                ? this.host.conversationIndexUi.vpsTasksForProject(project)
                 : [];
             const items = buildReviewHubPullRequestItems(
                 project,
@@ -198,13 +201,13 @@ export class MobileProjectsWorkHubInboxUi {
     }
 
     compareChatInboxProjectOrder(a: MobileProjectEntry, b: MobileProjectEntry): number {
-        const aRunning = this.host.countRunningTasks(a) > 0 ? 1 : 0;
-        const bRunning = this.host.countRunningTasks(b) > 0 ? 1 : 0;
+        const aRunning = this.host.conversationIndexUi.countRunningTasks(a) > 0 ? 1 : 0;
+        const bRunning = this.host.conversationIndexUi.countRunningTasks(b) > 0 ? 1 : 0;
         if (aRunning !== bRunning) {
             return bRunning - aRunning;
         }
-        const aUnread = this.host.countUnreadTasks(a) > 0 ? 1 : 0;
-        const bUnread = this.host.countUnreadTasks(b) > 0 ? 1 : 0;
+        const aUnread = this.host.conversationIndexUi.countUnreadTasks(a) > 0 ? 1 : 0;
+        const bUnread = this.host.conversationIndexUi.countUnreadTasks(b) > 0 ? 1 : 0;
         if (aUnread !== bUnread) {
             return bUnread - aUnread;
         }
@@ -270,7 +273,7 @@ export class MobileProjectsWorkHubInboxUi {
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-projects-chats-list';
-        const activeInfo = this.host.activeInfoForProject(project);
+        const activeInfo = this.host.conversationIndexUi.activeInfoForProject(project);
 
         const variantRuns = new Map<string, QaapAgentConversationSummaryDTO[]>();
         for (const item of items) {
@@ -282,8 +285,8 @@ export class MobileProjectsWorkHubInboxUi {
                 continue;
             }
             if (item.kind === 'conversation') {
-                const task = this.host.summaryToTaskView(item.summary);
-                list.append(this.host.createTaskItem(project, task, activeInfo, item.summary, parentIds));
+                const task = this.host.conversationIndexUi.summaryToTaskView(item.summary);
+                list.append(this.host.projectRowsUi.createTaskItem(project, task, activeInfo, item.summary, parentIds));
             } else {
                 list.append(this.createInboxPullRequestItem(project, item.pullRequest, item.agentActivityLabel));
             }
@@ -360,7 +363,7 @@ export class MobileProjectsWorkHubInboxUi {
 
     protected activeAgentBranchForProject(project: MobileProjectEntry): string | undefined {
         const streaming = this.host.conversations
-            ? this.host.vpsTasksForProject(project).some(c => c.status === 'streaming')
+            ? this.host.conversationIndexUi.vpsTasksForProject(project).some(c => c.status === 'streaming')
             : false;
         return streaming && project.branch ? project.branch : undefined;
     }
@@ -379,7 +382,7 @@ export class MobileProjectsWorkHubInboxUi {
 
         const icon = document.createElement('span');
         icon.className = 'theia-mobile-projects-task-dot theia-mod-pr';
-        icon.append(this.host.createTaskLeadingGlyph('codicon-git-pull-request'));
+        icon.append(this.host.projectRowsUi.createTaskLeadingGlyph('codicon-git-pull-request'));
         icon.setAttribute('aria-hidden', 'true');
 
         const body = document.createElement('div');

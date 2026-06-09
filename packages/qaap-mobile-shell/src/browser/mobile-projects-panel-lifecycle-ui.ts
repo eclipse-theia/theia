@@ -76,13 +76,13 @@ export interface MobileProjectsPanelLifecycleHost {
 
     closeRoutineEditor(): void;
     closeCardMenu(): void;
-    closeStickyComposerSheets(): void;
-    closeWorkHubSearchQuickPick(): void;
+    stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
+    workHubSearchUi: import('./mobile-projects-work-hub-search-ui').MobileProjectsWorkHubSearchUi;
+    chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
     disposeTranscriptTerminalSlides(): void;
     detachDiffReviewWidget(): void;
     ensureOverlayUi(): { team: { renderTeamSection(host: HTMLElement, conv: QaapAgentConversationDTO): void }; parallel: { applyParallelRunStats(runId: string, variants: unknown): void } };
-    redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView;
-    refreshChatServiceSessionSummaries(): Promise<void>;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     refreshDiffHubView(): Promise<void>;
     refreshTasksHubApprovals(forceRender?: boolean): void;
     refreshInboxPullRequests(projects?: MobileProjectEntry[], force?: boolean): Promise<void>;
@@ -91,14 +91,14 @@ export interface MobileProjectsPanelLifecycleHost {
     renderList(): void;
     renderSubtitle(): void;
     renderFilters(): void;
-    renderStickyComposer(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
     syncLandingHubListChrome(): void;
     markTasksFirstLoadComplete(render: boolean): void;
-    isTasksHubView(): boolean;
     shouldSkipFullRenderListOnConversationTick(): boolean;
     refreshWorkHubConversationChrome(): void;
     mergeInboxPullRequests(polled: QaapGithubPullRequestSummary[]): QaapGithubPullRequestSummary[];
     updateTasksAttentionChrome(): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 export class MobileProjectsPanelLifecycleUi {
@@ -115,8 +115,8 @@ export class MobileProjectsPanelLifecycleUi {
         this.host.closeRoutineEditor();
         window.removeEventListener('qaap-auth-session-changed', this.host.onAuthSessionChanged);
         this.host.accountBtn.removeEventListener('click', this.host.onAccountClick);
-        this.host.closeCardMenu();
-        this.host.closeStickyComposerSheets();
+        this.host.cardMenuUi.closeCardMenu();
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         this.host.transcriptComposerUi.closeTranscriptComposerSheets();
         this.host.dragDismissDispose.dispose();
         this.host.dragDismissDispose = Disposable.NULL;
@@ -149,19 +149,19 @@ export class MobileProjectsPanelLifecycleUi {
     async show(options?: { preferredHubView?: MobileProjectsHubView }): Promise<void> {
         this.host.projects = await this.host.projectsService.loadProjects();
         await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-        await this.host.refreshChatServiceSessionSummaries();
+        await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
         this.host.filter = this.host.projectsService.getFilter();
         this.host.tasksHubSurface = 'task';
         if (options?.preferredHubView !== undefined) {
-            this.host.hubView = this.host.redirectHubView(options.preferredHubView);
+            this.host.hubView = this.host.hubQueryUi.redirectHubView(options.preferredHubView);
             this.host.projectsService.setHubView(this.host.hubView);
         } else if (!this.host.visible) {
             const storedHubView = this.host.projectsService.getHubView();
             if (this.host.homeMode && !hasMobileProjectsLeftLanding()) {
-                this.host.hubView = storedHubView === 'home' ? 'tasks' : this.host.redirectHubView(storedHubView);
+                this.host.hubView = storedHubView === 'home' ? 'tasks' : this.host.hubQueryUi.redirectHubView(storedHubView);
                 this.host.projectsService.setHubView(this.host.hubView);
             } else {
-                this.host.hubView = this.host.redirectHubView(storedHubView);
+                this.host.hubView = this.host.hubQueryUi.redirectHubView(storedHubView);
             }
         }
         this.host.render();
@@ -196,9 +196,9 @@ export class MobileProjectsPanelLifecycleUi {
         if (!this.host.visible) {
             return;
         }
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         dismissQaapAccountMenu();
-        this.host.closeWorkHubSearchQuickPick();
+        this.host.workHubSearchUi.closeWorkHubSearchQuickPick();
         this.host.openRepoDialog?.hide();
         document.removeEventListener('pointerdown', this.host.onDocumentPointerDown, true);
         this.host.activeTasksDispose.dispose();
@@ -236,7 +236,7 @@ export class MobileProjectsPanelLifecycleUi {
                 if (this.host.visible && this.host.transcriptSheet && this.host.transcriptChatHost && this.host.transcriptLastConv) {
                     this.host.ensureOverlayUi().team.renderTeamSection(this.host.transcriptChatHost, this.host.transcriptLastConv);
                 }
-                if (this.host.visible && this.host.isTasksHubView()) {
+                if (this.host.visible && this.host.hubQueryUi.isTasksHubView()) {
                     this.host.renderList();
                 } else if (this.host.visible && !this.host.transcriptSheet) {
                     void this.applyActiveTasksRefresh();
@@ -251,7 +251,7 @@ export class MobileProjectsPanelLifecycleUi {
             const conversationUpdates = new DisposableCollection(
                 this.host.conversations.onDidChange(() => {
                     this.host.markTasksFirstLoadComplete(false);
-                    if (this.host.visible && this.host.isTasksHubView()) {
+                    if (this.host.visible && this.host.hubQueryUi.isTasksHubView()) {
                         if (this.host.shouldSkipFullRenderListOnConversationTick()) {
                             this.host.refreshWorkHubConversationChrome();
                             this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
@@ -352,7 +352,7 @@ export class MobileProjectsPanelLifecycleUi {
     }
 
     scheduleChatHubListRefreshAfterSummaries(): void {
-        void this.host.refreshChatServiceSessionSummaries().then(() => {
+        void this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries().then(() => {
             if (this.host.hubView === 'chat' && this.host.visible) {
                 this.host.renderList();
                 this.host.renderSubtitle();
@@ -367,11 +367,11 @@ export class MobileProjectsPanelLifecycleUi {
         try {
             this.host.projects = await this.host.projectsService.loadProjects();
             await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-            await this.host.refreshChatServiceSessionSummaries();
+            await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
             this.host.renderSubtitle();
             this.host.renderFilters();
             this.host.renderList();
-            this.host.renderStickyComposer();
+            this.host.stickyComposerRenderUi.renderStickyComposer();
         } catch {
             /* a transient load failure must not break the live view */
         }

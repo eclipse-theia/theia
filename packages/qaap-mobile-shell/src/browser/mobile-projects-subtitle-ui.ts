@@ -45,12 +45,10 @@ export interface MobileProjectsSubtitleHost {
     transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
     shouldUseAgentsHubLanding(): boolean;
     resolveHomePinnedProject(): MobileProjectEntry | undefined;
-    localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     countTasksAttention(): { needsYou: number; running: number };
-    vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
     isProjectDetailView(): boolean;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
-    isProjectRunning(project: MobileProjectEntry): boolean;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
 }
 
 /** Hub subtitle line and desktop meta chips under the panel title. */
@@ -150,7 +148,7 @@ export class MobileProjectsSubtitleUi {
             }
             if (this.host.tasksHubSurface === 'chat') {
                 const chatCount = this.host.projects.reduce(
-                    (sum, project) => sum + this.host.localChatsForProject(project).length,
+                    (sum, project) => sum + this.host.conversationIndexUi.localChatsForProject(project).length,
                     0,
                 );
                 this.host.subtitleEl.textContent = chatCount > 0
@@ -167,7 +165,7 @@ export class MobileProjectsSubtitleUi {
             }
             const attention = this.host.countTasksAttention();
             const streamingCount = this.host.projects.reduce(
-                (sum, project) => sum + this.host.vpsTasksForProject(project).filter(c => c.status === 'streaming').length,
+                (sum, project) => sum + this.host.conversationIndexUi.vpsTasksForProject(project).filter(c => c.status === 'streaming').length,
                 0,
             );
             if (attention.needsYou > 0) {
@@ -226,7 +224,7 @@ export class MobileProjectsSubtitleUi {
         if (this.host.homeMode && this.host.hubView === 'chat') {
             this.host.subtitleEl.className = 'theia-mobile-projects-subtitle';
             const chatCount = this.host.projects.reduce(
-                (sum, project) => sum + this.host.localChatsForProject(project).length,
+                (sum, project) => sum + this.host.conversationIndexUi.localChatsForProject(project).length,
                 0,
             );
             this.host.subtitleEl.textContent = chatCount > 0
@@ -242,7 +240,7 @@ export class MobileProjectsSubtitleUi {
             return;
         }
         if (this.host.isProjectDetailView()) {
-            const project = this.host.resolveSelectedProject();
+            const project = this.host.projectNavigationUi.resolveSelectedProject();
             this.host.subtitleEl.className = 'theia-mobile-projects-subtitle';
             this.host.subtitleEl.hidden = false;
             this.host.subtitleEl.textContent = project ? this.buildProjectBranchSubtitle(project) : '';
@@ -260,7 +258,7 @@ export class MobileProjectsSubtitleUi {
         this.host.subtitleEl.className = 'theia-mobile-projects-meta';
         const repoCount = this.host.projects.length;
         const openCount = this.host.projects.filter(p => p.isCurrent).length;
-        const runningCount = this.host.projects.filter(p => this.host.isProjectRunning(p)).length;
+        const runningCount = this.host.projects.filter(p => this.host.conversationIndexUi.isProjectRunning(p)).length;
 
         this.host.subtitleEl.replaceChildren();
         const reposChip = document.createElement('span');

@@ -4,7 +4,6 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { ChatAgent } from '@theia/ai-chat';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import {
     buildStickyComposerMentionOptions,
@@ -35,8 +34,8 @@ pickContextVariable?: (anchor: HTMLElement, handlers: MobileComposerAttachHandle
 formatContextChip?: (item: AIVariableResolutionRequest) => StickyComposerContextChipView | undefined;
             getComposerVariables?: () => readonly import('@theia/ai-core').AIVariable[];
 transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
-renderStickyComposer(): void;
-getOfferableCoderAgent(): ChatAgent | undefined;
+stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
+stickyComposerAgentsUi: import('./mobile-projects-sticky-composer-agents-ui').MobileProjectsStickyComposerAgentsUi;
 }
 
 export class MobileProjectsStickyComposerContextUi {
@@ -56,13 +55,13 @@ export class MobileProjectsStickyComposerContextUi {
         for (const request of variables) {
             this.host.stickyComposerContext.push(createComposerContextEntry(request));
         }
-        this.host.renderStickyComposer();
+        this.host.stickyComposerRenderUi.renderStickyComposer();
     }
     createStickyComposerAttachHandlers(): MobileComposerAttachHandlers {
         return {
             appendOptimistic: entry => {
                 this.host.stickyComposerContext.push(entry);
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             },
             finalizeOptimistic: (id, request) => {
                 const entry = this.host.stickyComposerContext.find(item => item.id === id);
@@ -74,7 +73,7 @@ export class MobileProjectsStickyComposerContextUi {
                 entry.pending = false;
                 entry.localPreviewSrc = undefined;
                 entry.displayName = undefined;
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             },
             removeOptimistic: id => {
                 const index = this.host.stickyComposerContext.findIndex(item => item.id === id);
@@ -83,7 +82,7 @@ export class MobileProjectsStickyComposerContextUi {
                 }
                 revokeComposerContextPreview(this.host.stickyComposerContext[index]);
                 this.host.stickyComposerContext.splice(index, 1);
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
                 MobileSnackbar.show(
                     nls.localize(
                         'qaap/mobileProjects/stickyComposerAttachDeviceFailed',
@@ -155,7 +154,7 @@ export class MobileProjectsStickyComposerContextUi {
         backendAgents: readonly QaapAgentTaskAgentOption[],
         coderOnly = false,
     ): StickyComposerTokenOption[] {
-        const coder = this.host.getOfferableCoderAgent();
+        const coder = this.host.stickyComposerAgentsUi.getOfferableCoderAgent();
         return buildStickyComposerMentionOptions(
             coderOnly ? [] : backendAgents,
             coder ? { name: coder.name } : undefined,

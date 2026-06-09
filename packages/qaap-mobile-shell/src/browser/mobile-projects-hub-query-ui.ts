@@ -15,8 +15,7 @@ export interface MobileProjectsHubQueryHost {
     query: string;
     homeMode: boolean;
 
-    isProjectRunning(project: MobileProjectEntry): boolean;
-    conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
     closeRoutineEditor(): void;
     selectHubLandingView(view: MobileProjectsHubView): void;
 }
@@ -29,7 +28,7 @@ export class MobileProjectsHubQueryUi {
             return projects.filter(p => p.pinned);
         }
         if (filter === 'active') {
-            return projects.filter(p => p.isCurrent || this.host.isProjectRunning(p));
+            return projects.filter(p => p.isCurrent || this.host.conversationIndexUi.isProjectRunning(p));
         }
         return projects;
     }
@@ -48,7 +47,7 @@ export class MobileProjectsHubQueryUi {
             || project.github?.fullName.toLowerCase().includes(query)) {
             return true;
         }
-        return this.host.conversationsForProject(project).some(c => this.conversationMatchesQuery(c, query));
+        return this.host.conversationIndexUi.conversationsForProject(project).some(c => this.conversationMatchesQuery(c, query));
     }
 
     conversationMatchesQuery(

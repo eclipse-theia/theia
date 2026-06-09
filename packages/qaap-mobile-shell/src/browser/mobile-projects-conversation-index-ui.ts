@@ -23,8 +23,7 @@ export interface MobileProjectsConversationIndexHost {
     activeTasks: MobileProjectsActiveTasks | undefined;
     chatServiceSessionSummariesByProjectId: Map<string, QaapAgentConversationSummaryDTO[]>;
 
-    isChatSessionWaitingForInput(session: import('@theia/ai-chat').ChatSession): boolean;
-    isChatSessionWorking(session: import('@theia/ai-chat').ChatSession): boolean;
+    chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
 }
 
 /** Conversation list queries, ordering, flags, and legacy task-view projection. */
@@ -66,7 +65,7 @@ export class MobileProjectsConversationIndexUi {
     countNeedsInputTasks(project: MobileProjectEntry): number {
         return this.vpsTasksForProject(project).filter(c => {
             const session = c.sessionId ? this.host.chatService?.getSession(c.sessionId) : undefined;
-            return !!session && this.host.isChatSessionWaitingForInput(session);
+            return !!session && this.host.chatServiceSummariesUi.isChatSessionWaitingForInput(session);
         }).length;
     }
 
@@ -247,10 +246,10 @@ export class MobileProjectsConversationIndexUi {
 
     conversationTaskState(conversation: QaapAgentConversationSummaryDTO): string {
         const session = conversation.sessionId ? this.host.chatService?.getSession(conversation.sessionId) : undefined;
-        if (session && this.host.isChatSessionWaitingForInput(session)) {
+        if (session && this.host.chatServiceSummariesUi.isChatSessionWaitingForInput(session)) {
             return 'needs-input';
         }
-        if (conversation.status === 'streaming' || (session && this.host.isChatSessionWorking(session))) {
+        if (conversation.status === 'streaming' || (session && this.host.chatServiceSummariesUi.isChatSessionWorking(session))) {
             return 'running';
         }
         if (conversation.status === 'failed') {

@@ -40,7 +40,7 @@ export interface MobileProjectsHubLandingHost {
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     isProjectDiffView(): boolean;
     show(options?: { preferredHubView?: MobileProjectsHubView }): Promise<void>;
-    redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     refreshHomeHubData(force?: boolean): void;
     scheduleChatHubListRefreshAfterSummaries(): void;
     refreshTasksHubApprovals(forceRender?: boolean): void;
@@ -71,7 +71,7 @@ export class MobileProjectsHubLandingUi {
         if (view === 'tasks') {
             this.host.agentsHubLegacyInbox = false;
         }
-        view = this.host.redirectHubView(view);
+        view = this.host.hubQueryUi.redirectHubView(view);
         const force = options?.force === true;
         if (!force && this.host.hubView === view && view === 'home') {
             this.host.refreshHomeHubData(true);

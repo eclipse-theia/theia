@@ -38,6 +38,8 @@ export interface MobileProjectsProjectDetailHost {
         activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
     ): HTMLElement;
     resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Expanded repo row: task block + execution surface hosts. */
@@ -62,8 +64,8 @@ export class MobileProjectsProjectDetailUi {
 
         const chatHost = document.createElement('div');
         chatHost.className = 'theia-mobile-project-detail-panel theia-mobile-project-detail-chat';
-        const activeInfo = this.host.activeInfoForProject(project);
-        chatHost.append(this.host.createTaskBlock(project, activeInfo));
+        const activeInfo = this.host.conversationIndexUi.activeInfoForProject(project);
+        chatHost.append(this.host.projectRowsUi.createTaskBlock(project, activeInfo));
         chatHost.hidden = activeTab !== 'messages';
 
         const planHost = document.createElement('div');

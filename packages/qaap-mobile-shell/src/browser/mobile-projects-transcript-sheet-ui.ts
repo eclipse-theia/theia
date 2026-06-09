@@ -223,6 +223,7 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.transcriptStickyComposerUi.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
         this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab('messages');
         this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, 'messages');
+        await this.host.transcriptLiveUi.refreshOpenTranscriptConversation({ forcePoll: true });
     }
 
     bindTranscriptSheetDismiss(back: HTMLButtonElement, backdrop: HTMLElement): void {

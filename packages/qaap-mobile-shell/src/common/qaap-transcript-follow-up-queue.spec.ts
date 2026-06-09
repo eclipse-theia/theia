@@ -25,4 +25,17 @@ describe('qaap-transcript-follow-up-queue', () => {
         }
         expect(queue.enqueue('c1', { draft: 'overflow' })).to.equal(false);
     });
+
+    it('removeAt, moveUp, and replaceAt mutate queue order', () => {
+        const queue = new TranscriptFollowUpQueue();
+        queue.enqueue('c1', { draft: 'first' });
+        queue.enqueue('c1', { draft: 'second' });
+        queue.enqueue('c1', { draft: 'third' });
+        queue.removeAt('c1', 1);
+        expect(queue.peek('c1').map(entry => entry.draft)).to.deep.equal(['first', 'third']);
+        expect(queue.moveUp('c1', 1)).to.equal(true);
+        expect(queue.peek('c1').map(entry => entry.draft)).to.deep.equal(['third', 'first']);
+        expect(queue.replaceAt('c1', 1, { draft: 'updated' })).to.equal(true);
+        expect(queue.peek('c1').map(entry => entry.draft)).to.deep.equal(['third', 'updated']);
+    });
 });

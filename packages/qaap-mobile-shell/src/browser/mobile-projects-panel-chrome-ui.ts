@@ -40,10 +40,10 @@ export interface MobileProjectsPanelChromeHost {
 
     handleHeaderBackClick(): void;
     openWorkHubSessionsSidebar(): void;
-    openWorkHubSearchQuickPick(): void;
+    workHubSearchUi: import('./mobile-projects-work-hub-search-ui').MobileProjectsWorkHubSearchUi;
     onNewClick(): Promise<void>;
     onTitleTap(): void;
-    updateStickyComposerFabLift(): void;
+    composerHeaderUi: import('./mobile-projects-composer-header-ui').MobileProjectsComposerHeaderUi;
     updateAccountAvatar(): void;
     hide(): void;
     refreshInboxPullRequests(projects?: import('./mobile-projects-types').MobileProjectEntry[], force?: boolean): Promise<void>;
@@ -133,7 +133,7 @@ export class MobileProjectsPanelChromeUi {
         this.host.searchToggleBtn.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
-            this.host.openWorkHubSearchQuickPick();
+            this.host.workHubSearchUi.openWorkHubSearchQuickPick();
         });
 
         actions.append(this.host.headerSurfacePickerHost, this.host.searchToggleBtn, this.host.accountBtn);
@@ -182,7 +182,7 @@ export class MobileProjectsPanelChromeUi {
         if (typeof ResizeObserver !== 'undefined') {
             this.host.stickyComposerFabLiftObserver = new ResizeObserver(() => {
                 if (!this.host.stickyComposerHost.hidden) {
-                    this.host.updateStickyComposerFabLift();
+                    this.host.composerHeaderUi.updateStickyComposerFabLift();
                 }
             });
             this.host.stickyComposerFabLiftObserver.observe(this.host.stickyComposerHost);

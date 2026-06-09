@@ -42,8 +42,8 @@ export interface MobileProjectsOverlayFactoryHost {
         parentIds?: ReadonlySet<string>,
         options?: { skipMenu?: boolean },
     ): HTMLElement;
-    summaryToTaskView(conversation: QaapAgentConversationSummaryDTO): MobileProjectTaskView;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
     showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void>;
     onTeamMemberClick(member: WorkHubTeamMember): void;
     selectHubLandingView(view: import('./mobile-projects-types').MobileProjectsHubView): void;
@@ -57,6 +57,7 @@ export interface MobileProjectsOverlayFactoryHost {
     onHomeOpenRecent(item: import('../common/qaap-work-hub-home').WorkHubHomeRecentItem): Promise<void>;
     onHomeOpenAttention(item: import('../common/qaap-work-hub-home').WorkHubHomeAttentionItem): void;
     onHomeQuickAction(action: import('./mobile-projects-home-ui').WorkHubHomeQuickActionId): Promise<void>;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Lazily constructs parallel/team/home overlay UI bundles wired to the panel host. */
@@ -77,14 +78,14 @@ export class MobileProjectsOverlayFactoryUi {
             },
             onOpenSessionsSidebar: () => this.host.openWorkHubSessionsSidebar(),
             buildVariantTaskRow: (project, summary, activeInfo, parentIds) => {
-                const task = this.host.summaryToTaskView(summary);
-                return this.host.createTaskItem(project, task, activeInfo, summary, parentIds);
+                const task = this.host.conversationIndexUi.summaryToTaskView(summary);
+                return this.host.projectRowsUi.createTaskItem(project, task, activeInfo, summary, parentIds);
             },
         });
         const team = new MobileProjectsTeamUi({
             getChildTasks: parentId => this.host.activeTasks?.getChildTasksForParent(parentId) ?? [],
             onSubtaskClick: taskId => {
-                const project = this.host.transcriptComposerProject ?? this.host.resolveSelectedProject();
+                const project = this.host.transcriptComposerProject ?? this.host.projectNavigationUi.resolveSelectedProject();
                 if (project) {
                     void this.host.showTaskLog(project, taskId);
                 }

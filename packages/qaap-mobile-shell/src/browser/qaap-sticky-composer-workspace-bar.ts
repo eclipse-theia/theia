@@ -14,7 +14,7 @@ export function createStickyComposerWorkspacePill(options: {
     readonly iconClass: string;
     readonly label: string;
     readonly ariaLabel: string;
-    readonly onClick: () => void;
+    readonly onClick: (anchor: HTMLButtonElement) => void;
     readonly mono?: boolean;
     readonly branch?: boolean;
 }): HTMLButtonElement {
@@ -23,8 +23,8 @@ export function createStickyComposerWorkspacePill(options: {
 
 export function renderStickyComposerWorkspaceBar(options: {
     readonly view: StickyComposerWorkspaceBarView;
-    readonly onOpenProject: () => void;
-    readonly onOpenBranch: () => void;
+    readonly onOpenProject: (anchor: HTMLButtonElement) => void;
+    readonly onOpenBranch: (anchor: HTMLButtonElement) => void;
     readonly includeProject?: boolean;
     readonly includeBranch?: boolean;
 }): HTMLElement {
@@ -58,7 +58,7 @@ function createWorkspacePill(options: {
     readonly iconClass: string;
     readonly label: string;
     readonly ariaLabel: string;
-    readonly onClick: () => void;
+    readonly onClick: (anchor: HTMLButtonElement) => void;
     readonly mono?: boolean;
     readonly branch?: boolean;
 }): HTMLButtonElement {
@@ -90,7 +90,7 @@ function createWorkspacePill(options: {
     btn.append(icon, label, chevron);
     btn.addEventListener('click', ev => {
         ev.stopPropagation();
-        options.onClick();
+        options.onClick(btn);
     });
     return btn;
 }

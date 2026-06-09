@@ -29,7 +29,7 @@ export interface MobileProjectsInboxPrHost {
     inboxPullRequestsAbort: AbortController | undefined;
     inboxStream: MobileWorkHubInboxStream | undefined;
 
-    projectsForCurrentHubList(): MobileProjectEntry[];
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     renderList(): void;
 }
 
@@ -74,7 +74,7 @@ export class MobileProjectsInboxPrUi {
     }
 
     async refreshInboxPullRequests(
-        projects: MobileProjectEntry[] = this.host.projectsForCurrentHubList(),
+        projects: MobileProjectEntry[] = this.host.hubQueryUi.projectsForCurrentHubList(),
         force = false,
     ): Promise<void> {
         if (this.host.inboxPullRequestsLoading && !force) {

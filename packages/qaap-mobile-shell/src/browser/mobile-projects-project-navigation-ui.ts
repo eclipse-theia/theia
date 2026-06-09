@@ -48,24 +48,25 @@ export interface MobileProjectsProjectNavigationHost {
     };
 
     closeCardMenu(): void;
-    closeStickyComposerSheets(): void;
+    stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
     executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
-    refreshChatServiceSessionSummaries(): Promise<void>;
+    chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
     render(): void;
     syncLandingHubListChrome(): void;
     renderList(): void;
-    projectsForCurrentHubList(): MobileProjectEntry[];
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     disposeTranscriptTerminalSlides(workspaceKey?: import('./qaap-transcript-workspace-surfaces-cache').TranscriptWorkspaceSurfaceKey): void;
     refreshProjects(): Promise<void>;
     hide(): void;
     dismissPanelIfSheet(): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 export class MobileProjectsProjectNavigationUi {
     constructor(protected readonly host: MobileProjectsProjectNavigationHost) { }
 
     async openProjectDetail(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         if (this.host.hubView !== 'repos') {
             this.host.hubView = 'repos';
             this.host.projectsService.setHubView('repos');
@@ -75,24 +76,24 @@ export class MobileProjectsProjectNavigationUi {
         }
         this.host.expandedId = project.id;
         this.host.soloExpanded = true;
-        this.host.closeStickyComposerSheets();
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         disposeComposerContextEntries(this.host.stickyComposerContext);
         this.host.stickyComposerContext = [];
         this.host.stickyComposerPinnedAgentId = undefined;
         this.host.stickyComposerModeId = undefined;
-        await this.host.refreshChatServiceSessionSummaries();
+        await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
         this.host.render();
         this.host.syncLandingHubListChrome();
         this.host.delegate.onProjectsChanged?.();
     }
 
     async toggleRowExpanded(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const wasExpanded = this.host.expandedId === project.id;
         this.host.expandedId = wasExpanded ? undefined : project.id;
         this.host.suppressCurrentAutoExpand = wasExpanded && project.isCurrent;
         this.host.soloExpanded = this.host.expandedId !== undefined;
-        this.host.closeStickyComposerSheets();
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         disposeComposerContextEntries(this.host.stickyComposerContext);
         this.host.stickyComposerContext = [];
         this.host.stickyComposerPinnedAgentId = undefined;
@@ -100,7 +101,7 @@ export class MobileProjectsProjectNavigationUi {
         if (wasExpanded) {
             this.host.stickyComposerDraft = '';
         }
-        await this.host.refreshChatServiceSessionSummaries();
+        await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
         this.host.renderList();
     }
 
@@ -114,7 +115,7 @@ export class MobileProjectsProjectNavigationUi {
         if (wasCurrent) {
             this.host.suppressCurrentAutoExpand = true;
         }
-        this.host.closeStickyComposerSheets();
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         disposeComposerContextEntries(this.host.stickyComposerContext);
         this.host.stickyComposerContext = [];
         this.host.stickyComposerPinnedAgentId = undefined;
@@ -136,7 +137,7 @@ export class MobileProjectsProjectNavigationUi {
     }
 
     resolveSelectedProject(
-        projects: MobileProjectEntry[] = this.host.projectsForCurrentHubList(),
+        projects: MobileProjectEntry[] = this.host.hubQueryUi.projectsForCurrentHubList(),
     ): MobileProjectEntry | undefined {
         if (this.host.expandedId === undefined) {
             return undefined;

@@ -35,15 +35,16 @@ quickInputService?: import('@theia/core/lib/browser').QuickInputService;
 delegate: {
     onProjectOpenInIde?(project: MobileProjectEntry): void | Promise<void>;
     onShowRoutinesHub?(): void | Promise<void>;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 };
 
+conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
+cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
+projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 compareChatInboxProjectOrder(a: MobileProjectEntry, b: MobileProjectEntry): number;
-conversationsForProject(project: MobileProjectEntry): import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO[];
-conversationMatchesQuery(conversation: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO, query: string): boolean;
-compareConversationOrder(a: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO, b: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): number;
-resolveConversationFlags(summary: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): { priority: boolean; paused: boolean };
-activeInfoForProject(project: MobileProjectEntry): ReturnType<import('./mobile-projects-active-tasks').MobileProjectsActiveTasks['getForCwd']>;
-summaryToTaskView(conversation: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): import('./mobile-projects-active-tasks').MobileProjectTaskView;
 createTaskItem(
     project: MobileProjectEntry,
     task: import('./mobile-projects-active-tasks').MobileProjectTaskView,
@@ -52,12 +53,11 @@ createTaskItem(
     parentIds: ReadonlySet<string>,
     options?: { onActivate?: () => void; compact?: boolean },
 ): HTMLElement;
-countRunningTasks(project: MobileProjectEntry): number;
 buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement;
 toggleCardMenu(row: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void;
-closeCardMenu(): void;
+buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement;
+toggleCardMenu(row: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void;
 resolveHomePinnedProject(): MobileProjectEntry | undefined;
-refreshChatServiceSessionSummaries(): Promise<void>;
 shouldUseAgentsHubLanding(): boolean;
 isProjectDetailView(): boolean;
 transcriptSheet: HTMLElement | undefined;
@@ -68,7 +68,7 @@ executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').Mo
 closeAgentsHubSession(): void;
 renderHeader(): void;
 renderSubtitle(): void;
-renderStickyComposer(): void;
+stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
 closeCurrentWorkspace(): Promise<void>;
 openConversationSummary(project: MobileProjectEntry, summary: import('../common/qaap-agent-conversation-client').QaapAgentConversationSummaryDTO): Promise<void>;
 runCatalogAction(action: import('../common/mobile-work-hub-catalog').WorkHubCatalogAction): Promise<void>;
@@ -106,7 +106,7 @@ export class MobileProjectsSessionsSidebarUi {
             /* keep in-memory list */
         }
         await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-        await this.host.refreshChatServiceSessionSummaries();
+        await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
     }
     isWorkHubSessionsSidebarVisible(): boolean {
         return this.host.sessionsSidebar?.isVisible() === true;
@@ -117,7 +117,7 @@ export class MobileProjectsSessionsSidebarUi {
                 renderSessionList: host => this.renderWorkHubSessionsSidebarList(host),
                 onNewChat: () => { void this.onWorkHubSessionsSidebarNewChat(); },
                 onClose: () => {
-                    this.host.closeCardMenu();
+                    this.host.cardMenuUi.closeCardMenu();
                 },
                 storageScope: () => this.host.projectsService.getCurrentWorkspaceCwd(),
                 onAccountMenu: anchor => { this.onSessionsSidebarAccountClick(anchor); },
@@ -164,11 +164,11 @@ export class MobileProjectsSessionsSidebarUi {
         list.className = 'theia-mobile-work-hub-sessions-sidebar-projects-list';
         let visibleCount = 0;
         for (const project of projects) {
-            let conversations = [...this.host.conversationsForProject(project)]
+            let conversations = [...this.host.conversationIndexUi.conversationsForProject(project)]
                 .filter(summary => !this.isSessionsSidebarPinnedConversation(summary))
-                .sort((a, b) => this.host.compareConversationOrder(a, b));
+                .sort((a, b) => this.host.conversationIndexUi.compareConversationOrder(a, b));
             if (query) {
-                conversations = conversations.filter(c => this.host.conversationMatchesQuery(c, query));
+                conversations = conversations.filter(c => this.host.hubQueryUi.conversationMatchesQuery(c, query));
                 if (conversations.length === 0) {
                     continue;
                 }
@@ -205,7 +205,7 @@ export class MobileProjectsSessionsSidebarUi {
         });
     }
     isSessionsSidebarPinnedConversation(summary: QaapAgentConversationSummaryDTO): boolean {
-        const flags = this.host.resolveConversationFlags(summary);
+        const flags = this.host.conversationIndexUi.resolveConversationFlags(summary);
         return flags.priority && !flags.paused;
     }
     collectSessionsSidebarPinnedGroups(
@@ -214,11 +214,11 @@ export class MobileProjectsSessionsSidebarUi {
     ): Array<{ project: MobileProjectEntry; conversations: QaapAgentConversationSummaryDTO[] }> {
         const groups: Array<{ project: MobileProjectEntry; conversations: QaapAgentConversationSummaryDTO[] }> = [];
         for (const project of projects) {
-            let conversations = this.host.conversationsForProject(project)
+            let conversations = this.host.conversationIndexUi.conversationsForProject(project)
                 .filter(summary => this.isSessionsSidebarPinnedConversation(summary))
-                .sort((a, b) => this.host.compareConversationOrder(a, b));
+                .sort((a, b) => this.host.conversationIndexUi.compareConversationOrder(a, b));
             if (query) {
-                conversations = conversations.filter(c => this.host.conversationMatchesQuery(c, query));
+                conversations = conversations.filter(c => this.host.hubQueryUi.conversationMatchesQuery(c, query));
             }
             if (conversations.length > 0) {
                 groups.push({ project, conversations });
@@ -296,7 +296,7 @@ export class MobileProjectsSessionsSidebarUi {
         if (visible.length === 0) {
             return;
         }
-        const activeInfo = this.host.activeInfoForProject(project);
+        const activeInfo = this.host.conversationIndexUi.activeInfoForProject(project);
         const parentIds = new Set<string>();
         for (const summary of conversations) {
             if (summary.forkedFromId) {
@@ -304,8 +304,8 @@ export class MobileProjectsSessionsSidebarUi {
             }
         }
         for (const summary of visible) {
-            const task = this.host.summaryToTaskView(summary);
-            listHost.append(this.host.createTaskItem(project, task, activeInfo, summary, parentIds, { onActivate, compact: true }));
+            const task = this.host.conversationIndexUi.summaryToTaskView(summary);
+            listHost.append(this.host.projectRowsUi.createTaskItem(project, task, activeInfo, summary, parentIds, { onActivate, compact: true }));
         }
         if (bypassLimit) {
             return;
@@ -390,7 +390,7 @@ export class MobileProjectsSessionsSidebarUi {
         }
         this.host.sessionsSidebarAccordionDefaultsApplied = true;
         for (const project of projects) {
-            if (project.isCurrent || this.host.countRunningTasks(project) > 0) {
+            if (project.isCurrent || this.host.conversationIndexUi.countRunningTasks(project) > 0) {
                 this.host.sessionsSidebarExpandedProjectIds.add(project.id);
             }
         }
@@ -462,7 +462,7 @@ export class MobileProjectsSessionsSidebarUi {
             actions.append(this.createSessionsSidebarIdeOpenBadge());
         }
         actions.append(this.createSessionsSidebarIdeOpenControl(project));
-        const menu = this.host.buildProjectOptionsMenu(project);
+        const menu = this.host.cardMenuUi.buildProjectOptionsMenu(project);
         const menuBtn = document.createElement('button');
         menuBtn.type = 'button';
         menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-row-menu';
@@ -475,7 +475,7 @@ export class MobileProjectsSessionsSidebarUi {
         menuBtn.append(menuIcon);
         menuBtn.addEventListener('click', ev => {
             ev.stopPropagation();
-            this.host.toggleCardMenu(row, menu, menuBtn);
+            this.host.cardMenuUi.toggleCardMenu(row, menu, menuBtn);
         });
         row.append(head, actions, menuBtn, menu);
         return row;
@@ -540,7 +540,7 @@ export class MobileProjectsSessionsSidebarUi {
                 this.host.renderHeader();
                 this.host.renderSubtitle();
             }
-            this.host.renderStickyComposer();
+            this.host.stickyComposerRenderUi.renderStickyComposer();
             return;
         }
         const cwd = this.host.projectsService.getProjectCwd(project);
@@ -588,7 +588,7 @@ export class MobileProjectsSessionsSidebarUi {
         if (!project) {
             return;
         }
-        const conversations = [...this.host.conversationsForProject(project)]
+        const conversations = [...this.host.conversationIndexUi.conversationsForProject(project)]
             .sort((a, b) => b.updatedAt - a.updatedAt);
         type SessionPickItem = QuickPickItem & { summary: QaapAgentConversationSummaryDTO };
         const quickPick = this.host.quickInputService.createQuickPick<SessionPickItem>();

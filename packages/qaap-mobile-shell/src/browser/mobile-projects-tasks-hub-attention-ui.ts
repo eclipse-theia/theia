@@ -25,6 +25,7 @@ export interface MobileProjectsTasksHubAttentionHost {
     renderList(): void;
     updateTasksAttentionChrome(): void;
     renderSubtitle(): void;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi
 }
 
 export class MobileProjectsTasksHubAttentionUi {
@@ -43,13 +44,13 @@ export class MobileProjectsTasksHubAttentionUi {
         const generation = ++this.host.agentApprovalsFetchGeneration;
         void fetchAgentApprovals().then(approvals => {
             if (generation !== this.host.agentApprovalsFetchGeneration || !this.host.visible
-                || (!this.host.isTasksHubView() && !this.host.isHomeHubView())) {
+                || (!this.host.hubQueryUi.isTasksHubView() && !this.host.hubQueryUi.isHomeHubView())) {
                 return;
             }
             this.host.cachedAgentApprovals = approvals;
             if (forceRender) {
                 this.host.renderList();
-            } else if (this.host.isHomeHubView()) {
+            } else if (this.host.hubQueryUi.isHomeHubView()) {
                 this.host.renderList();
             } else {
                 this.host.updateTasksAttentionChrome();
@@ -57,13 +58,13 @@ export class MobileProjectsTasksHubAttentionUi {
             }
         }).catch(() => {
             if (generation !== this.host.agentApprovalsFetchGeneration || !this.host.visible
-                || (!this.host.isTasksHubView() && !this.host.isHomeHubView())) {
+                || (!this.host.hubQueryUi.isTasksHubView() && !this.host.hubQueryUi.isHomeHubView())) {
                 return;
             }
             this.host.cachedAgentApprovals = [];
             if (forceRender) {
                 this.host.renderList();
-            } else if (this.host.isHomeHubView()) {
+            } else if (this.host.hubQueryUi.isHomeHubView()) {
                 this.host.renderList();
             } else {
                 this.host.updateTasksAttentionChrome();

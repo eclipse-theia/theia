@@ -75,4 +75,12 @@ export const QAAP_AGENTS_HUB_QUICK_ACTIONS: readonly QaapAgentsHubQuickAction[] 
         promptKey: 'qaap/agentsHub/quickAction/explorePrompt',
         promptDefault: 'Explore this codebase and give me a concise overview of the architecture, key modules, and how to run the project.',
     },
+    {
+        id: 'run-app',
+        icon: 'rocket',
+        labelKey: 'qaap/agentsHub/quickAction/runApp',
+        labelDefault: 'Run app',
+        promptKey: 'qaap/agentsHub/quickAction/runAppPrompt',
+        promptDefault: 'Figure out how to build and run this project locally. Start the dev server, confirm it boots cleanly, and report the URL plus any setup steps I should know.',
+    },
 ];

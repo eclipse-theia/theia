@@ -44,7 +44,7 @@ export interface MobileProjectsTasksHubHost {
     conversationMatchesQuery(summary: QaapAgentConversationSummaryDTO, query: string): boolean;
     transcriptMessagesUi: import('./mobile-projects-transcript-messages-ui').MobileProjectsTranscriptMessagesUi;
     transcriptStickyComposerUi: import('./mobile-projects-transcript-sticky-composer-ui').MobileProjectsTranscriptStickyComposerUi;
-    renderStickyComposer(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
     activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']>;
     summaryToTaskView(conversation: QaapAgentConversationSummaryDTO): MobileProjectTaskView;
     createTaskItem(
@@ -83,6 +83,9 @@ export interface MobileProjectsTasksHubHost {
             ): boolean;
         };
     };
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Tasks hub inbox rendering and Agents Hub landing recents / quick-action prompts. */
@@ -104,11 +107,11 @@ export class MobileProjectsTasksHubUi {
         const scope = scopeProject ? [scopeProject] : projects;
         for (const project of scope) {
             const conversations = [
-                ...this.host.localChatsForProject(project),
-                ...this.host.vpsTasksForProject(project),
+                ...this.host.conversationIndexUi.localChatsForProject(project),
+                ...this.host.conversationIndexUi.vpsTasksForProject(project),
             ];
             for (const summary of conversations) {
-                if (query && !this.host.conversationMatchesQuery(summary, query)) {
+                if (query && !this.host.hubQueryUi.conversationMatchesQuery(summary, query)) {
                     continue;
                 }
                 entries.push({ project, summary, updatedAt: summary.updatedAt });
@@ -166,7 +169,7 @@ export class MobileProjectsTasksHubUi {
             return;
         }
         this.host.stickyComposerDraft = trimmed;
-        this.host.renderStickyComposer();
+        this.host.stickyComposerRenderUi.renderStickyComposer();
         window.requestAnimationFrame(() => {
             const input = this.host.stickyComposerHost?.querySelector<HTMLTextAreaElement>(
                 '.theia-mobile-projects-sticky-composer-input',
@@ -204,10 +207,10 @@ export class MobileProjectsTasksHubUi {
                 parentIds.add(entry.summary.forkedFromId);
             }
         }
-        const activeInfo = this.host.activeInfoForProject(project);
+        const activeInfo = this.host.conversationIndexUi.activeInfoForProject(project);
         for (const { summary } of recents) {
-            const task = this.host.summaryToTaskView(summary);
-            list.append(this.host.createTaskItem(project, task, activeInfo, summary, parentIds));
+            const task = this.host.conversationIndexUi.summaryToTaskView(summary);
+            list.append(this.host.projectRowsUi.createTaskItem(project, task, activeInfo, summary, parentIds));
         }
         block.append(head, list);
         const viewAll = document.createElement('button');
@@ -222,7 +225,7 @@ export class MobileProjectsTasksHubUi {
     }
 
     updateTasksAttentionChrome(): void {
-        if (!this.host.homeMode || !this.host.isTasksHubView() || this.host.tasksHubSurface === 'chat' || this.host.shouldUseAgentsHubLanding()) {
+        if (!this.host.homeMode || !this.host.hubQueryUi.isTasksHubView() || this.host.tasksHubSurface === 'chat' || this.host.shouldUseAgentsHubLanding()) {
             this.host.titleAttentionEl.hidden = true;
             this.host.titleAttentionEl.setAttribute('aria-hidden', 'true');
             return;
@@ -253,7 +256,7 @@ export class MobileProjectsTasksHubUi {
             return;
         }
         this.host.tasksFirstLoadPending = false;
-        if (render && this.host.visible && this.host.isTasksHubView()) {
+        if (render && this.host.visible && this.host.hubQueryUi.isTasksHubView()) {
             this.host.renderList();
         }
     }

@@ -6,7 +6,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { ChatMode, ChatModel, ChatService } from '@theia/ai-chat';
+import { ChatModel, ChatService } from '@theia/ai-chat';
 import {
     THEIA_CODER_AGENT_ID,
     resolveExplicitAgentForSubmit,
@@ -38,6 +38,10 @@ import {
     resolveContextUsageWarningThresholdPercentage,
     resolveVpsContextUsageIndicatorState,
 } from './qaap-chat-context-usage-indicator';
+import {
+    resolveChatModelContextUsageBreakdown,
+    resolveVpsContextUsageBreakdown,
+} from './qaap-chat-context-usage-panel';
 import type { QaapAgentConversationSummaryDTO, QaapAgentConversationDTO } from '../common/qaap-agent-conversation-client';
 import type { QaapAgentApprovalPolicyId } from '../common/qaap-sticky-composer-approval-policy';
 import type { QaapAgentToolApprovalRules } from '../common/qaap-agent-tool-approval-rules';
@@ -47,7 +51,6 @@ import type { MobileProjectEntry, MobileProjectFilter } from './mobile-projects-
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileSnackbar } from './mobile-snackbar';
-import type { StickyComposerColumnOptions } from './mobile-projects-sticky-composer-column-ui';
 import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
 import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 
@@ -55,6 +58,7 @@ export interface MobileProjectsStickyComposerRenderHost {
 root: HTMLElement;
 stickyComposerHost: HTMLElement;
 stickyComposerContextUsageDispose: Disposable;
+stickyComposerContextUsageSheet: HTMLElement | undefined;
 projects: MobileProjectEntry[];
 filter: MobileProjectFilter;
 homeMode: boolean;
@@ -81,34 +85,19 @@ chatAgentService?: ChatAgentService;
 conversations?: MobileProjectsConversations;
             readPreference?: (key: string) => unknown;
 getComposerVariables?: unknown;
-applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[];
-applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
-resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined;
+hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
 resolveAgentsHubShellProject(): MobileProjectEntry | undefined;
 resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO | undefined;
+updateNewFabVisibility(): void;
+submitBackgroundAgentTask(project: MobileProjectEntry, draft: string, options: Record<string, unknown>): Promise<void>;
 executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
 transcriptComposerUi: MobileProjectsTranscriptComposerUi;
 transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
-syncHeaderComposerSurfacePicker(): void;
-updateNewFabVisibility(): void;
-updateStickyComposerFabLift(): void;
-closeStickyComposerSheets(): void;
-refreshStickyComposerAgents(project: MobileProjectEntry): Promise<void>;
-resolveStickyComposerPinnedAgentId(project: MobileProjectEntry): string;
-resolveStickyComposerAgentLabel(project?: MobileProjectEntry): string;
-openStickyComposerModeSheet(project: MobileProjectEntry, modes: readonly ChatMode[]): void;
-openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void;
-openStickyComposerAgentSheet(project: MobileProjectEntry): void;
-onStickyComposerAttach(project: MobileProjectEntry, anchor: HTMLElement): Promise<void>;
-hasPendingComposerAttachments(): boolean;
-notifyPendingComposerAttachments(): void;
-formatComposerContextEntry(entry: StickyComposerContextEntry): import('./qaap-sticky-composer-context-ui').StickyComposerContextChipView;
-resolveComposerMentionOptions(agents: readonly import('../common/qaap-agent-task-client').QaapAgentTaskAgentOption[], coderOnly?: boolean): readonly import('../common/qaap-sticky-composer-mention').StickyComposerTokenOption[];
-resolveComposerVariableOptions(): readonly import('../common/qaap-sticky-composer-mention').StickyComposerTokenOption[];
-mountStickyComposerContextUsage(badge: HTMLElement, resolveTarget: () => unknown): Disposable;
-shouldShowComposerWorkspaceBar(summary?: QaapAgentConversationSummaryDTO): boolean;
-submitBackgroundAgentTask(project: MobileProjectEntry, draft: string, options: Record<string, unknown>): Promise<void>;
-buildStickyComposerColumn(options: StickyComposerColumnOptions): HTMLElement;
+composerHeaderUi: import('./mobile-projects-composer-header-ui').MobileProjectsComposerHeaderUi;
+stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
+stickyComposerAgentsUi: import('./mobile-projects-sticky-composer-agents-ui').MobileProjectsStickyComposerAgentsUi;
+stickyComposerContextUi: import('./mobile-projects-sticky-composer-context-ui').MobileProjectsStickyComposerContextUi;
+stickyComposerColumnUi: import('./mobile-projects-sticky-composer-column-ui').MobileProjectsStickyComposerColumnUi;
 isProjectDetailView(): boolean;
 projectsService: MobileProjectsService;
 transcriptComposerSendRefresh: (() => void) | undefined;
@@ -137,8 +126,8 @@ export class MobileProjectsStickyComposerRenderUi {
 
     renderStickyComposer(): void {
         this.host.stickyComposerContextUsageDispose.dispose();
-        const filtered = this.host.applySearch(this.host.applyFilter(this.host.projects, this.host.filter));
-        const project = this.host.resolveStickyComposerProject(filtered);
+        const filtered = this.host.hubQueryUi.applySearch(this.host.hubQueryUi.applyFilter(this.host.projects, this.host.filter));
+        const project = this.host.composerHeaderUi.resolveStickyComposerProject(filtered);
         if (this.host.agentsHubShellActive) {
             const shellProject = this.host.resolveAgentsHubShellProject();
             const shellSummary = shellProject ? this.host.resolveAgentsHubShellSummary(shellProject) : undefined;
@@ -167,9 +156,9 @@ export class MobileProjectsStickyComposerRenderUi {
                 this.host.transcriptComposerMountKey = undefined;
                 this.host.stickyComposerHost.replaceChildren();
             }
-            this.host.syncHeaderComposerSurfacePicker();
+            this.host.composerHeaderUi.syncHeaderComposerSurfacePicker();
             this.host.updateNewFabVisibility();
-            window.requestAnimationFrame(() => this.host.updateStickyComposerFabLift());
+            window.requestAnimationFrame(() => this.host.composerHeaderUi.updateStickyComposerFabLift());
             return;
         }
         this.host.transcriptComposerMountKey = undefined;
@@ -181,11 +170,11 @@ export class MobileProjectsStickyComposerRenderUi {
         this.host.stickyComposerHost.hidden = !showComposer;
         this.host.root.classList.toggle('theia-mod-sticky-composer', showComposer);
         if (!showSurface || !project) {
-            this.host.closeStickyComposerSheets();
+            this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
             return;
         }
 
-        void this.host.refreshStickyComposerAgents(project);
+        void this.host.stickyComposerAgentsUi.refreshStickyComposerAgents(project);
 
         const cwd = this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id);
         this.host.stickyComposerSurface = 'task';
@@ -193,7 +182,7 @@ export class MobileProjectsStickyComposerRenderUi {
         const canRunTask = !!project && (!!cwd || !!project.github);
         const canRunChat = !!this.host.chatService && !!project;
         const canSubmit = isChatSurface ? canRunChat : canRunTask;
-        const pinnedId = this.host.resolveStickyComposerPinnedAgentId(project);
+        const pinnedId = this.host.stickyComposerAgentsUi.resolveStickyComposerPinnedAgentId(project);
         const modes = resolveStickyComposerModes(pinnedId, this.host.chatAgentService);
         this.host.stickyComposerModeId = reconcileComposerModeId(
             this.host.stickyComposerModeId,
@@ -216,7 +205,7 @@ export class MobileProjectsStickyComposerRenderUi {
             this.host.stickyComposerToolApprovalRules = undefined;
         }
 
-        const column = this.host.buildStickyComposerColumn({
+        const column = this.host.stickyComposerColumnUi.buildStickyComposerColumn({
             project,
             surface: this.host.stickyComposerSurface,
             agentLocked: isChatSurface,
@@ -231,38 +220,41 @@ export class MobileProjectsStickyComposerRenderUi {
                 this.host.stickyComposerContext.splice(index, 1);
                 this.renderStickyComposer();
             },
-            formatContextChip: item => this.host.formatComposerContextEntry(item),
+            formatContextChip: item => this.host.stickyComposerContextUi.formatComposerContextEntry(item),
             filesExpanded: this.host.stickyComposerFilesExpanded,
             onFilesExpandedChange: expanded => { this.host.stickyComposerFilesExpanded = expanded; },
             getDraft: () => this.host.stickyComposerDraft,
             setDraft: value => { this.host.stickyComposerDraft = value; },
-            resolveAgentLabel: () => this.host.resolveStickyComposerAgentLabel(project),
-            resolveAgentId: () => this.host.resolveStickyComposerPinnedAgentId(project),
+            resolveAgentLabel: () => this.host.stickyComposerAgentsUi.resolveStickyComposerAgentLabel(project),
+            resolveAgentId: () => this.host.stickyComposerAgentsUi.resolveStickyComposerPinnedAgentId(project),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.host.stickyComposerModeId),
             onOpenModeSheet: modes.length > 1
-                ? () => { this.host.openStickyComposerModeSheet(project, modes); }
+                ? anchor => { this.host.stickyComposerSheetsUi.openStickyComposerModeSheet(project, modes, anchor); }
                 : undefined,
             approvalPolicyId: showApprovalPolicy ? this.host.stickyComposerApprovalPolicyId : undefined,
             onOpenApprovalPolicySheet: showApprovalPolicy
-                ? () => {
-                    this.host.openStickyComposerApprovalPolicySheet(
+                ? anchor => {
+                    this.host.stickyComposerSheetsUi.openStickyComposerApprovalPolicySheet(
                         project,
-                        this.host.resolveStickyComposerAgentLabel(project),
+                        this.host.stickyComposerAgentsUi.resolveStickyComposerAgentLabel(project),
+                        anchor,
                     );
                 }
                 : undefined,
             canSubmit,
-            onAttach: anchor => { void this.host.onStickyComposerAttach(project, anchor); },
-            onOpenAgentSheet: isChatSurface ? () => { /* Chat is Coder-only */ } : () => { this.host.openStickyComposerAgentSheet(project); },
+            onAttach: anchor => { void this.host.stickyComposerContextUi.onStickyComposerAttach(project, anchor); },
+            onOpenAgentSheet: isChatSurface
+                ? () => { /* Chat is Coder-only */ }
+                : anchor => { this.host.stickyComposerSheetsUi.openStickyComposerAgentSheet(project, anchor); },
             onSubmit: draft => {
-                if (this.host.hasPendingComposerAttachments()) {
-                    this.host.notifyPendingComposerAttachments();
+                if (this.host.stickyComposerContextUi.hasPendingComposerAttachments()) {
+                    this.host.stickyComposerContextUi.notifyPendingComposerAttachments();
                     return;
                 }
                 const resolvedPinnedId = isChatSurface
                     ? THEIA_CODER_AGENT_ID
-                    : this.host.resolveStickyComposerPinnedAgentId(project);
+                    : this.host.stickyComposerAgentsUi.resolveStickyComposerPinnedAgentId(project);
                 const selectedAgentId = isChatSurface
                     ? THEIA_CODER_AGENT_ID
                     : resolveExplicitAgentForSubmit(draft, {
@@ -295,8 +287,8 @@ export class MobileProjectsStickyComposerRenderUi {
                 void done.finally(() => this.renderStickyComposer());
             },
             onSubmitBlocked: () => {
-                if (this.host.hasPendingComposerAttachments()) {
-                    this.host.notifyPendingComposerAttachments();
+                if (this.host.stickyComposerContextUi.hasPendingComposerAttachments()) {
+                    this.host.stickyComposerContextUi.notifyPendingComposerAttachments();
                     return;
                 }
                 if (isChatSurface && !this.host.chatService) {
@@ -314,9 +306,9 @@ export class MobileProjectsStickyComposerRenderUi {
                 );
             },
             afterInputChange: () => { /* sticky draft persisted in setDraft */ },
-            getMentionOptions: () => this.host.resolveComposerMentionOptions(this.host.stickyComposerBackendAgents, isChatSurface),
+            getMentionOptions: () => this.host.stickyComposerContextUi.resolveComposerMentionOptions(this.host.stickyComposerBackendAgents, isChatSurface),
             getVariableOptions: this.host.getComposerVariables
-                ? () => this.host.resolveComposerVariableOptions()
+                ? () => this.host.stickyComposerContextUi.resolveComposerVariableOptions()
                 : undefined,
             inputPlaceholder: isChatSurface
                 ? nls.localize('qaap/mobileProjects/stickyComposerNewChat', 'Message the workspace agent…')
@@ -335,7 +327,23 @@ export class MobileProjectsStickyComposerRenderUi {
                         : undefined,
                 );
             },
-            showWorkspaceBar: this.host.shouldShowComposerWorkspaceBar(),
+            onOpenContextUsageSheet: anchor => {
+                this.host.stickyComposerSheetsUi.openStickyComposerContextUsageSheet(
+                    () => {
+                        if (isChatSurface) {
+                            const chatModel = this.resolveProjectTheiaChatModel(project);
+                            if (chatModel) {
+                                return resolveChatModelContextUsageBreakdown(chatModel);
+                            }
+                        }
+                        return resolveVpsContextUsageBreakdown(undefined);
+                    },
+                    document.body.classList.contains('theia-mobile-mod-workhub-composer-header')
+                        || document.body.classList.contains('theia-mobile-mod-workhub-no-bottom-chrome'),
+                    anchor,
+                );
+            },
+            showWorkspaceBar: this.host.composerHeaderUi.shouldShowComposerWorkspaceBar(),
         });
         const modeHint = describeComposerInteractionMode(this.host.stickyComposerModeId);
         if (modeHint) {
@@ -345,12 +353,12 @@ export class MobileProjectsStickyComposerRenderUi {
             this.host.stickyComposerHost.append(modeBanner);
         }
         this.host.stickyComposerHost.append(column);
-        this.host.syncHeaderComposerSurfacePicker();
+        this.host.composerHeaderUi.syncHeaderComposerSurfacePicker();
         this.host.updateNewFabVisibility();
-        window.requestAnimationFrame(() => this.host.updateStickyComposerFabLift());
+        window.requestAnimationFrame(() => this.host.composerHeaderUi.updateStickyComposerFabLift());
     }
     mountStickyComposerContextUsage(
-        badge: HTMLElement,
+        badge: HTMLButtonElement,
         resolveTarget: () => {
             readonly summary?: QaapAgentConversationSummaryDTO;
             readonly chatModel?: ChatModel;
@@ -360,7 +368,18 @@ export class MobileProjectsStickyComposerRenderUi {
         const enabled = isContextUsageIndicatorEnabled(this.host.readPreference);
         const thresholdPercent = resolveContextUsageWarningThresholdPercentage(this.host.readPreference);
         const theiaThreshold = resolveContextUsageWarningThreshold(this.host.readPreference);
-        return bindContextUsageIndicator(
+        const subscribe = (onRefresh: () => void): Disposable => {
+            const disposables = new DisposableCollection();
+            if (this.host.conversations) {
+                disposables.push(this.host.conversations.onDidChange(onRefresh));
+            }
+            const model = resolveTarget()?.chatModel;
+            if (model) {
+                disposables.push(model.onDidChange(onRefresh));
+            }
+            return disposables;
+        };
+        const indicatorDisposable = bindContextUsageIndicator(
             badge,
             () => {
                 const target = resolveTarget();
@@ -378,18 +397,9 @@ export class MobileProjectsStickyComposerRenderUi {
                     thresholdPercentBasis: thresholdPercent,
                 }, target?.full);
             },
-            onRefresh => {
-                const disposables = new DisposableCollection();
-                if (this.host.conversations) {
-                    disposables.push(this.host.conversations.onDidChange(onRefresh));
-                }
-                const model = resolveTarget()?.chatModel;
-                if (model) {
-                    disposables.push(model.onDidChange(onRefresh));
-                }
-                return disposables;
-            },
+            subscribe,
         );
+        return indicatorDisposable;
     }
 }
 

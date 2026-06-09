@@ -33,28 +33,12 @@ export interface MobileProjectsProjectRowsHost {
     projectsService: MobileProjectsService;
     delegate: { onProjectOpen(project: MobileProjectEntry): void };
 
-    countRunningTasks(project: MobileProjectEntry): number;
-    countNeedsInputTasks(project: MobileProjectEntry): number;
-    countFailedTasks(project: MobileProjectEntry): number;
-    countUnreadTasks(project: MobileProjectEntry): number;
-    countDoneTasks(project: MobileProjectEntry): number;
-    activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']>;
-    buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement;
-    toggleCardMenu(card: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    conversationOpenUi: import('./mobile-projects-conversation-open-ui').MobileProjectsConversationOpenUi;
     openProjectDetail(project: MobileProjectEntry): void | Promise<void>;
     toggleRowExpanded(project: MobileProjectEntry): void | Promise<void>;
-    localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    fallbackTasksFromProject(project: MobileProjectEntry): MobileProjectTaskView[];
-    summaryToTaskView(conversation: QaapAgentConversationSummaryDTO): MobileProjectTaskView;
     renderList(): void;
-    isConversationUnread(summary: QaapAgentConversationSummaryDTO): boolean;
-    resolveConversationLineage(
-        summary: QaapAgentConversationSummaryDTO,
-        parentIds: ReadonlySet<string>,
-    ): 'none' | 'parent' | 'child' | 'both';
-    resolveConversationFlags(summary: QaapAgentConversationSummaryDTO): { priority: boolean; paused: boolean };
-    buildConversationMenu(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): HTMLElement;
     onRetryConversation(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
     openTaskInAgent(project: MobileProjectEntry, task?: MobileProjectTaskView): Promise<void>;
 }
@@ -83,12 +67,12 @@ export class MobileProjectsProjectRowsUi {
                 card.classList.add('theia-mod-expanded');
             }
 
-            const running = this.host.countRunningTasks(project) > 0;
-            const needsInput = this.host.countNeedsInputTasks(project) > 0;
-            const failed = this.host.countFailedTasks(project) > 0;
-            const unreadCount = this.host.countUnreadTasks(project);
-            const doneCount = this.host.countDoneTasks(project);
-            const activeInfo = this.host.activeInfoForProject(project);
+            const running = this.host.conversationIndexUi.countRunningTasks(project) > 0;
+            const needsInput = this.host.conversationIndexUi.countNeedsInputTasks(project) > 0;
+            const failed = this.host.conversationIndexUi.countFailedTasks(project) > 0;
+            const unreadCount = this.host.conversationIndexUi.countUnreadTasks(project);
+            const doneCount = this.host.conversationIndexUi.countDoneTasks(project);
+            const activeInfo = this.host.conversationIndexUi.activeInfoForProject(project);
 
             // Collapsed header (always visible) — clicking toggles the expansion.
             const header = document.createElement('div');
@@ -163,11 +147,11 @@ export class MobileProjectsProjectRowsUi {
                 const homeStatus = this.createHomeRowStatus(project, {
                     unreadCount,
                     running,
-                    runningCount: this.host.countRunningTasks(project),
+                    runningCount: this.host.conversationIndexUi.countRunningTasks(project),
                     needsInput,
                     failed,
-                    failedCount: this.host.countFailedTasks(project),
-                    needsInputCount: this.host.countNeedsInputTasks(project),
+                    failedCount: this.host.conversationIndexUi.countFailedTasks(project),
+                    needsInputCount: this.host.conversationIndexUi.countNeedsInputTasks(project),
                 });
                 if (isExpanded && homeStatus) {
                     homeStatus.classList.add('theia-mobile-projects-row-status-inline');
@@ -207,7 +191,7 @@ export class MobileProjectsProjectRowsUi {
                 sep.textContent = '·';
                 const run = document.createElement('span');
                 run.className = 'theia-mobile-projects-row-meta-running';
-                const runningCount = this.host.countRunningTasks(project);
+                const runningCount = this.host.conversationIndexUi.countRunningTasks(project);
                 run.textContent = runningCount === 1
                     ? nls.localize('qaap/mobileProjects/rowRunning', '1 running')
                     : nls.localize('qaap/mobileProjects/rowRunningMany', '{0} running', String(runningCount));
@@ -238,7 +222,7 @@ export class MobileProjectsProjectRowsUi {
             }
             header.append(main);
 
-            const menu = this.host.buildProjectOptionsMenu(project);
+            const menu = this.host.cardMenuUi.buildProjectOptionsMenu(project);
             const menuBtn = document.createElement('button');
             menuBtn.type = 'button';
             menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-row-menu';
@@ -251,7 +235,7 @@ export class MobileProjectsProjectRowsUi {
             menuBtn.append(menuIcon);
             menuBtn.addEventListener('click', ev => {
                 ev.stopPropagation();
-                this.host.toggleCardMenu(card, menu, menuBtn);
+                this.host.cardMenuUi.toggleCardMenu(card, menu, menuBtn);
             });
             menuBtn.addEventListener('keydown', ev => ev.stopPropagation());
             header.append(menuBtn);
@@ -388,8 +372,8 @@ export class MobileProjectsProjectRowsUi {
             const surface = this.detailComposerSurfaceForProject(project);
             const isChatSurface = surface === 'chat';
             const allConversations = isChatSurface
-                ? this.host.localChatsForProject(project)
-                : this.host.vpsTasksForProject(project);
+                ? this.host.conversationIndexUi.localChatsForProject(project)
+                : this.host.conversationIndexUi.vpsTasksForProject(project);
             const head = document.createElement('div');
             head.className = 'theia-mobile-projects-tasks-head';
             const headLabel = document.createElement('span');
@@ -416,7 +400,7 @@ export class MobileProjectsProjectRowsUi {
                     block.append(empty);
                     return block;
                 }
-                const fallbackTasks = this.host.fallbackTasksFromProject(project);
+                const fallbackTasks = this.host.conversationIndexUi.fallbackTasksFromProject(project);
                 if (fallbackTasks.length === 0) {
                     const empty = document.createElement('div');
                     empty.className = 'theia-mobile-projects-tasks-empty';
@@ -441,7 +425,7 @@ export class MobileProjectsProjectRowsUi {
                 ? allConversations
                 : allConversations.slice(0, limit);
             const hiddenCount = allConversations.length - visibleConversations.length;
-            const tasks = visibleConversations.map(c => this.host.summaryToTaskView(c));
+            const tasks = visibleConversations.map(c => this.host.conversationIndexUi.summaryToTaskView(c));
 
             // Pre-compute the set of conversation ids that have at least one descendant fork, so each
             // row can decide which lineage glyph to render (parent / child / both / standalone).
@@ -587,7 +571,7 @@ export class MobileProjectsProjectRowsUi {
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'theia-mobile-projects-task-item';
-            const isUnread = summary ? this.host.isConversationUnread(summary) : false;
+            const isUnread = summary ? this.host.conversationIndexUi.isConversationUnread(summary) : false;
             const visualStatus = resolveQaapAgentTaskVisualStatus(task, summary, isUnread);
             const isRunning = visualStatus.id === 'running';
             const needsInput = visualStatus.id === 'needs-you';
@@ -604,7 +588,7 @@ export class MobileProjectsProjectRowsUi {
                 item.classList.add('theia-mod-needs-input');
             }
 
-            const lineage = summary ? this.host.resolveConversationLineage(summary, parentIds) : 'none';
+            const lineage = summary ? this.host.conversationIndexUi.resolveConversationLineage(summary, parentIds) : 'none';
             const taskDot = document.createElement('span');
             const showLineageGlyph = lineage !== 'none' && !isFailed && !isRunning && !needsInput;
             if (showLineageGlyph) {
@@ -717,7 +701,11 @@ export class MobileProjectsProjectRowsUi {
             item.addEventListener('click', ev => {
                 ev.stopPropagation();
                 options?.onActivate?.();
-                void this.host.openTaskInAgent(project, task);
+                if (summary) {
+                    void this.host.conversationOpenUi.openConversationSummary(project, summary);
+                } else {
+                    void this.host.conversationOpenUi.openTaskInAgent(project, task);
+                }
             });
             row.append(item);
 
@@ -731,7 +719,7 @@ export class MobileProjectsProjectRowsUi {
             }
 
             if (summary) {
-                const flags = this.host.resolveConversationFlags(summary);
+                const flags = this.host.conversationIndexUi.resolveConversationFlags(summary);
                 if (flags.priority && !flags.paused) {
                     row.classList.add('theia-mod-priority');
                     if (!compact) {
@@ -791,10 +779,10 @@ export class MobileProjectsProjectRowsUi {
                 icon.className = 'codicon codicon-kebab-vertical';
                 icon.setAttribute('aria-hidden', 'true');
                 menuBtn.append(icon);
-                const menu = this.host.buildConversationMenu(project, summary);
+                const menu = this.host.cardMenuUi.buildConversationMenu(project, summary);
                 menuBtn.addEventListener('click', ev => {
                     ev.stopPropagation();
-                    this.host.toggleCardMenu(row, menu, menuBtn);
+                    this.host.cardMenuUi.toggleCardMenu(row, menu, menuBtn);
                 });
                 row.append(menuBtn, menu);
             }

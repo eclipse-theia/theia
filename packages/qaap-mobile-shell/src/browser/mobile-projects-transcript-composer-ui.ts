@@ -51,8 +51,6 @@ export interface ComposerAgentPickerChrome {
     readonly list: HTMLElement;
 }
 
-type ComposerAgentPickerView = 'agents' | 'models';
-
 /** Panel surface for transcript overlay composer sheets and agent resolution. */
 export interface MobileProjectsTranscriptComposerHost {
     transcriptComposerAgentSheet: HTMLElement | undefined;
@@ -76,55 +74,16 @@ export interface MobileProjectsTranscriptComposerHost {
     activeTasks?: MobileProjectsActiveTasks;
     transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
     stickyComposerSheetsUi: MobileProjectsStickyComposerSheetsUi;
+    stickyComposerAgentsUi: import('./mobile-projects-sticky-composer-agents-ui').MobileProjectsStickyComposerAgentsUi;
+    stickyComposerWorkspaceUi: import('./mobile-projects-sticky-composer-workspace-ui').MobileProjectsStickyComposerWorkspaceUi;
 
-    filterSelectableComposerAgents(agents: readonly QaapAgentTaskAgentOption[]): QaapAgentTaskAgentOption[];
     loadBackendAgentSnapshot(): Promise<{
         agents: QaapAgentTaskAgentOption[];
         qaiqModels: QaapQaiqModelOption[];
         defaultAgent?: string;
     }>;
-    reconcileStickyComposerPinnedAgent(
-        pinned: string | undefined,
-        agents: readonly QaapAgentTaskAgentOption[],
-        defaultAgent: string | undefined,
-        cwd: string | undefined,
-    ): string | undefined;
     resolveConversationAgentLabel(summary: QaapAgentConversationSummaryDTO | undefined): string;
-    createComposerAgentPickerChrome(options: {
-        readonly sheetClassName: string;
-        readonly closeTitle: string;
-        readonly onClose: () => void;
-    }): ComposerAgentPickerChrome;
-    showComposerAgentPickerLoading(chrome: ComposerAgentPickerChrome): void;
-    renderComposerAgentPicker(
-        chrome: ComposerAgentPickerChrome,
-        options: {
-            readonly view: ComposerAgentPickerView;
-            readonly modelPickerAgentId?: string;
-            readonly cwd: string | undefined;
-            readonly agents: readonly QaapAgentTaskAgentOption[];
-            readonly selectedAgentId: string | undefined;
-            readonly includeCoder: boolean;
-            readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
-        },
-    ): Promise<void>;
-    createModeSheetOption(
-        label: string,
-        id: string,
-        selectedId: string | undefined,
-        onSelect: (id: string) => void,
-    ): HTMLElement;
-    openApprovalPolicySheet(options: {
-        readonly agentLabel: string;
-        readonly cwd: string | undefined;
-        readonly selectedId: QaapAgentApprovalPolicyId;
-        readonly toolRules: QaapAgentToolApprovalRules;
-        readonly transcriptOverlay?: boolean;
-        readonly onSelect: (policyId: QaapAgentApprovalPolicyId) => void;
-        readonly onToolRulesChange?: (rules: QaapAgentToolApprovalRules) => void;
-        readonly onClose: () => void;
-        readonly assignSheet: (sheet: HTMLElement) => void;
-    }): void;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Transcript sticky-composer agent/mode/approval sheets and backend agent list refresh. */
@@ -136,7 +95,7 @@ export class MobileProjectsTranscriptComposerUi {
         if (this.host.transcriptComposerBackendAgents.length === 0) {
             await this.refreshTranscriptComposerAgents(project);
         }
-        return this.host.filterSelectableComposerAgents(this.host.transcriptComposerBackendAgents);
+        return this.host.stickyComposerAgentsUi.filterSelectableComposerAgents(this.host.transcriptComposerBackendAgents);
     }
 
     resolveTranscriptComposerPinnedAgentId(
@@ -174,7 +133,7 @@ export class MobileProjectsTranscriptComposerUi {
         if (fromList) {
             return fromList;
         }
-        return this.host.resolveConversationAgentLabel(this.host.transcriptComposerSummary);
+        return this.host.projectRowsUi.resolveConversationAgentLabel(this.host.transcriptComposerSummary);
     }
 
     async refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void> {
@@ -183,10 +142,10 @@ export class MobileProjectsTranscriptComposerUi {
             ?? this.host.preparedCwdByProjectId.get(project.id);
         try {
             const snapshot = await this.host.loadBackendAgentSnapshot();
-            const filteredAgents = this.host.filterSelectableComposerAgents(snapshot.agents);
+            const filteredAgents = this.host.stickyComposerAgentsUi.filterSelectableComposerAgents(snapshot.agents);
             this.host.transcriptComposerBackendAgents = filteredAgents;
             this.host.transcriptComposerQaiqModels = snapshot.qaiqModels;
-            const resolved = this.host.reconcileStickyComposerPinnedAgent(
+            const resolved = this.host.stickyComposerAgentsUi.reconcileStickyComposerPinnedAgent(
                 this.host.transcriptComposerPinnedAgentId ?? readStoredAgent(cwd),
                 filteredAgents,
                 snapshot.defaultAgent,
@@ -205,7 +164,7 @@ export class MobileProjectsTranscriptComposerUi {
                 }
             }
         } catch {
-            this.host.transcriptComposerBackendAgents = this.host.filterSelectableComposerAgents(this.host.activeTasks?.getAgents() ?? []);
+            this.host.transcriptComposerBackendAgents = this.host.stickyComposerAgentsUi.filterSelectableComposerAgents(this.host.activeTasks?.getAgents() ?? []);
             this.host.transcriptComposerQaiqModels = [];
         }
     }
@@ -214,12 +173,13 @@ export class MobileProjectsTranscriptComposerUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
         agentLabel: string,
+        anchor?: HTMLElement,
     ): void {
-        this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        this.host.openApprovalPolicySheet({
+        this.host.stickyComposerSheetsUi.openApprovalPolicySheet({
             agentLabel,
             cwd,
+            anchor,
             transcriptOverlay: true,
             selectedId: reconcileAgentApprovalPolicyId(this.host.transcriptComposerApprovalPolicyId, cwd),
             toolRules: reconcileAgentToolApprovalRules(
@@ -227,6 +187,7 @@ export class MobileProjectsTranscriptComposerUi {
                 cwd,
                 this.host.transcriptComposerToolApprovalRules,
             ),
+            isOpen: () => this.host.transcriptComposerApprovalSheet !== undefined,
             onSelect: policyId => {
                 this.host.transcriptComposerApprovalPolicyId = policyId;
                 this.host.transcriptComposerToolApprovalRules = reconcileAgentToolApprovalRules(
@@ -257,25 +218,40 @@ export class MobileProjectsTranscriptComposerUi {
     openTranscriptComposerAgentSheet(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
+        anchor?: HTMLElement,
     ): void {
         if (summary.source === 'theia-chat') {
             return;
         }
+        const usePopover = this.host.stickyComposerSheetsUi.shouldUseAgentPickerPopover(anchor);
+        if (usePopover
+            && this.host.stickyComposerSheetsUi.isAgentPickerPopoverAnchoredTo(anchor)
+            && this.host.transcriptComposerAgentSheet) {
+            this.closeAllComposerSheets();
+            return;
+        }
         this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        const chrome = this.host.createComposerAgentPickerChrome({
-            sheetClassName: 'theia-mobile-sticky-composer-sheet theia-mod-agent theia-mod-transcript-overlay',
+        const onClose = (): void => { this.closeAllComposerSheets(); };
+        const chrome = this.host.stickyComposerSheetsUi.createComposerAgentPickerChrome({
             closeTitle: nls.localize('qaap/mobileProjects/closeTranscript', 'Close'),
-            onClose: () => this.closeAllComposerSheets(),
+            onClose,
+            anchor,
+            transcriptOverlay: true,
         });
         document.body.append(chrome.sheet);
         this.host.transcriptComposerAgentSheet = chrome.sheet;
-        this.host.showComposerAgentPickerLoading(chrome);
+        if (this.host.stickyComposerSheetsUi.shouldUseAgentPickerPopover(anchor)) {
+            this.host.stickyComposerSheetsUi.assignAgentPickerPopover(anchor, chrome.popoverCleanup);
+            this.host.stickyComposerSheetsUi.syncAgentPickerPopoverPosition(chrome.sheet);
+        }
+        this.host.stickyComposerAgentsUi.showComposerAgentPickerLoading(chrome);
+        this.host.stickyComposerSheetsUi.syncAgentPickerPopoverPosition(chrome.sheet);
         void this.ensureTranscriptComposerAgentsLoaded(project).then(agents => {
             if (this.host.transcriptComposerAgentSheet !== chrome.sheet) {
                 return;
             }
-            void this.host.renderComposerAgentPicker(chrome, {
+            void this.host.stickyComposerSheetsUi.renderComposerAgentPicker(chrome, {
                 view: 'agents',
                 cwd,
                 agents,
@@ -307,59 +283,35 @@ export class MobileProjectsTranscriptComposerUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
         modes: readonly ChatMode[],
+        anchor?: HTMLElement,
     ): void {
-        this.closeAllComposerSheets();
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        const sheet = document.createElement('div');
-        sheet.className = 'theia-mobile-sticky-composer-sheet theia-mod-mode theia-mod-transcript-overlay';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.closeAllComposerSheets());
-
-        const panel = document.createElement('section');
-        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-sticky-composer-sheet-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/mobileProjects/stickyComposerPickMode', 'Choose mode');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileProjects/closeTranscript', 'Close');
-        close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.closeAllComposerSheets());
-        header.append(title, close);
-
-        const list = document.createElement('div');
-        list.className = 'theia-mobile-sticky-composer-sheet-list';
-        for (const mode of modes) {
-            list.append(this.host.createModeSheetOption(
-                mode.name,
-                mode.id,
-                this.host.transcriptComposerModeId,
-                id => {
-                    this.host.transcriptComposerModeId = id;
-                    if (cwd) {
-                        writeStoredComposerMode(cwd, id);
-                    }
-                    this.host.transcriptStickyComposerUi.schedulePersistTranscriptComposerPrefs(project, summary);
-                    this.closeAllComposerSheets();
-                    this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
-                },
-            ));
-        }
-
-        panel.append(header, list);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.host.transcriptComposerModeSheet = sheet;
+        this.host.stickyComposerSheetsUi.openComposerModeSheet({
+            modes,
+            selectedModeId: this.host.transcriptComposerModeId,
+            cwd,
+            anchor,
+            transcriptOverlay: true,
+            closeTitle: nls.localize('qaap/mobileProjects/closeTranscript', 'Close'),
+            onClose: () => this.closeAllComposerSheets(),
+            isOpen: () => this.host.transcriptComposerModeSheet !== undefined,
+            assignSheet: sheet => { this.host.transcriptComposerModeSheet = sheet; },
+            onSelect: id => {
+                this.host.transcriptComposerModeId = id;
+                if (cwd) {
+                    writeStoredComposerMode(cwd, id);
+                }
+                this.host.transcriptStickyComposerUi.schedulePersistTranscriptComposerPrefs(project, summary);
+                this.closeAllComposerSheets();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
+            },
+        });
     }
 
     closeTranscriptComposerSheets(): void {
+        this.host.stickyComposerSheetsUi.teardownAgentPickerPopover();
+        this.host.stickyComposerSheetsUi.teardownModeSheetPopover();
+        this.host.stickyComposerSheetsUi.teardownApprovalPolicySheetPopover();
         if (this.host.transcriptComposerAgentSheet) {
             this.host.transcriptComposerAgentSheet.remove();
             this.host.transcriptComposerAgentSheet = undefined;
@@ -377,8 +329,7 @@ export class MobileProjectsTranscriptComposerUi {
             this.host.transcriptComposerApprovalSheet = undefined;
         }
         if (this.host.stickyComposerWorkspaceSheet) {
-            this.host.stickyComposerWorkspaceSheet.remove();
-            this.host.stickyComposerWorkspaceSheet = undefined;
+            this.host.stickyComposerWorkspaceUi.closeComposerWorkspaceSheet();
         }
     }
 

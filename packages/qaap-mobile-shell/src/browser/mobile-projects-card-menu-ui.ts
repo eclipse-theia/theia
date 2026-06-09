@@ -60,6 +60,7 @@ export interface MobileProjectsCardMenuHost {
             openParallelRunsSheet(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
         };
     };
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi
 }
 
 /** Floating card menus for project rows and conversation task rows. */
@@ -129,7 +130,7 @@ export class MobileProjectsCardMenuUi {
             onSelect: () => { void this.host.onRemoveProject(project); },
         });
 
-        const conversations = this.host.conversationsForProject(project);
+        const conversations = this.host.conversationIndexUi.conversationsForProject(project);
         this.appendCardMenuItem(menu, {
             label: nls.localize('qaap/mobileProjects/clearAllTasks', 'Clear all tasks'),
             iconClass: 'codicon-clear-all',
@@ -314,7 +315,7 @@ export class MobileProjectsCardMenuUi {
             onSelect: () => { void this.host.onRenameConversation(project, summary); },
         });
 
-        const flags = this.host.resolveConversationFlags(summary);
+        const flags = this.host.conversationIndexUi.resolveConversationFlags(summary);
         const canFlag = isTheiaChat ? !!this.host.conversationFlags : true;
         this.appendCardMenuItem(menu, {
             label: flags.priority

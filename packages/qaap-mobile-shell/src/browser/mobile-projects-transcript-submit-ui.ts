@@ -68,6 +68,25 @@ export class MobileProjectsTranscriptSubmitUi {
 
     constructor(protected readonly host: MobileProjectsTranscriptSubmitHost) { }
 
+    protected shouldRenderTranscriptSubmit(summary: QaapAgentConversationSummaryDTO): boolean {
+        if (this.host.transcriptOpenSummaryId === summary.id) {
+            return true;
+        }
+        return this.host.transcriptComposerSummary?.id === summary.id;
+    }
+
+    protected renderTranscriptSubmitMessages(
+        chatHost: HTMLElement,
+        conv: QaapAgentConversationDTO,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        if (!this.shouldRenderTranscriptSubmit(summary)) {
+            return;
+        }
+        this.host.transcriptLastFingerprint = undefined;
+        this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, conv);
+    }
+
     async submitTranscriptViaBackendConversation(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -104,6 +123,12 @@ export class MobileProjectsTranscriptSubmitUi {
             this.host.applyTaskStartedToProject(created.cwd, content, created.id);
             return;
         }
+        if (this.host.transcriptComposerSummary?.id === summary.id) {
+            if (!this.host.transcriptOpenSummaryId) {
+                this.host.transcriptOpenSummaryId = summary.id;
+                this.host.transcriptOpenSummary = summary;
+            }
+        }
         const agent = resolveExplicitAgentForSubmit(content, {
             pinnedChatAgentId: options.selectedAgentId ?? options.widget?.pinnedAgent?.id ?? summary.agentId,
         }) ?? options.selectedAgentId ?? summary.agentId;
@@ -124,9 +149,8 @@ export class MobileProjectsTranscriptSubmitUi {
             }],
         };
         const activeChatHost = this.host.resolveActiveTranscriptChatHost();
-        if (activeChatHost && this.host.transcriptOpenSummaryId === summary.id) {
-            this.host.transcriptLastFingerprint = undefined;
-            this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, optimistic);
+        if (activeChatHost) {
+            this.renderTranscriptSubmitMessages(activeChatHost, optimistic, summary);
         }
         try {
             const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
@@ -147,17 +171,15 @@ export class MobileProjectsTranscriptSubmitUi {
             const nextSummary = conversationToSummary(updated);
             this.host.conversations?.recordSnapshot(nextSummary);
             const refreshedChatHost = this.host.resolveActiveTranscriptChatHost();
-            if (refreshedChatHost && this.host.transcriptOpenSummaryId === summary.id) {
-                this.host.transcriptLastFingerprint = undefined;
-                this.host.transcriptMessagesUi.renderTranscriptMessages(refreshedChatHost, updated);
+            if (refreshedChatHost) {
+                this.renderTranscriptSubmitMessages(refreshedChatHost, updated, summary);
             }
             this.host.applyTaskStartedToProject(summary.cwd, content, summary.id);
             this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
         } catch (error) {
             const rollbackChatHost = this.host.resolveActiveTranscriptChatHost();
-            if (rollbackChatHost && this.host.transcriptOpenSummaryId === summary.id) {
-                this.host.transcriptLastFingerprint = undefined;
-                this.host.transcriptMessagesUi.renderTranscriptMessages(rollbackChatHost, base);
+            if (rollbackChatHost) {
+                this.renderTranscriptSubmitMessages(rollbackChatHost, base, summary);
             }
             throw error;
         }

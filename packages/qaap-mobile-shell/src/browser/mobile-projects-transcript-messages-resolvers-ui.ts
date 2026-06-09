@@ -31,7 +31,7 @@ export class MobileProjectsTranscriptMessagesResolversUi {
                 }
             } else if (segment.type === 'tool') {
                 items.push({
-                    label: this.host.localizeActivityLabel(formatToolActivityLabel(segment.name, segment.args)),
+                    label: this.host.projectRowsUi.localizeActivityLabel(formatToolActivityLabel(segment.name, segment.args)),
                     state: segment.finished ? 'done' : 'running',
                 });
             }
@@ -111,6 +111,31 @@ export class MobileProjectsTranscriptMessagesResolversUi {
         return found ? { added, removed } : undefined;
     }
 
+    resolveTranscriptFileDiffStats(
+        segments: QaapAgentMessageSegmentDTO[],
+        filePath: string,
+    ): { readonly added?: number; readonly removed?: number } {
+        for (const segment of segments) {
+            if (segment.type !== 'tool') {
+                continue;
+            }
+            const path = this.extractTranscriptToolPath(segment.args);
+            if (path !== filePath) {
+                continue;
+            }
+            for (const text of [segment.result ?? '', segment.args]) {
+                const parsed = parseDiffStatsFromText(this.contentUi.cleanTranscriptDisplayText(text));
+                if (parsed) {
+                    return parsed;
+                }
+            }
+            if (this.resolveTranscriptFileChangeKind(segment.name) === 'created') {
+                return { added: 1, removed: 0 };
+            }
+        }
+        return {};
+    }
+
 
     resolveTranscriptFileChangeKind(toolName: string): 'edited' | 'created' | undefined {
         const name = toolName.toLowerCase();
@@ -133,7 +158,11 @@ export class MobileProjectsTranscriptMessagesResolversUi {
                     ? args.file_path
                     : typeof args.filename === 'string'
                         ? args.filename
-                        : undefined;
+                        : typeof args.target_file === 'string'
+                            ? args.target_file
+                            : typeof args.file === 'string'
+                                ? args.file
+                                : undefined;
             return path ? this.compactTranscriptPath(path) : undefined;
         } catch {
             return undefined;

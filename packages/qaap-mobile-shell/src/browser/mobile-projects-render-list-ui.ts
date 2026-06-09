@@ -25,7 +25,7 @@ export interface MobileProjectsRenderListHost {
     closeCardMenu(): void;
     shouldPreserveAgentsHubInlineTranscriptShell(): boolean;
     renderDiffHubView(): void;
-    projectsForCurrentHubList(): MobileProjectEntry[];
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     renderHomeHubView(): void;
     renderChatHubView(projects: MobileProjectEntry[]): void;
     renderTasksHubView(projects: MobileProjectEntry[]): void;
@@ -37,7 +37,9 @@ export interface MobileProjectsRenderListHost {
     createRow(project: MobileProjectEntry): HTMLElement;
     updateNewFabVisibility(): void;
     syncLandingHubListChrome(): void;
-    renderStickyComposer(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /**
@@ -51,7 +53,7 @@ export class MobileProjectsRenderListUi {
         if ((this.host.hubView !== 'tasks' || !this.host.shouldUseAgentsHubLanding()) && this.host.agentsHubShellActive) {
             this.host.teardownAgentsHubExecutionShell();
         }
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         this.host.projectDetailSurfaceTargets = undefined;
         this.host.projectDetailTabStrip = undefined;
         if (!this.host.shouldPreserveAgentsHubInlineTranscriptShell()) {
@@ -65,7 +67,7 @@ export class MobileProjectsRenderListUi {
             this.host.diffProjectTabsHost.hidden = true;
             this.host.diffWidgetHost.hidden = true;
 
-            const filtered = this.host.projectsForCurrentHubList();
+            const filtered = this.host.hubQueryUi.projectsForCurrentHubList();
 
             if (this.host.hubView === 'home') {
                 this.host.renderHomeHubView();
@@ -128,14 +130,14 @@ export class MobileProjectsRenderListUi {
             const list = document.createElement('div');
             list.className = 'theia-mobile-projects-rows';
             for (const p of visible) {
-                list.append(this.host.createRow(p));
+                list.append(this.host.projectRowsUi.createRow(p));
             }
             this.host.scroll.append(list);
         } finally {
             this.host.updateNewFabVisibility();
             this.host.syncLandingHubListChrome();
             if (this.host.homeMode) {
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             }
         }
     }

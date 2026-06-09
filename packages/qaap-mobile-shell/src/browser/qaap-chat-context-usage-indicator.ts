@@ -169,10 +169,10 @@ export function resolveVpsContextUsageIndicatorState(
     return { visible: true, percent, colorClass, title };
 }
 
-export function createContextUsageIndicatorBadge(): HTMLElement {
-    const badge = document.createElement('span');
-    badge.className = 'token-usage-badge qaap-chat-context-usage-indicator';
-    badge.setAttribute('role', 'status');
+export function createContextUsageIndicatorBadge(): HTMLButtonElement {
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'token-usage-badge qaap-chat-context-usage-indicator theia-mobile-projects-sticky-composer-context-usage-btn';
     const ring = document.createElement('span');
     ring.className = 'token-usage-ring';
     const inner = document.createElement('span');

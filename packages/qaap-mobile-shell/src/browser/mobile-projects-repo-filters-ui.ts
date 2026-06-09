@@ -21,12 +21,13 @@ export interface MobileProjectsRepoFiltersHost {
     projectsService: MobileProjectsService;
 
     isProjectDetailView(): boolean;
-    applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
     renderList(): void;
-    renderStickyComposer(): void;
-    closeWorkHubSearchQuickPick(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
+    workHubSearchUi: import('./mobile-projects-work-hub-search-ui').MobileProjectsWorkHubSearchUi;
     detailComposerSurfaceForProject(project: MobileProjectEntry): QaapComposerSurface;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Repository filter row and search toggle chrome for the repos hub. */
@@ -64,7 +65,7 @@ export class MobileProjectsRepoFiltersUi {
             label.textContent = spec.label;
             const count = document.createElement('span');
             count.className = 'theia-mobile-projects-filter-tab-count';
-            count.textContent = String(this.host.applyFilter(this.host.projects, spec.id).length);
+            count.textContent = String(this.host.hubQueryUi.applyFilter(this.host.projects, spec.id).length);
             btn.append(label, count);
             btn.addEventListener('click', () => {
                 if (this.host.filter === spec.id) {
@@ -74,7 +75,7 @@ export class MobileProjectsRepoFiltersUi {
                 this.host.projectsService.setFilter(spec.id);
                 this.renderFilters();
                 this.host.renderList();
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             });
             row.append(btn);
         }
@@ -108,7 +109,7 @@ export class MobileProjectsRepoFiltersUi {
         this.host.searchToggleBtn.classList.toggle('theia-mod-active', open);
         this.host.searchToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (hideSearch && open) {
-            this.host.closeWorkHubSearchQuickPick();
+            this.host.workHubSearchUi.closeWorkHubSearchQuickPick();
         }
     }
 
@@ -131,8 +132,8 @@ export class MobileProjectsRepoFiltersUi {
             return nls.localize('qaap/mobileProjects/searchRoutinesPlaceholder', 'Search routines and automations');
         }
         if (this.host.isProjectDetailView()) {
-            const project = this.host.resolveSelectedProject();
-            const surface = project ? this.host.detailComposerSurfaceForProject(project) : 'task';
+            const project = this.host.projectNavigationUi.resolveSelectedProject();
+            const surface = project ? this.host.projectRowsUi.detailComposerSurfaceForProject(project) : 'task';
             return surface === 'chat'
                 ? nls.localize('qaap/mobileProjects/searchChatPlaceholder', 'Search local chat sessions')
                 : nls.localize('qaap/mobileProjects/searchTasksPlaceholder', 'Search tasks and agents');

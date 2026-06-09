@@ -7,7 +7,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { ChatService } from '@theia/ai-chat';
-import { deleteConversation, type QaapAgentConversationSummaryDTO } from '../common/qaap-agent-conversation-client';
+import { deleteConversation } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectEntry } from './mobile-projects-types';
@@ -25,8 +25,9 @@ export interface MobileProjectsProjectActionsHost {
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     render(): void;
     renderList(): void;
-    conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    refreshChatServiceSessionSummaries(): Promise<void>;
+    chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 /** Repository card actions: rename, duplicate, clear tasks, remove. */
@@ -35,7 +36,7 @@ export class MobileProjectsProjectActionsUi {
     constructor(protected readonly host: MobileProjectsProjectActionsHost) { }
 
     async onRenameProject(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const renamed = await this.host.projectsService.renameProject(project);
         if (!renamed) {
             return;
@@ -46,7 +47,7 @@ export class MobileProjectsProjectActionsUi {
     }
 
     async onDuplicateProject(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const duplicated = await this.host.projectsService.duplicateProject(project);
         if (!duplicated) {
             return;
@@ -57,8 +58,8 @@ export class MobileProjectsProjectActionsUi {
     }
 
     async onClearProjectChats(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
-        const conversations = this.host.conversationsForProject(project);
+        this.host.cardMenuUi.closeCardMenu();
+        const conversations = this.host.conversationIndexUi.conversationsForProject(project);
         if (conversations.length === 0) {
             return;
         }
@@ -86,7 +87,7 @@ export class MobileProjectsProjectActionsUi {
             }
             await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
             this.host.transcriptSheetUi.closeTranscriptSheet();
-            await this.host.refreshChatServiceSessionSummaries();
+            await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
             this.host.renderList();
         } catch (error) {
             this.host.messageService?.error(nls.localize(
@@ -98,7 +99,7 @@ export class MobileProjectsProjectActionsUi {
     }
 
     async onRemoveProject(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const removed = await this.host.projectsService.removeProject(project);
         if (!removed) {
             return;

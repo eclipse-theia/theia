@@ -6,6 +6,14 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { QAAP_GIT_REVIEW_API_PATH, type QaapGitBranchesResponse } from '../common/qaap-git-review';
 import type { StickyComposerWorkspaceBarView } from './qaap-sticky-composer-workspace-bar';
+import {
+    markStickyComposerPopoverAnchor,
+    mountStickyComposerBottomSheet,
+    mountStickyComposerSheetPopover,
+    scheduleStickyComposerPopoverPosition,
+    shouldUseStickyComposerDesktopPopover,
+    type StickyComposerPopoverAlign,
+} from './qaap-sticky-composer-popover';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
@@ -26,16 +34,100 @@ projectsService: MobileProjectsService;
 delegate: { onProjectsChanged?: () => void };
 transcriptComposerUi: MobileProjectsTranscriptComposerUi;
 transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
-renderStickyComposer(): void;
 render(): void;
 renderAgentsHubExecutionShell(): void;
 openProject(project: MobileProjectEntry): Promise<void>;
 onNewClick(): Promise<void>;
-closeStickyComposerSheets(): void;
+stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
+stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
 }
 
 export class MobileProjectsStickyComposerWorkspaceUi {
+    private workspaceSheetAnchor: HTMLElement | undefined;
+    private workspacePopoverCleanup: (() => void) | undefined;
+    private workspacePopoverAlign: StickyComposerPopoverAlign = 'start';
+
     constructor(protected readonly host: MobileProjectsStickyComposerWorkspaceHost) { }
+
+    closeComposerWorkspaceSheet(): void {
+        this.workspacePopoverCleanup?.();
+        this.workspacePopoverCleanup = undefined;
+        if (this.workspaceSheetAnchor) {
+            markStickyComposerPopoverAnchor(this.workspaceSheetAnchor, false);
+            this.workspaceSheetAnchor = undefined;
+        }
+        if (this.host.stickyComposerWorkspaceSheet) {
+            this.host.stickyComposerWorkspaceSheet.remove();
+            this.host.stickyComposerWorkspaceSheet = undefined;
+        }
+    }
+
+    protected shouldUseWorkspacePopover(anchor?: HTMLElement): anchor is HTMLElement {
+        return shouldUseStickyComposerDesktopPopover(anchor);
+    }
+
+    protected syncWorkspacePopoverPosition(): void {
+        const root = this.host.stickyComposerWorkspaceSheet;
+        const anchor = this.workspaceSheetAnchor;
+        if (!root?.classList.contains('qaap-sticky-composer-sheet-popover') || !anchor) {
+            return;
+        }
+        scheduleStickyComposerPopoverPosition(root, anchor, this.workspacePopoverAlign);
+    }
+
+    protected mountComposerWorkspaceSheetPresentation(
+        panel: HTMLElement,
+        options: {
+            readonly transcriptOverlay: boolean;
+            readonly anchor?: HTMLElement;
+            readonly align?: StickyComposerPopoverAlign;
+            readonly variant?: 'project' | 'branch';
+        },
+    ): void {
+        const onClose = (): void => { this.host.stickyComposerSheetsUi.closeStickyComposerSheets(); };
+        this.workspacePopoverAlign = options.align ?? 'start';
+        if (this.shouldUseWorkspacePopover(options.anchor)) {
+            const modifierClasses = options.variant === 'branch'
+                ? ['theia-mod-branch-sheet']
+                : ['theia-mod-project-sheet'];
+            const mounted = mountStickyComposerSheetPopover(panel, {
+                anchor: options.anchor,
+                onClose,
+                align: this.workspacePopoverAlign,
+                transcriptOverlay: options.transcriptOverlay,
+                modifierClasses,
+            });
+            document.body.append(mounted.root);
+            this.host.stickyComposerWorkspaceSheet = mounted.root;
+            this.workspaceSheetAnchor = options.anchor;
+            this.workspacePopoverCleanup = mounted.cleanup;
+            scheduleStickyComposerPopoverPosition(mounted.root, options.anchor, this.workspacePopoverAlign);
+            return;
+        }
+        const sheet = mountStickyComposerBottomSheet(panel, {
+            sheetClassName: options.transcriptOverlay
+                ? 'theia-mobile-sticky-composer-sheet theia-mod-workspace theia-mod-transcript-overlay'
+                : 'theia-mobile-sticky-composer-sheet theia-mod-workspace',
+            onClose,
+        });
+        document.body.append(sheet);
+        this.host.stickyComposerWorkspaceSheet = sheet;
+    }
+
+    protected createComposerWorkspaceSheetHeader(titleText: string, onClose: () => void): HTMLElement {
+        const header = document.createElement('header');
+        header.className = 'theia-mobile-sticky-composer-sheet-header';
+        const title = document.createElement('h2');
+        title.textContent = titleText;
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
+        close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
+        close.setAttribute('aria-label', close.title);
+        close.addEventListener('click', onClose);
+        header.append(title, close);
+        return header;
+    }
 
     resolveComposerWorkspaceBranch(project: MobileProjectEntry): string {
         return this.host.composerWorkspaceBranchByProjectId.get(project.id)
@@ -78,43 +170,36 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             return;
         }
-        this.host.renderStickyComposer();
+        this.host.stickyComposerRenderUi.renderStickyComposer();
         void this.refreshComposerWorkspaceBranch(project).then(() => {
             if (this.host.transcriptComposerHost?.isConnected) {
                 this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             } else {
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             }
         });
     }
-    openComposerWorkspaceProjectSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
-        this.host.closeStickyComposerSheets();
+    openComposerWorkspaceProjectSheet(
+        project: MobileProjectEntry,
+        transcriptOverlay = false,
+        anchor?: HTMLElement,
+    ): void {
+        if (this.shouldUseWorkspacePopover(anchor)
+            && this.workspaceSheetAnchor === anchor
+            && this.host.stickyComposerWorkspaceSheet) {
+            this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
+            return;
+        }
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         this.host.transcriptComposerUi.closeTranscriptComposerSheets();
-        const sheet = document.createElement('div');
-        sheet.className = transcriptOverlay
-            ? 'theia-mobile-sticky-composer-sheet theia-mod-workspace theia-mod-transcript-overlay'
-            : 'theia-mobile-sticky-composer-sheet theia-mod-workspace';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.host.closeStickyComposerSheets());
 
         const panel = document.createElement('section');
         panel.className = 'theia-mobile-sticky-composer-sheet-panel';
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-sticky-composer-sheet-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/composerWorkspace/projectSheetTitle', 'Project');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
-        close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.host.closeStickyComposerSheets());
-        header.append(title, close);
+        const onClose = (): void => { this.host.stickyComposerSheetsUi.closeStickyComposerSheets(); };
+        panel.append(this.createComposerWorkspaceSheetHeader(
+            nls.localize('qaap/composerWorkspace/projectSheetTitle', 'Project'),
+            onClose,
+        ));
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
@@ -144,7 +229,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             }
             btn.append(content);
             btn.addEventListener('click', () => {
-                this.host.closeStickyComposerSheets();
+                this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
                 if (entry.id === project.id) {
                     return;
                 }
@@ -175,7 +260,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             iconClass: 'codicon-repo-clone',
             label: nls.localize('qaap/mobileProjects/newRepository', 'Add repository'),
             onSelect: () => {
-                this.host.closeStickyComposerSheets();
+                this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
                 void this.host.onNewClick();
             },
         }));
@@ -183,15 +268,19 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             iconClass: 'codicon-add',
             label: nls.localize('qaap/mobileOpenRepo/startNewProject', 'Start new project'),
             onSelect: () => {
-                this.host.closeStickyComposerSheets();
+                this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
                 void this.onCreateNewProjectFromSheet();
             },
         }));
 
-        panel.append(header, list);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.host.stickyComposerWorkspaceSheet = sheet;
+        panel.append(list);
+        this.mountComposerWorkspaceSheetPresentation(panel, {
+            transcriptOverlay,
+            anchor,
+            align: 'start',
+            variant: 'project',
+        });
+        window.requestAnimationFrame(() => this.syncWorkspacePopoverPosition());
     }
     createComposerProjectSheetAction(options: {
         readonly iconClass: string;
@@ -223,34 +312,27 @@ export class MobileProjectsStickyComposerWorkspaceUi {
         this.host.render();
         this.host.delegate.onProjectsChanged?.();
     }
-    openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
-        this.host.closeStickyComposerSheets();
+    openComposerWorkspaceBranchSheet(
+        project: MobileProjectEntry,
+        transcriptOverlay = false,
+        anchor?: HTMLElement,
+    ): void {
+        if (this.shouldUseWorkspacePopover(anchor)
+            && this.workspaceSheetAnchor === anchor
+            && this.host.stickyComposerWorkspaceSheet) {
+            this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
+            return;
+        }
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
         this.host.transcriptComposerUi.closeTranscriptComposerSheets();
-        const sheet = document.createElement('div');
-        sheet.className = transcriptOverlay
-            ? 'theia-mobile-sticky-composer-sheet theia-mod-workspace theia-mod-transcript-overlay'
-            : 'theia-mobile-sticky-composer-sheet theia-mod-workspace';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-
-        const backdrop = document.createElement('div');
-        backdrop.className = 'theia-mobile-sticky-composer-sheet-backdrop';
-        backdrop.addEventListener('click', () => this.host.closeStickyComposerSheets());
 
         const panel = document.createElement('section');
         panel.className = 'theia-mobile-sticky-composer-sheet-panel';
-
-        const header = document.createElement('header');
-        header.className = 'theia-mobile-sticky-composer-sheet-header';
-        const title = document.createElement('h2');
-        title.textContent = nls.localize('qaap/composerWorkspace/branchSheetTitle', 'Branch');
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'theia-mobile-sticky-composer-sheet-close codicon codicon-close';
-        close.title = nls.localize('qaap/mobileAgentComposer/close', 'Close');
-        close.setAttribute('aria-label', close.title);
-        close.addEventListener('click', () => this.host.closeStickyComposerSheets());
-        header.append(title, close);
+        const onClose = (): void => { this.host.stickyComposerSheetsUi.closeStickyComposerSheets(); };
+        panel.append(this.createComposerWorkspaceSheetHeader(
+            nls.localize('qaap/composerWorkspace/branchSheetTitle', 'Branch'),
+            onClose,
+        ));
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-sticky-composer-sheet-list';
@@ -259,12 +341,18 @@ export class MobileProjectsStickyComposerWorkspaceUi {
         loading.textContent = nls.localize('qaap/composerWorkspace/branchLoading', 'Loading branches…');
         list.append(loading);
 
-        panel.append(header, list);
-        sheet.append(backdrop, panel);
-        document.body.append(sheet);
-        this.host.stickyComposerWorkspaceSheet = sheet;
+        panel.append(list);
+        this.mountComposerWorkspaceSheetPresentation(panel, {
+            transcriptOverlay,
+            anchor,
+            align: 'start',
+            variant: 'branch',
+        });
 
         void this.loadComposerWorkspaceBranchSheet(project, list);
+    }
+    protected finishComposerWorkspaceBranchSheetList(list: HTMLElement): void {
+        window.requestAnimationFrame(() => this.syncWorkspacePopoverPosition());
     }
     async loadComposerWorkspaceBranchSheet(
         project: MobileProjectEntry,
@@ -280,6 +368,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
                 'Open this project in the workspace to switch branches.',
             );
             list.append(empty);
+            this.finishComposerWorkspaceBranchSheetList(list);
             return;
         }
         try {
@@ -302,6 +391,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
                 empty.className = 'theia-mobile-sticky-composer-sheet-loading';
                 empty.textContent = nls.localize('qaap/composerWorkspace/branchEmpty', 'No local branches found.');
                 list.append(empty);
+                this.finishComposerWorkspaceBranchSheetList(list);
                 return;
             }
             for (const branch of payload.branches) {
@@ -329,12 +419,14 @@ export class MobileProjectsStickyComposerWorkspaceUi {
                 });
                 list.append(btn);
             }
+            this.finishComposerWorkspaceBranchSheetList(list);
         } catch (error) {
             list.replaceChildren();
             const failed = document.createElement('p');
             failed.className = 'theia-mobile-sticky-composer-sheet-loading';
             failed.textContent = error instanceof Error ? error.message : String(error);
             list.append(failed);
+            this.finishComposerWorkspaceBranchSheetList(list);
         }
     }
     async checkoutComposerWorkspaceBranch(
@@ -359,7 +451,7 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             if (payload.branch) {
                 this.host.composerWorkspaceBranchByProjectId.set(project.id, payload.branch);
             }
-            this.host.closeStickyComposerSheets();
+            this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
             this.remountComposerWithWorkspaceBar(project);
             MobileSnackbar.show(
                 nls.localize('qaap/composerWorkspace/branchSwitched', 'Switched to {0}', payload.branch ?? branch),

@@ -29,17 +29,15 @@ export interface MobileProjectsComposerHeaderHost {
 
     isProjectDetailView(): boolean;
     syncAgentsHubAccountChrome(): void;
-    applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[];
-    applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
     projectsService: import('./mobile-projects-service').MobileProjectsService;
     stickyComposerPinnedAgentId: string | undefined;
-    renderStickyComposer(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
     renderList(): void;
     renderSubtitle(): void;
-    isTasksHubView(): boolean;
     shouldUseAgentsHubLanding(): boolean;
     resolveHomePinnedProject(): MobileProjectEntry | undefined;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
 }
 
 export class MobileProjectsComposerHeaderUi {
@@ -103,7 +101,7 @@ export class MobileProjectsComposerHeaderUi {
 
     onHeaderComposerSurfaceChange(surface: QaapComposerSurface): void {
         if (this.host.isProjectDetailView()) {
-            const filtered = this.host.applySearch(this.host.applyFilter(this.host.projects, this.host.filter));
+            const filtered = this.host.hubQueryUi.applySearch(this.host.hubQueryUi.applyFilter(this.host.projects, this.host.filter));
             const project = this.resolveStickyComposerProject(filtered);
             const cwd = project
                 ? (this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id))
@@ -113,11 +111,11 @@ export class MobileProjectsComposerHeaderUi {
             if (surface === 'chat') {
                 this.pinStickyComposerToQaiq(cwd);
             }
-            this.host.renderStickyComposer();
+            this.host.stickyComposerRenderUi.renderStickyComposer();
             this.host.renderList();
             return;
         }
-        if (this.host.isTasksHubView()) {
+        if (this.host.hubQueryUi.isTasksHubView()) {
             this.host.tasksHubSurface = surface;
             writeStoredComposerSurface(undefined, surface);
             this.host.renderList();
@@ -153,7 +151,7 @@ export class MobileProjectsComposerHeaderUi {
         if (this.host.shouldUseAgentsHubLanding()) {
             return this.host.resolveHomePinnedProject();
         }
-        return this.host.resolveSelectedProject(projects);
+        return this.host.projectNavigationUi.resolveSelectedProject(projects);
     }
 
     preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void {
@@ -161,7 +159,7 @@ export class MobileProjectsComposerHeaderUi {
         writeStoredComposerSurface(projectCwd, 'task');
         this.host.stickyComposerSurface = 'task';
         if (this.host.visible && this.host.hubView === 'repos') {
-            this.host.renderStickyComposer();
+            this.host.stickyComposerRenderUi.renderStickyComposer();
         }
     }
 

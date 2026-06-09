@@ -86,6 +86,8 @@ export interface MobileProjectsTranscriptLiveHost {
     ): void;
     isPendingNewChatSummary(summary: QaapAgentConversationSummaryDTO): boolean;
     ensureTranscriptConversationRefresh(): void;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    getChatServiceConversation(summary: QaapAgentConversationSummaryDTO): Promise<QaapAgentConversationDTO | undefined>;
 }
 
 /** SSE-first live transcript watch, debounced refetch, and inline approval bar. */
@@ -134,6 +136,9 @@ export class MobileProjectsTranscriptLiveUi {
                     160,
                 ),
             };
+        }
+        if (next.status === 'streaming') {
+            this.host.transcriptStickyComposerUi.refreshTranscriptComposerActivityIfNeeded(next);
         }
     }
 
@@ -224,7 +229,7 @@ export class MobileProjectsTranscriptLiveUi {
         if (!project || !summaryId || !chatHost) {
             return undefined;
         }
-        const summary = this.host.conversationsForProject(project).find(c => c.id === summaryId)
+        const summary = this.host.conversationIndexUi.conversationsForProject(project).find(c => c.id === summaryId)
             ?? this.host.transcriptOpenSummary;
         if (!summary) {
             return undefined;
@@ -346,12 +351,12 @@ export class MobileProjectsTranscriptLiveUi {
         if (!context || !this.isWatchingOpenTranscript(context.summary.id)) {
             return;
         }
-        const liveStatus = this.host.transcriptLastConv?.status ?? context.summary.status;
-        if (liveStatus !== 'streaming') {
-            return;
-        }
         if (!this.host.transcriptScheduleRefresh) {
             this.scheduleTranscriptConversationRefresh(context.project, context.summary, context.chatHost);
+            return;
+        }
+        const liveStatus = this.host.transcriptLastConv?.status ?? context.summary.status;
+        if (liveStatus !== 'streaming') {
             return;
         }
         this.host.transcriptScheduleRefresh();
@@ -367,6 +372,22 @@ export class MobileProjectsTranscriptLiveUi {
         controller.watch(summary.id);
         this.host.transcriptScheduleRefresh = controller.onScheduleRefresh;
         this.scheduleTranscriptApprovalRefresh();
+    }
+
+    async resolveOpenTranscriptConversation(
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<QaapAgentConversationDTO | undefined> {
+        if (summary.source === 'theia-chat' || summary.id.startsWith('theia-chat-service:')) {
+            return this.host.getChatServiceConversation(summary);
+        }
+        try {
+            return await getConversation(summary.id);
+        } catch {
+            if (summary.sessionId) {
+                return this.host.getChatServiceConversation(summary);
+            }
+            return undefined;
+        }
     }
 
     async refreshOpenTranscriptConversation(
@@ -389,7 +410,10 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         try {
-            const full = await getConversation(activeSummary.id);
+            const full = await this.resolveOpenTranscriptConversation(activeSummary);
+            if (!full) {
+                throw new Error('Conversation not found');
+            }
             if (!this.isActiveTranscriptConversation(activeSummary.id) || !activeChatHost.isConnected) {
                 return;
             }
@@ -417,6 +441,9 @@ export class MobileProjectsTranscriptLiveUi {
             }
             this.host.transcriptLastFingerprint = fingerprint;
             this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
+            if (this.host.transcriptComposerSummary?.id === full.id) {
+                this.host.transcriptStickyComposerUi.refreshTranscriptComposerActivityIfNeeded(full);
+            }
             if (this.host.transcriptSheet) {
                 const surfaceTab = this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(activeProject);
                 this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab(surfaceTab);

@@ -72,13 +72,14 @@ export interface MobileProjectsExecutionSurfaceTabsHost {
     appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement;
     renderHeader(): void;
     renderSubtitle(): void;
-    renderStickyComposer(): void;
+    stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
     resolveAgentsHubShellSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO;
-    resolveSelectedProject(): MobileProjectEntry | undefined;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     isProjectDetailView(): boolean;
     projects: MobileProjectEntry[];
-    projectsForCurrentHubList(): MobileProjectEntry[];
     closeCardMenu(): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 /** Tab strip, overflow picker, and execution-surface visibility for transcript and project detail. */
@@ -92,7 +93,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
             return undefined;
         }
         return this.host.projects.find(p => p.id === projectId)
-            ?? this.host.projectsForCurrentHubList().find(p => p.id === projectId);
+            ?? this.host.hubQueryUi.projectsForCurrentHubList().find(p => p.id === projectId);
     }
 
     activeExecutionTab(project?: MobileProjectEntry): TranscriptTab {
@@ -218,7 +219,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         this.mountExecutionSurfaceTabContent(project, summary, tab);
         this.host.root.classList.toggle('theia-mod-project-surface-chat', tab === 'messages');
         this.host.root.classList.toggle('theia-mod-project-surface-tools', tab !== 'messages');
-        this.host.renderStickyComposer();
+        this.host.stickyComposerRenderUi.renderStickyComposer();
         this.syncExecutionSurfaceChrome(project);
     }
 
@@ -283,7 +284,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         if (this.host.agentsHubShellActive) {
             return;
         }
-        const project = this.host.isProjectDetailView() ? this.host.resolveSelectedProject() : undefined;
+        const project = this.host.isProjectDetailView() ? this.host.projectNavigationUi.resolveSelectedProject() : undefined;
         if (!project) {
             this.host.headerExecutionTabsHost.hidden = true;
             this.host.headerExecutionTabsHost.replaceChildren();
@@ -544,7 +545,7 @@ export class MobileProjectsExecutionSurfaceTabsUi {
 
     openExecutionTabOverflowMenu(anchor: HTMLButtonElement, menu: HTMLElement): void {
         this.closeExecutionTabOverflowMenu();
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         this.host.executionTabOverflowAnchor = anchor;
         this.host.executionTabOverflowMenu = menu;
         anchor.setAttribute('aria-expanded', 'true');

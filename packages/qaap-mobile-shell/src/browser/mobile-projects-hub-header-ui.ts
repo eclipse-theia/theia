@@ -29,19 +29,17 @@ export interface MobileProjectsHubHeaderHost {
     isProjectDetailView(): boolean;
     isProjectDiffView(): boolean;
     shouldUseAgentsHubLanding(): boolean;
-    isSidebarSecondaryHubView(): boolean;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
     transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
     transcriptSheetUi: MobileProjectsTranscriptSheetUi;
     executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     updateTasksAttentionChrome(): void;
     buildHomeGreeting(): string;
-    projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
     scroll: HTMLElement;
     lastTitleTap: number;
 
     closeAgentsHubSession(): void;
-    navigateBackFromSidebarSecondaryHub(): void;
     closeProjectDiffView(): void;
     closeProjectDetail(): void;
     openWorkHubSessionsSidebar(): void;
@@ -62,12 +60,12 @@ export class MobileProjectsHubHeaderUi {
         this.host.sessionsMenuBtn.setAttribute('aria-hidden', showSessionsMenu ? 'false' : 'true');
         const showHeaderBack = inProjectDetail
             || inProjectDiff
-            || this.host.isSidebarSecondaryHubView()
+            || this.host.hubQueryUi.isSidebarSecondaryHubView()
             || (this.host.agentsHubInlineActive && !this.host.shouldUseAgentsHubLanding());
         this.host.headerBackBtn.hidden = !showHeaderBack;
         this.host.headerBackBtn.setAttribute('aria-hidden', showHeaderBack ? 'false' : 'true');
         this.host.titleBlock.classList.toggle('theia-mod-with-back', showHeaderBack);
-        if (this.host.isSidebarSecondaryHubView()) {
+        if (this.host.hubQueryUi.isSidebarSecondaryHubView()) {
             this.host.headerBackBtn.title = nls.localize('qaap/mobileProjects/backToAgents', 'Back to agents');
             this.host.headerBackBtn.setAttribute('aria-label', this.host.headerBackBtn.title);
         } else if (inProjectDiff) {
@@ -122,7 +120,7 @@ export class MobileProjectsHubHeaderUi {
         }
         this.host.titleAttentionEl.hidden = true;
         if (inProjectDetail) {
-            this.host.titleEl.textContent = this.host.projectDetailHeaderTitle(this.host.resolveSelectedProject());
+            this.host.titleEl.textContent = this.projectDetailHeaderTitle(this.host.projectNavigationUi.resolveSelectedProject());
             return;
         }
         if (this.host.homeMode && this.host.hubView === 'repos') {
@@ -141,7 +139,7 @@ export class MobileProjectsHubHeaderUi {
     syncAgentsHubAccountChrome(): void {
         const hideAccount = this.host.homeMode && (
             (this.host.hubView === 'tasks' && this.host.shouldUseAgentsHubLanding())
-            || this.host.isSidebarSecondaryHubView()
+            || this.host.hubQueryUi.isSidebarSecondaryHubView()
         );
         this.host.accountBtn.hidden = hideAccount;
         this.host.accountBtn.style.display = hideAccount ? 'none' : '';
@@ -177,15 +175,15 @@ export class MobileProjectsHubHeaderUi {
             this.host.transcriptSheetUi.closeTranscriptSheet();
             return;
         }
-        if (this.host.isSidebarSecondaryHubView()) {
-            this.host.navigateBackFromSidebarSecondaryHub();
+        if (this.host.hubQueryUi.isSidebarSecondaryHubView()) {
+            this.host.hubQueryUi.navigateBackFromSidebarSecondaryHub();
             return;
         }
         if (this.host.isProjectDiffView()) {
             this.host.closeProjectDiffView();
             return;
         }
-        const project = this.host.resolveSelectedProject();
+        const project = this.host.projectNavigationUi.resolveSelectedProject();
         if (project && this.host.executionSurfaceTabsUi.navigateExecutionSurfaceBack(project)) {
             return;
         }

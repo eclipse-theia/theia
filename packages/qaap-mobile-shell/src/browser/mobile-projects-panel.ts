@@ -11,10 +11,10 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import type { QuickPick } from '@theia/core/lib/common/quick-pick-service';
-import { QuickInputService, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { AIVariable, AIVariableResolutionRequest, GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { ChatAgent, ChatMode, ChatModel, ChatService, ChatSession } from '@theia/ai-chat';
+import { ChatAgent, ChatService, ChatSession } from '@theia/ai-chat';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { MobileProjectChatViewWidget } from './mobile-project-ai-chat-input-widget';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
@@ -47,7 +47,6 @@ import {
 } from '../common/qaap-agent-approval-client';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
-    readStoredAgentModel,
     type QaapAgentTaskAgentOption,
     type QaapQaiqModelOption,
     type QaapAgentTaskListSnapshot,
@@ -59,18 +58,12 @@ import {
     type QaapAgentToolApprovalRules,
 } from '../common/qaap-agent-tool-approval-rules';
 import {
-    type StickyComposerTokenOption,
-} from '../common/qaap-sticky-composer-mention';
-import {
     type StickyComposerContextChipView,
 } from './qaap-sticky-composer-context-ui';
 import {
     type StickyComposerContextEntry,
 } from '../common/qaap-composer-context-entry';
 import type { MobileComposerAttachHandlers } from './qaap-mobile-composer-device-attach';
-import {
-    type StickyComposerWorkspaceBarView,
-} from './qaap-sticky-composer-workspace-bar';
 import { type QaapSegmentedFieldController } from './qaap-mobile-form-ui';
 import {
     buildQaapAccountMenuEntries,
@@ -229,8 +222,6 @@ import {
 import {
     MobileProjectsStickyComposerSheetsUi,
     type MobileProjectsStickyComposerSheetsHost,
-    type ComposerAgentPickerChrome,
-    type ComposerAgentPickerView,
 } from './mobile-projects-sticky-composer-sheets-ui';
 import {
     MobileProjectsStickyComposerWorkspaceUi,
@@ -497,6 +488,7 @@ export class MobileProjectsPanel {
     protected stickyComposerModeSheet: HTMLElement | undefined;
     protected stickyComposerApprovalSheet: HTMLElement | undefined;
     protected stickyComposerWorkspaceSheet: HTMLElement | undefined;
+    protected stickyComposerContextUsageSheet: HTMLElement | undefined;
     protected agentsHubSelectedProjectId: string | undefined;
     protected readonly composerWorkspaceBranchByProjectId = new Map<string, string>();
     protected stickyComposerModeId: string | undefined;
@@ -521,6 +513,8 @@ export class MobileProjectsPanel {
     protected transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
     protected transcriptComposerContext: StickyComposerContextEntry[] = [];
     protected transcriptComposerFilesExpanded = true;
+    protected transcriptComposerQueueExpanded = true;
+    protected transcriptComposerChangedFilesExpanded = true;
     protected transcriptComposerPinnedAgentId: string | undefined;
     protected transcriptComposerDraft = '';
     protected readonly transcriptFollowUpQueue = new TranscriptFollowUpQueue();
@@ -830,6 +824,11 @@ export class MobileProjectsPanel {
         this.hubHeaderUi.handleHeaderBackClick();
     }
 
+    /** Seam for {@link MobileProjectsStickyComposerSheetsUi.closeAllComposerSheets}. */
+    closeTranscriptComposerSheets(): void {
+        this.transcriptComposerUi.closeTranscriptComposerSheets();
+    }
+
     protected onTitleTap(): void {
         this.hubHeaderUi.onTitleTap();
     }
@@ -865,10 +864,6 @@ export class MobileProjectsPanel {
         this.composerHeaderUi.pinStickyComposerToQaiq(cwd);
     }
 
-    protected getOfferableCoderAgent(): ChatAgent | undefined {
-        return this.stickyComposerAgentsUi.getOfferableCoderAgent();
-    }
-
     /** Work Hub home: user drilled into a single repository (tasks list + sticky composer). */
     isProjectDetailView(): boolean {
         return this.homeMode && this.hubView === 'repos' && this.expandedId !== undefined;
@@ -885,10 +880,6 @@ export class MobileProjectsPanel {
 
     protected resetProjectDetailSurfaces(): void {
         this.projectNavigationUi.resetProjectDetailSurfaces();
-    }
-
-    protected redirectHubView(view: MobileProjectsHubView): MobileProjectsHubView {
-        return this.hubQueryUi.redirectHubView(view);
     }
 
     /** Work Hub landing: repos list, chat, tasks, or diff review (collapses any expanded repo row). */
@@ -930,14 +921,6 @@ export class MobileProjectsPanel {
 
     protected updateAccountAvatar(): void {
         this.panelLifecycleUi.updateAccountAvatar();
-    }
-
-    protected localizeActivityLabel(label: string): string {
-        return this.projectRowsUi.localizeActivityLabel(label);
-    }
-
-    protected hasConversationDiffStats(summary?: QaapAgentConversationSummaryDTO): boolean {
-        return this.projectRowsUi.hasConversationDiffStats(summary);
     }
 
     protected subscribeToActiveTasks(): void {
@@ -985,165 +968,6 @@ export class MobileProjectsPanel {
         this.subtitleUi.renderSubtitle();
     }
 
-    protected buildProjectBranchSubtitle(project: MobileProjectEntry): string {
-        return this.subtitleUi.buildProjectBranchSubtitle(project);
-    }
-
-    protected projectDetailHeaderTitle(project: MobileProjectEntry | undefined): string {
-        return this.hubHeaderUi.projectDetailHeaderTitle(project);
-    }
-
-    protected isProjectRunning(project: MobileProjectEntry): boolean {
-        return this.conversationIndexUi.isProjectRunning(project);
-    }
-
-    protected countRunningTasks(project: MobileProjectEntry): number {
-        return this.conversationIndexUi.countRunningTasks(project);
-    }
-
-    /** VPS agent conversations/tasks for one project (excludes local Theia chat). */
-    protected vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
-        return this.conversationIndexUi.vpsTasksForProject(project);
-    }
-
-    /**
-     * Local Theia chat sessions. The Chat surface was removed from the mobile shell, so these are
-     * hidden from every list, counter, and recents row — only agentic VPS tasks are surfaced.
-     */
-    protected localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
-        return this.conversationIndexUi.localChatsForProject(project);
-    }
-
-    protected countDoneTasks(project: MobileProjectEntry): number {
-        return this.conversationIndexUi.countDoneTasks(project);
-    }
-
-    protected countNeedsInputTasks(project: MobileProjectEntry): number {
-        return this.conversationIndexUi.countNeedsInputTasks(project);
-    }
-
-    protected countFailedTasks(project: MobileProjectEntry): number {
-        return this.conversationIndexUi.countFailedTasks(project);
-    }
-
-    protected countUnreadTasks(project: MobileProjectEntry): number {
-        return this.conversationIndexUi.countUnreadTasks(project);
-    }
-
-    /**
-     * A conversation is "unread" when the agent has produced new activity since the user last
-     * opened it. Conversations the user has never opened only count as unread if their last
-     * message is from the agent — otherwise the row would render as a permanent badge.
-     */
-    protected isConversationUnread(summary: QaapAgentConversationSummaryDTO): boolean {
-        return this.conversationIndexUi.isConversationUnread(summary);
-    }
-
-    /** All persistent agent conversations the panel knows about for this project. */
-    protected conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
-        return this.conversationIndexUi.conversationsForProject(project);
-    }
-
-    protected async refreshChatServiceSessionSummaries(): Promise<void> {
-        await this.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
-    }
-
-    protected projectForChatSession(sessionId: string, fallback: MobileProjectEntry): MobileProjectEntry {
-        return this.chatServiceSummariesUi.projectForChatSession(sessionId, fallback);
-    }
-
-    protected rememberChatSessionProject(sessionId: string | undefined, project: MobileProjectEntry): void {
-        this.chatServiceSummariesUi.rememberChatSessionProject(sessionId, project);
-    }
-
-    protected isChatSessionWorking(session: ChatSession): boolean {
-        return this.chatServiceSummariesUi.isChatSessionWorking(session);
-    }
-
-    protected isChatSessionWaitingForInput(session: ChatSession): boolean {
-        return this.chatServiceSummariesUi.isChatSessionWaitingForInput(session);
-    }
-
-    protected chatSessionPreview(session: ChatSession | undefined): string | undefined {
-        return this.chatServiceSummariesUi.chatSessionPreview(session);
-    }
-
-    protected mergeConversationSummaries(
-        first: QaapAgentConversationSummaryDTO[],
-        second: QaapAgentConversationSummaryDTO[],
-    ): QaapAgentConversationSummaryDTO[] {
-        return this.conversationIndexUi.mergeConversationSummaries(first, second);
-    }
-
-    /**
-     * Order conversations within a project card. Highest first: priority chats (and never paused),
-     * then streaming chats, then idle chats, then paused chats sink to the bottom. Within each tier
-     * the more recently updated one wins.
-     */
-    protected compareConversationOrder(
-        a: QaapAgentConversationSummaryDTO,
-        b: QaapAgentConversationSummaryDTO,
-    ): number {
-        return this.conversationIndexUi.compareConversationOrder(a, b);
-    }
-
-    /**
-     * Position of a conversation in the fork tree:
-     *   'none'   — no fork relationship
-     *   'parent' — at least one other conversation was forked from this one
-     *   'child'  — this conversation was forked from another
-     *   'both'   — both of the above (forked in and out)
-     */
-    protected resolveConversationLineage(
-        summary: QaapAgentConversationSummaryDTO,
-        parentIds: ReadonlySet<string>,
-    ): 'none' | 'parent' | 'child' | 'both' {
-        return this.conversationIndexUi.resolveConversationLineage(summary, parentIds);
-    }
-
-    /**
-     * Effective priority/paused state for a conversation. VPS-backed conversations carry the
-     * flags on the summary itself; Theia-chat summaries pick them up from the local override store.
-     */
-    protected resolveConversationFlags(summary: QaapAgentConversationSummaryDTO): {
-        priority: boolean;
-        paused: boolean;
-    } {
-        return this.conversationIndexUi.resolveConversationFlags(summary);
-    }
-
-    protected preferConversationSummary(
-        current: QaapAgentConversationSummaryDTO,
-        next: QaapAgentConversationSummaryDTO,
-    ): QaapAgentConversationSummaryDTO {
-        return this.conversationIndexUi.preferConversationSummary(current, next);
-    }
-
-    protected chatServiceConversationId(sessionId: string): string {
-        return this.chatServiceSummariesUi.chatServiceConversationId(sessionId);
-    }
-
-    /**
-     * Legacy adapter — projects the conversation list as `MobileProjectTaskView[]` so existing
-     * task-block markup (built before the conversation refactor) keeps working unchanged. New
-     * code paths should use {@link conversationsForProject} directly.
-     */
-    protected summaryToTaskView(conversation: QaapAgentConversationSummaryDTO): MobileProjectTaskView {
-        return this.conversationIndexUi.summaryToTaskView(conversation);
-    }
-
-    protected tasksForProject(project: MobileProjectEntry): MobileProjectTaskView[] {
-        return this.conversationIndexUi.tasksForProject(project);
-    }
-
-    protected conversationTaskState(conversation: QaapAgentConversationSummaryDTO): string {
-        return this.conversationIndexUi.conversationTaskState(conversation);
-    }
-
-    protected fallbackTasksFromProject(project: MobileProjectEntry): MobileProjectTaskView[] {
-        return this.conversationIndexUi.fallbackTasksFromProject(project);
-    }
-
     protected async onNewClick(): Promise<void> {
         await this.repoLifecycleUi.onNewClick();
     }
@@ -1164,78 +988,10 @@ export class MobileProjectsPanel {
         this.hubRenderUi.syncHubViewAvailability();
     }
 
-    /** Projects included in the current hub list (inbox ignores Active/Pinned filters). */
-    protected projectsForCurrentHubList(): MobileProjectEntry[] {
-        return this.hubQueryUi.projectsForCurrentHubList();
-    }
-
     protected static readonly REPO_FILTER_ORDER: readonly MobileProjectFilter[] = ['all', 'active', 'pinned'];
 
     protected renderFilters(): void {
         this.repoFiltersUi.renderFilters();
-    }
-
-    protected repoFilterLabel(id: MobileProjectFilter): string {
-        return this.repoFiltersUi.repoFilterLabel(id);
-    }
-
-    protected isSearchChromeHidden(): boolean {
-        return this.repoFiltersUi.isSearchChromeHidden();
-    }
-
-    protected syncSearchChrome(): void {
-        this.repoFiltersUi.syncSearchChrome();
-    }
-
-    protected workHubSearchPlaceholder(): string {
-        return this.repoFiltersUi.workHubSearchPlaceholder();
-    }
-
-    protected openWorkHubSearchQuickPick(): void {
-        this.workHubSearchUi.openWorkHubSearchQuickPick();
-    }
-
-    protected closeWorkHubSearchQuickPick(): void {
-        this.workHubSearchUi.closeWorkHubSearchQuickPick();
-    }
-
-    protected buildWorkHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildWorkHubSearchPickItems();
-    }
-
-    protected buildProjectDetailSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildProjectDetailSearchPickItems();
-    }
-
-    protected buildReposSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildReposSearchPickItems();
-    }
-
-    protected buildTasksHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildTasksHubSearchPickItems();
-    }
-
-    protected buildChatHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildChatHubSearchPickItems();
-    }
-
-    protected buildReviewSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildReviewSearchPickItems();
-    }
-
-    protected buildWorkflowSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildWorkflowSearchPickItems();
-    }
-
-    protected buildRoutineSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        return this.workHubSearchUi.buildRoutineSearchPickItems();
-    }
-
-    protected conversationToSearchPickItem(
-        project: MobileProjectEntry,
-        conversation: QaapAgentConversationSummaryDTO,
-    ): WorkHubSearchPickItem {
-        return this.workHubSearchUi.conversationToSearchPickItem(project, conversation);
     }
 
     protected async activateWorkHubSearchTarget(target: WorkHubSearchTarget): Promise<void> {
@@ -1303,429 +1059,6 @@ export class MobileProjectsPanel {
 
     protected detachDiffReviewWidgetFromHost(): void {
         this.diffHubUi.detachDiffReviewWidgetFromHost();
-    }
-
-    protected resolveStickyComposerProject(projects: MobileProjectEntry[]): MobileProjectEntry | undefined {
-        return this.composerHeaderUi.resolveStickyComposerProject(projects);
-    }
-
-    /** Sidebar drill-downs (Routines, overview, workflows) when Agents is the default shell. */
-    protected isSidebarSecondaryHubView(): boolean {
-        return this.hubQueryUi.isSidebarSecondaryHubView();
-    }
-
-    protected navigateBackFromSidebarSecondaryHub(): void {
-        this.hubQueryUi.navigateBackFromSidebarSecondaryHub();
-    }
-
-    protected resolveSelectedProject(
-        projects: MobileProjectEntry[] = this.projectsForCurrentHubList(),
-    ): MobileProjectEntry | undefined {
-        return this.projectNavigationUi.resolveSelectedProject(projects);
-    }
-
-    protected createProjectDetailView(project: MobileProjectEntry): HTMLElement {
-        return this.projectDetailUi.createProjectDetailView(project);
-    }
-
-    /** Synthetic conversation scope for project-level Files/Terminal/Preview surfaces. */
-    protected projectDetailSurfaceSummary(project: MobileProjectEntry): QaapAgentConversationSummaryDTO {
-        return this.projectDetailUi.projectDetailSurfaceSummary(project);
-    }
-
-    protected detachTranscriptReviewWidget(): void {
-        this.transcriptSurfacesUi.detachTranscriptReviewWidget();
-    }
-
-    protected disposeTranscriptEmbeddedPreview(): void {
-        this.transcriptSurfacesUi.disposeTranscriptEmbeddedPreview();
-    }
-
-    protected detachTranscriptWorkspaceSurfacesFromSheet(): void {
-        this.transcriptSurfacesUi.detachTranscriptWorkspaceSurfacesFromSheet();
-    }
-
-    protected disposeTranscriptTerminalSlides(workspaceKey?: TranscriptWorkspaceSurfaceKey): void {
-        this.transcriptSurfacesUi.disposeTranscriptTerminalSlides(workspaceKey);
-    }
-
-    protected async syncTranscriptPreviewFromConversation(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-        conv: QaapAgentConversationDTO,
-    ): Promise<void> {
-        await this.transcriptSurfacesUi.syncTranscriptPreviewFromConversation(project, summary, conv);
-    }
-
-    protected async refreshTranscriptPreviewProject(
-        project: MobileProjectEntry,
-        summary?: QaapAgentConversationSummaryDTO,
-    ): Promise<MobileProjectEntry> {
-        return this.transcriptSurfacesUi.refreshTranscriptPreviewProject(project, summary);
-    }
-
-    protected resolveTranscriptPreviewUrl(
-        project: MobileProjectEntry,
-        conv: QaapAgentConversationDTO | undefined,
-    ): string | undefined {
-        return this.transcriptSurfacesUi.resolveTranscriptPreviewUrl(project, conv);
-    }
-
-    protected async requestTranscriptPreview(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): Promise<void> {
-        await this.transcriptSurfacesUi.requestTranscriptPreview(project, summary);
-    }
-
-    onResumePreview(project: MobileProjectEntry): void | Promise<void> {
-        return this.delegate.onResumePreview?.(project);
-    }
-
-    protected async onStickyComposerAttach(
-        _project: MobileProjectEntry,
-        anchor: HTMLElement,
-    ): Promise<void> {
-        await this.stickyComposerContextUi.onStickyComposerAttach(_project, anchor);
-    }
-
-    protected createStickyComposerAttachHandlers(): MobileComposerAttachHandlers {
-        return this.stickyComposerContextUi.createStickyComposerAttachHandlers();
-    }
-
-    protected createTranscriptComposerAttachHandlers(): MobileComposerAttachHandlers {
-        return this.stickyComposerContextUi.createTranscriptComposerAttachHandlers();
-    }
-
-    protected hasPendingComposerAttachments(): boolean {
-        return this.stickyComposerContextUi.hasPendingComposerAttachments();
-    }
-
-    protected notifyPendingComposerAttachments(): void {
-        this.stickyComposerContextUi.notifyPendingComposerAttachments();
-    }
-
-    protected renderStickyComposer(): void {
-        this.stickyComposerRenderUi.renderStickyComposer();
-    }
-
-    protected composerSurfaceSegmentOptions(): Array<{ id: QaapComposerSurface; label: string; iconClass: string }> {
-        return this.composerHeaderUi.composerSurfaceSegmentOptions();
-    }
-
-    protected shouldShowHeaderComposerSurfacePicker(): boolean {
-        return this.composerHeaderUi.shouldShowHeaderComposerSurfacePicker();
-    }
-
-    protected syncHeaderComposerSurfacePicker(): void {
-        this.composerHeaderUi.syncHeaderComposerSurfacePicker();
-    }
-
-    protected onHeaderComposerSurfaceChange(surface: QaapComposerSurface): void {
-        this.composerHeaderUi.onHeaderComposerSurfaceChange(surface);
-    }
-
-    protected updateStickyComposerFabLift(): void {
-        this.composerHeaderUi.updateStickyComposerFabLift();
-    }
-
-    protected mountStickyComposerContextUsage(
-        badge: HTMLElement,
-        resolveTarget: () => {
-            readonly summary?: QaapAgentConversationSummaryDTO;
-            readonly chatModel?: ChatModel;
-            readonly full?: QaapAgentConversationDTO;
-        } | undefined,
-    ): Disposable {
-        return this.stickyComposerRenderUi.mountStickyComposerContextUsage(badge, resolveTarget);
-    }
-
-    protected resolveTranscriptContextUsageTarget(
-        summary: QaapAgentConversationSummaryDTO,
-    ): {
-        readonly summary?: QaapAgentConversationSummaryDTO;
-        readonly chatModel?: ChatModel;
-        readonly full?: QaapAgentConversationDTO;
-    } {
-        return this.transcriptStickyComposerUi.resolveTranscriptContextUsageTarget(summary);
-    }
-
-    protected resolveProjectTheiaChatModel(project: MobileProjectEntry): ChatModel | undefined {
-        return this.stickyComposerRenderUi.resolveProjectTheiaChatModel(project);
-    }
-
-    protected shouldShowComposerWorkspaceBar(_summary?: QaapAgentConversationSummaryDTO): boolean {
-        return this.composerHeaderUi.shouldShowComposerWorkspaceBar(_summary);
-    }
-
-    protected resolveComposerWorkspaceBranch(project: MobileProjectEntry): string {
-        return this.stickyComposerWorkspaceUi.resolveComposerWorkspaceBranch(project);
-    }
-
-    protected async refreshComposerWorkspaceBranch(project: MobileProjectEntry): Promise<string> {
-        return this.stickyComposerWorkspaceUi.refreshComposerWorkspaceBranch(project);
-    }
-
-    protected resolveComposerWorkspaceBarView(project: MobileProjectEntry): StickyComposerWorkspaceBarView {
-        return this.stickyComposerWorkspaceUi.resolveComposerWorkspaceBarView(project);
-    }
-
-    protected remountComposerWithWorkspaceBar(project: MobileProjectEntry): void {
-        this.stickyComposerWorkspaceUi.remountComposerWithWorkspaceBar(project);
-    }
-
-    protected openComposerWorkspaceProjectSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
-        this.stickyComposerWorkspaceUi.openComposerWorkspaceProjectSheet(project, transcriptOverlay);
-    }
-
-    protected createComposerProjectSheetAction(options: {
-        readonly iconClass: string;
-        readonly label: string;
-        readonly onSelect: () => void;
-    }): HTMLButtonElement {
-        return this.stickyComposerWorkspaceUi.createComposerProjectSheetAction(options);
-    }
-
-    protected async onCreateNewProjectFromSheet(): Promise<void> {
-        await this.stickyComposerWorkspaceUi.onCreateNewProjectFromSheet();
-    }
-
-    protected openComposerWorkspaceBranchSheet(project: MobileProjectEntry, transcriptOverlay = false): void {
-        this.stickyComposerWorkspaceUi.openComposerWorkspaceBranchSheet(project, transcriptOverlay);
-    }
-
-    protected async loadComposerWorkspaceBranchSheet(
-        project: MobileProjectEntry,
-        list: HTMLElement,
-    ): Promise<void> {
-        await this.stickyComposerWorkspaceUi.loadComposerWorkspaceBranchSheet(project, list);
-    }
-
-    protected async checkoutComposerWorkspaceBranch(
-        project: MobileProjectEntry,
-        branch: string,
-    ): Promise<void> {
-        await this.stickyComposerWorkspaceUi.checkoutComposerWorkspaceBranch(project, branch);
-    }
-
-    protected buildStickyComposerColumn(options: {
-        project: MobileProjectEntry;
-        surface?: QaapComposerSurface;
-        agentLocked?: boolean;
-        getContext: () => StickyComposerContextEntry[];
-        clearContext: () => void;
-        removeContextItem: (index: number) => void;
-        formatContextChip: (item: StickyComposerContextEntry) => StickyComposerContextChipView;
-        filesExpanded?: boolean;
-        onFilesExpandedChange?: (expanded: boolean) => void;
-        getDraft: () => string;
-        setDraft: (value: string) => void;
-        resolveAgentLabel: () => string;
-        resolveAgentId: () => string;
-        modes?: readonly ChatMode[];
-        resolveModeLabel?: () => string;
-        onOpenModeSheet?: () => void;
-        approvalPolicyId?: QaapAgentApprovalPolicyId;
-        onOpenApprovalPolicySheet?: () => void;
-        canSubmit: boolean;
-        isAgentWorking?: () => boolean;
-        onStop?: () => void;
-        stopLabel?: string;
-        onAttach: (anchor: HTMLElement) => void;
-        onOpenAgentSheet: () => void;
-        onSubmit: (draft: string) => void;
-        onSubmitBlocked?: () => void;
-        afterInputChange?: () => void;
-        sendLabel?: string;
-        onSendControlMounted?: (refresh: () => void) => void;
-        inputPlaceholder?: string;
-        getMentionOptions?: () => readonly StickyComposerTokenOption[];
-        getVariableOptions?: () => readonly StickyComposerTokenOption[];
-        onContextUsageBadgeMounted?: (badge: HTMLElement) => void;
-        showWorkspaceBar?: boolean;
-        transcriptOverlay?: boolean;
-    }): HTMLElement {
-        return this.stickyComposerColumnUi.buildStickyComposerColumn(options);
-    }
-
-    protected formatComposerContextEntry(entry: StickyComposerContextEntry): StickyComposerContextChipView {
-        return this.stickyComposerContextUi.formatComposerContextEntry(entry);
-    }
-
-    protected formatComposerContextChip(item: AIVariableResolutionRequest): StickyComposerContextChipView {
-        return this.stickyComposerContextUi.formatComposerContextChip(item);
-    }
-
-    protected resolveComposerMentionOptions(
-        backendAgents: readonly QaapAgentTaskAgentOption[],
-        coderOnly = false,
-    ): StickyComposerTokenOption[] {
-        return this.stickyComposerContextUi.resolveComposerMentionOptions(backendAgents, coderOnly);
-    }
-
-    protected resolveComposerVariableOptions(): StickyComposerTokenOption[] {
-        return this.stickyComposerContextUi.resolveComposerVariableOptions();
-    }
-
-    protected resolveStickyComposerPinnedAgentId(project: MobileProjectEntry): string {
-        return this.stickyComposerAgentsUi.resolveStickyComposerPinnedAgentId(project);
-    }
-
-    protected resolveStickyComposerAgentLabel(project?: MobileProjectEntry): string {
-        return this.stickyComposerAgentsUi.resolveStickyComposerAgentLabel(project);
-    }
-
-    protected resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined {
-        return this.stickyComposerAgentsUi.resolveStickyComposerModelLabel(agentId, project);
-    }
-
-    protected reconcileStickyComposerPinnedAgent(
-        current: string | undefined,
-        agents: readonly QaapAgentTaskAgentOption[],
-        defaultAgent: string | undefined,
-        cwd: string | undefined,
-    ): string {
-        return this.stickyComposerAgentsUi.reconcileStickyComposerPinnedAgent(current, agents, defaultAgent, cwd);
-    }
-
-    protected filterSelectableComposerAgents(
-        agents: readonly QaapAgentTaskAgentOption[],
-    ): QaapAgentTaskAgentOption[] {
-        return this.stickyComposerAgentsUi.filterSelectableComposerAgents(agents);
-    }
-
-    protected async refreshStickyComposerAgents(project: MobileProjectEntry): Promise<void> {
-        await this.stickyComposerAgentsUi.refreshStickyComposerAgents(project);
-    }
-
-    protected showComposerAgentPickerLoading(chrome: ComposerAgentPickerChrome): void {
-        this.stickyComposerAgentsUi.showComposerAgentPickerLoading(chrome);
-    }
-
-    protected async ensureStickyComposerAgentsLoaded(project: MobileProjectEntry): Promise<readonly QaapAgentTaskAgentOption[]> {
-        return this.stickyComposerAgentsUi.ensureStickyComposerAgentsLoaded(project);
-    }
-
-    protected openStickyComposerAgentSheet(project: MobileProjectEntry): void {
-        this.stickyComposerSheetsUi.openStickyComposerAgentSheet(project);
-    }
-
-    protected openStickyComposerModeSheet(project: MobileProjectEntry, modes: readonly ChatMode[]): void {
-        this.stickyComposerSheetsUi.openStickyComposerModeSheet(project, modes);
-    }
-
-    protected openStickyComposerApprovalPolicySheet(project: MobileProjectEntry, agentLabel: string): void {
-        this.stickyComposerSheetsUi.openStickyComposerApprovalPolicySheet(project, agentLabel);
-    }
-
-    protected openApprovalPolicySheet(options: {
-        readonly agentLabel: string;
-        readonly cwd: string | undefined;
-        readonly selectedId: QaapAgentApprovalPolicyId;
-        readonly toolRules: QaapAgentToolApprovalRules;
-        /** Raise above the full-screen transcript overlay (z-index 2147483001). */
-        readonly transcriptOverlay?: boolean;
-        readonly onSelect: (policyId: QaapAgentApprovalPolicyId) => void;
-        readonly onToolRulesChange?: (rules: QaapAgentToolApprovalRules) => void;
-        readonly onClose: () => void;
-        readonly assignSheet: (sheet: HTMLElement) => void;
-    }): void {
-        this.stickyComposerSheetsUi.openApprovalPolicySheet(options);
-    }
-
-    protected createModeSheetOption(
-        label: string,
-        modeId: string,
-        selectedModeId: string | undefined,
-        onSelect: (modeId: string) => void,
-    ): HTMLElement {
-        return this.stickyComposerSheetsUi.createModeSheetOption(label, modeId, selectedModeId, onSelect);
-    }
-
-    protected createAgentSheetOption(
-        label: string,
-        agentId: string,
-        cwd: string | undefined,
-        selectedAgentId: string | undefined,
-        onSelect: (agentId: string) => void,
-    ): HTMLElement {
-        return this.stickyComposerSheetsUi.createAgentSheetOption(label, agentId, cwd, selectedAgentId, onSelect);
-    }
-
-    protected async resolveModelsForAgentPicker(agentId: string): Promise<QaapQaiqModelOption[]> {
-        return this.stickyComposerSheetsUi.resolveModelsForAgentPicker(agentId);
-    }
-
-    protected createComposerAgentPickerChrome(options: {
-        readonly sheetClassName: string;
-        readonly closeTitle: string;
-        readonly onClose: () => void;
-    }): ComposerAgentPickerChrome {
-        return this.stickyComposerSheetsUi.createComposerAgentPickerChrome(options);
-    }
-
-    protected async renderComposerAgentPicker(
-        chrome: ComposerAgentPickerChrome,
-        options: {
-            readonly view: ComposerAgentPickerView;
-            readonly modelPickerAgentId?: string;
-            readonly cwd: string | undefined;
-            readonly agents: readonly QaapAgentTaskAgentOption[];
-            readonly selectedAgentId: string | undefined;
-            readonly includeCoder: boolean;
-            readonly onSelectAgent: (agentId: string, model?: QaapQaiqModelOption) => void;
-        },
-    ): Promise<void> {
-        await this.stickyComposerSheetsUi.renderComposerAgentPicker(chrome, options);
-    }
-
-    protected appendAgentModelPickerList(
-        list: HTMLElement,
-        agentId: string,
-        models: readonly QaapQaiqModelOption[],
-        storedModel: ReturnType<typeof readStoredAgentModel>,
-        onSelect: (model: QaapQaiqModelOption) => void,
-    ): void {
-        this.stickyComposerSheetsUi.appendAgentModelPickerList(list, agentId, models, storedModel, onSelect);
-    }
-
-    protected closeStickyComposerSheets(): void {
-        this.stickyComposerSheetsUi.closeStickyComposerSheets();
-    }
-
-    closeTranscriptComposerSheets(): void {
-        this.transcriptComposerUi.closeTranscriptComposerSheets();
-    }
-
-    protected applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[] {
-        return this.hubQueryUi.applyFilter(projects, filter);
-    }
-
-    protected applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[] {
-        return this.hubQueryUi.applySearch(projects);
-    }
-
-    protected projectMatchesSearch(project: MobileProjectEntry, query: string): boolean {
-        return this.hubQueryUi.projectMatchesSearch(project, query);
-    }
-
-    protected conversationMatchesQuery(
-        conversation: QaapAgentConversationSummaryDTO,
-        query: string,
-    ): boolean {
-        return this.hubQueryUi.conversationMatchesQuery(conversation, query);
-    }
-
-    protected isReviewHubView(): boolean {
-        return this.hubQueryUi.isReviewHubView();
-    }
-
-    protected isHomeHubView(): boolean {
-        return this.hubQueryUi.isHomeHubView();
-    }
-
-    protected isTasksHubView(): boolean {
-        return this.hubQueryUi.isTasksHubView();
     }
 
     protected refreshHomeHubData(forceRender: boolean): void {
@@ -2057,10 +1390,6 @@ export class MobileProjectsPanel {
         return this.theiaChatSessionUi.ensureAgentChatSession(cwd);
     }
 
-    protected activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']> {
-        return this.conversationIndexUi.activeInfoForProject(project);
-    }
-
     protected async cancelActiveTask(taskId: string): Promise<void> {
         await this.activeTaskActionsUi.cancelActiveTask(taskId);
     }
@@ -2167,69 +1496,9 @@ export class MobileProjectsPanel {
         force = false,
     ): Promise<void> {
         return this.inboxPrUi.refreshInboxPullRequests(
-            projects ?? this.projectsForCurrentHubList(),
+            projects ?? this.hubQueryUi.projectsForCurrentHubList(),
             force,
         );
-    }
-
-    protected buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement {
-        return this.cardMenuUi.buildProjectOptionsMenu(project);
-    }
-
-    protected buildCardMenu(
-        project: MobileProjectEntry,
-        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-    ): HTMLElement {
-        return this.cardMenuUi.buildCardMenu(project, activeInfo);
-    }
-
-    protected buildConversationMenu(
-        project: MobileProjectEntry,
-        summary: QaapAgentConversationSummaryDTO,
-    ): HTMLElement {
-        return this.cardMenuUi.buildConversationMenu(project, summary);
-    }
-
-    protected toggleCardMenu(card: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void {
-        this.cardMenuUi.toggleCardMenu(card, menu, menuBtn);
-    }
-
-    protected closeCardMenu(): void {
-        this.cardMenuUi.closeCardMenu();
-    }
-
-    protected createRow(project: MobileProjectEntry): HTMLElement {
-        return this.projectRowsUi.createRow(project);
-    }
-
-    protected createTaskBlock(
-        project: MobileProjectEntry,
-        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-    ): HTMLElement {
-        return this.projectRowsUi.createTaskBlock(project, activeInfo);
-    }
-
-    protected createTaskItem(
-        project: MobileProjectEntry,
-        task: MobileProjectTaskView,
-        activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
-        summary?: QaapAgentConversationSummaryDTO,
-        parentIds: ReadonlySet<string> = new Set<string>(),
-        options?: { onActivate?: () => void; compact?: boolean },
-    ): HTMLElement {
-        return this.projectRowsUi.createTaskItem(project, task, activeInfo, summary, parentIds, options);
-    }
-
-    protected detailComposerSurfaceForProject(project: MobileProjectEntry): QaapComposerSurface {
-        return this.projectRowsUi.detailComposerSurfaceForProject(project);
-    }
-
-    protected createTaskLeadingGlyph(codiconClass: string): HTMLElement {
-        return this.projectRowsUi.createTaskLeadingGlyph(codiconClass);
-    }
-
-    protected resolveConversationAgentLabel(summary?: QaapAgentConversationSummaryDTO): string {
-        return this.projectRowsUi.resolveConversationAgentLabel(summary);
     }
 
     protected async refreshWorkHubRoutines(force = false): Promise<void> {
@@ -2540,6 +1809,10 @@ export class MobileProjectsPanel {
         this.transcriptVerifyUi.refreshTranscriptChecksViews(project, summary);
     }
 
+    protected onResumePreview(project: MobileProjectEntry): void | Promise<void> | undefined {
+        return this.delegate.onResumePreview?.(project);
+    }
+
     protected renderChecksSection(
         host: HTMLElement | undefined,
         project: MobileProjectEntry,
@@ -2557,6 +1830,14 @@ export class MobileProjectsPanel {
         this.transcriptVerifyUi.handleTranscriptStatusForAutoVerify(project, summary, status);
     }
 
+    protected async syncTranscriptPreviewFromConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        conv: QaapAgentConversationDTO,
+    ): Promise<void> {
+        await this.transcriptSurfacesUi.syncTranscriptPreviewFromConversation(project, summary, conv);
+    }
+
     protected ensureOverlayUi(): {
         parallel: MobileProjectsParallelUi;
         team: MobileProjectsTeamUi;
@@ -2564,6 +1845,38 @@ export class MobileProjectsPanel {
         home: MobileProjectsHomeUi;
     } {
         return this.overlayFactoryUi.ensureOverlayUi();
+    }
+
+    protected appendTranscriptHeaderActions(header: HTMLElement, title: HTMLElement): HTMLButtonElement {
+        return this.overlayFactoryUi.appendTranscriptHeaderActions(header, title);
+    }
+
+    protected createProjectDetailView(project: MobileProjectEntry): HTMLElement {
+        return this.projectDetailUi.createProjectDetailView(project);
+    }
+
+    protected disposeTranscriptTerminalSlides(workspaceKey?: TranscriptWorkspaceSurfaceKey): void {
+        this.transcriptSurfacesUi.disposeTranscriptTerminalSlides(workspaceKey);
+    }
+
+    protected syncSearchChrome(): void {
+        this.repoFiltersUi.syncSearchChrome();
+    }
+
+    protected closeParallelSheet(): void {
+        this.overlayFactoryUi.closeParallelSheet();
+    }
+
+    protected detachTranscriptReviewWidget(): void {
+        this.transcriptSurfacesUi.detachTranscriptReviewWidget();
+    }
+
+    protected disposeTranscriptEmbeddedPreview(): void {
+        this.transcriptSurfacesUi.disposeTranscriptEmbeddedPreview();
+    }
+
+    protected detachTranscriptWorkspaceSurfacesFromSheet(): void {
+        this.transcriptSurfacesUi.detachTranscriptWorkspaceSurfacesFromSheet();
     }
 
     protected attachTranscriptChatViewWidget(

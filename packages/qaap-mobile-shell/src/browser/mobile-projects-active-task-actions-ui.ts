@@ -19,13 +19,14 @@ export interface MobileProjectsActiveTaskActionsHost {
 
     closeCardMenu(): void;
     render(): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 export class MobileProjectsActiveTaskActionsUi {
     constructor(protected readonly host: MobileProjectsActiveTaskActionsHost) { }
 
     async cancelActiveTask(taskId: string): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             const response = await fetch(`/qaap/api/agent-tasks/${encodeURIComponent(taskId)}/cancel`, {
                 method: 'POST',
@@ -46,7 +47,7 @@ export class MobileProjectsActiveTaskActionsUi {
     }
 
     async showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const root = document.createElement('div');
         root.className = 'theia-mobile-agent-log theia-mod-visible';
         root.setAttribute('role', 'dialog');

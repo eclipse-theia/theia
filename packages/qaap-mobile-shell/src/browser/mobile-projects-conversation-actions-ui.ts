@@ -48,6 +48,7 @@ export interface MobileProjectsConversationActionsHost {
     isWatchingOpenTranscript(conversationId: string): boolean;
     transcriptLiveUi: MobileProjectsTranscriptLiveUi;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 /** Task card actions invoked from project lists and the sessions sidebar. */
@@ -59,7 +60,7 @@ export class MobileProjectsConversationActionsUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             const full = await forkConversation(summary.id);
             const forked = conversationToSummary(full);
@@ -79,7 +80,7 @@ export class MobileProjectsConversationActionsUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         if (summary.source === 'theia-chat' && (!summary.sessionId || !this.host.chatService)) {
             return;
         }
@@ -122,7 +123,7 @@ export class MobileProjectsConversationActionsUi {
         summary: QaapAgentConversationSummaryDTO,
         priority: boolean,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             if (summary.source === 'theia-chat') {
                 if (!this.host.conversationFlags) {
@@ -152,7 +153,7 @@ export class MobileProjectsConversationActionsUi {
         summary: QaapAgentConversationSummaryDTO,
         paused: boolean,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             if (paused && summary.status === 'streaming') {
                 await this.onCancelConversation(project, summary);
@@ -192,7 +193,7 @@ export class MobileProjectsConversationActionsUi {
         if (this.host.transcriptAutoApproveBusy) {
             return;
         }
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         this.host.transcriptAutoApproveBusy = true;
         try {
             const full = await updateConversation(summary.id, { autoApprove });
@@ -220,7 +221,7 @@ export class MobileProjectsConversationActionsUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             if (summary.source === 'theia-chat') {
                 const session = await this.host.getOrRestoreProjectChatSession(project, summary);
@@ -246,7 +247,7 @@ export class MobileProjectsConversationActionsUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         try {
             const retried = await retryConversation(summary.id);
             this.host.conversations?.recordSnapshot(conversationToSummary(retried));
@@ -272,7 +273,7 @@ export class MobileProjectsConversationActionsUi {
     }
 
     async onDeleteConversation(summary: QaapAgentConversationSummaryDTO): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const confirmed = await new ConfirmDialog({
             title: nls.localize('qaap/mobileProjects/deleteTask', 'Delete task'),
             msg: nls.localize('qaap/mobileProjects/deleteTaskConfirm', 'Delete this task? This cannot be undone.'),

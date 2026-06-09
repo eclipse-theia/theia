@@ -17,11 +17,11 @@ export interface MobileProjectsHubRenderHost {
     isProjectDiffView(): boolean;
     shouldUseAgentsHubLanding(): boolean;
     isProjectDetailView(): boolean;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
     executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     renderHeader(): void;
     renderSubtitle(): void;
-    syncHeaderComposerSurfacePicker(): void;
+    composerHeaderUi: import('./mobile-projects-composer-header-ui').MobileProjectsComposerHeaderUi;
     syncHubViewAvailability(): void;
     renderFilters(): void;
     renderList(): void;
@@ -43,7 +43,7 @@ export class MobileProjectsHubRenderUi {
         this.host.root.classList.toggle('theia-mod-hub-repos', this.host.hubView === 'repos');
         this.host.root.classList.toggle('theia-mod-agents-hub-landing', this.host.shouldUseAgentsHubLanding());
         this.host.root.classList.toggle('theia-mod-project-detail', this.host.isProjectDetailView());
-        const detailProject = this.host.resolveSelectedProject();
+        const detailProject = this.host.projectNavigationUi.resolveSelectedProject();
         const detailTab = detailProject ? this.host.executionSurfaceTabsUi.executionSurfaceTabForProject(detailProject) : 'messages';
         this.host.root.classList.toggle(
             'theia-mod-project-surface-chat',
@@ -55,7 +55,7 @@ export class MobileProjectsHubRenderUi {
         );
         this.host.renderHeader();
         this.host.renderSubtitle();
-        this.host.syncHeaderComposerSurfacePicker();
+        this.host.composerHeaderUi.syncHeaderComposerSurfacePicker();
         this.host.executionSurfaceTabsUi.syncHeaderExecutionTabStrip();
         if (this.host.transcriptSheet && this.host.transcriptOpenProject) {
             this.host.executionSurfaceTabsUi.syncExecutionSurfaceChrome(this.host.transcriptOpenProject);

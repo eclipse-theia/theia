@@ -55,4 +55,38 @@ export class TranscriptFollowUpQueue {
     size(conversationId: string): number {
         return this.byConversation.get(conversationId)?.length ?? 0;
     }
+
+    removeAt(conversationId: string, index: number): void {
+        const queue = this.byConversation.get(conversationId);
+        if (!queue || index < 0 || index >= queue.length) {
+            return;
+        }
+        queue.splice(index, 1);
+        if (!queue.length) {
+            this.byConversation.delete(conversationId);
+        }
+    }
+
+    moveUp(conversationId: string, index: number): boolean {
+        if (index <= 0) {
+            return false;
+        }
+        const queue = this.byConversation.get(conversationId);
+        if (!queue || index >= queue.length) {
+            return false;
+        }
+        const entry = queue[index];
+        queue.splice(index, 1);
+        queue.splice(index - 1, 0, entry);
+        return true;
+    }
+
+    replaceAt(conversationId: string, index: number, entry: TranscriptFollowUpEntry): boolean {
+        const queue = this.byConversation.get(conversationId);
+        if (!queue || index < 0 || index >= queue.length) {
+            return false;
+        }
+        queue[index] = entry;
+        return true;
+    }
 }

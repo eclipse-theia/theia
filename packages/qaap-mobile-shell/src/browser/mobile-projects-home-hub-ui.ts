@@ -58,6 +58,7 @@ export interface MobileProjectsHomeHubHost {
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     selectHubLandingView(view: import('./mobile-projects-types').MobileProjectsHubView, preferredDiffProjectId?: string, options?: { force?: boolean }): void;
     preferComposerSurface(surface: import('../common/qaap-composer-surface').QaapComposerSurface, projectCwd?: string): void;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi
 }
 
 export class MobileProjectsHomeHubUi {
@@ -107,7 +108,7 @@ export class MobileProjectsHomeHubUi {
         }
         const recentSources: WorkHubHomeRecentSource[] = [];
         for (const project of this.host.projects) {
-            for (const summary of [...this.host.localChatsForProject(project), ...this.host.vpsTasksForProject(project)]) {
+            for (const summary of [...this.host.conversationIndexUi.localChatsForProject(project), ...this.host.conversationIndexUi.vpsTasksForProject(project)]) {
                 recentSources.push({
                     id: summary.id,
                     projectId: project.id,
@@ -124,7 +125,7 @@ export class MobileProjectsHomeHubUi {
         }
         const usageEvents = [];
         for (const project of this.host.projects) {
-            for (const summary of this.host.conversationsForProject(project)) {
+            for (const summary of this.host.conversationIndexUi.conversationsForProject(project)) {
                 usageEvents.push({
                     createdAt: summary.createdAt,
                     updatedAt: summary.updatedAt,
@@ -139,7 +140,7 @@ export class MobileProjectsHomeHubUi {
                 needsYou,
                 openPullRequests: this.host.inboxPullRequests.length,
                 localChatCount: this.host.projects.reduce(
-                    (sum, project) => sum + this.host.localChatsForProject(project).length,
+                    (sum, project) => sum + this.host.conversationIndexUi.localChatsForProject(project).length,
                     0,
                 ),
             },
@@ -177,7 +178,7 @@ export class MobileProjectsHomeHubUi {
         const activeCount = cwd
             ? (this.host.activeTasks?.getForCwd(cwd)?.activeCount ?? 0)
             : this.host.activeTasks?.findTasksForProject(project).filter(task => task.state === 'running').length ?? 0;
-        const tasks = this.host.vpsTasksForProject(project).length;
+        const tasks = this.host.conversationIndexUi.vpsTasksForProject(project).length;
         if (activeCount > 0 && tasks > 0) {
             return activeCount === 1
                 ? nls.localize(
@@ -295,7 +296,7 @@ export class MobileProjectsHomeHubUi {
         if (!project) {
             return;
         }
-        const summary = this.host.conversationsForProject(project).find(entry => entry.id === item.id);
+        const summary = this.host.conversationIndexUi.conversationsForProject(project).find(entry => entry.id === item.id);
         if (!summary) {
             return;
         }

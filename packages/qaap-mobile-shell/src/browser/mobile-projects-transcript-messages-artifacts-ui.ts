@@ -493,7 +493,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             return undefined;
         }
         const summary = this.host.transcriptOpenSummary ?? conversationToSummary(conv);
-        if (!this.host.hasConversationDiffStats(summary)) {
+        if (!this.host.projectRowsUi.hasConversationDiffStats(summary)) {
             return undefined;
         }
         const lastAgent = [...conv.messages].reverse().find(message => message.role === 'agent');
@@ -686,7 +686,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         const activeTool = [...segments].reverse().find((segment): segment is Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> =>
             segment.type === 'tool' && !segment.finished);
         if (activeTool) {
-            const label = this.host.localizeActivityLabel(formatToolActivityLabel(activeTool.name, activeTool.args));
+            const label = this.host.projectRowsUi.localizeActivityLabel(formatToolActivityLabel(activeTool.name, activeTool.args));
             return {
                 kind: this.resolversUi.resolveTranscriptToolKind(activeTool.name),
                 title: label,

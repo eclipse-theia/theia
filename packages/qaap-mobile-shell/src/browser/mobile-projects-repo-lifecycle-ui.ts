@@ -32,8 +32,9 @@ export interface MobileProjectsRepoLifecycleHost {
     renderList(): void;
     openProjectDetail(project: MobileProjectEntry): Promise<void>;
     preferComposerSurface(surface: QaapComposerSurface, projectCwd?: string): void;
-    refreshChatServiceSessionSummaries(): Promise<void>;
+    chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
     closeCardMenu(): void;
+    cardMenuUi: import('./mobile-projects-card-menu-ui').MobileProjectsCardMenuUi;
 }
 
 export class MobileProjectsRepoLifecycleUi {
@@ -81,7 +82,7 @@ export class MobileProjectsRepoLifecycleUi {
         try {
             this.host.projects = await this.host.projectsService.loadProjects();
             await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-            await this.host.refreshChatServiceSessionSummaries();
+            await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
             this.host.render();
             this.host.delegate.onProjectsChanged?.();
         } finally {
@@ -90,7 +91,7 @@ export class MobileProjectsRepoLifecycleUi {
     }
 
     async onTogglePin(project: MobileProjectEntry): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         this.host.projectsService.togglePin(project);
         this.host.projects = await this.host.projectsService.loadProjects();
         this.host.render();
@@ -98,7 +99,7 @@ export class MobileProjectsRepoLifecycleUi {
     }
 
     async openAgentComposer(project: MobileProjectEntry, draft?: string): Promise<void> {
-        this.host.closeCardMenu();
+        this.host.cardMenuUi.closeCardMenu();
         const cwd = this.host.projectsService.getProjectCwd(project);
         this.host.preferComposerSurface('task', cwd);
         this.host.stickyComposerDraft = draft ?? this.host.stickyComposerDraft;

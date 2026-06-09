@@ -32,9 +32,10 @@ preparedCwdByProjectId: Map<string, string>;
 projectsService: MobileProjectsService;
 chatAgentService?: ChatAgentService;
 activeTasks?: MobileProjectsActiveTasks;
-renderStickyComposer(): void;
+stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
 loadBackendAgentSnapshot(): Promise<QaapAgentTaskListSnapshot>;
 resolveConversationAgentLabel(agentId: string | undefined): string;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 export class MobileProjectsStickyComposerAgentsUi {
@@ -66,7 +67,7 @@ export class MobileProjectsStickyComposerAgentsUi {
         if (fromList) {
             return fromList;
         }
-        return this.host.resolveConversationAgentLabel(undefined);
+        return this.host.projectRowsUi.resolveConversationAgentLabel(undefined);
     }
     resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined {
         if (!agentSupportsModelPicker(agentId)) {
@@ -111,7 +112,7 @@ export class MobileProjectsStickyComposerAgentsUi {
             );
             if (this.host.stickyComposerPinnedAgentId !== resolved) {
                 this.host.stickyComposerPinnedAgentId = resolved;
-                this.host.renderStickyComposer();
+                this.host.stickyComposerRenderUi.renderStickyComposer();
             }
         } catch {
             this.host.stickyComposerBackendAgents = this.filterSelectableComposerAgents(this.host.activeTasks?.getAgents() ?? []);

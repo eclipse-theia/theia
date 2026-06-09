@@ -38,15 +38,12 @@ export interface MobileProjectsWorkHubSearchHost {
     expandedId: string | undefined;
     delegate: { onOpenPullRequest?(pullRequest: QaapGithubPullRequestSummary): void };
 
-    isSearchChromeHidden(): boolean;
-    workHubSearchPlaceholder(): string;
+    repoFiltersUi: import('./mobile-projects-repo-filters-ui').MobileProjectsRepoFiltersUi;
+    projectNavigationUi: import('./mobile-projects-project-navigation-ui').MobileProjectsProjectNavigationUi;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
+    hubQueryUi: import('./mobile-projects-hub-query-ui').MobileProjectsHubQueryUi;
     isProjectDetailView(): boolean;
-    resolveSelectedProject(projects?: MobileProjectEntry[]): MobileProjectEntry | undefined;
     detailComposerSurfaceForProject(project: MobileProjectEntry): import('../common/qaap-composer-surface').QaapComposerSurface;
-    localChatsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    vpsTasksForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[];
-    applyFilter(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[];
     sortRoutinesForDisplay(routines: QaapWorkHubRoutine[]): QaapWorkHubRoutine[];
     openProjectDetail(project: MobileProjectEntry): void | Promise<void>;
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
@@ -54,6 +51,7 @@ export interface MobileProjectsWorkHubSearchHost {
     selectHubLandingView(view: MobileProjectsHubView, preferredDiffProjectId?: string, options?: { force?: boolean }): void;
     openRoutineEditor(routine: QaapWorkHubRoutine): void;
     syncSearchChrome(): void;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
 }
 
 /** Work Hub quick-pick search: item builders and navigation targets. */
@@ -62,7 +60,7 @@ export class MobileProjectsWorkHubSearchUi {
     constructor(protected readonly host: MobileProjectsWorkHubSearchHost) { }
 
     openWorkHubSearchQuickPick(): void {
-        if (!this.host.quickInputService || this.host.isSearchChromeHidden()) {
+        if (!this.host.quickInputService || this.host.repoFiltersUi.isSearchChromeHidden()) {
             return;
         }
         if (this.host.workHubSearchQuickPick) {
@@ -71,7 +69,7 @@ export class MobileProjectsWorkHubSearchUi {
         }
         const quickPick = this.host.quickInputService.createQuickPick<WorkHubSearchPickItem>();
         this.host.workHubSearchQuickPick = quickPick;
-        quickPick.placeholder = this.host.workHubSearchPlaceholder();
+        quickPick.placeholder = this.host.repoFiltersUi.workHubSearchPlaceholder();
         quickPick.canSelectMany = false;
         quickPick.matchOnDescription = true;
         quickPick.matchOnDetail = true;
@@ -122,20 +120,20 @@ export class MobileProjectsWorkHubSearchUi {
     }
 
     buildProjectDetailSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
-        const project = this.host.resolveSelectedProject();
+        const project = this.host.projectNavigationUi.resolveSelectedProject();
         if (!project) {
             return [];
         }
-        const surface = this.host.detailComposerSurfaceForProject(project);
+        const surface = this.host.projectRowsUi.detailComposerSurfaceForProject(project);
         const conversations = surface === 'chat'
-            ? this.host.localChatsForProject(project)
-            : this.host.vpsTasksForProject(project);
+            ? this.host.conversationIndexUi.localChatsForProject(project)
+            : this.host.conversationIndexUi.vpsTasksForProject(project);
         return conversations.map(c => this.conversationToSearchPickItem(project, c));
     }
 
     buildReposSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         const items: Array<WorkHubSearchPickItem | QuickPickSeparator> = [];
-        const projects = this.host.applyFilter(this.host.projects, this.host.filter);
+        const projects = this.host.hubQueryUi.applyFilter(this.host.projects, this.host.filter);
         for (const project of projects) {
             items.push({
                 label: project.name,
@@ -144,7 +142,7 @@ export class MobileProjectsWorkHubSearchUi {
                 iconClasses: ['codicon', 'codicon-repo'],
                 target: { kind: 'project', projectId: project.id },
             });
-            for (const conversation of this.host.conversationsForProject(project)) {
+            for (const conversation of this.host.conversationIndexUi.conversationsForProject(project)) {
                 items.push(this.conversationToSearchPickItem(project, conversation));
             }
         }
@@ -157,7 +155,7 @@ export class MobileProjectsWorkHubSearchUi {
             return this.buildChatHubSearchPickItems();
         }
         for (const project of this.host.projects) {
-            for (const conversation of this.host.vpsTasksForProject(project)) {
+            for (const conversation of this.host.conversationIndexUi.vpsTasksForProject(project)) {
                 items.push(this.conversationToSearchPickItem(project, conversation));
             }
         }
@@ -167,7 +165,7 @@ export class MobileProjectsWorkHubSearchUi {
     buildChatHubSearchPickItems(): Array<WorkHubSearchPickItem | QuickPickSeparator> {
         const items: Array<WorkHubSearchPickItem | QuickPickSeparator> = [];
         for (const project of this.host.projects) {
-            for (const conversation of this.host.localChatsForProject(project)) {
+            for (const conversation of this.host.conversationIndexUi.localChatsForProject(project)) {
                 items.push(this.conversationToSearchPickItem(project, conversation));
             }
         }
@@ -246,7 +244,7 @@ export class MobileProjectsWorkHubSearchUi {
                 if (!project) {
                     return;
                 }
-                const summary = this.host.conversationsForProject(project).find(entry => entry.id === target.conversationId);
+                const summary = this.host.conversationIndexUi.conversationsForProject(project).find(entry => entry.id === target.conversationId);
                 if (!summary) {
                     return;
                 }

@@ -30,6 +30,7 @@ export interface MobileProjectsHubTeamDataHost {
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
     showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void>;
     openProjectDetail(project: MobileProjectEntry): Promise<void>;
+    conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi
 }
 
 /** Collects Team hub members/approvals and handles member row navigation. */
@@ -56,7 +57,7 @@ export class MobileProjectsHubTeamDataUi {
             updatedAt: number;
         }> = [];
         for (const project of this.host.projects) {
-            for (const summary of this.host.conversationsForProject(project)) {
+            for (const summary of this.host.conversationIndexUi.conversationsForProject(project)) {
                 if (summary.source === 'theia-chat') {
                     continue;
                 }
@@ -117,7 +118,7 @@ export class MobileProjectsHubTeamDataUi {
             }
             const project = this.resolveProjectForTeamMember(member);
             const summary = project
-                ? this.host.conversationsForProject(project).find(c => c.id === member.conversationId)
+                ? this.host.conversationIndexUi.conversationsForProject(project).find(c => c.id === member.conversationId)
                 : undefined;
             if (!summary || summary.source === 'theia-chat' || isConversationAutoApproveEnabled(summary)) {
                 continue;
@@ -193,7 +194,7 @@ export class MobileProjectsHubTeamDataUi {
         if (member.conversationId) {
             const project = this.resolveProjectForTeamMember(member);
             const summary = project
-                ? this.host.conversationsForProject(project).find(c => c.id === member.conversationId)
+                ? this.host.conversationIndexUi.conversationsForProject(project).find(c => c.id === member.conversationId)
                 : undefined;
             if (project && summary) {
                 void this.host.transcriptSheetUi.openTranscriptSheet(project, summary);

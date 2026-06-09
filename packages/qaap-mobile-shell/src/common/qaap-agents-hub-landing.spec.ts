@@ -30,7 +30,7 @@ describe('qaap-agents-hub-landing', () => {
     it('exposes agent-first quick actions for the empty transcript', () => {
         expect(QAAP_AGENTS_HUB_QUICK_ACTIONS.length).to.be.at.least(3);
         const ids = QAAP_AGENTS_HUB_QUICK_ACTIONS.map(action => action.id);
-        expect(ids).to.include.members(['fix-bug', 'review-pr', 'add-tests']);
+        expect(ids).to.include.members(['fix-bug', 'review-pr', 'add-tests', 'run-app']);
         for (const action of QAAP_AGENTS_HUB_QUICK_ACTIONS) {
             expect(action.icon.trim()).to.not.equal('');
             expect(action.labelDefault.trim()).to.not.equal('');

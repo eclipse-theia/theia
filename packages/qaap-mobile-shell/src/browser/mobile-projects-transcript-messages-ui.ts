@@ -54,8 +54,7 @@ export interface MobileProjectsTranscriptMessagesHost {
     projectsService: MobileProjectsService;
     projects: MobileProjectEntry[];
 
-    localizeActivityLabel(label: string): string;
-    hasConversationDiffStats(summary?: QaapAgentConversationSummaryDTO): boolean;
+    projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
     shouldEmbedAgentsHubRecentsInWorkspaceTranscript(): boolean;
     createAgentsHubRecentsBlock(project: MobileProjectEntry): HTMLElement;
     createAgentsHubQuickActionsBlock(): HTMLElement;
@@ -127,5 +126,42 @@ export class MobileProjectsTranscriptMessagesUi {
 
     cleanTranscriptDisplayText(content: string | undefined | null): string {
         return this.contentUi.cleanTranscriptDisplayText(content);
+    }
+
+    resolveComposerActivityFiles(
+        conv: QaapAgentConversationDTO | undefined,
+        summary?: QaapAgentConversationSummaryDTO,
+    ): {
+        readonly files: Array<{ readonly path: string; readonly kind: 'edited' | 'created'; readonly added?: number; readonly removed?: number }>;
+        readonly stats?: { readonly added: number; readonly removed: number };
+    } {
+        const segments = this.resolveComposerTurnSegments(conv);
+        const files = this.resolversUi.resolveTranscriptChangedFiles(segments);
+        let stats = this.resolversUi.resolveTranscriptDiffStats(segments);
+        if (!stats && summary && ((summary.linesAdded ?? 0) > 0 || (summary.linesRemoved ?? 0) > 0)) {
+            stats = { added: summary.linesAdded ?? 0, removed: summary.linesRemoved ?? 0 };
+        }
+        return {
+            files: files.map(file => ({
+                ...file,
+                ...this.resolversUi.resolveTranscriptFileDiffStats(segments, file.path),
+            })),
+            stats,
+        };
+    }
+
+    protected resolveComposerTurnSegments(conv: QaapAgentConversationDTO | undefined): QaapAgentMessageSegmentDTO[] {
+        if (!conv?.messages.length) {
+            return [];
+        }
+        let lastUserIndex = -1;
+        for (let i = conv.messages.length - 1; i >= 0; i--) {
+            if (conv.messages[i].role === 'user') {
+                lastUserIndex = i;
+                break;
+            }
+        }
+        const turnMessages = lastUserIndex >= 0 ? conv.messages.slice(lastUserIndex + 1) : conv.messages;
+        return turnMessages.flatMap(message => message.role === 'agent' ? (message.segments ?? []) : []);
     }
 }
