@@ -7,6 +7,7 @@
 ## 1.73.0 - tbd
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [plugin-ext] avoided exhausting OS file watches by not registering plugin watches rooted at an ancestor of the workspace folder (e.g. a language server watching the parent directory), which the backend would otherwise crawl recursively [#17633](https://github.com/eclipse-theia/theia/pull/17633)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
