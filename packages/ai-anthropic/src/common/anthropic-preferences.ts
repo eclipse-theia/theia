@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
+export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideCompaction';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -45,6 +46,22 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [SERVER_SIDE_COMPACTION_PREF]: {
+            type: 'string',
+            enum: ['default', 'enabled', 'disabled'],
+            enumDescriptions: [
+                nls.localize('theia/ai/anthropic/compaction/default', 'Follow the global chat server-side compaction setting.'),
+                nls.localize('theia/ai/anthropic/compaction/enabled', 'Always request server-side compaction for Anthropic models.'),
+                nls.localize('theia/ai/anthropic/compaction/disabled', 'Never request server-side compaction for Anthropic models.')
+            ],
+            default: 'default',
+            markdownDescription: nls.localize('theia/ai/anthropic/compaction/description',
+                'Override provider-native server-side compaction for Anthropic models. "default" follows the global chat setting ' +
+                '({0}). When effectively enabled, the Anthropic Beta Messages API is used so the provider can summarize ' +
+                'older turns once the conversation grows past its threshold.',
+                `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',

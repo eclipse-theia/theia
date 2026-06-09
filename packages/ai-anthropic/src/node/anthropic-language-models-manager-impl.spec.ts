@@ -64,6 +64,7 @@ function description(model: string, url?: string): AnthropicModelDescription {
         enableStreaming: true,
         useCaching: true,
         maxRetries: 3,
+        serverSideCompactionEnabledByDefault: false,
         url
     };
 }
