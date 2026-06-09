@@ -41,6 +41,7 @@ import {
 import {
     createAgentStreamAccumulator,
     parseAgentLogForTranscript,
+    resolveAgentLogDisplayText,
     type QaapAgentStreamAccumulator,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-cli-transcript-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
@@ -798,8 +799,9 @@ export class QaapAgentConversationStore {
         if (task.state !== 'completed') {
             const reason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
             const errored = this.markUserMessageFailed(withUsageBaseline, userMessageId, reason);
-            const withReply = log && !agentMessageId
-                ? this.appendAgentReply(errored, log)
+            const failureBody = log ? resolveAgentLogDisplayText(conv.agentId, log) : '';
+            const withReply = failureBody && !agentMessageId
+                ? this.appendAgentReply(errored, failureBody)
                 : errored;
             this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
             return;
@@ -818,7 +820,8 @@ export class QaapAgentConversationStore {
         } else if (agentMessageId) {
             withReply = { ...withUsageBaseline, status: 'idle' as const, updatedAt: Date.now() };
         } else {
-            const body = structuredParsed?.content || log || '(agent produced no output)';
+            const displayText = log ? resolveAgentLogDisplayText(conv.agentId, log) : '';
+            const body = structuredParsed?.content?.trim() || displayText || '(agent produced no output)';
             const reply = this.appendAgentReply({ ...withUsageBaseline, status: 'idle' }, body);
             if (structuredParsed?.segments?.length) {
                 const messages = reply.messages.map((message, index, all) => {

@@ -79,3 +79,12 @@ export function parseAgentLogForTranscript(
     }
     return { content: log.trim(), segments: [] };
 }
+
+/** Plain reply text for storage/UI — never surfaces QAIQ NDJSON metadata envelopes. */
+export function resolveAgentLogDisplayText(agentId: string | undefined, log: string): string {
+    const trimmed = log.trim();
+    if (!trimmed) {
+        return '';
+    }
+    return parseAgentLogForTranscript(agentId, trimmed).content.trim();
+}

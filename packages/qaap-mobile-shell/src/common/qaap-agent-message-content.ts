@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { QAAP_PRIMARY_AGENT_ID } from './qaap-agent-task-client';
+import { parseAgentLogForTranscript } from './qaap-cli-transcript-stream';
 import { isQaiqStreamMetadataEnvelope } from './qaap-qaiq-stream';
 
 interface AgentContentBlock {
@@ -27,6 +29,9 @@ interface AgentMessageLike {
 export function normalizeAgentMessageContentForDisplay(raw: string | undefined | null): string {
     const text = raw ?? '';
     const trimmed = text.trim();
+    if (looksLikeQaiqProcessLog(trimmed)) {
+        return parseAgentLogForTranscript(QAAP_PRIMARY_AGENT_ID, trimmed).content.trim();
+    }
     if (!looksLikeJson(trimmed)) {
         return text;
     }
@@ -64,6 +69,10 @@ export function resolveMessagePreviewText(message: MessagePreviewLike | undefine
         }
     }
     return trimmed;
+}
+
+function looksLikeQaiqProcessLog(text: string): boolean {
+    return /\{"type":"(?:stream_event|system|result)"/.test(text);
 }
 
 function isQaiqStreamMetadataJson(text: string): boolean {

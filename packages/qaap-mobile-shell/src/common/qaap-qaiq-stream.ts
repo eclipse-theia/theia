@@ -140,8 +140,13 @@ export class QaapQaiqStreamAccumulator {
         }
         if (type === 'result') {
             this.captureUsage(envelope.usage);
-            if (envelope.is_error && typeof envelope.result === 'string' && envelope.result.trim()) {
-                this.liveText = mergeIncrementalStreamText(this.liveText, `\n\n**Error:** ${envelope.result.trim()}`);
+            if (typeof envelope.result === 'string' && envelope.result.trim()) {
+                const resultText = envelope.result.trim();
+                if (envelope.is_error) {
+                    this.liveText = mergeIncrementalStreamText(this.liveText, `\n\n**Error:** ${resultText}`);
+                } else {
+                    this.liveText = mergeIncrementalStreamText(this.liveText, resultText);
+                }
                 this.rebuildSegments();
             }
         }
@@ -580,6 +585,14 @@ export function dedupeAgentMessageTextSegments(
     return result;
 }
 
+/** Session bootstrap / retry envelopes — safe to drop from process logs and display text. */
+export function isQaiqStreamSystemInitEnvelope(value: unknown): boolean {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+    return (value as StreamMessageEnvelope).type === 'system';
+}
+
 /** NDJSON envelopes that carry session metadata, not user-visible assistant text. */
 export function isQaiqStreamMetadataEnvelope(value: unknown): boolean {
     if (typeof value !== 'object' || value === null) {
@@ -594,6 +607,29 @@ export function isQaiqStreamMetadataEnvelope(value: unknown): boolean {
         return true;
     }
     return false;
+}
+
+/**
+ * Strip only QAIQ system init/retry lines from agent stdout before transcript parsing.
+ * Unlike {@link filterQaiqStreamMetadataLines}, keeps stream_event deltas and result text.
+ */
+export function filterQaiqStreamProcessLogLines(chunk: string): string {
+    if (!chunk) {
+        return '';
+    }
+    const lines = chunk.split('\n');
+    const kept = lines.filter(line => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('{')) {
+            return true;
+        }
+        try {
+            return !isQaiqStreamSystemInitEnvelope(JSON.parse(trimmed));
+        } catch {
+            return true;
+        }
+    });
+    return kept.join('\n');
 }
 
 /** Drop QAIQ / Claude Code stream-json metadata lines from stdout chunks. */

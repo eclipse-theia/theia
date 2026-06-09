@@ -486,6 +486,17 @@ export function renderStickyComposerContextStrip(options: {
 
     let attachmentsExpanded = options.filesExpanded ?? true;
     let attachmentBodyHost: HTMLElement | undefined;
+    let attachmentsToggle: HTMLButtonElement | undefined;
+
+    const syncAttachmentsExpanded = (): void => {
+        attachmentsToggle?.setAttribute('aria-expanded', attachmentsExpanded ? 'true' : 'false');
+        attachmentsToggle?.classList.toggle('theia-mod-collapsed', !attachmentsExpanded);
+        strip.classList.toggle('theia-mod-attachments-collapsed', attachmentsOnly && !attachmentsExpanded);
+        options.onFilesExpandedChange?.(attachmentsExpanded);
+        if (attachmentBodyHost) {
+            attachmentBodyHost.hidden = !attachmentsExpanded;
+        }
+    };
 
     const head = document.createElement('div');
     head.className = 'theia-mobile-projects-sticky-composer-context-head';
@@ -497,8 +508,7 @@ export function renderStickyComposerContextStrip(options: {
         const toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'theia-mobile-projects-sticky-composer-context-files-toggle';
-        toggle.setAttribute('aria-expanded', attachmentsExpanded ? 'true' : 'false');
-        toggle.classList.toggle('theia-mod-collapsed', !attachmentsExpanded);
+        attachmentsToggle = toggle;
 
         const chevron = document.createElement('span');
         chevron.className = 'codicon codicon-chevron-down';
@@ -518,14 +528,10 @@ export function renderStickyComposerContextStrip(options: {
 
         toggle.append(chevron, text);
         toggle.addEventListener('click', ev => {
+            ev.preventDefault();
             ev.stopPropagation();
             attachmentsExpanded = !attachmentsExpanded;
-            toggle.setAttribute('aria-expanded', attachmentsExpanded ? 'true' : 'false');
-            toggle.classList.toggle('theia-mod-collapsed', !attachmentsExpanded);
-            options.onFilesExpandedChange?.(attachmentsExpanded);
-            if (attachmentBodyHost) {
-                attachmentBodyHost.hidden = !attachmentsExpanded;
-            }
+            syncAttachmentsExpanded();
         });
         headMain.append(toggle);
     } else {
@@ -573,10 +579,10 @@ export function renderStickyComposerContextStrip(options: {
             body.append(renderContextChipRow(otherEntries, options.onRemoveItem));
         }
 
-        if (attachmentsOnly) {
-            body.hidden = !attachmentsExpanded;
-        }
         strip.append(body);
+        if (attachmentsOnly) {
+            syncAttachmentsExpanded();
+        }
     }
 
     if (attachmentCount > 0) {

@@ -33,6 +33,7 @@ export interface MobileProjectsTranscriptSheetHost {
     transcriptSheet: HTMLElement | undefined;
     transcriptChatHost: HTMLElement | undefined;
     transcriptChatInputHost: HTMLElement | undefined;
+    transcriptComposerSizeDispose: Disposable;
     transcriptTabStrip: HTMLElement | undefined;
     transcriptPlanHost: HTMLElement | undefined;
     transcriptReviewHost: HTMLElement | undefined;
@@ -183,6 +184,7 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.transcriptSheet = root;
         this.host.transcriptChatHost = chatHost;
         this.host.transcriptChatInputHost = chatInputHost;
+        this.observeTranscriptComposerSize(root, chatInputHost);
         this.host.transcriptTabStrip = tabStrip;
         this.host.transcriptPlanHost = planHost;
         this.host.transcriptReviewHost = reviewHost;
@@ -355,6 +357,8 @@ export class MobileProjectsTranscriptSheetUi {
         }
 
         this.host.transcriptLiveUi.stopTranscriptLiveWatch();
+        this.host.transcriptComposerSizeDispose.dispose();
+        this.host.transcriptComposerSizeDispose = Disposable.NULL;
         this.host.transcriptUserScrollPinDispose.dispose();
         this.host.transcriptUserScrollPinDispose = Disposable.NULL;
         this.host.transcriptUi.disposeList();
@@ -388,5 +392,26 @@ export class MobileProjectsTranscriptSheetUi {
                 viewWidget.dispose();
             }
         }, 0);
+    }
+
+    /**
+     * Publishes the floating composer's height as `--qaap-transcript-composer-height` on the
+     * sheet root, so the empty-state quick actions can hover just above it (ChatGPT-style) while
+     * the chat surface scrolls behind.
+     */
+    protected observeTranscriptComposerSize(root: HTMLElement, composer: HTMLElement): void {
+        this.host.transcriptComposerSizeDispose.dispose();
+        const apply = () => {
+            const height = composer.hidden ? 0 : composer.offsetHeight;
+            root.style.setProperty('--qaap-transcript-composer-height', `${Math.round(height)}px`);
+        };
+        apply();
+        if (typeof ResizeObserver === 'undefined') {
+            this.host.transcriptComposerSizeDispose = Disposable.NULL;
+            return;
+        }
+        const observer = new ResizeObserver(() => apply());
+        observer.observe(composer);
+        this.host.transcriptComposerSizeDispose = Disposable.create(() => observer.disconnect());
     }
 }

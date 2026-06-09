@@ -5,12 +5,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import {
     buildPendingComposerContextArg,
     type StickyComposerContextEntry,
 } from '../common/qaap-composer-context-entry';
 import {
+    renderStickyComposerContextStrip,
     resolveStickyComposerContextChip,
     resolveStickyComposerContextEntry,
     resolveDocumentIconClasses,
@@ -162,5 +164,68 @@ describe('qaap-sticky-composer-context-ui', () => {
         const fromEntry = resolveStickyComposerContextEntry(entry);
         const fromRequest = resolveStickyComposerContextChip(request);
         expect(fromEntry).to.deep.equal(fromRequest);
+    });
+
+    describe('renderStickyComposerContextStrip', () => {
+        let disableJSDOM: () => void;
+
+        before(() => {
+            disableJSDOM = enableJSDOM();
+            const style = document.createElement('style');
+            style.textContent = `
+                .theia-mobile-projects-sticky-composer-context-body {
+                    display: flex;
+                }
+                .theia-mobile-projects-sticky-composer-context-body[hidden] {
+                    display: none !important;
+                }
+            `;
+            document.head.append(style);
+        });
+
+        after(() => {
+            disableJSDOM();
+        });
+
+        it('collapses attachment previews when the header toggle is clicked', () => {
+            const request = ImageContextVariable.createRequest({
+                name: 'screenshot.png',
+                mimeType: 'image/png',
+                data: btoa('img'),
+            });
+            const entry: StickyComposerContextEntry = { id: 'img-1', request };
+            let expanded = true;
+
+            const strip = renderStickyComposerContextStrip({
+                items: [entry],
+                formatChip: resolveStickyComposerContextEntry,
+                onRemoveItem: () => undefined,
+                onClearAll: () => undefined,
+                filesExpanded: expanded,
+                onFilesExpandedChange: value => { expanded = value; },
+            });
+            document.body.append(strip);
+
+            const toggle = strip.querySelector<HTMLButtonElement>(
+                '.theia-mobile-projects-sticky-composer-context-files-toggle',
+            );
+            const body = strip.querySelector<HTMLElement>(
+                '.theia-mobile-projects-sticky-composer-context-body',
+            );
+            expect(toggle).to.exist;
+            expect(body).to.exist;
+            expect(toggle!.getAttribute('aria-expanded')).to.equal('true');
+            expect(body!.hidden).to.equal(false);
+            expect(window.getComputedStyle(body!).display).to.equal('flex');
+
+            toggle!.click();
+
+            expect(expanded).to.equal(false);
+            expect(toggle!.getAttribute('aria-expanded')).to.equal('false');
+            expect(toggle!.classList.contains('theia-mod-collapsed')).to.equal(true);
+            expect(strip.classList.contains('theia-mod-attachments-collapsed')).to.equal(true);
+            expect(body!.hidden).to.equal(true);
+            expect(window.getComputedStyle(body!).display).to.equal('none');
+        });
     });
 });

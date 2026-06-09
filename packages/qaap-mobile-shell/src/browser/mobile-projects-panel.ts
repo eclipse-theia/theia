@@ -604,6 +604,8 @@ export class MobileProjectsPanel {
     protected transcriptApprovalRefreshTimer: number | undefined;
     protected transcriptChatHost: HTMLElement | undefined;
     protected transcriptChatInputHost: HTMLElement | undefined;
+    /** Tracks the floating composer height so empty-state quick actions can hover above it. */
+    protected transcriptComposerSizeDispose: Disposable = Disposable.NULL;
     /** Execution-view tabs: strip + per-tab content hosts. */
     protected transcriptTabStrip: HTMLElement | undefined;
     protected transcriptPlanHost: HTMLElement | undefined;

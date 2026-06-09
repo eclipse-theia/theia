@@ -214,9 +214,23 @@
   padding-right: var(--q-space-8, 16px);
 }
 
+/*
+ * Full-screen transcript: the composer floats absolutely over the bottom of the scroll viewport,
+ * so reserve its measured height (`--qaap-transcript-composer-height`, published by the sheet) plus
+ * the glass fade band. This lets the last message clear the composer at rest and earlier messages
+ * scroll behind it (ChatGPT-style) instead of being cut off into a black band underneath it.
+ */
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat > .theia-mobile-agent-transcript {
-  scroll-padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
-  padding-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+  --qaap-transcript-composer-clear: max(
+    var(--qaap-transcript-composer-height, 0px),
+    var(--theia-mobile-projects-fab-lift, 0px)
+  );
+  scroll-padding-bottom: calc(
+    var(--qaap-transcript-composer-clear) + var(--qaap-chat-edge-scroll-padding-bottom-composer)
+  );
+  padding-bottom: calc(
+    var(--qaap-transcript-composer-clear) + var(--qaap-chat-edge-scroll-padding-bottom-composer)
+  );
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript > .theia-mobile-agent-transcript-msg:first-child {
@@ -228,5 +242,11 @@
 }
 
 .theia-mobile-agent-transcript-root .theia-mobile-agent-transcript-real-chat > .theia-mobile-agent-transcript > .theia-mobile-agent-transcript-msg:last-child {
-  scroll-margin-bottom: var(--qaap-chat-edge-scroll-padding-bottom-composer);
+  scroll-margin-bottom: calc(
+    max(
+      var(--qaap-transcript-composer-height, 0px),
+      var(--theia-mobile-projects-fab-lift, 0px)
+    )
+    + var(--qaap-chat-edge-scroll-padding-bottom-composer)
+  );
 }

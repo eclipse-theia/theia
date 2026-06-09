@@ -9,6 +9,7 @@ import {
     collapseExactRepeatedText,
     dedupeAgentMessageTextSegments,
     filterQaiqStreamMetadataLines,
+    filterQaiqStreamProcessLogLines,
     mergeIncrementalStreamText,
     QaapQaiqStreamAccumulator,
     stripLeadingParagraphsInPriorText,
@@ -243,6 +244,14 @@ describe('QaapQaiqStreamAccumulator', () => {
         }
     });
 
+    it('adopts success result text when stream deltas were filtered upstream', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push('{"type":"result","subtype":"success","is_error":false,"result":"Hola, ¿en qué puedo ayudarte?"}\n');
+        expect(acc.getSegments()).to.deep.equal([
+            { type: 'text', content: 'Hola, ¿en qué puedo ayudarte?' },
+        ]);
+    });
+
     it('normalizes tool names to canonical casing', () => {
         const acc = new QaapQaiqStreamAccumulator();
         acc.push('{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"tool_use","id":"n1","name":"bash","input":{}}]}}\n');
@@ -251,6 +260,29 @@ describe('QaapQaiqStreamAccumulator', () => {
         if (seg.type === 'tool') {
             expect(seg.name).to.equal('Bash');
         }
+    });
+});
+
+describe('filterQaiqStreamProcessLogLines', () => {
+
+    it('strips system init but keeps stream_event text deltas', () => {
+        const input = [
+            '{"type":"system","subtype":"init","cwd":"/tmp","model":"moonshotai/kimi-k2.6:free"}',
+            '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hola"}}}',
+        ].join('\n');
+        expect(filterQaiqStreamProcessLogLines(input)).to.equal(
+            '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hola"}}}',
+        );
+    });
+
+    it('keeps success result envelopes for final transcript replay', () => {
+        const input = [
+            '{"type":"system","subtype":"init","cwd":"/tmp"}',
+            '{"type":"result","subtype":"success","is_error":false,"result":"Done"}',
+        ].join('\n');
+        expect(filterQaiqStreamProcessLogLines(input)).to.equal(
+            '{"type":"result","subtype":"success","is_error":false,"result":"Done"}',
+        );
     });
 });
 

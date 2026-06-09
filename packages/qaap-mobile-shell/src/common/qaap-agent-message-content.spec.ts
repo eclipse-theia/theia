@@ -59,6 +59,15 @@ describe('normalizeAgentMessageContentForDisplay', () => {
         expect(normalizeAgentMessageContentForDisplay(raw)).to.equal('');
     });
 
+    it('hides QAIQ stream_event process logs with no assistant text', () => {
+        const raw = [
+            '{"type":"stream_event","event":{"type":"message_start","message":{"role":"assistant","content":[]}}}',
+            '{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn"}}}',
+            '{"type":"result","subtype":"success","is_error":false,"result":""}',
+        ].join(' ');
+        expect(normalizeAgentMessageContentForDisplay(raw)).to.equal('');
+    });
+
     it('treats missing content as empty text', () => {
         expect(normalizeAgentMessageContentForDisplay(undefined)).to.equal('');
         expect(normalizeAgentMessageContentForDisplay(null)).to.equal('');

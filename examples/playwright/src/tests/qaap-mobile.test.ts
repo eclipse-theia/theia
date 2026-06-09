@@ -4,19 +4,39 @@
 // *****************************************************************************
 
 import { execSync } from 'child_process';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TheiaAppLoader } from '../theia-app-loader';
+import { TheiaApp } from '../theia-app';
 import { TheiaWorkspace } from '../theia-workspace';
 
 const MOBILE_VIEWPORT = { width: 375, height: 812 };
 const KPI_PREVIEW_MS = 120_000;
 
-const RESOURCES = path.resolve(__dirname, './resources');
+/** Compiled tests live under lib/tests; fixtures stay in src/tests/resources. */
+const RESOURCES = path.resolve(__dirname, '../../src/tests/resources');
+const SAMPLE_FILES = path.join(RESOURCES, 'sample-files1');
 const VITE_FIXTURE = path.join(RESOURCES, 'qaap-vite-fixture');
 const NEXT_FIXTURE = path.join(RESOURCES, 'qaap-next-fixture');
 const LEGACY_BOOTSTRAP_FIXTURE = path.join(RESOURCES, 'qaap-bootstrap-fixture');
+
+async function dismissMobileTutorial(page: Page): Promise<void> {
+    const skip = page.locator('button').filter({ hasText: /^skip$/i }).first();
+    if (await skip.count()) {
+        await skip.click();
+    }
+}
+
+async function openDesktopIde(app: TheiaApp): Promise<void> {
+    await app.quickCommandPalette.open();
+    const input = app.page.locator(
+        '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
+    );
+    await input.fill('Open IDE');
+    await app.page.locator('.quick-input-list .monaco-list-row').first().click();
+    await expect(app.page.locator('#theia-mobile-bottom-bar')).toBeVisible({ timeout: 30_000 });
+}
 
 test.describe('@qaap-mobile Qaap mobile layout', () => {
 
@@ -33,23 +53,25 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
-    test('activates one-column shell and bottom activity bar', async ({ playwright, browser }) => {
+    test('lands on Work Hub by default with sticky composer', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
 
-        const shell = app.page.locator('#theia-app-shell');
-        await expect(shell).toHaveClass(/theia-mod-mobile-one-column/);
-
-        const bottomBar = app.page.locator('#theia-mobile-bottom-bar');
-        await expect(bottomBar).toBeVisible();
+        await expect(app.page.locator('#theia-app-shell')).toHaveClass(/theia-mod-mobile-one-column/);
+        await expect(app.page.locator('.theia-mobile-projects')).toBeVisible();
+        await expect(app.page.locator('.theia-mobile-projects-sticky-composer-input')).toBeVisible();
+        await expect(app.page.locator('#theia-mobile-bottom-bar')).toBeHidden();
 
         await app.page.close();
     });
 
-    test('opens Explorer from the mobile bottom bar', async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
+    test('opens Explorer from the mobile bottom bar after Open IDE', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([SAMPLE_FILES]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
         const explorerBtn = app.page.locator('#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="explore"]');
         await expect(explorerBtn).toBeVisible();
@@ -62,10 +84,14 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
     });
 
     test('collapses left explorer sheet after opening a file', async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
+        const ws = new TheiaWorkspace([SAMPLE_FILES]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
+        const explorerBtn = app.page.locator('#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="explore"]');
+        await explorerBtn.click();
         await app.page.waitForSelector('#explorer-view-container--files', { state: 'visible' });
         const sampleFile = app.page.locator('#explorer-view-container--files .theia-FileStatNode', { hasText: 'sample.txt' });
         await expect(sampleFile).toBeVisible();
@@ -101,9 +127,11 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
-    test('opens Agent chat from the mobile bottom bar', async ({ playwright, browser }) => {
+    test('opens classic Agent chat after Open IDE', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
         const agentBtn = app.page.locator('#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="agent"]');
         await expect(agentBtn).toBeVisible();
@@ -135,6 +163,15 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
     test('getting started uses single-column layout on narrow viewport', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
+
+        await app.quickCommandPalette.open();
+        const input = app.page.locator(
+            '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
+        );
+        await input.fill('Getting Started');
+        await app.page.locator('.quick-input-list .monaco-list-row').first().click();
 
         const flexDirections = await app.page.locator('.gs-container .flex-grid').evaluateAll(
             elements => elements.map(el => getComputedStyle(el).flexDirection)
