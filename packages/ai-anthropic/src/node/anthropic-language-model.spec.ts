@@ -611,4 +611,84 @@ describe('AnthropicModel', () => {
             expect(result.thinking).to.equal(undefined);
         });
     });
+
+    describe('endpoint selection (useBetaEndpoints)', () => {
+        /** Builds a mock Anthropic client that records which endpoint was used and returns minimal valid responses. */
+        function buildEndpointRecordingAnthropic(calls: string[]): Anthropic {
+            const streamFactory = (label: string) => (_params: object) => {
+                calls.push(label);
+                async function* iterate(): AsyncGenerator<object> {
+                    yield { type: 'message_start', message: { usage: { input_tokens: 1, output_tokens: 0 } } };
+                    yield { type: 'message_stop' };
+                }
+                const iter = iterate();
+                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                return iter;
+            };
+            const createFactory = (label: string) => async (_params: object) => {
+                calls.push(label);
+                return { content: [{ type: 'text', text: 'ok' }], usage: { input_tokens: 1, output_tokens: 2 } };
+            };
+            return {
+                messages: { stream: streamFactory('messages.stream'), create: createFactory('messages.create') },
+                beta: { messages: { stream: streamFactory('beta.messages.stream'), create: createFactory('beta.messages.create') } }
+            } as unknown as Anthropic;
+        }
+
+        function createEndpointTestModel(calls: string[], enableStreaming: boolean, useBetaEndpoints?: boolean): AnthropicModel {
+            return new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildEndpointRecordingAnthropic(calls);
+                }
+            }(
+                'test-id', 'claude-opus-4-5', { status: 'ready' },
+                enableStreaming, false, () => 'test-key', undefined, DEFAULT_MAX_TOKENS,
+                3, undefined, undefined, undefined, undefined, undefined, useBetaEndpoints
+            );
+        }
+
+        const request: UserRequest = {
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            agentId: 'test',
+            sessionId: 'test-session',
+            requestId: 'test-req'
+        };
+
+        async function drainStream(model: AnthropicModel): Promise<void> {
+            const response = await model.request(request);
+            if ('stream' in response) {
+                const parts: LanguageModelStreamResponsePart[] = [];
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+        }
+
+        it('uses the standard streaming endpoint by default', async () => {
+            const calls: string[] = [];
+            await drainStream(createEndpointTestModel(calls, true));
+            expect(calls).to.deep.equal(['messages.stream']);
+        });
+
+        it('uses the beta streaming endpoint when useBetaEndpoints is enabled', async () => {
+            const calls: string[] = [];
+            await drainStream(createEndpointTestModel(calls, true, true));
+            expect(calls).to.deep.equal(['beta.messages.stream']);
+        });
+
+        it('uses the standard non-streaming endpoint by default', async () => {
+            const calls: string[] = [];
+            const response = await createEndpointTestModel(calls, false).request(request);
+            expect(calls).to.deep.equal(['messages.create']);
+            expect('text' in response && response.text).to.equal('ok');
+        });
+
+        it('uses the beta non-streaming endpoint when useBetaEndpoints is enabled', async () => {
+            const calls: string[] = [];
+            const response = await createEndpointTestModel(calls, false, true).request(request);
+            expect(calls).to.deep.equal(['beta.messages.create']);
+            expect('text' in response && response.text).to.equal('ok');
+        });
+    });
 });

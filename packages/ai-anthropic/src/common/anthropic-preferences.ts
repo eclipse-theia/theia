@@ -19,6 +19,7 @@ import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
+export const USE_BETA_ENDPOINTS_PREF = 'ai-features.anthropic.useBetaEndpoints';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
@@ -43,6 +44,14 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [USE_BETA_ENDPOINTS_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/anthropic/useBetaEndpoints/mdDescription',
+                'Use the Anthropic beta Messages API instead of the standard one. When enabled, a `betas` array in the model request settings is sent as the\
+            `anthropic-beta` header, allowing beta features such as `context_management` to be used in the request settings.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',

@@ -31,6 +31,8 @@ export interface AnthropicModelDescription {
     useCaching: boolean;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Indicate whether the beta Messages API shall be used. `false` by default. */
+    useBetaEndpoints?: boolean;
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

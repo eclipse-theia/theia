@@ -35,6 +35,8 @@ import {
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
+import type { BetaMessageStreamParams } from '@anthropic-ai/sdk/resources/beta/messages';
+import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
 
@@ -238,7 +240,8 @@ export class AnthropicModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public useBetaEndpoints?: boolean
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -291,7 +294,7 @@ export class AnthropicModel implements LanguageModel {
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
+        const stream = this.createMessageStream(anthropic, params);
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();
@@ -425,6 +428,17 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
+    /**
+     * Creates the message stream either via the standard or the beta Messages API, depending on {@link useBetaEndpoints}.
+     * The beta stream is a structural superset of the standard one for all events consumed here, so it is safe to treat it as a {@link MessageStream}.
+     */
+    protected createMessageStream(anthropic: Anthropic, params: Anthropic.MessageCreateParams): MessageStream {
+        if (this.useBetaEndpoints) {
+            return anthropic.beta.messages.stream(params as BetaMessageStreamParams, { maxRetries: this.maxRetries }) as unknown as MessageStream;
+        }
+        return anthropic.messages.stream(params, { maxRetries: this.maxRetries });
+    }
+
     protected createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
         if (request.tools?.length === 0) {
             return undefined;
@@ -458,7 +472,9 @@ export class AnthropicModel implements LanguageModel {
         };
 
         try {
-            const response = await anthropic.messages.create(params);
+            const response = this.useBetaEndpoints
+                ? await anthropic.beta.messages.create({ ...params, stream: false })
+                : await anthropic.messages.create(params);
             const textContent = response.content[0];
 
             const usage = response.usage ? {

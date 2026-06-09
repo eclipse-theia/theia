@@ -17,7 +17,7 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/anthropic-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_BETA_ENDPOINTS_PREF } from '../common/anthropic-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
@@ -65,6 +65,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                } else if (event.preferenceName === USE_BETA_ENDPOINTS_PREF) {
+                    this.updateAllModels();
                 }
             });
 
@@ -127,12 +129,14 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             apiKey: true,
             enableStreaming: true,
             useCaching: true,
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            useBetaEndpoints: this.preferenceService.get<boolean>(USE_BETA_ENDPOINTS_PREF, false)
         };
     }
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const useBetaEndpoints = this.preferenceService.get<boolean>(USE_BETA_ENDPOINTS_PREF, false);
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -146,7 +150,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     enableStreaming: pref.enableStreaming ?? true,
                     useCaching: pref.useCaching ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    useBetaEndpoints
                 }
             ];
         }, []);
