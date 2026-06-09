@@ -4,14 +4,6 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.73.0 - tbd
-
-- [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-
-<a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
-
-- [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-
 ## 1.72.0 - 5/28/2026
 
 - [ai] continued ai white label [#17447](https://github.com/eclipse-theia/theia/pull/17447)
@@ -74,6 +66,7 @@
 - [plugin-ext] supported ESM VS Code extensions [#17503](https://github.com/eclipse-theia/theia/pull/17503)
 - [preferences] fixed disposal of preference storage and its provider [#17565](https://github.com/eclipse-theia/theia/pull/17565)
 - [sample-namespace] added browser-only plugin example [#17469](https://github.com/eclipse-theia/theia/pull/17469)
+- [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 - [vscode] API bump and nls update to 1.121.0 [#17571](https://github.com/eclipse-theia/theia/pull/17571) - contributed on behalf of STMicroelectronics
 - [vsx-registry] showed disabled extensions as installed [#17540](https://github.com/eclipse-theia/theia/pull/17540)
 - [workspace,core] workspace trust follow ups and made markdown hover tooltips interactive [#17518](https://github.com/eclipse-theia/theia/pull/17518)
@@ -94,6 +87,7 @@
 - [core] `BackendApplicationContribution.onStop()` is now dispatched from `gracefulShutdown()` before the root Inversify container is unbound, instead of from `process.on('exit')`. Hooks are dispatched in parallel and may now return `Promise<void>` to participate in the (timeout-bounded) asynchronous shutdown; existing synchronous implementations remain valid. Contributions that somehow relied on a particular synchronous cross-contribution ordering will observe different behaviour (the new parallel contract matches `initialize`/`configure`). The synchronous `process.on('exit')` fallback still runs `onStop` for code paths that bypass `gracefulShutdown` and continues to discard any returned promise. [#17477](https://github.com/eclipse-theia/theia/pull/17477)
 - [dev-container] `RemoteContainerConnectionProvider` interface changes: `attachToContainer` now takes an `AttachContainerOptions` object instead of a plain `containerId` string; new methods added: `getWorkspaceCandidates()`, `scanForDevContainerConfig()`, `getAttachContainerArgs()` [#17515](https://github.com/eclipse-theia/theia/pull/17515)
 - [remote] `RemoteConnection.copy()` parameter type narrowed from `string | Buffer | NodeJS.ReadableStream` to `string` — no implementation or call site supported the broader type [#17515](https://github.com/eclipse-theia/theia/pull/17515)
+- [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 ## 1.71.0 - 4/30/2026
 
