@@ -27,6 +27,7 @@ import {
     CapabilityAwareContext,
     GenericCapabilitySelections,
     getTextOfResponse,
+    isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
     isServerToolCallResponsePart,
     isTextResponsePart,
@@ -65,6 +66,7 @@ import {
     ChatRequestModel,
     ChatResponseContent,
     CommonChatSessionSettings,
+    CompactionChatResponseContentImpl,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
@@ -547,6 +549,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 serverTools: enabledServerTools.length > 0 ? enabledServerTools : undefined,
                 settings,
                 reasoning: commonSettings?.reasoning,
+                compaction: commonSettings?.compaction,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
@@ -775,6 +778,13 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         if (isUsageResponsePart(token)) {
             request.response.setTokenUsage(this.mapUsageResponsePart(token));
             return [];
+        }
+        if (isCompactionResponsePart(token)) {
+            return new CompactionChatResponseContentImpl(
+                token.compaction.provider,
+                token.compaction.data,
+                token.compaction.summary
+            );
         }
         return this.defaultContentFactory.create('', request);
     }

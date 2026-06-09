@@ -2235,7 +2235,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens, props.tokenUsageWarningThreshold, props.contextWindowSize) : '';
     const tokenIsWarningOrError = tokenColorClass === 'token-usage-yellow' || tokenColorClass === 'token-usage-red';
     const tokenTooltip = showTokenUsage
-        ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold, props.contextWindowSize)
+        ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold, props.contextWindowSize, props.chatModel)
         : undefined;
 
     return (

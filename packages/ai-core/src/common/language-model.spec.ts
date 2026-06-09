@@ -15,7 +15,16 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isModelMatching, isToolCallContent, LanguageModel, LanguageModelSelector } from './language-model';
+import {
+    isCompactionResponsePart,
+    isLanguageModelStreamResponsePart,
+    isModelMatching,
+    isToolCallContent,
+    LanguageModel,
+    LanguageModelSelector,
+    resolveCompactionDefault,
+    resolveServerSideCompaction
+} from './language-model';
 
 describe('isModelMatching', () => {
     it('returns false with one of two parameter mismatches', () => {
@@ -162,4 +171,39 @@ describe('isToolCallContent', () => {
         expect(isToolCallContent(value)).to.be.false;
     });
 
+});
+
+describe('compaction contract', () => {
+    it('recognizes a compaction response part', () => {
+        const part = { compaction: { provider: 'anthropic', data: { foo: 1 } } };
+        expect(isCompactionResponsePart(part)).to.equal(true);
+        expect(isLanguageModelStreamResponsePart(part)).to.equal(true);
+    });
+    it('rejects a non-compaction part', () => {
+        expect(isCompactionResponsePart({ content: 'hi' })).to.equal(false);
+        // eslint-disable-next-line no-null/no-null
+        expect(isCompactionResponsePart(null)).to.equal(false);
+        expect(isCompactionResponsePart(undefined)).to.equal(false);
+        // eslint-disable-next-line no-null/no-null
+        expect(isCompactionResponsePart({ compaction: null })).to.equal(false);
+        expect(isCompactionResponsePart({ compaction: { provider: 42 } })).to.equal(false);
+    });
+    it('resolves a model default from the global preference and the per-provider override', () => {
+        expect(resolveCompactionDefault(true, 'default')).to.equal(true);
+        expect(resolveCompactionDefault(false, 'default')).to.equal(false);
+        expect(resolveCompactionDefault(false, 'enabled')).to.equal(true);
+        expect(resolveCompactionDefault(true, 'disabled')).to.equal(false);
+    });
+    it('resolves server-side compaction with capability gate and session-wins precedence', () => {
+        // capability gate
+        expect(resolveServerSideCompaction(false, true, { enabled: true })).to.equal(false);
+        expect(resolveServerSideCompaction(undefined, true, undefined)).to.equal(false);
+        // no per-session setting -> model default
+        expect(resolveServerSideCompaction(true, true, undefined)).to.equal(true);
+        expect(resolveServerSideCompaction(true, false, undefined)).to.equal(false);
+        expect(resolveServerSideCompaction(true, true, {})).to.equal(true);
+        // explicit per-session setting wins over the model default (which already folds in the per-provider override)
+        expect(resolveServerSideCompaction(true, false, { enabled: true })).to.equal(true);
+        expect(resolveServerSideCompaction(true, true, { enabled: false })).to.equal(false);
+    });
 });
