@@ -14,26 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 
+import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { Event } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { AgentDelegationTool } from './agent-delegation-tool';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
 import {
     ActiveSessionChangedEvent,
     ChatAgentService,
+    ChatResponseContent,
     ChatService,
     SessionCreatedEvent,
     SessionDeletedEvent,
     SessionRenamedEvent,
+    TextChatResponseContentImpl,
+    ThinkingChatResponseContentImpl
 } from '../common';
 import { ChatAgentServiceImpl } from '../common/chat-agent-service';
-import { Event } from '@theia/core';
+import { AgentDelegationTool } from './agent-delegation-tool';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
 
 disableJSDOM();
 
@@ -117,9 +120,10 @@ function makeChatContext(): {
 
 type SessionEvent = ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent | SessionRenamedEvent;
 
-function makeChatService(newSession: ReturnType<typeof makeNewSession>): ChatService {
+function makeChatService(newSession: ReturnType<typeof makeNewSession>, responseContent?: ChatResponseContent[]): ChatService {
+    const content = responseContent ?? [{ kind: 'text', content: 'agent response', asString: () => 'agent response' }];
     const responseCompleted = Promise.resolve({
-        response: { asString: () => 'agent response' }
+        response: { content }
     });
     return {
         onSessionEvent: sinon.stub() as Event<SessionEvent>,
@@ -191,6 +195,40 @@ describe('AgentDelegationTool', () => {
             await tool.getTool().handler(argString, ctx);
 
             expect(contextManager.addVariables.called).to.be.false;
+        });
+    });
+
+    describe('delegateToAgent() — thinking content filtering', () => {
+        it('excludes thinking content from the tool result', async () => {
+            const thinkingContent = new ThinkingChatResponseContentImpl('some internal thinking', 'sig123');
+            const textContent = new TextChatResponseContentImpl('final answer');
+
+            const newSession = makeNewSession();
+            const agentService = makeChatAgentService();
+            const chatService = makeChatService(newSession, [thinkingContent, textContent]);
+            const tool = makeAgentDelegationTool(agentService, chatService);
+            const ctx = makeChatContext();
+
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.equal('final answer');
+            expect(result).to.not.include('thinking');
+        });
+
+        it('returns empty string when all content is thinking', async () => {
+            const thinkingContent = new ThinkingChatResponseContentImpl('internal', 'sig');
+
+            const newSession = makeNewSession();
+            const agentService = makeChatAgentService();
+            const chatService = makeChatService(newSession, [thinkingContent]);
+            const tool = makeAgentDelegationTool(agentService, chatService);
+            const ctx = makeChatContext();
+
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.equal('');
         });
     });
 });
