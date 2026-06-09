@@ -16,10 +16,12 @@ import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-project
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 import type { MobileProjectsTranscriptMessagesToolUi } from './mobile-projects-transcript-messages-tool-ui';
 import type { MobileProjectsTranscriptMessagesUserUi } from './mobile-projects-transcript-messages-user-ui';
+import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 
 export class MobileProjectsTranscriptMessagesRenderUi {
     constructor(
         protected readonly host: MobileProjectsTranscriptMessagesHost,
+        protected readonly workHub: WorkHubTranscriptBridge,
         protected readonly contentUi: MobileProjectsTranscriptMessagesContentUi,
         protected readonly userUi: MobileProjectsTranscriptMessagesUserUi,
         protected readonly artifactsUi: MobileProjectsTranscriptMessagesArtifactsUi,
@@ -120,8 +122,8 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         }
         this.host.transcriptUserScrollPinDispose.dispose();
         this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
-        this.host.ensureOverlayUi().team.renderTeamSection(host, conv);
-        this.host.renderTranscriptInlineApproval(host, conv);
+        this.workHub.renderTeamSectionInTranscript(host, conv);
+        this.workHub.renderInlineApproval(host, conv);
         this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
     }
 
@@ -144,12 +146,12 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             this.host.transcriptLastRenderedConversationId = conv.id;
             this.host.transcriptLastRenderedMessageId = undefined;
             const project = this.host.transcriptOpenProject;
-            if (project && this.host.shouldEmbedAgentsHubRecentsInWorkspaceTranscript()) {
-                messageHost.append(this.host.createAgentsHubRecentsBlock(project));
+            if (project && this.workHub.shouldEmbedAgentsHubRecentsInWorkspaceTranscript()) {
+                messageHost.append(this.workHub.createAgentsHubRecentsBlock(project));
             }
             const empty = document.createElement('div');
             empty.className = 'theia-mobile-agent-transcript-empty';
-            empty.append(this.host.createAgentsHubQuickActionsBlock());
+            empty.append(this.workHub.createAgentsHubQuickActionsBlock());
             messageHost.append(empty);
             return;
         }
@@ -181,8 +183,8 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         scrollElementToEnd(messageHost);
         this.host.transcriptUserScrollPinDispose.dispose();
         this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
-        this.host.ensureOverlayUi().team.renderTeamSection(host, conv);
-        this.host.renderTranscriptInlineApproval(host, conv);
+        this.workHub.renderTeamSectionInTranscript(host, conv);
+        this.workHub.renderInlineApproval(host, conv);
         this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
     }
 

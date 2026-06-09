@@ -9,6 +9,7 @@ import { join } from 'path';
 
 const BROWSER_DIR = join(__dirname, '../../src/browser');
 const panelSource = readFileSync(join(BROWSER_DIR, 'mobile-projects-panel.ts'), 'utf8');
+const transcriptStateSource = readFileSync(join(BROWSER_DIR, 'mobile-projects-transcript-overlay-state.ts'), 'utf8');
 
 /** Methods invoked via `this.host.foo(` that live on extracted *Ui modules, not on the panel class. */
 const HOST_INTERFACE_ONLY = new Set([
@@ -34,6 +35,10 @@ function panelExposesHostMember(method: string): boolean {
     }
     // Options injected at construction (pickContextVariable, createDiffReviewWidget, …)
     if (new RegExp(`(?:readonly\\s+)?${method}\\s*[:=]`).test(panelSource)) {
+        return true;
+    }
+    // Phase 2: transcript overlay state fields are bound onto the panel at runtime.
+    if (new RegExp(`(?:readonly\\s+)?${method}\\s*[:=]`).test(transcriptStateSource)) {
         return true;
     }
     return false;

@@ -21,6 +21,7 @@ import { TranscriptFollowUpQueue } from '../common/qaap-transcript-follow-up-que
 import type { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import type { MobileProjectChatViewWidget } from './mobile-project-ai-chat-input-widget';
 import { disposeComposerContextEntries, type StickyComposerContextEntry } from '../common/qaap-composer-context-entry';
+import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 
 interface VerifyCheckResult {
     readonly check: { readonly label: string; readonly command: string };
@@ -96,26 +97,20 @@ export interface MobileProjectsTranscriptSheetHost {
         onExitActiveTranscript?(): void;
     };
 
-    shouldUseAgentsHubLanding(): boolean;
-    isProjectDetailView(): boolean;
-    openAgentsHubInlineTranscript(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): Promise<void>;
-    renderHeader(): void;
-    renderSubtitle(): void;
-    renderList(): void;
     closeExecutionTabOverflowMenu(): void;
     closeParallelSheet(): void;
-    closeAgentsHubSession(): void;
-    teardownAgentsHubExecutionShell(): void;
     detachTranscriptReviewWidget(): void;
     disposeTranscriptEmbeddedPreview(): void;
     detachTranscriptWorkspaceSurfacesFromSheet(): void;
-    notifyWorkspaceHubBottomBarRefresh(): void;
 }
 
 /** Full-screen transcript sheet overlay: open, dismiss bindings, and teardown. */
 export class MobileProjectsTranscriptSheetUi {
 
-    constructor(protected readonly host: MobileProjectsTranscriptSheetHost) { }
+    constructor(
+        protected readonly host: MobileProjectsTranscriptSheetHost,
+        protected readonly workHub: WorkHubTranscriptBridge,
+    ) { }
 
     createTranscriptSheetSurfaceHosts(): {
         planHost: HTMLElement;
@@ -146,8 +141,8 @@ export class MobileProjectsTranscriptSheetUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
-        if (this.host.shouldUseAgentsHubLanding() && !this.host.isProjectDetailView()) {
-            await this.host.openAgentsHubInlineTranscript(project, summary);
+        if (this.workHub.isAgentsHubLanding() && !this.workHub.isProjectDetailView()) {
+            await this.workHub.openInlineTranscript(project, summary);
             return;
         }
         this.host.replacingTranscriptSheet = true;
@@ -211,9 +206,7 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.transcriptOpenProject = project;
         this.host.transcriptLastFingerprint = undefined;
         if (this.host.visible) {
-            this.host.renderHeader();
-            this.host.renderSubtitle();
-            this.host.renderList();
+            this.workHub.refreshHubChrome();
             this.host.executionSurfaceTabsUi.syncHeaderExecutionTabStrip();
         }
         this.bindTranscriptSheetDismiss(back, backdrop);
@@ -308,14 +301,14 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.transcriptFollowUpFlushInFlight = false;
 
         const wasAgentsHubInline = this.host.agentsHubInlineActive;
-        const preserveAgentsShell = wasAgentsHubInline && this.host.shouldUseAgentsHubLanding();
+        const preserveAgentsShell = wasAgentsHubInline && this.workHub.isAgentsHubLanding();
         if (preserveAgentsShell) {
-            this.host.closeAgentsHubSession();
+            this.workHub.closeAgentsHubSession();
             if (!this.host.transcriptSheet) {
                 return;
             }
-        } else if (wasAgentsHubInline && !this.host.shouldUseAgentsHubLanding()) {
-            this.host.teardownAgentsHubExecutionShell();
+        } else if (wasAgentsHubInline && !this.workHub.isAgentsHubLanding()) {
+            this.workHub.teardownAgentsHubShell();
         }
 
         const sheet = this.host.transcriptSheet;
@@ -351,9 +344,7 @@ export class MobileProjectsTranscriptSheetUi {
         this.host.verifyAutoAttempts = 0;
         this.host.transcriptLastStatus = undefined;
         if (this.host.visible) {
-            this.host.renderHeader();
-            this.host.renderSubtitle();
-            this.host.renderList();
+            this.workHub.refreshHubChrome();
         }
 
         this.host.transcriptLiveUi.stopTranscriptLiveWatch();
@@ -372,9 +363,9 @@ export class MobileProjectsTranscriptSheetUi {
                 setMobileActiveTranscriptChrome(false);
                 this.host.delegate.onExitActiveTranscript?.();
             }
-            this.host.notifyWorkspaceHubBottomBarRefresh();
+            this.workHub.refreshHubBottomBar();
         } else if (wasAgentsHubInline && !this.host.replacingTranscriptSheet) {
-            this.host.notifyWorkspaceHubBottomBarRefresh();
+            this.workHub.refreshHubBottomBar();
         }
 
         const inputWidget = this.host.transcriptChatInputWidget;

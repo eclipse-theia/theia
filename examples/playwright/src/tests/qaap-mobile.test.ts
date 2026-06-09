@@ -28,14 +28,43 @@ async function dismissMobileTutorial(page: Page): Promise<void> {
     }
 }
 
+async function waitForWorkHubReady(page: Page): Promise<void> {
+    await expect(page.locator('.theia-mobile-projects-sticky-composer-input')).toBeVisible({ timeout: 60_000 });
+}
+
 async function openDesktopIde(app: TheiaApp): Promise<void> {
-    await app.quickCommandPalette.open();
-    const input = app.page.locator(
-        '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
-    );
-    await input.fill('Open IDE');
-    await app.page.locator('.quick-input-list .monaco-list-row').first().click();
-    await expect(app.page.locator('#theia-mobile-bottom-bar')).toBeVisible({ timeout: 30_000 });
+    await dismissMobileTutorial(app.page);
+    await waitForWorkHubReady(app.page);
+
+    const bottomBar = app.page.locator('#theia-mobile-bottom-bar');
+    if (await bottomBar.isVisible()) {
+        return;
+    }
+
+    const accountBtn = app.page.locator('.theia-workbench-account-btn').first();
+    if (await accountBtn.count()) {
+        await accountBtn.click();
+        const openIdeMenuItem = app.page.locator('.theia-qaap-account-menu-item').filter({ hasText: /^Open IDE$/i });
+        if (await openIdeMenuItem.count()) {
+            await openIdeMenuItem.first().click();
+        }
+    }
+
+    if (!(await bottomBar.isVisible())) {
+        await app.quickCommandPalette.open();
+        const input = app.page.locator(
+            '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
+        );
+        await expect(input).toBeVisible();
+        await input.fill('Open IDE');
+        const openIdeRow = app.page.locator('.quick-input-list .monaco-list-row').filter({ hasText: /^Open IDE$/i });
+        await expect(openIdeRow.first()).toBeVisible({ timeout: 15_000 });
+        await openIdeRow.first().click();
+        await app.page.waitForSelector('.quick-input-widget', { state: 'hidden', timeout: 15_000 }).catch(() => undefined);
+    }
+
+    await expect(app.page.locator('body')).not.toHaveClass(/theia-mobile-mod-landing/, { timeout: 30_000 });
+    await expect(bottomBar).toBeVisible({ timeout: 30_000 });
 }
 
 test.describe('@qaap-mobile Qaap mobile layout', () => {
@@ -107,6 +136,8 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         const ws = new TheiaWorkspace([LEGACY_BOOTSTRAP_FIXTURE]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
         const banner = app.page.locator('.qaap-project-bootstrap-banner');
         await expect(banner).toBeVisible({ timeout: 15_000 });
@@ -119,6 +150,8 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         const ws = new TheiaWorkspace([NEXT_FIXTURE]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
         const banner = app.page.locator('.qaap-project-bootstrap-banner');
         await expect(banner).toBeVisible({ timeout: 15_000 });
@@ -160,24 +193,15 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
-    test('getting started uses single-column layout on narrow viewport', async ({ playwright, browser }) => {
-        const app = await TheiaAppLoader.load({ playwright, browser });
+    test('classic IDE surfaces stay in one-column layout on narrow viewport', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([SAMPLE_FILES]);
+        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
         await dismissMobileTutorial(app.page);
         await openDesktopIde(app);
 
-        await app.quickCommandPalette.open();
-        const input = app.page.locator(
-            '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
-        );
-        await input.fill('Getting Started');
-        await app.page.locator('.quick-input-list .monaco-list-row').first().click();
-
-        const flexDirections = await app.page.locator('.gs-container .flex-grid').evaluateAll(
-            elements => elements.map(el => getComputedStyle(el).flexDirection)
-        );
-        expect(flexDirections.length).toBeGreaterThan(0);
-        expect(flexDirections.every(direction => direction === 'column')).toBe(true);
+        await expect(app.page.locator('#theia-app-shell')).toHaveClass(/theia-mod-mobile-one-column/);
+        await expect(app.page.locator('#theia-mobile-bottom-bar')).toBeVisible();
 
         await app.page.close();
     });
@@ -203,6 +227,8 @@ test.describe('@qaap-mobile Qaap time to preview', () => {
         const ws = new TheiaWorkspace([VITE_FIXTURE]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
+        await dismissMobileTutorial(app.page);
+        await openDesktopIde(app);
 
         const started = Date.now();
         const banner = app.page.locator('.qaap-project-bootstrap-banner');

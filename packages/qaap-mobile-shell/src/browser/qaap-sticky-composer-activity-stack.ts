@@ -1,10 +1,15 @@
 // *****************************************************************************
 // Copyright (C) 2026 Theia contributors and Qaap product fork.
+//
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
 import type { TranscriptFollowUpEntry } from '../common/qaap-transcript-follow-up-queue';
+import {
+    resolveDocumentIconClasses,
+    truncateContextDetail,
+} from './qaap-sticky-composer-context-ui';
 
 export interface StickyComposerChangedFileView {
     readonly path: string;
@@ -26,6 +31,9 @@ export interface StickyComposerActivityStackOptions {
     onFilesExpandedChange?: (expanded: boolean) => void;
     agentWorking?: boolean;
     onStop?: () => void;
+    onUndoAll?: () => void;
+    onKeepAll?: () => void;
+    changedFilesBulkBusy?: boolean;
     onReview?: () => void;
 }
 
@@ -35,7 +43,7 @@ export function renderStickyComposerActivityStack(options: StickyComposerActivit
         : undefined;
     const hasFiles = (options.changedFiles?.length ?? 0) > 0;
     const hasStats = !!options.diffStats && ((options.diffStats.added ?? 0) > 0 || (options.diffStats.removed ?? 0) > 0);
-    const filesSection = hasFiles || (options.agentWorking && hasStats)
+    const filesSection = hasFiles || hasStats
         ? renderStickyComposerChangedFilesSection(options)
         : undefined;
     if (!queueSection && !filesSection) {
@@ -150,13 +158,43 @@ function renderQueueItem(
     return row;
 }
 
+function buildChangedFilesHeadLabel(fileCount: number): string {
+    return fileCount === 1
+        ? nls.localize('qaap/mobileProjects/stickyComposerFilesOne', '1 File')
+        : nls.localize('qaap/mobileProjects/stickyComposerFilesMany', '{0} Files', String(fileCount));
+}
+
+function appendDiffStatsInline(
+    host: HTMLElement,
+    stats: { readonly added?: number; readonly removed?: number } | undefined,
+): void {
+    if (!stats || ((stats.added ?? 0) <= 0 && (stats.removed ?? 0) <= 0)) {
+        return;
+    }
+    const statsInline = document.createElement('span');
+    statsInline.className = 'theia-mobile-sticky-composer-activity-inline-stats';
+    if ((stats.added ?? 0) > 0) {
+        const added = document.createElement('span');
+        added.className = 'theia-mobile-agent-diff-stat theia-mod-added';
+        added.textContent = `+${stats.added}`;
+        statsInline.append(added);
+    }
+    if ((stats.removed ?? 0) > 0) {
+        const removed = document.createElement('span');
+        removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
+        removed.textContent = `-${stats.removed}`;
+        statsInline.append(removed);
+    }
+    host.append(statsInline);
+}
+
 function renderStickyComposerChangedFilesSection(options: StickyComposerActivityStackOptions): HTMLElement {
     const files = options.changedFiles ?? [];
     const stats = options.diffStats;
     const hasStats = !!stats && ((stats.added ?? 0) > 0 || (stats.removed ?? 0) > 0);
     const hasFileRows = files.length > 0;
     const fileCount = hasFileRows ? files.length : (hasStats ? 1 : 0);
-    let expanded = hasFileRows ? (options.filesExpanded ?? true) : false;
+    let expanded = options.filesExpanded ?? true;
 
     const section = document.createElement('div');
     section.className = 'theia-mobile-sticky-composer-activity-section theia-mod-files';
@@ -164,53 +202,83 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
         section.classList.add('theia-mod-stats-only');
     }
 
-    const headRow = document.createElement('div');
-    headRow.className = 'theia-mobile-sticky-composer-activity-head-row';
+    const strip = document.createElement('div');
+    strip.className = 'theia-mobile-projects-sticky-composer-context-strip theia-mod-changed-files';
 
-    const head = document.createElement('button');
-    head.type = 'button';
-    head.className = 'theia-mobile-sticky-composer-activity-head theia-mod-files-toggle';
-    head.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    if (!hasFileRows) {
-        head.disabled = true;
-        head.classList.add('theia-mod-static');
-    }
+    const head = document.createElement('div');
+    head.className = 'theia-mobile-projects-sticky-composer-context-head';
 
-    if (hasFileRows) {
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-sticky-composer-activity-chevron codicon codicon-chevron-down';
-        chevron.setAttribute('aria-hidden', 'true');
-        chevron.classList.toggle('theia-mod-collapsed', !expanded);
-        head.append(chevron);
-    }
+    const headMain = document.createElement('div');
+    headMain.className = 'theia-mobile-projects-sticky-composer-context-head-main';
 
-    const title = document.createElement('span');
-    title.className = 'theia-mobile-sticky-composer-activity-title';
-    title.textContent = fileCount === 1
-        ? nls.localize('qaap/mobileProjects/stickyComposerFilesOne', '1 File')
-        : nls.localize('qaap/mobileProjects/stickyComposerFilesMany', '{0} Files', String(fileCount));
-    head.append(title);
+    let filesToggle: HTMLButtonElement | undefined;
+    let filesBodyHost: HTMLElement | undefined;
 
-    if (hasStats) {
-        const statsInline = document.createElement('span');
-        statsInline.className = 'theia-mobile-sticky-composer-activity-inline-stats';
-        if ((stats!.added ?? 0) > 0) {
-            const added = document.createElement('span');
-            added.className = 'theia-mobile-agent-diff-stat theia-mod-added';
-            added.textContent = `+${stats!.added}`;
-            statsInline.append(added);
+    const syncFilesExpanded = (): void => {
+        filesToggle?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        filesToggle?.classList.toggle('theia-mod-collapsed', !expanded);
+        strip.classList.toggle('theia-mod-files-collapsed', !expanded);
+        options.onFilesExpandedChange?.(expanded);
+        if (filesBodyHost) {
+            filesBodyHost.hidden = !expanded;
         }
-        if ((stats!.removed ?? 0) > 0) {
-            const removed = document.createElement('span');
-            removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
-            removed.textContent = `-${stats!.removed}`;
-            statsInline.append(removed);
-        }
-        head.append(statsInline);
-    }
+    };
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'theia-mobile-projects-sticky-composer-context-files-toggle';
+    filesToggle = toggle;
+
+    const chevron = document.createElement('span');
+    chevron.className = 'codicon codicon-chevron-down';
+    chevron.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'theia-mobile-projects-sticky-composer-context-head-label';
+    text.textContent = buildChangedFilesHeadLabel(fileCount);
+
+    toggle.append(chevron, text);
+    appendDiffStatsInline(toggle, stats);
+    toggle.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        expanded = !expanded;
+        syncFilesExpanded();
+    });
+    headMain.append(toggle);
 
     const headActions = document.createElement('div');
-    headActions.className = 'theia-mobile-sticky-composer-activity-head-actions';
+    headActions.className = 'theia-mobile-projects-sticky-composer-context-head-actions';
+
+    const bulkBusy = options.changedFilesBulkBusy === true;
+
+    if (hasFileRows && options.onUndoAll) {
+        const undoAll = document.createElement('button');
+        undoAll.type = 'button';
+        undoAll.className = 'theia-mobile-sticky-composer-activity-bulk-action theia-mod-undo';
+        undoAll.textContent = nls.localize('qaap/mobileProjects/stickyComposerUndoAll', 'Undo All');
+        undoAll.disabled = bulkBusy;
+        undoAll.addEventListener('click', ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            options.onUndoAll?.();
+        });
+        headActions.append(undoAll);
+    }
+
+    if (hasFileRows && options.onKeepAll) {
+        const keepAll = document.createElement('button');
+        keepAll.type = 'button';
+        keepAll.className = 'theia-mobile-sticky-composer-activity-bulk-action theia-mod-keep';
+        keepAll.textContent = nls.localize('qaap/mobileProjects/stickyComposerKeepAll', 'Keep All');
+        keepAll.disabled = bulkBusy;
+        keepAll.addEventListener('click', ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            options.onKeepAll?.();
+        });
+        headActions.append(keepAll);
+    }
 
     if (options.agentWorking && options.onStop) {
         const stopBtn = document.createElement('button');
@@ -231,6 +299,7 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
         const reviewBtn = document.createElement('button');
         reviewBtn.type = 'button';
         reviewBtn.className = 'theia-mobile-sticky-composer-activity-review';
+        reviewBtn.disabled = bulkBusy;
         reviewBtn.textContent = nls.localize('qaap/mobileProjects/transcriptChangedFilesReview', 'Review');
         reviewBtn.addEventListener('click', ev => {
             ev.preventDefault();
@@ -240,77 +309,83 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
         headActions.append(reviewBtn);
     }
 
-    headRow.append(head, headActions);
-    section.append(headRow);
+    head.append(headMain);
+    if (headActions.childElementCount > 0) {
+        head.append(headActions);
+    }
+    strip.append(head);
 
     if (hasFileRows) {
         const body = document.createElement('div');
-        body.className = 'theia-mobile-sticky-composer-activity-body theia-mobile-sticky-composer-files-list';
-        body.hidden = !expanded;
+        body.className = 'theia-mobile-projects-sticky-composer-context-body';
+        filesBodyHost = body;
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-sticky-composer-changed-files-list';
+        list.setAttribute('role', 'list');
 
         for (const file of files.slice(0, 12)) {
-            body.append(renderChangedFileRow(file));
+            list.append(renderChangedFileRow(file));
         }
         if (files.length > 12) {
             const more = document.createElement('div');
-            more.className = 'theia-mobile-sticky-composer-files-more';
+            more.className = 'theia-mobile-sticky-composer-changed-files-more';
             more.textContent = nls.localize(
                 'qaap/mobileProjects/transcriptChangedFilesMore',
                 '+{0} more',
                 String(files.length - 12),
             );
-            body.append(more);
+            list.append(more);
         }
 
-        head.addEventListener('click', ev => {
-            ev.stopPropagation();
-            expanded = !expanded;
-            head.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            head.querySelector('.theia-mobile-sticky-composer-activity-chevron')
-                ?.classList.toggle('theia-mod-collapsed', !expanded);
-            body.hidden = !expanded;
-            options.onFilesExpandedChange?.(expanded);
-        });
-
-        section.append(body);
+        body.append(list);
+        strip.append(body);
     }
 
+    syncFilesExpanded();
+    section.append(strip);
     return section;
 }
 
 function renderChangedFileRow(file: StickyComposerChangedFileView): HTMLElement {
+    const slash = file.path.lastIndexOf('/');
+    const fileName = slash >= 0 ? file.path.slice(slash + 1) : file.path;
+
     const row = document.createElement('div');
-    row.className = `theia-mobile-sticky-composer-file-row theia-mod-${file.kind}`;
+    row.className = 'theia-mobile-sticky-composer-changed-file-row';
+    row.classList.add(`theia-mod-${file.kind}`);
+    row.setAttribute('role', 'listitem');
+    row.title = file.path;
 
     const icon = document.createElement('span');
-    icon.className = `theia-mobile-sticky-composer-file-icon codicon ${composerFileIconClass(file.path)}`;
+    icon.className = `theia-mobile-sticky-composer-changed-file-icon ${resolveDocumentIconClasses(fileName)}`;
     icon.setAttribute('aria-hidden', 'true');
 
     const name = document.createElement('span');
-    name.className = 'theia-mobile-sticky-composer-file-name';
-    const slash = file.path.lastIndexOf('/');
-    name.textContent = slash >= 0 ? file.path.slice(slash + 1) : file.path;
+    name.className = 'theia-mobile-sticky-composer-changed-file-name';
+    name.textContent = truncateContextDetail(fileName, 36);
 
-    row.append(icon, name);
-
-    if ((file.added ?? 0) > 0 || (file.removed ?? 0) > 0) {
-        const stats = document.createElement('span');
-        stats.className = 'theia-mobile-sticky-composer-file-stats';
-        if ((file.added ?? 0) > 0) {
-            const added = document.createElement('span');
-            added.className = 'theia-mobile-agent-diff-stat theia-mod-added';
-            added.textContent = `+${file.added}`;
-            stats.append(added);
-        }
-        if ((file.removed ?? 0) > 0) {
-            const removed = document.createElement('span');
-            removed.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
-            removed.textContent = `-${file.removed}`;
-            stats.append(removed);
-        }
-        row.append(stats);
+    const stats = document.createElement('span');
+    stats.className = 'theia-mobile-sticky-composer-changed-file-stats';
+    const added = file.added ?? (file.kind === 'created' ? 1 : 0);
+    const removed = file.removed ?? 0;
+    if (added > 0) {
+        const addedStat = document.createElement('span');
+        addedStat.className = 'theia-mobile-agent-diff-stat theia-mod-added';
+        addedStat.textContent = `+${added}`;
+        stats.append(addedStat);
+    }
+    if (removed > 0) {
+        const removedStat = document.createElement('span');
+        removedStat.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
+        removedStat.textContent = `-${removed}`;
+        stats.append(removedStat);
     }
 
+    row.append(icon, name);
+    if (stats.childElementCount > 0) {
+        row.append(stats);
+    }
     return row;
 }
 
@@ -327,24 +402,4 @@ function createQueueActionButton(iconClass: string, label: string, onClick: () =
         onClick();
     });
     return btn;
-}
-
-function composerFileIconClass(path: string): string {
-    const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
-    if (['js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'sh'].includes(ext)) {
-        return 'codicon-file-code';
-    }
-    if (['json', 'yaml', 'yml', 'toml', 'xml', 'ini', 'env'].includes(ext)) {
-        return 'codicon-settings-gear';
-    }
-    if (['md', 'mdx', 'txt', 'rst'].includes(ext)) {
-        return 'codicon-markdown';
-    }
-    if (['css', 'scss', 'less', 'html', 'svg'].includes(ext)) {
-        return 'codicon-symbol-color';
-    }
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico'].includes(ext)) {
-        return 'codicon-file-media';
-    }
-    return 'codicon-file';
 }

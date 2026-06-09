@@ -36,15 +36,9 @@ import {
 import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
 import { MobileProjectsService } from './mobile-projects-service';
 import {
-    TranscriptFollowUpQueue,
-} from '../common/qaap-transcript-follow-up-queue';
-import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
-import {
-    type QaapAgentApprovalRequestDTO,
-} from '../common/qaap-agent-approval-client';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
     type QaapAgentTaskAgentOption,
@@ -70,31 +64,17 @@ import {
     toggleQaapAccountMenu,
 } from './qaap-workbench-account-menu';
 import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
-import {
-    type EmbeddedAgentPreviewChrome,
-} from '@theia/qaap-adapters/lib/browser/qaap-agent-preview-chrome';
 import type { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
 import type { QaapPreviewInspectorDeps } from '@theia/qaap-adapters/lib/browser/qaap-preview-inline-inspector';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     type ExecutionSurfaceTabId,
 } from '../common/qaap-execution-surface-tabs';
-import { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
-import {
-    MobileProjectsTranscriptHistoryUi,
-    type MobileProjectsTranscriptHistoryHost,
-} from './mobile-projects-transcript-history-ui';
-import {
-    MobileProjectsTranscriptComposerUi,
-    type MobileProjectsTranscriptComposerHost,
-} from './mobile-projects-transcript-composer-ui';
-import { MobileProjectsTranscriptStickyComposerUi, type MobileProjectsTranscriptStickyComposerHost } from './mobile-projects-transcript-sticky-composer-ui';
-import { MobileProjectsTranscriptSheetUi, type MobileProjectsTranscriptSheetHost } from './mobile-projects-transcript-sheet-ui';
 import { MobileProjectsExecutionSurfaceTabsUi, type MobileProjectsExecutionSurfaceTabsHost } from './mobile-projects-execution-surface-tabs-ui';
-import { MobileProjectsTranscriptSurfacesUi, type MobileProjectsTranscriptSurfacesHost } from './mobile-projects-transcript-surfaces-ui';
-import { MobileProjectsTranscriptVerifyUi, type MobileProjectsTranscriptVerifyHost } from './mobile-projects-transcript-verify-ui';
-import { MobileProjectsTranscriptHeaderUi, type MobileProjectsTranscriptHeaderHost } from './mobile-projects-transcript-header-ui';
-import { MobileProjectsTranscriptSubmitUi, type MobileProjectsTranscriptSubmitHost } from './mobile-projects-transcript-submit-ui';
+import { type MobileProjectsTranscriptOverlayHost } from './mobile-projects-transcript-overlay-host';
+import { TranscriptOverlayController } from './mobile-projects-transcript-overlay-controller';
+import { bindTranscriptOverlayStateAccessors } from './mobile-projects-transcript-overlay-state';
+import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 import { MobileProjectsTasksHubUi, type MobileProjectsTasksHubHost } from './mobile-projects-tasks-hub-ui';
 import { MobileProjectsWorkHubInboxUi, type MobileProjectsWorkHubInboxHost } from './mobile-projects-work-hub-inbox-ui';
 import { MobileProjectsTheiaChatSessionUi, type MobileProjectsTheiaChatSessionHost } from './mobile-projects-theia-chat-session-ui';
@@ -113,8 +93,6 @@ import {
 import { MobileProjectsHubTeamDataUi, type MobileProjectsHubTeamDataHost } from './mobile-projects-hub-team-data-ui';
 import { MobileProjectsConversationActionsUi, type MobileProjectsConversationActionsHost } from './mobile-projects-conversation-actions-ui';
 import { MobileProjectsAgentsHubInlineUi, type MobileProjectsAgentsHubInlineHost } from './mobile-projects-agents-hub-inline-ui';
-import { MobileProjectsTranscriptLiveUi, type MobileProjectsTranscriptLiveHost } from './mobile-projects-transcript-live-ui';
-import { MobileProjectsTranscriptMessagesUi, type MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 import {
     MobileProjectsBackgroundTaskUi,
     type MobileProjectsBackgroundTaskHost,
@@ -262,16 +240,10 @@ import {
     type MobileWorkHubInboxItem,
 } from './mobile-work-hub-inbox';
 import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
-import {
-    type QaapGitHistoryCommit,
-} from '../common/qaap-git-review';
-import {
-    QaapDiffReviewWidget,
-} from './qaap-diff-review-widget';
+import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import type { TranscriptFilesViewServices } from './qaap-transcript-files-view';
-import type { TranscriptTerminalSurface, TranscriptTerminalViewServices } from './qaap-transcript-terminal-view';
+import type { TranscriptTerminalViewServices } from './qaap-transcript-terminal-view';
 import {
-    TranscriptWorkspaceSurfacesCache,
     type TranscriptWorkspaceSurfaceKey,
 } from './qaap-transcript-workspace-surfaces-cache';
 
@@ -384,11 +356,6 @@ interface WorkHubSearchPickItem extends QuickPickItem {
     readonly target: WorkHubSearchTarget;
 }
 
-interface TranscriptTerminalSliderState {
-    surfaces: TranscriptTerminalSurface[];
-    activeIndex: number;
-}
-
 interface QaapDiffProjectTab {
     projectId: string;
     label: string;
@@ -401,22 +368,7 @@ interface QaapDiffProjectTab {
 /** Tabs of the transcript sheet (execution view). 'messages' is the chat tab. */
 type TranscriptTab = ExecutionSurfaceTabId;
 
-/** A single verification step run on the project (build/test/lint). */
-interface VerifyCheck {
-    readonly label: string;
-    readonly command: string;
-}
-
-/** Result of running a {@link VerifyCheck} via the agent-task backend. */
-interface VerifyCheckResult {
-    readonly check: VerifyCheck;
-    state: 'idle' | 'running' | 'ok' | 'fail';
-    durationMs?: number;
-    exitCode?: number;
-    logTail?: string;
-}
-
-export class MobileProjectsPanel {
+export class MobileProjectsPanel implements WorkHubTranscriptBridge {
 
     /** Max conversation rows per repo card before "More" expands the list. */
     protected static readonly CONVERSATIONS_COLLAPSED_LIMIT = MOBILE_PROJECTS_CONVERSATIONS_COLLAPSED_LIMIT;
@@ -448,7 +400,6 @@ export class MobileProjectsPanel {
     protected filter: MobileProjectFilter = 'all';
     protected hubView: MobileProjectsHubView = 'tasks';
     protected query = '';
-    protected cachedAgentApprovals: QaapAgentApprovalRequestDTO[] = [];
     protected agentApprovalsFetchGeneration = 0;
     /** Project ids whose conversation list is fully expanded (not capped at {@link CONVERSATIONS_COLLAPSED_LIMIT}). */
     protected readonly expandedConversationProjectIds = new Set<string>();
@@ -456,7 +407,6 @@ export class MobileProjectsPanel {
     protected readonly diffWidgetHost: HTMLElement;
     protected diffProjectTabs: QaapDiffProjectTab[] = [];
     protected diffActiveProjectId: string | undefined;
-    protected diffReviewWidget: QaapDiffReviewWidget | undefined;
     protected diffScanning = false;
     protected diffPendingPreferredProjectId: string | undefined;
     /** When true, diff is scoped to one repo (workspace sheet) instead of cross-project hub tabs. */
@@ -504,45 +454,27 @@ export class MobileProjectsPanel {
     /** Per-project visible session count in the sidebar (undefined → default collapsed limit). */
     protected readonly sessionsSidebarVisibleConversationCountByProjectId = new Map<string, number>();
     protected sessionsSidebarAccordionDefaultsApplied = false;
-    /** Suppresses hub-restore when closing a transcript immediately before opening another. */
-    protected replacingTranscriptSheet = false;
-    protected transcriptComposerHost: HTMLElement | undefined;
-    /** `${projectId}|${summaryId}` while transcript sticky composer DOM is stable. */
-    protected transcriptComposerMountKey: string | undefined;
-    protected transcriptComposerProject: MobileProjectEntry | undefined;
-    protected transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
-    protected transcriptComposerContext: StickyComposerContextEntry[] = [];
-    protected transcriptComposerFilesExpanded = true;
-    protected transcriptComposerQueueExpanded = true;
-    protected transcriptComposerChangedFilesExpanded = true;
-    protected transcriptComposerPinnedAgentId: string | undefined;
-    protected transcriptComposerDraft = '';
-    protected readonly transcriptFollowUpQueue = new TranscriptFollowUpQueue();
-    protected transcriptFollowUpFlushInFlight = false;
-    /** Refreshes transcript sticky-composer send/stop affordance without a full remount. */
-    protected transcriptComposerSendRefresh: (() => void) | undefined;
-    protected transcriptComposerBackendAgents: QaapAgentTaskAgentOption[] = [];
-    protected transcriptComposerQaiqModels: QaapQaiqModelOption[] = [];
-    protected transcriptComposerAgentSheet: HTMLElement | undefined;
-    protected transcriptComposerQaiqModelSheet: HTMLElement | undefined;
-    protected transcriptComposerModeSheet: HTMLElement | undefined;
-    protected transcriptComposerApprovalSheet: HTMLElement | undefined;
-    protected transcriptComposerModeId: string | undefined;
-    protected transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
-    protected transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
-    protected transcriptComposerPrefsConvId: string | undefined;
-    protected transcriptComposerDraftPersistTimer: number | undefined;
-    protected transcriptComposerPrefsPersistTimer: number | undefined;
     protected agentChatInputSession: ChatSession | undefined;
-    protected transcriptChatInputWidget: AIChatInputWidget | undefined;
-    protected transcriptChatViewWidget: MobileProjectChatViewWidget | undefined;
-    protected transcriptScheduleRefresh: (() => void) | undefined;
-    protected transcriptLastRenderedConversationId: string | undefined;
-    protected transcriptLastRenderedMessageId: string | undefined;
-    protected readonly transcriptUi = new MobileProjectsTranscriptUi();
-    protected readonly transcriptHistoryUi = new MobileProjectsTranscriptHistoryUi(this as unknown as MobileProjectsTranscriptHistoryHost);
-    protected readonly transcriptComposerUi = new MobileProjectsTranscriptComposerUi(this as unknown as MobileProjectsTranscriptComposerHost);
-    protected readonly transcriptStickyComposerUi = new MobileProjectsTranscriptStickyComposerUi(this as unknown as MobileProjectsTranscriptStickyComposerHost);
+
+    /** Transcript overlay controller — state bag + `MobileProjectsTranscript*Ui` modules (Phase 3). */
+    protected transcriptController!: TranscriptOverlayController;
+
+    /** Single cast surface for all `MobileProjectsTranscript*Ui` host contracts. */
+    protected get transcriptOverlayHost(): MobileProjectsTranscriptOverlayHost {
+        return this as unknown as MobileProjectsTranscriptOverlayHost;
+    }
+
+    protected get transcriptUi() { return this.transcriptController.transcriptUi; }
+    protected get transcriptHistoryUi() { return this.transcriptController.historyUi; }
+    protected get transcriptComposerUi() { return this.transcriptController.composerUi; }
+    protected get transcriptStickyComposerUi() { return this.transcriptController.stickyComposerUi; }
+    protected get transcriptSheetUi() { return this.transcriptController.sheetUi; }
+    protected get transcriptSurfacesUi() { return this.transcriptController.surfacesUi; }
+    protected get transcriptHeaderUi() { return this.transcriptController.headerUi; }
+    protected get transcriptSubmitUi() { return this.transcriptController.submitUi; }
+    protected get transcriptMessagesUi() { return this.transcriptController.messagesUi; }
+    protected get transcriptLiveUi() { return this.transcriptController.liveUi; }
+    protected get transcriptVerifyUi() { return this.transcriptController.verifyUi; }
     protected readonly backgroundTaskUi = new MobileProjectsBackgroundTaskUi(this as unknown as MobileProjectsBackgroundTaskHost);
     protected readonly chatServiceSummariesUi = new MobileProjectsChatServiceSummariesUi(this as unknown as MobileProjectsChatServiceSummariesHost);
     protected readonly composerHeaderUi = new MobileProjectsComposerHeaderUi(this as unknown as MobileProjectsComposerHeaderHost);
@@ -575,16 +507,6 @@ export class MobileProjectsPanel {
     protected readonly stickyComposerColumnUi = new MobileProjectsStickyComposerColumnUi(this as unknown as MobileProjectsStickyComposerColumnHost);
     protected readonly stickyComposerRenderUi = new MobileProjectsStickyComposerRenderUi(this as unknown as MobileProjectsStickyComposerRenderHost);
     protected readonly executionSurfaceTabsUi = new MobileProjectsExecutionSurfaceTabsUi(this as unknown as MobileProjectsExecutionSurfaceTabsHost);
-    protected readonly transcriptSheetUi = new MobileProjectsTranscriptSheetUi(this as unknown as MobileProjectsTranscriptSheetHost);
-    protected readonly transcriptSurfacesUi = new MobileProjectsTranscriptSurfacesUi(
-        this as unknown as MobileProjectsTranscriptSurfacesHost,
-        this.transcriptHistoryUi,
-    );
-    protected readonly transcriptHeaderUi = new MobileProjectsTranscriptHeaderUi(this as unknown as MobileProjectsTranscriptHeaderHost);
-    protected readonly transcriptSubmitUi = new MobileProjectsTranscriptSubmitUi(this as unknown as MobileProjectsTranscriptSubmitHost);
-    protected readonly transcriptMessagesUi = new MobileProjectsTranscriptMessagesUi(this as unknown as MobileProjectsTranscriptMessagesHost);
-    protected readonly transcriptLiveUi = new MobileProjectsTranscriptLiveUi(this as unknown as MobileProjectsTranscriptLiveHost);
-    protected readonly transcriptVerifyUi = new MobileProjectsTranscriptVerifyUi(this as unknown as MobileProjectsTranscriptVerifyHost);
     protected readonly tasksHubUi = new MobileProjectsTasksHubUi(this as unknown as MobileProjectsTasksHubHost);
     protected readonly hubCatalogUi = new MobileProjectsHubCatalogUi(this as unknown as MobileProjectsHubCatalogHost);
     protected readonly reposHubUi = new MobileProjectsReposHubUi(this as unknown as MobileProjectsReposHubHost);
@@ -599,76 +521,16 @@ export class MobileProjectsPanel {
     protected readonly workHubInboxUi = new MobileProjectsWorkHubInboxUi(this as unknown as MobileProjectsWorkHubInboxHost);
     protected readonly theiaChatSessionUi = new MobileProjectsTheiaChatSessionUi(this as unknown as MobileProjectsTheiaChatSessionHost);
     protected readonly agentsHubInlineUi = new MobileProjectsAgentsHubInlineUi(this as unknown as MobileProjectsAgentsHubInlineHost);
-    /** Last successful SSE message delta applied to the open transcript (ms). */
-    protected transcriptLastSseDeltaAt: number | undefined;
-    protected transcriptApprovalRefreshTimer: number | undefined;
-    protected transcriptChatHost: HTMLElement | undefined;
-    protected transcriptChatInputHost: HTMLElement | undefined;
-    /** Tracks the floating composer height so empty-state quick actions can hover above it. */
-    protected transcriptComposerSizeDispose: Disposable = Disposable.NULL;
-    /** Execution-view tabs: strip + per-tab content hosts. */
-    protected transcriptTabStrip: HTMLElement | undefined;
-    protected transcriptPlanHost: HTMLElement | undefined;
-    protected transcriptReviewHost: HTMLElement | undefined;
-    protected transcriptReviewDiffHost: HTMLElement | undefined;
-    protected transcriptReviewChecksHost: HTMLElement | undefined;
-    protected transcriptChecksPanelOpen = false;
-    protected transcriptHistoryPanelOpen = false;
-    protected transcriptHistoryPanelHeightPx: number | undefined;
-    protected transcriptHistoryLoading = false;
-    protected transcriptHistoryCommits: QaapGitHistoryCommit[] = [];
-    protected transcriptHistoryBranch: string | undefined;
-    protected transcriptHistoryQuery = '';
-    protected transcriptHistoryRoot: string | undefined;
-    protected transcriptHistoryLoadGeneration = 0;
-    protected transcriptPreviewHost: HTMLElement | undefined;
-    protected transcriptEmbeddedPreview: EmbeddedAgentPreviewChrome | undefined;
-    protected transcriptFilesHost: HTMLElement | undefined;
-    protected transcriptTerminalHost: HTMLElement | undefined;
-    protected transcriptTerminalToolbar: HTMLElement | undefined;
-    protected transcriptTerminalSlider: HTMLElement | undefined;
-    protected transcriptTerminalDots: HTMLElement | undefined;
-    protected transcriptTerminalResizeObserver: ResizeObserver | undefined;
-    /** One Files tree + Terminal per workspace cwd (project), reused across tasks. */
-    protected readonly transcriptWorkspaceSurfaces = new TranscriptWorkspaceSurfacesCache();
-    protected transcriptFilesAttachedKey: TranscriptWorkspaceSurfaceKey | undefined;
-    protected readonly transcriptTerminalSlidesByWorkspace = new Map<TranscriptWorkspaceSurfaceKey, TranscriptTerminalSliderState>();
-    protected transcriptPreviewRequestRunning = false;
-    protected transcriptPreviewRequestPending = false;
-    protected readonly transcriptPreviewRecoveryRequests = new Set<string>();
     /** Shared Changes · Preview · Files · Terminal tab per project (task surface + transcript sheet). */
     protected readonly executionSurfaceTabByProjectId = new Map<string, TranscriptTab>();
     protected projectDetailExpandedId: string | undefined;
     protected projectDetailTabStrip: HTMLElement | undefined;
-    protected projectDetailSurfaceTargets: {
-        readonly chatHost: HTMLElement;
-        readonly planHost: HTMLElement;
-        readonly reviewHost: HTMLElement;
-        readonly previewHost: HTMLElement;
-        readonly filesHost: HTMLElement;
-        readonly terminalHost: HTMLElement;
-    } | undefined;
-    protected verifyRunning = false;
-    protected verifyResults: VerifyCheckResult[] = [];
-    protected verifyChecksCwd: string | undefined;
-    protected verifyChecksLoading = false;
-    /** Count of consecutive automatic verify→fix loops for the open conversation. */
-    protected verifyAutoAttempts = 0;
-    /** Last transcript status seen — drives auto-verify on streaming→idle. */
-    protected transcriptLastStatus: QaapAgentConversationSummaryDTO['status'] | undefined;
     protected overlayUi: {
         parallel: MobileProjectsParallelUi;
         team: MobileProjectsTeamUi;
         teamHub: MobileProjectsTeamHubUi;
         home: MobileProjectsHomeUi;
     } | undefined;
-    protected transcriptOpenSummaryId: string | undefined;
-    protected transcriptOpenSummary: QaapAgentConversationSummaryDTO | undefined;
-    protected transcriptOpenProject: MobileProjectEntry | undefined;
-    protected transcriptAutoApproveBusy = false;
-    protected transcriptLastFingerprint: string | undefined;
-    protected transcriptLastConv: QaapAgentConversationDTO | undefined;
-    protected readonly transcriptTheiaSessionByConversationId = new Map<string, string>();
     /** Monotonic counter that disambiguates each AIChatInputWidget instance from the WidgetManager cache. */
     protected agentChatInputMountSeq = 0;
     /** Last-flashed task id — drives the highlight animation when a fresh task appears. */
@@ -737,9 +599,6 @@ export class MobileProjectsPanel {
     protected readonly chatSessionModelDisposables = new Map<string, Disposable>();
     protected readonly chatSessionProjectIds = new Map<string, string>();
     protected chatServiceRefreshHandle: number | undefined;
-    protected stickyComposerContextUsageDispose: Disposable = Disposable.NULL;
-    /** Open transcript sheet — only one at a time, dismissed on tap-outside or header back button. */
-    protected transcriptSheet: HTMLElement | undefined;
     /** Agents tab: unified execution shell (tabs + surfaces) in-panel, no body overlay. */
     protected agentsHubShellActive = false;
     /** Agents tab: a real session is open in the shell (header back returns to idle shell). */
@@ -748,9 +607,6 @@ export class MobileProjectsPanel {
     protected agentsHubInlineTranscriptRoot: HTMLElement | undefined;
     protected agentsHubInlineExecutionRoot: HTMLElement | undefined;
     protected agentsHubInlineTabStrip: HTMLElement | undefined;
-    protected transcriptHeaderSubtitle: HTMLElement | undefined;
-    protected transcriptSheetDispose: Disposable = Disposable.NULL;
-    protected transcriptUserScrollPinDispose: Disposable = Disposable.NULL;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         this.cardMenuUi.handleDocumentPointerDown(ev);
     };
@@ -782,6 +638,11 @@ export class MobileProjectsPanel {
         protected readonly delegate: MobileProjectsPanelDelegate,
         options: MobileProjectsPanelOptions = {},
     ) {
+        this.transcriptController = new TranscriptOverlayController(
+            this as unknown as MobileProjectsTranscriptOverlayHost,
+            this,
+        );
+        bindTranscriptOverlayStateAccessors(this, this.transcriptController.state);
         this.homeMode = !!options.homeMode;
         this.activeTasks = options.activeTasks;
         this.conversations = options.conversations;
@@ -1441,18 +1302,6 @@ export class MobileProjectsPanel {
         return this.tasksHubUi.collectAgentsHubRecentItems(projects, limit, scopeProject);
     }
 
-    protected shouldEmbedAgentsHubRecentsInWorkspaceTranscript(): boolean {
-        return this.tasksHubUi.shouldEmbedAgentsHubRecentsInWorkspaceTranscript();
-    }
-
-    protected createAgentsHubQuickActionsBlock(): HTMLElement {
-        return this.tasksHubUi.createAgentsHubQuickActionsBlock();
-    }
-
-    protected createAgentsHubRecentsBlock(project: MobileProjectEntry): HTMLElement {
-        return this.tasksHubUi.createAgentsHubRecentsBlock(project);
-    }
-
     protected updateTasksAttentionChrome(): void {
         this.tasksHubUi.updateTasksAttentionChrome();
     }
@@ -1710,6 +1559,68 @@ export class MobileProjectsPanel {
         return this.theiaChatSessionUi.mountTranscriptChatInput(project, summary, host, submit);
     }
 
+    // ========================================================================
+    // WorkHubTranscriptBridge — explicit hub surface for transcript overlay
+    // ========================================================================
+
+    isAgentsHubLanding(): boolean {
+        return this.shouldUseAgentsHubLanding();
+    }
+
+    shouldEmbedAgentsHubRecentsInWorkspaceTranscript(): boolean {
+        return this.tasksHubUi.shouldEmbedAgentsHubRecentsInWorkspaceTranscript();
+    }
+
+    async openInlineTranscript(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        await this.openAgentsHubInlineTranscript(project, summary);
+    }
+
+    refreshHubChrome(): void {
+        this.renderHeader();
+        this.renderSubtitle();
+        this.renderList();
+    }
+
+    refreshHubSubtitle(): void {
+        this.renderSubtitle();
+    }
+
+    teardownAgentsHubShell(): void {
+        this.teardownAgentsHubExecutionShell();
+    }
+
+    refreshHubBottomBar(): void {
+        this.notifyWorkspaceHubBottomBarRefresh();
+    }
+
+    renderTeamSectionInTranscript(host: HTMLElement, conv: QaapAgentConversationDTO): void {
+        this.ensureOverlayUi().team.renderTeamSection(host, conv);
+    }
+
+    renderInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void {
+        this.renderTranscriptInlineApproval(host, conv);
+    }
+
+    createAgentsHubRecentsBlock(project: MobileProjectEntry): HTMLElement {
+        return this.tasksHubUi.createAgentsHubRecentsBlock(project);
+    }
+
+    createAgentsHubQuickActionsBlock(): HTMLElement {
+        return this.tasksHubUi.createAgentsHubQuickActionsBlock();
+    }
+
+    renderIdleSubmitOptimistic(
+        chatHost: HTMLElement,
+        summary: QaapAgentConversationSummaryDTO,
+        draft: string,
+        selectedAgentId: string,
+    ): void {
+        this.renderAgentsHubIdleSubmitOptimistic(chatHost, summary, draft, selectedAgentId);
+    }
+
     protected shouldUseAgentsHubLanding(): boolean {
         return this.agentsHubInlineUi.shouldUseAgentsHubLanding();
     }
@@ -1758,7 +1669,7 @@ export class MobileProjectsPanel {
         await this.agentsHubInlineUi.openAgentsHubInlineTranscript(project, summary);
     }
 
-    protected closeAgentsHubSession(): void {
+    closeAgentsHubSession(): void {
         this.agentsHubInlineUi.closeAgentsHubSession();
     }
 

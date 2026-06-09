@@ -10,6 +10,7 @@ import {
     type MobileProjectEntry,
     MOBILE_PROJECT_STATUS_COLORS,
 } from './mobile-projects-types';
+import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 
 /** Panel surface for active-chat header subtitle chips and live chrome refresh. */
 export interface MobileProjectsTranscriptHeaderHost {
@@ -21,7 +22,6 @@ export interface MobileProjectsTranscriptHeaderHost {
     visible: boolean;
     transcriptComposerSendRefresh: (() => void) | undefined;
 
-    renderSubtitle(): void;
 }
 
 /** Branch / status / activity chips in the transcript execution header. */
@@ -29,7 +29,10 @@ export class MobileProjectsTranscriptHeaderUi {
 
     protected lastExecutionChromeKey = '';
 
-    constructor(protected readonly host: MobileProjectsTranscriptHeaderHost) { }
+    constructor(
+        protected readonly host: MobileProjectsTranscriptHeaderHost,
+        protected readonly workHub: WorkHubTranscriptBridge,
+    ) { }
 
     createExecutionHeaderSubtitle(
         project: MobileProjectEntry,
@@ -138,7 +141,7 @@ export class MobileProjectsTranscriptHeaderUi {
             ].join('|');
             if (chromeKey !== this.lastExecutionChromeKey) {
                 this.lastExecutionChromeKey = chromeKey;
-                this.host.renderSubtitle();
+                this.workHub.refreshHubSubtitle();
             }
         }
         this.host.transcriptComposerSendRefresh?.();

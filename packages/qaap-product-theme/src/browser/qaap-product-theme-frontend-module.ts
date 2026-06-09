@@ -34,6 +34,7 @@ import { TerminalThemeService } from '@theia/terminal/lib/browser/terminal-theme
 import { QaapWorkbenchColorContribution } from './qaap-workbench-color-contribution';
 import { QaapThemeContribution } from './qaap-theme-contribution';
 import { QaapTerminalThemeService } from './qaap-terminal-theme-service';
+import { QaapChatScrollFadeContribution } from './qaap-chat-scroll-fade-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapWorkbenchColorContribution).toSelf().inSingletonScope();
@@ -41,6 +42,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapThemeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapThemeContribution);
+
+    bind(QaapChatScrollFadeContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapChatScrollFadeContribution);
 
     bind(QaapTerminalThemeService).toSelf().inSingletonScope();
     rebind(TerminalThemeService).toService(QaapTerminalThemeService);

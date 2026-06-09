@@ -27,6 +27,7 @@ import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcr
 import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
 import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 
 /** Panel surface consumed by transcript message rendering (keeps deps narrow vs. the full panel). */
 export interface MobileProjectsTranscriptMessagesHost {
@@ -55,11 +56,6 @@ export interface MobileProjectsTranscriptMessagesHost {
     projects: MobileProjectEntry[];
 
     projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
-    shouldEmbedAgentsHubRecentsInWorkspaceTranscript(): boolean;
-    createAgentsHubRecentsBlock(project: MobileProjectEntry): HTMLElement;
-    createAgentsHubQuickActionsBlock(): HTMLElement;
-    ensureOverlayUi(): { team: { renderTeamSection(host: HTMLElement, conv: QaapAgentConversationDTO): void } };
-    renderTranscriptInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void;
     transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
     transcriptLiveUi: MobileProjectsTranscriptLiveUi;
     transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
@@ -77,7 +73,10 @@ export class MobileProjectsTranscriptMessagesUi {
     protected readonly userUi: MobileProjectsTranscriptMessagesUserUi;
     protected readonly renderUi: MobileProjectsTranscriptMessagesRenderUi;
 
-    constructor(protected readonly host: MobileProjectsTranscriptMessagesHost) {
+    constructor(
+        protected readonly host: MobileProjectsTranscriptMessagesHost,
+        protected readonly workHub: WorkHubTranscriptBridge,
+    ) {
         this.contentUi = new MobileProjectsTranscriptMessagesContentUi(host);
         this.resolversUi = new MobileProjectsTranscriptMessagesResolversUi(host, this.contentUi);
         this.toolUi = new MobileProjectsTranscriptMessagesToolUi(host, this.contentUi, this.resolversUi);
@@ -86,7 +85,7 @@ export class MobileProjectsTranscriptMessagesUi {
         this.userUi = new MobileProjectsTranscriptMessagesUserUi(host, this.contentUi, this.toolUi, (messageHost, conv) => {
             renderUi.renderTranscriptMessages(messageHost, conv);
         });
-        renderUi = new MobileProjectsTranscriptMessagesRenderUi(host, this.contentUi, this.userUi, this.artifactsUi, this.toolUi);
+        renderUi = new MobileProjectsTranscriptMessagesRenderUi(host, workHub, this.contentUi, this.userUi, this.artifactsUi, this.toolUi);
         this.renderUi = renderUi;
     }
 
@@ -135,7 +134,7 @@ export class MobileProjectsTranscriptMessagesUi {
         readonly files: Array<{ readonly path: string; readonly kind: 'edited' | 'created'; readonly added?: number; readonly removed?: number }>;
         readonly stats?: { readonly added: number; readonly removed: number };
     } {
-        const segments = this.resolveComposerTurnSegments(conv);
+        const segments = this.resolveComposerConversationSegments(conv);
         const files = this.resolversUi.resolveTranscriptChangedFiles(segments);
         let stats = this.resolversUi.resolveTranscriptDiffStats(segments);
         if (!stats && summary && ((summary.linesAdded ?? 0) > 0 || (summary.linesRemoved ?? 0) > 0)) {
@@ -150,18 +149,11 @@ export class MobileProjectsTranscriptMessagesUi {
         };
     }
 
-    protected resolveComposerTurnSegments(conv: QaapAgentConversationDTO | undefined): QaapAgentMessageSegmentDTO[] {
+    /** All agent tool segments in the conversation — keeps changed files visible across turns. */
+    protected resolveComposerConversationSegments(conv: QaapAgentConversationDTO | undefined): QaapAgentMessageSegmentDTO[] {
         if (!conv?.messages.length) {
             return [];
         }
-        let lastUserIndex = -1;
-        for (let i = conv.messages.length - 1; i >= 0; i--) {
-            if (conv.messages[i].role === 'user') {
-                lastUserIndex = i;
-                break;
-            }
-        }
-        const turnMessages = lastUserIndex >= 0 ? conv.messages.slice(lastUserIndex + 1) : conv.messages;
-        return turnMessages.flatMap(message => message.role === 'agent' ? (message.segments ?? []) : []);
+        return conv.messages.flatMap(message => message.role === 'agent' ? (message.segments ?? []) : []);
     }
 }
