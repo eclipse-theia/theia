@@ -4,14 +4,18 @@
 // *****************************************************************************
 
 import { Disposable, nls } from '@theia/core/lib/common';
-import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
-import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
+import {
+    resolveTranscriptNearBottomThresholdPx,
+    shouldShowTranscriptScrollToBottomState,
+    type TranscriptScrollToBottomState,
+} from '../common/qaap-transcript-scroll-to-bottom';
+import { resolveScrollBehavior } from '../common/qaap-prefers-reduced-motion';
 
 export const TRANSCRIPT_SCROLL_TO_BOTTOM_BUTTON_CLASS = 'theia-mobile-agent-transcript-scroll-to-bottom';
 export const TRANSCRIPT_SCROLL_TO_BOTTOM_MOUNT_CLASS = 'theia-mod-transcript-scroll-to-bottom-mount';
+export const TRANSCRIPT_SCROLL_TO_BOTTOM_VISIBLE_CLASS = 'theia-mod-visible';
 
 const SCROLL_BUTTON_GRACE_PERIOD_MS = 100;
-const NEAR_BOTTOM_THRESHOLD_PX = 24;
 
 function resolveTranscriptScroller(mountHost: HTMLElement): HTMLElement | undefined {
     const list = mountHost.querySelector<HTMLElement>(':scope > .theia-mobile-agent-transcript');
@@ -24,17 +28,60 @@ function resolveTranscriptScroller(mountHost: HTMLElement): HTMLElement | undefi
     return undefined;
 }
 
+const TRANSCRIPT_CONVERSATION_MESSAGE_SELECTOR = [
+    '.theia-mobile-agent-transcript-msg.theia-mod-user',
+    '.theia-mobile-agent-transcript-msg.theia-mod-agent:not(.theia-mobile-agent-activity)',
+    '.theia-transcript-virtual-window > .theia-mobile-agent-transcript-msg.theia-mod-user',
+    '.theia-transcript-virtual-window > .theia-mobile-agent-transcript-msg.theia-mod-agent:not(.theia-mobile-agent-activity)',
+].join(', ');
+
+function readComposerLiftPx(mountHost: HTMLElement): number {
+    const source = mountHost.closest('.theia-mobile-projects') ?? mountHost;
+    const raw = getComputedStyle(source).getPropertyValue('--theia-mobile-projects-fab-lift').trim();
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function scrollTranscriptToEnd(scroller: HTMLElement): void {
+    const top = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    scroller.scrollTo({ top, behavior: resolveScrollBehavior('smooth') });
+}
+
+function readTranscriptScrollToBottomState(scroller: HTMLElement, mountHost: HTMLElement): TranscriptScrollToBottomState {
+    const hasConversationMessages = scroller.querySelector(TRANSCRIPT_CONVERSATION_MESSAGE_SELECTOR) !== null;
+    const emptyChat = scroller.classList.contains('theia-mod-empty-chat')
+        || scroller.querySelector('.theia-mobile-agent-transcript-empty') !== null
+        || !hasConversationMessages;
+    const style = getComputedStyle(scroller);
+    const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
+    const scrollPaddingBottom = Number.parseFloat(style.scrollPaddingBottom) || 0;
+    return {
+        emptyChat,
+        hasConversationMessages,
+        scrollTop: scroller.scrollTop,
+        clientHeight: scroller.clientHeight,
+        scrollHeight: scroller.scrollHeight,
+        nearBottomThresholdPx: resolveTranscriptNearBottomThresholdPx(
+            paddingBottom,
+            scrollPaddingBottom,
+            readComposerLiftPx(mountHost),
+        ),
+    };
+}
+
 /**
  * Floating glass scroll-to-bottom control for mobile transcript chat hosts.
  * Mounts on `.theia-mobile-agent-transcript-real-chat`; listens on the inner list scroller.
  */
 export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Disposable {
     mountHost.classList.add(TRANSCRIPT_SCROLL_TO_BOTTOM_MOUNT_CLASS);
+    mountHost.querySelector(`.${TRANSCRIPT_SCROLL_TO_BOTTOM_BUTTON_CLASS}`)?.remove();
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `${TRANSCRIPT_SCROLL_TO_BOTTOM_BUTTON_CLASS} codicon codicon-chevron-down`;
     button.hidden = true;
+    button.setAttribute('aria-hidden', 'true');
     const label = nls.localize('theia/ai/chat-ui/chat-view-tree-widget/scrollToBottom', 'Jump to latest message');
     button.title = label;
     button.setAttribute('aria-label', label);
@@ -42,9 +89,10 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
 
     let boundScroller: HTMLElement | undefined;
     let scrollListener: (() => void) | undefined;
+    let scrollEndListener: (() => void) | undefined;
     let resizeObserver: ResizeObserver | undefined;
+    let contentObserver: MutationObserver | undefined;
     let showButton = false;
-    let atBottom = true;
     let debounceTimer: number | undefined;
     let syncRaf = 0;
 
@@ -54,70 +102,83 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
         }
         showButton = visible;
         button.hidden = !visible;
+        button.classList.toggle(TRANSCRIPT_SCROLL_TO_BOTTOM_VISIBLE_CLASS, visible);
+        button.setAttribute('aria-hidden', visible ? 'false' : 'true');
     };
 
-    const hideButtonImmediately = (): void => {
-        atBottom = true;
-        setButtonVisible(false);
+    const clearShowDebounce = (): void => {
         if (debounceTimer !== undefined) {
             window.clearTimeout(debounceTimer);
             debounceTimer = undefined;
         }
     };
 
-    const updateButtonState = (nearBottom: boolean): void => {
-        if (nearBottom) {
+    const hideButtonImmediately = (): void => {
+        clearShowDebounce();
+        setButtonVisible(false);
+    };
+
+    const readShouldShow = (scroller: HTMLElement | undefined): boolean => {
+        if (!scroller) {
+            return false;
+        }
+        return shouldShowTranscriptScrollToBottomState(readTranscriptScrollToBottomState(scroller, mountHost));
+    };
+
+    const scheduleShowIfStillNeeded = (): void => {
+        if (debounceTimer !== undefined) {
+            return;
+        }
+        debounceTimer = window.setTimeout(() => {
+            debounceTimer = undefined;
+            if (readShouldShow(boundScroller)) {
+                setButtonVisible(true);
+            }
+        }, SCROLL_BUTTON_GRACE_PERIOD_MS);
+    };
+
+    const applyScrollVisibility = (): void => {
+        const scroller = boundScroller;
+        if (!readShouldShow(scroller)) {
             hideButtonImmediately();
             return;
         }
-        if (atBottom) {
-            atBottom = false;
-            if (debounceTimer !== undefined) {
-                window.clearTimeout(debounceTimer);
-            }
-            debounceTimer = window.setTimeout(() => {
-                if (!atBottom) {
-                    setButtonVisible(true);
-                }
-                debounceTimer = undefined;
-            }, SCROLL_BUTTON_GRACE_PERIOD_MS);
+        if (!showButton) {
+            scheduleShowIfStillNeeded();
         }
     };
 
-    const sync = (): void => {
-        syncRaf = 0;
-        const scroller = boundScroller;
-        if (!scroller) {
-            hideButtonImmediately();
-            return;
-        }
-        if (scroller.scrollHeight <= scroller.clientHeight) {
-            hideButtonImmediately();
-            return;
-        }
-        const nearBottom = isTranscriptScrollNearBottom(
-            scroller.scrollTop,
-            scroller.clientHeight,
-            scroller.scrollHeight,
-            NEAR_BOTTOM_THRESHOLD_PX,
-        );
-        updateButtonState(nearBottom);
+    const onScrollerScroll = (): void => {
+        // Hide immediately when the user reaches the end — no rAF / debounce lag.
+        applyScrollVisibility();
     };
 
     const scheduleSync = (): void => {
         if (syncRaf) {
             return;
         }
-        syncRaf = requestAnimationFrame(sync);
+        syncRaf = requestAnimationFrame(() => {
+            syncRaf = 0;
+            applyScrollVisibility();
+        });
     };
 
     const unbindScroller = (): void => {
         if (boundScroller && scrollListener) {
             boundScroller.removeEventListener('scroll', scrollListener);
         }
+        if (boundScroller && scrollEndListener) {
+            boundScroller.removeEventListener('touchend', scrollEndListener);
+            if ('onscrollend' in boundScroller) {
+                boundScroller.removeEventListener('scrollend', scrollEndListener);
+            }
+        }
         resizeObserver?.disconnect();
         resizeObserver = undefined;
+        contentObserver?.disconnect();
+        contentObserver = undefined;
         scrollListener = undefined;
+        scrollEndListener = undefined;
         boundScroller = undefined;
     };
 
@@ -132,12 +193,19 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
             hideButtonImmediately();
             return;
         }
-        scrollListener = scheduleSync;
+        scrollListener = onScrollerScroll;
+        scrollEndListener = onScrollerScroll;
         scroller.addEventListener('scroll', scrollListener, { passive: true });
+        scroller.addEventListener('touchend', scrollEndListener, { passive: true });
+        if ('onscrollend' in scroller) {
+            scroller.addEventListener('scrollend', scrollEndListener, { passive: true });
+        }
         if (typeof ResizeObserver !== 'undefined') {
             resizeObserver = new ResizeObserver(scheduleSync);
             resizeObserver.observe(scroller);
         }
+        contentObserver = new MutationObserver(scheduleSync);
+        contentObserver.observe(scroller, { childList: true, subtree: true, characterData: true });
         scheduleSync();
     };
 
@@ -145,13 +213,20 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
         bindScroller(resolveTranscriptScroller(mountHost));
     };
 
-    button.addEventListener('click', () => {
+    button.addEventListener('click', (event: MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
         const scroller = boundScroller;
-        if (!scroller) {
+        if (!scroller || button.hidden) {
             return;
         }
         hideButtonImmediately();
-        scrollElementToEnd(scroller, 'smooth');
+        scrollTranscriptToEnd(scroller);
+        const resync = (): void => onScrollerScroll();
+        if ('onscrollend' in scroller) {
+            scroller.addEventListener('scrollend', resync, { once: true });
+        }
+        window.setTimeout(resync, 450);
     });
 
     const mutationObserver = new MutationObserver(resolveAndBindScroller);

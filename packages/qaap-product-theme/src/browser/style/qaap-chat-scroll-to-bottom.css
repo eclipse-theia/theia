@@ -12,12 +12,92 @@
   position: relative;
 }
 
-.theia-mobile-agent-transcript-scroll-to-bottom,
-.theia-ChatTree-ScrollToBottom {
+/* Mobile transcript — hidden by default; never rely on [hidden] alone (display was overridden). */
+.theia-mobile-agent-transcript-scroll-to-bottom {
   position: absolute;
-  right: calc(16px + env(safe-area-inset-right, 0px));
+  left: 50%;
+  right: auto;
   bottom: calc(12px + var(--theia-mobile-projects-fab-lift, 0px));
   z-index: 6;
+  transform: translateX(-50%);
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--theia-foreground) 16%, transparent);
+  background: color-mix(in srgb, var(--theia-editor-background) 58%, transparent);
+  color: var(--theia-foreground);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 1;
+  transition:
+    opacity 0.18s ease,
+    transform 0.14s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.theia-mobile-agent-transcript-scroll-to-bottom.theia-mod-visible {
+  display: inline-flex !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+
+/* Never show jump-to-end on idle / quick-action shells (no conversation rows). */
+.theia-mod-transcript-scroll-to-bottom-mount:has(.theia-mobile-agent-transcript.theia-mod-empty-chat)
+  .theia-mobile-agent-transcript-scroll-to-bottom,
+.theia-mod-transcript-scroll-to-bottom-mount:has(.theia-mobile-agent-transcript-empty)
+  .theia-mobile-agent-transcript-scroll-to-bottom {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+  .theia-mobile-agent-transcript-scroll-to-bottom {
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    background: color-mix(in srgb, var(--theia-editor-background) 48%, transparent);
+  }
+}
+
+.theia-mobile-agent-transcript-scroll-to-bottom:hover,
+.theia-mobile-agent-transcript-scroll-to-bottom:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--theia-foreground) 28%, transparent);
+  background: color-mix(in srgb, var(--theia-editor-background) 68%, transparent);
+  color: var(--theia-foreground);
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.theia-mobile-agent-transcript-scroll-to-bottom:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+/* Desktop AI chat tree — chevron instead of arrow-down. */
+.chat-tree-view-widget.treeContainer {
+  position: relative;
+}
+
+.theia-ChatTree-ScrollToBottom {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: calc(12px + var(--theia-mobile-projects-fab-lift, 0px));
+  z-index: 6;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -45,8 +125,11 @@
     border-color 0.18s ease;
 }
 
+.theia-ChatTree-ScrollToBottom.codicon-arrow-down::before {
+  content: '\eab4';
+}
+
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
-  .theia-mobile-agent-transcript-scroll-to-bottom,
   .theia-ChatTree-ScrollToBottom {
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     backdrop-filter: blur(14px) saturate(150%);
@@ -54,29 +137,17 @@
   }
 }
 
-.theia-mobile-agent-transcript-scroll-to-bottom:hover,
-.theia-mobile-agent-transcript-scroll-to-bottom:focus-visible,
 .chat-view-widget .theia-ChatTree-ScrollToBottom:hover,
 .chat-view-widget .theia-ChatTree-ScrollToBottom:focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--theia-foreground) 28%, transparent);
   background: color-mix(in srgb, var(--theia-editor-background) 68%, transparent);
   color: var(--theia-foreground);
-  transform: translateY(-1px);
+  transform: translateX(-50%) translateY(-1px);
 }
 
-.theia-mobile-agent-transcript-scroll-to-bottom:active,
 .chat-view-widget .theia-ChatTree-ScrollToBottom:active {
-  transform: scale(0.96);
-}
-
-/* Desktop AI chat tree — chevron instead of arrow-down. */
-.chat-tree-view-widget.treeContainer {
-  position: relative;
-}
-
-.theia-ChatTree-ScrollToBottom.codicon-arrow-down::before {
-  content: '\eab4';
+  transform: translateX(-50%) scale(0.96);
 }
 
 /* Full-screen transcript sheet: float above composer clearance. */
@@ -88,7 +159,9 @@
 /* Classic IDE chat panel — no composer lift token; beat upstream flat button styles. */
 .chat-view-widget .theia-ChatTree-ScrollToBottom {
   bottom: 16px;
-  right: 16px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   width: 40px;
   height: 40px;
   border-radius: 50%;

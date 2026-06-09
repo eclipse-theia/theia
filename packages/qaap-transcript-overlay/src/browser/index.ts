@@ -10,6 +10,7 @@ export * from '../common/qaap-transcript-follow-up-queue';
 export * from '../common/qaap-transcript-incremental-update';
 export * from '../common/qaap-transcript-project-entry';
 export * from '../common/qaap-transcript-scroll-compact';
+export * from '../common/qaap-transcript-scroll-to-bottom';
 export * from '../common/qaap-transcript-sse-delta';
 export * from '../common/qaap-transcript-user-scroll-pin';
 export * from '../common/qaap-transcript-virtual-list-math';

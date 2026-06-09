@@ -154,6 +154,10 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             empty.className = 'theia-mobile-agent-transcript-empty';
             empty.append(this.workHub.createAgentsHubQuickActionsBlock());
             messageHost.append(empty);
+            this.host.transcriptUserScrollPinDispose.dispose();
+            this.host.transcriptUserScrollPinDispose = new DisposableCollection(
+                attachTranscriptScrollToBottomButton(host),
+            );
             return;
         }
         if (this.host.transcriptUi.shouldVirtualize(conv)) {
