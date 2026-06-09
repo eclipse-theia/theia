@@ -207,6 +207,7 @@ export class MobileProjectsStickyComposerRenderUi {
 
         const column = this.host.stickyComposerColumnUi.buildStickyComposerColumn({
             project,
+            composerCwd: cwd,
             surface: this.host.stickyComposerSurface,
             agentLocked: isChatSurface,
             getContext: () => this.host.stickyComposerContext,

@@ -55,6 +55,9 @@
       "path": "../qaap-shell"
     },
     {
+      "path": "../qaap-transcript-overlay"
+    },
+    {
       "path": "../scm"
     },
     {

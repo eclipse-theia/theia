@@ -9,7 +9,10 @@ import { join } from 'path';
 
 const BROWSER_DIR = join(__dirname, '../../src/browser');
 const panelSource = readFileSync(join(BROWSER_DIR, 'mobile-projects-panel.ts'), 'utf8');
-const transcriptStateSource = readFileSync(join(BROWSER_DIR, 'mobile-projects-transcript-overlay-state.ts'), 'utf8');
+const transcriptStateSource = readFileSync(
+    join(__dirname, '../../../qaap-transcript-overlay/src/browser/mobile-projects-transcript-overlay-state.ts'),
+    'utf8',
+);
 
 /** Methods invoked via `this.host.foo(` that live on extracted *Ui modules, not on the panel class. */
 const HOST_INTERFACE_ONLY = new Set([

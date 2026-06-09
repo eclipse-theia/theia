@@ -23,8 +23,12 @@ export type { MobileProjectsTranscriptSubmitHost } from './mobile-projects-trans
 export type { MobileProjectsTranscriptSurfacesHost } from './mobile-projects-transcript-surfaces-ui';
 export type { MobileProjectsTranscriptVerifyHost } from './mobile-projects-transcript-verify-ui';
 export { TranscriptOverlayController } from './mobile-projects-transcript-overlay-controller';
-export { TranscriptOverlayState, bindTranscriptOverlayStateAccessors } from './mobile-projects-transcript-overlay-state';
-export type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
+export {
+    TranscriptOverlayState,
+    TRANSCRIPT_OVERLAY_STATE_KEYS,
+    bindTranscriptOverlayStateAccessors,
+} from '@theia/qaap-transcript-overlay/lib/browser/mobile-projects-transcript-overlay-state';
+export type { WorkHubTranscriptBridge } from '@theia/qaap-transcript-overlay/lib/browser/work-hub-transcript-bridge';
 
 import type { MobileProjectsTranscriptComposerHost } from './mobile-projects-transcript-composer-ui';
 import type { MobileProjectsTranscriptHeaderHost } from './mobile-projects-transcript-header-ui';

@@ -69,13 +69,17 @@ export class MobileProjectsStickyComposerAgentsUi {
         }
         return this.host.projectRowsUi.resolveConversationAgentLabel(undefined);
     }
-    resolveStickyComposerModelLabel(agentId: string, project?: MobileProjectEntry): string | undefined {
+    resolveStickyComposerModelLabel(
+        agentId: string,
+        project?: MobileProjectEntry,
+        composerCwd?: string,
+    ): string | undefined {
         if (!agentSupportsModelPicker(agentId)) {
             return undefined;
         }
-        const cwd = project
+        const cwd = composerCwd ?? (project
             ? (this.host.projectsService.getProjectCwd(project) ?? this.host.preparedCwdByProjectId.get(project.id))
-            : undefined;
+            : undefined);
         return readStoredAgentModel(cwd, agentId)?.modelId;
     }
     reconcileStickyComposerPinnedAgent(

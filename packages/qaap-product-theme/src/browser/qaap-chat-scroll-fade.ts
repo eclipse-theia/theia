@@ -45,20 +45,27 @@ export function resolveChatScrollFadeState(
 }
 
 export function resolveChatScrollFadeHosts(scroller: HTMLElement): ChatScrollFadeHosts {
-    const transcript = scroller.closest<HTMLElement>('.theia-mobile-agent-transcript');
-    if (transcript && (scroller === transcript || transcript.contains(scroller))) {
-        return { top: transcript, bottom: transcript };
+    const chatView = scroller.closest<HTMLElement>('.chat-view-widget');
+    if (chatView) {
+        return { top: chatView, bottom: chatView };
+    }
+
+    const transcriptList = scroller.classList.contains('theia-mobile-agent-transcript')
+        ? scroller
+        : scroller.closest<HTMLElement>('.theia-mobile-agent-transcript');
+    if (transcriptList) {
+        const realChatHost = transcriptList.parentElement?.classList.contains('theia-mobile-agent-transcript-real-chat')
+            ? transcriptList.parentElement
+            : transcriptList.closest<HTMLElement>('.theia-mobile-agent-transcript-real-chat');
+        const inlineTranscript = realChatHost?.closest<HTMLElement>('.theia-mobile-agents-hub-inline-transcript');
+        const topHost = inlineTranscript ?? realChatHost ?? transcriptList;
+        const bottomHost = realChatHost ?? transcriptList;
+        return { top: topHost, bottom: bottomHost };
     }
 
     const realChat = scroller.closest<HTMLElement>('.theia-mobile-agent-transcript-real-chat');
-    if (realChat && scroller.classList.contains('theia-mobile-agent-transcript-real-chat')) {
+    if (realChat && scroller === realChat) {
         return { top: realChat, bottom: realChat };
-    }
-
-    const chatView = scroller.closest<HTMLElement>('.chat-view-widget');
-    const chatTree = scroller.closest<HTMLElement>('.chat-tree-view-widget');
-    if (chatView) {
-        return { top: chatView, bottom: chatTree ?? chatView };
     }
 
     return { top: scroller, bottom: scroller };

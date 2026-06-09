@@ -209,10 +209,9 @@ export function findTranscriptReadmeEntry(
         ?? files.find(entry => entry.name.toLowerCase().startsWith('readme'));
 }
 
-export interface TranscriptFilesMount {
-    readonly root: HTMLElement;
-    readonly dispose: Disposable;
-}
+import type { TranscriptFilesMount } from './qaap-transcript-surface-types';
+
+export type { TranscriptFilesMount } from './qaap-transcript-surface-types';
 
 export function mountTranscriptFilesView(
     host: HTMLElement,

@@ -12,6 +12,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { resolveTranscriptWorkspaceRootUri } from './qaap-transcript-file-open';
+import type { TranscriptTerminalSurface } from './qaap-transcript-surface-types';
 
 export interface TranscriptTerminalViewServices {
     resolveCwd(cwd: string): string;
@@ -19,11 +20,7 @@ export interface TranscriptTerminalViewServices {
     localize(key: string, defaultValue: string, ...args: string[]): string;
 }
 
-export interface TranscriptTerminalSurface {
-    readonly dispose: Disposable;
-    readonly terminal: TerminalWidget;
-    readonly mountHost: HTMLElement;
-}
+export type { TranscriptTerminalSurface } from './qaap-transcript-surface-types';
 
 export function scheduleTranscriptTerminalResize(terminal: TerminalWidget): void {
     terminal.update();

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     type QaapAgentConversationDTO,
@@ -13,6 +13,7 @@ import {
     buildAgentsHubIdleConversationSummary,
     QAAP_AGENTS_HUB_LANDING_ENABLED,
 } from '../common/qaap-agents-hub-landing';
+import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
 import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
@@ -240,7 +241,10 @@ export class MobileProjectsAgentsHubInlineUi {
         this.host.scroll.append(executionRoot);
 
         this.host.transcriptUserScrollPinDispose.dispose();
-        this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(chatHost);
+        this.host.transcriptUserScrollPinDispose = new DisposableCollection(
+            attachTranscriptUserScrollPin(chatHost),
+            attachTranscriptScrollToBottomButton(chatHost),
+        );
         this.host.updateTasksAttentionChrome();
         this.host.renderSubtitle();
         this.syncAgentsHubInlineExecutionHeader(project, summary);

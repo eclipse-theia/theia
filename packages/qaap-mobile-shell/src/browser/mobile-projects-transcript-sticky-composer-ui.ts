@@ -829,9 +829,10 @@ export class MobileProjectsTranscriptStickyComposerUi {
         this.host.transcriptComposerSendRefresh = undefined;
         this.host.stickyComposerContextUsageDispose.dispose();
         host.replaceChildren();
-        if (this.host.transcriptLastConv?.id === summary.id) {
+        if (this.host.transcriptLastConv?.id === summary.id
+            && this.host.transcriptComposerPrefsConvId !== summary.id) {
             this.applyTranscriptComposerPrefsFromConversation(this.host.transcriptLastConv, project, summary);
-        } else {
+        } else if (this.host.transcriptLastConv?.id !== summary.id) {
             void this.hydrateTranscriptComposerPrefs(project, summary).then(applied => {
                 if (!applied) {
                     return;
@@ -867,6 +868,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }
         const column = this.host.stickyComposerColumnUi.buildStickyComposerColumn({
             project,
+            composerCwd: cwd,
             surface: 'task',
             agentLocked: isLegacyTheiaChat,
             activityStack: this.buildTranscriptComposerActivityStack(project, summary),

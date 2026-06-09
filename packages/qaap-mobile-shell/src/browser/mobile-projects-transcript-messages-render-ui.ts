@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
 import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
+import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
 import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin';
 import type { QaapAgentConversationDTO, QaapAgentMessageDTO, QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsTranscriptMessagesArtifactsUi } from './mobile-projects-transcript-messages-artifacts-ui';
@@ -88,10 +90,6 @@ export class MobileProjectsTranscriptMessagesRenderUi {
 
     buildTranscriptVirtualFooter(conv: QaapAgentConversationDTO): HTMLElement[] {
         const footers: HTMLElement[] = [];
-        const turnReview = this.artifactsUi.createTranscriptTurnReviewCta(conv);
-        if (turnReview) {
-            footers.push(turnReview);
-        }
         if (conv.status === 'streaming' && conv.messages.at(-1)?.role === 'user') {
             footers.push(this.artifactsUi.createTranscriptStreamingActivityRow(conv));
         }
@@ -121,7 +119,10 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             list.scrollToEnd();
         }
         this.host.transcriptUserScrollPinDispose.dispose();
-        this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
+        this.host.transcriptUserScrollPinDispose = new DisposableCollection(
+            attachTranscriptUserScrollPin(messageHost),
+            attachTranscriptScrollToBottomButton(host),
+        );
         this.workHub.renderTeamSectionInTranscript(host, conv);
         this.workHub.renderInlineApproval(host, conv);
         this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
@@ -176,13 +177,12 @@ export class MobileProjectsTranscriptMessagesRenderUi {
                 messageHost.append(this.artifactsUi.createTranscriptStreamingActivityRow(conv));
             }
         }
-        const turnReview = this.artifactsUi.createTranscriptTurnReviewCta(conv);
-        if (turnReview) {
-            messageHost.append(turnReview);
-        }
         scrollElementToEnd(messageHost);
         this.host.transcriptUserScrollPinDispose.dispose();
-        this.host.transcriptUserScrollPinDispose = attachTranscriptUserScrollPin(messageHost);
+        this.host.transcriptUserScrollPinDispose = new DisposableCollection(
+            attachTranscriptUserScrollPin(messageHost),
+            attachTranscriptScrollToBottomButton(host),
+        );
         this.workHub.renderTeamSectionInTranscript(host, conv);
         this.workHub.renderInlineApproval(host, conv);
         this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();

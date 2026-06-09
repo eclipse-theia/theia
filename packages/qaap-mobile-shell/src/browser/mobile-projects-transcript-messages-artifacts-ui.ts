@@ -483,45 +483,6 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         return card;
     }
 
-    /**
-     * Post-turn CTA when git diff stats exist on the conversation but the last agent row did not
-     * render a changed-files card (e.g. ground-truth stats from `git diff --numstat`).
-     */
-
-    createTranscriptTurnReviewCta(conv: QaapAgentConversationDTO): HTMLElement | undefined {
-        if (conv.status !== 'idle') {
-            return undefined;
-        }
-        const summary = this.host.transcriptOpenSummary ?? conversationToSummary(conv);
-        if (!this.host.projectRowsUi.hasConversationDiffStats(summary)) {
-            return undefined;
-        }
-        const lastAgent = [...conv.messages].reverse().find(message => message.role === 'agent');
-        if (!lastAgent) {
-            return undefined;
-        }
-        if (lastAgent.segments?.length && this.resolversUi.resolveTranscriptChangedFiles(lastAgent.segments).length > 0) {
-            return undefined;
-        }
-        const added = summary.linesAdded ?? 0;
-        const removed = summary.linesRemoved ?? 0;
-        const banner = document.createElement('div');
-        banner.className = 'theia-mobile-agent-turn-review-cta';
-        const stats = document.createElement('span');
-        stats.className = 'theia-mobile-agent-turn-review-cta-stats';
-        const addedSpan = document.createElement('span');
-        addedSpan.className = 'theia-mobile-agent-diff-stat theia-mod-added';
-        addedSpan.textContent = `+${added}`;
-        const removedSpan = document.createElement('span');
-        removedSpan.className = 'theia-mobile-agent-diff-stat theia-mod-removed';
-        removedSpan.textContent = `−${removed}`;
-        stats.append(addedSpan, removedSpan);
-        const review = this.createTranscriptChangedFilesReviewButton();
-        review.classList.add('theia-mobile-agent-turn-review-cta-btn');
-        banner.append(stats, review);
-        return banner;
-    }
-
     /** "Review" button in the changed-files header — jumps to the transcript's diff Review tab. */
 
     createTranscriptChangedFilesReviewButton(): HTMLButtonElement {

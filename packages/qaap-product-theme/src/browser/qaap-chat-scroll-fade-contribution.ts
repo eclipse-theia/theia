@@ -37,9 +37,12 @@ export class QaapChatScrollFadeContribution implements FrontendApplicationContri
                         this.patchExisting(node);
                     }
                 }
+                if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
+                    this.patchExisting(mutation.target);
+                }
             }
         });
-        this.observer.observe(document.body, { childList: true, subtree: true });
+        this.observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
         this.toDispose.push(Disposable.create(() => {
             this.observer?.disconnect();
             this.observer = undefined;

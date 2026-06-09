@@ -24,7 +24,7 @@ export interface MobileProjectsTranscriptHeaderHost {
 
 }
 
-/** Branch / status / activity chips in the transcript execution header. */
+/** Status / activity chips in the transcript execution header. */
 export class MobileProjectsTranscriptHeaderUi {
 
     protected lastExecutionChromeKey = '';
@@ -53,11 +53,6 @@ export class MobileProjectsTranscriptHeaderUi {
         host.hidden = false;
         host.replaceChildren();
         host.append(
-            this.createActiveChatContextChip(
-                'codicon-git-branch',
-                project.branch || nls.localize('qaap/mobileProjects/noBranch', 'No branch'),
-                nls.localize('qaap/mobileProjects/branchChipAria', 'Branch'),
-            ),
             this.createActiveChatContextChip(
                 this.activeChatStatusIcon(summary),
                 this.activeChatStatusLabel(project, summary),
@@ -131,7 +126,6 @@ export class MobileProjectsTranscriptHeaderUi {
         if (this.host.agentsHubInlineActive && project && this.host.visible && summary) {
             const status = this.resolveActiveChatEffectiveStatus(summary) ?? summary.status;
             const chromeKey = [
-                project.branch ?? '',
                 project.status,
                 summary.id,
                 status,
