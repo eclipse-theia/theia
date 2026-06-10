@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { usesInteractiveAgentApprovals } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-interactive-approvals';
 import type { QaapAgentConversation, QaapAgentMessageSegment } from './qaap-agent-conversation';
+import type { QaapQaiqPendingControlRequest } from './qaap-qaiq-stdio-approvals';
 
 /** HTTP base path for pending VPS tool / permission approvals. */
 export const QAAP_AGENT_APPROVAL_API_PATH = '/qaap/api/agent-approvals';
@@ -70,9 +72,39 @@ export function summarizeToolApproval(toolName: string, args: string): { summary
     };
 }
 
-/** Manual approvals apply when YOLO is off or the composer preset is "request approval". */
+/** Manual approvals apply when the run can pause for tool permission prompts. */
 export function usesInteractiveApprovals(conv: QaapAgentConversation): boolean {
-    return conv.autoApprove === false || conv.approvalPolicyId === 'request-approval';
+    return usesInteractiveAgentApprovals({
+        approvalPolicyId: conv.approvalPolicyId,
+        autoApprove: conv.autoApprove === false ? false : undefined,
+        toolApprovalRules: conv.toolApprovalRules,
+        cwd: conv.cwd,
+    });
+}
+
+export function buildControlRequestApproval(
+    conv: QaapAgentConversation,
+    taskId: string,
+    request: QaapQaiqPendingControlRequest,
+): QaapAgentApprovalRequest {
+    const toolUseId = request.toolUseId ?? request.requestId;
+    const toolName = request.toolName ?? 'Tool';
+    const args = request.toolInput ? JSON.stringify(request.toolInput) : '';
+    const { summary, detail } = summarizeToolApproval(toolName, args);
+    return {
+        id: buildToolApprovalId(conv.id, toolUseId),
+        conversationId: conv.id,
+        taskId,
+        cwd: conv.cwd,
+        agentId: conv.agentId,
+        conversationTitle: conv.title,
+        kind: 'tool',
+        toolName,
+        toolUseId,
+        summary,
+        detail,
+        createdAt: Date.now(),
+    };
 }
 
 export function extractPendingToolApprovals(

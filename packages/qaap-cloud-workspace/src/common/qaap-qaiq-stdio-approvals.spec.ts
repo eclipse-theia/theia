@@ -21,7 +21,12 @@ describe('qaap-qaiq-stdio-approvals', () => {
         const event = parseQaiqStdioEvent(line);
         expect(event).to.deep.equal({
             type: 'control-request',
-            request: { requestId: 'req-1', toolUseId: 'toolu_1', toolName: 'Bash' },
+            request: {
+                requestId: 'req-1',
+                toolUseId: 'toolu_1',
+                toolName: 'Bash',
+                toolInput: { command: 'npm test' },
+            },
         });
     });
 

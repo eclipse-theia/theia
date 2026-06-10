@@ -7,6 +7,8 @@ import { expect } from 'chai';
 import {
     applyAgentApprovalPolicyToCommand,
     resolveEffectiveToolApprovalRules,
+    shouldUseInteractiveAgentApprovals,
+    shouldUseQaiqStdioApprovals,
 } from './qaap-agent-approval-flags';
 
 describe('qaap-agent-approval-flags', () => {
@@ -66,5 +68,18 @@ describe('qaap-agent-approval-flags', () => {
             { agentId: 'codex', approvalPolicyId: 'request-approval', autoApprove: false },
         );
         expect(command).not.to.include('--full-auto');
+    });
+
+    it('default approve-for-me still needs QAIQ stdio for gated shell', () => {
+        expect(shouldUseQaiqStdioApprovals({
+            agentId: 'qaiq',
+            approvalPolicyId: 'approve-for-me',
+            autoApprove: true,
+        })).to.equal(true);
+        expect(shouldUseInteractiveAgentApprovals({
+            agentId: 'qaiq',
+            approvalPolicyId: 'approve-for-me',
+            autoApprove: true,
+        })).to.equal(false);
     });
 });

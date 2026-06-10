@@ -7,6 +7,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     type QaapAgentApprovalActionResponse,
     type QaapAgentApprovalRequest,
+    buildControlRequestApproval,
     extractPendingPromptApproval,
     extractPendingToolApprovals,
 } from '../common/qaap-agent-approval';
@@ -46,6 +47,12 @@ export class QaapAgentApprovalStore {
                 const taskId = this.conversationStore.getActiveTaskIdForConversation(conv.id);
                 for (const item of extractPendingToolApprovals(conv, taskId)) {
                     byId.set(item.id, item);
+                }
+                if (taskId) {
+                    for (const pending of this.taskRunner.listPendingQaiqControlRequests(taskId)) {
+                        const item = buildControlRequestApproval(conv, taskId, pending);
+                        byId.set(item.id, item);
+                    }
                 }
                 if (taskId) {
                     const detail = await this.taskRunner.detail(taskId);

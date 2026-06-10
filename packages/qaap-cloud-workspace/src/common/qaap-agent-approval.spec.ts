@@ -5,6 +5,7 @@
 
 import { expect } from 'chai';
 import {
+    buildControlRequestApproval,
     buildToolApprovalId,
     detectLogApprovalPrompt,
     extractPendingToolApprovals,
@@ -52,5 +53,26 @@ describe('qaap-agent-approval', () => {
     it('detectLogApprovalPrompt finds permission lines in log tail', () => {
         const detected = detectLogApprovalPrompt('Working…\nDo you want to allow this tool?\n> ');
         expect(detected?.summary).to.match(/allow this tool/i);
+    });
+
+    it('buildControlRequestApproval maps stdio control requests to tool approvals', () => {
+        const conv: QaapAgentConversation = {
+            id: 'conv-1',
+            cwd: '/repo',
+            agentId: 'qaiq',
+            title: 'Run vite',
+            status: 'streaming',
+            createdAt: 1,
+            updatedAt: 2,
+            messages: [],
+        };
+        const pending = buildControlRequestApproval(conv, 'task-1', {
+            requestId: 'req-1',
+            toolUseId: 'toolu_1',
+            toolName: 'Bash',
+            toolInput: { command: 'npx vite --config vite.config.ts' },
+        });
+        expect(pending.id).to.equal(buildToolApprovalId('conv-1', 'toolu_1'));
+        expect(pending.summary).to.include('npx vite');
     });
 });

@@ -42,7 +42,7 @@ import { listNativeAgentModels } from './qaap-agent-native-models';
 import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
 import {
     applyAgentApprovalPolicyToCommand,
-    shouldUseInteractiveAgentApprovals,
+    shouldUseQaiqStdioApprovals,
 } from '../common/qaap-agent-approval-flags';
 import {
     QAIQ_STDIO_APPROVAL_FLAGS,
@@ -769,7 +769,7 @@ export class QaapAgentTaskRunner {
         };
         const useStdioApprovals = id === QAIQ_AGENT_ID
             && !!detected
-            && shouldUseInteractiveAgentApprovals(approvalOptions);
+            && shouldUseQaiqStdioApprovals(approvalOptions);
         if (detected) {
             const vars = this.buildTemplateVars(id, agentModel, interaction);
             command = useStdioApprovals
@@ -1005,6 +1005,11 @@ export class QaapAgentTaskRunner {
             return this.finishTask(id, 'cancelled', undefined);
         }
         return task;
+    }
+
+    /** Pending QAIQ stdio `can_use_tool` requests for a running task. */
+    listPendingQaiqControlRequests(taskId: string): readonly QaapQaiqPendingControlRequest[] {
+        return this.pendingQaiqControlRequests.get(taskId) ?? [];
     }
 
     /**

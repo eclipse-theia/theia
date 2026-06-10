@@ -8,11 +8,11 @@ import { nls } from '@theia/core/lib/common/nls';
 import {
     conversationToSummary,
     getConversation,
-    isConversationAutoApproveEnabled,
     type QaapAgentConversationDTO,
     type QaapAgentConversationSummaryDTO,
     type QaapAgentMessageDTO,
 } from '../common/qaap-agent-conversation-client';
+import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import {
     approveAgentRequest,
     fetchAgentApprovals,
@@ -25,7 +25,7 @@ import {
     canApplySseMessageDelta,
     shouldSkipStreamingTranscriptRefetch,
 } from '../common/qaap-transcript-sse-delta';
-import { resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
+import { isPendingTranscriptToolSegment, resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
 import {
     buildConversationTranscriptFingerprint,
     shouldForceTranscriptRenderOnStatusSettle,
@@ -122,7 +122,7 @@ export class MobileProjectsTranscriptLiveUi {
         this.ensureTranscriptLiveController().markSseDeltaApplied();
         this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, next);
         this.host.transcriptLastFingerprint = this.conversationTranscriptFingerprint(next);
-        if (!isConversationAutoApproveEnabled(conversationToSummary(next))) {
+        if (conversationUsesInteractiveApprovals(next)) {
             this.renderTranscriptInlineApproval(chatHost, next);
         }
         if (this.host.transcriptOpenSummary) {
@@ -253,8 +253,8 @@ export class MobileProjectsTranscriptLiveUi {
 
     scheduleTranscriptApprovalRefresh(): void {
         this.stopTranscriptApprovalRefresh();
-        if (!this.host.transcriptOpenSummaryId || !this.host.transcriptOpenSummary
-            || isConversationAutoApproveEnabled(this.host.transcriptOpenSummary)) {
+        if (!this.host.transcriptOpenSummaryId || !this.host.transcriptLastConv
+            || !conversationUsesInteractiveApprovals(this.host.transcriptLastConv)) {
             return;
         }
         this.host.transcriptApprovalRefreshTimer = window.setTimeout(() => {
@@ -273,10 +273,16 @@ export class MobileProjectsTranscriptLiveUi {
                 : this.host.transcriptOpenSummary?.cwd);
             const chatHost = this.resolveActiveTranscriptChatHost();
             if (chatHost && this.host.transcriptLastConv) {
+                this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, this.host.transcriptLastConv);
                 this.renderTranscriptInlineApproval(chatHost, this.host.transcriptLastConv);
             }
         } catch {
             /* best-effort */
+        } finally {
+            if (this.host.transcriptLastConv?.status === 'streaming'
+                && conversationUsesInteractiveApprovals(this.host.transcriptLastConv)) {
+                this.scheduleTranscriptApprovalRefresh();
+            }
         }
     }
 
@@ -308,11 +314,14 @@ export class MobileProjectsTranscriptLiveUi {
 
     renderTranscriptInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void {
         host.querySelector('.theia-mobile-agent-transcript-inline-approval')?.remove();
-        if (isConversationAutoApproveEnabled(conversationToSummary(conv))) {
+        if (!conversationUsesInteractiveApprovals(conv)) {
             return;
         }
         const pending = resolveTranscriptInlineApproval(this.host.cachedAgentApprovals, conv.id);
-        if (!pending || pending.kind === 'tool') {
+        if (!pending) {
+            return;
+        }
+        if (pending.kind === 'tool' && pending.toolUseId && this.hasVisiblePendingToolSegment(conv, pending.toolUseId)) {
             return;
         }
         const bar = document.createElement('div');
@@ -344,6 +353,15 @@ export class MobileProjectsTranscriptLiveUi {
         actions.append(approve, reject);
         bar.append(title, summary, actions);
         host.append(bar);
+    }
+
+    protected hasVisiblePendingToolSegment(conv: QaapAgentConversationDTO, toolUseId: string): boolean {
+        const agentMessage = [...conv.messages].reverse().find(message => message.role === 'agent');
+        return !!agentMessage?.segments?.some(segment =>
+            segment.type === 'tool'
+            && segment.toolUseId === toolUseId
+            && isPendingTranscriptToolSegment(segment),
+        );
     }
 
     ensureTranscriptConversationRefresh(): void {

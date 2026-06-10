@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { usesInteractiveAgentApprovals } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-interactive-approvals';
 import type { QaapAgentApprovalPolicyId } from '@theia/qaap-mobile-shell/lib/common/qaap-sticky-composer-approval-policy';
 import {
     formatQaiqInteractionFlags,
@@ -47,9 +48,18 @@ export function resolveEffectiveToolApprovalRules(
     };
 }
 
-/** Whether the VPS task should stay interactive (stdin approvals) for this preset. */
+/** Whether the VPS task should stay interactive (stdin y/n) for this preset. */
 export function shouldUseInteractiveAgentApprovals(options: QaapAgentApprovalFlagOptions): boolean {
     return options.autoApprove === false || options.approvalPolicyId === 'request-approval';
+}
+
+/** QAIQ headless runs need stdio pause-and-wait whenever shell/network are not fully bypassed. */
+export function shouldUseQaiqStdioApprovals(options: QaapAgentApprovalFlagOptions): boolean {
+    return usesInteractiveAgentApprovals({
+        approvalPolicyId: options.approvalPolicyId,
+        autoApprove: options.autoApprove,
+        toolApprovalRules: options.toolApprovalRules,
+    });
 }
 
 /**

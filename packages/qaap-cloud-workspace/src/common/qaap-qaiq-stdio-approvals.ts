@@ -21,6 +21,7 @@ export interface QaapQaiqPendingControlRequest {
     readonly requestId: string;
     readonly toolUseId?: string;
     readonly toolName?: string;
+    readonly toolInput?: Record<string, unknown>;
 }
 
 export type QaapQaiqStdioEvent =
@@ -64,6 +65,9 @@ export function parseQaiqStdioEvent(line: string): QaapQaiqStdioEvent | undefine
             requestId: message.request_id,
             toolUseId: typeof request.tool_use_id === 'string' ? request.tool_use_id : undefined,
             toolName: typeof request.tool_name === 'string' ? request.tool_name : undefined,
+            toolInput: request.input && typeof request.input === 'object'
+                ? request.input as Record<string, unknown>
+                : undefined,
         },
     };
 }

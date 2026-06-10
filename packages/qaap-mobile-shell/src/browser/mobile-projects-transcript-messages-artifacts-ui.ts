@@ -5,7 +5,8 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { approveAgentRequest, rejectAgentRequest } from '../common/qaap-agent-approval-client';
-import { conversationToSummary, isConversationAutoApproveEnabled, type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
+import { type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
+import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
 import { excerptTranscriptThought, extractInlineDiffPreview, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
@@ -156,7 +157,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         segments: QaapAgentMessageSegmentDTO[],
         conv?: QaapAgentConversationDTO,
     ): HTMLElement | undefined {
-        const manualApproval = !!conv && !isConversationAutoApproveEnabled(conversationToSummary(conv));
+        const manualApproval = !!conv && conversationUsesInteractiveApprovals(conv);
         const toolSegments = segments.filter((segment): segment is Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> =>
             segment.type === 'tool',
         );
