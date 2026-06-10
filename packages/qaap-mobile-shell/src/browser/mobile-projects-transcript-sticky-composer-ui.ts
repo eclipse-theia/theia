@@ -81,6 +81,8 @@ import { MobileSnackbar } from './mobile-snackbar';
 import { QAAP_GIT_REVIEW_API_PATH, type QaapGitChangedFile } from '../common/qaap-git-review';
 import {
     renderStickyComposerActivityStack,
+    renderStickyComposerChangesPill,
+    type StickyComposerActivityStackOptions,
     type StickyComposerChangedFileView,
 } from './qaap-sticky-composer-activity-stack';
 
@@ -314,7 +316,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         fallback?: { readonly added: number; readonly removed: number },
     ): { readonly added: number; readonly removed: number } | undefined {
         if (files.length === 0) {
-            return undefined;
+            return fallback;
         }
         let added = 0;
         let removed = 0;
@@ -465,16 +467,13 @@ export class MobileProjectsTranscriptStickyComposerUi {
     protected async refreshComposerActivityGitFilesIfNeeded(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
-        conv: QaapAgentConversationDTO | undefined,
-        activityFiles: {
+        _conv: QaapAgentConversationDTO | undefined,
+        _activityFiles: {
             readonly files: readonly StickyComposerChangedFileView[];
             readonly stats?: { readonly added: number; readonly removed: number };
         },
     ): Promise<void> {
         if (this.composerActivityGitFilesByConversationId.has(summary.id)) {
-            return;
-        }
-        if (activityFiles.files.length === 0 && !activityFiles.stats) {
             return;
         }
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
@@ -501,19 +500,16 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }
     }
 
-    buildTranscriptComposerActivityStack(
+    protected buildTranscriptComposerActivityOptions(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
-    ): HTMLElement | undefined {
-        const queueEntries = this.host.transcriptFollowUpQueue.peek(summary.id);
+    ): StickyComposerActivityStackOptions {
         const conv = this.host.transcriptLastConv?.id === summary.id ? this.host.transcriptLastConv : undefined;
         const activityFiles = this.resolveComposerActivityFilesForStack(project, summary, conv);
-        const agentWorking = this.isTranscriptStickyComposerAgentWorking();
         void this.refreshComposerActivityGitFilesIfNeeded(project, summary, conv, activityFiles);
-        const canBulkActOnFiles = activityFiles.files.length > 0
-            && !!this.resolveComposerWorkspaceRoot(project, summary);
-        return renderStickyComposerActivityStack({
-            queueEntries,
+        const agentWorking = this.isTranscriptStickyComposerAgentWorking();
+        return {
+            queueEntries: this.host.transcriptFollowUpQueue.peek(summary.id),
             queueExpanded: this.host.transcriptComposerQueueExpanded,
             onQueueExpandedChange: expanded => { this.host.transcriptComposerQueueExpanded = expanded; },
             onQueueEdit: (index, entry) => {
@@ -535,18 +531,25 @@ export class MobileProjectsTranscriptStickyComposerUi {
             filesExpanded: this.peekTranscriptComposerChangedFilesExpanded(summary.id),
             onFilesExpandedChange: expanded => { this.setTranscriptComposerChangedFilesExpanded(summary.id, expanded); },
             agentWorking,
-            changedFilesBulkBusy: this.composerChangedFilesBulkBusy,
             onStop: () => { void this.host.onCancelConversation(project, summary); },
-            onUndoAll: canBulkActOnFiles
-                ? () => { void this.undoAllComposerChangedFiles(project, summary); }
-                : undefined,
-            onKeepAll: canBulkActOnFiles
-                ? () => { void this.keepAllComposerChangedFiles(project, summary); }
-                : undefined,
             onReview: () => {
                 this.host.executionSurfaceTabsUi.selectTranscriptTab('review', project, summary);
             },
-        });
+        };
+    }
+
+    buildTranscriptComposerActivityStack(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): HTMLElement | undefined {
+        return renderStickyComposerActivityStack(this.buildTranscriptComposerActivityOptions(project, summary));
+    }
+
+    buildTranscriptComposerChangesPill(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): HTMLElement | undefined {
+        return renderStickyComposerChangesPill(this.buildTranscriptComposerActivityOptions(project, summary));
     }
 
     syncComposerActivityFingerprint(
@@ -568,10 +571,20 @@ export class MobileProjectsTranscriptStickyComposerUi {
         if (!host?.isConnected || !project || !summary) {
             return;
         }
-        const card = host.querySelector('.theia-mobile-projects-sticky-composer-card.theia-mod-codex');
-        if (!card) {
+        const wrap = host.querySelector('.theia-mobile-projects-sticky-composer-inner');
+        const card = wrap?.querySelector('.theia-mobile-projects-sticky-composer-card.theia-mod-codex');
+        if (!wrap || !card) {
             this.remountTranscriptStickyComposer();
             return;
+        }
+        const changesPill = this.buildTranscriptComposerChangesPill(project, summary);
+        const existingPill = wrap.querySelector(':scope > .theia-mobile-sticky-composer-changes-pill-host');
+        if (!changesPill) {
+            existingPill?.remove();
+        } else if (existingPill) {
+            existingPill.replaceWith(changesPill);
+        } else {
+            wrap.insertBefore(changesPill, card);
         }
         const stack = this.buildTranscriptComposerActivityStack(project, summary);
         const existing = card.querySelector(':scope > .theia-mobile-sticky-composer-activity-stack');
@@ -866,12 +879,14 @@ export class MobileProjectsTranscriptStickyComposerUi {
             this.host.transcriptComposerApprovalPolicyId = undefined;
             this.host.transcriptComposerToolApprovalRules = undefined;
         }
+        const activityOptions = this.buildTranscriptComposerActivityOptions(project, summary);
         const column = this.host.stickyComposerColumnUi.buildStickyComposerColumn({
             project,
             composerCwd: cwd,
             surface: 'task',
             agentLocked: isLegacyTheiaChat,
-            activityStack: this.buildTranscriptComposerActivityStack(project, summary),
+            activityStack: renderStickyComposerActivityStack(activityOptions),
+            changesPill: renderStickyComposerChangesPill(activityOptions),
             getContext: () => this.host.transcriptComposerContext,
             clearContext: () => {
                 disposeComposerContextEntries(this.host.transcriptComposerContext);

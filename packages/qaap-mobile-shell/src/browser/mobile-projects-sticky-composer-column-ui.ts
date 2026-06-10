@@ -53,6 +53,7 @@ export class MobileProjectsStickyComposerColumnUi {
         filesExpanded?: boolean;
         onFilesExpandedChange?: (expanded: boolean) => void;
         activityStack?: HTMLElement;
+        changesPill?: HTMLElement;
         getDraft: () => string;
         setDraft: (value: string) => void;
         resolveAgentLabel: () => string;
@@ -367,6 +368,9 @@ export class MobileProjectsStickyComposerColumnUi {
 
         const card = document.createElement('div');
         card.className = 'theia-mobile-projects-sticky-composer-card theia-mod-codex';
+        if (options.changesPill) {
+            wrap.append(options.changesPill);
+        }
         if (contextItems.length > 0) {
             card.classList.add('theia-mod-has-context');
             card.append(renderStickyComposerContextStrip({

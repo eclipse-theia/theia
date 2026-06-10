@@ -3,12 +3,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export interface VirtualListItemLayout {
-    readonly index: number;
-    readonly offset: number;
-    readonly size: number;
-}
-
 export interface VirtualListVisibleRange {
     readonly startIndex: number;
     readonly endIndex: number;
@@ -16,62 +10,89 @@ export interface VirtualListVisibleRange {
     readonly totalHeight: number;
 }
 
-/** Build cumulative offsets from per-item sizes (0 = use {@link defaultSize}). */
-export function buildVirtualListLayouts(
+/**
+ * Build cumulative prefix offsets from per-item sizes (0 = use {@link defaultSize}).
+ * `offsets[i]` is the top of item `i`; `offsets[sizes.length]` is the total height.
+ * One flat number array instead of per-item layout objects keeps the per-frame
+ * cost allocation-free for the caller (build once, binary-search many).
+ */
+export function buildVirtualListOffsets(
     sizes: readonly number[],
     defaultSize: number,
-): readonly VirtualListItemLayout[] {
-    let offset = 0;
-    const layouts: VirtualListItemLayout[] = [];
+): readonly number[] {
+    const offsets = new Array<number>(sizes.length + 1);
+    offsets[0] = 0;
     for (let index = 0; index < sizes.length; index++) {
         const raw = sizes[index] ?? 0;
-        const size = raw > 0 ? raw : defaultSize;
-        layouts.push({ index, offset, size });
-        offset += size;
+        offsets[index + 1] = offsets[index] + (raw > 0 ? raw : defaultSize);
     }
-    return layouts;
+    return offsets;
 }
 
-export function resolveVirtualListTotalHeight(layouts: readonly VirtualListItemLayout[]): number {
-    if (layouts.length === 0) {
-        return 0;
-    }
-    const last = layouts[layouts.length - 1];
-    return last.offset + last.size;
+export function resolveVirtualListTotalHeight(offsets: readonly number[]): number {
+    return offsets.length === 0 ? 0 : offsets[offsets.length - 1];
 }
 
-/** Map scroll position to the indices that should be mounted (inclusive). */
+/** Largest index with `offsets[index] <= value` (offsets are ascending). */
+function greatestIndexAtMost(offsets: readonly number[], value: number): number {
+    let low = 0;
+    let high = offsets.length - 1;
+    let result = 0;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (offsets[mid] <= value) {
+            result = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return result;
+}
+
+/** Largest index with `offsets[index] < value` (offsets are ascending). */
+function greatestIndexBelow(offsets: readonly number[], value: number): number {
+    let low = 0;
+    let high = offsets.length - 1;
+    let result = 0;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (offsets[mid] < value) {
+            result = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return result;
+}
+
+/**
+ * Map scroll position to the indices that should be mounted (inclusive).
+ * O(log n) over the prefix {@link buildVirtualListOffsets} array, so it is safe
+ * to call on every scroll frame even for very long transcripts.
+ */
 export function resolveVirtualListVisibleRange(
     scrollTop: number,
     viewportHeight: number,
-    layouts: readonly VirtualListItemLayout[],
+    offsets: readonly number[],
     overscanPx: number,
 ): VirtualListVisibleRange {
-    if (layouts.length === 0) {
+    const itemCount = offsets.length - 1;
+    if (itemCount <= 0) {
         return { startIndex: 0, endIndex: -1, windowOffset: 0, totalHeight: 0 };
     }
-    const totalHeight = resolveVirtualListTotalHeight(layouts);
+    const totalHeight = offsets[itemCount];
     const viewStart = Math.max(0, scrollTop - overscanPx);
     const viewEnd = scrollTop + viewportHeight + overscanPx;
 
-    let startIndex = 0;
-    while (startIndex < layouts.length && layouts[startIndex].offset + layouts[startIndex].size <= viewStart) {
-        startIndex++;
-    }
-    if (startIndex >= layouts.length) {
-        startIndex = layouts.length - 1;
-    }
-
-    let endIndex = startIndex;
-    while (endIndex < layouts.length && layouts[endIndex].offset < viewEnd) {
-        endIndex++;
-    }
-    endIndex = Math.min(layouts.length - 1, Math.max(startIndex, endIndex - 1));
+    const startIndex = Math.min(itemCount - 1, greatestIndexAtMost(offsets, viewStart));
+    const endIndex = Math.min(itemCount - 1, Math.max(startIndex, greatestIndexBelow(offsets, viewEnd)));
 
     return {
         startIndex,
         endIndex,
-        windowOffset: layouts[startIndex]?.offset ?? 0,
+        windowOffset: offsets[startIndex],
         totalHeight,
     };
 }

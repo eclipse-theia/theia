@@ -122,6 +122,13 @@ const ALLOWED = [
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-welcome-policy\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
+    // Rolling prompt-cache breakpoints in addCacheControlToLastMessage: adds a
+    // second ephemeral cache_control on the previous user message so multi-turn
+    // history hits the cache written by the prior turn. Behaviour-only fix to an
+    // exported helper; subclassing AnthropicModel would require duplicating
+    // handleStreamingRequest. Candidate to propose upstream.
+    /^packages\/ai-anthropic\/src\/node\/anthropic-language-model\.ts$/,
+    /^packages\/ai-anthropic\/src\/node\/anthropic-language-model\.spec\.ts$/,
     // ---- Fork lags upstream Theia (NOT product-code drift) ----------------
     // These files show the fork on a SIMPLER/OLDER version than upstream — i.e.
     // upstream Theia later added features (graceful shutdown, ESM plugin loader,

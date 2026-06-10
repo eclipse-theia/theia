@@ -5,7 +5,7 @@
 
 import { Disposable } from '@theia/core/lib/common/disposable';
 import {
-    buildVirtualListLayouts,
+    buildVirtualListOffsets,
     resolveVirtualListVisibleRange,
 } from '../common/qaap-transcript-virtual-list-math';
 
@@ -13,6 +13,13 @@ export const TRANSCRIPT_VIRTUAL_DEFAULT_ITEM_HEIGHT = 128;
 export const TRANSCRIPT_VIRTUAL_OVERSCAN_PX = 480;
 /** Virtualize once the thread is long enough to hurt scroll paint on real devices. */
 export const TRANSCRIPT_VIRTUAL_MIN_MESSAGES = 12;
+/**
+ * Coalescing window for height remeasurements. During token streaming, content reflows
+ * fire ResizeObserver many times per second; without throttling, each fires a
+ * `getBoundingClientRect()` over every visible row and a relayout, forcing layout
+ * thrash. 100ms keeps the perceived scroll-pin smooth without backlogging measurements.
+ */
+export const TRANSCRIPT_VIRTUAL_MEASURE_THROTTLE_MS = 100;
 
 export type TranscriptVirtualListRenderFn = (index: number) => HTMLElement;
 
@@ -26,6 +33,10 @@ export interface TranscriptVirtualListOptions {
 /**
  * Windowed transcript renderer — only mounts rows in (or near) the viewport.
  * The scroll host keeps native overflow so touch scroll and scroll-pin still work.
+ *
+ * Scroll frames are O(log n): prefix offsets are cached and rebuilt only when a
+ * size actually changes, and row remeasurement (forced layout reads) runs only
+ * when rows were just mounted or content reflowed — never on plain scrolling.
  */
 export class TranscriptVirtualList implements Disposable {
     protected readonly defaultItemHeight: number;
@@ -38,9 +49,16 @@ export class TranscriptVirtualList implements Disposable {
     protected readonly scrollHost: HTMLElement;
     protected readonly mounted = new Map<number, HTMLElement>();
     protected sizes: number[] = [];
+    protected offsets: readonly number[] = [0];
+    protected offsetsDirty = false;
+    protected footerHeight = 0;
     protected itemCount = 0;
     protected disposed = false;
     protected rafId = 0;
+    protected measureRafId = 0;
+    protected measureRequested = true;
+    protected measureTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    protected lastMeasureRanAt = 0;
     protected scrollListener: () => void;
     protected resizeObserver: ResizeObserver | undefined;
 
@@ -82,13 +100,16 @@ export class TranscriptVirtualList implements Disposable {
     setItemCount(count: number, resetSizes = false): void {
         this.itemCount = Math.max(0, count);
         if (resetSizes || this.sizes.length !== count) {
-            this.sizes = Array.from({ length: count }, (_, index) => this.sizes[index] ?? 0);
+            this.sizes = Array.from({ length: count }, (_, index) => resetSizes ? 0 : this.sizes[index] ?? 0);
+            this.offsetsDirty = true;
+            this.measureRequested = true;
         }
         this.scheduleUpdate();
     }
 
     setFooter(children: readonly HTMLElement[]): void {
         this.footerHost.replaceChildren(...children);
+        this.measureRequested = true;
         this.scheduleUpdate();
     }
 
@@ -134,6 +155,7 @@ export class TranscriptVirtualList implements Disposable {
         this.itemCount = Math.max(this.itemCount, index + 1);
         if (this.sizes.length < this.itemCount) {
             this.sizes = [...this.sizes, ...Array.from({ length: this.itemCount - this.sizes.length }, () => 0)];
+            this.offsetsDirty = true;
         }
         this.scheduleMeasure();
     }
@@ -146,6 +168,14 @@ export class TranscriptVirtualList implements Disposable {
         if (this.rafId) {
             cancelAnimationFrame(this.rafId);
             this.rafId = 0;
+        }
+        if (this.measureRafId) {
+            cancelAnimationFrame(this.measureRafId);
+            this.measureRafId = 0;
+        }
+        if (this.measureTimeoutId !== undefined) {
+            clearTimeout(this.measureTimeoutId);
+            this.measureTimeoutId = undefined;
         }
         this.scrollHost.removeEventListener('scroll', this.scrollListener);
         this.resizeObserver?.disconnect();
@@ -162,24 +192,50 @@ export class TranscriptVirtualList implements Disposable {
         });
     }
 
+    /**
+     * Throttled remeasure path used by ResizeObserver and content swaps during streaming.
+     * Bursts of reflow events coalesce into one `scheduleUpdate()` per
+     * `TRANSCRIPT_VIRTUAL_MEASURE_THROTTLE_MS` window, avoiding layout thrash on every
+     * token delta. Scroll handling stays on its own RAF path and remains snappy.
+     */
     protected scheduleMeasure(): void {
-        this.scheduleUpdate();
+        if (this.disposed) {
+            return;
+        }
+        this.measureRequested = true;
+        if (this.measureTimeoutId !== undefined) {
+            return;
+        }
+        const now = Date.now();
+        const elapsed = now - this.lastMeasureRanAt;
+        const delay = elapsed >= TRANSCRIPT_VIRTUAL_MEASURE_THROTTLE_MS
+            ? 0
+            : TRANSCRIPT_VIRTUAL_MEASURE_THROTTLE_MS - elapsed;
+        this.measureTimeoutId = setTimeout(() => {
+            this.measureTimeoutId = undefined;
+            this.lastMeasureRanAt = Date.now();
+            this.scheduleUpdate();
+        }, delay);
     }
 
     protected update(): void {
         if (this.disposed) {
             return;
         }
-        const layouts = buildVirtualListLayouts(this.sizes, this.defaultItemHeight);
+        if (this.offsetsDirty || this.offsets.length !== this.sizes.length + 1) {
+            this.offsets = buildVirtualListOffsets(this.sizes, this.defaultItemHeight);
+            this.offsetsDirty = false;
+        }
         const range = resolveVirtualListVisibleRange(
             this.scrollHost.scrollTop,
             this.scrollHost.clientHeight,
-            layouts,
+            this.offsets,
             this.overscanPx,
         );
         this.window.style.transform = `translateY(${range.windowOffset}px)`;
         this.footerHost.style.transform = `translateY(${range.totalHeight}px)`;
 
+        let mountedNew = false;
         const nextMounted = new Set<number>();
         for (let index = range.startIndex; index <= range.endIndex; index++) {
             nextMounted.add(index);
@@ -188,9 +244,11 @@ export class TranscriptVirtualList implements Disposable {
                 row = this.renderItem(index);
                 row.setAttribute('data-virtual-index', String(index));
                 this.mounted.set(index, row);
+                mountedNew = true;
             }
             if (!row.parentElement) {
                 this.window.append(row);
+                mountedNew = true;
             }
         }
 
@@ -201,9 +259,17 @@ export class TranscriptVirtualList implements Disposable {
             }
         }
 
-        const footerHeight = this.footerHost.offsetHeight;
-        this.spacer.style.height = `${range.totalHeight + footerHeight}px`;
-        requestAnimationFrame(() => this.measureVisible(range.startIndex, range.endIndex));
+        this.spacer.style.height = `${range.totalHeight + this.footerHeight}px`;
+
+        // Forced layout reads only when row content may have changed — plain
+        // scroll frames stay write-only and never trigger a synchronous reflow.
+        if ((mountedNew || this.measureRequested) && !this.measureRafId) {
+            this.measureRequested = false;
+            this.measureRafId = requestAnimationFrame(() => {
+                this.measureRafId = 0;
+                this.measureVisible(range.startIndex, range.endIndex);
+            });
+        }
     }
 
     protected measureVisible(startIndex: number, endIndex: number): void {
@@ -219,8 +285,14 @@ export class TranscriptVirtualList implements Disposable {
             const height = Math.ceil(row.getBoundingClientRect().height);
             if (height > 0 && this.sizes[index] !== height) {
                 this.sizes[index] = height;
+                this.offsetsDirty = true;
                 changed = true;
             }
+        }
+        const footerHeight = this.footerHost.offsetHeight;
+        if (footerHeight !== this.footerHeight) {
+            this.footerHeight = footerHeight;
+            changed = true;
         }
         if (changed) {
             this.update();
