@@ -132,7 +132,7 @@ export const useMarkdownRendering = (
 
         // intercept link clicks to use the Theia OpenerService instead of the default browser behavior
         const handleClick = (event: MouseEvent) => {
-            let target = event.target instanceof HTMLElement ? event.target : event.target instanceof Node ? event.target.parentElement : undefined;
+            let target = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : undefined;
             const allowButton = target?.closest(`.${BLOCKED_RESOURCE_ALLOW_CLASS}`);
             if (allowButton) {
                 const placeholder = allowButton.closest(`.${BLOCKED_RESOURCE_CLASS}`);
@@ -152,11 +152,12 @@ export const useMarkdownRendering = (
                 return;
             }
             if ((eventHandler?.handleEvent(event) as unknown) === true) { return; }
-            while (target && target.tagName !== 'A') {
+            // SVG anchors keep their lower-case tag name, so normalize before comparing
+            while (target && target.tagName.toUpperCase() !== 'A') {
                 target = target.parentElement ?? undefined;
             }
-            if (target && target.tagName === 'A') {
-                const href = target.getAttribute('href');
+            if (target && target.tagName.toUpperCase() === 'A') {
+                const href = target.getAttribute('href') ?? target.getAttribute('xlink:href');
                 if (href) {
                     open(openerService, new URI(href));
                     event.preventDefault();
