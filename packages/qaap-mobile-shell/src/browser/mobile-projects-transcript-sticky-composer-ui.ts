@@ -500,7 +500,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
     protected async refreshComposerActivityGitFilesIfNeeded(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
-        _conv: QaapAgentConversationDTO | undefined,
+        conv: QaapAgentConversationDTO | undefined,
         activityFiles: {
             readonly files: readonly StickyComposerChangedFileView[];
             readonly stats?: { readonly added: number; readonly removed: number };
@@ -510,7 +510,11 @@ export class MobileProjectsTranscriptStickyComposerUi {
             return;
         }
         // Skip the repo-wide git snapshot until the agent has actually edited files here.
-        if (!this.hasComposerAgentActivity(activityFiles)) {
+        // Tool-call evidence alone must count: some agent CLIs (e.g. opencode/QAIQ) report
+        // Edit/Write tool calls without parseable paths or diff stats, leaving activityFiles
+        // empty even though the agent did change files — same gate as the pill itself.
+        if (!this.hasComposerAgentActivity(activityFiles)
+            && !this.host.transcriptMessagesUi.hasComposerFileChangeToolCalls(conv)) {
             return;
         }
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
