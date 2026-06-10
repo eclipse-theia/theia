@@ -185,6 +185,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             headers: '',
             oauthEnabled: false,
             oauthClientId: '',
+            oauthClientSecret: '',
             oauthScopes: '',
             oauthAuthorizationServer: '',
             oauthResource: '',
@@ -197,6 +198,7 @@ describe('MCPServerEditor OAuth form handling', () => {
         await editor.save(remoteFormData({
             oauthEnabled: true,
             oauthClientId: 'client-id',
+            oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',
             oauthAuthorizationServer: 'https://auth.example.com',
             oauthResource: 'https://mcp.example.com/mcp'
@@ -209,6 +211,7 @@ describe('MCPServerEditor OAuth form handling', () => {
                 oauth: {
                     enabled: true,
                     clientId: 'client-id',
+                    clientSecret: 'client-secret',
                     scopes: ['mcp.read', 'mcp.write'],
                     authorizationServer: 'https://auth.example.com',
                     resource: 'https://mcp.example.com/mcp'
@@ -221,6 +224,7 @@ describe('MCPServerEditor OAuth form handling', () => {
         await editor.save(remoteFormData({
             oauthEnabled: false,
             oauthClientId: 'client-id',
+            oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',
             oauthAuthorizationServer: 'https://auth.example.com',
             oauthResource: 'https://mcp.example.com/mcp'
@@ -241,6 +245,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             oauth: {
                 enabled: true,
                 clientId: 'client-id',
+                clientSecret: 'client-secret',
                 scopes: ['mcp.read', 'mcp.write'],
                 authorizationServer: 'https://auth.example.com',
                 resource: 'https://mcp.example.com/mcp'
@@ -255,6 +260,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             serverUrl: 'https://mcp.example.com/mcp',
             oauthEnabled: true,
             oauthClientId: 'client-id',
+            oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',
             oauthAuthorizationServer: 'https://auth.example.com',
             oauthResource: 'https://mcp.example.com/mcp'

@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MessageService, nls } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -25,8 +26,24 @@ export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDeleg
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     async openExternal(url: string): Promise<void> {
         this.windowService.openNewWindow(url, { external: true });
+        // The RPC round-trip consumed the user activation of the original click, so popup blockers may
+        // suppress the window.open above — undetectably, as 'noopener' makes it return null even on success.
+        // The toast's action click carries fresh activation as a manual fallback. Deliberately not awaited:
+        // the OAuth flow must proceed to the callback wait regardless of the toast.
+        this.messageService.info(
+            nls.localize('theia/ai/mcp/oauth/completeSignInInBrowser',
+                'Complete the MCP OAuth sign-in in your browser. If no sign-in tab opened, your browser may have blocked the popup.'),
+            nls.localizeByDefault('Open')
+        ).then(action => {
+            if (action) {
+                this.windowService.openNewWindow(url, { external: true });
+            }
+        });
     }
 
     async getCallbackUrl(): Promise<string> {

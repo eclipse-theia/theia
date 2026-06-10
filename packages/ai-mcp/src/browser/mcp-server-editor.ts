@@ -243,6 +243,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 headers: '',
                 oauthEnabled: false,
                 oauthClientId: '',
+                oauthClientSecret: '',
                 oauthScopes: '',
                 oauthAuthorizationServer: '',
                 oauthResource: '',
@@ -264,6 +265,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                     : '',
                 oauthEnabled: server.oauth?.enabled ?? false,
                 oauthClientId: server.oauth?.clientId ?? '',
+                oauthClientSecret: server.oauth?.clientSecret ?? '',
                 oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
                 oauthAuthorizationServer: server.oauth?.authorizationServer ?? '',
                 oauthResource: server.oauth?.resource ?? '',
@@ -337,6 +339,7 @@ function toOAuthConfig(formData: MCPServerFormData): MCPOAuthConfig | undefined 
     return {
         enabled: formData.oauthEnabled,
         ...(formData.oauthClientId.trim() && { clientId: formData.oauthClientId.trim() }),
+        ...(formData.oauthClientSecret.trim() && { clientSecret: formData.oauthClientSecret.trim() }),
         ...(scopes && { scopes }),
         ...(formData.oauthAuthorizationServer.trim() && { authorizationServer: formData.oauthAuthorizationServer.trim() }),
         ...(formData.oauthResource.trim() && { resource: formData.oauthResource.trim() })

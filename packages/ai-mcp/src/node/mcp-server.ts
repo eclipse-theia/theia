@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import { OAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport, StreamableHTTPClientTransportOptions, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -217,12 +218,14 @@ export class MCPServer {
                 } catch (e) {
                     // An OAuth-flow outcome (success, cancel, denial, retry-required) is final for this authorization;
                     // SSE fallback would create a fresh provider and re-prompt a user who was already involved.
+                    // OAuthError covers error responses the SDK auth flow re-throws without self-healing.
                     if (e instanceof UnauthorizedError || e instanceof MCPOAuthCancelledError
-                        || e instanceof MCPOAuthAuthorizationRequiredError || e instanceof MCPOAuthAuthorizationServerError) {
+                        || e instanceof MCPOAuthAuthorizationRequiredError || e instanceof MCPOAuthAuthorizationServerError
+                        || e instanceof OAuthError || this.isIncompatibleAuthServerError(e)) {
                         await this.handleStartupError(e);
                         return;
                     }
-                    console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`);
+                    console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`, e);
                     if (this.transport instanceof StreamableHTTPClientTransport) {
                         // Best-effort terminate of any session created during the failed connect, mirroring stop().
                         try {
@@ -275,6 +278,16 @@ export class MCPServer {
             // Surface the authorization server's diagnostic (e.g. "access_denied"); a re-start triggers a fresh sign-in.
             const description = error.authorizationServerErrorDescription ?? error.authorizationServerError;
             this.error = nls.localize('theia/ai/mcp/oauth/authorizationServerError', 'Authorization server reported: {0}', description);
+            await this.client.close();
+            this.setStatus(MCPServerStatus.AuthenticationRequired);
+            return;
+        }
+        if (error instanceof OAuthError) {
+            // A non-self-healing OAuth error response: invalidate stored credentials so the next interactive
+            // start runs a fresh authorization instead of replaying the same failing flow.
+            await this.authProvider?.invalidateCredentials?.('tokens');
+            await this.authProvider?.invalidateCredentials?.('discovery');
+            this.error = nls.localize('theia/ai/mcp/oauth/authorizationServerError', 'Authorization server reported: {0}', this.oauthErrorDiagnostic(error));
             await this.client.close();
             this.setStatus(MCPServerStatus.AuthenticationRequired);
             return;
@@ -352,13 +365,17 @@ export class MCPServer {
     protected isAuthenticationRequiredError(error: Error): boolean {
         return error instanceof UnauthorizedError
             || error instanceof MCPOAuthAuthorizationRequiredError
-            || error instanceof MCPOAuthAuthorizationServerError;
+            || error instanceof MCPOAuthAuthorizationServerError
+            || error instanceof OAuthError;
     }
 
     protected authenticationRequiredErrorMessage(error: Error): string {
         if (error instanceof MCPOAuthAuthorizationServerError) {
             const description = error.authorizationServerErrorDescription ?? error.authorizationServerError;
             return nls.localize('theia/ai/mcp/oauth/authorizationServerError', 'Authorization server reported: {0}', description);
+        }
+        if (error instanceof OAuthError) {
+            return nls.localize('theia/ai/mcp/oauth/authorizationServerError', 'Authorization server reported: {0}', this.oauthErrorDiagnostic(error));
         }
         return isRemoteMCPServerDescription(this.description) && this.description.oauth?.enabled
             ? nls.localize('theia/ai/mcp/oauth/authorizationRequired', 'MCP OAuth authorization is required.')
@@ -473,6 +490,20 @@ export class MCPServer {
     protected isUnauthorizedReconnectError(error: unknown): boolean {
         return error instanceof UnauthorizedError
             || error instanceof StreamableHTTPError && error.code === HTTP_STATUS_UNAUTHORIZED;
+    }
+
+    /** `message` carries the OAuth `error_description`, which servers may omit; fall back to the bare error code. */
+    protected oauthErrorDiagnostic(error: OAuthError): string {
+        return error.message ? `${error.errorCode}: ${error.message}` : error.errorCode;
+    }
+
+    /**
+     * The SDK reports unmet authorization-server capabilities (e.g. no dynamic client registration) as plain
+     * Errors with this prefix. They are configuration outcomes, not transport failures, and must not trigger
+     * the SSE fallback. Like the SSE-disconnect prefix, an SDK wording change flips the classification test.
+     */
+    protected isIncompatibleAuthServerError(error: unknown): boolean {
+        return error instanceof Error && error.message.startsWith('Incompatible auth server:');
     }
 
     async callTool(toolName: string, arg_string: string): Promise<CallToolResult> {

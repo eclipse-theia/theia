@@ -158,6 +158,17 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         expect(text).to.not.contain('OAuth Client Secret');
     });
 
+    it('masks a configured OAuth client secret in the summary', async () => {
+        const widget = createWidget({
+            servers: [{ ...oauthServer, oauth: { ...oauthServer.oauth, clientSecret: 'top-secret-value' } }]
+        });
+        renderWidget(widget);
+
+        const text = host.textContent ?? '';
+        expect(text).to.contain('OAuth Client Secret=******');
+        expect(text).to.not.contain('top-secret-value');
+    });
+
     it('shows sign out action for OAuth-enabled remote servers and calls signOut after confirmation', async () => {
         let signedOutServer: string | undefined;
         const widget = createWidget({ servers: [oauthServer], onSignOut: serverName => signedOutServer = serverName });
@@ -169,6 +180,30 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         await Promise.resolve();
 
         expect(signedOutServer).to.equal('oauth-server');
+    });
+
+    it('surfaces a warning toast when signOut rejects', async () => {
+        let warning: string | undefined;
+        const originalConsoleError = console.error;
+        console.error = () => { };
+        try {
+            const widget = createWidget({
+                servers: [oauthServer],
+                onSignOut: () => { throw new Error('rpc broken'); },
+                onWarn: message => warning = message
+            });
+            renderWidget(widget);
+
+            const signOutButton = host.querySelector('button[title="Sign Out"]') as HTMLButtonElement | null;
+            expect(signOutButton).to.not.be.null;
+            signOutButton!.click();
+            await Promise.resolve();
+            await Promise.resolve();
+        } finally {
+            console.error = originalConsoleError;
+        }
+
+        expect(warning).to.contain('oauth-server');
     });
 
     it('does not sign out when confirmation is cancelled', async () => {

@@ -97,7 +97,10 @@ export class MCPOAuthClientProvider implements OAuthClientProvider {
     async clientInformation(): Promise<OAuthClientInformationMixed | undefined> {
         if (this.config.clientId) {
             return {
-                client_id: this.config.clientId
+                client_id: this.config.clientId,
+                // A configured secret marks this client as pre-registered and confidential; the SDK then
+                // authenticates the token endpoint with client_secret_basic/post instead of 'none' + PKCE.
+                ...(this.config.clientSecret && { client_secret: this.config.clientSecret })
             };
         }
         return this.readClientInformation();
@@ -215,7 +218,11 @@ export class MCPOAuthClientProvider implements OAuthClientProvider {
 
     async codeVerifier(): Promise<string> {
         if (!this.codeVerifierValue) {
-            throw new Error(nls.localize('theia/ai/mcp/oauth/signInSessionExpired', 'MCP OAuth sign-in session expired. Start the server again to sign in.'));
+            // Typed so MCPServer.doStart routes a missing verifier to AuthenticationRequired instead of the
+            // SSE fallback, which would start a second authorization round-trip.
+            throw new MCPOAuthAuthorizationRequiredError({
+                cause: new Error(`MCP OAuth PKCE code verifier for server "${this.serverName}" is no longer available; the sign-in attempt expired or was cancelled.`)
+            });
         }
         return this.codeVerifierValue;
     }
@@ -272,7 +279,9 @@ export class MCPOAuthClientProvider implements OAuthClientProvider {
 
     async invalidateCredentials(scope: 'all' | 'client' | 'tokens' | 'verifier' | 'discovery'): Promise<void> {
         if (scope === 'all') {
-            this.codeVerifierValue = undefined;
+            // Preserves `codeVerifierValue` like the scoped variants below: the SDK calls
+            // invalidateCredentials('all') to self-heal invalid_client/unauthorized_client and then retries
+            // the code exchange, which still needs the in-memory PKCE verifier of the in-flight round-trip.
             await Promise.all([
                 this.delete('client'),
                 this.delete('tokens'),

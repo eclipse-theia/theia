@@ -20,6 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import { MessageService } from '@theia/core';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
 
@@ -34,16 +35,29 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
         disableJSDOM();
     });
 
-    function createClient(openCalls: Array<{ url: string, external: boolean | undefined }> = []): MCPOAuthFrontendDelegateClientImpl {
+    function createClient(openCalls: Array<{ url: string, external: boolean | undefined }> = [], options: {
+        /** Captures the popup-blocked fallback toast; the returned value simulates the user's action choice. */
+        onInfo?: (message: string, ...actions: string[]) => Promise<string | undefined>
+    } = {}): MCPOAuthFrontendDelegateClientImpl {
         const client = new MCPOAuthFrontendDelegateClientImpl();
         const windowService = {
-            openNewWindow(url: string, options?: { external?: boolean }): undefined {
-                openCalls.push({ url, external: options?.external });
+            openNewWindow(url: string, options2?: { external?: boolean }): undefined {
+                openCalls.push({ url, external: options2?.external });
                 return undefined;
             }
         } as unknown as WindowService;
         (client as unknown as { windowService: WindowService }).windowService = windowService;
+        const messageService = {
+            info: (message: string, ...actions: string[]) => options.onInfo?.(message, ...actions) ?? Promise.resolve(undefined)
+        } as unknown as MessageService;
+        (client as unknown as { messageService: MessageService }).messageService = messageService;
         return client;
+    }
+
+    async function flushToastHandlers(): Promise<void> {
+        // openExternal resolves before the toast promise's .then runs; flush the microtask chain.
+        await Promise.resolve();
+        await Promise.resolve();
     }
 
     describe('getCallbackUrl', () => {
@@ -78,6 +92,40 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
             await client.openExternal('https://auth.example.com/authorize?state=abc&code_challenge=xyz');
 
             expect(openCalls).to.deep.equal([{ url: 'https://auth.example.com/authorize?state=abc&code_challenge=xyz', external: true }]);
+        });
+
+        it('re-opens the sign-in URL when the user clicks the popup-blocked fallback toast action', async () => {
+            // The RPC-initiated window.open carries no user activation and may be popup-blocked (undetectable
+            // with 'noopener'); the toast action click carries fresh activation.
+            const openCalls: Array<{ url: string, external: boolean | undefined }> = [];
+            let infoMessage: string | undefined;
+            const client = createClient(openCalls, {
+                onInfo: async message => {
+                    infoMessage = message;
+                    return 'Open';
+                }
+            });
+
+            await client.openExternal('https://auth.example.com/authorize?state=abc');
+            await flushToastHandlers();
+
+            expect(infoMessage).to.contain('browser may have blocked');
+            expect(openCalls).to.deep.equal([
+                { url: 'https://auth.example.com/authorize?state=abc', external: true },
+                { url: 'https://auth.example.com/authorize?state=abc', external: true }
+            ]);
+        });
+
+        it('does not re-open the sign-in URL when the fallback toast is dismissed', async () => {
+            const openCalls: Array<{ url: string, external: boolean | undefined }> = [];
+            const client = createClient(openCalls, {
+                onInfo: async () => undefined
+            });
+
+            await client.openExternal('https://auth.example.com/authorize');
+            await flushToastHandlers();
+
+            expect(openCalls).to.have.length(1);
         });
 
         it('does not require any prepare / arm step before the call', async () => {

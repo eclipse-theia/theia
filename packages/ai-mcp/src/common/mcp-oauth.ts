@@ -19,6 +19,11 @@ export const MCP_OAUTH_CALLBACK_PATH = '/mcp/oauth/callback';
 export interface MCPOAuthConfig {
     enabled?: boolean;
     clientId?: string;
+    /**
+     * Optional client secret for authorization servers that require a pre-registered confidential
+     * client. Only used together with {@link clientId}; ignored during dynamic client registration.
+     */
+    clientSecret?: string;
     scopes?: string[];
     authorizationServer?: string;
     resource?: string;
