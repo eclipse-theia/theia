@@ -5946,34 +5946,9 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   cursor: default;
 }
 
-/* Commit en curso — anillo de color girando sobre el grupo, mismo lenguaje que el
-   border-beam del composer (reutiliza la @property --qaap-border-beam-angle y su spin). */
-.theia-mobile-sticky-composer-commit-group.theia-mod-busy {
-  border-color: transparent;
-  animation: qaap-border-beam-spin 1.8s linear infinite;
-}
-
-.theia-mobile-sticky-composer-commit-group.theia-mod-busy::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--qaap-border-beam-angle),
-    rgb(255, 50, 100), rgb(255, 120, 40), rgb(240, 50, 180),
-    rgb(100, 70, 255), rgb(40, 140, 255), rgb(50, 200, 80),
-    rgb(255, 50, 100)
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Mientras gira el beam el botón no debe leerse como "deshabilitado". */
+/* Commit en curso — el grupo enciende el mismo border-beam del composer (reglas compartidas
+   al final del fichero, junto a .theia-mod-agent-working). Mientras gira el beam el botón
+   no debe leerse como "deshabilitado". */
 .theia-mobile-sticky-composer-commit-group.theia-mod-busy .theia-mobile-sticky-composer-commit-btn:disabled,
 .theia-mobile-sticky-composer-commit-group.theia-mod-busy .theia-mobile-sticky-composer-commit-menu:disabled {
   opacity: 0.85;
@@ -18544,7 +18519,8 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .qaap-chat-conte
   inherits: true;
 }
 
-.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working,
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy {
   /* Defaults = tema oscuro (md.dark del paquete), strength 70% como el playground */
   --qaap-beam-strength: 0.7;
   --qaap-beam-stroke-opacity: 0.26;
@@ -18597,7 +18573,8 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .qaap-chat-conte
     qaap-border-beam-fade-in 0.9s ease forwards;
 }
 
-body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working,
+body.qaap-theme-light .theia-mobile-sticky-composer-commit-group.theia-mod-busy {
   --qaap-beam-stroke-opacity: 0.12;
   --qaap-beam-inner-opacity: 0.26;
   --qaap-beam-bloom-opacity: 0.34;
@@ -18633,7 +18610,8 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-m
 }
 
 /* Capa 1 — stroke ring: blobs de color + highlight, recortado al anillo de 1px y a la ventana cónica */
-.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after {
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after,
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -18667,7 +18645,8 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-m
 }
 
 /* Capa 2 — lavado interior: mismos blobs al 45% / 0.9x, desvanecidos hacia el centro (franja de 28px) */
-.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::before {
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::before,
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -18700,7 +18679,8 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-m
 }
 
 /* Capa 3 — bloom: el pico del haz desenfocado, recortado al anillo */
-.theia-mobile-projects-sticky-composer-input-panel .qaap-border-beam-bloom {
+.theia-mobile-projects-sticky-composer-input-panel .qaap-border-beam-bloom,
+.theia-mobile-sticky-composer-commit-group .qaap-border-beam-bloom {
   display: none;
   position: absolute;
   inset: 0;
@@ -18717,7 +18697,8 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-m
   opacity: 0;
 }
 
-.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom {
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom,
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy .qaap-border-beam-bloom {
   display: block;
   opacity: calc(var(--qaap-border-beam-opacity) * var(--qaap-beam-bloom-opacity) * var(--qaap-beam-strength));
 }
@@ -18752,16 +18733,21 @@ body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-m
 @media (prefers-reduced-motion: reduce) {
   .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working,
   .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::before,
-  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after {
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after,
+  .theia-mobile-sticky-composer-commit-group.theia-mod-busy,
+  .theia-mobile-sticky-composer-commit-group.theia-mod-busy::before,
+  .theia-mobile-sticky-composer-commit-group.theia-mod-busy::after {
     animation: none;
   }
 
-  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working,
+  .theia-mobile-sticky-composer-commit-group.theia-mod-busy {
     /* Sin animación de fade-in: encender el anillo de forma estática */
     --qaap-border-beam-opacity: 1;
   }
 
-  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom {
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom,
+  .theia-mobile-sticky-composer-commit-group.theia-mod-busy .qaap-border-beam-bloom {
     display: none;
   }
 }

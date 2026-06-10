@@ -374,7 +374,11 @@ function renderChangesCommitGroup(options: StickyComposerActivityStackOptions): 
     }
 
     menuWrap.append(menuBtn, dropdown);
-    group.append(commitBtn, menuWrap);
+    // Same bloom layer as the composer's border beam; CSS only shows it while theia-mod-busy is set.
+    const borderBeamBloom = document.createElement('div');
+    borderBeamBloom.className = 'qaap-border-beam-bloom';
+    borderBeamBloom.setAttribute('aria-hidden', 'true');
+    group.append(commitBtn, menuWrap, borderBeamBloom);
     return group;
 }
 
