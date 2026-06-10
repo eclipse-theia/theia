@@ -241,7 +241,6 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 serverAuthToken: '',
                 serverAuthTokenHeader: '',
                 headers: '',
-                oauthEnabled: false,
                 oauthClientId: '',
                 oauthClientSecret: '',
                 oauthScopes: '',
@@ -253,7 +252,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         if (isRemoteMCPServerDescription(server)) {
             return {
                 name: server.name,
-                serverType: 'remote',
+                serverType: server.oauth?.enabled ? 'remote-oauth' : 'remote',
                 command: '',
                 args: '',
                 env: '',
@@ -263,7 +262,6 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 headers: server.headers
                     ? Object.entries(server.headers).map(([k, v]) => `${k}=${v}`).join('\n')
                     : '',
-                oauthEnabled: server.oauth?.enabled ?? false,
                 oauthClientId: server.oauth?.clientId ?? '',
                 oauthClientSecret: server.oauth?.clientSecret ?? '',
                 oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
@@ -295,11 +293,13 @@ export class MCPServerEditorImpl implements MCPServerEditor {
             serverUrl: formData.serverUrl.trim(),
             autostart: formData.autostart
         };
-        if (formData.serverAuthToken.trim()) {
-            config.serverAuthToken = formData.serverAuthToken.trim();
-        }
-        if (formData.serverAuthTokenHeader.trim()) {
-            config.serverAuthTokenHeader = formData.serverAuthTokenHeader.trim();
+        if (formData.serverType === 'remote') {
+            if (formData.serverAuthToken.trim()) {
+                config.serverAuthToken = formData.serverAuthToken.trim();
+            }
+            if (formData.serverAuthTokenHeader.trim()) {
+                config.serverAuthTokenHeader = formData.serverAuthTokenHeader.trim();
+            }
         }
         const headers = parseKeyValuePairs(formData.headers);
         if (headers) {
@@ -332,12 +332,12 @@ function parseKeyValuePairs(input: string): Record<string, string> | undefined {
 }
 
 function toOAuthConfig(formData: MCPServerFormData): MCPOAuthConfig | undefined {
-    if (!formData.oauthEnabled) {
+    if (formData.serverType !== 'remote-oauth') {
         return undefined;
     }
     const scopes = formData.oauthScopes.trim() ? formData.oauthScopes.trim().split(/\s+/) : undefined;
     return {
-        enabled: formData.oauthEnabled,
+        enabled: true,
         ...(formData.oauthClientId.trim() && { clientId: formData.oauthClientId.trim() }),
         ...(formData.oauthClientSecret.trim() && { clientSecret: formData.oauthClientSecret.trim() }),
         ...(scopes && { scopes }),

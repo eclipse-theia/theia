@@ -252,6 +252,8 @@ export class MCPServer {
             if (!connected) {
                 await this.connectTransport(this.authProvider, descHeaders);
             }
+            // Clear any error recorded via a non-fatal `onerror` while the connect was still resolving.
+            this.error = undefined;
             this.setStatus(isLocalMCPServerDescription(this.description) ? MCPServerStatus.Running : MCPServerStatus.Connected);
         } catch (e) {
             await this.handleStartupError(e);

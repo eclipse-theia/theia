@@ -183,7 +183,6 @@ describe('MCPServerEditor OAuth form handling', () => {
             serverAuthToken: '',
             serverAuthTokenHeader: '',
             headers: '',
-            oauthEnabled: false,
             oauthClientId: '',
             oauthClientSecret: '',
             oauthScopes: '',
@@ -196,7 +195,7 @@ describe('MCPServerEditor OAuth form handling', () => {
 
     it('persists OAuth fields for a remote MCP server', async () => {
         await editor.save(remoteFormData({
-            oauthEnabled: true,
+            serverType: 'remote-oauth',
             oauthClientId: 'client-id',
             oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',
@@ -220,9 +219,9 @@ describe('MCPServerEditor OAuth form handling', () => {
         });
     });
 
-    it('omits OAuth config when OAuth is disabled even if OAuth fields are populated', async () => {
+    it('omits OAuth config when token authentication is selected even if OAuth fields are populated', async () => {
         await editor.save(remoteFormData({
-            oauthEnabled: false,
+            serverType: 'remote',
             oauthClientId: 'client-id',
             oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',
@@ -234,6 +233,24 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false
+            }
+        });
+    });
+
+    it('does not persist auth token fields when OAuth authentication is selected', async () => {
+        await editor.save(remoteFormData({
+            serverType: 'remote-oauth',
+            serverAuthToken: 'stale-token',
+            serverAuthTokenHeader: 'X-Auth'
+        }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                oauth: {
+                    enabled: true
+                }
             }
         });
     });
@@ -256,9 +273,8 @@ describe('MCPServerEditor OAuth form handling', () => {
 
         expect(formData).to.deep.include({
             name: 'oauth-server',
-            serverType: 'remote',
+            serverType: 'remote-oauth',
             serverUrl: 'https://mcp.example.com/mcp',
-            oauthEnabled: true,
             oauthClientId: 'client-id',
             oauthClientSecret: 'client-secret',
             oauthScopes: 'mcp.read mcp.write',

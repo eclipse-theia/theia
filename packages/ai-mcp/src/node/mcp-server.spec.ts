@@ -357,6 +357,36 @@ describe('MCPServer OAuth reconnect', () => {
         expect((await server.getDescription()).error).to.be.undefined;
     });
 
+    it('clears an error recorded by a transient onerror once the OAuth reconnect succeeds', async () => {
+        // The SDK can emit non-fatal asynchronous errors (e.g. a failing GET/SSE notification stream)
+        // through `onerror` while `connect()` itself still resolves. The steady-state handler records the
+        // error before the start attempt completes; it must not survive into the Connected state, where
+        // the UI would show "Connected" and an error indicator at the same time.
+        const server = new TestMCPServer(undefined, [[new UnauthorizedError()], []]);
+        const originalCreateClient = (server as unknown as { createClient: () => Client }).createClient.bind(server);
+        (server as unknown as { createClient: () => Client }).createClient = () => {
+            const client = originalCreateClient() as unknown as TestClient;
+            if (server.clients.length === 2) {
+                // The reconnect client: fire a non-OAuth transport error while its connect still succeeds.
+                const originalConnect = client.connect.bind(client);
+                client.connect = async () => {
+                    client.onerror?.(new Error('GET stream failed'));
+                    return originalConnect();
+                };
+            }
+            return client as unknown as Client;
+        };
+
+        await withConsoleOutputSuppressed(async () => {
+            await withConsoleErrorsSuppressed(async () => {
+                await server.start();
+            });
+        });
+
+        expect(server.getStatus()).to.equal(MCPServerStatus.Connected);
+        expect((await server.getDescription()).error).to.be.undefined;
+    });
+
     it('falls back to SSE for OAuth-enabled servers when Streamable HTTP fails without Unauthorized', async () => {
         const server = new TestMCPServer(undefined, [[new Error('streamable http unavailable')], []]);
 

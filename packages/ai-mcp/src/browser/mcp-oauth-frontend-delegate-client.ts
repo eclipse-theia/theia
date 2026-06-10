@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessageService, nls } from '@theia/core';
+import { MessageService, nls, Progress } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MCP_OAUTH_CALLBACK_PATH, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
+import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
 
 @injectable()
 export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDelegateClient {
@@ -29,20 +30,45 @@ export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDeleg
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(MCPFrontendNotificationService)
+    protected readonly mcpNotificationService: MCPFrontendNotificationService;
+
+    /** The currently visible browser sign-in notification, if any. */
+    protected pendingBrowserPrompt?: Progress;
+
+    @postConstruct()
+    protected init(): void {
+        // A server update means the OAuth flow progressed, so the notification is stale.
+        this.mcpNotificationService.onDidUpdateMCPServers(() => {
+            this.pendingBrowserPrompt?.cancel();
+            this.pendingBrowserPrompt = undefined;
+        });
+    }
+
     async openExternal(url: string): Promise<void> {
         this.windowService.openNewWindow(url, { external: true });
-        // The RPC round-trip consumed the user activation of the original click, so popup blockers may
-        // suppress the window.open above — undetectably, as 'noopener' makes it return null even on success.
-        // The toast's action click carries fresh activation as a manual fallback. Deliberately not awaited:
-        // the OAuth flow must proceed to the callback wait regardless of the toast.
-        this.messageService.info(
-            nls.localize('theia/ai/mcp/oauth/completeSignInInBrowser',
+        // Popup blockers may suppress the window.open above without indication, as the RPC round-trip
+        // consumed the user activation of the original click. The notification's 'Open' action carries
+        // fresh activation as a manual fallback; not awaited so the flow proceeds to the callback wait.
+        this.pendingBrowserPrompt?.cancel();
+        const openAction = nls.localizeByDefault('Open');
+        this.messageService.showProgress({
+            text: nls.localize('theia/ai/mcp/oauth/completeSignInInBrowser',
                 'Complete the MCP OAuth sign-in in your browser. If no sign-in tab opened, your browser may have blocked the popup.'),
-            nls.localizeByDefault('Open')
-        ).then(action => {
-            if (action) {
-                this.windowService.openNewWindow(url, { external: true });
-            }
+            actions: [openAction],
+            options: { cancelable: true }
+        }).then(progress => {
+            this.pendingBrowserPrompt = progress;
+            return progress.result.then(action => {
+                if (this.pendingBrowserPrompt === progress) {
+                    this.pendingBrowserPrompt = undefined;
+                }
+                if (action === openAction) {
+                    this.windowService.openNewWindow(url, { external: true });
+                }
+            });
+        }).catch(error => {
+            console.error('Failed to drive the MCP OAuth browser sign-in toast', error);
         });
     }
 
