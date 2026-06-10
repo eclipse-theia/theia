@@ -5860,8 +5860,170 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   border-color: color-mix(in srgb, var(--theia-foreground) 18%, transparent);
 }
 
+/* Frosted-glass pill: translucent so the transcript shows through; solid background above is the fallback. */
+@supports (backdrop-filter: blur(14px)) or (-webkit-backdrop-filter: blur(14px)) {
+  .theia-mobile-sticky-composer-changes-pill {
+    background: color-mix(in srgb, var(--theia-editor-background) 58%, transparent);
+    border-color: color-mix(in srgb, var(--theia-foreground) 16%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+
+  .theia-mobile-sticky-composer-changes-pill:hover,
+  .theia-mobile-sticky-composer-changes-pill:focus-visible {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--theia-foreground) 10%, var(--theia-editor-background)) 68%,
+      transparent
+    );
+  }
+}
+
 .theia-mobile-sticky-composer-changes-pill-label {
   flex: 0 0 auto;
+}
+
+/* Commit split-button — same glass pill language as the Changes pill. */
+.theia-mobile-sticky-composer-commit-group {
+  flex: 0 1 auto;
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theia-foreground) 6%, var(--theia-editor-background));
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-sticky-composer-commit-btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  padding: 4px 8px 4px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 999px 0 0 999px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.theia-mobile-sticky-composer-commit-menu-wrap {
+  position: static;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.theia-mobile-sticky-composer-commit-menu {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--theia-foreground) 10%, transparent);
+  background: transparent;
+  color: var(--theia-descriptionForeground);
+  border-radius: 0 999px 999px 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.theia-mobile-sticky-composer-commit-btn:disabled,
+.theia-mobile-sticky-composer-commit-menu:disabled {
+  opacity: var(--theia-mod-disabled-opacity, 0.4);
+  cursor: default;
+}
+
+.theia-mobile-sticky-composer-commit-btn:not(:disabled):hover,
+.theia-mobile-sticky-composer-commit-btn:not(:disabled):focus-visible,
+.theia-mobile-sticky-composer-commit-btn:not(:disabled):active,
+.theia-mobile-sticky-composer-commit-menu:not(:disabled):hover,
+.theia-mobile-sticky-composer-commit-menu:not(:disabled):focus-visible,
+.theia-mobile-sticky-composer-commit-menu:not(:disabled):active,
+.theia-mobile-sticky-composer-commit-menu.theia-mod-open {
+  background: color-mix(in srgb, var(--theia-foreground) 10%, var(--theia-editor-background));
+}
+
+/* Composer sits at the bottom — the options menu drops upward, anchored to the group. */
+.theia-mobile-sticky-composer-commit-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 220px;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+  background: color-mix(in srgb, var(--theia-editor-background) 94%, var(--theia-foreground) 6%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.theia-mobile-sticky-composer-commit-dropdown-item {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--theia-foreground);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+  padding: 9px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.theia-mobile-sticky-composer-commit-dropdown-item:hover,
+.theia-mobile-sticky-composer-commit-dropdown-item:focus-visible {
+  background: color-mix(in srgb, var(--theia-foreground) 8%, transparent);
+  outline: none;
+}
+
+.theia-mobile-sticky-composer-commit-dropdown-item:active {
+  background: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+}
+
+/* Frosted glass for the commit group + its menu, matching the Changes pill. */
+@supports (backdrop-filter: blur(14px)) or (-webkit-backdrop-filter: blur(14px)) {
+  .theia-mobile-sticky-composer-commit-group {
+    background: color-mix(in srgb, var(--theia-editor-background) 58%, transparent);
+    border-color: color-mix(in srgb, var(--theia-foreground) 16%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+
+  .theia-mobile-sticky-composer-commit-btn:not(:disabled):hover,
+  .theia-mobile-sticky-composer-commit-btn:not(:disabled):focus-visible,
+  .theia-mobile-sticky-composer-commit-btn:not(:disabled):active,
+  .theia-mobile-sticky-composer-commit-menu:not(:disabled):hover,
+  .theia-mobile-sticky-composer-commit-menu:not(:disabled):focus-visible,
+  .theia-mobile-sticky-composer-commit-menu:not(:disabled):active,
+  .theia-mobile-sticky-composer-commit-menu.theia-mod-open {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--theia-foreground) 10%, var(--theia-editor-background)) 68%,
+      transparent
+    );
+  }
+
+  /* Note: the dropdown stays solid — the group's own backdrop-filter makes it the backdrop
+     root, so a nested glass menu could not blur the transcript behind it. */
 }
 
 .theia-mobile-sticky-composer-changes-pill .theia-mobile-sticky-composer-activity-inline-stats {
@@ -11997,6 +12159,10 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Scroll position is managed by the transcript controllers (bottom pinning,
+     sticky-pin measurement, virtual-list anchoring). Native scroll anchoring
+     reacting to their layout writes bounces the scroll position. */
+  overflow-anchor: none;
 }
 
 .theia-mobile-agent-transcript.theia-mod-virtual-scroll {
@@ -12007,6 +12173,10 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 .theia-transcript-virtual-root {
   width: 100%;
   min-height: 100%;
+  /* The virtual list anchors the scroll position itself when row heights are
+     corrected; native scroll anchoring reacting to the same layout change would
+     double-compensate and bounce the scroll position. */
+  overflow-anchor: none;
 }
 
 .theia-transcript-virtual-spacer {
@@ -18320,5 +18490,245 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .qaap-chat-conte
   .theia-mobile-agent-transcript-real-chat,
   .theia-mobile-agents-hub-inline-transcript .theia-mobile-agent-transcript-real-chat {
     scroll-behavior: auto;
+  }
+}
+
+/* Border beam premium (port fiel de border-beam@1.2.0, tipo "Large" + paleta "Colorful", strength 0.7).
+   Tres capas: ::after = stroke ring (highlight blanco + blobs de color, recortado al anillo y a una
+   ventana cónica suave que gira), ::before = lavado interior degradado pegado a los bordes,
+   .qaap-border-beam-bloom = glow desenfocado que persigue el haz. El ángulo gira en el host
+   (custom property registrada, inherits: true) para que las 3 capas compartan la misma fase.
+   La clase theia-mod-agent-working la togglea updateSend() en mobile-projects-sticky-composer-column-ui.ts. */
+@property --qaap-border-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: true;
+}
+
+@property --qaap-border-beam-opacity {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: true;
+}
+
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+  /* Defaults = tema oscuro (md.dark del paquete), strength 70% como el playground */
+  --qaap-beam-strength: 0.7;
+  --qaap-beam-stroke-opacity: 0.26;
+  --qaap-beam-inner-opacity: 0.42;
+  --qaap-beam-bloom-opacity: 0.24;
+  --qaap-beam-saturation: 1.2;
+  --qaap-beam-inner-shadow: rgba(255, 255, 255, 0.27);
+  /* Highlight blanco que recorre el borde (cola larga y degradada) */
+  --qaap-beam-highlight: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    transparent 0%, transparent 54%,
+    rgba(255, 255, 255, 0.1) 57%,
+    rgba(255, 255, 255, 0.3) 60%,
+    rgba(255, 255, 255, 0.6) 63%,
+    rgba(255, 255, 255, 0.75) 66%,
+    rgba(255, 255, 255, 0.6) 69%,
+    rgba(255, 255, 255, 0.3) 72%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 78%, transparent 100%
+  );
+  /* Pico fino y brillante para el bloom desenfocado */
+  --qaap-beam-bloom-gradient: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    transparent 0%, transparent 58%,
+    rgba(255, 255, 255, 0.03) 62%,
+    rgba(255, 255, 255, 0.08) 65%,
+    rgba(255, 255, 255, 0.2) 67%,
+    rgba(255, 255, 255, 0.45) 69%,
+    rgba(255, 255, 255, 0.85) 70%,
+    rgba(255, 255, 255, 0.85) 70.5%,
+    rgba(255, 255, 255, 0.45) 71.5%,
+    rgba(255, 255, 255, 0.2) 73%,
+    rgba(255, 255, 255, 0.08) 75%,
+    rgba(255, 255, 255, 0.03) 78%,
+    transparent 82%
+  );
+  /* Ventana cónica suave que revela ~65% del perímetro con colas degradadas */
+  --qaap-beam-window: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    transparent 0%, transparent 30%,
+    rgba(255, 255, 255, 0.1) 36%, rgba(255, 255, 255, 0.35) 44%,
+    white 52%, white 80%,
+    rgba(255, 255, 255, 0.35) 86%, rgba(255, 255, 255, 0.1) 92%,
+    transparent 95%, transparent 100%
+  );
+  position: relative;
+  /* Giro lento y constante (linear evita tirones); el default del paquete es 1.96s */
+  animation:
+    qaap-border-beam-spin 3.5s linear infinite,
+    qaap-border-beam-fade-in 0.9s ease forwards;
+}
+
+body.qaap-theme-light .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+  --qaap-beam-stroke-opacity: 0.12;
+  --qaap-beam-inner-opacity: 0.26;
+  --qaap-beam-bloom-opacity: 0.34;
+  --qaap-beam-saturation: 1.5;
+  --qaap-beam-inner-shadow: rgba(0, 0, 0, 0.14);
+  --qaap-beam-highlight: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    transparent 0%, transparent 54%,
+    rgba(0, 0, 0, 0.08) 57%,
+    rgba(0, 0, 0, 0.2) 60%,
+    rgba(0, 0, 0, 0.4) 63%,
+    rgba(0, 0, 0, 0.55) 66%,
+    rgba(0, 0, 0, 0.4) 69%,
+    rgba(0, 0, 0, 0.2) 72%,
+    rgba(0, 0, 0, 0.08) 75%,
+    transparent 78%, transparent 100%
+  );
+  --qaap-beam-bloom-gradient: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    transparent 0%, transparent 58%,
+    rgba(0, 0, 0, 0.02) 62%,
+    rgba(0, 0, 0, 0.08) 65%,
+    rgba(0, 0, 0, 0.2) 67%,
+    rgba(0, 0, 0, 0.4) 69%,
+    rgba(0, 0, 0, 0.6) 70%,
+    rgba(0, 0, 0, 0.6) 70.5%,
+    rgba(0, 0, 0, 0.4) 71.5%,
+    rgba(0, 0, 0, 0.2) 73%,
+    rgba(0, 0, 0, 0.08) 75%,
+    rgba(0, 0, 0, 0.02) 78%,
+    transparent 82%
+  );
+}
+
+/* Capa 1 — stroke ring: blobs de color + highlight, recortado al anillo de 1px y a la ventana cónica */
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    var(--qaap-beam-highlight),
+    radial-gradient(ellipse 70px 40px at 33% -7.4%, rgb(255, 50, 100), transparent),
+    radial-gradient(ellipse 60px 35px at 12% -5%, rgb(40, 140, 255), transparent),
+    radial-gradient(ellipse 40px 70px at 2.1% 68.3%, rgb(50, 200, 80), transparent),
+    radial-gradient(ellipse 20px 35px at 2.1% 68.3%, rgb(30, 185, 170), transparent),
+    radial-gradient(ellipse 180px 32px at 74.4% 100%, rgb(100, 70, 255), transparent),
+    radial-gradient(ellipse 85px 26px at 55% 100%, rgb(40, 140, 255), transparent),
+    radial-gradient(ellipse 74px 32px at 93.9% 0%, rgb(255, 120, 40), transparent),
+    radial-gradient(ellipse 26px 42px at 100% 27.1%, rgb(240, 50, 180), transparent),
+    radial-gradient(ellipse 52px 48px at 100% 27.1%, rgb(180, 40, 240), transparent);
+  -webkit-mask:
+    var(--qaap-beam-window),
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: source-in, xor;
+  mask:
+    var(--qaap-beam-window),
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: intersect, exclude;
+  pointer-events: none;
+  z-index: 2;
+  opacity: calc(var(--qaap-border-beam-opacity) * var(--qaap-beam-stroke-opacity) * var(--qaap-beam-strength));
+  animation: qaap-border-beam-hue 12s ease-in-out infinite;
+}
+
+/* Capa 2 — lavado interior: mismos blobs al 45% / 0.9x, desvanecidos hacia el centro (franja de 28px) */
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 63px 36px at 33% -7.4%, rgba(255, 50, 100, 0.45), transparent),
+    radial-gradient(ellipse 54px 32px at 12% -5%, rgba(40, 140, 255, 0.45), transparent),
+    radial-gradient(ellipse 36px 63px at 2.1% 68.3%, rgba(50, 200, 80, 0.45), transparent),
+    radial-gradient(ellipse 18px 32px at 2.1% 68.3%, rgba(30, 185, 170, 0.45), transparent),
+    radial-gradient(ellipse 162px 29px at 74.4% 100%, rgba(100, 70, 255, 0.45), transparent),
+    radial-gradient(ellipse 77px 23px at 55% 100%, rgba(40, 140, 255, 0.45), transparent),
+    radial-gradient(ellipse 67px 29px at 93.9% 0%, rgba(255, 120, 40, 0.45), transparent),
+    radial-gradient(ellipse 23px 38px at 100% 27.1%, rgba(240, 50, 180, 0.45), transparent),
+    radial-gradient(ellipse 47px 43px at 100% 27.1%, rgba(180, 40, 240, 0.45), transparent);
+  box-shadow: inset 0 0 9px 1px var(--qaap-beam-inner-shadow);
+  -webkit-mask-image:
+    var(--qaap-beam-window),
+    linear-gradient(white, transparent 28px, transparent calc(100% - 28px), white),
+    linear-gradient(to right, white, transparent 28px, transparent calc(100% - 28px), white);
+  -webkit-mask-composite: source-in, source-over;
+  mask-image:
+    var(--qaap-beam-window),
+    linear-gradient(white, transparent 28px, transparent calc(100% - 28px), white),
+    linear-gradient(to right, white, transparent 28px, transparent calc(100% - 28px), white);
+  mask-composite: intersect, add;
+  pointer-events: none;
+  z-index: 1;
+  opacity: calc(var(--qaap-border-beam-opacity) * var(--qaap-beam-inner-opacity) * var(--qaap-beam-strength));
+  animation: qaap-border-beam-hue 12s ease-in-out infinite;
+}
+
+/* Capa 3 — bloom: el pico del haz desenfocado, recortado al anillo */
+.theia-mobile-projects-sticky-composer-input-panel .qaap-border-beam-bloom {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--qaap-beam-bloom-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: blur(8px) brightness(1.3) saturate(var(--qaap-beam-saturation));
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+}
+
+.theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom {
+  display: block;
+  opacity: calc(var(--qaap-border-beam-opacity) * var(--qaap-beam-bloom-opacity) * var(--qaap-beam-strength));
+}
+
+@keyframes qaap-border-beam-spin {
+  to {
+    --qaap-border-beam-angle: 360deg;
+  }
+}
+
+@keyframes qaap-border-beam-fade-in {
+  to {
+    --qaap-border-beam-opacity: 1;
+  }
+}
+
+/* Deriva sutil de tono que mantiene vivos los colores (igual que el paquete: ±30deg / 12s) */
+@keyframes qaap-border-beam-hue {
+  0% {
+    filter: hue-rotate(-30deg) brightness(1.3) saturate(var(--qaap-beam-saturation));
+  }
+
+  50% {
+    filter: hue-rotate(30deg) brightness(1.3) saturate(var(--qaap-beam-saturation));
+  }
+
+  100% {
+    filter: hue-rotate(-30deg) brightness(1.3) saturate(var(--qaap-beam-saturation));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working,
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::before,
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working::after {
+    animation: none;
+  }
+
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working {
+    /* Sin animación de fade-in: encender el anillo de forma estática */
+    --qaap-border-beam-opacity: 1;
+  }
+
+  .theia-mobile-projects-sticky-composer-input-panel.theia-mod-agent-working .qaap-border-beam-bloom {
+    display: none;
   }
 }

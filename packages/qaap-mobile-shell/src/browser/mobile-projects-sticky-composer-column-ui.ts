@@ -257,6 +257,7 @@ export class MobileProjectsStickyComposerColumnUi {
         const updateSend = (): void => {
             const has = input.value.trim().length > 0;
             const working = options.isAgentWorking?.() ?? false;
+            inputPanel.classList.toggle('theia-mod-agent-working', working);
             const showStop = working && !has;
             const sendLabel = options.sendLabel ?? nls.localize('qaap/mobileProjects/inlineStart', 'Start');
             const stopLabel = options.stopLabel ?? nls.localize('qaap/mobileProjects/cancelTaskRun', 'Cancel run');
@@ -363,7 +364,10 @@ export class MobileProjectsStickyComposerColumnUi {
         options.onContextUsageBadgeMounted?.(usageBadge);
         controlsRight.append(inputActions);
         controlsRow.append(controlsLeft, controlsRight);
-        inputPanel.append(inputBody, controlsRow);
+        const borderBeamBloom = document.createElement('div');
+        borderBeamBloom.className = 'qaap-border-beam-bloom';
+        borderBeamBloom.setAttribute('aria-hidden', 'true');
+        inputPanel.append(inputBody, controlsRow, borderBeamBloom);
         stage.append(inputPanel, toolbar);
 
         const card = document.createElement('div');

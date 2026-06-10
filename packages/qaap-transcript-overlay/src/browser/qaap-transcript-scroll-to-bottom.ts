@@ -85,7 +85,67 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
     const label = nls.localize('theia/ai/chat-ui/chat-view-tree-widget/scrollToBottom', 'Jump to latest message');
     button.title = label;
     button.setAttribute('aria-label', label);
+    const badge = document.createElement('span');
+    badge.className = 'theia-mobile-agent-transcript-scroll-badge';
+    badge.setAttribute('aria-hidden', 'true');
+    badge.hidden = true;
+    button.append(badge);
     mountHost.append(button);
+
+    // New-message badge: while the user is scrolled away, count freshly appended
+    // message rows (dedupe by message id — virtual-list remounts reuse ids).
+    let unseenCount = 0;
+    const seenMessageIds = new Set<string>();
+
+    const updateBadge = (): void => {
+        badge.hidden = unseenCount <= 0;
+        badge.textContent = unseenCount > 99 ? '99+' : String(unseenCount);
+        button.setAttribute('aria-label', unseenCount > 0
+            ? nls.localize('qaap/mobileProjects/transcriptJumpToNew', 'Jump to {0} new messages', String(unseenCount))
+            : label);
+    };
+
+    const resetBadge = (): void => {
+        unseenCount = 0;
+        seenMessageIds.clear();
+        updateBadge();
+    };
+
+    const snapshotSeenMessages = (scroller: HTMLElement | undefined): void => {
+        seenMessageIds.clear();
+        if (!scroller) {
+            return;
+        }
+        for (const row of scroller.querySelectorAll<HTMLElement>('[data-transcript-message-id]')) {
+            const id = row.getAttribute('data-transcript-message-id');
+            if (id) {
+                seenMessageIds.add(id);
+            }
+        }
+    };
+
+    const countNewMessages = (mutations: readonly MutationRecord[]): void => {
+        if (!showButton) {
+            return;
+        }
+        let counted = false;
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (!(node instanceof HTMLElement)) {
+                    continue;
+                }
+                const id = node.getAttribute('data-transcript-message-id');
+                if (id && !seenMessageIds.has(id)) {
+                    seenMessageIds.add(id);
+                    unseenCount++;
+                    counted = true;
+                }
+            }
+        }
+        if (counted) {
+            updateBadge();
+        }
+    };
 
     let boundScroller: HTMLElement | undefined;
     let scrollListener: (() => void) | undefined;
@@ -104,6 +164,11 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
         button.hidden = !visible;
         button.classList.toggle(TRANSCRIPT_SCROLL_TO_BOTTOM_VISIBLE_CLASS, visible);
         button.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        if (visible) {
+            snapshotSeenMessages(boundScroller);
+        } else {
+            resetBadge();
+        }
     };
 
     const clearShowDebounce = (): void => {
@@ -204,7 +269,10 @@ export function attachTranscriptScrollToBottomButton(mountHost: HTMLElement): Di
             resizeObserver = new ResizeObserver(scheduleSync);
             resizeObserver.observe(scroller);
         }
-        contentObserver = new MutationObserver(scheduleSync);
+        contentObserver = new MutationObserver(mutations => {
+            countNewMessages(mutations);
+            scheduleSync();
+        });
         contentObserver.observe(scroller, { childList: true, subtree: true, characterData: true });
         scheduleSync();
     };

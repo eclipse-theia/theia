@@ -263,27 +263,35 @@ export class TranscriptVirtualList implements Disposable {
 
         // Forced layout reads only when row content may have changed — plain
         // scroll frames stay write-only and never trigger a synchronous reflow.
-        if ((mountedNew || this.measureRequested) && !this.measureRafId) {
+        // A pending measure RAF covers rows mounted afterwards too, because the
+        // measure pass walks whatever is mounted when it runs.
+        if (mountedNew || this.measureRequested) {
             this.measureRequested = false;
-            this.measureRafId = requestAnimationFrame(() => {
-                this.measureRafId = 0;
-                this.measureVisible(range.startIndex, range.endIndex);
-            });
+            if (!this.measureRafId) {
+                this.measureRafId = requestAnimationFrame(() => {
+                    this.measureRafId = 0;
+                    this.measureMounted();
+                });
+            }
         }
     }
 
-    protected measureVisible(startIndex: number, endIndex: number): void {
+    protected measureMounted(): void {
         if (this.disposed) {
             return;
         }
+        const scrollTop = this.scrollHost.scrollTop;
         let changed = false;
-        for (let index = startIndex; index <= endIndex; index++) {
-            const row = this.mounted.get(index);
-            if (!row) {
-                continue;
-            }
+        let deltaAboveViewport = 0;
+        for (const [index, row] of this.mounted) {
             const height = Math.ceil(row.getBoundingClientRect().height);
             if (height > 0 && this.sizes[index] !== height) {
+                // Rows fully above the viewport shift everything below them when
+                // corrected; track the delta so the scroll position can be anchored.
+                if ((this.offsets[index + 1] ?? 0) <= scrollTop) {
+                    const previous = this.sizes[index] > 0 ? this.sizes[index] : this.defaultItemHeight;
+                    deltaAboveViewport += height - previous;
+                }
                 this.sizes[index] = height;
                 this.offsetsDirty = true;
                 changed = true;
@@ -294,8 +302,15 @@ export class TranscriptVirtualList implements Disposable {
             this.footerHeight = footerHeight;
             changed = true;
         }
-        if (changed) {
-            this.update();
+        if (!changed) {
+            return;
+        }
+        this.update();
+        if (deltaAboveViewport !== 0) {
+            // Keep the content the user is looking at fixed in place: apply the
+            // correction after update() so the spacer is already resized and the
+            // new scrollTop cannot be clamped against a stale scrollHeight.
+            this.scrollHost.scrollTop = scrollTop + deltaAboveViewport;
         }
     }
 }

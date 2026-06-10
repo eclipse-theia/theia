@@ -74,6 +74,51 @@ describe('qaap-sticky-composer-activity-stack', () => {
             expect(host!.querySelector('.theia-mobile-sticky-composer-changes-pill')).to.exist;
             expect(host!.querySelector('.theia-mobile-sticky-composer-activity-stop')?.textContent).to.equal('Stop');
         });
+
+        it('renders the commit split-button beside the Changes pill and fires the workflow actions', () => {
+            const actions: string[] = [];
+            const host = renderStickyComposerChangesPill({
+                diffStats: { added: 4, removed: 2 },
+                onReview: () => undefined,
+                onCommitAction: action => { actions.push(action); },
+            });
+            document.body.append(host!);
+
+            const commitBtn = host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-btn');
+            expect(commitBtn).to.exist;
+            expect(commitBtn!.textContent).to.equal('Create Branch & Commit');
+            commitBtn!.click();
+            expect(actions).to.deep.equal(['create-branch-commit']);
+
+            const menuBtn = host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-menu');
+            const dropdown = host!.querySelector<HTMLElement>('.theia-mobile-sticky-composer-commit-dropdown');
+            expect(menuBtn).to.exist;
+            expect(dropdown!.hidden).to.equal(true);
+            menuBtn!.click();
+            expect(dropdown!.hidden).to.equal(false);
+            expect(menuBtn!.getAttribute('aria-expanded')).to.equal('true');
+
+            const items = Array.from(dropdown!.querySelectorAll<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-dropdown-item'));
+            expect(items.map(item => item.textContent)).to.deep.equal([
+                'Create Branch, Commit & Push',
+                'Commit & Push',
+                'Commit',
+                'Commit & Create PR',
+            ]);
+            items[1].click();
+            expect(actions).to.deep.equal(['create-branch-commit', 'commit-push']);
+            expect(dropdown!.hidden).to.equal(true);
+        });
+
+        it('does not render the commit split-button without an onCommitAction handler', () => {
+            const host = renderStickyComposerChangesPill({
+                diffStats: { added: 1, removed: 0 },
+                onReview: () => undefined,
+            });
+            document.body.append(host!);
+
+            expect(host!.querySelector('.theia-mobile-sticky-composer-commit-group')).to.equal(null);
+        });
     });
 
     describe('renderStickyComposerActivityStack queue', () => {

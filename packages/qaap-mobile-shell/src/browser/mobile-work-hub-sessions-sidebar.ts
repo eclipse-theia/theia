@@ -126,7 +126,7 @@ export class MobileWorkHubSessionsSidebar {
         nav.append(
             this.createNavButton(
                 'codicon-edit',
-                nls.localize('qaap/sessionsSidebar/newChat', 'New chat'),
+                nls.localize('qaap/sessionsSidebar/newChat', 'New agent'),
                 () => {
                     this.hideForMobileOverlay();
                     this.delegate.onNewChat();

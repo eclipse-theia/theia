@@ -42,7 +42,15 @@ import { listNativeAgentModels } from './qaap-agent-native-models';
 import { listQaiqModelsFromPreferences } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-model-catalog';
 import {
     applyAgentApprovalPolicyToCommand,
+    shouldUseInteractiveAgentApprovals,
 } from '../common/qaap-agent-approval-flags';
+import {
+    QAIQ_STDIO_APPROVAL_FLAGS,
+    buildQaiqControlResponseLine,
+    buildQaiqStdioPromptLine,
+    parseQaiqStdioEvent,
+    type QaapQaiqPendingControlRequest,
+} from '../common/qaap-qaiq-stdio-approvals';
 import {
     resolveAgentAutoApprove,
 } from '../common/qaap-agent-auto-approve';
@@ -230,6 +238,10 @@ export class QaapAgentTaskRunner {
     protected readonly processes = new Map<string, ChildProcess>();
     /** Tasks spawned with stdin piped for manual approval mode. */
     protected readonly stdinInteractiveTasks = new Set<string>();
+    /** Prompts to deliver over stdin for QAIQ stdio-approval runs (`--input-format stream-json`). */
+    protected readonly stdinPrompts = new Map<string, string>();
+    /** Unanswered `can_use_tool` control requests per task — the pause-and-wait approval queue. */
+    protected readonly pendingQaiqControlRequests = new Map<string, QaapQaiqPendingControlRequest[]>();
     /** Agents whose CLI was found on PATH at startup, keyed by id. */
     protected readonly detectedAgents = new Map<string, AgentCandidate>();
     /** Random token shared with spawned agents so they can call back via `qaap-task`. */
@@ -714,6 +726,11 @@ export class QaapAgentTaskRunner {
      *
      * A template's `{prompt}` placeholder is replaced with a POSIX shell-quoted prompt;
      * without a placeholder the prompt is appended.
+     *
+     * QAIQ + interactive approvals ("request approval" preset / YOLO off) switches to the
+     * SDK stdio permission flow: the prompt moves to stdin (`stdinPrompt`) and the CLI is
+     * launched with {@link QAIQ_STDIO_APPROVAL_FLAGS} so permission checks pause and wait
+     * for a `control_response` instead of auto-denying in headless mode.
      */
     protected buildAgentCommand(
         prompt: string,
@@ -725,11 +742,11 @@ export class QaapAgentTaskRunner {
         interactionModeId?: string,
         approvalPolicyId?: string,
         toolApprovalRules?: QaapCreateAgentTaskRequest['toolApprovalRules'],
-    ): string {
+    ): { command: string; stdinPrompt?: string } {
         const id = this.resolveAgentId(prompt, agentId);
         const runnerPrompt = this.stripLeadingAgentMention(prompt);
         if (id === SHELL_AGENT_ID) {
-            return runnerPrompt;
+            return { command: runnerPrompt };
         }
         const workflowPrompt = appendAgentDefaultWorkflowToPrompt(runnerPrompt, id);
         // Inject important project context for every agent: cross-project context from the request
@@ -743,8 +760,21 @@ export class QaapAgentTaskRunner {
             approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
             autoApprove: autoApprove ? true : false,
         };
+        const approvalOptions = {
+            agentId: id,
+            approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
+            autoApprove,
+            interactionModeId,
+            toolApprovalRules,
+        };
+        const useStdioApprovals = id === QAIQ_AGENT_ID
+            && !!detected
+            && shouldUseInteractiveAgentApprovals(approvalOptions);
         if (detected) {
-            command = this.applyTemplate(detected.template, agentPrompt, this.buildTemplateVars(id, agentModel, interaction));
+            const vars = this.buildTemplateVars(id, agentModel, interaction);
+            command = useStdioApprovals
+                ? this.applyTemplateWithoutPrompt(detected.template, vars)
+                : this.applyTemplate(detected.template, agentPrompt, vars);
         } else {
             const envTemplate = process.env.QAAP_AGENT_COMMAND?.trim();
             if (envTemplate) {
@@ -753,13 +783,11 @@ export class QaapAgentTaskRunner {
                 command = agentPrompt;
             }
         }
-        return applyAgentApprovalPolicyToCommand(command, {
-            agentId: id,
-            approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
-            autoApprove,
-            interactionModeId,
-            toolApprovalRules,
-        });
+        command = applyAgentApprovalPolicyToCommand(command, approvalOptions);
+        if (useStdioApprovals) {
+            return { command: `${command} ${QAIQ_STDIO_APPROVAL_FLAGS}`, stdinPrompt: agentPrompt };
+        }
+        return { command };
     }
 
     /** Best-effort read of the workspace per-project info artifact (`.prompts/project-info.prompttemplate`). */
@@ -943,9 +971,19 @@ export class QaapAgentTaskRunner {
 
     protected applyTemplate(template: string, prompt: string, vars: Record<string, string> = {}): string {
         const quoted = this.shellQuote(prompt);
-        let resolved = template.includes('{prompt}')
+        const resolved = template.includes('{prompt}')
             ? template.split('{prompt}').join(quoted)
             : `${template} ${quoted}`;
+        return this.applyTemplateVars(resolved, vars);
+    }
+
+    /** Template expansion for stdio-approval runs: the prompt is delivered over stdin, not argv. */
+    protected applyTemplateWithoutPrompt(template: string, vars: Record<string, string> = {}): string {
+        return this.applyTemplateVars(template.split('{prompt}').join(' '), vars);
+    }
+
+    protected applyTemplateVars(template: string, vars: Record<string, string>): string {
+        let resolved = template;
         for (const [key, value] of Object.entries(vars)) {
             resolved = resolved.split(`{${key}}`).join(value.trim());
         }
@@ -971,11 +1009,29 @@ export class QaapAgentTaskRunner {
 
     /**
      * Best-effort reply to a CLI permission prompt for a manual-approval task.
-     * Requires the task to have been spawned with stdin piped (`autoApprove === false`).
+     *
+     * QAIQ stdio-approval runs answer the matching `can_use_tool` control request
+     * (resuming the paused tool call); other interactive agents get a legacy
+     * `y`/`n` line on stdin. Requires the task to have been spawned with stdin piped.
      */
-    respondToApprovalPrompt(taskId: string, action: 'approve' | 'reject'): boolean {
+    respondToApprovalPrompt(taskId: string, action: 'approve' | 'reject', toolUseId?: string): boolean {
         const child = this.processes.get(taskId);
-        if (!child?.stdin || !this.stdinInteractiveTasks.has(taskId)) {
+        if (!child?.stdin) {
+            return false;
+        }
+        const pending = this.pendingQaiqControlRequests.get(taskId);
+        if (pending?.length) {
+            const matched = toolUseId ? pending.find(entry => entry.toolUseId === toolUseId) : undefined;
+            const entry = matched ?? pending[0];
+            try {
+                child.stdin.write(buildQaiqControlResponseLine(entry, action));
+            } catch {
+                return false;
+            }
+            pending.splice(pending.indexOf(entry), 1);
+            return true;
+        }
+        if (!this.stdinInteractiveTasks.has(taskId)) {
             return false;
         }
         const payload = action === 'approve' ? 'y\n' : 'n\n';
@@ -996,7 +1052,7 @@ export class QaapAgentTaskRunner {
             try {
                 const autoApprove = task.autoApprove !== false;
                 const agentModel = resolveRequestAgentModel(request);
-                const command = this.buildAgentCommand(
+                const { command, stdinPrompt } = this.buildAgentCommand(
                     prompt,
                     request.agent,
                     autoApprove,
@@ -1007,6 +1063,9 @@ export class QaapAgentTaskRunner {
                     request.approvalPolicyId,
                     request.toolApprovalRules,
                 );
+                if (stdinPrompt) {
+                    this.stdinPrompts.set(task.id, stdinPrompt);
+                }
                 const next: QaapAgentTask = {
                     ...task,
                     command,
@@ -1030,7 +1089,8 @@ export class QaapAgentTaskRunner {
     protected spawnProcess(task: QaapAgentTask): void {
         fs.mkdirSync(STORE_DIR, { recursive: true });
         const logStream = fs.createWriteStream(this.logPath(task.id), { flags: 'w' });
-        const stdinInteractive = task.autoApprove === false;
+        const stdioPrompt = this.stdinPrompts.get(task.id);
+        const stdinInteractive = task.autoApprove === false || stdioPrompt !== undefined;
         const agentModel = resolveTaskAgentModel(task);
         const restoreAntigravitySettings = agentModel?.modelId?.trim()
             && isAntigravityCliCommand(task.command)
@@ -1049,6 +1109,7 @@ export class QaapAgentTaskRunner {
             });
         } catch (error) {
             finishAntigravitySettings();
+            this.stdinPrompts.delete(task.id);
             logStream.end(`Failed to start: ${error instanceof Error ? error.message : String(error)}\n`);
             this.finishTask(task.id, 'failed', undefined);
             return;
@@ -1056,6 +1117,16 @@ export class QaapAgentTaskRunner {
         this.processes.set(task.id, child);
         if (stdinInteractive) {
             this.stdinInteractiveTasks.add(task.id);
+        }
+        if (stdioPrompt !== undefined) {
+            this.stdinPrompts.delete(task.id);
+            // stream-json input: the prompt travels over stdin, which stays open
+            // for control_responses until the end-of-turn `result` message.
+            try {
+                child.stdin?.write(buildQaiqStdioPromptLine(stdioPrompt));
+            } catch (error) {
+                logStream.write(`\n[qaap] failed to write prompt to agent stdin: ${error instanceof Error ? error.message : String(error)}\n`);
+            }
         }
         let idleTimer: NodeJS.Timeout | undefined;
         const clearIdleTimer = (): void => {
@@ -1070,16 +1141,56 @@ export class QaapAgentTaskRunner {
                 if (this.tasks.get(task.id)?.state !== 'running') {
                     return;
                 }
+                // A run paused on a permission approval is waiting for the user,
+                // not hung — keep it alive until someone responds.
+                if (this.pendingQaiqControlRequests.get(task.id)?.length) {
+                    bumpIdleTimer();
+                    return;
+                }
                 logStream.write(`\n[qaap] task timed out after ${Math.round(IDLE_TASK_TIMEOUT_MS / 1000)}s without output.\n`);
                 child.kill('SIGTERM');
                 this.finishTask(task.id, 'failed', undefined);
             }, IDLE_TASK_TIMEOUT_MS);
         };
         bumpIdleTimer();
+        let stdioLineBuffer = '';
+        const scanStdioApprovalChunk = (chunk: unknown): void => {
+            stdioLineBuffer += Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
+            let newline: number;
+            while ((newline = stdioLineBuffer.indexOf('\n')) >= 0) {
+                const line = stdioLineBuffer.slice(0, newline);
+                stdioLineBuffer = stdioLineBuffer.slice(newline + 1);
+                const event = parseQaiqStdioEvent(line);
+                if (!event) {
+                    continue;
+                }
+                if (event.type === 'control-request') {
+                    const pending = this.pendingQaiqControlRequests.get(task.id) ?? [];
+                    pending.push(event.request);
+                    this.pendingQaiqControlRequests.set(task.id, pending);
+                } else if (event.type === 'control-cancel') {
+                    const pending = this.pendingQaiqControlRequests.get(task.id);
+                    const index = pending?.findIndex(entry => entry.requestId === event.requestId) ?? -1;
+                    if (pending && index >= 0) {
+                        pending.splice(index, 1);
+                    }
+                } else if (event.type === 'result') {
+                    // End of turn — close stdin so the headless CLI exits.
+                    try {
+                        child.stdin?.end();
+                    } catch {
+                        // Already closed — nothing to do.
+                    }
+                }
+            }
+        };
         child.stdout?.on('data', chunk => {
             bumpIdleTimer();
             logStream.write(chunk);
             this.fireOutput(task.id, chunk);
+            if (stdioPrompt !== undefined) {
+                scanStdioApprovalChunk(chunk);
+            }
         });
         child.stderr?.on('data', chunk => {
             bumpIdleTimer();
@@ -1095,6 +1206,8 @@ export class QaapAgentTaskRunner {
             logStream.end();
             this.processes.delete(task.id);
             this.stdinInteractiveTasks.delete(task.id);
+            this.stdinPrompts.delete(task.id);
+            this.pendingQaiqControlRequests.delete(task.id);
             // A SIGTERM-killed task is already marked 'cancelled' by cancel().
             if (this.tasks.get(task.id)?.state !== 'running') {
                 return;

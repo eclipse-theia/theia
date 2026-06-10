@@ -6,6 +6,7 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import type { TranscriptFollowUpEntry } from '../common/qaap-transcript-follow-up-queue';
+import type { QaapGitCommitWorkflowAction } from '../common/qaap-git-review';
 
 export interface StickyComposerChangedFileView {
     readonly path: string;
@@ -31,6 +32,35 @@ export interface StickyComposerActivityStackOptions {
     onKeepAll?: () => void;
     changedFilesBulkBusy?: boolean;
     onReview?: () => void;
+    /** When set, a commit split-button (primary action + options menu) renders beside the Changes pill. */
+    onCommitAction?: (action: QaapGitCommitWorkflowAction) => void;
+    commitBusy?: boolean;
+}
+
+interface StickyComposerCommitMenuOption {
+    readonly action: QaapGitCommitWorkflowAction;
+    readonly label: string;
+}
+
+function stickyComposerCommitMenuOptions(): StickyComposerCommitMenuOption[] {
+    return [
+        {
+            action: 'create-branch-commit-push',
+            label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
+        },
+        {
+            action: 'commit-push',
+            label: nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push'),
+        },
+        {
+            action: 'commit',
+            label: nls.localize('qaap/mobileProjects/commit', 'Commit'),
+        },
+        {
+            action: 'commit-create-pr',
+            label: nls.localize('qaap/mobileProjects/commitCreatePr', 'Commit & Create PR'),
+        },
+    ];
 }
 
 export function renderStickyComposerChangesPill(options: StickyComposerActivityStackOptions): HTMLElement | undefined {
@@ -237,6 +267,10 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
         row.append(pill);
     }
 
+    if (options.onCommitAction) {
+        row.append(renderChangesCommitGroup(options));
+    }
+
     if (options.agentWorking && options.onStop) {
         const stopBtn = document.createElement('button');
         stopBtn.type = 'button';
@@ -254,6 +288,93 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
 
     section.append(row);
     return section;
+}
+
+/** Split button beside the Changes pill: primary "Create Branch & Commit" + a menu with the other git workflows. */
+function renderChangesCommitGroup(options: StickyComposerActivityStackOptions): HTMLElement {
+    const disabled = !!options.commitBusy;
+
+    const group = document.createElement('div');
+    group.className = 'theia-mobile-sticky-composer-commit-group';
+
+    const commitBtn = document.createElement('button');
+    commitBtn.type = 'button';
+    commitBtn.className = 'theia-mobile-sticky-composer-commit-btn';
+    commitBtn.disabled = disabled;
+    commitBtn.textContent = nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit');
+    commitBtn.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        options.onCommitAction?.('create-branch-commit');
+    });
+
+    const menuWrap = document.createElement('div');
+    menuWrap.className = 'theia-mobile-sticky-composer-commit-menu-wrap';
+
+    const menuLabel = nls.localize('qaap/mobileProjects/commitOptions', 'Commit options');
+    const menuBtn = document.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'theia-mobile-sticky-composer-commit-menu';
+    menuBtn.disabled = disabled;
+    menuBtn.title = menuLabel;
+    menuBtn.setAttribute('aria-label', menuLabel);
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.setAttribute('aria-haspopup', 'menu');
+    menuBtn.innerHTML = '<span class="codicon codicon-chevron-down" aria-hidden="true"></span>';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'theia-mobile-sticky-composer-commit-dropdown';
+    dropdown.setAttribute('role', 'menu');
+    dropdown.hidden = true;
+
+    const onDocumentPointerDown = (ev: PointerEvent): void => {
+        const target = ev.target;
+        if (target instanceof Node && group.isConnected && group.contains(target)) {
+            return;
+        }
+        closeMenu();
+    };
+    const closeMenu = (): void => {
+        dropdown.hidden = true;
+        menuBtn.classList.remove('theia-mod-open');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('pointerdown', onDocumentPointerDown, true);
+    };
+    const openMenu = (): void => {
+        dropdown.hidden = false;
+        menuBtn.classList.add('theia-mod-open');
+        menuBtn.setAttribute('aria-expanded', 'true');
+        document.addEventListener('pointerdown', onDocumentPointerDown, true);
+    };
+
+    menuBtn.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (dropdown.hidden) {
+            openMenu();
+        } else {
+            closeMenu();
+        }
+    });
+
+    for (const option of stickyComposerCommitMenuOptions()) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'theia-mobile-sticky-composer-commit-dropdown-item';
+        item.setAttribute('role', 'menuitem');
+        item.textContent = option.label;
+        item.addEventListener('click', ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            closeMenu();
+            options.onCommitAction?.(option.action);
+        });
+        dropdown.append(item);
+    }
+
+    menuWrap.append(menuBtn, dropdown);
+    group.append(commitBtn, menuWrap);
+    return group;
 }
 
 function createQueueActionButton(iconClass: string, label: string, onClick: () => void): HTMLButtonElement {

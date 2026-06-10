@@ -552,7 +552,7 @@ export class MobileProjectsSessionsSidebarUi {
             cwd: cwd ?? '',
             workspacePath: cwd,
             agentId,
-            title: nls.localize('qaap/mobileProjects/newChatTitle', 'New chat'),
+            title: nls.localize('qaap/mobileProjects/newChatTitle', 'New agent'),
             status: 'idle',
             createdAt: Date.now(),
             updatedAt: Date.now(),

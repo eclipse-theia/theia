@@ -5,6 +5,8 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import type { CommandRegistry } from '@theia/core/lib/common/command';
+import type { QuickInputService } from '@theia/core/lib/common/quick-pick-service';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatMode, ChatModel } from '@theia/ai-chat';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -78,7 +80,11 @@ import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
 import type { WorkHubTranscriptBridge } from './work-hub-transcript-bridge';
 import { MobileSnackbar } from './mobile-snackbar';
-import { QAAP_GIT_REVIEW_API_PATH, type QaapGitChangedFile } from '../common/qaap-git-review';
+import {
+    QAAP_GIT_REVIEW_API_PATH,
+    type QaapGitChangedFile,
+    type QaapGitCommitWorkflowAction,
+} from '../common/qaap-git-review';
 import {
     renderStickyComposerActivityStack,
     renderStickyComposerChangesPill,
@@ -153,6 +159,10 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     chatAgentService?: ChatAgentService;
     chatService?: import('@theia/ai-chat').ChatService;
     messageService?: MessageService;
+    /** Quick input for the commit split-button prompts (branch name, commit message). */
+    quickInputService?: QuickInputService;
+    /** Command registry for opening the Create-PR flow after a commit. */
+    commands?: CommandRegistry;
     conversations?: MobileProjectsConversations;
     getComposerVariables?: unknown;
     pickContextVariable?: (
@@ -191,6 +201,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
     protected lastComposerActivityFingerprint = '';
     protected readonly composerActivityGitFilesByConversationId = new Map<string, StickyComposerChangedFileView[]>();
     protected composerChangedFilesBulkBusy = false;
+    protected composerCommitBusy = false;
 
     constructor(
         protected readonly host: MobileProjectsTranscriptStickyComposerHost,
@@ -298,17 +309,37 @@ export class MobileProjectsTranscriptStickyComposerUi {
         readonly stats?: { readonly added: number; readonly removed: number };
     } {
         const activityFiles = this.host.transcriptMessagesUi.resolveComposerActivityFiles(conv, summary);
-        if (this.composerActivityGitFilesByConversationId.has(summary.id)) {
-            const gitFiles = this.composerActivityGitFilesByConversationId.get(summary.id) ?? [];
+        // The Changes pill + commit button only surface for edits the agent made in this
+        // conversation. The gate needs evidence from the transcript itself (file-edit tool calls
+        // or agent-reported diff stats): `summary.linesAdded` alone is not enough because the
+        // backend stamps repo-wide `git diff` stats on every turn, so a tree left dirty by another
+        // session would surface the buttons in conversations that never touched a file.
+        const transcriptEvidence = this.host.transcriptMessagesUi.resolveComposerActivityFiles(conv);
+        if (!this.hasComposerAgentActivity(transcriptEvidence)
+            && !this.host.transcriptMessagesUi.hasComposerFileChangeToolCalls(conv)) {
+            return { files: [] };
+        }
+        const gitFiles = this.composerActivityGitFilesByConversationId.get(summary.id);
+        if (gitFiles) {
+            if (gitFiles.length === 0) {
+                // Working tree is clean (e.g. changes were just committed) — nothing left to review.
+                return { files: [] };
+            }
             return {
                 files: gitFiles,
                 stats: this.resolveChangedFilesStats(gitFiles, activityFiles.stats),
             };
         }
-        if (activityFiles.files.length > 0) {
-            return activityFiles;
-        }
         return activityFiles;
+    }
+
+    protected hasComposerAgentActivity(activityFiles: {
+        readonly files: readonly StickyComposerChangedFileView[];
+        readonly stats?: { readonly added: number; readonly removed: number };
+    }): boolean {
+        return activityFiles.files.length > 0
+            || (activityFiles.stats?.added ?? 0) > 0
+            || (activityFiles.stats?.removed ?? 0) > 0;
     }
 
     protected resolveChangedFilesStats(
@@ -468,12 +499,16 @@ export class MobileProjectsTranscriptStickyComposerUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
         _conv: QaapAgentConversationDTO | undefined,
-        _activityFiles: {
+        activityFiles: {
             readonly files: readonly StickyComposerChangedFileView[];
             readonly stats?: { readonly added: number; readonly removed: number };
         },
     ): Promise<void> {
         if (this.composerActivityGitFilesByConversationId.has(summary.id)) {
+            return;
+        }
+        // Skip the repo-wide git snapshot until the agent has actually edited files here.
+        if (!this.hasComposerAgentActivity(activityFiles)) {
             return;
         }
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
@@ -535,7 +570,80 @@ export class MobileProjectsTranscriptStickyComposerUi {
             onReview: () => {
                 this.host.executionSurfaceTabsUi.selectTranscriptTab('review', project, summary);
             },
+            onCommitAction: this.host.quickInputService
+                ? action => { void this.runComposerCommitAction(project, summary, action); }
+                : undefined,
+            commitBusy: this.composerCommitBusy || this.composerChangedFilesBulkBusy,
         };
+    }
+
+    /** Same git workflows as the diff-review toolbar, surfaced beside the composer Changes pill. */
+    protected async runComposerCommitAction(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        action: QaapGitCommitWorkflowAction,
+    ): Promise<void> {
+        const quickInput = this.host.quickInputService;
+        const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
+        if (!quickInput || !cwd || this.composerCommitBusy) {
+            return;
+        }
+        const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
+        let branchName: string | undefined;
+        if (needsBranch) {
+            branchName = (await quickInput.input({
+                title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
+                placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
+                prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
+            }))?.trim();
+            if (!branchName) {
+                return;
+            }
+        }
+        const message = (await quickInput.input({
+            title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
+            placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
+            prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
+        }))?.trim();
+        if (!message) {
+            return;
+        }
+        this.composerCommitBusy = true;
+        this.refreshComposerActivityStack();
+        try {
+            const response = await fetch(`${QAAP_GIT_REVIEW_API_PATH}/commit-workflow`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ root: cwd, action, branchName, message }),
+            });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({})) as { error?: string };
+                throw new Error(body.error ?? `commit workflow failed (${response.status})`);
+            }
+            if (action === 'commit-create-pr' && this.host.commands) {
+                try {
+                    await this.host.commands.executeCommand('pr.pushAndCreate', { repoPath: cwd });
+                } catch {
+                    await this.host.commands.executeCommand('pr.create', { repoPath: cwd });
+                }
+            }
+            this.composerActivityGitFilesByConversationId.delete(summary.id);
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/stickyComposerCommitDone', 'Changes committed'),
+                { kind: 'success', duration: 1800 },
+            );
+        } catch (error) {
+            MobileSnackbar.show(
+                error instanceof Error && error.message
+                    ? error.message
+                    : nls.localize('qaap/mobileProjects/stickyComposerCommitFailed', 'Commit failed'),
+                { kind: 'warning', duration: 3200 },
+            );
+        } finally {
+            this.composerCommitBusy = false;
+            this.refreshComposerActivityStack();
+        }
     }
 
     buildTranscriptComposerActivityStack(
@@ -623,6 +731,9 @@ export class MobileProjectsTranscriptStickyComposerUi {
             return;
         }
         this.lastComposerActivityFingerprint = fingerprint;
+        // Activity changed (new agent edits, turn finished) — drop the cached git snapshot so the
+        // Changes pill refetches instead of keeping a stale (possibly empty) file list.
+        this.composerActivityGitFilesByConversationId.delete(conv.id);
         this.refreshComposerActivityStack();
         this.host.transcriptComposerSendRefresh?.();
     }
@@ -840,6 +951,10 @@ export class MobileProjectsTranscriptStickyComposerUi {
         this.host.transcriptComposerProject = project;
         this.host.transcriptComposerSummary = summary;
         this.host.transcriptComposerSendRefresh = undefined;
+        // Conversations share the project's working tree — a git snapshot cached while another
+        // session was open can be stale (e.g. committed meanwhile). Refetch per (re)mount so the
+        // Changes pill + commit button reflect this conversation's current pending changes.
+        this.composerActivityGitFilesByConversationId.delete(summary.id);
         this.host.stickyComposerContextUsageDispose.dispose();
         host.replaceChildren();
         if (this.host.transcriptLastConv?.id === summary.id

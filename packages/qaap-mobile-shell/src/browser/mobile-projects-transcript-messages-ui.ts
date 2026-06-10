@@ -149,6 +149,19 @@ export class MobileProjectsTranscriptMessagesUi {
         };
     }
 
+    /**
+     * True when the agent ran any file-change tool (Write/Edit/Patch/…) in this conversation.
+     * Some agent CLIs (e.g. opencode) report these tool calls with empty args, so no file path or
+     * diff stats can be extracted — the call itself is still proof the agent modified files here.
+     */
+    hasComposerFileChangeToolCalls(conv: QaapAgentConversationDTO | undefined): boolean {
+        return this.resolveComposerConversationSegments(conv).some(segment =>
+            segment.type === 'tool'
+            // 'todowrite' / 'todo_write' track the agent's task list, not workspace files.
+            && !segment.name.toLowerCase().includes('todo')
+            && !!this.resolversUi.resolveTranscriptFileChangeKind(segment.name));
+    }
+
     /** All agent tool segments in the conversation — keeps changed files visible across turns. */
     protected resolveComposerConversationSegments(conv: QaapAgentConversationDTO | undefined): QaapAgentMessageSegmentDTO[] {
         if (!conv?.messages.length) {

@@ -17,6 +17,7 @@ interface ParsedApprovalId {
     readonly conversationId: string;
     readonly kind: 'tool' | 'prompt';
     readonly taskId?: string;
+    readonly toolUseId?: string;
 }
 
 /** Aggregates pending VPS permission prompts from conversations and task logs. */
@@ -83,7 +84,7 @@ export class QaapAgentApprovalStore {
         if (!task || task.state !== 'running') {
             return { ok: false, error: 'Task is not running.' };
         }
-        const sent = this.taskRunner.respondToApprovalPrompt(taskId, action);
+        const sent = this.taskRunner.respondToApprovalPrompt(taskId, action, parsed.toolUseId);
         if (!sent) {
             return {
                 ok: false,
@@ -98,7 +99,7 @@ export class QaapAgentApprovalStore {
     protected parseApprovalId(id: string): ParsedApprovalId | undefined {
         const toolMatch = /^([^:]+):tool:(.+)$/.exec(id);
         if (toolMatch) {
-            return { conversationId: toolMatch[1], kind: 'tool' };
+            return { conversationId: toolMatch[1], kind: 'tool', toolUseId: toolMatch[2] };
         }
         const promptMatch = /^([^:]+):prompt:(.+)$/.exec(id);
         if (promptMatch) {

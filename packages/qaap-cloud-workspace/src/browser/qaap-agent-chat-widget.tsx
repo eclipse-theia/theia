@@ -74,7 +74,7 @@ export class QaapAgentChatWidget extends ReactWidget {
                         className='qaap-agent-chat-new'
                         onClick={this.onNewChat}
                     >
-                        {nls.localize('qaap/agentChat/new', 'New chat')}
+                        {nls.localize('qaap/agentChat/new', 'New agent')}
                     </button>
                 </div>
                 <div className='qaap-agent-chat-list'>

@@ -70,11 +70,16 @@ export function summarizeToolApproval(toolName: string, args: string): { summary
     };
 }
 
+/** Manual approvals apply when YOLO is off or the composer preset is "request approval". */
+export function usesInteractiveApprovals(conv: QaapAgentConversation): boolean {
+    return conv.autoApprove === false || conv.approvalPolicyId === 'request-approval';
+}
+
 export function extractPendingToolApprovals(
     conv: QaapAgentConversation,
     taskId: string | undefined,
 ): QaapAgentApprovalRequest[] {
-    if (conv.autoApprove !== false || conv.status !== 'streaming') {
+    if (!usesInteractiveApprovals(conv) || conv.status !== 'streaming') {
         return [];
     }
     const agentMessage = [...conv.messages].reverse().find(message => message.role === 'agent');
@@ -139,7 +144,7 @@ export function extractPendingPromptApproval(
     taskId: string | undefined,
     logTail: string | undefined,
 ): QaapAgentApprovalRequest | undefined {
-    if (conv.autoApprove !== false || conv.status !== 'streaming' || !taskId || !logTail?.trim()) {
+    if (!usesInteractiveApprovals(conv) || conv.status !== 'streaming' || !taskId || !logTail?.trim()) {
         return undefined;
     }
     const detected = detectLogApprovalPrompt(logTail);
