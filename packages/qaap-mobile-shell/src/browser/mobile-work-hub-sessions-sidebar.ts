@@ -125,7 +125,7 @@ export class MobileWorkHubSessionsSidebar {
         nav.setAttribute('aria-label', nls.localize('qaap/sessionsSidebar/navLabel', 'Sidebar shortcuts'));
         nav.append(
             this.createNavButton(
-                'codicon-edit',
+                'codicon-add',
                 nls.localize('qaap/sessionsSidebar/newChat', 'New agent'),
                 () => {
                     this.hideForMobileOverlay();

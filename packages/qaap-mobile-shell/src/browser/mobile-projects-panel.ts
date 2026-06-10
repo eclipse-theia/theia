@@ -339,6 +339,8 @@ export interface MobileProjectsPanelOptions {
     readPreference?: (key: string) => unknown;
     /** Monaco quick input — Work Hub search opens as a top overlay instead of an inline field. */
     quickInputService?: QuickInputService;
+    /** Generates commit messages automatically from the diff for the commit split-button. */
+    commitMessageAi?: import('./qaap-commit-message-ai').QaapCommitMessageAi;
     /** Opens AI / Settings preferences inside the Work Hub instead of the IDE main area. */
     openPreferencesSheet?: (query?: string) => Promise<void>;
     /** Opens AI Configuration (agents, MCP, prompts) inside the Work Hub overlay. */
@@ -590,6 +592,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     protected readonly previewClipboard: MobileProjectsPanelOptions['clipboard'];
     protected readonly readPreference: MobileProjectsPanelOptions['readPreference'];
     protected readonly quickInputService: QuickInputService | undefined;
+    protected readonly commitMessageAi: MobileProjectsPanelOptions['commitMessageAi'];
     protected readonly openPreferencesSheet: MobileProjectsPanelOptions['openPreferencesSheet'];
     protected readonly openAiConfigurationSheet: MobileProjectsPanelOptions['openAiConfigurationSheet'];
     protected activeTasksDispose: Disposable = Disposable.NULL;
@@ -668,6 +671,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
         this.previewClipboard = options.clipboard;
         this.readPreference = options.readPreference;
         this.quickInputService = options.quickInputService;
+        this.commitMessageAi = options.commitMessageAi;
         this.openPreferencesSheet = options.openPreferencesSheet;
         this.openAiConfigurationSheet = options.openAiConfigurationSheet;
         this.root = document.createElement('div');

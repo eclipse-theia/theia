@@ -9,7 +9,6 @@
  */
 import {
     isUiHiddenVpsAgent,
-    QAAP_BUILTIN_AGENT_DEFINITIONS,
     resolveQaapBuiltinAgentMentionId,
 } from './qaap-builtin-agents';
 import {
@@ -231,27 +230,18 @@ export function reconcileSelectedAgent(
 }
 
 /**
- * Composer pickers list VPS-backed agents from the server plus built-in CLI runners so users can
- * switch away from QAIQ even when `/all` only reports a subset as detected on PATH.
+ * Composer pickers list only the VPS-backed agents the server detected as installed
+ * (CLI found on PATH or env-configured); undetected built-ins are not padded in.
  */
 export function mergeComposerAgentPickerOptions(
     agents: readonly QaapAgentTaskAgentOption[],
 ): QaapAgentTaskAgentOption[] {
     const merged = new Map<string, QaapAgentTaskAgentOption>();
     for (const agent of filterUiSelectableVpsAgents(agents)) {
+        if (agent.available === false) {
+            continue;
+        }
         merged.set(agent.id.toLowerCase(), agent);
-    }
-    const ensureAgent = (id: string, label: string): void => {
-        const key = id.toLowerCase();
-        if (!merged.has(key)) {
-            merged.set(key, { id, label, available: true });
-        }
-    };
-    ensureAgent(QAIQ_AGENT_ID, 'QAIQ');
-    for (const definition of QAAP_BUILTIN_AGENT_DEFINITIONS) {
-        if (!isUiHiddenVpsAgent(definition.id)) {
-            ensureAgent(definition.id, definition.label);
-        }
     }
     return Array.from(merged.values()).sort((left, right) => left.label.localeCompare(right.label));
 }

@@ -90,14 +90,13 @@ describe('qaap-agent-task-client', () => {
         expect(ids).to.not.include('shell');
     });
 
-    it('mergeComposerAgentPickerOptions adds built-in agents when the server only reports QAIQ', () => {
-        const agents = [{ id: 'qaiq', label: 'QAIQ', available: true }];
+    it('mergeComposerAgentPickerOptions only lists agents the server detected as installed', () => {
+        const agents = [
+            { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'claude', label: 'Claude Code', available: false },
+        ];
         const ids = mergeComposerAgentPickerOptions(agents).map(agent => agent.id);
-        expect(ids).to.include('qaiq');
-        expect(ids).to.include('codex');
-        expect(ids).to.include('claude');
-        expect(ids).to.not.include('shell');
-        expect(ids).to.not.include('cursor');
+        expect(ids).to.deep.equal(['qaiq']);
     });
 
     it('reconcileSelectedAgent prefers QAIQ as the product default', () => {

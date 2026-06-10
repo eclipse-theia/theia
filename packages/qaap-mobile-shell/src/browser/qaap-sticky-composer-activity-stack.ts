@@ -45,12 +45,12 @@ interface StickyComposerCommitMenuOption {
 function stickyComposerCommitMenuOptions(): StickyComposerCommitMenuOption[] {
     return [
         {
-            action: 'create-branch-commit-push',
-            label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
+            action: 'create-branch-commit',
+            label: nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit'),
         },
         {
-            action: 'commit-push',
-            label: nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push'),
+            action: 'create-branch-commit-push',
+            label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
         },
         {
             action: 'commit',
@@ -290,22 +290,23 @@ function renderStickyComposerChangedFilesSection(options: StickyComposerActivity
     return section;
 }
 
-/** Split button beside the Changes pill: primary "Create Branch & Commit" + a menu with the other git workflows. */
+/** Split button beside the Changes pill: primary "Commit & Push" + a menu with the other git workflows. */
 function renderChangesCommitGroup(options: StickyComposerActivityStackOptions): HTMLElement {
     const disabled = !!options.commitBusy;
 
     const group = document.createElement('div');
-    group.className = 'theia-mobile-sticky-composer-commit-group';
+    // theia-mod-busy drives the animated border beam while the commit workflow runs.
+    group.className = `theia-mobile-sticky-composer-commit-group${disabled ? ' theia-mod-busy' : ''}`;
 
     const commitBtn = document.createElement('button');
     commitBtn.type = 'button';
     commitBtn.className = 'theia-mobile-sticky-composer-commit-btn';
     commitBtn.disabled = disabled;
-    commitBtn.textContent = nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit');
+    commitBtn.textContent = nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push');
     commitBtn.addEventListener('click', ev => {
         ev.preventDefault();
         ev.stopPropagation();
-        options.onCommitAction?.('create-branch-commit');
+        options.onCommitAction?.('commit-push');
     });
 
     const menuWrap = document.createElement('div');

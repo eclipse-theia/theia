@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { ArrayExt, toArray } from '@lumino/algorithm';
 import { MessageLoop } from '@lumino/messaging';
 import { BoxLayout, BoxPanel, Panel, SplitPanel, Widget as LuminoWidget } from '@lumino/widgets';
@@ -48,6 +48,7 @@ import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-s
 import { QaapSidePanelHandler } from '@theia/qaap-shell/lib/browser/qaap-side-panel-handler';
 import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-layout-contribution';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
+import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 import { QaapWorkHubDiffDelegate, QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
 import { MobileHaptics } from './mobile-haptics';
 import { installMobileHorizontalTouchScroll } from './mobile-horizontal-touch-scroll';
@@ -259,6 +260,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(QaapWorkHubDiffService)
     protected readonly workHubDiff: QaapWorkHubDiffService;
+
+    @inject(QaapCommitMessageAi) @optional()
+    protected readonly commitMessageAi?: QaapCommitMessageAi;
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
@@ -1295,6 +1299,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 clipboard: this.clipboardService,
                 readPreference: key => this.preferenceService.get(key),
                 quickInputService: this.quickInputService,
+                commitMessageAi: this.commitMessageAi,
                 openPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),
                 openAiConfigurationSheet: tabId => this.openWorkHubAiConfigurationSheet(tabId),
             }

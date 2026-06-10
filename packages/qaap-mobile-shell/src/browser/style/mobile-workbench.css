@@ -5946,6 +5946,39 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   cursor: default;
 }
 
+/* Commit en curso — anillo de color girando sobre el grupo, mismo lenguaje que el
+   border-beam del composer (reutiliza la @property --qaap-border-beam-angle y su spin). */
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy {
+  border-color: transparent;
+  animation: qaap-border-beam-spin 1.8s linear infinite;
+}
+
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--qaap-border-beam-angle),
+    rgb(255, 50, 100), rgb(255, 120, 40), rgb(240, 50, 180),
+    rgb(100, 70, 255), rgb(40, 140, 255), rgb(50, 200, 80),
+    rgb(255, 50, 100)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Mientras gira el beam el botón no debe leerse como "deshabilitado". */
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy .theia-mobile-sticky-composer-commit-btn:disabled,
+.theia-mobile-sticky-composer-commit-group.theia-mod-busy .theia-mobile-sticky-composer-commit-menu:disabled {
+  opacity: 0.85;
+}
+
 .theia-mobile-sticky-composer-commit-btn:not(:disabled):hover,
 .theia-mobile-sticky-composer-commit-btn:not(:disabled):focus-visible,
 .theia-mobile-sticky-composer-commit-btn:not(:disabled):active,

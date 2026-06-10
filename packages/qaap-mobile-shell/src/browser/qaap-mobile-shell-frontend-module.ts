@@ -75,6 +75,7 @@ import { QaapBackgroundContextProvider } from './qaap-background-context-provide
 import { QaapQaiqBashToolRenderer } from './qaap-qaiq-bash-tool-renderer';
 import { QaapQaiqGenericToolRenderer } from './qaap-qaiq-generic-tool-renderer';
 import { QaapDesktopTerminalLayoutContribution } from './qaap-desktop-terminal-layout-contribution';
+import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
@@ -172,6 +173,7 @@ export default new ContainerModule(bind => {
     bind(QaapBootstrapVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(QaapBootstrapVariableContribution);
 
+    bind(QaapCommitMessageAi).toSelf().inSingletonScope();
     bind(QaapWorkHubDiffService).toSelf().inSingletonScope();
     bind(QaapDiffReviewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

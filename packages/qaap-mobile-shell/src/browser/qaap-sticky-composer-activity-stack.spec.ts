@@ -86,9 +86,9 @@ describe('qaap-sticky-composer-activity-stack', () => {
 
             const commitBtn = host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-btn');
             expect(commitBtn).to.exist;
-            expect(commitBtn!.textContent).to.equal('Create Branch & Commit');
+            expect(commitBtn!.textContent).to.equal('Commit & Push');
             commitBtn!.click();
-            expect(actions).to.deep.equal(['create-branch-commit']);
+            expect(actions).to.deep.equal(['commit-push']);
 
             const menuBtn = host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-menu');
             const dropdown = host!.querySelector<HTMLElement>('.theia-mobile-sticky-composer-commit-dropdown');
@@ -100,14 +100,30 @@ describe('qaap-sticky-composer-activity-stack', () => {
 
             const items = Array.from(dropdown!.querySelectorAll<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-dropdown-item'));
             expect(items.map(item => item.textContent)).to.deep.equal([
+                'Create Branch & Commit',
                 'Create Branch, Commit & Push',
-                'Commit & Push',
                 'Commit',
                 'Commit & Create PR',
             ]);
-            items[1].click();
-            expect(actions).to.deep.equal(['create-branch-commit', 'commit-push']);
+            items[0].click();
+            expect(actions).to.deep.equal(['commit-push', 'create-branch-commit']);
             expect(dropdown!.hidden).to.equal(true);
+        });
+
+        it('marks the commit group busy (border beam) and disables its buttons while committing', () => {
+            const host = renderStickyComposerChangesPill({
+                diffStats: { added: 4, removed: 2 },
+                onReview: () => undefined,
+                onCommitAction: () => undefined,
+                commitBusy: true,
+            });
+            document.body.append(host!);
+
+            const group = host!.querySelector<HTMLElement>('.theia-mobile-sticky-composer-commit-group');
+            expect(group).to.exist;
+            expect(group!.classList.contains('theia-mod-busy')).to.equal(true);
+            expect(host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-btn')!.disabled).to.equal(true);
+            expect(host!.querySelector<HTMLButtonElement>('.theia-mobile-sticky-composer-commit-menu')!.disabled).to.equal(true);
         });
 
         it('does not render the commit split-button without an onCommitAction handler', () => {

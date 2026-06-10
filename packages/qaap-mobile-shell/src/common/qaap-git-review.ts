@@ -86,6 +86,16 @@ export interface QaapGitFileActionRequest {
     file: string;
 }
 
+/** Context for AI commit-message generation: changed files plus a truncated combined diff. */
+export interface QaapGitCommitContextResponse {
+    root: string;
+    branch?: string;
+    files: QaapGitChangedFile[];
+    /** Combined unified diff (staged + unstaged), truncated server-side to fit an LLM prompt. */
+    diff: string;
+    truncated: boolean;
+}
+
 export type QaapGitCommitWorkflowAction =
     | 'create-branch-commit'
     | 'create-branch-commit-push'

@@ -14,6 +14,7 @@ import {
     parseUnifiedDiff,
     type QaapGitChangedFile,
     type QaapGitChangesResponse,
+    type QaapGitCommitContextResponse,
     type QaapGitCommitWorkflowAction,
     type QaapGitFileDiffResponse,
     type QaapGitBranchesResponse,
@@ -23,6 +24,9 @@ import {
 
 /** Diffs can be large; allow up to 16 MB of git output. */
 const GIT_MAX_BUFFER = 16 * 1024 * 1024;
+
+/** Max characters of combined diff returned by `commit-context` (roughly 6k tokens for the LLM prompt). */
+const COMMIT_CONTEXT_DIFF_LIMIT = 24_000;
 
 /**
  * Exposes read-only `git` working-tree information for the mobile diff-review surface.
@@ -56,6 +60,47 @@ export class QaapGitReviewEndpoint implements BackendApplicationContribution {
         app.post(`${QAAP_GIT_REVIEW_API_PATH}/commit-workflow`, (req, res) => {
             void this.handleCommitWorkflow(req, res);
         });
+        app.get(`${QAAP_GIT_REVIEW_API_PATH}/commit-context`, (req, res) => {
+            void this.handleCommitContext(req, res);
+        });
+    }
+
+    /** Changed files plus a truncated combined diff — input for AI commit-message generation. */
+    protected async handleCommitContext(req: Request, res: Response): Promise<void> {
+        const root = await this.resolveRepository(req, res);
+        if (!root) {
+            return;
+        }
+        try {
+            const [files, branch, diff] = await Promise.all([
+                this.collectChangedFiles(root),
+                this.readCurrentBranch(root),
+                this.collectCommitDiff(root),
+            ]);
+            const truncated = diff.length > COMMIT_CONTEXT_DIFF_LIMIT;
+            res.json({
+                root,
+                branch,
+                files,
+                diff: truncated ? diff.slice(0, COMMIT_CONTEXT_DIFF_LIMIT) : diff,
+                truncated,
+            } satisfies QaapGitCommitContextResponse);
+        } catch (error) {
+            res.status(500).json({ error: this.errorMessage(error) });
+        }
+    }
+
+    /** Combined staged + unstaged diff against HEAD (falls back when the repo has no commits yet). */
+    protected async collectCommitDiff(root: string): Promise<string> {
+        try {
+            return await this.git(root, ['diff', 'HEAD']);
+        } catch {
+            const [staged, unstaged] = await Promise.all([
+                this.git(root, ['diff', '--cached']).catch(() => ''),
+                this.git(root, ['diff']).catch(() => ''),
+            ]);
+            return `${staged}\n${unstaged}`.trim();
+        }
     }
 
     protected async handleChanges(req: Request, res: Response): Promise<void> {

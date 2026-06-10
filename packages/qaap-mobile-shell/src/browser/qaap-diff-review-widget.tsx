@@ -9,7 +9,7 @@ import { CommandService } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
@@ -21,6 +21,7 @@ import {
     type QaapGitHunkLine,
 } from '../common/qaap-git-review';
 import { middleTruncatePath, splitRepoRelativePath } from './qaap-diff-review-path';
+import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 
 /** Git extension commands used by the bulk review actions. */
 const GIT_STAGE_ALL = 'git.stageAll';
@@ -36,12 +37,12 @@ interface QaapGitCommitMenuOption {
 
 const GIT_COMMIT_MENU_OPTIONS: QaapGitCommitMenuOption[] = [
     {
-        action: 'create-branch-commit-push',
-        label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
+        action: 'create-branch-commit',
+        label: nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit'),
     },
     {
-        action: 'commit-push',
-        label: nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push'),
+        action: 'create-branch-commit-push',
+        label: nls.localize('qaap/mobileProjects/createBranchCommitPush', 'Create Branch, Commit & Push'),
     },
     {
         action: 'commit',
@@ -90,6 +91,10 @@ export class QaapDiffReviewWidget extends ReactWidget {
 
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
+
+    /** Generates commit messages automatically from the diff (Cursor-agents style). */
+    @inject(QaapCommitMessageAi) @optional()
+    protected readonly commitMessageAi?: QaapCommitMessageAi;
 
     protected readonly toDisposeOnRepository = new DisposableCollection();
 
@@ -460,9 +465,9 @@ export class QaapDiffReviewWidget extends ReactWidget {
                     type='button'
                     className='qaap-agent-changes-commit-btn'
                     disabled={disabled}
-                    onClick={() => { void this.runCommitAction('create-branch-commit'); }}
+                    onClick={() => { void this.runCommitAction('commit-push'); }}
                 >
-                    {nls.localize('qaap/mobileProjects/createBranchAndCommit', 'Create Branch & Commit')}
+                    {nls.localize('qaap/mobileProjects/commitPush', 'Commit & Push')}
                 </button>
                 <div className='qaap-agent-changes-commit-menu-wrap'>
                     <button
@@ -554,35 +559,37 @@ export class QaapDiffReviewWidget extends ReactWidget {
         if (this.runningBulkAction || !this.bulkActionsEnabled || this.files.length === 0 || !this.rootFsPath) {
             return;
         }
-        const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
-        let branchName: string | undefined;
-        if (needsBranch) {
-            branchName = await this.quickInputService.input({
-                title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
-                placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
-                prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
-            });
-            if (!branchName?.trim()) {
-                return;
-            }
-            branchName = branchName.trim();
-        }
-        let message: string | undefined;
-        if (action !== 'commit') {
-            message = await this.quickInputService.input({
-                title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
-                placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
-                prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
-            });
-            if (!message?.trim()) {
-                return;
-            }
-        }
         this.runningBulkAction = true;
         this.error = undefined;
         this.update();
         try {
-            if (action === 'commit') {
+            // The AI writes the commit message automatically from the diff (Cursor-agents style).
+            const generated = await this.commitMessageAi?.generate(this.rootFsPath);
+            let message = generated?.message;
+            if (!message && action !== 'commit') {
+                message = (await this.quickInputService.input({
+                    title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
+                    placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
+                    prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
+                }))?.trim();
+                if (!message) {
+                    return;
+                }
+            }
+            const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
+            let branchName: string | undefined;
+            if (needsBranch) {
+                branchName = (await this.quickInputService.input({
+                    title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
+                    value: generated?.branchName,
+                    placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
+                    prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
+                }))?.trim();
+                if (!branchName) {
+                    return;
+                }
+            }
+            if (action === 'commit' && !message) {
                 await this.commands.executeCommand(GIT_STAGE_ALL);
                 await this.commands.executeCommand(GIT_COMMIT);
             } else {
@@ -594,7 +601,7 @@ export class QaapDiffReviewWidget extends ReactWidget {
                         root: this.rootFsPath,
                         action,
                         branchName,
-                        message: message!.trim(),
+                        message,
                     }),
                 });
                 if (!response.ok) {

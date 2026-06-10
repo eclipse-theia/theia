@@ -159,8 +159,10 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     chatAgentService?: ChatAgentService;
     chatService?: import('@theia/ai-chat').ChatService;
     messageService?: MessageService;
-    /** Quick input for the commit split-button prompts (branch name, commit message). */
+    /** Quick input for the commit split-button branch-name prompt (and message fallback). */
     quickInputService?: QuickInputService;
+    /** Generates commit messages automatically from the diff (Cursor-agents style). */
+    commitMessageAi?: import('./qaap-commit-message-ai').QaapCommitMessageAi;
     /** Command registry for opening the Create-PR flow after a commit. */
     commands?: CommandRegistry;
     conversations?: MobileProjectsConversations;
@@ -570,7 +572,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
             onReview: () => {
                 this.host.executionSurfaceTabsUi.selectTranscriptTab('review', project, summary);
             },
-            onCommitAction: this.host.quickInputService
+            onCommitAction: (this.host.commitMessageAi || this.host.quickInputService)
                 ? action => { void this.runComposerCommitAction(project, summary, action); }
                 : undefined,
             commitBusy: this.composerCommitBusy || this.composerChangedFilesBulkBusy,
@@ -583,34 +585,41 @@ export class MobileProjectsTranscriptStickyComposerUi {
         summary: QaapAgentConversationSummaryDTO,
         action: QaapGitCommitWorkflowAction,
     ): Promise<void> {
-        const quickInput = this.host.quickInputService;
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        if (!quickInput || !cwd || this.composerCommitBusy) {
-            return;
-        }
-        const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
-        let branchName: string | undefined;
-        if (needsBranch) {
-            branchName = (await quickInput.input({
-                title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
-                placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
-                prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
-            }))?.trim();
-            if (!branchName) {
-                return;
-            }
-        }
-        const message = (await quickInput.input({
-            title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
-            placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
-            prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
-        }))?.trim();
-        if (!message) {
+        if (!cwd || this.composerCommitBusy) {
             return;
         }
         this.composerCommitBusy = true;
         this.refreshComposerActivityStack();
         try {
+            // The AI writes the commit message automatically from the diff (Cursor-agents style).
+            const generated = await this.host.commitMessageAi?.generate(cwd);
+            let message = generated?.message;
+            if (!message) {
+                message = (await this.host.quickInputService?.input({
+                    title: nls.localize('qaap/mobileProjects/commitMessageTitle', 'Commit message'),
+                    placeHolder: nls.localize('qaap/mobileProjects/commitMessagePlaceholder', 'Describe your changes'),
+                    prompt: nls.localize('qaap/mobileProjects/commitMessagePrompt', 'Message for this commit'),
+                }))?.trim();
+            }
+            if (!message) {
+                return;
+            }
+            const needsBranch = action === 'create-branch-commit' || action === 'create-branch-commit-push';
+            let branchName: string | undefined;
+            if (needsBranch) {
+                branchName = this.host.quickInputService
+                    ? (await this.host.quickInputService.input({
+                        title: nls.localize('qaap/mobileProjects/newBranchTitle', 'Create branch'),
+                        value: generated?.branchName,
+                        placeHolder: nls.localize('qaap/mobileProjects/newBranchPlaceholder', 'feature/my-change'),
+                        prompt: nls.localize('qaap/mobileProjects/newBranchPrompt', 'Name for the new branch'),
+                    }))?.trim()
+                    : generated?.branchName;
+                if (!branchName) {
+                    return;
+                }
+            }
             const response = await fetch(`${QAAP_GIT_REVIEW_API_PATH}/commit-workflow`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -628,7 +637,12 @@ export class MobileProjectsTranscriptStickyComposerUi {
                     await this.host.commands.executeCommand('pr.create', { repoPath: cwd });
                 }
             }
-            this.composerActivityGitFilesByConversationId.delete(summary.id);
+            // `git add -A && git commit` leaves the tree clean — hide the Changes pill and the
+            // commit buttons right away, then re-verify against the real working tree.
+            this.composerActivityGitFilesByConversationId.set(summary.id, []);
+            void this.syncComposerGitSnapshot(project, summary)
+                .then(() => this.refreshComposerActivityStack())
+                .catch(() => undefined);
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/stickyComposerCommitDone', 'Changes committed'),
                 { kind: 'success', duration: 1800 },
