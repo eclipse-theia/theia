@@ -1251,6 +1251,22 @@
   border-radius: 3px;
 }
 
+.ai-tools-recommended-defaults-banner {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) * 2);
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+  padding: calc(var(--theia-ui-padding) * 1.5);
+  background-color: var(--theia-editorInfo-background, var(--theia-editor-background));
+  border: var(--theia-border-width) solid var(--theia-editorInfo-border, var(--theia-widget-border));
+  border-radius: 3px;
+}
+
+.ai-tools-recommended-defaults-text {
+  flex: 1;
+  line-height: var(--theia-content-line-height);
+}
+
 .ai-tools-configuration-default-section {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
 }
