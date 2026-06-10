@@ -1,6 +1,6 @@
 {
   "name": "@theia/toolbar",
-  "version": "1.72.2",
+  "version": "1.72.3",
   "description": "Theia - Toolbar",
   "keywords": [
     "theia-extension"
@@ -28,15 +28,15 @@
     "update:icons": "node ./update-icons.js"
   },
   "dependencies": {
-    "@theia/core": "1.72.2",
-    "@theia/editor": "1.72.2",
-    "@theia/file-search": "1.72.2",
-    "@theia/filesystem": "1.72.2",
-    "@theia/monaco": "1.72.2",
+    "@theia/core": "1.72.3",
+    "@theia/editor": "1.72.3",
+    "@theia/file-search": "1.72.3",
+    "@theia/filesystem": "1.72.3",
+    "@theia/monaco": "1.72.3",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/search-in-workspace": "1.72.2",
-    "@theia/userstorage": "1.72.2",
-    "@theia/workspace": "1.72.2",
+    "@theia/search-in-workspace": "1.72.3",
+    "@theia/userstorage": "1.72.3",
+    "@theia/workspace": "1.72.3",
     "ajv": "^6.15.0",
     "jsonc-parser": "^3.3.1",
     "perfect-scrollbar": "1.5.5",
