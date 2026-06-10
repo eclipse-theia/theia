@@ -341,6 +341,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     getSettings(): ChatSessionSettings | undefined {
         return this.chatSession.model.settings;
     }
+
+    get sessionId(): string {
+        return this.chatSession.id;
+    }
 }
 
 export namespace ChatViewWidget {

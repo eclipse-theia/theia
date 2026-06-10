@@ -991,6 +991,15 @@ div:last-child>.theia-ChatNode {
   cursor: default;
 }
 
+.theia-tool-confirmation-intro {
+  margin: calc(var(--theia-ui-padding) * 2) 0;
+  line-height: var(--theia-content-line-height);
+}
+
+.theia-tool-confirmation-intro p {
+  margin: 0;
+}
+
 .theia-tool-confirmation-header {
   font-weight: bold;
   margin-bottom: 8px;

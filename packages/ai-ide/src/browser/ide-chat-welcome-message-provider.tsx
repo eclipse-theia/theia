@@ -24,7 +24,9 @@ import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/
 import { PreferenceService } from '@theia/core/lib/common';
 import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
-import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { DEFAULT_TOOL_CONFIRMATION_PREFERENCE, TOOL_CONFIRMATION_PREFERENCE, ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { OPEN_AI_CONFIG_VIEW, OPEN_AI_CONFIG_VIEW_TOOLS } from './ai-configuration/ai-configuration-view-contribution';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
@@ -83,6 +85,9 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     @inject(AgentService)
     protected agentService: AgentService;
 
+    @inject(ToolConfirmationManager)
+    protected readonly toolConfirmationManager: ToolConfirmationManager;
+
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
@@ -120,6 +125,9 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                         this._modelRequirementBypassed = effectiveValue;
                         this.notifyStateChanged();
                     }
+                } else if (e.preferenceName === DEFAULT_TOOL_CONFIRMATION_PREFERENCE || e.preferenceName === TOOL_CONFIRMATION_PREFERENCE) {
+                    // Re-render so the tool-confirmation explainer is hidden once the user configures confirmation behavior.
+                    this.notifyStateChanged();
                 }
             })
         );
@@ -186,6 +194,19 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         return this._defaultAgent;
     }
 
+    /**
+     * Whether to show the tool-confirmation explainer on the welcome screen.
+     *
+     * Only shown while the user is still in the default state, i.e. every tool call is confirmed and
+     * no per-tool overrides exist. Once the user has changed the default mode (e.g. to always allow
+     * or to disable tools) or pre-approved individual tools (including via bulk approval), they are
+     * already aware of the mechanism, so the explainer is suppressed.
+     */
+    protected get shouldShowToolConfirmationInfo(): boolean {
+        return this.toolConfirmationManager.getDefaultConfirmationMode() === ToolConfirmationMode.CONFIRM
+            && Object.keys(this.toolConfirmationManager.getAllConfirmationSettings()).length === 0;
+    }
+
     protected setModelRequirementBypassed(bypassed: boolean): void {
         this.preferenceService.set(BYPASS_MODEL_REQUIREMENT_PREF, bypassed, PreferenceScope.User);
     }
@@ -227,6 +248,27 @@ Attach context with *#{3}*, *#{4}*, *#{5}*, or click {6}. [Learn more](https://t
                 className="theia-WelcomeMessage-Content"
                 markdownOptions={{ supportHtml: true }}
             />
+            {this.shouldShowToolConfirmationInfo && (
+                <div className="theia-alert theia-info-alert theia-WelcomeMessage-Alert">
+                    <div className="theia-message-header">
+                        <span className={codicon('info')}></span>
+                        <span>{nls.localize('theia/ai/ide/toolConfirmationInfo/header', 'Tool confirmation')}</span>
+                    </div>
+                    <div className="theia-message-content">
+                        <LocalizedMarkdown
+                            localizationKey="theia/ai/ide/toolConfirmationInfo"
+                            defaultMarkdown={
+                                'AI agents may want to use tools to act on your workspace. ' +
+                                'By default each tool call needs your confirmation. ' +
+                                'You can change this default or pre-approve individual tools in the [Tools configuration view]({0}).'
+                            }
+                            args={[`command:${OPEN_AI_CONFIG_VIEW_TOOLS.id}`]}
+                            markdownRenderer={this.markdownRenderer}
+                            markdownOptions={{ isTrusted: { enabledCommands: [OPEN_AI_CONFIG_VIEW_TOOLS.id] } }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>;
     }
 
