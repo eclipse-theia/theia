@@ -18,6 +18,7 @@ import { expect } from 'chai';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
 import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
+import { MCPOAuthAuthorizationRequiredError } from './mcp-oauth-errors';
 import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
 import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
 import { MCP_OAUTH_AUTHORIZATION_CANCELLED, MCPOAuthCallbackService } from './mcp-oauth-callback-service';
@@ -224,6 +225,24 @@ describe('MCPOAuthClientProvider', () => {
         expect(await provider.clientInformation()).to.deep.equal({ client_id: 'client' });
     });
 
+    it('includes the configured client secret for pre-registered confidential clients', async () => {
+        // Authorization servers without dynamic client registration may require confidential clients;
+        // the SDK keys its token-endpoint auth method off client_secret presence in clientInformation().
+        provider = new MCPOAuthClientProvider({
+            serverName: 'test server',
+            config: { enabled: true, clientId: 'client', clientSecret: 'secret' },
+            callbackUrl: 'http://localhost/mcp/oauth/callback',
+            stateValue: 'state-1',
+            credentialScope: TEST_SERVER_URL,
+            keyStore,
+            frontendDelegate,
+            callbackService,
+            interactive: true
+        });
+
+        expect(await provider.clientInformation()).to.deep.equal({ client_id: 'client', client_secret: 'secret' });
+    });
+
     it('does not store dynamic client information for static client configuration', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
@@ -260,8 +279,23 @@ describe('MCPOAuthClientProvider', () => {
             await provider.codeVerifier();
             throw new Error('Expected verifier to be cleared');
         } catch (error) {
-            expect((error as Error).message).to.equal('MCP OAuth sign-in session expired. Start the server again to sign in.');
+            // Typed so MCPServer.doStart routes a missing verifier to AuthenticationRequired, not the SSE fallback.
+            expect(error).to.be.instanceOf(MCPOAuthAuthorizationRequiredError);
         }
+    });
+
+    it('preserves the in-flight code verifier when invalidating all stored credentials', async () => {
+        // The SDK self-heals invalid_client/unauthorized_client by invalidating 'all' and retrying the code
+        // exchange; the retry still needs the in-memory PKCE verifier of the in-flight round-trip.
+        await provider.saveClientInformation({ client_id: 'dynamic-client' });
+        await provider.saveTokens({ access_token: 'access', token_type: 'Bearer' });
+        await provider.saveCodeVerifier('verifier');
+
+        await provider.invalidateCredentials('all');
+
+        expect(await provider.codeVerifier()).to.equal('verifier');
+        expect(await provider.clientInformation()).to.be.undefined;
+        expect(await provider.tokens()).to.be.undefined;
     });
 
     it('scopes stored tokens by server URL', async () => {
@@ -346,7 +380,7 @@ describe('MCPOAuthClientProvider', () => {
             await provider.codeVerifier();
             throw new Error('Expected verifier to be missing');
         } catch (error) {
-            expect((error as Error).message).to.equal('MCP OAuth sign-in session expired. Start the server again to sign in.');
+            expect(error).to.be.instanceOf(MCPOAuthAuthorizationRequiredError);
         }
     });
 
@@ -359,7 +393,7 @@ describe('MCPOAuthClientProvider', () => {
             await provider.codeVerifier();
             throw new Error('Expected verifier to be cleared on disposal');
         } catch (error) {
-            expect((error as Error).message).to.equal('MCP OAuth sign-in session expired. Start the server again to sign in.');
+            expect(error).to.be.instanceOf(MCPOAuthAuthorizationRequiredError);
         }
     });
 

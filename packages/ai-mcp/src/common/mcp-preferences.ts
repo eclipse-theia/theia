@@ -129,8 +129,9 @@ Example configuration:\n\
                         type: 'object',
                         title: nls.localize('theia/ai/mcp/servers/oauth/title', 'OAuth'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/mdDescription',
-                            'Optional OAuth 2.1 configuration for remote MCP servers that require authorization. Theia uses public clients with PKCE; ' +
-                            'changes take effect after restarting the MCP server.'),
+                            'Optional OAuth 2.1 configuration for remote MCP servers that require authorization. Theia uses public clients with PKCE by default; ' +
+                            'configure a client secret only for servers that require a pre-registered confidential client. ' +
+                            'Changes take effect after restarting the MCP server.'),
                         properties: {
                             enabled: {
                                 type: 'boolean',
@@ -144,6 +145,14 @@ Example configuration:\n\
                                 title: nls.localize('theia/ai/mcp/servers/oauth/clientId/title', 'Client ID'),
                                 markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/clientId/mdDescription',
                                     'Optional static OAuth client ID. If omitted, Theia attempts dynamic client registration.'),
+                            },
+                            clientSecret: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/clientSecret/title', 'Client Secret'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/clientSecret/mdDescription',
+                                    'Optional OAuth client secret for authorization servers that only accept pre-registered confidential clients ' +
+                                    '(no dynamic client registration). Only used together with the client ID. This is stored in preferences as plain text; ' +
+                                    'avoid workspace settings if the secret is sensitive.'),
                             },
                             scopes: {
                                 type: 'array',

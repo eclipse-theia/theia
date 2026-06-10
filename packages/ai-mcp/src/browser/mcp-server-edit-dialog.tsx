@@ -37,6 +37,7 @@ export interface MCPServerFormData {
     headers: string;
     oauthEnabled: boolean;
     oauthClientId: string;
+    oauthClientSecret: string;
     oauthScopes: string;
     oauthAuthorizationServer: string;
     oauthResource: string;
@@ -55,6 +56,7 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     headers: '',
     oauthEnabled: false,
     oauthClientId: '',
+    oauthClientSecret: '',
     oauthScopes: '',
     oauthAuthorizationServer: '',
     oauthResource: '',
@@ -104,7 +106,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 errors.push(nls.localize('theia/ai/mcpConfiguration/form/commandRequired', 'Command is required for local servers'));
             }
         } else if (!this.formData.serverUrl.trim()) {
-                errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
+            errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
         } else if (this.formData.oauthEnabled) {
             const authorizationServer = this.formData.oauthAuthorizationServer.trim();
             if (authorizationServer && !isHttpOrHttpsUrl(authorizationServer)) {
@@ -280,7 +282,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     </label>
                     <div className="mcp-form-description">
                         {nls.localize('theia/ai/mcpConfiguration/form/oauthPublicClientDescription',
-                            'Theia uses public OAuth clients with PKCE. Do not configure client secrets in preferences.')}
+                            'Theia uses public OAuth clients with PKCE by default. Provide a client secret only if the server requires a pre-registered confidential client.')}
                     </div>
                     <div className="mcp-form-description">
                         {nls.localize('theia/ai/mcpConfiguration/form/oauthSharedCredentialsDescription',
@@ -298,6 +300,19 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                                 value={this.formData.oauthClientId}
                                 onChange={e => this.handleFormChange('oauthClientId', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthClientIdPlaceholder', 'Optional static client ID')}
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientSecret', 'OAuth Client Secret')}:</label>
+                            <input
+                                type="password"
+                                className="theia-input"
+                                value={this.formData.oauthClientSecret}
+                                onChange={e => this.handleFormChange('oauthClientSecret', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthClientSecretPlaceholder',
+                                    'Only for servers requiring a confidential client')}
                                 spellCheck={false}
                             />
                         </div>

@@ -121,14 +121,13 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected async handleStartServer(server: MCPServerDescription): Promise<void> {
-        // Uniform entry for OAuth and non-OAuth servers: `startServerInteractive` sets the manager's
-        // `interactive` flag downstream, which is what permits the OAuth provider to launch the browser.
-        // No popup preparation or OAuth-flag inspection is needed here.
+        // `startServerInteractive` sets the manager's `interactive` flag, which is what permits the OAuth
+        // provider to open the browser; no OAuth-specific handling is needed at this layer.
         try {
             await this.mcpFrontendService.startServerInteractive(server.name);
         } catch (error) {
-            // Catch pre-terminal failures (e.g. RPC channel drops) that would otherwise be an unhandled
-            // rejection with no user-visible feedback; terminal states already surface via the status badge.
+            // Surface pre-terminal failures (e.g. RPC channel drops) that would otherwise be unhandled
+            // rejections; terminal states already surface via the status badge.
             console.error(`Failed to start MCP server "${server.name}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/startServerFailed',
                 'Failed to start MCP server "{0}".', server.name));
@@ -139,8 +138,6 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         try {
             await this.mcpFrontendService.stopServer(serverName);
         } catch (error) {
-            // See `handleStartServer`: catches pre-terminal failures so the onClick handler is not left
-            // with an unhandled rejection.
             console.error(`Failed to stop MCP server "${serverName}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/stopServerFailed',
                 'Failed to stop MCP server "{0}".', serverName));
@@ -149,7 +146,13 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected async handleSignOutServer(serverName: string): Promise<void> {
         if (await this.confirmSignOut(serverName)) {
-            await this.mcpFrontendService.signOut(serverName);
+            try {
+                await this.mcpFrontendService.signOut(serverName);
+            } catch (error) {
+                console.error(`Failed to sign out from MCP server "${serverName}"`, error);
+                this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/signOutServerFailed',
+                    'Failed to sign out from MCP server "{0}".', serverName));
+            }
         }
     }
 
@@ -392,6 +395,11 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {server.oauth.clientId && (
                         <div className="mcp-env-entry">
                             <code>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}={server.oauth.clientId}</code>
+                        </div>
+                    )}
+                    {server.oauth.clientSecret && (
+                        <div className="mcp-env-entry">
+                            <code>{nls.localize('theia/ai/mcpConfiguration/oauthClientSecret', 'OAuth Client Secret')}=******</code>
                         </div>
                     )}
                     {server.oauth.scopes && server.oauth.scopes.length > 0 && (

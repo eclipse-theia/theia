@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import { InvalidScopeError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -57,11 +58,16 @@ class TestClient {
 
 class TestOAuthProvider {
     cancelCalls = 0;
+    readonly invalidateCalls: string[] = [];
 
     constructor(protected readonly onWaitForAuthorization?: () => void) { }
 
     cancel(): void {
         this.cancelCalls++;
+    }
+
+    async invalidateCredentials(scope: string): Promise<void> {
+        this.invalidateCalls.push(scope);
     }
 
     markInactive(): void {
@@ -250,6 +256,39 @@ describe('MCPServer OAuth reconnect', () => {
         expect(server.oauthFactory.createCalls).to.equal(1);
         expect(server.sseTransports).to.have.length(0);
         expect(server.clients[0].closeCalls).to.equal(1);
+    });
+
+    it('does not fall back to SSE when the SDK auth flow re-throws an OAuth error response', async () => {
+        // auth() self-heals invalid_grant/invalid_client but re-throws every other OAuth error response raw;
+        // treating those as transport failures would replay the identical failing flow over SSE.
+        const server = new TestMCPServer(undefined, [[new InvalidScopeError('The requested scope is invalid.')]]);
+
+        await withConsoleOutputSuppressed(async () => {
+            await server.start();
+        });
+
+        expect(server.getStatus()).to.equal(MCPServerStatus.AuthenticationRequired);
+        expect((await server.getDescription()).error).to.contain('invalid_scope');
+        expect((await server.getDescription()).error).to.contain('The requested scope is invalid.');
+        expect(server.oauthFactory.createCalls).to.equal(1);
+        expect(server.sseTransports).to.have.length(0);
+        // Stored credentials are invalidated so the next interactive start runs a fresh authorization.
+        expect(server.oauthFactory.providersCreated[0].invalidateCalls).to.deep.equal(['tokens', 'discovery']);
+    });
+
+    it('does not fall back to SSE when the authorization server lacks a required OAuth capability', async () => {
+        // 'Incompatible auth server:' errors are configuration outcomes; the SSE fallback would re-run the
+        // identical failing discovery in a second authorization round-trip.
+        const server = new TestMCPServer(undefined, [[new Error('Incompatible auth server: does not support dynamic client registration')]]);
+
+        await withConsoleOutputSuppressed(async () => {
+            await server.start();
+        });
+
+        expect(server.getStatus()).to.equal(MCPServerStatus.Errored);
+        expect((await server.getDescription()).error).to.contain('does not support dynamic client registration');
+        expect(server.sseTransports).to.have.length(0);
+        expect(server.oauthFactory.createCalls).to.equal(1);
     });
 
     it('cleans up startup when OAuth is intentionally cancelled during Streamable HTTP connect', async () => {
@@ -493,6 +532,22 @@ describe('MCPServer OAuth reconnect', () => {
 
         expect(server.getStatus()).to.equal(MCPServerStatus.AuthenticationRequired);
         expect((await server.getDescription()).error).to.contain('User declined re-consent');
+    });
+
+    it('routes steady-state OAuth error responses to AuthenticationRequired with the authorization server diagnostic', async () => {
+        const server = new TestMCPServer();
+        const initialTransport = new StreamableHTTPClientTransport(new URL('https://mcp.example.com/mcp'));
+        const initialClient = new TestClient();
+        server.setInitialState(initialClient, initialTransport);
+        server.testSetStatus(MCPServerStatus.Connected);
+        server.testConfigureErrorHandlers();
+
+        // A mid-session token refresh rejected with a non-self-healing OAuth error surfaces via client.onerror.
+        initialClient.onerror?.(new InvalidScopeError('The requested scope is invalid.'));
+
+        expect(server.getStatus()).to.equal(MCPServerStatus.AuthenticationRequired);
+        expect((await server.getDescription()).error).to.contain('invalid_scope');
+        expect((await server.getDescription()).error).to.contain('The requested scope is invalid.');
     });
 
     it('ignores transient SSE stream disconnect events while the remote server remains connected', async () => {
