@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture
 
 **Monorepo Structure:**
-- Lerna-managed monorepo with 78 packages
+- Lerna-managed monorepo
 - `/packages/` - Runtime packages (core + extensions)
 - `/dev-packages/` - Development tooling (application-manager, cli, eslint-plugin, ext-scripts)
 - `/examples/` - Sample applications (browser, electron, browser-only, playwright)
@@ -68,13 +68,14 @@ For more information also look at:
 - @.prompts/project-info.prompttemplate (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
 
 Read on demand (not auto-loaded) — consult when the task calls for it:
-- [doc/code-organization.md](doc/code-organization.md) — exact platform import-dependency matrix (`common`→all; `browser`/`browser-only`→`common`; `node`→`common`; `electron-node`→`common`,`node`; `electron-browser`→`common`,`browser`; `electron-main`→`common`,`node`,`electron-node`). Enforce these when adding cross-platform imports.
-- [doc/vscode-usage.md](doc/vscode-usage.md) — **never export a VS Code internal API type/function/value (anything from `@theia/monaco-editor-core/esm/vs`) from a Theia package.** Export a Theia interface and adapt, so Monaco upgrades don't break adopters.
-- [doc/api-management.md](doc/api-management.md) — API stability lifecycle (Experimental → Stable, deprecation/finalization). Follow when changing any public/shared API.
-- [doc/api-testing.md](doc/api-testing.md) — API integration testing (in-app service-level tests), distinct from the unit tests in `Testing.md`.
-- [doc/pull-requests.md](doc/pull-requests.md) — PR/review checklist and landing/reverting conventions.
-- [doc/Developing.md](doc/Developing.md) — full build/setup details (prerequisites, SSL browser example, plugin download, repo structure).
-- [doc/Migration.md](doc/Migration.md) — adopter-facing breaking-change notes per version. [doc/runtime-policy.md](doc/runtime-policy.md) / [doc/Publishing.md](doc/Publishing.md) — Node/Electron support policy and the release process.
+- [doc/code-organization.md](doc/code-organization.md) — platform import rules; consult when adding cross-platform imports.
+- [doc/vscode-usage.md](doc/vscode-usage.md) — rules for exposing Monaco/VS Code internals from Theia packages.
+- [doc/api-management.md](doc/api-management.md) — API stability lifecycle.
+- [doc/api-testing.md](doc/api-testing.md) — API integration testing (vs. unit tests in `Testing.md`).
+- [doc/pull-requests.md](doc/pull-requests.md) — PR / review checklist.
+- [doc/Developing.md](doc/Developing.md) — full build/setup details.
+- [doc/Migration.md](doc/Migration.md) — adopter-facing breaking-change notes.
+- [doc/runtime-policy.md](doc/runtime-policy.md) / [doc/Publishing.md](doc/Publishing.md) — Node/Electron support and release process.
 
 **Code Style:**
 - 4 spaces indentation, single quotes, `undefined` over `null`
@@ -122,27 +123,9 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 - `configs/mocharc.yml` - Mocha test runner config
 - `configs/nyc.json` - Test coverage config
 
-## Commits
+## Commits, Issues, and Pull Requests
 
-- **Never commit automatically.** Only commit (or push) when the user explicitly asks. Leave changes in the working tree otherwise.
-- Do **not** add Claude Code attribution to commits or PRs — no `Co-Authored-By: Claude` trailer and no "Generated with Claude Code" line. Keep authorship to the human committer. (This overrides the default harness behavior.)
 - Use Conventional Commits subjects, matching existing history: `type(scope): summary` (e.g. `fix(plugin-ext): ...`, `feat(ai-registry): ...`, `chore(deps): ...`).
-- Keep commit messages, PR descriptions, and issues **brief and concise** — cover the required template sections, but no padding, marketing language, or restating the diff.
-
-## Creating Issues and Pull Requests
-
-When creating a PR or issue, follow the repository templates in `.github/`. Keep the content **brief and concise** — cover the required template sections, but no padding, marketing language, or restating the diff.
-
-**Pull requests** — use [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md). The body must include these sections, in order:
-- `#### What it does` — what the change does; reference relevant issues.
-- `#### How to test` — concrete steps for a reviewer to reproduce/verify.
-- `#### Follow-ups` — known issues, future work, or introduced technical debt (with justification); link tickets.
-- `#### Breaking changes` — checkbox; if checked, the breaking-changes section of `CHANGELOG.md` must be updated.
-- `#### Attribution` — optional changelog attribution.
-- `#### Review checklist` — confirm changes are tested per [doc/pull-requests.md](doc/pull-requests.md) and user-facing text is internationalized via `nls`.
-
-**Issues** — `blank_issues_enabled: false`; use the matching template:
-- Bug: [.github/ISSUE_TEMPLATE/bug_report.md](.github/ISSUE_TEMPLATE/bug_report.md) — Bug Description, Steps to Reproduce, Additional Information (OS, Theia version).
-- Feature: [.github/ISSUE_TEMPLATE/feature_request.md](.github/ISSUE_TEMPLATE/feature_request.md) — Feature Description.
-
-**Security:** never disclose vulnerabilities via a GitHub issue or PR — report them per `SECURITY.md`. Such issues are deleted on sight.
+- Use the templates in `.github/` when opening issues or PRs.
+- Keep commit messages, PR descriptions, issues, and comments **brief and concise** — no padding, marketing language, or restating the diff.
+- **Security:** never disclose vulnerabilities via a GitHub issue or PR — report them per `SECURITY.md`. Such issues are deleted on sight.
