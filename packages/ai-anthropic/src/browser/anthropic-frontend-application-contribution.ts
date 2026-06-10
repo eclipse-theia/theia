@@ -16,10 +16,11 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_BETA_ENDPOINTS_PREF } from '../common/anthropic-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MEMORY_TOOL_FOLDER_PREF, MEMORY_TOOL_PREF, MODELS_PREF, USE_BETA_ENDPOINTS_PREF } from '../common/anthropic-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { PreferenceService } from '@theia/core';
+import { Path, PreferenceService } from '@theia/core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -34,6 +35,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
     @inject(AICorePreferences)
     protected aiCorePreferences: AICorePreferences;
+
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
 
     protected prevModels: string[] = [];
     protected prevCustomModels: Partial<AnthropicModelDescription>[] = [];
@@ -65,7 +69,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
-                } else if (event.preferenceName === USE_BETA_ENDPOINTS_PREF) {
+                } else if (event.preferenceName === USE_BETA_ENDPOINTS_PREF
+                    || event.preferenceName === MEMORY_TOOL_PREF
+                    || event.preferenceName === MEMORY_TOOL_FOLDER_PREF) {
                     this.updateAllModels();
                 }
             });
@@ -74,6 +80,10 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
                     this.updateAllModels();
                 }
+            });
+
+            this.workspaceService.onWorkspaceChanged(() => {
+                this.updateAllModels();
             });
         });
     }
@@ -130,13 +140,34 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             enableStreaming: true,
             useCaching: true,
             maxRetries: maxRetries,
-            useBetaEndpoints: this.preferenceService.get<boolean>(USE_BETA_ENDPOINTS_PREF, false)
+            useBetaEndpoints: this.preferenceService.get<boolean>(USE_BETA_ENDPOINTS_PREF, false),
+            memoryToolFolder: this.getMemoryToolFolder()
         };
+    }
+
+    /**
+     * Resolves the configured memory tool folder to an absolute path, or `undefined` if the memory tool is not activated
+     * or a relative folder is configured while no workspace is open.
+     */
+    protected getMemoryToolFolder(): string | undefined {
+        if (!this.preferenceService.get<boolean>(MEMORY_TOOL_PREF, false)) {
+            return undefined;
+        }
+        const folder = this.preferenceService.get<string>(MEMORY_TOOL_FOLDER_PREF, 'memory');
+        if (!folder) {
+            return undefined;
+        }
+        if (new Path(folder).isAbsolute) {
+            return folder;
+        }
+        const root = this.workspaceService.tryGetRoots()[0];
+        return root ? root.resource.resolve(folder).path.fsPath() : undefined;
     }
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         const useBetaEndpoints = this.preferenceService.get<boolean>(USE_BETA_ENDPOINTS_PREF, false);
+        const memoryToolFolder = this.getMemoryToolFolder();
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -151,7 +182,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     enableStreaming: pref.enableStreaming ?? true,
                     useCaching: pref.useCaching ?? true,
                     maxRetries: pref.maxRetries ?? maxRetries,
-                    useBetaEndpoints
+                    useBetaEndpoints,
+                    memoryToolFolder
                 }
             ];
         }, []);

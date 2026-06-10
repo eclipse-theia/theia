@@ -30,6 +30,7 @@ import {
     ReasoningSupport,
     ToolCallResult,
     ToolInvocationContext,
+    ToolRequest,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
@@ -39,6 +40,7 @@ import type { BetaMessageStreamParams } from '@anthropic-ai/sdk/resources/beta/m
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
+import { AnthropicMemoryTool, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -241,7 +243,8 @@ export class AnthropicModel implements LanguageModel {
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
         public maxInputTokens?: number,
-        public useBetaEndpoints?: boolean
+        public useBetaEndpoints?: boolean,
+        public memoryToolFolder?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -257,12 +260,13 @@ export class AnthropicModel implements LanguageModel {
         }
 
         const anthropic = this.initializeAnthropic();
+        const effectiveRequest = this.withMemoryTool(request);
 
         try {
             if (this.enableStreaming) {
-                return this.handleStreamingRequest(anthropic, request, cancellationToken);
+                return this.handleStreamingRequest(anthropic, effectiveRequest, cancellationToken);
             }
-            return this.handleNonStreamingRequest(anthropic, request);
+            return this.handleNonStreamingRequest(anthropic, effectiveRequest);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             throw new Error(`Anthropic API request failed: ${errorMessage}`);
@@ -439,21 +443,52 @@ export class AnthropicModel implements LanguageModel {
         return anthropic.messages.stream(params, { maxRetries: this.maxRetries });
     }
 
-    protected createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
-        if (request.tools?.length === 0) {
+    /**
+     * Returns the request extended with the memory tool if it is activated (see {@link memoryToolFolder}), so that memory tool
+     * calls are dispatched like any other tool call. Request tools with a conflicting name are replaced.
+     */
+    protected withMemoryTool<T extends LanguageModelRequest>(request: T): T {
+        const memoryTool = this.createMemoryTool();
+        if (!memoryTool) {
+            return request;
+        }
+        const memoryToolRequest: ToolRequest = {
+            id: MEMORY_TOOL_NAME,
+            name: MEMORY_TOOL_NAME,
+            description: 'Anthropic\'s built-in memory tool, executed against the configured memory folder.',
+            parameters: { type: 'object', properties: {} },
+            handler: argsJson => memoryTool.execute(argsJson)
+        };
+        return {
+            ...request,
+            tools: [memoryToolRequest, ...(request.tools?.filter(tool => tool.name !== MEMORY_TOOL_NAME) ?? [])]
+        };
+    }
+
+    /**
+     * Maps the request tools to Anthropic tool parameters. The activated memory tool (see {@link withMemoryTool}) is mapped
+     * to Anthropic's built-in `memory_20250818` tool type instead of a custom schema tool, so that the model uses its native
+     * memory behavior and the memory protocol system prompt is injected automatically by the API.
+     */
+    protected createTools(request: LanguageModelRequest): Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined {
+        if (!request.tools?.length) {
             return undefined;
         }
-        const tools = request.tools?.map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: tool.parameters
-        } as Anthropic.Messages.Tool));
+        const tools = request.tools.map(tool => this.memoryToolFolder && tool.name === MEMORY_TOOL_NAME
+            ? { type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME } as Anthropic.Messages.MemoryTool20250818
+            : {
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.parameters
+            } as Anthropic.Messages.Tool);
         if (this.useCaching) {
-            if (tools?.length) {
-                tools[tools.length - 1].cache_control = { type: 'ephemeral' };
-            }
+            tools[tools.length - 1].cache_control = { type: 'ephemeral' };
         }
         return tools;
+    }
+
+    protected createMemoryTool(): AnthropicMemoryTool | undefined {
+        return this.memoryToolFolder ? new AnthropicMemoryTool(this.memoryToolFolder) : undefined;
     }
 
     protected async handleNonStreamingRequest(
