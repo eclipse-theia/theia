@@ -1302,6 +1302,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 commitMessageAi: this.commitMessageAi,
                 openPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),
                 openAiConfigurationSheet: tabId => this.openWorkHubAiConfigurationSheet(tabId),
+                projectBootstrap: this.projectBootstrap,
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);

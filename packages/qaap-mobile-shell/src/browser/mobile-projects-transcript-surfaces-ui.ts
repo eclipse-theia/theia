@@ -23,6 +23,8 @@ import { reconcileAgentApprovalPolicyId, type QaapAgentApprovalPolicyId } from '
 import { resolveTranscriptWorkspaceCwd } from '../common/qaap-transcript-workspace-cwd';
 import type { ExecutionSurfaceTabId } from '../common/qaap-execution-surface-tabs';
 import { probeQaapDevPreviewPort, toDevPreviewUrl } from './qaap-dev-preview-client';
+import { ensureTranscriptDevPreview, extractDevPreviewPortFromUrl } from './qaap-transcript-preview-bootstrap';
+import type { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import type { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectEntry } from './mobile-projects-types';
@@ -140,10 +142,13 @@ export interface MobileProjectsTranscriptSurfacesHost {
     refreshTranscriptChecksViews(project: MobileProjectEntry, summary: QaapAgentConversationSummaryDTO): void;
     setAutoVerifyEnabled(cwd: string | undefined, on: boolean): void;
     onResumePreview?(project: MobileProjectEntry): void | Promise<void>;
+    projectBootstrap?: QaapProjectBootstrapService;
 }
 
 /** Execution-surface tab content: plan, review, preview, files, and terminal. */
 export class MobileProjectsTranscriptSurfacesUi {
+
+    protected readonly transcriptPreviewEnsureRequests = new Set<string>();
 
     constructor(
         protected readonly host: MobileProjectsTranscriptSurfacesHost,
@@ -518,6 +523,7 @@ export class MobileProjectsTranscriptSurfacesUi {
         if (previewUrl) {
             this.host.transcriptPreviewRequestPending = false;
             this.host.transcriptPreviewRequestRunning = false;
+            void this.ensureTranscriptPreviewServing(project, summary, previewUrl);
             if (latestProject.previewUrl !== previewUrl) {
                 void this.host.projectsService.recordProjectPreviewUrl(latestProject, previewUrl)
                     .then(() => {
@@ -586,13 +592,65 @@ export class MobileProjectsTranscriptSurfacesUi {
         }
         this.host.transcriptPreviewRecoveryRequests.add(summary.id);
         void this.refreshTranscriptPreviewProject(project, summary).then(latestProject => {
-            if (!latestProject.previewUrl || this.host.transcriptOpenSummaryId !== summary.id || this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
+            const conv = this.host.transcriptLastConv;
+            const previewUrl = latestProject.previewUrl ?? this.resolveTranscriptPreviewUrl(latestProject, conv);
+            if (previewUrl) {
+                void this.ensureTranscriptPreviewServing(latestProject, summary, previewUrl);
+            }
+            if (!previewUrl || this.host.transcriptOpenSummaryId !== summary.id || this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
                 return;
             }
-            this.host.projects = this.host.projects.map(candidate => candidate.id === latestProject.id ? latestProject : candidate);
+            this.host.projects = this.host.projects.map(candidate => candidate.id === latestProject.id
+                ? { ...latestProject, previewUrl }
+                : candidate);
             this.renderPreviewTab(latestProject, summary);
         }).finally(() => {
             this.host.transcriptPreviewRecoveryRequests.delete(summary.id);
+        });
+    }
+
+    protected ensureTranscriptPreviewServing(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        previewUrl: string,
+    ): void {
+        const bootstrap = this.host.projectBootstrap;
+        if (!bootstrap) {
+            return;
+        }
+        const requestKey = `${summary.id}:${previewUrl}`;
+        if (this.transcriptPreviewEnsureRequests.has(requestKey)) {
+            return;
+        }
+        const port = extractDevPreviewPortFromUrl(previewUrl);
+        this.transcriptPreviewEnsureRequests.add(requestKey);
+        void (async () => {
+            if (port !== undefined) {
+                const probe = await probeQaapDevPreviewPort(port);
+                if (probe.ready) {
+                    return;
+                }
+            }
+            const readyUrl = await ensureTranscriptDevPreview(bootstrap, {
+                previewUrlHint: previewUrl,
+                portHint: port,
+            });
+            if (!readyUrl || this.host.transcriptOpenSummaryId !== summary.id) {
+                return;
+            }
+            if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
+                return;
+            }
+            const latestProject = this.host.projects.find(candidate => candidate.id === project.id) ?? project;
+            this.host.projects = this.host.projects.map(candidate => candidate.id === latestProject.id
+                ? { ...candidate, previewUrl: readyUrl }
+                : candidate);
+            void this.host.projectsService.recordProjectPreviewUrl({ ...latestProject, previewUrl: readyUrl }, readyUrl);
+            this.host.transcriptPreviewRequestPending = false;
+            this.host.transcriptPreviewRequestRunning = false;
+            this.renderPreviewTab({ ...latestProject, previewUrl: readyUrl }, summary);
+        })().finally(() => {
+            this.transcriptPreviewEnsureRequests.delete(requestKey);
         });
     }
 
@@ -1192,9 +1250,27 @@ export class MobileProjectsTranscriptSurfacesUi {
             return;
         }
 
+        const bootstrap = this.host.projectBootstrap;
+        if (bootstrap) {
+            void ensureTranscriptDevPreview(bootstrap).then(readyUrl => {
+                if (!readyUrl || this.host.transcriptOpenSummaryId !== summary.id) {
+                    return;
+                }
+                if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
+                    return;
+                }
+                const refreshed = this.host.projects.find(candidate => candidate.id === project.id) ?? project;
+                this.host.projects = this.host.projects.map(candidate => candidate.id === refreshed.id
+                    ? { ...candidate, previewUrl: readyUrl }
+                    : candidate);
+                void this.host.projectsService.recordProjectPreviewUrl({ ...refreshed, previewUrl: readyUrl }, readyUrl);
+                this.renderPreviewTab({ ...refreshed, previewUrl: readyUrl }, summary);
+            });
+        }
+
         const message = nls.localize(
             'qaap/mobileProjects/previewAgentRequest',
-            'Start this app for preview. Install dependencies if needed. Before starting the server, check whether the default port is already in use; if it is, pick another free port for this project without stopping previews for other projects. Run the dev server on that available port and keep it running with hot reload/HMR so changes appear automatically in the preview. Whenever you modify code or any project file, run the available build, compile, typecheck, or check before considering the change done; if it fails, fix the issue and verify again. Expose the final URL and let me know when the preview is ready.',
+            'Prepare this app for live in-IDE preview. Qaap starts and keeps the dev server running in a dedicated terminal with hot reload — do NOT run long-lived dev commands in shell (pnpm dev, npm start, vite, next dev, etc.); shell tools time out after ~30s and break preview. Install dependencies only if node_modules is missing. Fix build/typecheck issues with one-shot commands. When ready, reply with the expected local port (e.g. 5173) and confirm dependencies are installed.',
         );
         this.host.transcriptPreviewRequestRunning = true;
         this.host.transcriptPreviewRequestPending = true;

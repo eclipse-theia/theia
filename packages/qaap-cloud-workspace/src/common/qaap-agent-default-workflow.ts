@@ -5,6 +5,7 @@
 
 const SHELL_AGENT_ID = 'shell';
 const DEFAULT_WORKFLOW_MARKER = '[QAAP default agent workflow]';
+const DEV_PREVIEW_MARKER = '[QAAP dev preview]';
 
 export function buildAgentDefaultWorkflowPromptBlock(): string {
     return [
@@ -17,9 +18,22 @@ export function buildAgentDefaultWorkflowPromptBlock(): string {
     ].join('\n');
 }
 
+export function buildAgentDevPreviewPromptBlock(): string {
+    return [
+        DEV_PREVIEW_MARKER,
+        'Qaap keeps the dev server alive in a dedicated IDE terminal with hot reload.',
+        'Never run long-lived dev commands in shell (pnpm dev, npm start, vite, next dev, astro dev, etc.) — shell tools time out after ~30s and kill the preview.',
+        'Use one-shot install/build/typecheck/test commands only. When the app should be previewable, reply with the expected local port (e.g. 5173) and confirm dependencies are installed; Qaap starts the server separately.',
+    ].join('\n');
+}
+
 export function appendAgentDefaultWorkflowToPrompt(prompt: string, agentId: string): string {
     if (agentId === SHELL_AGENT_ID || prompt.includes(DEFAULT_WORKFLOW_MARKER)) {
         return prompt;
     }
-    return `${buildAgentDefaultWorkflowPromptBlock()}\n\n---\n\n${prompt}`;
+    const blocks = [buildAgentDefaultWorkflowPromptBlock()];
+    if (!prompt.includes(DEV_PREVIEW_MARKER)) {
+        blocks.push(buildAgentDevPreviewPromptBlock());
+    }
+    return `${blocks.join('\n\n')}\n\n---\n\n${prompt}`;
 }

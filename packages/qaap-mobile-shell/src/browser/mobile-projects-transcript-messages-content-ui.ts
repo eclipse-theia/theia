@@ -6,6 +6,7 @@
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { nls } from '@theia/core/lib/common/nls';
 import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
+import { ensureTranscriptDevPreview } from './qaap-transcript-preview-bootstrap';
 import { collapseExactRepeatedText } from '../common/qaap-qaiq-stream';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
@@ -54,6 +55,9 @@ export class MobileProjectsTranscriptMessagesContentUi {
         await this.host.projectsService.recordProjectPreviewUrl(latestProject, previewUrl).catch(() => undefined);
 
         this.host.executionSurfaceTabsUi.selectTranscriptTab('preview', latestProject, summary);
+        if (this.host.projectBootstrap) {
+            void ensureTranscriptDevPreview(this.host.projectBootstrap, { previewUrlHint: previewUrl });
+        }
         MobileSnackbar.show(nls.localize('qaap/mobileProjects/previewLinkOpened', 'Preview opened'), { kind: 'success', duration: 1400 });
         return true;
     }

@@ -54,6 +54,7 @@ export interface MobileProjectsTranscriptMessagesHost {
     conversations?: MobileProjectsConversations;
     projectsService: MobileProjectsService;
     projects: MobileProjectEntry[];
+    projectBootstrap?: import('./qaap-project-bootstrap-service').QaapProjectBootstrapService;
 
     projectRowsUi: import('./mobile-projects-project-rows-ui').MobileProjectsProjectRowsUi;
     transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;

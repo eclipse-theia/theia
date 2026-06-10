@@ -13,6 +13,8 @@ import { CoderAgentId } from '@theia/ai-ide/lib/browser/coder-agent';
 import { MobileProjectEntry } from '@theia/qaap-mobile-shell/lib/browser/mobile-projects-types';
 import { MobileProjectsService } from '@theia/qaap-mobile-shell/lib/browser/mobile-projects-service';
 import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
+import { ensureTranscriptDevPreview, extractDevPreviewPortFromUrl } from '@theia/qaap-mobile-shell/lib/browser/qaap-transcript-preview-bootstrap';
+import { probeQaapDevPreviewPort } from '@theia/qaap-mobile-shell/lib/browser/qaap-dev-preview-client';
 
 export const QAAP_HUB_RESUME_PREVIEW_COMMAND_ID = 'qaap.hub.resumePreview';
 export const QAAP_HUB_OPEN_AGENT_ON_TASK_COMMAND_ID = 'qaap.hub.openAgentOnTask';
@@ -77,15 +79,28 @@ export class QaapHubActionsContribution implements CommandContribution, Frontend
     }
 
     protected async doResumePreview(previewUrl?: string): Promise<void> {
-        if (previewUrl) {
-            try {
-                await this.commands.executeCommand('mini-browser.openUrl', previewUrl);
-                return;
-            } catch {
-                /* fall through to bootstrap */
+        const port = extractDevPreviewPortFromUrl(previewUrl);
+        if (port !== undefined) {
+            const probe = await probeQaapDevPreviewPort(port);
+            if (probe.ready) {
+                try {
+                    await this.commands.executeCommand('mini-browser.openUrl', probe.previewUrl);
+                    return;
+                } catch {
+                    /* fall through to bootstrap */
+                }
             }
         }
-        await this.bootstrap.runDevServer();
+        const readyUrl = await ensureTranscriptDevPreview(this.bootstrap, { previewUrlHint: previewUrl, portHint: port });
+        if (readyUrl) {
+            try {
+                await this.commands.executeCommand('mini-browser.openUrl', readyUrl);
+                return;
+            } catch {
+                /* fall through */
+            }
+        }
+        await this.bootstrap.focusPreview();
     }
 
     protected async openAgentOnTask(project?: MobileProjectEntry): Promise<void> {

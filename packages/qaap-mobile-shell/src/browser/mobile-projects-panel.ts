@@ -241,6 +241,7 @@ import {
 } from './mobile-work-hub-inbox';
 import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
+import type { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import type { TranscriptFilesViewServices } from './qaap-transcript-files-view';
 import type { TranscriptTerminalViewServices } from './qaap-transcript-terminal-view';
 import {
@@ -345,6 +346,8 @@ export interface MobileProjectsPanelOptions {
     openPreferencesSheet?: (query?: string) => Promise<void>;
     /** Opens AI Configuration (agents, MCP, prompts) inside the Work Hub overlay. */
     openAiConfigurationSheet?: (tabId?: string) => Promise<void>;
+    /** Persistent dev-server orchestration for transcript Preview tab. */
+    projectBootstrap?: QaapProjectBootstrapService;
 }
 
 type WorkHubSearchTarget =
@@ -595,6 +598,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     protected readonly commitMessageAi: MobileProjectsPanelOptions['commitMessageAi'];
     protected readonly openPreferencesSheet: MobileProjectsPanelOptions['openPreferencesSheet'];
     protected readonly openAiConfigurationSheet: MobileProjectsPanelOptions['openAiConfigurationSheet'];
+    readonly projectBootstrap: QaapProjectBootstrapService | undefined;
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
     protected inboxStreamDispose: Disposable = Disposable.NULL;
@@ -674,6 +678,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
         this.commitMessageAi = options.commitMessageAi;
         this.openPreferencesSheet = options.openPreferencesSheet;
         this.openAiConfigurationSheet = options.openAiConfigurationSheet;
+        this.projectBootstrap = options.projectBootstrap;
         this.root = document.createElement('div');
         this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
         if (!this.homeMode) {

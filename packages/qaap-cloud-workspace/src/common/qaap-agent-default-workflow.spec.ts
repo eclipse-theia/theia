@@ -19,6 +19,7 @@ describe('appendAgentDefaultWorkflowToPrompt', () => {
     it('prepends the default workflow for agent prompts', () => {
         const result = appendAgentDefaultWorkflowToPrompt('Fix the bug', 'qaiq');
         expect(result).to.include('[QAAP default agent workflow]');
+        expect(result).to.include('[QAAP dev preview]');
         expect(result).to.include('Fix the bug');
     });
 
