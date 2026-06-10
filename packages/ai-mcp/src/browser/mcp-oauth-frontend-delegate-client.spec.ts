@@ -20,9 +20,10 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { MessageService } from '@theia/core';
+import { Emitter, MessageService, ProgressMessage } from '@theia/core';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
+import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
 
 disableJSDOM();
 
@@ -37,7 +38,11 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
 
     function createClient(openCalls: Array<{ url: string, external: boolean | undefined }> = [], options: {
         /** Captures the popup-blocked fallback toast; the returned value simulates the user's action choice. */
-        onInfo?: (message: string, ...actions: string[]) => Promise<string | undefined>
+        onShowProgress?: (message: ProgressMessage) => string | undefined
+        /** Invoked when the toast is dismissed programmatically through its progress handle. */
+        onPromptCancel?: (message: ProgressMessage) => void
+        /** Fired to simulate MCP server updates arriving in the frontend. */
+        serverUpdateEmitter?: Emitter<void>
     } = {}): MCPOAuthFrontendDelegateClientImpl {
         const client = new MCPOAuthFrontendDelegateClientImpl();
         const windowService = {
@@ -48,14 +53,32 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
         } as unknown as WindowService;
         (client as unknown as { windowService: WindowService }).windowService = windowService;
         const messageService = {
-            info: (message: string, ...actions: string[]) => options.onInfo?.(message, ...actions) ?? Promise.resolve(undefined)
+            // Mirrors the real toast: the result only settles when the user picks an action.
+            showProgress: async (message: ProgressMessage) => {
+                const action = options.onShowProgress?.(message);
+                return {
+                    id: 'test-progress',
+                    report: () => { /* not used */ },
+                    cancel: () => options.onPromptCancel?.(message),
+                    result: action !== undefined ? Promise.resolve(action) : new Promise<string | undefined>(() => { /* stays pending */ })
+                };
+            }
         } as unknown as MessageService;
         (client as unknown as { messageService: MessageService }).messageService = messageService;
+        const serverUpdateEmitter = options.serverUpdateEmitter ?? new Emitter<void>();
+        (client as unknown as { mcpNotificationService: MCPFrontendNotificationService }).mcpNotificationService = {
+            onDidUpdateMCPServers: serverUpdateEmitter.event,
+            didUpdateMCPServers: () => serverUpdateEmitter.fire()
+        };
+        // `@postConstruct` only runs under an inversify container; wire the subscription manually.
+        (client as unknown as { init(): void }).init();
         return client;
     }
 
     async function flushToastHandlers(): Promise<void> {
-        // openExternal resolves before the toast promise's .then runs; flush the microtask chain.
+        // openExternal resolves before the toast promise chain runs; flush the microtask chain.
+        await Promise.resolve();
+        await Promise.resolve();
         await Promise.resolve();
         await Promise.resolve();
     }
@@ -98,10 +121,10 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
             // The RPC-initiated window.open carries no user activation and may be popup-blocked (undetectable
             // with 'noopener'); the toast action click carries fresh activation.
             const openCalls: Array<{ url: string, external: boolean | undefined }> = [];
-            let infoMessage: string | undefined;
+            let prompt: ProgressMessage | undefined;
             const client = createClient(openCalls, {
-                onInfo: async message => {
-                    infoMessage = message;
+                onShowProgress: message => {
+                    prompt = message;
                     return 'Open';
                 }
             });
@@ -109,7 +132,10 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
             await client.openExternal('https://auth.example.com/authorize?state=abc');
             await flushToastHandlers();
 
-            expect(infoMessage).to.contain('browser may have blocked');
+            expect(prompt?.text).to.contain('browser may have blocked');
+            expect(prompt?.actions).to.deep.equal(['Open']);
+            // The user must be able to dismiss the toast manually; progress notifications have no close button.
+            expect(prompt?.options?.cancelable).to.be.true;
             expect(openCalls).to.deep.equal([
                 { url: 'https://auth.example.com/authorize?state=abc', external: true },
                 { url: 'https://auth.example.com/authorize?state=abc', external: true }
@@ -119,13 +145,34 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
         it('does not re-open the sign-in URL when the fallback toast is dismissed', async () => {
             const openCalls: Array<{ url: string, external: boolean | undefined }> = [];
             const client = createClient(openCalls, {
-                onInfo: async () => undefined
+                onShowProgress: () => undefined
             });
 
             await client.openExternal('https://auth.example.com/authorize');
             await flushToastHandlers();
 
             expect(openCalls).to.have.length(1);
+        });
+
+        it('dismisses the fallback toast when an MCP server update arrives', async () => {
+            // A server update after the sign-in page was opened means the OAuth flow progressed (the user
+            // completed or aborted the sign-in), so the toast is no longer relevant.
+            const cancelled: ProgressMessage[] = [];
+            const serverUpdateEmitter = new Emitter<void>();
+            const client = createClient([], {
+                onShowProgress: () => undefined,
+                onPromptCancel: message => cancelled.push(message),
+                serverUpdateEmitter
+            });
+
+            await client.openExternal('https://auth.example.com/authorize');
+            await flushToastHandlers();
+            expect(cancelled).to.deep.equal([]);
+
+            serverUpdateEmitter.fire();
+
+            expect(cancelled).to.have.length(1);
+            expect(cancelled[0].text).to.contain('browser may have blocked');
         });
 
         it('does not require any prepare / arm step before the call', async () => {

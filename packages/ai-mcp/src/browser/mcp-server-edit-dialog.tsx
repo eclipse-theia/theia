@@ -21,8 +21,8 @@ import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator';
 
-/** Server type discriminator the dialog edits - stdio launch vs remote URL. */
-export type MCPServerType = 'local' | 'remote';
+/** Server type edited in the dialog: local stdio launch, remote URL with token authentication, or remote URL with OAuth. */
+export type MCPServerType = 'local' | 'remote' | 'remote-oauth';
 
 /** User-facing form fields collected by the Add/Edit MCP Server dialog. */
 export interface MCPServerFormData {
@@ -35,7 +35,6 @@ export interface MCPServerFormData {
     serverAuthToken: string;
     serverAuthTokenHeader: string;
     headers: string;
-    oauthEnabled: boolean;
     oauthClientId: string;
     oauthClientSecret: string;
     oauthScopes: string;
@@ -54,7 +53,6 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     serverAuthToken: '',
     serverAuthTokenHeader: '',
     headers: '',
-    oauthEnabled: false,
     oauthClientId: '',
     oauthClientSecret: '',
     oauthScopes: '',
@@ -107,7 +105,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
             }
         } else if (!this.formData.serverUrl.trim()) {
             errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
-        } else if (this.formData.oauthEnabled) {
+        } else if (this.formData.serverType === 'remote-oauth') {
             const authorizationServer = this.formData.oauthAuthorizationServer.trim();
             if (authorizationServer && !isHttpOrHttpsUrl(authorizationServer)) {
                 errors.push(nls.localize('theia/ai/mcpConfiguration/form/oauthAuthorizationServerInvalid',
@@ -150,7 +148,8 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                         defaultValue={this.formData.serverType}
                         options={[
                             { value: 'local', label: nls.localize('theia/ai/mcpConfiguration/form/localServer', 'Local (Command)') },
-                            { value: 'remote', label: nls.localize('theia/ai/mcpConfiguration/form/remoteServer', 'Remote (URL)') }
+                            { value: 'remote', label: nls.localize('theia/ai/mcpConfiguration/form/remoteServer', 'Remote (URL)') },
+                            { value: 'remote-oauth', label: nls.localize('theia/ai/mcpConfiguration/form/remoteOAuthServer', 'Remote (OAuth)') }
                         ]}
                         onChange={option => this.handleFormChange('serverType', option.value as MCPServerType)}
                     />
@@ -230,29 +229,33 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     />
                 </div>
 
-                <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthToken', 'Auth Token')}:</label>
-                    <input
-                        type="password"
-                        className="theia-input"
-                        value={this.formData.serverAuthToken}
-                        onChange={e => this.handleFormChange('serverAuthToken', e.target.value)}
-                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/authTokenPlaceholder', 'Optional authentication token')}
-                        spellCheck={false}
-                    />
-                </div>
+                {this.formData.serverType === 'remote' && (
+                    <>
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthToken', 'Auth Token')}:</label>
+                            <input
+                                type="password"
+                                className="theia-input"
+                                value={this.formData.serverAuthToken}
+                                onChange={e => this.handleFormChange('serverAuthToken', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/authTokenPlaceholder', 'Optional authentication token')}
+                                spellCheck={false}
+                            />
+                        </div>
 
-                <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthTokenHeader', 'Auth Header Name')}:</label>
-                    <input
-                        type="text"
-                        className="theia-input"
-                        value={this.formData.serverAuthTokenHeader}
-                        onChange={e => this.handleFormChange('serverAuthTokenHeader', e.target.value)}
-                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/authHeaderPlaceholder', 'Default: Authorization with Bearer')}
-                        spellCheck={false}
-                    />
-                </div>
+                        <div className="mcp-form-field">
+                            <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthTokenHeader', 'Auth Header Name')}:</label>
+                            <input
+                                type="text"
+                                className="theia-input"
+                                value={this.formData.serverAuthTokenHeader}
+                                onChange={e => this.handleFormChange('serverAuthTokenHeader', e.target.value)}
+                                placeholder={nls.localize('theia/ai/mcpConfiguration/form/authHeaderPlaceholder', 'Default: Authorization with Bearer')}
+                                spellCheck={false}
+                            />
+                        </div>
+                    </>
+                )}
 
                 <div className="mcp-form-field">
                     <label>{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</label>
@@ -266,32 +269,21 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     />
                 </div>
 
-                <div className="mcp-form-section-title">
-                    {nls.localize('theia/ai/mcpConfiguration/oauth', 'OAuth')}
-                </div>
-
-                <div className="mcp-form-field mcp-form-checkbox">
-                    <label>
-                        <input
-                            type="checkbox"
-                            className='theia-input'
-                            checked={this.formData.oauthEnabled}
-                            onChange={e => this.handleFormChange('oauthEnabled', e.target.checked)}
-                        />
-                        {nls.localize('theia/ai/mcpConfiguration/form/oauthEnabled', 'Enable OAuth authorization')}
-                    </label>
-                    <div className="mcp-form-description">
-                        {nls.localize('theia/ai/mcpConfiguration/form/oauthPublicClientDescription',
-                            'Theia uses public OAuth clients with PKCE by default. Provide a client secret only if the server requires a pre-registered confidential client.')}
-                    </div>
-                    <div className="mcp-form-description">
-                        {nls.localize('theia/ai/mcpConfiguration/form/oauthSharedCredentialsDescription',
-                            'Stored OAuth sessions are shared across workspaces that use the same server name and URL (or resource).')}
-                    </div>
-                </div>
-
-                {this.formData.oauthEnabled && (
+                {this.formData.serverType === 'remote-oauth' && (
                     <>
+                        <div className="mcp-form-section-title">
+                            {nls.localize('theia/ai/mcpConfiguration/oauth', 'OAuth')}
+                        </div>
+
+                        <div className="mcp-form-description">
+                            {nls.localize('theia/ai/mcpConfiguration/form/oauthPublicClientDescription',
+                                'Theia uses public OAuth clients with PKCE by default. Provide a client secret only if the server requires a pre-registered confidential client.')}
+                        </div>
+                        <div className="mcp-form-description">
+                            {nls.localize('theia/ai/mcpConfiguration/form/oauthSharedCredentialsDescription',
+                                'Stored OAuth sessions are shared across workspaces that use the same server name and URL (or resource).')}
+                        </div>
+
                         <div className="mcp-form-field">
                             <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}:</label>
                             <input

@@ -18,9 +18,9 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common';
 import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
-import { MCPFrontendService } from '../common/mcp-server-manager';
+import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { MessageService, PreferenceService, PreferenceUtils, ILogger } from '@theia/core';
+import { MessageService, PreferenceService, PreferenceUtils, Progress, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     WorkspaceTrustService,
@@ -57,17 +57,27 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     @inject(MCPOAuthFrontendDelegate)
     protected oauthFrontendDelegate: MCPOAuthFrontendDelegate;
 
+    @inject(MCPFrontendNotificationService)
+    protected mcpNotificationService: MCPFrontendNotificationService;
+
     protected prevServers: Map<string, MCPServerDescription> = new Map();
 
     protected blockedUntrustedServers: Set<string> = new Set();
 
     protected serverChangeQueue: Promise<void> = Promise.resolve();
 
+    /** Pending OAuth sign-in prompts, keyed by server name. */
+    protected readonly pendingSignInPrompts = new Map<string, Progress>();
+
     onStart(): void {
         // Preflight the backend→frontend RPC channel for OAuth callbacks so a wiring failure surfaces
         // at startup rather than at the first OAuth flow. Failures are logged but not propagated.
         this.oauthFrontendDelegate.getCallbackUrl().catch(error =>
             console.warn('MCP OAuth duplex-channel preflight failed; OAuth callbacks may not work until reconnect.', error));
+
+        this.mcpNotificationService.onDidUpdateMCPServers(() => {
+            this.dismissSettledSignInPrompts().catch(error => console.error('Failed to dismiss settled MCP OAuth sign-in prompts', error));
+        });
 
         this.preferenceService.ready.then(async () => {
             const servers = filterValidValues(this.preferenceService.get(
@@ -213,7 +223,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
      * Autostart path for a single server. For non-OAuth servers, just calls `startServer`. For OAuth
      * servers, either skips the silent start when no usable credentials exist (and prompts the user)
      * or attempts the silent start; if the silent start lands in `AuthenticationRequired`, prompts
-     * the user via `messageService.warn` with a Sign In action.
+     * the user via a notification with a Sign In action.
      */
     protected async attemptSilentStartOrPromptForOAuth(name: string, serverDesc: MCPServerDescription): Promise<void> {
         const isOAuthServer = isRemoteMCPServerDescription(serverDesc) && !!serverDesc.oauth?.enabled;
@@ -232,23 +242,43 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     }
 
     /**
-     * Surfaces a non-modal notification with a 'Sign In' action button. Fire-and-forget so multiple
-     * OAuth servers each get their own notification the user can respond to independently.
+     * Prompts the user to authorize the given MCP server via a non-modal notification with a 'Sign In'
+     * action. Dismissed automatically once the start attempt concludes, see {@link dismissSettledSignInPrompts}.
      */
     protected promptForOAuthSignIn(serverName: string): void {
+        this.pendingSignInPrompts.get(serverName)?.cancel();
         const signInAction = nls.localizeByDefault('Sign In');
-        this.messageService.warn(
-            nls.localize('theia/ai/mcp/oauth/notification/signInPrompt',
+        this.messageService.showProgress({
+            text: nls.localize('theia/ai/mcp/oauth/notification/signInPrompt',
                 'MCP server "{0}" requires authorization to start.', serverName),
-            signInAction
-        ).then(action => {
-            if (action !== signInAction) {
-                return undefined;
-            }
-            return this.frontendMCPService.startServerInteractive(serverName);
+            actions: [signInAction],
+            options: { cancelable: true }
+        }).then(progress => {
+            this.pendingSignInPrompts.set(serverName, progress);
+            return progress.result.then(action => {
+                if (this.pendingSignInPrompts.get(serverName) === progress) {
+                    this.pendingSignInPrompts.delete(serverName);
+                }
+                if (action !== signInAction) {
+                    return undefined;
+                }
+                return this.frontendMCPService.startServerInteractive(serverName);
+            });
         }).catch(error => {
             console.error(`Failed to drive OAuth sign-in prompt for MCP server "${serverName}"`, error);
         });
+    }
+
+    /** Dismisses sign-in prompts whose server was removed or whose start attempt has concluded. */
+    protected async dismissSettledSignInPrompts(): Promise<void> {
+        for (const [name, prompt] of Array.from(this.pendingSignInPrompts.entries())) {
+            const description = await this.frontendMCPService.getServerDescription(name);
+            const status = description?.status;
+            if (!description || status === MCPServerStatus.Connected || status === MCPServerStatus.Running || status === MCPServerStatus.Errored) {
+                this.pendingSignInPrompts.delete(name);
+                prompt.cancel();
+            }
+        }
     }
 
     protected enqueueServerChanges(newServers: MCPServersPreference): void {

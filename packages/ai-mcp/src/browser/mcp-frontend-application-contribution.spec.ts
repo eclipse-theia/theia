@@ -30,9 +30,11 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { MessageService, PreferenceService, ILogger } from '@theia/core';
+import { MessageService, PreferenceService, ProgressMessage, ILogger } from '@theia/core';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
-import { MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServersPreference, MCPServerStatus } from '../common';
+import {
+    MCPFrontendNotificationService, MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServersPreference, MCPServerStatus
+} from '../common';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -153,6 +155,10 @@ describe('McpFrontendApplicationContribution', () => {
         container.bind(MCPOAuthFrontendDelegate).toConstantValue({
             getCallbackUrl: () => Promise.resolve('')
         } as unknown as MCPOAuthFrontendDelegate);
+        container.bind(MCPFrontendNotificationService).toConstantValue({
+            onDidUpdateMCPServers: () => ({ dispose: () => { } }),
+            didUpdateMCPServers: () => { /* not used */ }
+        } as unknown as MCPFrontendNotificationService);
 
         contribution = container.get<McpFrontendApplicationContribution>(McpFrontendApplicationContribution) as TestableContribution;
     });
@@ -279,9 +285,11 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
         blockedServers?: string[];
         onStop?: (name: string) => void;
         onStart?: (name: string) => void;
-        // Captures invocations of `messageService.warn` so tests can assert the user was prompted for
-        // OAuth sign-in on autostart failure.
-        onWarn?: (message: string, ...actions: string[]) => string | undefined;
+        // Captures the OAuth sign-in prompts shown via `messageService.showProgress`; the returned value
+        // simulates the user's action choice (undefined keeps the toast open, mirroring the real UI).
+        onSignInPrompt?: (message: ProgressMessage) => string | undefined;
+        // Invoked when a sign-in prompt is dismissed programmatically through its progress handle.
+        onSignInPromptCancel?: (message: ProgressMessage) => void;
     }): TestMcpFrontendApplicationContribution {
         const contribution = new TestMcpFrontendApplicationContribution();
         const runningServers = [...(options.runningServers ?? [])];
@@ -329,11 +337,19 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             refreshRestrictedModeIndicator: () => { /* tracked via override */ }
         };
         (contribution as unknown as { messageService: MessageService }).messageService = {
-            // The MessageService.warn overload accepts `(message, ...actions)` or `(message, options, ...actions)`.
-            // The contribution uses the former; this mock matches that calling convention by treating all
-            // varargs as action labels.
-            warn: ((message: string, ...rest: unknown[]) =>
-                Promise.resolve(options.onWarn?.(String(message), ...rest.filter((arg): arg is string => typeof arg === 'string'))))
+            warn: () => Promise.resolve(undefined),
+            // Sign-in prompts are shown via `showProgress` so the contribution can dismiss them once the
+            // start attempt concludes. The fake result only settles when the simulated user picks an
+            // action, mirroring the real toast which stays open until clicked or cancelled.
+            showProgress: async (message: ProgressMessage) => {
+                const action = options.onSignInPrompt?.(message);
+                return {
+                    id: 'test-progress',
+                    report: () => { /* not used */ },
+                    cancel: () => options.onSignInPromptCancel?.(message),
+                    result: action !== undefined ? Promise.resolve(action) : new Promise<string | undefined>(() => { /* stays pending */ })
+                };
+            }
         } as unknown as MessageService;
         contribution.setPrevServers(prev);
         contribution.setBlockedServers(options.blockedServers ?? []);
@@ -500,9 +516,9 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
         it('skips the silent start AND prompts the user to sign in when an OAuth-enabled server has no stored credentials', async () => {
             // Without stored credentials the silent start would just hit `redirectToAuthorization` and be
             // rejected by the non-interactive provider. The contribution skips the round-trip and prompts
-            // the user directly via `messageService.warn` with a Sign In action.
+            // the user directly via a dismissable notification with a Sign In action.
             const started: string[] = [];
-            const warnings: Array<{ message: string, actions: string[] }> = [];
+            const prompts: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
                     { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
@@ -510,8 +526,8 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: () => false,
                 onStart: name => started.push(name),
-                onWarn: (message: string, ...actions: string[]) => {
-                    warnings.push({ message, actions });
+                onSignInPrompt: message => {
+                    prompts.push(message);
                     return undefined;
                 }
             });
@@ -520,10 +536,67 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
 
             expect(started).to.deep.equal([]);
             expect(contribution.getBlockedServers()).to.deep.equal([]);
-            expect(warnings).to.have.length(1);
-            expect(warnings[0].message).to.contain('oauth-server');
-            expect(warnings[0].actions).to.have.length(1);
-            expect(warnings[0].actions[0].toLowerCase()).to.contain('sign in');
+            expect(prompts).to.have.length(1);
+            expect(prompts[0].text).to.contain('oauth-server');
+            expect(prompts[0].actions).to.have.length(1);
+            expect(prompts[0].actions?.[0]?.toLowerCase()).to.contain('sign in');
+            // The user must be able to dismiss the prompt manually; progress notifications have no close button.
+            expect(prompts[0].options?.cancelable).to.be.true;
+        });
+
+        it('dismisses the sign-in prompt once the server start attempt has concluded', async () => {
+            // The prompt is moot once the user signed in through another affordance (e.g. the Connect
+            // button in the MCP configuration view) or the start failed; a server update must clear it.
+            const prompts: ProgressMessage[] = [];
+            const cancelled: ProgressMessage[] = [];
+            const contribution = createContribution({
+                prevServers: [
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                ],
+                blockedServers: ['oauth-server'],
+                hasStoredOAuthCredentials: () => false,
+                postStartStatus: { 'oauth-server': MCPServerStatus.Connected },
+                onSignInPrompt: message => {
+                    prompts.push(message);
+                    return undefined;
+                },
+                onSignInPromptCancel: message => cancelled.push(message)
+            });
+
+            await contribution.testStartPreviouslyBlockedServers();
+            // Let the fire-and-forget prompt chain register the progress handle.
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(prompts).to.have.length(1);
+            expect(cancelled).to.deep.equal([]);
+
+            // Simulates the server-update notification arriving once the server reached Connected.
+            await contribution.testDismissSettledSignInPrompts();
+
+            expect(cancelled).to.have.length(1);
+            expect(cancelled[0].text).to.contain('oauth-server');
+        });
+
+        it('keeps the sign-in prompt while the server still requires authentication', async () => {
+            const cancelled: ProgressMessage[] = [];
+            const contribution = createContribution({
+                prevServers: [
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                ],
+                blockedServers: ['oauth-server'],
+                hasStoredOAuthCredentials: () => false,
+                postStartStatus: { 'oauth-server': MCPServerStatus.AuthenticationRequired },
+                onSignInPrompt: () => undefined,
+                onSignInPromptCancel: message => cancelled.push(message)
+            });
+
+            await contribution.testStartPreviouslyBlockedServers();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            await contribution.testDismissSettledSignInPrompts();
+
+            expect(cancelled).to.deep.equal([]);
         });
 
         it('attempts the silent start when an OAuth-enabled server has stored credentials', async () => {
@@ -549,7 +622,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             // non-interactive provider which rejects authorization, leaving the server in
             // AuthenticationRequired. The contribution detects this and prompts the user.
             const started: string[] = [];
-            const warnings: Array<{ message: string }> = [];
+            const prompts: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
                     { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
@@ -558,15 +631,15 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
                 hasStoredOAuthCredentials: name => name === 'oauth-server',
                 postStartStatus: { 'oauth-server': MCPServerStatus.AuthenticationRequired },
                 onStart: name => started.push(name),
-                onWarn: (message: string) => { warnings.push({ message }); return undefined; }
+                onSignInPrompt: message => { prompts.push(message); return undefined; }
             });
 
             await contribution.testStartPreviouslyBlockedServers();
 
             // Silent start was attempted (credentials present), then prompted because it failed.
             expect(started).to.deep.equal(['oauth-server']);
-            expect(warnings).to.have.length(1);
-            expect(warnings[0].message).to.contain('oauth-server');
+            expect(prompts).to.have.length(1);
+            expect(prompts[0].text).to.contain('oauth-server');
         });
     });
 });
@@ -592,6 +665,10 @@ class TestMcpFrontendApplicationContribution extends McpFrontendApplicationContr
 
     testStartPreviouslyBlockedServers(): Promise<void> {
         return this.startPreviouslyBlockedServers();
+    }
+
+    testDismissSettledSignInPrompts(): Promise<void> {
+        return this.dismissSettledSignInPrompts();
     }
 
     testEnqueueServerChanges(newServers: MCPServersPreference): Promise<void> {
