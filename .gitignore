@@ -46,3 +46,4 @@ test-results/
 .tmp.cfg
 # Deployment env — contains secrets (VAPID private key, OAuth secret). Never commit.
 /.env
+/qaiq/
