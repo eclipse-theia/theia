@@ -189,6 +189,56 @@ describe('blockExternalResources', () => {
         expect(placeholder.textContent).to.contain('(inline external content)');
     });
 
+    it('sandboxes restored embedded content', () => {
+        const root = createRoot('<iframe srcdoc="&lt;img src=x onerror=alert(1)&gt;"></iframe>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        const restored = restoreBlockedResource(placeholder);
+        expect(restored?.tagName).to.equal('IFRAME');
+        expect(restored?.getAttribute('sandbox')).to.equal('');
+    });
+
+    it('overrides attacker-supplied sandbox attributes on restored embedded content', () => {
+        const root = createRoot('<iframe sandbox="allow-scripts allow-same-origin" srcdoc="&lt;p&gt;hi&lt;/p&gt;"></iframe>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        const restored = restoreBlockedResource(placeholder);
+        expect(restored?.getAttribute('sandbox')).to.equal('');
+    });
+
+    it('blocks object and embed elements without external URLs', () => {
+        const root = createRoot('<object></object><embed>');
+
+        const placeholders = root.querySelectorAll(`.${BLOCKED_RESOURCE_CLASS}`);
+        expect(placeholders).to.have.length(2);
+        expect(placeholders[0].textContent).to.contain('(inline external content)');
+        expect(root.querySelector('object')).to.be.null;
+        expect(root.querySelector('embed')).to.be.null;
+    });
+
+    it('blocks objects with inline document data URLs', () => {
+        const root = createRoot('<object data="data:text/html,&lt;script&gt;fetch(1)&lt;/script&gt;"></object>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('object')).to.be.null;
+    });
+
+    it('blocks elements with external background attributes', () => {
+        const root = createRoot('<table background="https://evil.com/x.png"><tr><td>x</td></tr></table>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/x.png');
+        expect(root.querySelector('table')).to.be.null;
+    });
+
+    it('preserves HTML and SVG links', () => {
+        const root = createRoot('<a href="https://example.com">link</a><svg><a href="https://example.com"><text>svg link</text></a></svg>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+        expect(root.querySelectorAll('a')).to.have.length(2);
+    });
+
     it('wraps elements with external CSS URLs and preserves safe style declarations', () => {
         const root = createRoot('<div style="background-image: url(https://x); color: red">content</div>');
 
@@ -219,6 +269,81 @@ describe('blockExternalResources', () => {
         expect(placeholder.textContent).to.contain('https://evil.com/x.png');
         expect(safeDiv).to.exist;
         expect(safeDiv?.getAttribute('style')).to.equal('color: red');
+    });
+
+    it('blocks style sheets importing external CSS via url()', () => {
+        const root = createRoot('<style>@import url("https://evil.com/main.css");</style><div class="App">content</div>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/main.css');
+        expect(root.querySelector('style')).to.be.null;
+        expect(root.querySelector('div.App')?.textContent).to.equal('content');
+    });
+
+    it('blocks style sheets importing external CSS via the string form', () => {
+        const root = createRoot("<style>@import 'https://evil.com/main.css';</style>");
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/main.css');
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('blocks style sheets with external CSS URLs', () => {
+        const root = createRoot('<style>.app { background: url(https://evil.com/x.png); }</style>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/x.png');
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('blocks style sheets with comment-obfuscated external references', () => {
+        const root = createRoot('<style>@import/**/"https://evil.com/main.css";</style>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('blocks style sheets with escape-obfuscated external references', () => {
+        const root = createRoot('<style>.app { background: \\75rl(https://evil.com/x.png); }</style>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('preserves style sheets without external references', () => {
+        const root = createRoot('<style>.app { color: red; background: url(data:image/png;base64,AA); border: 1px solid url(#pattern); }</style>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+        expect(root.querySelector('style')).to.exist;
+    });
+
+    it('blocks external SVG paint server references', () => {
+        const root = createRoot('<svg><rect fill="url(https://evil.com/paint.svg#p)"></rect></svg>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/paint.svg#p');
+        expect(root.querySelector('rect')).to.be.null;
+    });
+
+    it('blocks external SVG filter references', () => {
+        const root = createRoot('<svg><rect filter="url(https://evil.com/filter.svg#f)"></rect></svg>');
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('https://evil.com/filter.svg#f');
+        expect(root.querySelector('rect')).to.be.null;
+    });
+
+    it('preserves same-document SVG references', () => {
+        const root = createRoot('<svg><defs><linearGradient id="gradient"></linearGradient></defs><circle fill="url(#gradient)"></circle><use href="#gradient"></use></svg>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+        expect(root.querySelector('circle')?.getAttribute('fill')).to.equal('url(#gradient)');
+        expect(root.querySelector('use')).to.exist;
     });
 
     it('preserves data CSS URLs', () => {

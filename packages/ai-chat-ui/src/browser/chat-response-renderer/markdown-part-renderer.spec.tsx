@@ -134,6 +134,22 @@ describe('useMarkdownRendering', () => {
         }, 50);
     });
 
+    it('sandboxes allowed iframes with inline content', done => {
+        root.render(<Markdown markdown={'<iframe srcdoc="&lt;img src=x onerror=alert(1)&gt;"></iframe>'} />);
+
+        setTimeout(() => {
+            const allow = container.querySelector(`.${BLOCKED_RESOURCE_ALLOW_CLASS}`) as HTMLButtonElement;
+            expect(allow).to.exist;
+
+            allow.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+            const iframe = container.querySelector('iframe');
+            expect(iframe).to.exist;
+            expect(iframe?.getAttribute('sandbox')).to.equal('');
+            done();
+        }, 50);
+    });
+
     it('shows blocked placeholders for SVG resource markdown', done => {
         root.render(<Markdown markdown={'<svg><image href="https://evil.com/x.png"></image></svg>'} />);
 
@@ -142,6 +158,18 @@ describe('useMarkdownRendering', () => {
             expect(placeholder).to.exist;
             expect(placeholder?.textContent).to.contain('https://evil.com/x.png');
             expect(container.querySelector('image')).to.be.null;
+            done();
+        }, 50);
+    });
+
+    it('shows blocked placeholders for style sheets importing external CSS', done => {
+        root.render(<Markdown markdown={'some text\n\n<style>@import url("https://evil.com/main.css");</style>\n<div class="App">content</div>'} />);
+
+        setTimeout(() => {
+            const placeholder = container.querySelector(`.${BLOCKED_RESOURCE_CLASS}`);
+            expect(placeholder).to.exist;
+            expect(placeholder?.textContent).to.contain('https://evil.com/main.css');
+            expect(container.querySelector('style')).to.be.null;
             done();
         }, 50);
     });
