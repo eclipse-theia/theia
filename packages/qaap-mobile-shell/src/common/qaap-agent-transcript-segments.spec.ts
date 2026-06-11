@@ -11,6 +11,8 @@ import {
     extractTranscriptDiffCard,
     hasTranscriptActivityTimeline,
     isTranscriptThoughtExcerptTruncated,
+    isTranscriptTodoTool,
+    parseTranscriptTodoChecklist,
     resolveTranscriptActivityStats,
     resolveTranscriptThinkingContent,
     resolveTranscriptToolPillDescriptors,
@@ -101,7 +103,8 @@ describe('classifyTranscriptToolActivityKind', () => {
         expect(classifyTranscriptToolActivityKind('Grep')).to.equal('searching');
         expect(classifyTranscriptToolActivityKind('Bash')).to.equal('terminal');
         expect(classifyTranscriptToolActivityKind('Edit')).to.equal('editing');
-        expect(classifyTranscriptToolActivityKind('todo_write')).to.equal('editing');
+        expect(classifyTranscriptToolActivityKind('todo_write')).to.equal('tool');
+        expect(classifyTranscriptToolActivityKind('TodoWrite')).to.equal('tool');
         expect(classifyTranscriptToolActivityKind('custom_tool')).to.equal('tool');
     });
 });
@@ -244,5 +247,46 @@ describe('resolveTranscriptToolRowParts', () => {
         expect(parts.detail.length).to.be.at.most(65);
         expect(parts.detail.endsWith('…')).to.equal(true);
         expect(parts.detail.startsWith('npm run x')).to.equal(true);
+    });
+});
+
+describe('parseTranscriptTodoChecklist', () => {
+    it('parses Claude Code TodoWrite args', () => {
+        const args = JSON.stringify({
+            todos: [
+                { content: 'Fix the bug', status: 'completed', activeForm: 'Fixing the bug' },
+                { content: 'Run tests', status: 'in_progress' },
+                { content: 'Ship it', status: 'pending' },
+            ],
+        });
+        expect(parseTranscriptTodoChecklist(args)).to.deep.equal([
+            { label: 'Fix the bug', status: 'completed' },
+            { label: 'Run tests', status: 'in_progress' },
+            { label: 'Ship it', status: 'pending' },
+        ]);
+    });
+
+    it('accepts bare arrays and alternate label keys, defaulting unknown statuses', () => {
+        expect(parseTranscriptTodoChecklist(JSON.stringify([
+            { subject: 'Alt label', status: 'weird' },
+            { title: 'Titled' },
+        ]))).to.deep.equal([
+            { label: 'Alt label', status: 'pending' },
+            { label: 'Titled', status: 'pending' },
+        ]);
+    });
+
+    it('returns undefined for partial JSON or non-todo payloads', () => {
+        expect(parseTranscriptTodoChecklist('{"todos":[{"content":"str')).to.equal(undefined);
+        expect(parseTranscriptTodoChecklist('{"path":"foo.ts"}')).to.equal(undefined);
+        expect(parseTranscriptTodoChecklist(JSON.stringify({ todos: [{ status: 'pending' }] }))).to.equal(undefined);
+    });
+});
+
+describe('isTranscriptTodoTool', () => {
+    it('matches todo tool name variants only', () => {
+        expect(isTranscriptTodoTool('TodoWrite')).to.equal(true);
+        expect(isTranscriptTodoTool('todo_write')).to.equal(true);
+        expect(isTranscriptTodoTool('Edit')).to.equal(false);
     });
 });

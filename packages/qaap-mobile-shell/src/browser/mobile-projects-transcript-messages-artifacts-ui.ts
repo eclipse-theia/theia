@@ -8,7 +8,7 @@ import { approveAgentRequest, rejectAgentRequest } from '../common/qaap-agent-ap
 import { type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
-import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
+import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, isTranscriptTodoTool, parseTranscriptTodoChecklist, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
 import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
@@ -328,7 +328,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         if (pendingApproval) {
             body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
         }
-        if (segment.result?.trim()) {
+        const todoChecklist = isTranscriptTodoTool(segment.name) && !!parseTranscriptTodoChecklist(segment.args);
+        if (segment.result?.trim() || todoChecklist) {
             body.append(this.toolUi.createTranscriptToolResultBody(
                 segment,
                 descriptor.kind,
@@ -360,12 +361,16 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
 
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-thought-brief-summary';
+        const glyph = document.createElement('span');
+        glyph.className = 'theia-mobile-agent-thought-brief-glyph';
+        glyph.setAttribute('aria-hidden', 'true');
+        glyph.textContent = '∴';
         const title = document.createElement('span');
         title.className = 'theia-mobile-agent-thought-brief-title';
         title.textContent = thinking
             ? nls.localize('qaap/mobileProjects/transcriptThoughtBriefly', 'Thought briefly')
             : nls.localize('qaap/mobileProjects/transcriptExploredWorkspace', 'Explored the workspace');
-        summary.append(title);
+        summary.append(glyph, title);
         if (hasStats) {
             const meta = document.createElement('span');
             meta.className = 'theia-mobile-agent-thought-brief-meta';
@@ -539,6 +544,11 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             finished: descriptor?.finished ?? segment.finished,
             resultFailed: descriptor?.resultFailed ?? false,
         });
+        const todoChecklist = isTranscriptTodoTool(segment.name) && !!parseTranscriptTodoChecklist(segment.args);
+        if (todoChecklist) {
+            // The live task checklist stays visible, Claude-Code-style.
+            pill.open = true;
+        }
         const summary = document.createElement('summary');
         summary.className = 'theia-mobile-agent-tool-pill-summary';
         const icon = document.createElement('span');
@@ -562,7 +572,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         if (manualApproval && isPendingTranscriptToolSegment(segment)) {
             body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
         }
-        if (segment.result?.trim()) {
+        if (segment.result?.trim() || todoChecklist) {
             body.append(this.toolUi.createTranscriptToolResultBody(
                 segment,
                 kind,

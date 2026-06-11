@@ -5,7 +5,7 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { formatReadToolDetailFromArgs } from '../common/qaap-agent-conversation-list-metrics';
-import { shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegment } from '../common/qaap-agent-transcript-segments';
+import { isTranscriptTodoTool, parseTranscriptTodoChecklist, shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegment } from '../common/qaap-agent-transcript-segments';
 import { isTranscriptErrorOutput, isTranscriptTerminalOutputText } from '../common/qaap-transcript-content-display';
 import { createTranscriptCodeView, resolveTranscriptCodeLanguage } from './qaap-transcript-code-view';
 import {
@@ -254,6 +254,12 @@ export class MobileProjectsTranscriptMessagesToolUi {
         _kind: string,
         options?: { readonly streaming?: boolean },
     ): HTMLElement {
+        if (isTranscriptTodoTool(segment.name)) {
+            const checklist = this.createTranscriptTodoChecklist(segment);
+            if (checklist) {
+                return checklist;
+            }
+        }
         const text = this.resolversUi.formatTranscriptToolResult(segment.result!);
         if (options?.streaming && !segment.finished) {
             return this.createTranscriptToolResultStreamBody(text);
@@ -262,6 +268,32 @@ export class MobileProjectsTranscriptMessagesToolUi {
         const language = resolveTranscriptCodeLanguage(fullPath, text);
         const view = createTranscriptCodeView(text, language);
         return this.createTranscriptClampedBlock(view, text.split('\n').length);
+    }
+
+    /** Claude-Code-style live task checklist (✓ done, ◉ in progress, ○ pending). */
+    protected createTranscriptTodoChecklist(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+    ): HTMLElement | undefined {
+        const items = parseTranscriptTodoChecklist(segment.args);
+        if (!items) {
+            return undefined;
+        }
+        const list = document.createElement('ul');
+        list.className = 'theia-mobile-agent-todo-checklist';
+        for (const item of items) {
+            const row = document.createElement('li');
+            row.className = `theia-mobile-agent-todo-item theia-mod-${item.status.replace('_', '-')}`;
+            const marker = document.createElement('span');
+            marker.className = 'theia-mobile-agent-todo-marker';
+            marker.setAttribute('aria-hidden', 'true');
+            marker.textContent = item.status === 'completed' ? '✓' : item.status === 'in_progress' ? '◉' : '○';
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-agent-todo-label';
+            label.textContent = item.label;
+            row.append(marker, label);
+            list.append(row);
+        }
+        return list;
     }
 
     createTranscriptToolSpeculativePlaceholder(): HTMLElement {

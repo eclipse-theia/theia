@@ -19127,3 +19127,55 @@ body.qaap-theme-light .theia-mobile-sticky-composer-commit-group.theia-mod-busy 
 .theia-mobile-agent-stream-status .theia-mobile-agent-stream-meta {
   margin-left: 0;
 }
+
+/* Claude-Code-style live task checklist inside the todo tool row. */
+.theia-mobile-agent-todo-checklist {
+  margin: 4px 0 2px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.theia-mobile-agent-todo-item {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-todo-marker {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-todo-item.theia-mod-completed .theia-mobile-agent-todo-marker {
+  color: color-mix(in srgb, #3fb950 88%, var(--theia-foreground));
+}
+
+.theia-mobile-agent-todo-item.theia-mod-completed .theia-mobile-agent-todo-label {
+  color: var(--theia-descriptionForeground);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--theia-descriptionForeground) 60%, transparent);
+}
+
+.theia-mobile-agent-todo-item.theia-mod-in-progress .theia-mobile-agent-todo-marker {
+  color: var(--q-accent, #E58E40);
+}
+
+.theia-mobile-agent-todo-item.theia-mod-in-progress .theia-mobile-agent-todo-label {
+  font-weight: 600;
+}
+
+/* "∴ Thought briefly" glyph on the thinking block. */
+.theia-mobile-agent-thought-brief-glyph {
+  flex: none;
+  margin-right: 5px;
+  color: var(--theia-descriptionForeground);
+  font-size: 12px;
+}

@@ -26,6 +26,10 @@ export function classifyTranscriptToolActivityKind(toolName: string): QaapTransc
     if (name.includes('bash') || name.includes('shell') || name.includes('terminal') || name.includes('run_')) {
         return 'terminal';
     }
+    // Task-list tools track the agent's plan, not workspace files — never count them as edits.
+    if (name.includes('todo')) {
+        return 'tool';
+    }
     if (name.includes('write') || name.includes('edit') || name.includes('patch') || name.includes('replace')) {
         return 'editing';
     }
@@ -274,6 +278,9 @@ export function resolveTranscriptToolRowParts(
     toolName: string,
     options?: { readonly path?: string; readonly command?: string },
 ): QaapTranscriptToolRowParts {
+    if (isTranscriptTodoTool(toolName)) {
+        return { verb: 'Updated', detail: 'todo list' };
+    }
     const file = options?.path ? options.path.split('/').pop() ?? options.path : undefined;
     switch (kind) {
         case 'reading':
@@ -287,6 +294,55 @@ export function resolveTranscriptToolRowParts(
         default:
             return { verb: 'Used', detail: (toolName || 'tool').replace(/_/g, ' ') };
     }
+}
+
+/** True for agent task-list tools (Claude Code `TodoWrite`, opencode `todowrite`, …). */
+export function isTranscriptTodoTool(toolName: string): boolean {
+    return toolName.toLowerCase().includes('todo');
+}
+
+export type QaapTranscriptTodoStatus = 'pending' | 'in_progress' | 'completed';
+
+export interface QaapTranscriptTodoItem {
+    readonly label: string;
+    readonly status: QaapTranscriptTodoStatus;
+}
+
+/**
+ * Parse a todo-tool args payload into checklist items. Tolerates the common CLI shapes
+ * (`{todos: [{content|subject|description, status}]}` or a bare array) and returns
+ * undefined for anything unparseable (e.g. args still streaming in).
+ */
+export function parseTranscriptTodoChecklist(argsJson: string): QaapTranscriptTodoItem[] | undefined {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(argsJson);
+    } catch {
+        return undefined;
+    }
+    const list = Array.isArray(parsed)
+        ? parsed
+        : typeof parsed === 'object' && parsed !== null && Array.isArray((parsed as { todos?: unknown }).todos)
+            ? (parsed as { todos: unknown[] }).todos
+            : undefined;
+    if (!list) {
+        return undefined;
+    }
+    const items: QaapTranscriptTodoItem[] = [];
+    for (const entry of list) {
+        if (typeof entry !== 'object' || entry === null) {
+            continue;
+        }
+        const record = entry as Record<string, unknown>;
+        const label = [record.content, record.subject, record.description, record.title]
+            .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+        if (!label) {
+            continue;
+        }
+        const status = record.status === 'completed' || record.status === 'in_progress' ? record.status : 'pending';
+        items.push({ label: label.trim(), status });
+    }
+    return items.length > 0 ? items : undefined;
 }
 
 export interface QaapTranscriptToolPillDescriptor {
