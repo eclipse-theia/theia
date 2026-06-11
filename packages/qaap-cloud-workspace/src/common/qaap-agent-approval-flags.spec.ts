@@ -43,6 +43,14 @@ describe('qaap-agent-approval-flags', () => {
         expect(command).not.to.include('acceptEdits');
     });
 
+    it('approve-for-me blocks QAIQ subagent tools under allowed-tools', () => {
+        const command = applyAgentApprovalPolicyToCommand(
+            "qaiq --print -p 'hi'",
+            { agentId: 'qaiq', approvalPolicyId: 'approve-for-me', autoApprove: true },
+        );
+        expect(command).to.include('--disallowed-tools Agent,Task');
+    });
+
     it('approve-for-me uses acceptEdits for Claude instead of full skip', () => {
         const command = applyAgentApprovalPolicyToCommand(
             "claude --print -p 'hi'",

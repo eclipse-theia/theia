@@ -126,11 +126,13 @@ function formatQaiqApproveForMeFlags(rules: QaapAgentToolApprovalRules): string 
     }
     const readTools = 'Read,Grep,Glob,LS';
     const editTools = 'Edit,Write,NotebookEdit';
+    // Subagents bypass stdio control_request — block at the CLI so headless turns finish.
+    const disallowedSubagents = '--disallowed-tools Agent,Task';
     if (rules.shell) {
-        return `--permission-mode default --allowed-tools ${readTools},${editTools},Bash`;
+        return `--permission-mode default --allowed-tools ${readTools},${editTools},Bash ${disallowedSubagents}`;
     }
     // Read-only exploration without prompts; Bash stays gated (stdio approvals when needed).
-    return `--permission-mode default --allowed-tools ${readTools},${editTools}`;
+    return `--permission-mode default --allowed-tools ${readTools},${editTools} ${disallowedSubagents}`;
 }
 
 function applyClaudeApprovalFlags(
