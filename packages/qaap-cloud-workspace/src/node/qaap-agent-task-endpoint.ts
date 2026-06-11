@@ -66,6 +66,19 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
         app.get(`${QAAP_AGENT_TASK_API_PATH}/stream`, (req, res) => {
             this.handleStream(req, res);
         });
+        app.post(`${QAAP_AGENT_TASK_API_PATH}/warm`, (req, res) => {
+            const body = (req.body ?? {}) as { cwd?: unknown };
+            const cwd = typeof body.cwd === 'string' ? body.cwd.trim() : '';
+            if (!cwd) {
+                res.status(400).json({ error: '"cwd" is required.' });
+                return;
+            }
+            try {
+                res.json(this.runner.warmForCwd(cwd));
+            } catch (error) {
+                res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+            }
+        });
         app.post(QAAP_AGENT_TASK_API_PATH, (req, res) => {
             this.handleCreate(req, res);
         });

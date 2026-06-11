@@ -131,6 +131,15 @@ export interface QaapCreateAgentTaskQaiqModel {
     readonly modelId: string;
 }
 
+/** Result of a best-effort runner warm-up for a workspace cwd. */
+export interface QaapAgentWarmResult {
+    readonly cwd: string;
+    readonly agentsReady: boolean;
+    readonly projectInfoCached: boolean;
+    readonly projectNameCached: boolean;
+    readonly qaiqProbed: boolean;
+}
+
 export interface QaapAgentTaskListResponse {
     readonly tasks: QaapAgentTask[];
     /**

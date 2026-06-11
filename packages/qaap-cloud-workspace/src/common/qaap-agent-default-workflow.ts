@@ -5,7 +5,16 @@
 
 const SHELL_AGENT_ID = 'shell';
 const DEFAULT_WORKFLOW_MARKER = '[QAAP default agent workflow]';
+const PARALLEL_TOOLS_MARKER = '[QAAP parallel tools]';
 const DEV_PREVIEW_MARKER = '[QAAP dev preview]';
+
+export function buildAgentParallelToolsPromptBlock(): string {
+    return [
+        PARALLEL_TOOLS_MARKER,
+        'When you need several independent operations (Read, Grep, Glob, list files), call them in the same tool batch — never serialize independent reads or searches.',
+        'Only run tools sequentially when a later call depends on an earlier result. Never write to the same file in parallel.',
+    ].join('\n');
+}
 
 export function buildAgentDefaultWorkflowPromptBlock(): string {
     return [
@@ -33,6 +42,9 @@ export function appendAgentDefaultWorkflowToPrompt(prompt: string, agentId: stri
         return prompt;
     }
     const blocks = [buildAgentDefaultWorkflowPromptBlock()];
+    if (!prompt.includes(PARALLEL_TOOLS_MARKER)) {
+        blocks.push(buildAgentParallelToolsPromptBlock());
+    }
     if (!prompt.includes(DEV_PREVIEW_MARKER)) {
         blocks.push(buildAgentDevPreviewPromptBlock());
     }

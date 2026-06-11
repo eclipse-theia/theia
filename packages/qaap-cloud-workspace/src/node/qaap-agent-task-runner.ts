@@ -23,6 +23,7 @@ import {
     type QaapAgentTaskEvent,
     type QaapAgentTaskState,
     type QaapCreateAgentTaskRequest,
+    type QaapAgentWarmResult,
 } from '../common/qaap-agent-task';
 import {
     QAAP_BUILTIN_AGENT_DEFINITIONS,
@@ -66,6 +67,7 @@ import {
     type QaapQaiqModelBinding,
 } from '../common/qaap-qaiq-model-binding';
 import { resolveRequestAgentModel, resolveTaskAgentModel } from '../common/qaap-agent-task';
+import { resolveEffectiveRequestAgentModel } from '../common/qaap-agent-task-model-routing';
 import { appendAgentDefaultWorkflowToPrompt } from '../common/qaap-agent-default-workflow';
 import { prependAgentTaskContextToPrompt, truncateProjectInfo } from '../common/qaap-agent-task-context';
 import {
@@ -251,6 +253,10 @@ export class QaapAgentTaskRunner {
     protected helperApiUrl = '';
     /** Best-effort `package.json#name` per cwd; lazily populated. */
     protected readonly projectNameCache = new Map<string, string>();
+    /** Cached `.prompts/project-info.prompttemplate` per cwd — primed by {@link warmForCwd}. */
+    protected readonly projectInfoCache = new Map<string, string | undefined>();
+    /** Agent bins probed once per backend process (`qaiq --version`, etc.). */
+    protected readonly probedAgentBins = new Set<string>();
 
     protected readonly onDidChangeTaskEmitter = new Emitter<QaapAgentTaskEvent>();
     /**
@@ -604,6 +610,44 @@ export class QaapAgentTaskRunner {
         return result.filter(agent => !isUiHiddenVpsAgent(agent.id));
     }
 
+    /**
+     * Best-effort warm-up after workspace open: cache project metadata and probe the QAIQ binary
+     * so the first user message skips cold-start disk reads and Node CLI startup.
+     */
+    warmForCwd(cwd: string): QaapAgentWarmResult {
+        const resolved = path.resolve(cwd);
+        if (!fs.existsSync(resolved)) {
+            throw new Error(`Workspace directory does not exist: ${resolved}`);
+        }
+        this.readProjectInfo(resolved);
+        this.resolveProjectName(resolved);
+        const qaiqProbed = this.probeAgentBinOnce(QAIQ_AGENT_ID, () => this.resolveQaiqBin());
+        return {
+            cwd: resolved,
+            agentsReady: this.isAgentConfigured(),
+            projectInfoCached: this.projectInfoCache.has(resolved),
+            projectNameCached: this.projectNameCache.has(resolved),
+            qaiqProbed,
+        };
+    }
+
+    protected probeAgentBinOnce(agentId: string, resolveBin: () => string | undefined): boolean {
+        if (this.probedAgentBins.has(agentId)) {
+            return true;
+        }
+        const bin = resolveBin();
+        if (!bin) {
+            return false;
+        }
+        try {
+            spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 8000 });
+            this.probedAgentBins.add(agentId);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     listQaiqModels(): QaapQaiqModelOption[] {
         if (!this.preferenceService) {
             return [];
@@ -679,6 +723,26 @@ export class QaapAgentTaskRunner {
         return { ...task, log: await this.readLog(id) };
     }
 
+    /** Resolve explicit picker model or route by task kind when none was sent. */
+    protected resolveAgentModelForRequest(
+        request: QaapCreateAgentTaskRequest,
+        prompt: string,
+    ): QaapCreateAgentTaskQaiqModel | undefined {
+        const explicit = resolveRequestAgentModel(request);
+        if (explicit) {
+            return explicit;
+        }
+        if (!this.preferenceService) {
+            return undefined;
+        }
+        const agentId = this.resolveAgentId(prompt, request.agent);
+        return resolveEffectiveRequestAgentModel(
+            request,
+            key => this.preferenceService!.get(key),
+            agentId,
+        );
+    }
+
     /** Validate the request, spawn the process and start tracking the task. */
     create(request: QaapCreateAgentTaskRequest): QaapAgentTask {
         const prompt = (request.prompt ?? '').trim();
@@ -706,7 +770,7 @@ export class QaapAgentTaskRunner {
             parentId,
             autoApprove,
             ...(() => {
-                const agentModel = resolveRequestAgentModel(request);
+                const agentModel = this.resolveAgentModelForRequest(request, prompt || rawCommand);
                 return agentModel ? { agentModel, qaiqModel: agentModel } : {};
             })(),
         };
@@ -793,6 +857,16 @@ export class QaapAgentTaskRunner {
 
     /** Best-effort read of the workspace per-project info artifact (`.prompts/project-info.prompttemplate`). */
     protected readProjectInfo(cwd: string): string | undefined {
+        const resolved = path.resolve(cwd);
+        if (this.projectInfoCache.has(resolved)) {
+            return this.projectInfoCache.get(resolved);
+        }
+        const info = this.loadProjectInfoFromDisk(resolved);
+        this.projectInfoCache.set(resolved, info);
+        return info;
+    }
+
+    protected loadProjectInfoFromDisk(cwd: string): string | undefined {
         try {
             const file = path.join(cwd, '.prompts', 'project-info.prompttemplate');
             const text = fs.readFileSync(file, 'utf8').trim();
@@ -1057,7 +1131,7 @@ export class QaapAgentTaskRunner {
         if (prompt) {
             try {
                 const autoApprove = task.autoApprove !== false;
-                const agentModel = resolveRequestAgentModel(request);
+                const agentModel = this.resolveAgentModelForRequest(request, prompt);
                 const { command, stdinPrompt } = this.buildAgentCommand(
                     prompt,
                     request.agent,

@@ -468,6 +468,35 @@ export async function fetchAgentTaskListAll(): Promise<QaapAgentTaskListSnapshot
     return parseAgentTaskListBody(await response.json());
 }
 
+export interface QaapAgentWarmResult {
+    readonly cwd: string;
+    readonly agentsReady: boolean;
+    readonly projectInfoCached: boolean;
+    readonly projectNameCached: boolean;
+    readonly qaiqProbed: boolean;
+}
+
+export async function warmAgentRunner(cwd: string): Promise<QaapAgentWarmResult | undefined> {
+    const trimmed = cwd.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+    try {
+        const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}/warm`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cwd: trimmed }),
+        });
+        if (!response.ok) {
+            return undefined;
+        }
+        return await response.json() as QaapAgentWarmResult;
+    } catch {
+        return undefined;
+    }
+}
+
 export async function fetchAgentModelsForAgent(agentId: string): Promise<QaapQaiqModelOption[]> {
     const response = await fetch(
         `${QAAP_AGENT_TASK_API_PATH}/agent-models?agent=${encodeURIComponent(agentId)}`,

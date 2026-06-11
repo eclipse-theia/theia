@@ -8,8 +8,8 @@ import {
     MarkdownChatResponseContentImpl,
     MutableChatResponseModel,
     ThinkingChatResponseContentImpl,
-    ToolCallChatResponseContent,
 } from '@theia/ai-chat/lib/common/chat-model';
+import { syncStreamResponseContents } from '@theia/ai-chat/lib/common/sync-stream-response-contents';
 import { ClaudeCodeToolCallChatResponseContent } from '@theia/ai-claude-code/lib/browser/claude-code-tool-call-content';
 import { QaapAgentMessageSegment, normalizeQaiqToolName } from '../common/qaap-qaiq-stream';
 import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
@@ -55,51 +55,5 @@ export function syncAgentResponseContents(
     response: MutableChatResponseModel['response'],
     nextContents: ChatResponseContent[],
 ): boolean {
-    const existing = response.content;
-    let changed = false;
-    for (let i = 0; i < nextContents.length; i++) {
-        const next = nextContents[i];
-        if (i >= existing.length) {
-            response.addContent(next);
-            changed = true;
-            continue;
-        }
-        const current = existing[i];
-        if (next.kind === 'markdownContent' && current.kind === 'markdownContent') {
-            const nextText = (next as MarkdownChatResponseContentImpl).content.value;
-            const curText = (current as MarkdownChatResponseContentImpl).content.value;
-            if (nextText.length > curText.length) {
-                (current as MarkdownChatResponseContentImpl).merge(
-                    new MarkdownChatResponseContentImpl(nextText.slice(curText.length)),
-                );
-                changed = true;
-            }
-        } else if (next.kind === 'thinking' && current.kind === 'thinking') {
-            const nextThink = (next as ThinkingChatResponseContentImpl).content;
-            const curThink = (current as ThinkingChatResponseContentImpl).content;
-            if (nextThink.length > curThink.length) {
-                (current as ThinkingChatResponseContentImpl).merge(
-                    new ThinkingChatResponseContentImpl(nextThink.slice(curThink.length), ''),
-                );
-                changed = true;
-            }
-        } else if (ToolCallChatResponseContent.is(next) && ToolCallChatResponseContent.is(current)) {
-            if (next.id && next.id === current.id) {
-                const before = JSON.stringify(current);
-                current.merge(next);
-                if (JSON.stringify(current) !== before) {
-                    changed = true;
-                }
-            } else {
-                response.clearContent();
-                response.addContents(nextContents);
-                return true;
-            }
-        } else {
-            response.clearContent();
-            response.addContents(nextContents);
-            return true;
-        }
-    }
-    return changed;
+    return syncStreamResponseContents(response, 0, nextContents);
 }

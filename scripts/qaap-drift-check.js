@@ -129,6 +129,11 @@ const ALLOWED = [
     // handleStreamingRequest. Candidate to propose upstream.
     /^packages\/ai-anthropic\/src\/node\/anthropic-language-model\.ts$/,
     /^packages\/ai-anthropic\/src\/node\/anthropic-language-model\.spec\.ts$/,
+    // Streaming chat: incremental sync instead of clear+re-add per token in
+    // addStreamResponse. Candidate to propose upstream.
+    /^packages\/ai-chat\/src\/common\/chat-agents\.ts$/,
+    /^packages\/ai-chat\/src\/common\/sync-stream-response-contents\.ts$/,
+    /^packages\/ai-chat\/src\/common\/sync-stream-response-contents\.spec\.ts$/,
     // ---- Fork lags upstream Theia (NOT product-code drift) ----------------
     // These files show the fork on a SIMPLER/OLDER version than upstream — i.e.
     // upstream Theia later added features (graceful shutdown, ESM plugin loader,

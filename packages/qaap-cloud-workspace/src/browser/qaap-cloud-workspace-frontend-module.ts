@@ -17,6 +17,7 @@ import { QaapAgentChatWidget } from './qaap-agent-chat-widget';
 import { QaapAgentTasksContribution } from './qaap-agent-tasks-contribution';
 import { QaapAgentTasksWidget } from './qaap-agent-tasks-widget';
 import { QaapCloudBootstrapUiContribution } from './qaap-cloud-bootstrap-ui-contribution';
+import { QaapAgentRunnerWarmContribution } from './qaap-agent-runner-warm-contribution';
 import { QaapDeployCloudflareTool, QaapDeployVercelTool } from './qaap-deploy-tool-providers';
 import { QaapTerminalPersistenceContribution } from './qaap-terminal-persistence-contribution';
 import { QaapWebPushContribution } from './qaap-web-push-contribution';
@@ -25,6 +26,9 @@ export default new ContainerModule(bind => {
     bind(QaapCloudBootstrapUiContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCloudBootstrapUiContribution);
     bind(CommandContribution).toService(QaapCloudBootstrapUiContribution);
+
+    bind(QaapAgentRunnerWarmContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAgentRunnerWarmContribution);
 
     bind(QaapTerminalPersistenceContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapTerminalPersistenceContribution);
