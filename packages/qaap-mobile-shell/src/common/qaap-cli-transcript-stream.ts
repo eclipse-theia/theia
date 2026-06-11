@@ -12,6 +12,7 @@ import {
     isOpencodeAgent,
     isQaiqAgent,
 } from './qaap-agent-task-client';
+import { detectAgentFailureKind, localizeAgentFailureMessage } from './qaap-agent-failure-message';
 import type { QaapAgentMessageSegment } from './qaap-qaiq-stream';
 import { QaapQaiqStreamAccumulator } from './qaap-qaiq-stream';
 
@@ -85,6 +86,10 @@ export function resolveAgentLogDisplayText(agentId: string | undefined, log: str
     const trimmed = log.trim();
     if (!trimmed) {
         return '';
+    }
+    const failureKind = detectAgentFailureKind(trimmed);
+    if (failureKind) {
+        return localizeAgentFailureMessage(failureKind);
     }
     return parseAgentLogForTranscript(agentId, trimmed).content.trim();
 }
