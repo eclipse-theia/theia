@@ -4,7 +4,6 @@
 // *****************************************************************************
 
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
-import { nls } from '@theia/core/lib/common/nls';
 import {
     conversationToSummary,
     getConversation,
@@ -26,6 +25,11 @@ import {
     shouldSkipStreamingTranscriptRefetch,
 } from '../common/qaap-transcript-sse-delta';
 import { isPendingTranscriptToolSegment, resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
+import {
+    clearTranscriptPendingApprovalBar,
+    mountTranscriptPendingApprovalBar,
+    removeTranscriptPendingApprovalHosts,
+} from './qaap-transcript-inline-approval-ui';
 import {
     conversationAwaitingDevPreview,
     conversationMayAutoOpenTranscriptPreview,
@@ -72,6 +76,7 @@ export interface MobileProjectsTranscriptLiveHost {
     transcriptChatHost: HTMLElement | undefined;
     agentsHubInlineChatHost: HTMLElement | undefined;
     transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
+    transcriptComposerHost: HTMLElement | undefined;
     transcriptComposerPrefsConvId: string | undefined;
     transcriptComposerSendRefresh: (() => void) | undefined;
     transcriptPreviewRequestPending: boolean;
@@ -105,6 +110,9 @@ export interface MobileProjectsTranscriptLiveHost {
     conversationIndexUi: import('./mobile-projects-conversation-index-ui').MobileProjectsConversationIndexUi;
     getChatServiceConversation(summary: QaapAgentConversationSummaryDTO): Promise<QaapAgentConversationDTO | undefined>;
 }
+
+/** Poll pending VPS tool approvals while an interactive agent turn is streaming. */
+const TRANSCRIPT_APPROVAL_REFRESH_MS = 320;
 
 /** SSE-first live transcript watch, debounced refetch, and inline approval bar. */
 export class MobileProjectsTranscriptLiveUi {
@@ -146,7 +154,7 @@ export class MobileProjectsTranscriptLiveUi {
         this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, next);
         this.host.transcriptLastFingerprint = this.conversationTranscriptFingerprint(next);
         if (conversationUsesInteractiveApprovals(next)) {
-            this.renderTranscriptInlineApproval(chatHost, next);
+            this.syncTranscriptPendingApproval(next);
         }
         this.scheduleTranscriptPreviewOfferRefresh(next);
         this.maybeActivateTranscriptDevPreview(next);
@@ -377,7 +385,7 @@ export class MobileProjectsTranscriptLiveUi {
         this.host.transcriptApprovalRefreshTimer = window.setTimeout(() => {
             this.host.transcriptApprovalRefreshTimer = undefined;
             void this.refreshTranscriptApprovals();
-        }, 600);
+        }, TRANSCRIPT_APPROVAL_REFRESH_MS);
     }
 
     async refreshTranscriptApprovals(): Promise<void> {
@@ -388,10 +396,8 @@ export class MobileProjectsTranscriptLiveUi {
             this.host.cachedAgentApprovals = await fetchAgentApprovals(this.host.transcriptOpenProject
                 ? this.host.projectsService.getProjectCwd(this.host.transcriptOpenProject)
                 : this.host.transcriptOpenSummary?.cwd);
-            const chatHost = this.resolveActiveTranscriptChatHost();
-            if (chatHost && this.host.transcriptLastConv) {
-                this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, this.host.transcriptLastConv);
-                this.renderTranscriptInlineApproval(chatHost, this.host.transcriptLastConv);
+            if (this.host.transcriptLastConv) {
+                this.syncTranscriptPendingApproval(this.host.transcriptLastConv);
             }
         } catch {
             /* best-effort */
@@ -430,46 +436,50 @@ export class MobileProjectsTranscriptLiveUi {
     }
 
     renderTranscriptInlineApproval(host: HTMLElement, conv: QaapAgentConversationDTO): void {
-        host.querySelector('.theia-mobile-agent-transcript-inline-approval')?.remove();
+        removeTranscriptPendingApprovalHosts(host);
+        this.syncTranscriptPendingApproval(conv);
+    }
+
+    syncTranscriptPendingApproval(conv: QaapAgentConversationDTO): void {
+        const chatHost = this.resolveActiveTranscriptChatHost();
+        if (chatHost) {
+            removeTranscriptPendingApprovalHosts(chatHost);
+        }
         if (!conversationUsesInteractiveApprovals(conv)) {
+            clearTranscriptPendingApprovalBar(this.host.transcriptComposerHost);
             return;
         }
         const pending = resolveTranscriptInlineApproval(this.host.cachedAgentApprovals, conv.id);
-        if (!pending) {
-            return;
-        }
-        if (pending.kind === 'tool' && pending.toolUseId && this.hasVisiblePendingToolSegment(conv, pending.toolUseId)) {
-            return;
-        }
-        const bar = document.createElement('div');
-        bar.className = 'theia-mobile-agent-transcript-inline-approval';
-        const title = document.createElement('div');
-        title.className = 'theia-mobile-agent-transcript-inline-approval-title';
-        title.textContent = pending.toolName
-            ? nls.localize('qaap/mobileProjects/transcriptApprovalTool', 'Approve tool: {0}', pending.toolName)
-            : nls.localize('qaap/mobileProjects/transcriptApprovalPending', 'Approval required');
-        const summary = document.createElement('p');
-        summary.className = 'theia-mobile-agent-transcript-inline-approval-summary';
-        summary.textContent = pending.summary;
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-agent-transcript-inline-approval-actions';
-        const approve = document.createElement('button');
-        approve.type = 'button';
-        approve.className = 'theia-mobile-agent-transcript-inline-approval-approve';
-        approve.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalAllow', 'Allow');
-        approve.addEventListener('click', () => {
-            void approveAgentRequest(pending.id).then(() => this.ensureTranscriptConversationRefresh());
-        });
-        const reject = document.createElement('button');
-        reject.type = 'button';
-        reject.className = 'theia-mobile-agent-transcript-inline-approval-reject';
-        reject.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalDeny', 'Deny');
-        reject.addEventListener('click', () => {
-            void rejectAgentRequest(pending.id).then(() => this.ensureTranscriptConversationRefresh());
-        });
-        actions.append(approve, reject);
-        bar.append(title, summary, actions);
-        host.append(bar);
+        const showPending = !!pending
+            && !(pending.kind === 'tool'
+                && pending.toolUseId
+                && this.hasVisiblePendingToolSegment(conv, pending.toolUseId));
+        mountTranscriptPendingApprovalBar(
+            this.host.transcriptComposerHost,
+            showPending ? pending : undefined,
+            {
+                onApprove: () => {
+                    if (!pending) {
+                        return;
+                    }
+                    void approveAgentRequest(pending.id).then(() => {
+                        this.stopTranscriptApprovalRefresh();
+                        void this.refreshTranscriptApprovals();
+                        this.ensureTranscriptConversationRefresh();
+                    });
+                },
+                onReject: () => {
+                    if (!pending) {
+                        return;
+                    }
+                    void rejectAgentRequest(pending.id).then(() => {
+                        this.stopTranscriptApprovalRefresh();
+                        void this.refreshTranscriptApprovals();
+                        this.ensureTranscriptConversationRefresh();
+                    });
+                },
+            },
+        );
     }
 
     stopTranscriptPreviewOfferRefresh(): void {
@@ -641,6 +651,9 @@ export class MobileProjectsTranscriptLiveUi {
                 this.host.transcriptComposerSendRefresh?.();
             }
             if (fingerprintUnchanged && !forceStatusSettle) {
+                if (conversationUsesInteractiveApprovals(full)) {
+                    this.syncTranscriptPendingApproval(full);
+                }
                 if (full.status !== 'streaming' && !this.host.transcriptPreviewRequestPending) {
                     this.host.transcriptLastSseDeltaAt = undefined;
                 }
@@ -648,6 +661,9 @@ export class MobileProjectsTranscriptLiveUi {
             }
             this.host.transcriptLastFingerprint = fingerprint;
             this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
+            if (conversationUsesInteractiveApprovals(full)) {
+                this.syncTranscriptPendingApproval(full);
+            }
             if (this.host.transcriptComposerSummary?.id === full.id) {
                 this.host.transcriptStickyComposerUi.refreshTranscriptComposerActivityIfNeeded(full);
             }

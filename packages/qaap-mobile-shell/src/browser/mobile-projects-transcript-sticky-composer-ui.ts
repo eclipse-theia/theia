@@ -195,6 +195,7 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     chatServiceSummariesUi: import('./mobile-projects-chat-service-summaries-ui').MobileProjectsChatServiceSummariesUi;
     transcriptMessagesUi: import('./mobile-projects-transcript-messages-ui').MobileProjectsTranscriptMessagesUi;
     executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
+    transcriptLiveUi: import('./mobile-projects-transcript-live-ui').MobileProjectsTranscriptLiveUi;
 }
 
 /** Transcript overlay sticky composer: mount, prefs, follow-up queue, and submit wiring. */
@@ -1229,6 +1230,9 @@ export class MobileProjectsTranscriptStickyComposerUi {
         shell.append(column);
         host.append(shell);
         this.syncComposerActivityFingerprint(summary, project);
+        if (this.host.transcriptLastConv?.id === summary.id) {
+            this.host.transcriptLiveUi.syncTranscriptPendingApproval(this.host.transcriptLastConv);
+        }
     }
 
     remountTranscriptStickyComposer(): void {

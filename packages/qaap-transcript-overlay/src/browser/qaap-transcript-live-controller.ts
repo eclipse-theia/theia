@@ -34,9 +34,9 @@ export interface QaapTranscriptLiveControllerDeps {
     readonly conversationsOnDidChange: Event<void>;
 }
 
-const REFRESH_DEBOUNCE_MS = 450;
+const REFRESH_DEBOUNCE_MS = 320;
 /** Poll GET /conversation while streaming when SSE is quiet (iOS Safari often drops EventSource). */
-const STREAMING_FALLBACK_POLL_MS = 4_000;
+const STREAMING_FALLBACK_POLL_MS = 3_000;
 
 /**
  * SSE-first live transcript coordinator. Message chunks are merged in the panel via
