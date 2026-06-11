@@ -8,6 +8,8 @@ import {
     buildConversationListMetrics,
     conversationMessagesHaveGitOperation,
     conversationTurnProgressRatio,
+    extractToolArgFilePath,
+    formatReadToolDetailFromArgs,
     formatToolActivityLabel,
     parseDiffStatsFromText,
     textInvokesGit,
@@ -149,6 +151,19 @@ describe('formatToolActivityLabel', () => {
         expect(formatToolActivityLabel('Read', '{"file_path":"src/index.ts"}')).to.equal('Read index.ts');
         expect(formatToolActivityLabel('Read', '{"file_path":"mobile-projects-panel.ts","offset":2505,"limit":50}'))
             .to.equal('Read mobile-projects-panel.ts L2505-2554');
+    });
+
+    it('extractToolArgFilePath reads common path fields and partial JSON', () => {
+        expect(extractToolArgFilePath('{"file_path":"src/index.ts"}')).to.equal('src/index.ts');
+        expect(extractToolArgFilePath('{"filePath":"packages/core/src/app.ts"}')).to.equal('packages/core/src/app.ts');
+        expect(extractToolArgFilePath('{"target_file":"foo.ts"}')).to.equal('foo.ts');
+        expect(extractToolArgFilePath('{"file_path":"src/config.ts"}')).to.equal('src/config.ts');
+        expect(extractToolArgFilePath('partial {"file_path":"mobile-projects-panel.ts"')).to.equal('mobile-projects-panel.ts');
+    });
+
+    it('formatReadToolDetailFromArgs survives partial JSON args while streaming', () => {
+        expect(formatReadToolDetailFromArgs('{"file_path":"src/auth.ts"}')).to.equal('auth.ts');
+        expect(formatReadToolDetailFromArgs('partial {"file_path":"mobile-projects-panel.ts"')).to.equal('mobile-projects-panel.ts');
     });
 
     it('falls back to generic label when args is not valid JSON', () => {

@@ -161,6 +161,38 @@ export function formatReadToolLineRange(args: Record<string, unknown>): string |
     return undefined;
 }
 
+const TOOL_ARG_FILE_PATH_FIELDS = ['path', 'file_path', 'filePath', 'filename', 'target_file', 'file'] as const;
+
+function pickToolArgFilePath(args: Record<string, unknown>): string | undefined {
+    for (const key of TOOL_ARG_FILE_PATH_FIELDS) {
+        const value = args[key];
+        if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+        }
+    }
+    return undefined;
+}
+
+/** Best-effort file path from tool args JSON, including partial streaming payloads. */
+export function extractToolArgFilePath(argsJson?: string): string | undefined {
+    const trimmed = argsJson?.trim();
+    if (!trimmed || trimmed === '{}') {
+        return undefined;
+    }
+    try {
+        return pickToolArgFilePath(JSON.parse(trimmed) as Record<string, unknown>);
+    } catch {
+        const match = trimmed.match(
+            /"(?:file_path|path|filePath|filename|target_file|file)"\s*:\s*"((?:[^"\\]|\\.)*)"/,
+        );
+        if (!match?.[1]) {
+            return undefined;
+        }
+        const decoded = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\').trim();
+        return decoded || undefined;
+    }
+}
+
 /** Basename + optional line range, e.g. `mobile-projects-panel.ts L2505-2554`. */
 export function formatReadToolDetailFromArgs(argsJson?: string): string | undefined {
     if (!argsJson) {
@@ -168,13 +200,7 @@ export function formatReadToolDetailFromArgs(argsJson?: string): string | undefi
     }
     try {
         const args = JSON.parse(argsJson) as Record<string, unknown>;
-        const filePath = (typeof args.path === 'string' && args.path)
-            ? args.path
-            : (typeof args.file_path === 'string' && args.file_path)
-                ? args.file_path
-                : (typeof args.filename === 'string' && args.filename)
-                    ? args.filename
-                    : undefined;
+        const filePath = pickToolArgFilePath(args);
         if (!filePath) {
             return undefined;
         }
@@ -183,7 +209,12 @@ export function formatReadToolDetailFromArgs(argsJson?: string): string | undefi
         const range = formatReadToolLineRange(args);
         return range ? `${fileName} ${range}` : fileName;
     } catch {
-        return undefined;
+        const filePath = extractToolArgFilePath(argsJson);
+        if (!filePath) {
+            return undefined;
+        }
+        const parts = filePath.replace(/\\/g, '/').split('/').filter(Boolean);
+        return parts.pop() ?? filePath;
     }
 }
 

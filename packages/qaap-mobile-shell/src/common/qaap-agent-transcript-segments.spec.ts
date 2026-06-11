@@ -173,6 +173,20 @@ describe('resolveTranscriptToolPillDescriptors', () => {
             },
         }).map(pill => pill.label)).to.deep.equal(['Read auth.ts', 'Edit auth.ts']);
     });
+
+    it('resolves read pill labels from file_path args', () => {
+        expect(resolveTranscriptToolPillDescriptors([
+            { type: 'tool', toolUseId: 't1', name: 'Read', args: '{"file_path":"src/browser/foo.ts"}', finished: true },
+        ], {
+            resolvePath: args => {
+                try {
+                    return JSON.parse(args).file_path as string;
+                } catch {
+                    return undefined;
+                }
+            },
+        }).map(pill => pill.label)).to.deep.equal(['Read foo.ts']);
+    });
 });
 
 describe('excerptTranscriptThought', () => {
@@ -234,6 +248,8 @@ describe('resolveTranscriptToolRowParts', () => {
         expect(resolveTranscriptToolRowParts('terminal', 'Bash', { command: 'npm run compile' }))
             .to.deep.equal({ verb: 'Ran', detail: 'npm run compile' });
         expect(resolveTranscriptToolRowParts('reading', 'Read', { path: 'src/browser/foo.ts' }))
+            .to.deep.equal({ verb: 'Read', detail: 'foo.ts' });
+        expect(resolveTranscriptToolRowParts('reading', 'Read', { path: 'packages/qaap-mobile-shell/src/browser/foo.ts' }))
             .to.deep.equal({ verb: 'Read', detail: 'foo.ts' });
         expect(resolveTranscriptToolRowParts('editing', 'Edit'))
             .to.deep.equal({ verb: 'Edited', detail: 'file' });
