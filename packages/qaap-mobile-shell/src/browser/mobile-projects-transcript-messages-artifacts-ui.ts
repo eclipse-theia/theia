@@ -12,6 +12,8 @@ import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActiv
 import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
 import { buildTranscriptApprovalCard, TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
+import { buildTranscriptDiffCardFromExtracted, buildTranscriptToolUiPayloadElement } from './qaap-transcript-rich-content-ui';
+import { resolveTranscriptToolUiPayloadFromSegment } from '../common/qaap-transcript-tool-ui-payloads';
 import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
@@ -576,6 +578,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         if (manualApproval && isPendingTranscriptToolSegment(segment)) {
             body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
         }
+        const richPayload = resolveTranscriptToolUiPayloadFromSegment(segment.name, segment.args, segment.result);
+        if (richPayload && !segment.result?.trim()) {
+            body.append(buildTranscriptToolUiPayloadElement(richPayload));
+        }
         if (segment.result?.trim() || todoChecklist) {
             body.append(this.toolUi.createTranscriptToolResultBody(
                 segment,
@@ -631,73 +637,11 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         const fileName = path?.split('/').pop();
 
         const rawDiff = this.resolversUi.formatTranscriptToolResult(editSegment.result!);
-        const details = document.createElement('details');
-        details.className = 'theia-mobile-agent-diff-card theia-mod-done';
-        details.open = true;
-
-        const summary = document.createElement('summary');
-        summary.className = 'theia-mobile-agent-diff-card-head';
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-agent-diff-card-chevron codicon codicon-chevron-right';
-        chevron.setAttribute('aria-hidden', 'true');
-        const iconWrap = document.createElement('span');
-        iconWrap.className = 'theia-mobile-agent-diff-card-icon-wrap';
-        const icon = document.createElement('span');
-        icon.className = 'theia-mobile-agent-diff-card-icon codicon codicon-diff';
-        icon.setAttribute('aria-hidden', 'true');
-        iconWrap.append(icon);
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-agent-diff-card-label';
-        label.textContent = fileName
-            ? nls.localize('qaap/mobileProjects/diffCardEditedFile', 'Edited {0}', fileName)
-            : nls.localize('qaap/mobileProjects/diffCardEdited', 'Edited a file');
-        const stats = document.createElement('span');
-        stats.className = 'theia-mobile-agent-diff-card-stats';
-        const addedBadge = document.createElement('span');
-        addedBadge.className = 'theia-mobile-agent-diff-card-added';
-        addedBadge.textContent = `+${card.added}`;
-        const removedBadge = document.createElement('span');
-        removedBadge.className = 'theia-mobile-agent-diff-card-removed';
-        removedBadge.textContent = `−${card.removed}`;
-        stats.append(addedBadge, removedBadge);
-        summary.append(chevron, iconWrap, label, stats);
-        this.toolUi.appendTranscriptCardCopyTail(summary, () => rawDiff);
-        details.append(summary);
-
-        const body = document.createElement('div');
-        body.className = 'theia-mobile-agent-diff-card-body';
-        if (path) {
-            const pathBar = document.createElement('div');
-            pathBar.className = 'theia-mobile-agent-diff-card-path';
-            pathBar.textContent = this.resolversUi.compactTranscriptPath(path);
-            body.append(pathBar);
-        }
-        const lines = document.createElement('pre');
-        lines.className = 'theia-mobile-agent-diff-card-lines';
-        for (const line of card.lines) {
-            const row = document.createElement('div');
-            row.className = `theia-mobile-agent-diff-card-line theia-mod-${line.kind}`;
-            const lineNo = document.createElement('span');
-            lineNo.className = 'theia-mobile-agent-diff-card-lineno';
-            lineNo.textContent = line.lineNumber !== undefined ? String(line.lineNumber) : '';
-            const marker = document.createElement('span');
-            marker.className = 'theia-mobile-agent-diff-card-marker';
-            marker.textContent = line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ' ';
-            const text = document.createElement('span');
-            text.className = 'theia-mobile-agent-diff-card-text';
-            text.textContent = line.text;
-            row.append(lineNo, marker, text);
-            lines.append(row);
-        }
-        body.append(lines);
-        if (card.truncated) {
-            const more = document.createElement('div');
-            more.className = 'theia-mobile-agent-diff-card-more';
-            more.textContent = nls.localize('qaap/mobileProjects/diffCardTruncated', '… more changes not shown');
-            body.append(more);
-        }
-        details.append(body);
-        return details;
+        return buildTranscriptDiffCardFromExtracted(card, {
+            fileName,
+            path: path ? this.resolversUi.compactTranscriptPath(path) : undefined,
+            rawDiff,
+        });
     }
 
     formatTranscriptActivityMeta(stats: QaapTranscriptActivityStats): string {

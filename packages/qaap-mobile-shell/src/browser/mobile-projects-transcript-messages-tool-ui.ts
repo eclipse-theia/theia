@@ -18,6 +18,7 @@ import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-project
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 import { TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
+import { tryBuildTranscriptRichToolBody } from './qaap-transcript-rich-content-ui';
 
 /** Lightweight stdout/stderr host inside a streaming tool pill (no syntax highlight per tick). */
 export const TRANSCRIPT_TOOL_RESULT_STREAM_CLASS = 'theia-mobile-agent-tool-result-stream';
@@ -258,6 +259,10 @@ export class MobileProjectsTranscriptMessagesToolUi {
         const text = this.resolversUi.formatTranscriptToolResult(segment.result!);
         if (options?.streaming && !segment.finished) {
             return this.createTranscriptToolResultStreamBody(text);
+        }
+        const richBody = tryBuildTranscriptRichToolBody(text, segment.name, segment.args);
+        if (richBody) {
+            return richBody;
         }
         const fullPath = this.resolversUi.extractTranscriptToolFullPath(segment.args);
         const language = resolveTranscriptCodeLanguage(fullPath, text);

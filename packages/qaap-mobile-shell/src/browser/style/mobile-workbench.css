@@ -5734,6 +5734,259 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   background: color-mix(in srgb, var(--q-accent, #E58E40) 30%, transparent);
 }
 
+/* Tool UI rich content cards in transcript markdown + tool payloads. */
+.theia-mobile-agent-rich-card-sep {
+  height: 1px;
+  background: color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 78%, transparent);
+}
+
+.theia-mobile-agent-rich-copy {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theia-descriptionForeground);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-agent-rich-copy:active,
+.theia-mobile-agent-rich-copy:focus-visible {
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 8%, transparent);
+}
+
+.theia-mobile-agent-rich-copy-tip {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 2;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--theia-editorWidget-foreground, var(--theia-foreground));
+  background: var(--theia-editorWidget-background, var(--theia-sideBar-background));
+  border: 1px solid var(--theia-editorWidget-border, var(--theia-panel-border, transparent));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theia-mobile-agent-rich-copy.theia-mod-copied .theia-mobile-agent-rich-copy-tip {
+  opacity: 1;
+}
+
+.theia-mobile-agent-code-block-card,
+.theia-mobile-agent-link-preview-card,
+.theia-mobile-agent-citation-card,
+.theia-mobile-agent-option-list-card,
+.theia-mobile-agent-question-flow-card {
+  overflow: hidden;
+  margin: 8px 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--theia-widget-border, color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.24)) 70%, transparent));
+  background: var(--theia-editorWidget-background, var(--theia-editor-background, #111));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--theia-widget-shadow, #000) 14%, transparent);
+  text-decoration: none;
+  color: inherit;
+}
+
+.theia-mobile-agent-code-block-card-head,
+.theia-mobile-agent-option-list-card-head,
+.theia-mobile-agent-question-flow-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-code-block-card-language {
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theia-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.theia-mobile-agent-code-block-card-body {
+  padding: 0 0 4px;
+  overflow-x: auto;
+}
+
+.theia-mobile-agent-code-block-card-body .theia-mobile-agent-code-view {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.theia-mobile-agent-link-preview-card {
+  display: block;
+}
+
+.theia-mobile-agent-link-preview-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.theia-mobile-agent-link-preview-card-image {
+  display: block;
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 70%, transparent);
+}
+
+.theia-mobile-agent-link-preview-card-copy {
+  padding: 10px 12px 12px;
+}
+
+.theia-mobile-agent-link-preview-card-domain,
+.theia-mobile-agent-citation-card-domain {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-link-preview-card-title,
+.theia-mobile-agent-citation-card-title {
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-link-preview-card-description,
+.theia-mobile-agent-citation-card-snippet {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-citation-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+}
+
+.theia-mobile-agent-citation-card-icon {
+  flex: none;
+  font-size: 15px;
+  color: var(--theia-textLink-foreground, var(--theia-focusBorder, #4c9aff));
+}
+
+.theia-mobile-agent-option-list-card-options,
+.theia-mobile-agent-question-flow-card-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 11px 11px;
+}
+
+.theia-mobile-agent-option-list-card-option,
+.theia-mobile-agent-question-flow-card-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.22)) 75%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 4%, transparent);
+}
+
+.theia-mobile-agent-option-list-card-option.theia-mod-selected,
+.theia-mobile-agent-question-flow-card-option.theia-mod-selected {
+  border-color: color-mix(in srgb, var(--q-accent, #E58E40) 42%, transparent);
+  background: color-mix(in srgb, var(--q-accent, #E58E40) 12%, transparent);
+}
+
+.theia-mobile-agent-option-list-card-marker,
+.theia-mobile-agent-question-flow-card-marker {
+  flex: none;
+  width: 14px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-option-list-card-label,
+.theia-mobile-agent-question-flow-card-option-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-option-list-card-description {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-agent-question-flow-card-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 11px 11px;
+}
+
+.theia-mobile-agent-question-flow-card-step {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--theia-panel-border, rgba(128, 128, 128, 0.2)) 70%, transparent);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 3%, transparent);
+}
+
+.theia-mobile-agent-question-flow-card-step-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.theia-mobile-agent-question-flow-card-step-index {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--theia-foreground);
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 10%, transparent);
+}
+
+.theia-mobile-agent-question-flow-card-step-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-agent-question-flow-card-question {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--theia-descriptionForeground);
+}
+
 .theia-mobile-sticky-composer-pending-approval-host {
   width: 100%;
   min-width: 0;

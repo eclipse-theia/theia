@@ -24,6 +24,7 @@ import {
 } from './qaap-transcript-row-defer';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
+import { enhanceTranscriptMarkdownRichContent } from './qaap-transcript-rich-content-ui';
 
 /** Monospace plain-text preview while worker markdown is in flight (short streams stay here). */
 export const TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS = 'theia-mod-streaming-plain-text';
@@ -147,6 +148,7 @@ export class MobileProjectsTranscriptMessagesContentUi {
         host.innerHTML = html;
         host.dataset.transcriptStreamParsedLen = String(cleanLength);
         host.dataset.transcriptStreamParsedAt = String(Date.now());
+        enhanceTranscriptMarkdownRichContent(host);
         this.attachTranscriptMarkdownLinkHandler(host);
     }
 
