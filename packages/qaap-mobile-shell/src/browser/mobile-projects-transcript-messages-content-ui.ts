@@ -32,6 +32,13 @@ export const TRANSCRIPT_STREAMING_HYBRID_CLASS = 'theia-mod-streaming-hybrid';
 /** Below this length streaming stays plain text; above it uses worker frozen/tail markdown. */
 export const TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS = 480;
 
+/** Fenced code or GFM-style tables need incremental markdown even on short streams. */
+export function transcriptContentNeedsStreamingMarkdown(content: string): boolean {
+    return content.length >= TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS
+        || /(?:^|\n)\s{0,3}```/.test(content)
+        || /(?:^|\n)\|[^\n]+\|/.test(content);
+}
+
 const STREAM_STABLE_LENGTH_DATA = 'qaapStreamStableLength';
 const STREAM_TOTAL_LENGTH_DATA = 'qaapStreamTotalLength';
 
@@ -182,7 +189,7 @@ export class MobileProjectsTranscriptMessagesContentUi {
             delete host.dataset[STREAM_TOTAL_LENGTH_DATA];
             return;
         }
-        if (clean.length < TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS) {
+        if (!transcriptContentNeedsStreamingMarkdown(clean)) {
             host.classList.remove('theia-mod-markdown', TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS);
             host.classList.add(TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS);
             host.textContent = clean;
@@ -213,7 +220,7 @@ export class MobileProjectsTranscriptMessagesContentUi {
             previousStable,
             previousTotal,
             (target, patch, cleanLength) => this.applyTranscriptStreamingMarkdownHtml(target, patch, cleanLength),
-            (target, linkedContent) => this.renderTranscriptStreamingPlainTextFallback(target, linkedContent),
+            (target, linkedContent) => this.renderTranscriptMarkdownSync(target, linkedContent),
         );
     }
 

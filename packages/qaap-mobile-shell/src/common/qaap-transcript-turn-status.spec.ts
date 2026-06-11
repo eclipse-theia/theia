@@ -8,6 +8,7 @@ import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client'
 import {
     isAgentMessageVisuallySettled,
     isConversationTurnVisuallySettled,
+    isTranscriptAgentTailStreaming,
     resolveTranscriptEffectiveStatus,
 } from './qaap-transcript-turn-status';
 
@@ -112,5 +113,45 @@ describe('qaap-transcript-turn-status', () => {
     it('isConversationTurnVisuallySettled mirrors backend idle', () => {
         const idle = conv({ status: 'idle', messages: [{ id: 'u1', role: 'user', content: 'hi', createdAt: 1 }] });
         expect(isConversationTurnVisuallySettled(idle)).to.equal(true);
+    });
+
+    it('isTranscriptAgentTailStreaming stops once the turn is visually settled', () => {
+        const userMessage = { id: 'u1', role: 'user' as const, content: 'explain api', createdAt: 5 };
+        const streaming = conv({
+            messages: [
+                userMessage,
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: '',
+                    createdAt: 8,
+                    segments: [{
+                        type: 'thinking',
+                        content: 'Exploring the API surface...',
+                    }],
+                },
+            ],
+        });
+        expect(isTranscriptAgentTailStreaming(streaming)).to.equal(true);
+        expect(isTranscriptAgentTailStreaming({
+            ...streaming,
+            messages: [
+                userMessage,
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: '',
+                    createdAt: 20,
+                    segments: [{
+                        type: 'tool',
+                        toolUseId: 't1',
+                        name: 'Bash',
+                        args: '{"command":"pnpm dev"}',
+                        finished: true,
+                    }],
+                },
+            ],
+        })).to.equal(false);
+        expect(isTranscriptAgentTailStreaming({ ...streaming, status: 'idle' })).to.equal(false);
     });
 });

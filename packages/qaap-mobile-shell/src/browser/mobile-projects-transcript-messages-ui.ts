@@ -113,6 +113,10 @@ export class MobileProjectsTranscriptMessagesUi {
         this.renderUi.renderTranscriptMessages(host, conv);
     }
 
+    settleVisuallySettledAgentTranscript(messageHost: HTMLElement, conv: QaapAgentConversationDTO): void {
+        this.renderUi.settleVisuallySettledAgentTranscript(messageHost, conv);
+    }
+
     focusTranscriptComposerInput(): void {
         this.userUi.focusTranscriptComposerInput();
     }

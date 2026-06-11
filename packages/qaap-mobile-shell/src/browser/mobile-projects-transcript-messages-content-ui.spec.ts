@@ -18,6 +18,7 @@ import {
     TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS,
     TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS,
     TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS,
+    transcriptContentNeedsStreamingMarkdown,
 } from './mobile-projects-transcript-messages-content-ui';
 import { QaapTranscriptMarkdownWorkerClient } from './qaap-transcript-markdown-worker-client';
 
@@ -35,7 +36,7 @@ describe('MobileProjectsTranscriptMessagesContentUi', () => {
         (client as unknown as { requestStreamingPatch: () => void }).requestStreamingPatch = () => { /* tested via direct HTML patch */ };
     });
 
-    it('renderTranscriptStreamingMarkdown keeps short streams as plain text', () => {
+    it('renderTranscriptStreamingMarkdown keeps short prose streams as plain text', () => {
         const host = document.createElement('div');
         host.className = 'theia-mobile-agent-transcript-content';
         const ui = new MobileProjectsTranscriptMessagesContentUi({
@@ -46,6 +47,24 @@ describe('MobileProjectsTranscriptMessagesContentUi', () => {
         expect(host.classList.contains(TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS)).to.equal(false);
         expect(host.textContent).to.equal('**Hello** `world`');
         expect(host.querySelector('strong')).to.equal(null);
+    });
+
+    it('transcriptContentNeedsStreamingMarkdown detects fenced code and tables', () => {
+        expect(transcriptContentNeedsStreamingMarkdown('short prose')).to.equal(false);
+        expect(transcriptContentNeedsStreamingMarkdown('```js\nx\n```')).to.equal(true);
+        expect(transcriptContentNeedsStreamingMarkdown('| a | b |\n|---|---|')).to.equal(true);
+        expect(transcriptContentNeedsStreamingMarkdown('word '.repeat(TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS))).to.equal(true);
+    });
+
+    it('renderTranscriptStreamingMarkdown uses hybrid mode for short fenced code', () => {
+        const host = document.createElement('div');
+        host.className = 'theia-mobile-agent-transcript-content';
+        const ui = new MobileProjectsTranscriptMessagesContentUi({
+            transcriptMarkdownIt: markdownit(),
+        } as never);
+        ui.renderTranscriptStreamingMarkdown(host, '```js\nconst x = 1;\n```');
+        expect(host.classList.contains(TRANSCRIPT_STREAMING_HYBRID_CLASS)).to.equal(true);
+        expect(host.classList.contains(TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS)).to.equal(false);
     });
 
     it('renderTranscriptStreamingMarkdown mounts hybrid plain preview for long streams', () => {

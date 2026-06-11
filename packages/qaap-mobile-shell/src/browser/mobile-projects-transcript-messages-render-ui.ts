@@ -9,6 +9,7 @@ import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream
 import { QaapCliTranscriptParseWorkerClient } from './qaap-cli-transcript-parse-worker-client';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
 import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendTextSegment, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentSegmentsInPlace, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
+import { isTranscriptAgentTailStreaming } from '../common/qaap-transcript-turn-status';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
 import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
@@ -89,8 +90,8 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             conversationStreaming: conv.status === 'streaming',
         });
         const streamingTail = index === conv.messages.length - 1
-            && conv.status === 'streaming'
-            && msg.role === 'agent';
+            && msg.role === 'agent'
+            && isTranscriptAgentTailStreaming(conv);
         let row: HTMLElement;
         const agentSegments = this.resolveTranscriptAgentSegments(conv, msg);
         if (msg.role === 'user') {
@@ -289,7 +290,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
                 `[${TRANSCRIPT_MESSAGE_ID_ATTR}="${CSS.escape(lastAgent.id)}"]`,
             );
             if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments, conv)) {
-                this.markTranscriptMessageRow(existing, lastAgent.id, true);
+                this.markTranscriptMessageRow(existing, lastAgent.id, isTranscriptAgentTailStreaming(conv));
                 this.removeTranscriptActivityRow(messageHost);
                 this.host.transcriptLastConv = conv;
                 this.host.transcriptLastRenderedConversationId = conv.id;
@@ -303,13 +304,16 @@ export class MobileProjectsTranscriptMessagesRenderUi {
 
         this.removeTranscriptActivityRow(messageHost);
         messageHost.querySelectorAll('.theia-mod-streaming').forEach(element => {
+            if (element instanceof HTMLElement) {
+                this.contentUi.settleTranscriptStreamingContent(element);
+            }
             element.classList.remove('theia-mod-streaming');
         });
 
         const row = segments?.length
             ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv, { streaming: true })
             : this.createTranscriptMessageRowAtIndex(conv, conv.messages.length - 1);
-        this.markTranscriptMessageRow(row, lastAgent.id, true);
+        this.markTranscriptMessageRow(row, lastAgent.id, isTranscriptAgentTailStreaming(conv));
 
         if (patchKind === 'last-agent') {
             const existing = messageHost.querySelector<HTMLElement>(
@@ -331,6 +335,22 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             scrollElementToEnd(messageHost);
         }
         return true;
+    }
+
+    /** Upgrade hybrid/plain streaming markdown once the agent turn looks complete. */
+    settleVisuallySettledAgentTranscript(messageHost: HTMLElement, conv: QaapAgentConversationDTO): void {
+        const lastAgent = [...conv.messages].reverse().find(message => message.role === 'agent');
+        if (!lastAgent?.id) {
+            return;
+        }
+        const row = messageHost.querySelector<HTMLElement>(
+            `[${TRANSCRIPT_MESSAGE_ID_ATTR}="${CSS.escape(lastAgent.id)}"]`,
+        );
+        if (!row) {
+            return;
+        }
+        row.classList.remove('theia-mod-streaming');
+        this.contentUi.settleTranscriptStreamingContent(row);
     }
 
     tryPatchStreamingTranscriptVirtual(
@@ -366,7 +386,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         if (patchKind === 'last-agent') {
             const existing = list.findRowByAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, lastAgent.id);
             if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments, conv)) {
-                this.markTranscriptMessageRow(existing, lastAgent.id, true);
+                this.markTranscriptMessageRow(existing, lastAgent.id, isTranscriptAgentTailStreaming(conv));
                 this.host.transcriptLastConv = conv;
                 list.setItemCount(conv.messages.length);
                 list.setFooter(this.buildTranscriptVirtualFooter(conv));
@@ -383,7 +403,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         const row = segments?.length
             ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv, { streaming: true })
             : this.createTranscriptMessageRowAtIndex(conv, conv.messages.length - 1);
-        this.markTranscriptMessageRow(row, lastAgent.id, true);
+        this.markTranscriptMessageRow(row, lastAgent.id, isTranscriptAgentTailStreaming(conv));
 
         if (patchKind === 'last-agent') {
             list.replaceRowByAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, lastAgent.id, row);

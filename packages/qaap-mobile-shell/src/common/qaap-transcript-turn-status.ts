@@ -56,3 +56,15 @@ export function resolveTranscriptEffectiveStatus(
     }
     return isConversationTurnVisuallySettled(conv) ? 'idle' : 'streaming';
 }
+
+/**
+ * True when the last agent message should use live streaming markdown (plain/hybrid)
+ * instead of full settled rendering.
+ */
+export function isTranscriptAgentTailStreaming(conv: QaapAgentConversationDTO): boolean {
+    if (conv.status !== 'streaming' || isConversationTurnVisuallySettled(conv)) {
+        return false;
+    }
+    const last = conv.messages[conv.messages.length - 1];
+    return last?.role === 'agent';
+}

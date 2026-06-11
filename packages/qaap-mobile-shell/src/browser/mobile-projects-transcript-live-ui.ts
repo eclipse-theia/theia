@@ -515,8 +515,14 @@ export class MobileProjectsTranscriptLiveUi {
                 this.transcriptTurnVisuallySettledActive = false;
                 return;
             }
-            if (!this.transcriptTurnVisuallySettledActive) {
+            const becameVisuallySettled = !this.transcriptTurnVisuallySettledActive;
+            if (becameVisuallySettled) {
                 this.transcriptTurnVisuallySettledActive = true;
+                const chatHost = this.resolveActiveTranscriptChatHost();
+                if (chatHost) {
+                    const messageHost = this.host.transcriptMessagesUi.resolveTranscriptMessageHost(chatHost);
+                    this.host.transcriptMessagesUi.settleVisuallySettledAgentTranscript(messageHost, conv);
+                }
             }
             this.host.transcriptComposerSendRefresh?.();
             this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
