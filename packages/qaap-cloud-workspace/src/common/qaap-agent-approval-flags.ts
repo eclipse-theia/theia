@@ -124,10 +124,13 @@ function formatQaiqApproveForMeFlags(rules: QaapAgentToolApprovalRules): string 
     if (rules.network) {
         return '--permission-mode bypassPermissions';
     }
+    const readTools = 'Read,Grep,Glob,LS';
+    const editTools = 'Edit,Write,NotebookEdit';
     if (rules.shell) {
-        return '--permission-mode default --allowed-tools Edit Write NotebookEdit Bash';
+        return `--permission-mode default --allowed-tools ${readTools},${editTools},Bash`;
     }
-    return '--permission-mode acceptEdits';
+    // Read-only exploration without prompts; Bash stays gated (stdio approvals when needed).
+    return `--permission-mode default --allowed-tools ${readTools},${editTools}`;
 }
 
 function applyClaudeApprovalFlags(

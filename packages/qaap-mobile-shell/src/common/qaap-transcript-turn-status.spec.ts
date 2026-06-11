@@ -89,6 +89,26 @@ describe('qaap-transcript-turn-status', () => {
         })).to.equal(true);
     });
 
+    it('isConversationTurnVisuallySettled stays streaming for thinking-only segments', () => {
+        const streaming = conv({
+            messages: [
+                { id: 'u1', role: 'user', content: 'run dev', createdAt: 5 },
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: '',
+                    createdAt: 8,
+                    segments: [{
+                        type: 'thinking',
+                        content: 'Let me explore the project structure first.',
+                    }],
+                },
+            ],
+        });
+        expect(isConversationTurnVisuallySettled(streaming)).to.equal(false);
+        expect(resolveTranscriptEffectiveStatus(streaming)).to.equal('streaming');
+    });
+
     it('isConversationTurnVisuallySettled mirrors backend idle', () => {
         const idle = conv({ status: 'idle', messages: [{ id: 'u1', role: 'user', content: 'hi', createdAt: 1 }] });
         expect(isConversationTurnVisuallySettled(idle)).to.equal(true);

@@ -51,6 +51,7 @@ import {
     parseQaiqStdioEvent,
     type QaapQaiqPendingControlRequest,
 } from '../common/qaap-qaiq-stdio-approvals';
+import { findQaiqDevServerGuardDenial } from '../common/qaap-agent-dev-server-guard';
 import {
     resolveAgentAutoApprove,
 } from '../common/qaap-agent-auto-approve';
@@ -409,7 +410,7 @@ export class QaapAgentTaskRunner {
             id: QAIQ_AGENT_ID,
             label: 'QAIQ',
             bin,
-            template: `${bin} --bare --print --output-format stream-json --verbose --include-partial-messages {qaiq_flags} {prompt}`,
+            template: `${bin} --print --output-format stream-json --verbose --include-partial-messages {qaiq_flags} {prompt}`,
         });
     }
 
@@ -1170,6 +1171,18 @@ export class QaapAgentTaskRunner {
                     continue;
                 }
                 if (event.type === 'control-request') {
+                    // Dev servers must run in the Qaap bootstrap terminal, not shell tools that
+                    // time out — auto-deny with guidance so the agent replies with the port instead.
+                    const devServerDenial = findQaiqDevServerGuardDenial(event.request);
+                    if (devServerDenial) {
+                        logStream.write('\n[qaap] auto-denied long-lived dev-server shell command; Qaap manages dev servers via the preview bootstrap.\n');
+                        try {
+                            child.stdin?.write(buildQaiqControlResponseLine(event.request, 'reject', { denyMessage: devServerDenial }));
+                        } catch {
+                            // stdin already closed — the turn is over anyway.
+                        }
+                        continue;
+                    }
                     const pending = this.pendingQaiqControlRequests.get(task.id) ?? [];
                     pending.push(event.request);
                     this.pendingQaiqControlRequests.set(task.id, pending);

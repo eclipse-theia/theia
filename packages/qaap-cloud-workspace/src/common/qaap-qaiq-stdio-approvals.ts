@@ -91,6 +91,7 @@ export function buildQaiqStdioPromptLine(prompt: string): string {
 export function buildQaiqControlResponseLine(
     pending: QaapQaiqPendingControlRequest,
     action: 'approve' | 'reject',
+    options: { readonly denyMessage?: string } = {},
 ): string {
     const response = action === 'approve'
         ? {
@@ -100,8 +101,9 @@ export function buildQaiqControlResponseLine(
         }
         : {
             behavior: 'deny',
-            message: 'The user declined this action from the Qaap approvals UI. '
-                + 'Do not retry it unchanged; continue with an allowed alternative or explain what you need.',
+            message: options.denyMessage
+                ?? ('The user declined this action from the Qaap approvals UI. '
+                    + 'Do not retry it unchanged; continue with an allowed alternative or explain what you need.'),
             ...(pending.toolUseId ? { toolUseID: pending.toolUseId } : {}),
         };
     return JSON.stringify({

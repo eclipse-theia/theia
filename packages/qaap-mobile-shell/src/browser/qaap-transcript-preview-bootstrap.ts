@@ -16,6 +16,8 @@ const PROBE_POLL_INTERVAL_MS = 500;
 export interface EnsureTranscriptDevPreviewOptions {
     readonly portHint?: number;
     readonly previewUrlHint?: string;
+    /** When set, only wait for an hinted port — never start bootstrap install/dev. */
+    readonly waitForHintOnly?: boolean;
 }
 
 /** Parses a proxied or direct localhost preview URL into a dev-server port. */
@@ -86,6 +88,16 @@ export async function ensureTranscriptDevPreview(
         if (readyUrl) {
             return readyUrl;
         }
+        const waited = await waitForQaapDevPreviewPort(portHint, {
+            maxAttempts: PROBE_POLL_ATTEMPTS,
+            intervalMs: PROBE_POLL_INTERVAL_MS,
+        });
+        if (waited?.ready) {
+            return normalizePreviewUrlForSameOrigin(waited.previewUrl);
+        }
+        if (options.waitForHintOnly || options.previewUrlHint || options.portHint) {
+            return undefined;
+        }
     }
 
     let snapshot = bootstrap.getStateSnapshot();
@@ -118,17 +130,6 @@ export async function ensureTranscriptDevPreview(
         await bootstrap.runInstall();
     } else if (canStartDev) {
         await bootstrap.runDevServer();
-    }
-
-    const waitPort = portHint ?? bootstrap.lastPort;
-    if (waitPort !== undefined) {
-        const ready = await waitForQaapDevPreviewPort(waitPort, {
-            maxAttempts: PROBE_POLL_ATTEMPTS,
-            intervalMs: PROBE_POLL_INTERVAL_MS,
-        });
-        if (ready?.ready) {
-            return normalizePreviewUrlForSameOrigin(ready.previewUrl);
-        }
     }
 
     const fromBootstrap = await waitForBootstrapPreviewUrl(bootstrap, BOOTSTRAP_PREVIEW_WAIT_MS);

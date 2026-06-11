@@ -10,8 +10,11 @@ import { GenericCapabilitySelections } from '@theia/ai-core';
 import {
     conversationToSummary,
     createConversation,
+    getConversation,
+    type QaapAgentConversationDTO,
     type QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
+import { messageRequestsDevPreview } from '../common/qaap-transcript-preview-offer';
 import {
     extractBackendAgentMention,
     fetchAgentTaskListAll,
@@ -47,6 +50,7 @@ export interface MobileProjectsBackgroundTaskHost {
     sessionsSidebar?: MobileWorkHubSessionsSidebar;
     delegate: { onProjectsChanged?: () => void };
     transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
+    transcriptLiveUi: import('./mobile-projects-transcript-live-ui').MobileProjectsTranscriptLiveUi;
     shouldUseAgentsHubLanding(): boolean;
     renderSubtitle(): void;
     renderList(): void;
@@ -96,8 +100,14 @@ export class MobileProjectsBackgroundTaskUi {
         }
         try {
             const summary = await this.createProjectChatSession(project, cwd, draft, options);
-            if (options.openConversation ?? true) {
+            const wantsDevPreview = messageRequestsDevPreview(draft);
+            if (wantsDevPreview || (options.openConversation ?? true)) {
                 await this.host.transcriptSheetUi.openTranscriptSheet(project, summary);
+            }
+            if (wantsDevPreview) {
+                const full: QaapAgentConversationDTO = await getConversation(summary.id);
+                this.host.transcriptLiveUi.onTranscriptUserMessageSubmitted(draft, full);
+                this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
             }
             this.applyTaskStartedToProject(cwd, draft, summary.id);
             MobileSnackbar.show(

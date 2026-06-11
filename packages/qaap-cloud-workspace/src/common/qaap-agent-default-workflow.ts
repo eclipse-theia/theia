@@ -12,6 +12,7 @@ export function buildAgentDefaultWorkflowPromptBlock(): string {
         DEFAULT_WORKFLOW_MARKER,
         'For coding tasks, work toward a reviewable pull request by default unless the user asks for a different outcome.',
         'Use the current repository context, inspect git status before changing files, and create or use an appropriate branch for the task.',
+        'Start every task by using Read, Glob, or Grep on the repository — never end a turn with only planning/thinking text.',
         'Implement the change, run the most relevant verification you can find, and summarize the result with changed files and test status.',
         'When GitHub credentials and remotes are available, push the branch and open or update a PR. Otherwise leave the branch PR-ready and state the exact next command or blocker.',
         'Do not merge, delete branches, or rewrite shared history unless the user explicitly asks.',

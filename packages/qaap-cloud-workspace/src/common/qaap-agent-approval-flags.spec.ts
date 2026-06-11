@@ -22,6 +22,17 @@ describe('qaap-agent-approval-flags', () => {
             .to.deep.equal({ shell: true, network: false });
     });
 
+    it('approve-for-me allows read-only exploration for QAIQ', () => {
+        const command = applyAgentApprovalPolicyToCommand(
+            "qaiq --print -p 'hi'",
+            { agentId: 'qaiq', approvalPolicyId: 'approve-for-me', autoApprove: true },
+        );
+        expect(command).to.include('--allowed-tools');
+        expect(command).to.include('Read');
+        expect(command).to.include('Grep');
+        expect(command).not.to.include('acceptEdits');
+    });
+
     it('approve-for-me uses acceptEdits for Claude instead of full skip', () => {
         const command = applyAgentApprovalPolicyToCommand(
             "claude --print -p 'hi'",
