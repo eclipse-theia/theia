@@ -11,6 +11,7 @@ import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-
 import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, isTranscriptTodoTool, parseTranscriptTodoChecklist, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
+import { buildTranscriptApprovalCard, TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
 import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
@@ -286,13 +287,17 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         pill.classList.toggle('theia-mod-done', descriptor.finished);
         pill.classList.toggle('theia-mod-failed', descriptor.resultFailed);
         const rowParts = this.resolveToolRowParts(segment, descriptor.kind);
-        const verb = pill.querySelector('.theia-mobile-agent-tool-pill-verb');
-        if (verb) {
-            verb.textContent = rowParts.verb;
-        }
-        const label = pill.querySelector('.theia-mobile-agent-tool-pill-label');
-        if (label) {
-            label.textContent = rowParts.detail;
+        const summary = pill.querySelector('summary');
+        if (summary) {
+            this.toolUi.syncTranscriptToolPillSummary(summary, {
+                verb: rowParts.verb,
+                label: rowParts.detail,
+                finished: descriptor.finished,
+                failed: descriptor.resultFailed,
+                copyFrom: segment.result?.trim()
+                    ? () => this.resolversUi.formatTranscriptToolResult(segment.result!)
+                    : undefined,
+            });
         }
         if (this.resolversUi.isTranscriptPureReadTool(segment.name)
             && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, descriptor.kind)) {
@@ -307,7 +312,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             pill.append(body);
         }
         const pendingApproval = manualApproval && isPendingTranscriptToolSegment(segment);
-        const pendingApprovalChanged = pendingApproval !== !!body.querySelector('.theia-mobile-agent-tool-pill-approval');
+        const pendingApprovalChanged = pendingApproval !== !!body.querySelector(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}`);
         if (!pendingApprovalChanged
             && this.toolUi.canPatchTranscriptToolResultStream(previous, segment)
             && this.toolUi.patchTranscriptToolResultStreamBody(body, segment)) {
@@ -549,20 +554,19 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             // The live task checklist stays visible, Claude-Code-style.
             pill.open = true;
         }
-        const summary = document.createElement('summary');
-        summary.className = 'theia-mobile-agent-tool-pill-summary';
-        const icon = document.createElement('span');
-        icon.className = `codicon ${this.toolUi.transcriptToolIconClass(kind)} theia-mobile-agent-tool-pill-icon`;
-        icon.setAttribute('aria-hidden', 'true');
         const rowParts = this.resolveToolRowParts(segment, kind);
-        const verb = document.createElement('span');
-        verb.className = 'theia-mobile-agent-tool-pill-verb';
-        verb.textContent = rowParts.verb;
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-agent-tool-pill-label';
-        label.textContent = rowParts.detail;
-        summary.append(icon, verb, label);
-        pill.append(summary);
+        const finished = descriptor?.finished ?? segment.finished;
+        const failed = descriptor?.resultFailed ?? false;
+        pill.append(this.toolUi.createTranscriptToolPillSummary({
+            kind,
+            verb: rowParts.verb,
+            label: rowParts.detail,
+            finished,
+            failed,
+            copyFrom: segment.result?.trim()
+                ? () => this.resolversUi.formatTranscriptToolResult(segment.result!)
+                : undefined,
+        }));
         if (this.resolversUi.isTranscriptPureReadTool(segment.name)
             && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, kind)) {
             return pill;
@@ -589,37 +593,24 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         conversationId: string,
         segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
     ): HTMLElement {
-        const wrap = document.createElement('div');
-        wrap.className = 'theia-mobile-agent-tool-pill-approval';
-        const title = document.createElement('div');
-        title.className = 'theia-mobile-agent-tool-pill-approval-title';
-        title.textContent = nls.localize(
-            'qaap/mobileProjects/transcriptToolApprovalTitle',
-            'Allow {0}?',
-            segment.name,
-        );
-        const actions = document.createElement('div');
-        actions.className = 'theia-mobile-agent-tool-pill-approval-actions';
         const approvalId = buildTranscriptToolApprovalId(conversationId, segment.toolUseId);
-        const approve = document.createElement('button');
-        approve.type = 'button';
-        approve.className = 'theia-mobile-agent-tool-pill-approval-allow';
-        approve.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalAllow', 'Allow');
-        approve.addEventListener('click', event => {
-            event.stopPropagation();
-            void approveAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
+        return buildTranscriptApprovalCard({
+            surface: 'pill',
+            title: nls.localize(
+                'qaap/mobileProjects/transcriptToolApprovalTitle',
+                'Allow {0}?',
+                segment.name,
+            ),
+        }, {
+            onApprove: event => {
+                event.stopPropagation();
+                void approveAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
+            },
+            onReject: event => {
+                event.stopPropagation();
+                void rejectAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
+            },
         });
-        const reject = document.createElement('button');
-        reject.type = 'button';
-        reject.className = 'theia-mobile-agent-tool-pill-approval-deny';
-        reject.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalDeny', 'Deny');
-        reject.addEventListener('click', event => {
-            event.stopPropagation();
-            void rejectAgentRequest(approvalId).then(() => this.host.transcriptLiveUi.ensureTranscriptConversationRefresh());
-        });
-        actions.append(approve, reject);
-        wrap.append(title, actions);
-        return wrap;
     }
 
     /** Claude-Code-style diff card for the latest edit: "Edited <file> +N −N" header + numbered lines. */
@@ -639,8 +630,9 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         const path = this.resolversUi.extractTranscriptToolFullPath(editSegment.args);
         const fileName = path?.split('/').pop();
 
+        const rawDiff = this.resolversUi.formatTranscriptToolResult(editSegment.result!);
         const details = document.createElement('details');
-        details.className = 'theia-mobile-agent-diff-card';
+        details.className = 'theia-mobile-agent-diff-card theia-mod-done';
         details.open = true;
 
         const summary = document.createElement('summary');
@@ -648,6 +640,12 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         const chevron = document.createElement('span');
         chevron.className = 'theia-mobile-agent-diff-card-chevron codicon codicon-chevron-right';
         chevron.setAttribute('aria-hidden', 'true');
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'theia-mobile-agent-diff-card-icon-wrap';
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-agent-diff-card-icon codicon codicon-diff';
+        icon.setAttribute('aria-hidden', 'true');
+        iconWrap.append(icon);
         const label = document.createElement('span');
         label.className = 'theia-mobile-agent-diff-card-label';
         label.textContent = fileName
@@ -662,7 +660,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         removedBadge.className = 'theia-mobile-agent-diff-card-removed';
         removedBadge.textContent = `−${card.removed}`;
         stats.append(addedBadge, removedBadge);
-        summary.append(chevron, label, stats);
+        summary.append(chevron, iconWrap, label, stats);
+        this.toolUi.appendTranscriptCardCopyTail(summary, () => rawDiff);
         details.append(summary);
 
         const body = document.createElement('div');

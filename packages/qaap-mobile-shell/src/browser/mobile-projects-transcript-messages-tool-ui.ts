@@ -17,6 +17,7 @@ import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversati
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
+import { TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
 
 /** Lightweight stdout/stderr host inside a streaming tool pill (no syntax highlight per tick). */
 export const TRANSCRIPT_TOOL_RESULT_STREAM_CLASS = 'theia-mobile-agent-tool-result-stream';
@@ -70,26 +71,18 @@ export class MobileProjectsTranscriptMessagesToolUi {
         details.className = `theia-mobile-agent-shell-window ${failed ? 'theia-mod-failed' : 'theia-mod-done'} theia-mod-text-output`;
         details.open = shouldOpenTranscriptToolDetailsSegment({ finished: true, resultFailed: failed });
         const cleanContent = this.contentUi.cleanTranscriptDisplayText(content);
-        const summary = document.createElement('summary');
-        summary.className = 'theia-mobile-agent-shell-head';
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
-        chevron.setAttribute('aria-hidden', 'true');
-        const icon = document.createElement('span');
-        icon.className = 'theia-mobile-agent-shell-icon';
-        icon.textContent = '>_';
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-agent-shell-title';
-        label.textContent = failed
-            ? nls.localize('qaap/mobileProjects/transcriptErrorOutput', 'Error output')
-            : nls.localize('qaap/mobileProjects/transcriptTerminalOutput', 'Terminal output');
-        summary.append(chevron, icon, label);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
         body.append(this.createTranscriptClampedPre(cleanContent, 'theia-mobile-agent-shell-output'));
-        this.appendTranscriptShellSummaryTail(summary, {
+        const summary = this.createTranscriptShellWindowHead({
+            title: failed
+                ? nls.localize('qaap/mobileProjects/transcriptErrorOutput', 'Error output')
+                : nls.localize('qaap/mobileProjects/transcriptTerminalOutput', 'Terminal output'),
             finished: true,
             failed,
+            exitCode: failed
+                ? (this.parseTranscriptShellExitCode(cleanContent) ?? 1)
+                : this.parseTranscriptShellExitCode(cleanContent),
             copyFrom: () => this.collectTranscriptShellBodyCopyText(body),
         });
         details.append(summary, body);
@@ -213,6 +206,7 @@ export class MobileProjectsTranscriptMessagesToolUi {
             return this.createTranscriptReadLine(segment);
         }
 
+        const failed = this.resolversUi.transcriptToolResultFailed(segment.result);
         const head = this.createTranscriptToolHead({
             kind,
             toolName: segment.name,
@@ -223,13 +217,14 @@ export class MobileProjectsTranscriptMessagesToolUi {
             pureRead,
             result: segment.result,
             finished: segment.finished,
+            failed,
         });
 
         const details = document.createElement('details');
         details.className = `theia-mobile-agent-tool-window theia-mod-${kind}`;
         const shouldOpen = this.resolversUi.shouldOpenTranscriptToolDetails(segment);
         details.open = shouldOpen;
-        details.classList.add(segment.finished ? 'theia-mod-done' : 'theia-mod-running');
+        details.classList.add(!segment.finished ? 'theia-mod-running' : failed ? 'theia-mod-failed' : 'theia-mod-done');
         details.append(head);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-tool-body';
@@ -311,7 +306,7 @@ export class MobileProjectsTranscriptMessagesToolUi {
         if (body.querySelector(`.${TRANSCRIPT_TOOL_SPECULATIVE_CLASS}`)) {
             return;
         }
-        if (body.childElementCount === 0 || body.querySelector('.theia-mobile-agent-tool-pill-approval')) {
+        if (body.childElementCount === 0 || body.querySelector(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}`)) {
             body.append(this.createTranscriptToolSpeculativePlaceholder());
         }
     }
@@ -392,6 +387,7 @@ export class MobileProjectsTranscriptMessagesToolUi {
         pureRead: boolean;
         result?: string;
         finished: boolean;
+        failed: boolean;
     }): HTMLElement {
         const head = document.createElement(options.showResultBody ? 'summary' : 'div');
         head.className = 'theia-mobile-agent-tool-head';
@@ -450,10 +446,13 @@ export class MobileProjectsTranscriptMessagesToolUi {
                 head.append(badge);
             }
         }
-        const state = document.createElement('span');
-        state.className = 'theia-mobile-agent-tool-state';
-        state.setAttribute('aria-hidden', 'true');
-        head.append(state);
+        this.appendTranscriptShellSummaryTail(head, {
+            finished: options.finished,
+            failed: options.failed,
+            copyFrom: options.hasResult && options.result
+                ? () => this.resolversUi.formatTranscriptToolResult(options.result!)
+                : undefined,
+        });
         return head;
     }
 
@@ -511,17 +510,145 @@ export class MobileProjectsTranscriptMessagesToolUi {
         return body.textContent?.trim() ?? '';
     }
 
+    /** Tool UI-style collapsible card header for the compact tool-pill strip. */
+    createTranscriptToolPillSummary(options: {
+        kind: string;
+        verb: string;
+        label: string;
+        finished: boolean;
+        failed: boolean;
+        copyFrom?: () => string;
+    }): HTMLElement {
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-tool-pill-summary';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-tool-pill-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const icon = document.createElement('span');
+        icon.className = `codicon ${this.transcriptToolIconClass(options.kind)} theia-mobile-agent-tool-pill-icon`;
+        icon.setAttribute('aria-hidden', 'true');
+        const verb = document.createElement('span');
+        verb.className = 'theia-mobile-agent-tool-pill-verb';
+        verb.textContent = options.verb;
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-tool-pill-label';
+        label.textContent = options.label;
+        summary.append(chevron, icon, verb, label);
+        this.appendTranscriptToolPillSummaryTail(summary, {
+            finished: options.finished,
+            failed: options.failed,
+            copyFrom: options.copyFrom,
+        });
+        return summary;
+    }
+
+    syncTranscriptToolPillSummary(
+        summary: HTMLElement,
+        options: {
+            verb: string;
+            label: string;
+            finished: boolean;
+            failed: boolean;
+            copyFrom?: () => string;
+        },
+    ): void {
+        const verb = summary.querySelector('.theia-mobile-agent-tool-pill-verb');
+        if (verb) {
+            verb.textContent = options.verb;
+        }
+        const labelEl = summary.querySelector('.theia-mobile-agent-tool-pill-label');
+        if (labelEl) {
+            labelEl.textContent = options.label;
+        }
+        summary.querySelector('.theia-mobile-agent-shell-tail')?.remove();
+        this.appendTranscriptToolPillSummaryTail(summary, {
+            finished: options.finished,
+            failed: options.failed,
+            copyFrom: options.copyFrom,
+        });
+    }
+
+    appendTranscriptToolPillSummaryTail(
+        summary: HTMLElement,
+        options: { finished: boolean; failed: boolean; copyFrom?: () => string },
+    ): void {
+        this.appendTranscriptShellSummaryTail(summary, options);
+    }
+
+    appendTranscriptCardCopyTail(summary: HTMLElement, copyFrom: () => string): void {
+        this.appendTranscriptShellSummaryTail(summary, {
+            finished: true,
+            failed: false,
+            showState: false,
+            copyFrom,
+        });
+    }
+
+    /** Tool UI terminal card header — chevron, terminal icon, title, optional exit code, tail actions. */
+    createTranscriptShellWindowHead(options: {
+        title: string;
+        finished: boolean;
+        failed: boolean;
+        exitCode?: number;
+        copyFrom?: () => string;
+    }): HTMLElement {
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-shell-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'theia-mobile-agent-shell-icon-wrap';
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-agent-shell-icon codicon codicon-terminal';
+        icon.setAttribute('aria-hidden', 'true');
+        iconWrap.append(icon);
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-shell-title';
+        label.textContent = options.title;
+        summary.append(chevron, iconWrap, label);
+        if (options.exitCode !== undefined && options.finished) {
+            const exitCode = document.createElement('span');
+            exitCode.className = 'theia-mobile-agent-shell-exit-code';
+            exitCode.classList.toggle('theia-mod-failed', options.exitCode !== 0);
+            exitCode.textContent = String(options.exitCode);
+            exitCode.setAttribute('aria-label', nls.localize(
+                'qaap/mobileProjects/transcriptShellExitCode',
+                'Exit code {0}',
+                String(options.exitCode),
+            ));
+            summary.append(exitCode);
+        }
+        this.appendTranscriptShellSummaryTail(summary, {
+            finished: options.finished,
+            failed: options.failed,
+            copyFrom: options.copyFrom,
+        });
+        return summary;
+    }
+
+    parseTranscriptShellExitCode(result: string | undefined): number | undefined {
+        if (!result?.trim()) {
+            return undefined;
+        }
+        const match = result.match(/\bexit(?:\s+code)?[:\s]+(\d+)\b/i)
+            ?? result.match(/\b(?:exited|code)\s+(\d+)\b/i);
+        return match ? Number(match[1]) : undefined;
+    }
+
     appendTranscriptShellSummaryTail(
         summary: HTMLElement,
-        options: { finished: boolean; failed: boolean; copyFrom?: () => string; copyLabel?: string },
+        options: { finished: boolean; failed: boolean; copyFrom?: () => string; copyLabel?: string; showState?: boolean },
     ): void {
         const tail = document.createElement('div');
         tail.className = 'theia-mobile-agent-shell-tail';
-        const state = document.createElement('span');
-        state.className = 'theia-mobile-agent-shell-state';
-        state.setAttribute('role', 'status');
-        state.setAttribute('aria-label', this.transcriptShellStateAriaLabel(options.finished, options.failed));
-        tail.append(state);
+        if (options.showState !== false) {
+            const state = document.createElement('span');
+            state.className = 'theia-mobile-agent-shell-state';
+            state.setAttribute('role', 'status');
+            state.setAttribute('aria-label', this.transcriptShellStateAriaLabel(options.finished, options.failed));
+            tail.append(state);
+        }
         if (options.copyFrom) {
             const copyBtn = document.createElement('button');
             copyBtn.type = 'button';
@@ -593,43 +720,40 @@ export class MobileProjectsTranscriptMessagesToolUi {
             details.classList.add('theia-mod-running');
         }
 
-        const summary = document.createElement('summary');
-        summary.className = 'theia-mobile-agent-shell-head';
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
-        chevron.setAttribute('aria-hidden', 'true');
-        const icon = document.createElement('span');
-        icon.className = 'theia-mobile-agent-shell-icon';
-        icon.textContent = '>_';
-        const label = document.createElement('span');
-        label.className = 'theia-mobile-agent-shell-title';
         const command = this.resolversUi.extractTranscriptToolCommand(segment.args)
             ?? this.contentUi.cleanTranscriptDisplayText(segment.args);
-        label.textContent = command && command !== '{}'
-            ? this.resolversUi.compactTranscriptCommand(command)
-            : nls.localize('qaap/mobileProjects/transcriptShell', 'Shell');
-        summary.append(chevron, icon, label);
-
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-shell-body';
-        const commandLine = document.createElement('div');
-        commandLine.className = 'theia-mobile-agent-shell-command';
-        const prompt = document.createElement('span');
-        prompt.className = 'theia-mobile-agent-shell-prompt';
-        prompt.textContent = '$';
-        const commandText = document.createElement('code');
-        commandText.textContent = command;
-        commandLine.append(prompt, commandText);
-        body.append(commandLine);
+        if (command && command !== '{}') {
+            const commandBlock = document.createElement('div');
+            commandBlock.className = 'theia-mobile-agent-shell-command-block';
+            const commandLine = document.createElement('div');
+            commandLine.className = 'theia-mobile-agent-shell-command';
+            const prompt = document.createElement('span');
+            prompt.className = 'theia-mobile-agent-shell-prompt';
+            prompt.textContent = '$';
+            const commandText = document.createElement('code');
+            commandText.textContent = command;
+            commandLine.append(prompt, commandText);
+            commandBlock.append(commandLine);
+            body.append(commandBlock);
+        }
         if (segment.result?.trim()) {
             body.append(this.createTranscriptClampedPre(
                 this.resolversUi.formatTranscriptToolResult(segment.result),
                 'theia-mobile-agent-shell-output',
             ));
         }
-        this.appendTranscriptShellSummaryTail(summary, {
+        const exitCode = segment.finished
+            ? (this.parseTranscriptShellExitCode(segment.result) ?? (failed ? 1 : undefined))
+            : undefined;
+        const summary = this.createTranscriptShellWindowHead({
+            title: command && command !== '{}'
+                ? this.resolversUi.compactTranscriptCommand(command)
+                : nls.localize('qaap/mobileProjects/transcriptShell', 'Shell'),
             finished: segment.finished,
             failed,
+            exitCode,
             copyFrom: () => this.collectTranscriptShellBodyCopyText(body),
         });
         details.append(summary, body);

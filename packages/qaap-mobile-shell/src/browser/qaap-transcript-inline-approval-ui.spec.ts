@@ -6,6 +6,7 @@
 import { expect } from 'chai';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import type { QaapAgentApprovalRequestDTO } from '../common/qaap-agent-approval-client';
+import { TRANSCRIPT_APPROVAL_CARD_ALLOW_CLASS } from './qaap-transcript-approval-card-ui';
 import {
     clearTranscriptPendingApprovalBar,
     mountTranscriptPendingApprovalBar,
@@ -46,7 +47,7 @@ describe('qaap-transcript-inline-approval-ui', () => {
         });
         const column = composerHost.querySelector('.theia-mobile-projects-sticky-composer-column')!;
         expect(column.firstElementChild?.className).to.equal(TRANSCRIPT_PENDING_APPROVAL_HOST_CLASS);
-        expect(column.querySelector('.theia-mobile-agent-transcript-inline-approval-approve')?.textContent).to.equal('Allow');
+        expect(column.querySelector(`.${TRANSCRIPT_APPROVAL_CARD_ALLOW_CLASS}`)?.textContent).to.equal('Allow');
     });
 
     it('clearTranscriptPendingApprovalBar removes the host', () => {

@@ -5,12 +5,16 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import type { QaapAgentApprovalRequestDTO } from '../common/qaap-agent-approval-client';
+import {
+    buildTranscriptApprovalCard,
+    TRANSCRIPT_APPROVAL_CARD_CLASS,
+} from './qaap-transcript-approval-card-ui';
 
 export const TRANSCRIPT_PENDING_APPROVAL_HOST_CLASS = 'theia-mobile-sticky-composer-pending-approval-host';
 
 export function removeTranscriptPendingApprovalHosts(root: ParentNode): void {
     root.querySelectorAll(`.${TRANSCRIPT_PENDING_APPROVAL_HOST_CLASS}`).forEach(node => node.remove());
-    root.querySelectorAll('.theia-mobile-agent-transcript-inline-approval').forEach(node => node.remove());
+    root.querySelectorAll(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}.theia-mod-inline`).forEach(node => node.remove());
 }
 
 export function buildTranscriptPendingApprovalBar(
@@ -20,31 +24,16 @@ export function buildTranscriptPendingApprovalBar(
         readonly onReject: () => void;
     },
 ): HTMLElement {
-    const bar = document.createElement('div');
-    bar.className = 'theia-mobile-agent-transcript-inline-approval';
-    const title = document.createElement('div');
-    title.className = 'theia-mobile-agent-transcript-inline-approval-title';
-    title.textContent = pending.toolName
-        ? nls.localize('qaap/mobileProjects/transcriptApprovalTool', 'Approve tool: {0}', pending.toolName)
-        : nls.localize('qaap/mobileProjects/transcriptApprovalPending', 'Approval required');
-    const summary = document.createElement('p');
-    summary.className = 'theia-mobile-agent-transcript-inline-approval-summary';
-    summary.textContent = pending.summary;
-    const actions = document.createElement('div');
-    actions.className = 'theia-mobile-agent-transcript-inline-approval-actions';
-    const approve = document.createElement('button');
-    approve.type = 'button';
-    approve.className = 'theia-mobile-agent-transcript-inline-approval-approve';
-    approve.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalAllow', 'Allow');
-    approve.addEventListener('click', () => { handlers.onApprove(); });
-    const reject = document.createElement('button');
-    reject.type = 'button';
-    reject.className = 'theia-mobile-agent-transcript-inline-approval-reject';
-    reject.textContent = nls.localize('qaap/mobileProjects/transcriptApprovalDeny', 'Deny');
-    reject.addEventListener('click', () => { handlers.onReject(); });
-    actions.append(approve, reject);
-    bar.append(title, summary, actions);
-    return bar;
+    return buildTranscriptApprovalCard({
+        surface: 'inline',
+        title: pending.toolName
+            ? nls.localize('qaap/mobileProjects/transcriptApprovalTool', 'Approve tool: {0}', pending.toolName)
+            : nls.localize('qaap/mobileProjects/transcriptApprovalPending', 'Approval required'),
+        description: pending.summary,
+    }, {
+        onApprove: () => { handlers.onApprove(); },
+        onReject: () => { handlers.onReject(); },
+    });
 }
 
 export function clearTranscriptPendingApprovalBar(composerHost: HTMLElement | undefined): void {
