@@ -53,27 +53,72 @@ function priorMessagesMatch(
  * Fingerprint for transcript refresh debouncing. Hashes every segment so updates to
  * non-last tools/text during streaming are not skipped.
  */
-export function buildConversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
-    const parts: string[] = [
+function fingerprintConversationHeader(conv: QaapAgentConversationDTO): string {
+    return [
         conv.autoApprove === false ? '0' : '1',
         conv.status,
         String(conv.updatedAt),
         String(conv.messages.length),
-    ];
-    for (const message of conv.messages) {
-        parts.push(message.id ?? '', String(message.content?.length ?? 0));
-        if (message.segments?.length) {
-            for (const segment of message.segments) {
-                if (segment.type === 'tool') {
-                    parts.push(
-                        `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}`,
-                    );
-                } else {
-                    parts.push(`${segment.type}:${segment.content?.length ?? 0}`);
-                }
+    ].join('|');
+}
+
+function appendTranscriptMessageFingerprintParts(parts: string[], message: QaapAgentMessageDTO): void {
+    parts.push(message.id ?? '', String(message.content?.length ?? 0));
+    if (message.segments?.length) {
+        for (const segment of message.segments) {
+            if (segment.type === 'tool') {
+                parts.push(
+                    `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}`,
+                );
+            } else {
+                parts.push(`${segment.type}:${segment.content?.length ?? 0}`);
             }
         }
     }
+}
+
+function fingerprintTranscriptMessage(message: QaapAgentMessageDTO): string {
+    const parts: string[] = [];
+    appendTranscriptMessageFingerprintParts(parts, message);
+    return parts.join('|');
+}
+
+export function buildConversationTranscriptFingerprint(conv: QaapAgentConversationDTO): string {
+    const parts: string[] = [fingerprintConversationHeader(conv)];
+    for (const message of conv.messages) {
+        appendTranscriptMessageFingerprintParts(parts, message);
+    }
+    return parts.join('|');
+}
+
+/**
+ * Recompute the transcript fingerprint when only the tail message grew during SSE —
+ * avoids scanning every historical message on each animation frame.
+ */
+export function mergeConversationTranscriptFingerprint(
+    prevConv: QaapAgentConversationDTO | undefined,
+    next: QaapAgentConversationDTO,
+): string {
+    if (!prevConv || prevConv.id !== next.id) {
+        return buildConversationTranscriptFingerprint(next);
+    }
+    if (prevConv.messages.length !== next.messages.length) {
+        return buildConversationTranscriptFingerprint(next);
+    }
+    const messageCount = next.messages.length;
+    if (messageCount === 0) {
+        return fingerprintConversationHeader(next);
+    }
+    for (let index = 0; index < messageCount - 1; index++) {
+        if (fingerprintTranscriptMessage(prevConv.messages[index]) !== fingerprintTranscriptMessage(next.messages[index])) {
+            return buildConversationTranscriptFingerprint(next);
+        }
+    }
+    const parts: string[] = [fingerprintConversationHeader(next)];
+    for (let index = 0; index < messageCount - 1; index++) {
+        appendTranscriptMessageFingerprintParts(parts, next.messages[index]);
+    }
+    appendTranscriptMessageFingerprintParts(parts, next.messages[messageCount - 1]);
     return parts.join('|');
 }
 

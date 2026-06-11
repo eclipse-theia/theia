@@ -45,6 +45,7 @@ import { ensureTranscriptDevPreview } from './qaap-transcript-preview-bootstrap'
 import type { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import {
     buildConversationTranscriptFingerprint,
+    mergeConversationTranscriptFingerprint,
     shouldForceTranscriptRenderOnStatusSettle,
 } from '../common/qaap-transcript-incremental-update';
 import { resolveTranscriptEffectiveStatus, isConversationTurnVisuallySettled } from '../common/qaap-transcript-turn-status';
@@ -191,13 +192,14 @@ export class MobileProjectsTranscriptLiveUi {
         if (!chatHost) {
             return;
         }
+        const prevConv = this.host.transcriptLastConv;
         this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, next);
-        this.host.transcriptLastFingerprint = this.conversationTranscriptFingerprint(next);
+        this.host.transcriptLastConv = next;
+        this.host.transcriptLastFingerprint = mergeConversationTranscriptFingerprint(prevConv, next);
         if (conversationUsesInteractiveApprovals(next) && this.host.transcriptApprovalRefreshTimer === undefined) {
             this.syncTranscriptPendingApproval(next);
         }
-        this.scheduleTranscriptPreviewOfferRefresh(next);
-        this.maybeActivateTranscriptDevPreview(next);
+        this.ensureTranscriptDevPreviewWatch(next);
         this.maybeSyncTranscriptVisuallySettledChrome(next);
         if (this.host.transcriptOpenSummary) {
             this.host.transcriptOpenSummary = {
@@ -344,11 +346,19 @@ export class MobileProjectsTranscriptLiveUi {
         if (!conv) {
             return;
         }
+        this.ensureTranscriptDevPreviewWatch(conv);
+    }
+
+    /** Start preview bootstrap/poll once — do not reset the poll timer on every SSE token. */
+    protected ensureTranscriptDevPreviewWatch(
+        conv: QaapAgentConversationDTO,
+        options?: { readonly restartPreviewPoll?: boolean },
+    ): void {
         if (conversationRequestsDevPreview(conv) || conversationAwaitingDevPreview(conv)) {
             this.kickoffTranscriptDevPreviewBootstrap(conv);
         }
         if (conversationShouldWatchDevPreview(conv, window.location.origin) || this.host.transcriptPreviewRequestPending) {
-            this.scheduleTranscriptPreviewOfferRefresh(conv);
+            this.scheduleTranscriptPreviewOfferRefresh(conv, { restart: options?.restartPreviewPoll });
         }
     }
 
@@ -362,7 +372,7 @@ export class MobileProjectsTranscriptLiveUi {
             this.host.transcriptPreviewRequestPending = true;
             this.host.beginTranscriptDevPreviewRequest(project, summary);
         }
-        this.maybeActivateTranscriptDevPreview(conv);
+        this.ensureTranscriptDevPreviewWatch(conv, { restartPreviewPoll: true });
     }
 
     maybeSyncTranscriptVisuallySettledChrome(conv: QaapAgentConversationDTO): void {
@@ -574,7 +584,13 @@ export class MobileProjectsTranscriptLiveUi {
         );
     }
 
-    scheduleTranscriptPreviewOfferRefresh(conv: QaapAgentConversationDTO | undefined = this.host.transcriptLastConv): void {
+    scheduleTranscriptPreviewOfferRefresh(
+        conv: QaapAgentConversationDTO | undefined = this.host.transcriptLastConv,
+        options?: { readonly restart?: boolean },
+    ): void {
+        if (!options?.restart && this.transcriptPreviewOfferTimer !== undefined) {
+            return;
+        }
         this.stopTranscriptPreviewOfferRefresh();
         if (!this.host.transcriptOpenSummaryId || !conv) {
             return;
@@ -597,7 +613,7 @@ export class MobileProjectsTranscriptLiveUi {
     }
 
     async refreshTranscriptPreviewOffer(conv: QaapAgentConversationDTO | undefined = this.host.transcriptLastConv): Promise<void> {
-        if (!conv || !this.host.transcriptOpenSummaryId) {
+        if (!conv || !this.host.transcriptOpenSummaryId || document.hidden) {
             return;
         }
         try {
@@ -725,7 +741,6 @@ export class MobileProjectsTranscriptLiveUi {
                 return;
             }
             const fingerprint = this.conversationTranscriptFingerprint(full);
-            await this.host.syncTranscriptPreviewFromConversation(activeProject, activeSummary, full);
             const fingerprintUnchanged = fingerprint === this.host.transcriptLastFingerprint;
             const forceStatusSettle = options?.forceStatusSettle
                 || shouldForceTranscriptRenderOnStatusSettle(
@@ -733,6 +748,9 @@ export class MobileProjectsTranscriptLiveUi {
                     full,
                     fingerprintUnchanged,
                 );
+            if (!fingerprintUnchanged || forceStatusSettle) {
+                await this.host.syncTranscriptPreviewFromConversation(activeProject, activeSummary, full);
+            }
             this.host.transcriptLastConv = full;
             this.host.transcriptOpenSummary = conversationToSummary(full);
             if (this.host.transcriptComposerSummary?.id === full.id

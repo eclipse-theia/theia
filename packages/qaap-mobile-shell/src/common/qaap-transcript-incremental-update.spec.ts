@@ -14,6 +14,7 @@ import {
     canStreamPatchAgentToolsOnly,
     canStreamPatchStdoutAgentContentOnly,
     isStreamingTranscriptTailUnchanged,
+    mergeConversationTranscriptFingerprint,
     resolveStreamingTranscriptPatchKind,
     shouldForceTranscriptRenderOnStatusSettle,
     transcriptFingerprintChanged,
@@ -376,5 +377,40 @@ describe('qaap-transcript-incremental-update', () => {
         expect(canStreamPatchAgentSegmentsInPlace(prevMsg, nextMsg)).to.equal(true);
         expect(canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)).to.equal(false);
         expect(canStreamPatchAgentToolsOnly(prevMsg, nextMsg)).to.equal(false);
+    });
+
+    it('mergeConversationTranscriptFingerprint matches full fingerprint when only the tail grows', () => {
+        const prev = conv({
+            updatedAt: 2,
+            messages: [
+                { id: 'u1', role: 'user', content: 'hi', createdAt: 1 },
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: '',
+                    createdAt: 2,
+                    segments: [{ type: 'text', content: 'Hel' }],
+                },
+            ],
+        });
+        const next = conv({
+            updatedAt: 3,
+            messages: [
+                { id: 'u1', role: 'user', content: 'hi', createdAt: 1 },
+                {
+                    id: 'a1',
+                    role: 'agent',
+                    content: '',
+                    createdAt: 2,
+                    segments: [{ type: 'text', content: 'Hello' }],
+                },
+            ],
+        });
+        expect(mergeConversationTranscriptFingerprint(prev, next)).to.equal(
+            buildConversationTranscriptFingerprint(next),
+        );
+        expect(mergeConversationTranscriptFingerprint(prev, next)).to.not.equal(
+            buildConversationTranscriptFingerprint(prev),
+        );
     });
 });

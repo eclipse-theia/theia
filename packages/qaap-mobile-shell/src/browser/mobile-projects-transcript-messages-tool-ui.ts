@@ -13,6 +13,9 @@ import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-project
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 
+/** Lightweight stdout/stderr host inside a streaming tool pill (no syntax highlight per tick). */
+export const TRANSCRIPT_TOOL_RESULT_STREAM_CLASS = 'theia-mobile-agent-tool-result-stream';
+
 export class MobileProjectsTranscriptMessagesToolUi {
     constructor(
         protected readonly host: MobileProjectsTranscriptMessagesHost,
@@ -205,12 +208,57 @@ export class MobileProjectsTranscriptMessagesToolUi {
     createTranscriptToolResultBody(
         segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
         _kind: string,
+        options?: { readonly streaming?: boolean },
     ): HTMLElement {
         const text = this.resolversUi.formatTranscriptToolResult(segment.result!);
+        if (options?.streaming && !segment.finished) {
+            return this.createTranscriptToolResultStreamBody(text);
+        }
         const fullPath = this.resolversUi.extractTranscriptToolFullPath(segment.args);
         const language = resolveTranscriptCodeLanguage(fullPath, text);
         const view = createTranscriptCodeView(text, language);
         return this.createTranscriptClampedBlock(view, text.split('\n').length);
+    }
+
+    createTranscriptToolResultStreamBody(text: string): HTMLElement {
+        const pre = document.createElement('pre');
+        pre.className = TRANSCRIPT_TOOL_RESULT_STREAM_CLASS;
+        pre.textContent = text;
+        return pre;
+    }
+
+    /** Patch a running tool's stdout in place — skips code-view rebuild while output grows. */
+    patchTranscriptToolResultStreamBody(
+        pillBody: HTMLElement,
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+    ): boolean {
+        const streamHost = pillBody.querySelector<HTMLElement>(`.${TRANSCRIPT_TOOL_RESULT_STREAM_CLASS}`);
+        if (!streamHost) {
+            return false;
+        }
+        streamHost.textContent = this.resolversUi.formatTranscriptToolResult(segment.result!);
+        return true;
+    }
+
+    canPatchTranscriptToolResultStream(
+        previous: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        next: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+    ): boolean {
+        if (next.finished || previous.finished) {
+            return false;
+        }
+        if (previous.toolUseId !== next.toolUseId || previous.name !== next.name) {
+            return false;
+        }
+        const previousArgs = previous.args ?? '';
+        const incomingArgs = next.args ?? '';
+        if (incomingArgs !== previousArgs) {
+            return false;
+        }
+        const previousResult = previous.result ?? '';
+        const incomingResult = next.result ?? '';
+        return incomingResult === previousResult
+            || (incomingResult.startsWith(previousResult) && incomingResult.length >= previousResult.length);
     }
 
     handleTranscriptFileOpen(filePath: string): void {
