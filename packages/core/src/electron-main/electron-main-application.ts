@@ -398,6 +398,8 @@ export class ElectronMainApplication {
         const cancelTokenSource = new CancellationTokenSource();
         const minTime = timeout(splashScreenOptions.minDuration ?? 0, cancelTokenSource.token);
         const maxTime = timeout(splashScreenOptions.maxDuration ?? 30000, cancelTokenSource.token);
+        // Swallow rejections that occur when the cancellation token is cancelled after one of the timers wins.
+        const ignoreCancellation = () => { /* timer was cancelled, intentionally ignored */ };
 
         const showWindowAndCloseSplashScreen = () => {
             cancelTokenSource.cancel();
@@ -408,10 +410,10 @@ export class ElectronMainApplication {
         };
         TheiaRendererAPI.onApplicationStateChanged(mainWindow.webContents, state => {
             if (state === 'ready') {
-                minTime.then(() => showWindowAndCloseSplashScreen());
+                minTime.then(() => showWindowAndCloseSplashScreen(), ignoreCancellation);
             }
         });
-        maxTime.then(() => showWindowAndCloseSplashScreen());
+        maxTime.then(() => showWindowAndCloseSplashScreen(), ignoreCancellation);
         return splashScreenWindow;
     }
 
