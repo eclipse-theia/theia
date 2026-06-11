@@ -244,7 +244,7 @@ export class MobileProjectsPanelLifecycleUi {
             });
         }
         if (this.host.conversations) {
-            this.host.conversations.start();
+            this.host.conversations.warmLiveTransport();
             if (this.host.tasksFirstLoadPending && this.host.tasksFirstLoadFallback === undefined) {
                 this.host.tasksFirstLoadFallback = window.setTimeout(() => this.host.markTasksFirstLoadComplete(true), 5000);
             }

@@ -133,6 +133,25 @@ export class MobileProjectsConversations {
         this.installVisibilityReconnect();
     }
 
+    /**
+     * Pre-connect WS/SSE and prime conversation snapshots before the user sends a turn.
+     * Safe to call from composer mount, transcript watch, or hub navigation.
+     */
+    warmLiveTransport(): void {
+        this.start();
+        this.schedulePrimeFromAll();
+    }
+
+    protected primeFromAllInFlight: Promise<void> | undefined;
+
+    protected schedulePrimeFromAll(): void {
+        if (!this.primeFromAllInFlight) {
+            this.primeFromAllInFlight = this.primeFromAll().finally(() => {
+                this.primeFromAllInFlight = undefined;
+            });
+        }
+    }
+
     /** iOS Safari suspends EventSource in background tabs — reconnect when the page is visible again. */
     protected installVisibilityReconnect(): void {
         if (this.visibilityListenerInstalled || typeof document === 'undefined' || typeof window === 'undefined') {
@@ -387,6 +406,7 @@ export class MobileProjectsConversations {
                         }
                     }
                 }
+                this.schedulePrimeFromAll();
             });
 
             socket.addEventListener('message', ev => {
@@ -434,6 +454,7 @@ export class MobileProjectsConversations {
             source.addEventListener('message_delta', ev => this.dispatchSseEvent(ev as MessageEvent));
             source.addEventListener('deleted', ev => this.dispatchSseEvent(ev as MessageEvent));
             source.addEventListener('parallel-run', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('open', () => this.schedulePrimeFromAll());
             source.addEventListener('error', () => this.scheduleSseReconnect());
         } catch {
             this.scheduleSseReconnect();

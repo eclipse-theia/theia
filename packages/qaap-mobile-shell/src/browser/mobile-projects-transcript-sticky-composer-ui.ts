@@ -26,6 +26,7 @@ import {
     writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
 } from '../common/qaap-agent-task-client';
+import { warmAgentTurnPath } from '../common/qaap-agent-turn-warm';
 import { createComposerContextEntry } from '../common/qaap-composer-context-entry';
 import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
 import { resolveTranscriptEffectiveStatus } from '../common/qaap-transcript-turn-status';
@@ -967,6 +968,10 @@ export class MobileProjectsTranscriptStickyComposerUi {
         summary: QaapAgentConversationSummaryDTO,
         chatHost: HTMLElement,
     ): void {
+        const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
+        warmAgentTurnPath(cwd, {
+            warmLiveTransport: () => this.host.conversations?.warmLiveTransport(),
+        });
         const mountKey = `${project.id}|${summary.id}`;
         const composerStable = this.host.transcriptComposerMountKey === mountKey
             && this.host.transcriptComposerHost === host
@@ -1002,7 +1007,6 @@ export class MobileProjectsTranscriptStickyComposerUi {
         shell.className = 'theia-mobile-projects-sticky-composer';
         const isLegacyTheiaChat = summary.source === 'theia-chat';
         const pinnedId = this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
-        const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
         const modes = resolveStickyComposerModes(pinnedId, this.host.chatAgentService);
         this.host.transcriptComposerModeId = reconcileComposerModeId(
             this.host.transcriptComposerModeId,

@@ -1733,9 +1733,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             panel.closeProjectDetail();
         }
         if (view === 'tasks') {
-            this.conversations.start();
+            this.conversations.warmLiveTransport();
             this.activeTasks.start();
             panel.preferComposerSurface('task');
+        } else if (view === 'chat' || view === 'review') {
+            this.conversations.warmLiveTransport();
         }
         panel.navigateHubTab(view);
         this.applyLandingChrome();
@@ -1782,9 +1784,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             resolved.closeProjectDetail();
         }
         if (view === 'tasks') {
-            this.conversations.start();
+            this.conversations.warmLiveTransport();
             this.activeTasks.start();
             resolved.preferComposerSurface('task');
+        } else if (view === 'chat' || view === 'review') {
+            this.conversations.warmLiveTransport();
         }
         resolved.navigateHubTab(view);
         if (view !== 'home') {

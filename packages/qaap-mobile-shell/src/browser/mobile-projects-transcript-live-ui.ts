@@ -50,6 +50,7 @@ import {
     mergeConversationTranscriptFingerprint,
     shouldForceTranscriptRenderOnStatusSettle,
 } from '../common/qaap-transcript-incremental-update';
+import { warmAgentTurnPath } from '../common/qaap-agent-turn-warm';
 import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
 import { scheduleTranscriptIdleWork, type TranscriptIdleWorkHandle } from '../common/qaap-transcript-idle-scheduler';
 import { resolveTranscriptStreamingCoalesceDelayMs } from '../common/qaap-transcript-streaming-coalesce';
@@ -832,6 +833,10 @@ export class MobileProjectsTranscriptLiveUi {
         _chatHost: HTMLElement,
     ): void {
         this.transcriptTurnVisuallySettledActive = false;
+        warmAgentTurnPath(
+            this.host.projectsService.getProjectCwd(project) ?? summary.cwd,
+            { warmLiveTransport: () => this.host.conversations?.warmLiveTransport() },
+        );
         const controller = this.ensureTranscriptLiveController();
         controller.watch(summary.id);
         this.host.transcriptScheduleRefresh = controller.onScheduleRefresh;
