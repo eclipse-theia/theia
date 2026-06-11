@@ -70,7 +70,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     async hasStoredOAuthCredentials(serverName: string): Promise<boolean> {
         const server = this.servers.get(serverName);
         const description = server?.getCachedDescription();
-        if (!description || !isRemoteMCPServerDescription(description) || !description.oauth?.enabled) {
+        if (!description || !isRemoteMCPServerDescription(description) || !description.oauth) {
             return false;
         }
         return this.credentialStore.hasTokens(serverName, description.serverUrl, description.oauth);
@@ -216,10 +216,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected connectionDescription(description: MCPServerDescription): object {
         if (isRemoteMCPServerDescription(description)) {
             const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth } = description;
-            // Disabled OAuth is treated as absent here (restart-decision compare only);
-            // `clearOAuthCredentialsIfDisabled` reads `oauth?.enabled` directly so transitions still clear.
-            const effectiveOauth = oauth?.enabled ? oauth : undefined;
-            return { type: 'remote', serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth: effectiveOauth };
+            return { type: 'remote', serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth };
         }
         const { command, args, env } = description;
         return { type: 'local', command, args, env };
@@ -227,9 +224,9 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     protected async clearOAuthCredentialsIfConnectionScopeChanged(oldDescription: MCPServerDescription, newDescription: MCPServerDescription): Promise<void> {
         if (isRemoteMCPServerDescription(oldDescription)
-            && oldDescription.oauth?.enabled
+            && oldDescription.oauth
             && isRemoteMCPServerDescription(newDescription)
-            && newDescription.oauth?.enabled
+            && newDescription.oauth
             && this.connectionScopeChanged(oldDescription, newDescription)) {
             await this.credentialStore.clear(oldDescription.name);
         }
@@ -271,8 +268,8 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     protected async clearOAuthCredentialsIfDisabled(oldDescription: MCPServerDescription, newDescription: MCPServerDescription): Promise<void> {
         if (isRemoteMCPServerDescription(oldDescription)
-            && oldDescription.oauth?.enabled
-            && (!isRemoteMCPServerDescription(newDescription) || !newDescription.oauth?.enabled)) {
+            && oldDescription.oauth
+            && (!isRemoteMCPServerDescription(newDescription) || !newDescription.oauth)) {
             await this.credentialStore.clear(oldDescription.name);
         }
     }

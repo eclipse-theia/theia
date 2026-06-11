@@ -29,6 +29,14 @@ export interface MCPFrontendService {
      *          has already surfaced its own diagnostic).
      */
     startServerInteractive(serverName: string): Promise<boolean>;
+    /**
+     * Runs the OAuth sign-in flow for a remote OAuth server without leaving the server running.
+     * The obtained tokens stay in the credential store, so subsequent starts connect silently.
+     *
+     * @returns `true` when the sign-in completed; `false` when a pre-flight check failed (the pre-flight
+     *          has already surfaced its own diagnostic) or the authorization handshake did not complete.
+     */
+    signIn(serverName: string): Promise<boolean>;
     hasServer(serverName: string): Promise<boolean>;
     isServerStarted(serverName: string): Promise<boolean>;
     registerToolsForAllStartedServers(): Promise<void>;

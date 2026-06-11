@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MCPOAuthConfig, MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
 import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
 import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
 import { deriveCredentialScope } from './mcp-oauth-keystore';
 
@@ -39,16 +38,6 @@ export class MCPOAuthClientProviderFactory {
 
     @inject(MCPOAuthCallbackService)
     protected readonly callbackService: MCPOAuthCallbackService;
-
-    /**
-     * Process-global override for the redirect URI source. Bound in Electron (the loopback callback
-     * server); unbound in browser/hosted, where the connection-scoped frontend delegate's
-     * origin-based callback URL is the only component that knows the public frontend origin.
-     * `@optional()` resolves the root binding from this connection-scoped factory (child containers
-     * resolve parent bindings) and is `undefined` when not bound.
-     */
-    @inject(MCPOAuthCallbackEndpoint) @optional()
-    protected readonly callbackEndpoint?: MCPOAuthCallbackEndpoint;
 
     protected callbackUrlPromise: Promise<string> | undefined;
 
@@ -73,11 +62,7 @@ export class MCPOAuthClientProviderFactory {
         // On rejection we clear the cache so the next start retries instead of returning the poisoned
         // failure forever. Clearing on the cached promise lets parallel awaiters receive the rejection too.
         if (!this.callbackUrlPromise) {
-            // Electron binds MCPOAuthCallbackEndpoint (the loopback server); browser/hosted leaves it
-            // unbound and falls back to the frontend delegate's origin-based callback URL.
-            const pending = this.callbackEndpoint
-                ? this.callbackEndpoint.getRedirectUrl()
-                : this.frontendDelegate.getCallbackUrl();
+            const pending = this.frontendDelegate.getEffectiveRedirectUrl();
             this.callbackUrlPromise = pending;
             pending.catch(() => {
                 if (this.callbackUrlPromise === pending) {

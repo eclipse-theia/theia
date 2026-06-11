@@ -17,7 +17,8 @@
 import { expect } from 'chai';
 import {
     filterValidValues,
-    isHttpOrHttpsUrl
+    isHttpOrHttpsUrl,
+    MCPServersPreference
 } from './mcp-server-preference-validator';
 
 /**
@@ -90,21 +91,21 @@ describe('MCPServersPreference validator', () => {
         });
 
         it('flags oauth on a local server', () => {
-            expect(reasonFor({ command: 'node', oauth: { enabled: true } })).to.contain('only valid for remote');
+            expect(reasonFor({ command: 'node', oauth: {} })).to.contain('only valid for remote');
         });
 
         it('flags serverAuthToken + OAuth conflict', () => {
             expect(reasonFor({
                 serverUrl: 'https://mcp.example.com/mcp',
                 serverAuthToken: 'token',
-                oauth: { enabled: true }
+                oauth: {}
             })).to.contain('not both');
         });
 
         it('flags an unparseable oauth.authorizationServer URL', () => {
             const reason = reasonFor({
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: true, authorizationServer: 'not-a-url' }
+                oauth: { authorizationServer: 'not-a-url' }
             });
             expect(reason).to.contain('oauth.authorizationServer');
             expect(reason).to.contain('http(s) URL');
@@ -113,7 +114,7 @@ describe('MCPServersPreference validator', () => {
         it('flags a non-http oauth.authorizationServer URL', () => {
             const reason = reasonFor({
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: true, authorizationServer: 'javascript:alert(1)' }
+                oauth: { authorizationServer: 'javascript:alert(1)' }
             });
             expect(reason).to.contain('oauth.authorizationServer');
             expect(reason).to.contain('http(s) URL');
@@ -122,7 +123,7 @@ describe('MCPServersPreference validator', () => {
         it('flags an unparseable oauth.resource URL', () => {
             const reason = reasonFor({
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: true, resource: 'not-a-url' }
+                oauth: { resource: 'not-a-url' }
             });
             expect(reason).to.contain('oauth.resource');
             expect(reason).to.contain('http(s) URL');
@@ -132,10 +133,10 @@ describe('MCPServersPreference validator', () => {
             expect(reasonFor({ command: 123 })).to.contain('"command" must be a string');
         });
 
-        it('flags a non-boolean oauth.enabled with the generic oauth diagnostic', () => {
+        it('flags a non-string oauth.clientId with the generic oauth diagnostic', () => {
             const reason = reasonFor({
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: 'true' }
+                oauth: { clientId: 42 }
             });
             expect(reason).to.contain('"oauth"');
         });
@@ -150,6 +151,10 @@ describe('MCPServersPreference validator', () => {
 
         it('produces no diagnostic for a valid entry', () => {
             expect(reasonFor({ command: 'node' })).to.be.undefined;
+        });
+
+        it('produces no diagnostic for a remote entry with an empty oauth object (presence enables OAuth)', () => {
+            expect(reasonFor({ serverUrl: 'https://mcp.example.com/mcp', oauth: {} })).to.be.undefined;
         });
 
         it('treats an explicit null oauth as absent on a local server (user-authored JSON may serialize this way)', () => {
@@ -170,7 +175,7 @@ describe('MCPServersPreference validator', () => {
                     'missing-command-and-url': { autostart: true },
                     'bad-oauth-url': {
                         serverUrl: 'https://mcp.example.com/mcp',
-                        oauth: { enabled: true, authorizationServer: 'not-a-url' }
+                        oauth: { authorizationServer: 'not-a-url' }
                     }
                 });
                 expect(Object.keys(result)).to.have.members(['good-local', 'good-remote']);
@@ -187,6 +192,28 @@ describe('MCPServersPreference validator', () => {
 
         it('returns an empty object for undefined', () => {
             expect(filterValidValues(undefined)).to.deep.equal({});
+        });
+    });
+
+    describe('MCPServersPreference.isValue', () => {
+        it('accepts a valid local entry', () => {
+            expect(MCPServersPreference.isValue({ command: 'node' })).to.be.true;
+        });
+
+        it('accepts a valid remote OAuth entry', () => {
+            expect(MCPServersPreference.isValue({ serverUrl: 'https://mcp.example.com/mcp', oauth: {} })).to.be.true;
+        });
+
+        it('rejects an entry with both command and serverUrl', () => {
+            expect(MCPServersPreference.isValue({ command: 'node', serverUrl: 'https://mcp.example.com/mcp' })).to.be.false;
+        });
+
+        it('rejects a remote entry combining serverAuthToken with oauth', () => {
+            expect(MCPServersPreference.isValue({ serverUrl: 'https://mcp.example.com/mcp', serverAuthToken: 'token', oauth: {} })).to.be.false;
+        });
+
+        it('rejects a non-object value', () => {
+            expect(MCPServersPreference.isValue('not-an-object')).to.be.false;
         });
     });
 });

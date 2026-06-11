@@ -208,7 +208,6 @@ describe('MCPServerEditor OAuth form handling', () => {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
                 oauth: {
-                    enabled: true,
                     clientId: 'client-id',
                     clientSecret: 'client-secret',
                     scopes: ['mcp.read', 'mcp.write'],
@@ -248,9 +247,72 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
-                oauth: {
-                    enabled: true
-                }
+                oauth: {}
+            }
+        });
+    });
+
+    it('drops the stored oauth block when an OAuth server is switched to token authentication', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                oauth: { clientId: 'client-id' },
+                registryMetadata: { serverId: 'io.github.example/example-mcp' }
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'remote', serverAuthToken: 'token-123' }));
+
+        // Extra fields like registryMetadata survive the edit, but the oauth block of the previous
+        // server type must not - a retained oauth key would conflict with the new token.
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                serverAuthToken: 'token-123',
+                registryMetadata: { serverId: 'io.github.example/example-mcp' }
+            }
+        });
+    });
+
+    it('drops stale token fields when a token server is switched to OAuth', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                serverAuthToken: 'old-token',
+                serverAuthTokenHeader: 'X-Auth'
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'remote-oauth', oauthClientId: 'client-id' }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                oauth: { clientId: 'client-id' }
+            }
+        });
+    });
+
+    it('drops remote-only fields when a remote OAuth server is switched to a local command', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: false,
+                oauth: { clientId: 'client-id' },
+                headers: { 'X-Custom': 'value' }
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'local', command: 'npx' }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                command: 'npx',
+                autostart: false
             }
         });
     });
@@ -260,7 +322,6 @@ describe('MCPServerEditor OAuth form handling', () => {
             name: 'oauth-server',
             serverUrl: 'https://mcp.example.com/mcp',
             oauth: {
-                enabled: true,
                 clientId: 'client-id',
                 clientSecret: 'client-secret',
                 scopes: ['mcp.read', 'mcp.write'],

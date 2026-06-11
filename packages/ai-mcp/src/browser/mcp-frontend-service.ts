@@ -16,7 +16,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MessageService, nls } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
+import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
 import { ILogger } from '@theia/core';
@@ -53,7 +53,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
 
     async startServerInteractive(serverName: string): Promise<boolean> {
         const description = await this.mcpServerManager.getServerDescription(serverName);
-        const usesOAuth = description && isRemoteMCPServerDescription(description) && description.oauth?.enabled;
+        const usesOAuth = description && isRemoteMCPServerDescription(description) && !!description.oauth;
         if (usesOAuth && !await this.workspaceTrustService.getWorkspaceTrust()) {
             this.messageService.error(nls.localize('theia/ai/mcp/error/oauthRequiresTrustedWorkspace',
                 'Starting OAuth-enabled MCP servers requires a trusted workspace.'));
@@ -64,6 +64,28 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         await this.mcpServerManager.startServer(serverName, { interactive: true });
         await this.registerTools(serverName);
         return true;
+    }
+
+    async signIn(serverName: string): Promise<boolean> {
+        const description = await this.mcpServerManager.getServerDescription(serverName);
+        if (!description || !isRemoteMCPServerDescription(description) || !description.oauth) {
+            return false;
+        }
+        if (!await this.workspaceTrustService.getWorkspaceTrust()) {
+            this.messageService.error(nls.localize('theia/ai/mcp/error/oauthRequiresTrustedWorkspace',
+                'Starting OAuth-enabled MCP servers requires a trusted workspace.'));
+            return false;
+        }
+        // Stop first so a stale in-flight authorization wait is cancelled and a fresh flow starts.
+        await this.mcpServerManager.stopServer(serverName);
+        await this.mcpServerManager.startServer(serverName, { interactive: true });
+        const afterStart = await this.mcpServerManager.getServerDescription(serverName);
+        const connected = afterStart?.status === MCPServerStatus.Connected || afterStart?.status === MCPServerStatus.Running;
+        if (connected) {
+            // Sign-in only: leave the server stopped. The tokens remain in the credential store.
+            await this.mcpServerManager.stopServer(serverName);
+        }
+        return connected;
     }
 
     async hasServer(serverName: string): Promise<boolean> {

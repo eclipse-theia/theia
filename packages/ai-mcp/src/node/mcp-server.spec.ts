@@ -125,7 +125,7 @@ class TestMCPServer extends MCPServer {
     ) {
         const oauthFactory = new TestOAuthClientProviderFactory(onWaitForAuthorization);
         super(
-            { name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } },
+            { name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: {} },
             oauthFactory as unknown as MCPOAuthClientProviderFactory
         );
         this.oauthFactory = oauthFactory;
@@ -716,7 +716,7 @@ describe('MCPServer OAuth reconnect', () => {
         const statusEvents: MCPServerStatus[] = [];
         server.onDidUpdateStatus(status => statusEvents.push(status));
 
-        server.update({ name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } });
+        server.update({ name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: {} });
 
         expect(server.getStatus()).to.equal(MCPServerStatus.NotConnected);
         // The status transition must reach onDidUpdateStatus subscribers so internal listeners (e.g. the
@@ -740,7 +740,7 @@ describe('MCPServer OAuth reconnect', () => {
         const statusEvents: MCPServerStatus[] = [];
         server.onDidUpdateStatus(status => statusEvents.push(status));
 
-        server.update({ name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } }, false);
+        server.update({ name: 'test', serverUrl: 'https://mcp.example.com/mcp', oauth: {} }, false);
 
         // Running connection is preserved (no status transition emitted).
         expect(server.getStatus()).to.equal(MCPServerStatus.Connected);
@@ -798,7 +798,7 @@ describe('MCPServer OAuth reconnect', () => {
         server.update({
             name: 'test',
             serverUrl: 'https://mcp.example.com/mcp',
-            oauth: { enabled: true },
+            oauth: {},
             status: MCPServerStatus.Errored,
             error: 'stale error from getDescription',
             tools: [{ name: 'stale-tool' }]

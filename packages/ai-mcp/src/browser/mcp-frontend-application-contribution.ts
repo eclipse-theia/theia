@@ -226,7 +226,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
      * the user via a notification with a Sign In action.
      */
     protected async attemptSilentStartOrPromptForOAuth(name: string, serverDesc: MCPServerDescription): Promise<void> {
-        const isOAuthServer = isRemoteMCPServerDescription(serverDesc) && !!serverDesc.oauth?.enabled;
+        const isOAuthServer = isRemoteMCPServerDescription(serverDesc) && !!serverDesc.oauth;
         if (isOAuthServer && !await this.frontendMCPService.hasStoredOAuthCredentials(name)) {
             // No usable stored credentials — skip the silent attempt and prompt directly.
             this.promptForOAuthSignIn(name);

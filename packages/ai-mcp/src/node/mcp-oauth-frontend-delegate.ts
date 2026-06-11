@@ -14,11 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
+import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
 
 @injectable()
 export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
+
+    /**
+     * Process-global override for the redirect URI source: bound in Electron (the loopback callback
+     * server), unbound in browser/hosted. `@optional()` resolves the root binding from this
+     * connection-scoped service and is `undefined` when not bound.
+     */
+    @inject(MCPOAuthCallbackEndpoint) @optional()
+    protected readonly callbackEndpoint?: MCPOAuthCallbackEndpoint;
 
     // Bound in a connection container, so at most one frontend client.
     protected client?: MCPOAuthFrontendDelegateClient;
@@ -46,6 +55,12 @@ export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
 
     async getCallbackUrl(): Promise<string> {
         return this.requireClient().getCallbackUrl();
+    }
+
+    async getEffectiveRedirectUrl(): Promise<string> {
+        return this.callbackEndpoint
+            ? this.callbackEndpoint.getRedirectUrl()
+            : this.requireClient().getCallbackUrl();
     }
 
     protected requireClient(): MCPOAuthFrontendDelegateClient {

@@ -71,17 +71,25 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
     protected formData: MCPServerFormData;
     protected existingServerNames: string[];
     protected isEditing: boolean;
+    protected readonly redirectUrlProvider?: () => Promise<string>;
+
+    /** The OAuth redirect URL displayed in the OAuth section; resolved lazily on first render of that section. */
+    protected oauthRedirectUrl?: string;
+    protected oauthRedirectUrlRequested = false;
+    protected redirectUrlCopied = false;
 
     constructor(
         props: DialogProps,
         initialData: MCPServerFormData,
         existingServerNames: string[],
-        isEditing: boolean
+        isEditing: boolean,
+        redirectUrlProvider?: () => Promise<string>
     ) {
         super(props);
         this.formData = { ...initialData };
         this.existingServerNames = existingServerNames;
         this.isEditing = isEditing;
+        this.redirectUrlProvider = redirectUrlProvider;
         this.appendCloseButton(nls.localizeByDefault('Cancel'));
         this.appendAcceptButton(isEditing
             ? nls.localize('theia/ai/mcpConfiguration/form/saveChanges', 'Save Changes')
@@ -214,7 +222,42 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
         );
     }
 
+    /**
+     * Kicks off resolving the OAuth redirect URL once. Resolved through the backend because only it
+     * knows whether the Electron loopback callback server overrides the frontend's origin-based URL.
+     */
+    protected ensureOAuthRedirectUrl(): void {
+        if (this.oauthRedirectUrlRequested || !this.redirectUrlProvider) {
+            return;
+        }
+        this.oauthRedirectUrlRequested = true;
+        this.redirectUrlProvider().then(url => {
+            this.oauthRedirectUrl = url;
+            this.update();
+        }).catch(error => {
+            console.warn('Failed to determine the MCP OAuth redirect URL; the redirect URL hint will not be shown.', error);
+        });
+    }
+
+    protected handleCopyRedirectUrl = (): void => {
+        if (!this.oauthRedirectUrl) {
+            return;
+        }
+        navigator.clipboard.writeText(this.oauthRedirectUrl);
+        this.redirectUrlCopied = true;
+        this.update();
+        setTimeout(() => {
+            this.redirectUrlCopied = false;
+            if (!this.isDisposed) {
+                this.update();
+            }
+        }, 1500);
+    };
+
     protected renderRemoteServerFields(): React.ReactNode {
+        if (this.formData.serverType === 'remote-oauth') {
+            this.ensureOAuthRedirectUrl();
+        }
         return (
             <>
                 <div className="mcp-form-field">
@@ -283,6 +326,27 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             {nls.localize('theia/ai/mcpConfiguration/form/oauthSharedCredentialsDescription',
                                 'Stored OAuth sessions are shared across workspaces that use the same server name and URL (or resource).')}
                         </div>
+
+                        {this.oauthRedirectUrl && (
+                            <div className="mcp-form-field">
+                                <label>{nls.localize('theia/ai/mcpConfiguration/oauthRedirectUrl', 'Redirect URL')}:</label>
+                                <div className="mcp-oauth-redirect-url-row">
+                                    <span className="mcp-form-static-value">{this.oauthRedirectUrl}</span>
+                                    <button
+                                        type="button"
+                                        className="mcp-icon-button"
+                                        title={nls.localizeByDefault('Copy')}
+                                        onClick={this.handleCopyRedirectUrl}
+                                    >
+                                        <i className={this.redirectUrlCopied ? 'codicon codicon-check' : 'codicon codicon-copy'}></i>
+                                    </button>
+                                </div>
+                                <div className="mcp-form-description">
+                                    {nls.localize('theia/ai/mcpConfiguration/form/oauthRedirectUrlDescription',
+                                        'Authorization callbacks are delivered to this URL. With a static client ID, register it as a redirect URI with your OAuth provider.')}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="mcp-form-field">
                             <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}:</label>

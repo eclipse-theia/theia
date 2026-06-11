@@ -17,7 +17,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { CommandContribution, CommandRegistry, MessageService, nls, ILogger } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp';
+import { isRemoteMCPServerDescription, MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp';
 
 export const StartMCPServer = {
     id: 'mcp.startserver',
@@ -30,6 +30,14 @@ export const StopMCPServer = {
 export const SignOutMCPServer = {
     id: 'mcp.signout',
     label: nls.localize('theia/ai/mcp/signout/label', 'MCP: Sign Out from MCP Server'),
+};
+export const SignInMCPServer = {
+    id: 'mcp.signin',
+    label: nls.localize('theia/ai/mcp/signin/label', 'MCP: Sign In to MCP Server'),
+};
+export const GetMCPOAuthRedirectUrl = {
+    id: 'mcp.oauth.getRedirectUrl',
+    label: nls.localize('theia/ai/mcp/getRedirectUrl/label', 'MCP: Get MCP OAuth Redirect URL'),
 };
 
 @injectable()
@@ -49,6 +57,9 @@ export class MCPCommandContribution implements CommandContribution {
     @inject(ILogger) @named('ai-mcp-ui:MCPCommandContribution')
     protected readonly logger: ILogger;
 
+    @inject(MCPOAuthFrontendDelegate)
+    protected readonly oauthFrontendDelegate: MCPOAuthFrontendDelegate;
+
     private async getMCPServerSelection(serverNames: string[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
             return undefined;
@@ -62,12 +73,18 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StopMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const startedServers = await this.mcpFrontendService.getStartedServers();
-                    if (!startedServers || startedServers.length === 0) {
+                    // Include `AuthenticationRequired` servers: stopping cancels a pending OAuth
+                    // authorization, which is the only way out of an abandoned sign-in attempt.
+                    const servers = await this.mcpFrontendService.getServerNames();
+                    const descriptions = await Promise.all(servers.map(server => this.mcpFrontendService.getServerDescription(server)));
+                    const stoppableServers = descriptions
+                        .filter((description): description is MCPServerDescription => !!description && this.isStoppableStatus(description.status))
+                        .map(description => description.name);
+                    if (stoppableServers.length === 0) {
                         this.messageService.error(nls.localize('theia/ai/mcp/error/noRunningServers', 'No MCP servers running.'));
                         return;
                     }
-                    const selection = await this.getMCPServerSelection(startedServers);
+                    const selection = await this.getMCPServerSelection(stoppableServers);
                     if (!selection) {
                         return;
                     }
@@ -82,15 +99,10 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(SignOutMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const servers = await this.mcpFrontendService.getServerNames();
-                    const descriptions = await Promise.all(servers.map(server => this.mcpFrontendService.getServerDescription(server)));
                     // List all OAuth-enabled servers without a `hasStoredOAuthCredentials` filter: the command
                     // palette is the recovery surface for stale-scope credentials, and signing out a server
                     // with no stored credentials is a harmless no-op.
-                    const oauthEnabledServers = descriptions
-                        .filter((description): description is MCPServerDescription =>
-                            !!description && isRemoteMCPServerDescription(description) && !!description.oauth?.enabled)
-                        .map(description => description.name);
+                    const oauthEnabledServers = await this.getOAuthEnabledServerNames();
                     if (oauthEnabledServers.length === 0) {
                         this.messageService.info(nls.localize('theia/ai/mcp/error/noOAuthServersConfigured', 'No OAuth-enabled MCP servers configured.'));
                         return;
@@ -104,6 +116,48 @@ export class MCPCommandContribution implements CommandContribution {
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/signOutFailed', 'An error occurred while signing out from the MCP server.'));
                     this.logger.error('Error while signing out from MCP server:', error);
+                }
+            }
+        }));
+
+        commandRegistry.registerCommand(SignInMCPServer, this.commandHandlerFactory({
+            execute: async () => {
+                try {
+                    const oauthEnabledServers = await this.getOAuthEnabledServerNames();
+                    if (oauthEnabledServers.length === 0) {
+                        this.messageService.info(nls.localize('theia/ai/mcp/error/noOAuthServersConfigured', 'No OAuth-enabled MCP servers configured.'));
+                        return;
+                    }
+                    const selection = await this.getMCPServerSelection(oauthEnabledServers);
+                    if (!selection) {
+                        return;
+                    }
+                    const signedIn = await this.mcpFrontendService.signIn(selection);
+                    if (signedIn) {
+                        this.messageService.info(nls.localize('theia/ai/mcp/info/serverSignedIn', 'Signed in to MCP server "{0}".', selection));
+                    } else {
+                        this.messageService.warn(nls.localize('theia/ai/mcp/warn/signInNotCompleted', 'Sign-in to MCP server "{0}" was not completed.', selection));
+                    }
+                } catch (error) {
+                    this.messageService.error(nls.localize('theia/ai/mcp/error/signInFailed', 'An error occurred while signing in to the MCP server.'));
+                    console.error('Error while signing in to MCP server:', error);
+                }
+            }
+        }));
+
+        commandRegistry.registerCommand(GetMCPOAuthRedirectUrl, this.commandHandlerFactory({
+            execute: async () => {
+                try {
+                    const redirectUrl = await this.oauthFrontendDelegate.getEffectiveRedirectUrl();
+                    const copyAction = nls.localizeByDefault('Copy');
+                    const action = await this.messageService.info(
+                        nls.localize('theia/ai/mcp/info/oauthRedirectUrl', 'MCP OAuth redirect URL: {0}', redirectUrl), copyAction);
+                    if (action === copyAction) {
+                        await navigator.clipboard.writeText(redirectUrl);
+                    }
+                } catch (error) {
+                    this.messageService.error(nls.localize('theia/ai/mcp/error/getRedirectUrlFailed', 'An error occurred while determining the MCP OAuth redirect URL.'));
+                    console.error('Error while determining the MCP OAuth redirect URL:', error);
                 }
             }
         }));
@@ -127,6 +181,12 @@ export class MCPCommandContribution implements CommandContribution {
                     if (!selection) {
                         return;
                     }
+                    const selectedDescription = await this.mcpFrontendService.getServerDescription(selection);
+                    if (selectedDescription?.status === MCPServerStatus.AuthenticationRequired) {
+                        // Starting in `AuthenticationRequired` would join the pending OAuth flow and change
+                        // nothing; stop first so the start below begins a fresh authorization attempt.
+                        await this.mcpFrontendService.stopServer(selection);
+                    }
                     // OAuth gating happens in the backend: `startServerInteractive` sets the manager's
                     // `interactive` flag, which is what permits the OAuth provider to launch the browser.
                     // No popup preparation or OAuth-flag inspection is needed at this layer.
@@ -145,6 +205,21 @@ export class MCPCommandContribution implements CommandContribution {
                 }
             }
         }));
+    }
+
+    protected isStoppableStatus(status: MCPServerStatus | undefined): boolean {
+        return status === MCPServerStatus.Running
+            || status === MCPServerStatus.Connected
+            || status === MCPServerStatus.AuthenticationRequired;
+    }
+
+    protected async getOAuthEnabledServerNames(): Promise<string[]> {
+        const servers = await this.mcpFrontendService.getServerNames();
+        const descriptions = await Promise.all(servers.map(server => this.mcpFrontendService.getServerDescription(server)));
+        return descriptions
+            .filter((description): description is MCPServerDescription =>
+                !!description && isRemoteMCPServerDescription(description) && !!description.oauth)
+            .map(description => description.name);
     }
 
     /**

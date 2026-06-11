@@ -94,15 +94,18 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         preferenceValue?: Record<string, object>;
         onPreferenceSet?: (value: Record<string, object>) => void;
         onSignOut?: (serverName: string) => void;
+        onSignIn?: (serverName: string) => boolean | Promise<boolean> | never;
         onStartServerInteractive?: (serverName: string) => boolean | Promise<boolean> | never;
         onStopServer?: (serverName: string) => void;
         onWarn?: (message: string) => void;
+        onInfo?: (message: string) => void;
     } = {}): TestAIMCPConfigurationWidget {
         const onDidUpdateMCPServersEmitter = new Emitter<void>();
         const widget = new TestAIMCPConfigurationWidget();
         widget.setServers(options.servers ?? []);
         (widget as unknown as { mcpFrontendService: Partial<MCPFrontendService> }).mcpFrontendService = {
             signOut: async serverName => options.onSignOut?.(serverName),
+            signIn: async serverName => (await options.onSignIn?.(serverName)) ?? false,
             getPromptTemplateId: serverName => `mcp_${serverName}_tools`,
             hasStoredOAuthCredentials: async () => false,
             startServerInteractive: async serverName => (await options.onStartServerInteractive?.(serverName)) ?? true,
@@ -110,7 +113,7 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         };
         (widget as unknown as { messageService: Partial<MessageService> }).messageService = {
             warn: message => { options.onWarn?.(String(message)); return Promise.resolve(); },
-            info: () => Promise.resolve(),
+            info: message => { options.onInfo?.(String(message)); return Promise.resolve(); },
             error: () => Promise.resolve()
         };
         (widget as unknown as { mcpFrontendNotificationService: MCPFrontendNotificationService }).mcpFrontendNotificationService = {
@@ -139,7 +142,6 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         serverUrl: 'https://mcp.example.com/mcp',
         status: MCPServerStatus.NotConnected,
         oauth: {
-            enabled: true,
             clientId: 'client-id',
             scopes: ['mcp.read', 'mcp.write'],
             authorizationServer: 'https://auth.example.com',
@@ -262,12 +264,12 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         });
 
         it('routes an OAuth Connect click through startServerInteractive (backend gates the OAuth flow)', async () => {
-            // The widget intentionally does not call `prepareAuthorization` or inspect `oauth.enabled`. The
+            // The widget intentionally does not call `prepareAuthorization` or inspect the oauth config. The
             // OAuth provider's interactive gate is set inside `startServerInteractive` downstream, so the
             // same call uniformly handles OAuth and non-OAuth servers.
             let startedServer: string | undefined;
             const widget = createWidget({
-                servers: [{ ...oauthServer, status: MCPServerStatus.AuthenticationRequired }],
+                servers: [oauthServer],
                 onStartServerInteractive: name => { startedServer = name; return true; }
             });
             renderWidget(widget);
@@ -278,6 +280,57 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
             await flushClickHandlers();
 
             expect(startedServer).to.equal('oauth-server');
+        });
+
+        it('stops a server stuck in Authentication Required before restarting it', async () => {
+            // A start in `AuthenticationRequired` would join the pending OAuth flow and do nothing -
+            // the user who closed the browser window would be stuck. Stop-then-start restarts cleanly.
+            const calls: string[] = [];
+            const widget = createWidget({
+                servers: [{ ...oauthServer, status: MCPServerStatus.AuthenticationRequired }],
+                onStartServerInteractive: name => { calls.push(`start:${name}`); return true; },
+                onStopServer: name => { calls.push(`stop:${name}`); }
+            });
+            renderWidget(widget);
+
+            const connectButton = host.querySelector('button[title="Connect"]') as HTMLButtonElement | null;
+            expect(connectButton).to.not.be.null;
+            connectButton!.click();
+            await flushClickHandlers();
+
+            expect(calls).to.deep.equal(['stop:oauth-server', 'start:oauth-server']);
+        });
+
+        it('does not stop a not-connected server before starting it', async () => {
+            const calls: string[] = [];
+            const widget = createWidget({
+                servers: [oauthServer],
+                onStartServerInteractive: name => { calls.push(`start:${name}`); return true; },
+                onStopServer: name => { calls.push(`stop:${name}`); }
+            });
+            renderWidget(widget);
+
+            const connectButton = host.querySelector('button[title="Connect"]') as HTMLButtonElement | null;
+            connectButton!.click();
+            await flushClickHandlers();
+
+            expect(calls).to.deep.equal(['start:oauth-server']);
+        });
+
+        it('offers Disconnect for a remote server in Authentication Required so an abandoned sign-in can be dismissed', async () => {
+            let stoppedServer: string | undefined;
+            const widget = createWidget({
+                servers: [{ ...oauthServer, status: MCPServerStatus.AuthenticationRequired }],
+                onStopServer: name => { stoppedServer = name; }
+            });
+            renderWidget(widget);
+
+            const stopButton = host.querySelector('button[title="Disconnect"]') as HTMLButtonElement | null;
+            expect(stopButton).to.not.be.null;
+            stopButton!.click();
+            await flushClickHandlers();
+
+            expect(stoppedServer).to.equal('oauth-server');
         });
 
         it('surfaces a warning toast when startServerInteractive rejects', async () => {
@@ -300,6 +353,60 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
             }
 
             expect(warning).to.contain('local-server');
+        });
+    });
+
+    describe('Sign In action', () => {
+        async function flushClickHandlers(): Promise<void> {
+            await Promise.resolve();
+            await Promise.resolve();
+        }
+
+        it('shows Sign In for a startable OAuth server and reports success', async () => {
+            const calls: string[] = [];
+            let info: string | undefined;
+            const widget = createWidget({
+                servers: [oauthServer],
+                onSignIn: name => { calls.push(`signIn:${name}`); return true; },
+                onInfo: message => info = message
+            });
+            renderWidget(widget);
+
+            const signInButton = host.querySelector('button[title="Sign In"]') as HTMLButtonElement | null;
+            expect(signInButton).to.not.be.null;
+            signInButton!.click();
+            await flushClickHandlers();
+
+            expect(calls).to.deep.equal(['signIn:oauth-server']);
+            expect(info).to.contain('oauth-server');
+        });
+
+        it('warns when the sign-in does not complete', async () => {
+            let warning: string | undefined;
+            const widget = createWidget({
+                servers: [oauthServer],
+                onSignIn: () => false,
+                onWarn: message => warning = message
+            });
+            renderWidget(widget);
+
+            const signInButton = host.querySelector('button[title="Sign In"]') as HTMLButtonElement | null;
+            signInButton!.click();
+            await flushClickHandlers();
+
+            expect(warning).to.contain('oauth-server');
+        });
+
+        it('hides Sign In for a running OAuth server and for non-OAuth servers', () => {
+            const widget = createWidget({
+                servers: [
+                    { ...oauthServer, status: MCPServerStatus.Connected },
+                    { name: 'plain-remote', serverUrl: 'https://mcp.example.com/mcp', status: MCPServerStatus.NotConnected }
+                ]
+            });
+            renderWidget(widget);
+
+            expect(host.querySelector('button[title="Sign In"]')).to.be.null;
         });
     });
 });

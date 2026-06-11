@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import { MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
+import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
 import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate';
 
 class TestOAuthFrontendDelegateClient implements MCPOAuthFrontendDelegateClient {
@@ -77,6 +78,33 @@ describe('MCPOAuthFrontendDelegateImpl', () => {
 
         try {
             await delegate.getCallbackUrl();
+            throw new Error('Expected missing client error');
+        } catch (error) {
+            expect((error as Error).message).to.equal('MCP OAuth frontend delegate client not set.');
+        }
+    });
+
+    it('prefers the loopback callback endpoint for the effective redirect URL (Electron)', async () => {
+        const delegate = new MCPOAuthFrontendDelegateImpl();
+        const endpoint: MCPOAuthCallbackEndpoint = { getRedirectUrl: async () => 'http://127.0.0.1:28932/mcp/oauth/callback' };
+        (delegate as unknown as { callbackEndpoint?: MCPOAuthCallbackEndpoint }).callbackEndpoint = endpoint;
+        delegate.setClient(new TestOAuthFrontendDelegateClient());
+
+        expect(await delegate.getEffectiveRedirectUrl()).to.equal('http://127.0.0.1:28932/mcp/oauth/callback');
+    });
+
+    it('falls back to the frontend client callback URL for the effective redirect URL (browser/hosted)', async () => {
+        const delegate = new MCPOAuthFrontendDelegateImpl();
+        delegate.setClient(new TestOAuthFrontendDelegateClient());
+
+        expect(await delegate.getEffectiveRedirectUrl()).to.equal('http://localhost/mcp/oauth/callback');
+    });
+
+    it('fails the effective redirect URL without a callback endpoint or frontend client', async () => {
+        const delegate = new MCPOAuthFrontendDelegateImpl();
+
+        try {
+            await delegate.getEffectiveRedirectUrl();
             throw new Error('Expected missing client error');
         } catch (error) {
             expect((error as Error).message).to.equal('MCP OAuth frontend delegate client not set.');

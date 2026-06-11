@@ -51,12 +51,13 @@ export default new ContainerModule(bind => {
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
 
-    bind(MCPServerEditDialogFactory).toFactory(() =>
+    bind(MCPServerEditDialogFactory).toFactory(ctx =>
         (parameters: MCPServerEditDialogParameters) => new MCPServerEditDialog(
             parameters.props,
             parameters.initialData ?? { ...DEFAULT_MCP_SERVER_FORM_DATA },
             parameters.existingServerNames,
-            parameters.isEditing
+            parameters.isEditing,
+            () => ctx.container.get<MCPOAuthFrontendDelegate>(MCPOAuthFrontendDelegate).getEffectiveRedirectUrl()
         ));
     bind(MCPServerInstallDialogFactory).toFactory(() =>
         (options: MCPServerInstallDialogOptions) => new MCPServerInstallDialog(options));

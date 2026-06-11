@@ -21,7 +21,7 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MCPServersPreference, MCPServersPreferenceValue } from '@theia/ai-mcp/lib/common/mcp-servers-preference';
+import { MCPServersPreference, MCPServersPreferenceValue } from '@theia/ai-mcp/lib/common/mcp-server-preference-validator';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';

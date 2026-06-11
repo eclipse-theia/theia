@@ -84,7 +84,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         this.servers = descriptions.filter((desc): desc is MCPServerDescription => desc !== undefined);
         this.oauthCredentialStates = Object.fromEntries(await Promise.all(this.servers.map(async server => [
             server.name,
-            isRemoteMCPServerDescription(server) && server.oauth?.enabled
+            isRemoteMCPServerDescription(server) && server.oauth
                 ? await this.mcpFrontendService.hasStoredOAuthCredentials(server.name)
                 : false
         ] as const)));
@@ -124,6 +124,11 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         // `startServerInteractive` sets the manager's `interactive` flag, which is what permits the OAuth
         // provider to open the browser; no OAuth-specific handling is needed at this layer.
         try {
+            if (server.status === MCPServerStatus.AuthenticationRequired) {
+                // A start in `AuthenticationRequired` would join the pending OAuth flow and do nothing;
+                // stop first to cancel it so the server restarts with a fresh authorization attempt.
+                await this.mcpFrontendService.stopServer(server.name);
+            }
             await this.mcpFrontendService.startServerInteractive(server.name);
         } catch (error) {
             // Surface pre-terminal failures (e.g. RPC channel drops) that would otherwise be unhandled
@@ -141,6 +146,23 @@ export class AIMCPConfigurationWidget extends ReactWidget {
             console.error(`Failed to stop MCP server "${serverName}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/stopServerFailed',
                 'Failed to stop MCP server "{0}".', serverName));
+        }
+    }
+
+    protected async handleSignInServer(serverName: string): Promise<void> {
+        try {
+            const signedIn = await this.mcpFrontendService.signIn(serverName);
+            if (signedIn) {
+                this.messageService.info(nls.localize('theia/ai/mcpConfiguration/signInServerSucceeded',
+                    'Signed in to MCP server "{0}".', serverName));
+            } else {
+                this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/signInServerNotCompleted',
+                    'Sign-in to MCP server "{0}" was not completed.', serverName));
+            }
+        } catch (error) {
+            console.error(`Failed to sign in to MCP server "${serverName}"`, error);
+            this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/signInServerFailed',
+                'Failed to sign in to MCP server "{0}".', serverName));
         }
     }
 
@@ -211,7 +233,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected renderServerHeader(server: MCPServerDescription): React.ReactNode {
         const isStoppable = server.status === MCPServerStatus.Running
-            || server.status === MCPServerStatus.Connected;
+            || server.status === MCPServerStatus.Connected
+            || server.status === MCPServerStatus.AuthenticationRequired;
         const isStarting = server.status === MCPServerStatus.Starting
             || server.status === MCPServerStatus.Connecting;
         const isStartable = server.status === MCPServerStatus.NotRunning
@@ -220,7 +243,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
             || server.status === MCPServerStatus.Errored;
 
         const isRemote = isRemoteMCPServerDescription(server);
-        const isOAuthEnabled = isRemote && server.oauth?.enabled;
+        const isOAuthEnabled = isRemote && !!server.oauth;
         const startIcon = isRemote ? 'plug' : 'play';
         const startingIcon = 'loading';
         const stopIcon = isRemote ? 'debug-disconnect' : 'debug-stop';
@@ -261,6 +284,13 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             className={`mcp-action-button ${codicon(stopIcon)}`}
                             onClick={() => this.handleStopServer(server.name)}
                             title={stopLabel}
+                        />
+                    )}
+                    {isOAuthEnabled && isStartable && (
+                        <button
+                            className={`mcp-action-button ${codicon('sign-in')}`}
+                            onClick={() => this.handleSignInServer(server.name)}
+                            title={nls.localizeByDefault('Sign In')}
                         />
                     )}
                     {isOAuthEnabled && this.oauthCredentialStates[server.name] && (
@@ -389,9 +419,6 @@ export class AIMCPConfigurationWidget extends ReactWidget {
             <div className="mcp-property-row">
                 <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/oauth', 'OAuth')}:</span>
                 <div className="mcp-property-value">
-                    <div className="mcp-env-entry">
-                        <code>{server.oauth.enabled ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}</code>
-                    </div>
                     {server.oauth.clientId && (
                         <div className="mcp-env-entry">
                             <code>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}={server.oauth.clientId}</code>
