@@ -283,7 +283,13 @@ export class TranscriptVirtualList implements Disposable {
         const scrollTop = this.scrollHost.scrollTop;
         let changed = false;
         let deltaAboveViewport = 0;
+        const streamingTailActive = [...this.mounted.values()].some(row =>
+            row.classList.contains('theia-mod-streaming'),
+        );
         for (const [index, row] of this.mounted) {
+            if (streamingTailActive && !row.classList.contains('theia-mod-streaming')) {
+                continue;
+            }
             const height = Math.ceil(row.getBoundingClientRect().height);
             if (height > 0 && this.sizes[index] !== height) {
                 // Rows fully above the viewport shift everything below them when

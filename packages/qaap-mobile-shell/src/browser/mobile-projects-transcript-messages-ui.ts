@@ -131,11 +131,12 @@ export class MobileProjectsTranscriptMessagesUi {
     resolveComposerActivityFiles(
         conv: QaapAgentConversationDTO | undefined,
         summary?: QaapAgentConversationSummaryDTO,
+        options?: { readonly allTurns?: boolean },
     ): {
         readonly files: Array<{ readonly path: string; readonly kind: 'edited' | 'created'; readonly added?: number; readonly removed?: number }>;
         readonly stats?: { readonly added: number; readonly removed: number };
     } {
-        const segments = this.resolveComposerConversationSegments(conv);
+        const segments = this.resolveComposerConversationSegments(conv, options);
         const files = this.resolversUi.resolveTranscriptChangedFiles(segments);
         let stats = this.resolversUi.resolveTranscriptDiffStats(segments);
         if (!stats && summary && ((summary.linesAdded ?? 0) > 0 || (summary.linesRemoved ?? 0) > 0)) {
@@ -156,17 +157,31 @@ export class MobileProjectsTranscriptMessagesUi {
      * diff stats can be extracted — the call itself is still proof the agent modified files here.
      */
     hasComposerFileChangeToolCalls(conv: QaapAgentConversationDTO | undefined): boolean {
-        return this.resolveComposerConversationSegments(conv).some(segment =>
+        return this.resolveComposerConversationSegments(conv, { allTurns: true }).some(segment =>
             segment.type === 'tool'
             // 'todowrite' / 'todo_write' track the agent's task list, not workspace files.
             && !segment.name.toLowerCase().includes('todo')
             && !!this.resolversUi.resolveTranscriptFileChangeKind(segment.name));
     }
 
-    /** All agent tool segments in the conversation — keeps changed files visible across turns. */
-    protected resolveComposerConversationSegments(conv: QaapAgentConversationDTO | undefined): QaapAgentMessageSegmentDTO[] {
+    /**
+     * Agent segments for composer activity. While streaming, only the in-flight agent turn is
+     * scanned so SSE refreshes stay O(turn) instead of O(conversation).
+     */
+    resolveComposerConversationSegments(
+        conv: QaapAgentConversationDTO | undefined,
+        options?: { readonly allTurns?: boolean },
+    ): QaapAgentMessageSegmentDTO[] {
         if (!conv?.messages.length) {
             return [];
+        }
+        const turnOnly = !options?.allTurns && conv.status === 'streaming';
+        if (turnOnly) {
+            const last = conv.messages[conv.messages.length - 1];
+            if (last?.role !== 'agent') {
+                return [];
+            }
+            return last.segments ?? [];
         }
         return conv.messages.flatMap(message => message.role === 'agent' ? (message.segments ?? []) : []);
     }

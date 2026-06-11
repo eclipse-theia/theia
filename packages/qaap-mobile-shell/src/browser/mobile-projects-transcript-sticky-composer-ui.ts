@@ -322,7 +322,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         // or agent-reported diff stats): `summary.linesAdded` alone is not enough because the
         // backend stamps repo-wide `git diff` stats on every turn, so a tree left dirty by another
         // session would surface the buttons in conversations that never touched a file.
-        const transcriptEvidence = this.host.transcriptMessagesUi.resolveComposerActivityFiles(conv);
+        const transcriptEvidence = this.host.transcriptMessagesUi.resolveComposerActivityFiles(conv, undefined, { allTurns: true });
         if (!this.hasComposerAgentActivity(transcriptEvidence)
             && !this.host.transcriptMessagesUi.hasComposerFileChangeToolCalls(conv)) {
             return { files: [] };
