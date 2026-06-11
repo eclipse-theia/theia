@@ -6,6 +6,7 @@
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
+import { QaapCliTranscriptParseWorkerClient } from './qaap-cli-transcript-parse-worker-client';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
 import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendTextSegment, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentSegmentsInPlace, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
@@ -59,8 +60,23 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         if (msg.role !== 'agent' || !msg.content?.trim()) {
             return undefined;
         }
+        const cacheKey = msg.id ?? `${conv.id}:${msg.content.length}`;
+        const cached = QaapCliTranscriptParseWorkerClient.get().peekParsedSegments(cacheKey);
+        if (cached && cached.length > 0) {
+            return dedupeAgentMessageTextSegments([...cached]);
+        }
         const parsed = parseAgentLogForTranscript(conv.agentId, msg.content);
         return parsed.segments.length > 0 ? dedupeAgentMessageTextSegments(parsed.segments) : undefined;
+    }
+
+    protected prefetchTranscriptAgentLogParses(conv: QaapAgentConversationDTO): void {
+        for (const msg of conv.messages) {
+            if (msg.segments?.length || msg.role !== 'agent' || !msg.content?.trim()) {
+                continue;
+            }
+            const cacheKey = msg.id ?? `${conv.id}:${msg.content.length}`;
+            QaapCliTranscriptParseWorkerClient.get().prefetch(conv.agentId, msg.content, cacheKey);
+        }
     }
 
     createTranscriptMessageRowAtIndex(conv: QaapAgentConversationDTO, index: number): HTMLElement {
@@ -72,12 +88,18 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             messageCount: conv.messages.length,
             conversationStreaming: conv.status === 'streaming',
         });
+        const streamingTail = index === conv.messages.length - 1
+            && conv.status === 'streaming'
+            && msg.role === 'agent';
         let row: HTMLElement;
         const agentSegments = this.resolveTranscriptAgentSegments(conv, msg);
         if (msg.role === 'user') {
             row = this.userUi.createTranscriptUserMessageRow(msg, conv, { deferHeavyContent });
         } else if (agentSegments && agentSegments.length > 0) {
-            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, conv, { deferHeavyContent });
+            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, conv, {
+                deferHeavyContent,
+                streaming: streamingTail,
+            });
             if (msg.id) {
                 row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, msg.id);
             }
@@ -86,13 +108,13 @@ export class MobileProjectsTranscriptMessagesRenderUi {
                 msg.role,
                 normalizeAgentMessageContentForDisplay(msg.content),
                 msg.error,
-                { deferHeavyContent },
+                { deferHeavyContent, streaming: streamingTail },
             );
         }
         if (index === conv.messages.length - 1 && sameConversation && previousLastMessageId && msg.id && msg.id !== previousLastMessageId) {
             row.classList.add('theia-mod-new-message');
         }
-        if (index === conv.messages.length - 1 && conv.status === 'streaming' && msg.role === 'agent') {
+        if (streamingTail) {
             row.classList.add('theia-mod-streaming');
         }
         return row;
@@ -140,6 +162,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             return;
         }
         this.host.transcriptLastConv = conv;
+        this.prefetchTranscriptAgentLogParses(conv);
         const messageHost = this.resolveTranscriptMessageHost(host);
         const isEmptyChat = conv.messages.length === 0 && conv.status !== 'streaming';
         if (isEmptyChat) {
@@ -284,7 +307,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         });
 
         const row = segments?.length
-            ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv)
+            ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv, { streaming: true })
             : this.createTranscriptMessageRowAtIndex(conv, conv.messages.length - 1);
         this.markTranscriptMessageRow(row, lastAgent.id, true);
 
@@ -358,7 +381,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
 
         this.host.transcriptLastConv = conv;
         const row = segments?.length
-            ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv)
+            ? this.artifactsUi.createTranscriptAgentSegmentsRow(segments, lastAgent.error, conv, { streaming: true })
             : this.createTranscriptMessageRowAtIndex(conv, conv.messages.length - 1);
         this.markTranscriptMessageRow(row, lastAgent.id, true);
 
@@ -376,8 +399,12 @@ export class MobileProjectsTranscriptMessagesRenderUi {
     }
 
     markTranscriptMessageRow(row: HTMLElement, messageId: string, streaming: boolean): void {
+        const wasStreaming = row.classList.contains('theia-mod-streaming');
         row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, messageId);
         row.classList.toggle('theia-mod-streaming', streaming);
+        if (wasStreaming && !streaming) {
+            this.contentUi.settleTranscriptStreamingContent(row);
+        }
     }
 
     tryPatchStreamingAgentTextContent(
@@ -453,6 +480,9 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         this.removeTranscriptActivityRow(messageHost);
         messageHost.querySelectorAll('.theia-mod-streaming').forEach(element => {
             element.classList.remove('theia-mod-streaming');
+            if (element instanceof HTMLElement) {
+                this.contentUi.settleTranscriptStreamingContent(element);
+            }
         });
         if (conv.status === 'streaming' && conv.messages.at(-1)?.role === 'user') {
             messageHost.append(this.artifactsUi.createTranscriptStreamingActivityRow(conv));
@@ -463,7 +493,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         role: 'user' | 'agent',
         content: string,
         error?: string,
-        options?: { readonly deferHeavyContent?: boolean },
+        options?: { readonly deferHeavyContent?: boolean; readonly streaming?: boolean },
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = `theia-mobile-agent-transcript-msg theia-mod-${role}`;
@@ -476,7 +506,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         this.toolUi.renderTranscriptRichContent(
             contentEl,
             normalizeAgentMessageContentForDisplay(content),
-            { defer: options?.deferHeavyContent },
+            { defer: options?.deferHeavyContent, streaming: options?.streaming },
         );
         row.append(contentEl);
         if (error) {

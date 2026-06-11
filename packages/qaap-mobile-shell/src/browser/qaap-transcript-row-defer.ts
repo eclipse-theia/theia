@@ -5,6 +5,8 @@
 
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
+import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
+import { scheduleTranscriptIdleWork, type TranscriptIdleWorkHandle } from '../common/qaap-transcript-idle-scheduler';
 import {
     shouldDeferTranscriptRowHeavyContent,
     type TranscriptRowDeferContext,
@@ -125,6 +127,27 @@ export function attachTranscriptRowDeferObserver(
     }
     const toDispose = new DisposableCollection();
     const observedRows = new Set<HTMLElement>();
+    const pendingHydrateRows = new Set<HTMLElement>();
+    let hydrateIdleHandle: TranscriptIdleWorkHandle | undefined;
+
+    const flushPendingHydrateRows = (): void => {
+        hydrateIdleHandle = undefined;
+        const rows = [...pendingHydrateRows];
+        pendingHydrateRows.clear();
+        for (const row of rows) {
+            hydrateRow(row);
+        }
+    };
+
+    const scheduleHydrateRow = (row: HTMLElement): void => {
+        pendingHydrateRows.add(row);
+        if (hydrateIdleHandle) {
+            return;
+        }
+        hydrateIdleHandle = scheduleTranscriptIdleWork(flushPendingHydrateRows, {
+            when: isTranscriptDocumentVisible,
+        });
+    };
 
     const hydrateRow = (row: HTMLElement): void => {
         if (!row.isConnected) {
@@ -141,7 +164,7 @@ export function attachTranscriptRowDeferObserver(
     const observer = new IntersectionObserver(entries => {
         for (const entry of entries) {
             if (entry.isIntersecting && entry.target instanceof HTMLElement) {
-                hydrateRow(entry.target);
+                scheduleHydrateRow(entry.target);
             }
         }
     }, {
@@ -149,7 +172,12 @@ export function attachTranscriptRowDeferObserver(
         rootMargin: '120px 0px',
         threshold: 0,
     });
-    toDispose.push(Disposable.create(() => observer.disconnect()));
+    toDispose.push(Disposable.create(() => {
+        observer.disconnect();
+        hydrateIdleHandle?.cancel();
+        hydrateIdleHandle = undefined;
+        pendingHydrateRows.clear();
+    }));
 
     const onToolToggle = (event: Event): void => {
         const target = event.target;

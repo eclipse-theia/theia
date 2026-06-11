@@ -126,6 +126,36 @@ describe('QaapQaiqStreamAccumulator', () => {
         expect(acc.getSegments()).to.deep.equal([{ type: 'text', content: 'Hi there' }]);
     });
 
+    it('streams tool args from content_block_start and input_json_delta before the tool finishes', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push([
+            '{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"tu-edit","name":"Edit","input":{}}}}',
+            '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"file_path\\":\\"src/"}}}',
+            '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"config.ts\\"}"}}}',
+        ].join('\n') + '\n');
+        const segments = acc.getSegments();
+        expect(segments).to.have.length(1);
+        expect(segments[0]).to.deep.equal({
+            type: 'tool',
+            toolUseId: 'tu-edit',
+            name: 'Edit',
+            args: '{"file_path":"src/config.ts"}',
+            finished: false,
+        });
+    });
+
+    it('drops live tool overlay once the timestamped assistant snapshot arrives', () => {
+        const acc = new QaapQaiqStreamAccumulator();
+        acc.push([
+            '{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"tu-read","name":"Read","input":{}}}}',
+            '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"file_path\\":\\"a.ts\\"}"}}}',
+            '{"type":"assistant","timestamp_ms":1,"message":{"content":[{"type":"tool_use","id":"tu-read","name":"Read","input":{"file_path":"a.ts"}}]}}',
+        ].join('\n') + '\n');
+        expect(acc.getSegments()).to.deep.equal([
+            { type: 'tool', toolUseId: 'tu-read', name: 'Read', args: '{"file_path":"a.ts"}', finished: false },
+        ]);
+    });
+
     it('skips duplicate timestamped assistant snapshot after stream_event deltas', () => {
         const acc = new QaapQaiqStreamAccumulator();
         const reply = '¡Hola! Estoy bien, gracias por preguntar. ¿En qué puedo ayudarte hoy?';

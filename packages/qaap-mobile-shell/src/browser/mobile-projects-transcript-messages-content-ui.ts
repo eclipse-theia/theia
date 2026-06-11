@@ -5,6 +5,7 @@
 
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { nls } from '@theia/core/lib/common/nls';
+import { patchStreamingMarkdownContent } from '@theia/qaap-transcript-overlay/lib/browser/qaap-transcript-streaming-markdown-view';
 import { QaapTranscriptMarkdownWorkerClient } from './qaap-transcript-markdown-worker-client';
 import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
 import { extractDevPreviewPortFromUrl } from './qaap-transcript-preview-bootstrap';
@@ -17,13 +18,14 @@ import {
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 
+/** Monospace plain-text host while an agent turn is still streaming (markdown on settle). */
+export const TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS = 'theia-mod-streaming-plain-text';
+/** Frozen/tail incremental markdown while a long agent turn streams. */
+export const TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS = 'theia-mod-streaming-incremental-markdown';
+/** Below this length streaming stays plain text; above it uses incremental frozen/tail markdown. */
+export const TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS = 480;
+
 export class MobileProjectsTranscriptMessagesContentUi {
-    /** Below this length every streaming tick re-parses markdown; above it we coalesce. */
-    protected static readonly STREAMING_MARKDOWN_MIN_CHARS = 1200;
-    /** Minimum growth before forcing a markdown re-parse during streaming. */
-    protected static readonly STREAMING_MARKDOWN_MIN_GROWTH = 80;
-    /** Max delay between full markdown parses while the agent row is still streaming. */
-    protected static readonly STREAMING_MARKDOWN_MAX_INTERVAL_MS = 120;
 
     constructor(protected readonly host: MobileProjectsTranscriptMessagesHost) { }
 
@@ -108,10 +110,15 @@ export class MobileProjectsTranscriptMessagesContentUi {
 
     /** Apply sanitized HTML from the worker (or sync fallback) without re-parsing markdown. */
     protected applyTranscriptMarkdownHtml(host: HTMLElement, html: string, cleanLength: number): void {
+        host.classList.remove(
+            TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS,
+            TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS,
+        );
+        host.classList.add('theia-mod-markdown');
+        delete host.dataset.transcriptStreamSource;
         host.innerHTML = html;
         host.dataset.transcriptStreamParsedLen = String(cleanLength);
         host.dataset.transcriptStreamParsedAt = String(Date.now());
-        host.querySelector('.theia-mobile-agent-streaming-text-tail')?.remove();
         this.attachTranscriptMarkdownLinkHandler(host);
     }
 
@@ -138,35 +145,69 @@ export class MobileProjectsTranscriptMessagesContentUi {
         registerDeferredTranscriptMarkdown(hydrate);
     }
 
-    /** Throttled markdown for long streaming agent text — appends a plain tail between full parses. */
+    /**
+     * Short streams: plain monospace text. Long streams: frozen/tail incremental markdown.
+     * Call {@link settleTranscriptStreamingContent} once the row leaves streaming.
+     */
     renderTranscriptStreamingMarkdown(host: HTMLElement, content: string, options?: { readonly defer?: boolean }): void {
         const clean = this.cleanTranscriptDisplayText(content).trim();
         if (options?.defer) {
             this.renderTranscriptDeferredMarkdownPlaceholder(host, clean);
             return;
         }
-        const minChars = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MIN_CHARS;
-        if (clean.length < minChars) {
-            this.renderTranscriptMarkdown(host, clean);
+        if (!clean) {
+            host.replaceChildren();
+            host.classList.remove(
+                'theia-mod-markdown',
+                TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS,
+                TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS,
+            );
+            delete host.dataset.transcriptStreamSource;
+            delete host.dataset.transcriptStreamParsedLen;
+            delete host.dataset.transcriptStreamParsedAt;
             return;
         }
-        const lastParsedLen = Number(host.dataset.transcriptStreamParsedLen ?? '0');
-        const lastParsedAt = Number(host.dataset.transcriptStreamParsedAt ?? '0');
-        const now = Date.now();
-        const growth = clean.length - lastParsedLen;
-        const maxInterval = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MAX_INTERVAL_MS;
-        const minGrowth = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MIN_GROWTH;
-        if (growth >= minGrowth || now - lastParsedAt >= maxInterval || lastParsedLen === 0) {
-            this.renderTranscriptMarkdown(host, clean);
+        if (clean.length < TRANSCRIPT_STREAMING_INCREMENTAL_MIN_CHARS) {
+            host.classList.remove('theia-mod-markdown', TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS);
+            host.classList.add(TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS);
+            host.textContent = clean;
+            delete host.dataset.transcriptStreamSource;
+            delete host.dataset.transcriptStreamParsedLen;
+            delete host.dataset.transcriptStreamParsedAt;
             return;
         }
-        let tail = host.querySelector<HTMLElement>('.theia-mobile-agent-streaming-text-tail');
-        if (!tail) {
-            tail = document.createElement('span');
-            tail.className = 'theia-mobile-agent-streaming-text-tail';
-            host.append(tail);
+        host.classList.remove(TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS);
+        host.classList.add('theia-mod-markdown', TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS);
+        host.dataset.transcriptStreamSource = clean;
+        const linked = this.linkifyTranscriptPreviewUrls(clean);
+        patchStreamingMarkdownContent(host, linked, {
+            renderHtml: markdown => this.renderTranscriptStreamingHtml(markdown),
+        });
+        this.attachTranscriptMarkdownLinkHandler(host);
+    }
+
+    protected renderTranscriptStreamingHtml(markdown: string): string {
+        const html = this.host.transcriptMarkdownIt.render(markdown);
+        return DOMPurify.sanitize(html, {
+            ALLOW_UNKNOWN_PROTOCOLS: true,
+        }) as string;
+    }
+
+    /** Upgrade every streaming host under `root` to full rendered markdown (turn settled). */
+    settleTranscriptStreamingContent(root: ParentNode): void {
+        const selector = [
+            `.${TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS}`,
+            `.${TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS}`,
+        ].join(', ');
+        for (const host of root.querySelectorAll<HTMLElement>(selector)) {
+            const content = host.dataset.transcriptStreamSource ?? host.textContent ?? '';
+            this.renderTranscriptMarkdown(host, content);
         }
-        tail.textContent = clean.slice(lastParsedLen);
+    }
+
+    /** @deprecated Use {@link settleTranscriptStreamingContent}. */
+    settleTranscriptStreamingPlainText(root: ParentNode): void {
+        this.settleTranscriptStreamingContent(root);
     }
 
     protected attachTranscriptMarkdownLinkHandler(host: HTMLElement): void {

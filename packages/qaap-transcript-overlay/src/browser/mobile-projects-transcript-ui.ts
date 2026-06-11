@@ -6,11 +6,17 @@
 import { Disposable } from '@theia/core/lib/common/disposable';
 import type { QaapAgentConversationDTO } from '../common/qaap-transcript-agent-types';
 import {
+    resolveTranscriptVirtualMinMessages,
     TRANSCRIPT_VIRTUAL_MIN_MESSAGES,
-    TranscriptVirtualList,
-} from './qaap-transcript-virtual-list';
+    TRANSCRIPT_VIRTUAL_MIN_MESSAGES_NARROW,
+} from '../common/qaap-transcript-virtual-list-policy';
+import { TranscriptVirtualList } from './qaap-transcript-virtual-list';
 
-export { TRANSCRIPT_VIRTUAL_MIN_MESSAGES };
+export {
+    resolveTranscriptVirtualMinMessages,
+    TRANSCRIPT_VIRTUAL_MIN_MESSAGES,
+    TRANSCRIPT_VIRTUAL_MIN_MESSAGES_NARROW,
+};
 
 /**
  * Owns the windowed transcript list for long threads. Rendering callbacks stay on the panel
@@ -23,7 +29,7 @@ export class MobileProjectsTranscriptUi implements Disposable {
 
     shouldVirtualize(conv: QaapAgentConversationDTO): boolean {
         const isEmptyChat = conv.messages.length === 0 && conv.status !== 'streaming';
-        return !isEmptyChat && conv.messages.length >= TRANSCRIPT_VIRTUAL_MIN_MESSAGES;
+        return !isEmptyChat && conv.messages.length >= resolveTranscriptVirtualMinMessages();
     }
 
     get activeList(): TranscriptVirtualList | undefined {

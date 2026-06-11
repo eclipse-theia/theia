@@ -28,7 +28,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         segments: QaapAgentMessageSegmentDTO[],
         error?: string,
         conv?: QaapAgentConversationDTO,
-        options?: { readonly deferHeavyContent?: boolean },
+        options?: { readonly deferHeavyContent?: boolean; readonly streaming?: boolean },
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent';
@@ -48,7 +48,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
             const segment = segments[segmentIndex];
             if (segment.type === 'text' && (segment.content?.trim() ?? '').length > 0) {
-                const textBlock = this.toolUi.createTranscriptSegmentDetails(segment, { defer });
+                const textBlock = this.toolUi.createTranscriptSegmentDetails(segment, {
+                    defer,
+                    streaming: options?.streaming,
+                });
                 textBlock.setAttribute(TRANSCRIPT_SEGMENT_INDEX_ATTR, String(segmentIndex));
                 body.append(textBlock);
             }
@@ -287,6 +290,16 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             pill.open = wasOpen;
             return;
         }
+        const speculativeOnly = !pendingApprovalChanged
+            && !segment.result?.trim()
+            && !segment.finished
+            && previous.toolUseId === segment.toolUseId
+            && previous.name === segment.name;
+        if (speculativeOnly) {
+            this.toolUi.ensureTranscriptToolSpeculativePlaceholder(body, segment);
+            pill.open = wasOpen;
+            return;
+        }
         body.replaceChildren();
         if (pendingApproval) {
             body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
@@ -297,6 +310,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 descriptor.kind,
                 { streaming: !descriptor.finished },
             ));
+        } else if (!segment.finished) {
+            this.toolUi.ensureTranscriptToolSpeculativePlaceholder(body, segment);
         }
         if (descriptor.resultFailed && !wasFailed) {
             pill.open = shouldOpenTranscriptToolDetails({
@@ -427,6 +442,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 kind,
                 { streaming: !(descriptor?.finished ?? segment.finished) },
             ));
+        } else if (!(descriptor?.finished ?? segment.finished)) {
+            this.toolUi.ensureTranscriptToolSpeculativePlaceholder(body, segment);
         }
         pill.append(body);
         return pill;

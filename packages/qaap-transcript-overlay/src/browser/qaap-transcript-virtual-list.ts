@@ -4,15 +4,19 @@
 // *****************************************************************************
 
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
 import {
     buildVirtualListOffsets,
     resolveVirtualListVisibleRange,
 } from '../common/qaap-transcript-virtual-list-math';
 
+export {
+    TRANSCRIPT_VIRTUAL_MIN_MESSAGES,
+    TRANSCRIPT_VIRTUAL_MIN_MESSAGES_NARROW,
+} from '../common/qaap-transcript-virtual-list-policy';
+
 export const TRANSCRIPT_VIRTUAL_DEFAULT_ITEM_HEIGHT = 128;
 export const TRANSCRIPT_VIRTUAL_OVERSCAN_PX = 480;
-/** Virtualize once the thread is long enough to hurt scroll paint on real devices. */
-export const TRANSCRIPT_VIRTUAL_MIN_MESSAGES = 12;
 /**
  * Coalescing window for height remeasurements. During token streaming, content reflows
  * fire ResizeObserver many times per second; without throttling, each fires a
@@ -59,8 +63,10 @@ export class TranscriptVirtualList implements Disposable {
     protected measureRequested = true;
     protected measureTimeoutId: ReturnType<typeof setTimeout> | undefined;
     protected lastMeasureRanAt = 0;
+    protected pendingWhileHidden = false;
     protected scrollListener: () => void;
     protected resizeObserver: ResizeObserver | undefined;
+    protected visibilityListener: (() => void) | undefined;
 
     constructor(options: TranscriptVirtualListOptions) {
         this.scrollHost = options.scrollHost;
@@ -90,6 +96,16 @@ export class TranscriptVirtualList implements Disposable {
         if (typeof ResizeObserver !== 'undefined') {
             this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
             this.resizeObserver.observe(this.window);
+        }
+
+        if (typeof document !== 'undefined') {
+            this.visibilityListener = () => {
+                if (isTranscriptDocumentVisible() && this.pendingWhileHidden) {
+                    this.pendingWhileHidden = false;
+                    this.scheduleUpdate();
+                }
+            };
+            document.addEventListener('visibilitychange', this.visibilityListener);
         }
     }
 
@@ -179,13 +195,26 @@ export class TranscriptVirtualList implements Disposable {
         }
         this.scrollHost.removeEventListener('scroll', this.scrollListener);
         this.resizeObserver?.disconnect();
+        if (this.visibilityListener) {
+            document.removeEventListener('visibilitychange', this.visibilityListener);
+            this.visibilityListener = undefined;
+        }
         this.mounted.clear();
+    }
+
+    protected shouldPauseBackgroundWork(): boolean {
+        return !isTranscriptDocumentVisible();
     }
 
     protected scheduleUpdate(): void {
         if (this.disposed || this.rafId) {
             return;
         }
+        if (this.shouldPauseBackgroundWork()) {
+            this.pendingWhileHidden = true;
+            return;
+        }
+        this.pendingWhileHidden = false;
         this.rafId = requestAnimationFrame(() => {
             this.rafId = 0;
             this.update();
@@ -200,6 +229,11 @@ export class TranscriptVirtualList implements Disposable {
      */
     protected scheduleMeasure(): void {
         if (this.disposed) {
+            return;
+        }
+        if (this.shouldPauseBackgroundWork()) {
+            this.measureRequested = true;
+            this.pendingWhileHidden = true;
             return;
         }
         this.measureRequested = true;
@@ -222,6 +256,11 @@ export class TranscriptVirtualList implements Disposable {
         if (this.disposed) {
             return;
         }
+        if (this.shouldPauseBackgroundWork()) {
+            this.pendingWhileHidden = true;
+            return;
+        }
+        this.pendingWhileHidden = false;
         if (this.offsetsDirty || this.offsets.length !== this.sizes.length + 1) {
             this.offsets = buildVirtualListOffsets(this.sizes, this.defaultItemHeight);
             this.offsetsDirty = false;
@@ -278,6 +317,11 @@ export class TranscriptVirtualList implements Disposable {
 
     protected measureMounted(): void {
         if (this.disposed) {
+            return;
+        }
+        if (this.shouldPauseBackgroundWork()) {
+            this.measureRequested = true;
+            this.pendingWhileHidden = true;
             return;
         }
         const scrollTop = this.scrollHost.scrollTop;

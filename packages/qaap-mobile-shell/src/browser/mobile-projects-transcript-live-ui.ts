@@ -19,6 +19,8 @@ import {
 } from '../common/qaap-agent-approval-client';
 import { resolveMessagePreviewText } from '../common/qaap-agent-message-content';
 import { excerptTranscriptThought } from '../common/qaap-agent-transcript-segments';
+import { applyAgentMessageWireDelta } from '../common/qaap-agent-message-wire-delta';
+import type { ConversationLiveMessageEvent } from './mobile-projects-conversations';
 import {
     applyConversationMessageDelta,
     canApplySseMessageDelta,
@@ -49,6 +51,7 @@ import {
     shouldForceTranscriptRenderOnStatusSettle,
 } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
+import { scheduleTranscriptIdleWork, type TranscriptIdleWorkHandle } from '../common/qaap-transcript-idle-scheduler';
 import { resolveTranscriptStreamingCoalesceDelayMs } from '../common/qaap-transcript-streaming-coalesce';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { resolveTranscriptEffectiveStatus, isConversationTurnVisuallySettled } from '../common/qaap-transcript-turn-status';
@@ -142,6 +145,7 @@ export class MobileProjectsTranscriptLiveUi {
     protected sseRenderTimer: number | undefined;
     protected lastMountedApprovalId: string | undefined;
     protected transcriptComposerActivityTimer: number | undefined;
+    protected transcriptComposerActivityIdleHandle: TranscriptIdleWorkHandle | undefined;
     protected transcriptPreviewPollIntervalMs = TRANSCRIPT_PREVIEW_POLL_BASE_MS;
     protected transcriptPreviewPollMisses = 0;
     protected visibilityResumeListenerInstalled = false;
@@ -158,6 +162,7 @@ export class MobileProjectsTranscriptLiveUi {
         this.visibilityResumeListenerInstalled = true;
         document.addEventListener('visibilitychange', () => {
             if (!isTranscriptDocumentVisible()) {
+                this.pauseTranscriptBackgroundRenders();
                 return;
             }
             const conv = this.host.transcriptLastConv;
@@ -178,18 +183,19 @@ export class MobileProjectsTranscriptLiveUi {
         return buildConversationTranscriptFingerprint(conv);
     }
 
-    handleTranscriptSseMessage(event: {
-        readonly conversationId: string;
-        readonly message: QaapAgentMessageDTO;
-    }): void {
+    handleTranscriptSseMessage(event: ConversationLiveMessageEvent): void {
         if (!this.isActiveTranscriptConversation(event.conversationId)) {
             return;
         }
-        const base = this.host.transcriptLastConv;
-        if (!canApplySseMessageDelta(base, event.conversationId, event.message)) {
+        const message = this.resolveLiveSseMessage(event);
+        if (!message) {
             return;
         }
-        const next = applyConversationMessageDelta(base, event.message);
+        const base = this.host.transcriptLastConv;
+        if (!canApplySseMessageDelta(base, event.conversationId, message)) {
+            return;
+        }
+        const next = applyConversationMessageDelta(base, message);
         if (next === base) {
             return;
         }
@@ -199,10 +205,41 @@ export class MobileProjectsTranscriptLiveUi {
             this.schedulePendingSseRender();
             return;
         }
-        this.applyTranscriptSseRender(next, event.message);
+        this.applyTranscriptSseRender(next, message);
+    }
+
+    protected resolveLiveSseMessage(event: ConversationLiveMessageEvent): QaapAgentMessageDTO | undefined {
+        if (event.type === 'message') {
+            return event.message;
+        }
+        const base = this.host.transcriptLastConv;
+        if (!base) {
+            return undefined;
+        }
+        if (event.delta.kind === 'message_start' || event.delta.kind === 'replace') {
+            return event.delta.message;
+        }
+        const patched = applyAgentMessageWireDelta(base, event.delta);
+        return patched;
+    }
+
+    protected pauseTranscriptBackgroundRenders(): void {
+        if (this.sseRenderRafId) {
+            cancelAnimationFrame(this.sseRenderRafId);
+            this.sseRenderRafId = 0;
+        }
+        if (this.sseRenderTimer !== undefined) {
+            window.clearTimeout(this.sseRenderTimer);
+            this.sseRenderTimer = undefined;
+        }
+        this.transcriptComposerActivityIdleHandle?.cancel();
+        this.transcriptComposerActivityIdleHandle = undefined;
     }
 
     protected schedulePendingSseRender(): void {
+        if (!isTranscriptDocumentVisible()) {
+            return;
+        }
         const nearBottom = this.isActiveTranscriptNearBottom();
         const delayMs = resolveTranscriptStreamingCoalesceDelayMs(nearBottom);
         if (delayMs === 0) {
@@ -249,6 +286,9 @@ export class MobileProjectsTranscriptLiveUi {
         if (this.sseRenderTimer !== undefined) {
             window.clearTimeout(this.sseRenderTimer);
             this.sseRenderTimer = undefined;
+        }
+        if (!isTranscriptDocumentVisible()) {
+            return;
         }
         const next = this.pendingSseRenderConv;
         if (!next) {
@@ -308,10 +348,14 @@ export class MobileProjectsTranscriptLiveUi {
             if (!isTranscriptDocumentVisible()) {
                 return;
             }
-            const latest = this.host.transcriptLastConv;
-            if (latest?.id === conv.id) {
-                this.host.transcriptStickyComposerUi.refreshTranscriptComposerActivityIfNeeded(latest);
-            }
+            this.transcriptComposerActivityIdleHandle?.cancel();
+            this.transcriptComposerActivityIdleHandle = scheduleTranscriptIdleWork(() => {
+                this.transcriptComposerActivityIdleHandle = undefined;
+                const latest = this.host.transcriptLastConv;
+                if (latest?.id === conv.id) {
+                    this.host.transcriptStickyComposerUi.refreshTranscriptComposerActivityIfNeeded(latest);
+                }
+            }, { when: isTranscriptDocumentVisible });
         }, TRANSCRIPT_COMPOSER_ACTIVITY_DEBOUNCE_MS);
     }
 
@@ -320,6 +364,8 @@ export class MobileProjectsTranscriptLiveUi {
             window.clearTimeout(this.transcriptComposerActivityTimer);
             this.transcriptComposerActivityTimer = undefined;
         }
+        this.transcriptComposerActivityIdleHandle?.cancel();
+        this.transcriptComposerActivityIdleHandle = undefined;
     }
 
     /** Header, composer stop/queue controls, and follow-up drain after streaming → idle. */

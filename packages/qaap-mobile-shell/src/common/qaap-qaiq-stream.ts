@@ -41,10 +41,13 @@ interface StreamMessageEnvelope {
     readonly usage?: ClaudeStreamUsageLike;
     readonly event?: {
         readonly type?: string;
+        readonly index?: number;
+        readonly content_block?: ContentBlock;
         readonly delta?: {
             readonly type?: string;
             readonly text?: string;
             readonly thinking?: string;
+            readonly partial_json?: string;
         };
     };
     readonly result?: string;
@@ -75,6 +78,8 @@ export class QaapQaiqStreamAccumulator {
     /** When true, ignore assistant snapshots without {@code timestamp_ms} (buffered flushes). */
     protected sawTimestampedAssistant = false;
     protected readonly toolsById = new Map<string, number>();
+    /** In-flight tool_use blocks keyed by stream index — args grow via input_json_delta. */
+    protected readonly liveToolsByIndex = new Map<number, { readonly id: string; readonly name: string; args: string }>();
     /** Latest usage reported for the in-flight turn (assistant snapshot or final result). */
     protected turnUsage: QaapAgentContextUsage | undefined;
 
@@ -160,15 +165,57 @@ export class QaapQaiqStreamAccumulator {
     }
 
     protected handleStreamEvent(envelope: StreamMessageEnvelope): void {
-        const delta = envelope.event?.delta;
-        if (!delta?.type) {
+        const event = envelope.event;
+        if (!event?.type) {
             return;
         }
-        if (delta.type === 'text_delta' && delta.text) {
-            this.liveText = mergeIncrementalStreamText(this.liveText, delta.text);
-            this.rebuildSegments();
-        } else if (delta.type === 'thinking_delta' && delta.thinking) {
-            this.liveThinking = mergeIncrementalStreamText(this.liveThinking, delta.thinking);
+        if (event.type === 'content_block_start') {
+            const block = event.content_block;
+            if (
+                block?.type === 'tool_use'
+                && block.id
+                && block.name
+                && event.index !== undefined
+            ) {
+                this.liveToolsByIndex.set(event.index, {
+                    id: block.id,
+                    name: block.name,
+                    args: block.input && Object.keys(block.input).length > 0
+                        ? JSON.stringify(block.input)
+                        : '',
+                });
+                this.rebuildSegments();
+            }
+            return;
+        }
+        if (event.type === 'content_block_delta') {
+            const delta = event.delta;
+            if (!delta?.type) {
+                return;
+            }
+            if (delta.type === 'text_delta' && delta.text) {
+                this.liveText = mergeIncrementalStreamText(this.liveText, delta.text);
+                this.rebuildSegments();
+            } else if (delta.type === 'thinking_delta' && delta.thinking) {
+                this.liveThinking = mergeIncrementalStreamText(this.liveThinking, delta.thinking);
+                this.rebuildSegments();
+            } else if (
+                delta.type === 'input_json_delta'
+                && delta.partial_json
+                && event.index !== undefined
+            ) {
+                const live = this.liveToolsByIndex.get(event.index);
+                if (live) {
+                    this.liveToolsByIndex.set(event.index, {
+                        ...live,
+                        args: live.args + delta.partial_json,
+                    });
+                    this.rebuildSegments();
+                }
+            }
+            return;
+        }
+        if (event.type === 'content_block_stop' && event.index !== undefined) {
             this.rebuildSegments();
         }
     }
@@ -302,6 +349,14 @@ export class QaapQaiqStreamAccumulator {
     }
 
     protected upsertTranscriptToolBlock(block: ContentBlock): void {
+        if (block.id) {
+            for (const [index, live] of this.liveToolsByIndex) {
+                if (live.id === block.id) {
+                    this.liveToolsByIndex.delete(index);
+                    break;
+                }
+            }
+        }
         const index = this.transcriptBlocks.findIndex(entry =>
             (entry.type === 'tool_use' || entry.type === 'server_tool_use') && entry.id === block.id);
         if (index >= 0) {
@@ -403,6 +458,21 @@ export class QaapQaiqStreamAccumulator {
                     segments.push({ type: 'text', content: normalized });
                 }
             }
+        }
+
+        const snapshotToolIds = new Set(
+            this.transcriptBlocks
+                .filter(block => block.type === 'tool_use' || block.type === 'server_tool_use')
+                .map(block => block.id)
+                .filter((id): id is string => !!id),
+        );
+        const liveToolIndexes = [...this.liveToolsByIndex.keys()].sort((a, b) => a - b);
+        for (const blockIndex of liveToolIndexes) {
+            const live = this.liveToolsByIndex.get(blockIndex);
+            if (!live || snapshotToolIds.has(live.id)) {
+                continue;
+            }
+            segments.push(this.buildToolSegment(live.id, live.name, live.args.trim() || '{}'));
         }
 
         this.segments = dedupeAgentMessageTextSegments(segments);

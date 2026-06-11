@@ -20,6 +20,8 @@ import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-tra
 
 /** Lightweight stdout/stderr host inside a streaming tool pill (no syntax highlight per tick). */
 export const TRANSCRIPT_TOOL_RESULT_STREAM_CLASS = 'theia-mobile-agent-tool-result-stream';
+/** Placeholder body mounted before tool stdout/result arrives (speculative pill). */
+export const TRANSCRIPT_TOOL_SPECULATIVE_CLASS = 'theia-mobile-agent-tool-pill-speculative';
 
 export class MobileProjectsTranscriptMessagesToolUi {
     constructor(
@@ -96,7 +98,7 @@ export class MobileProjectsTranscriptMessagesToolUi {
 
     createTranscriptSegmentDetails(
         segment: QaapAgentMessageSegmentDTO,
-        options?: { readonly defer?: boolean },
+        options?: { readonly defer?: boolean; readonly streaming?: boolean },
     ): HTMLElement {
         if (segment.type === 'thinking') {
             const details = document.createElement('details');
@@ -117,7 +119,10 @@ export class MobileProjectsTranscriptMessagesToolUi {
         }
         const block = document.createElement('div');
         block.className = 'theia-mobile-agent-transcript-content';
-        this.renderTranscriptRichContent(block, segment.content ?? '', { defer: options?.defer });
+        this.renderTranscriptRichContent(block, segment.content ?? '', {
+            defer: options?.defer,
+            streaming: options?.streaming,
+        });
         return block;
     }
 
@@ -257,6 +262,26 @@ export class MobileProjectsTranscriptMessagesToolUi {
         const language = resolveTranscriptCodeLanguage(fullPath, text);
         const view = createTranscriptCodeView(text, language);
         return this.createTranscriptClampedBlock(view, text.split('\n').length);
+    }
+
+    createTranscriptToolSpeculativePlaceholder(): HTMLElement {
+        const placeholder = document.createElement('div');
+        placeholder.className = TRANSCRIPT_TOOL_SPECULATIVE_CLASS;
+        placeholder.setAttribute('aria-hidden', 'true');
+        return placeholder;
+    }
+
+    ensureTranscriptToolSpeculativePlaceholder(body: HTMLElement, segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): void {
+        if (segment.finished || segment.result?.trim()) {
+            body.querySelector(`.${TRANSCRIPT_TOOL_SPECULATIVE_CLASS}`)?.remove();
+            return;
+        }
+        if (body.querySelector(`.${TRANSCRIPT_TOOL_SPECULATIVE_CLASS}`)) {
+            return;
+        }
+        if (body.childElementCount === 0 || body.querySelector('.theia-mobile-agent-tool-pill-approval')) {
+            body.append(this.createTranscriptToolSpeculativePlaceholder());
+        }
     }
 
     createTranscriptToolResultStreamBody(text: string): HTMLElement {
