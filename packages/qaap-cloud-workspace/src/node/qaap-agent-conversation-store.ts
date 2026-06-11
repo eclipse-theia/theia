@@ -38,6 +38,7 @@ import {
     mergeQaapAgentContextUsage,
     totalTokensFromContextUsage,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
+import { resolveAgentTurnFailureMessage } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-failure-message';
 import {
     createAgentStreamAccumulator,
     parseAgentLogForTranscript,
@@ -856,7 +857,8 @@ export class QaapAgentConversationStore {
             )) {
                 return;
             }
-            const reason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
+            const genericReason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
+            const reason = resolveAgentTurnFailureMessage(log, genericReason);
             const errored = this.markUserMessageFailed(withUsageBaseline, userMessageId, reason);
             const failureBody = log ? resolveAgentLogDisplayText(conv.agentId, log) : '';
             const withReply = failureBody && !agentMessageId
