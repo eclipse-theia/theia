@@ -43,7 +43,8 @@ describe('CapabilityVariableContribution', () => {
         // Set up PromptService
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
         const mockLogger = new MockLogger();
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, mockLogger);
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = mockLogger;
         container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
         container.bind<ILogger>(ILogger).toConstantValue(mockLogger);
 

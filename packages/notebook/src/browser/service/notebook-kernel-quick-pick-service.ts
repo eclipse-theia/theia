@@ -93,7 +93,7 @@ export class NotebookKernelQuickPickService {
     protected readonly openerService: OpenerService;
     @inject(NotebookKernelHistoryService)
     protected readonly notebookKernelHistoryService: NotebookKernelHistoryService;
-    @inject(ILogger) @named('notebook')
+    @inject(ILogger) @named('notebook:NotebookKernelQuickPickService')
     protected readonly logger: ILogger;
 
     async showQuickPick(editor: NotebookModel, wantedId?: string, skipAutoRun?: boolean): Promise<boolean> {
@@ -110,7 +110,7 @@ export class NotebookKernelQuickPickService {
                 }
             }
             if (!newKernel) {
-                console.warn(`wanted kernel DOES NOT EXIST, wanted: ${wantedId}, all: ${all.map(k => k.id)}`);
+                this.logger.warn(`wanted kernel DOES NOT EXIST, wanted: ${wantedId}, all: ${all.map(k => k.id)}`);
                 return false;
             }
         }
@@ -364,7 +364,7 @@ export class NotebookKernelQuickPickService {
                         return this.displaySelectAnotherQuickPick(editor, false);
                     }
                 } catch (ex) {
-                    console.error('Failed to select notebook kernel', ex);
+                    this.logger.error('Failed to select notebook kernel', ex);
                     return false;
                 }
             } else if (isKernelPick(selectedKernelPickItem)) {
@@ -379,7 +379,7 @@ export class NotebookKernelQuickPickService {
                     await selectedKernelPickItem.action.run(this.commandService);
                     return true;
                 } catch (ex) {
-                    console.error('Failed to select notebook kernel', ex);
+                    this.logger.error('Failed to select notebook kernel', ex);
                     return false;
                 }
             }

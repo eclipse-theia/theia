@@ -30,6 +30,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
     ];
 
     private collectionName: string;
+    private ownerId: string;
     private diagnosticsLimitPerResource: number;
     private proxy: LanguagesMain;
     private onDidChangeDiagnosticsEmitter: Emitter<theia.DiagnosticChangeEvent>;
@@ -38,8 +39,9 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
     private isDisposed: boolean;
     private onDisposeCallback: (() => void) | undefined;
 
-    constructor(name: string, maxCountPerFile: number, proxy: LanguagesMain, onDidChangeDiagnosticsEmitter: Emitter<theia.DiagnosticChangeEvent>) {
+    constructor(name: string, owner: string, maxCountPerFile: number, proxy: LanguagesMain, onDidChangeDiagnosticsEmitter: Emitter<theia.DiagnosticChangeEvent>) {
         this.collectionName = name;
+        this.ownerId = owner;
         this.diagnosticsLimitPerResource = maxCountPerFile;
         this.proxy = proxy;
         this.onDidChangeDiagnosticsEmitter = onDidChangeDiagnosticsEmitter;
@@ -51,6 +53,10 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
 
     get name(): string {
         return this.collectionName;
+    }
+
+    get owner(): string {
+        return this.ownerId;
     }
 
     set(uri: theia.Uri, diagnostics: theia.Diagnostic[] | undefined): void;
@@ -115,7 +121,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         if (this.has(uri)) {
             this.fireDiagnosticChangeEvent(uri);
             this.diagnostics.delete(uri.toString());
-            this.proxy.$changeDiagnostics(this.name, [[uri.toString(), []]]);
+            this.proxy.$changeDiagnostics(this.ownerId, [[uri.toString(), []]]);
         }
     }
 
@@ -123,7 +129,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         this.ensureNotDisposed();
         this.fireDiagnosticChangeEvent(this.getAllResourcesUris());
         this.diagnostics.clear();
-        this.proxy.$clearDiagnostics(this.name);
+        this.proxy.$clearDiagnostics(this.ownerId);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,7 +253,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
             }
         }
 
-        this.proxy.$changeDiagnostics(this.name, markers);
+        this.proxy.$changeDiagnostics(this.ownerId, markers);
     }
 }
 
@@ -256,7 +262,12 @@ export class Diagnostics {
     private static GENERATED_DIAGNOSTIC_COLLECTION_NAME_PREFIX = '_generated_diagnostic_collection_name_#';
 
     private proxy: LanguagesMain;
-    private diagnosticCollections: Map<string, DiagnosticCollection>; // id -> diagnostic collection
+    // Collections are keyed by their unique `owner` id (which is the same as `name` for the first
+    // collection with that name, but is suffixed when a duplicate name is requested). This matches
+    // VS Code's behavior and prevents collisions on the main side's marker owner namespace as well
+    // as a latent bug where disposing the first collection would evict the second from the map.
+    private diagnosticCollections: Map<string, DiagnosticCollection>;
+    private nextOwnerSuffix = 1;
 
     private diagnosticsChangedEmitter = new Emitter<theia.DiagnosticChangeEvent>();
     public readonly onDidChangeDiagnostics: Event<theia.DiagnosticChangeEvent> = this.diagnosticsChangedEmitter.event;
@@ -278,19 +289,26 @@ export class Diagnostics {
     }
 
     createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
+        let owner: string;
         if (!name) {
             do {
                 name = Diagnostics.GENERATED_DIAGNOSTIC_COLLECTION_NAME_PREFIX + this.getNextId();
             } while (this.diagnosticCollections.has(name));
-        } else if (this.diagnosticCollections.has(name)) {
-            console.warn(`Diagnostic collection with name '${name}' already exist.`);
+            owner = name;
+        } else if (!this.diagnosticCollections.has(name)) {
+            owner = name;
+        } else {
+            console.warn(`Diagnostic collection with name '${name}' already exists.`);
+            do {
+                owner = name + this.nextOwnerSuffix++;
+            } while (this.diagnosticCollections.has(owner));
         }
 
-        const diagnosticCollection = new DiagnosticCollection(name, Diagnostics.MAX_DIAGNOSTICS_PER_FILE, this.proxy, this.diagnosticsChangedEmitter);
+        const diagnosticCollection = new DiagnosticCollection(name, owner, Diagnostics.MAX_DIAGNOSTICS_PER_FILE, this.proxy, this.diagnosticsChangedEmitter);
         diagnosticCollection.setOnDisposeCallback(() => {
-            this.diagnosticCollections.delete(name!);
+            this.diagnosticCollections.delete(owner);
         });
-        this.diagnosticCollections.set(name, diagnosticCollection);
+        this.diagnosticCollections.set(owner, diagnosticCollection);
         return diagnosticCollection;
     }
 

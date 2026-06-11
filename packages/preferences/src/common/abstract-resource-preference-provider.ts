@@ -98,6 +98,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`Preference provider for '${uri}' was disposed.`))));
 
         this.preferenceStorage = this.preferenceStorageFactory(uri, this.getScope());
+        this.toDispose.push(this.preferenceStorage);
         this.preferenceStorage.onDidChangeFileContent(async ({ content, fileOK }) => {
             this.fileExists = fileOK;
             this.readPreferencesFromContent(content);

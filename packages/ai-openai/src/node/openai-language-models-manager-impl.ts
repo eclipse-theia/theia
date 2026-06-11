@@ -14,12 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, ReasoningSupport } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+
+interface ResolvedModelMetadata {
+    maxInputTokens?: number;
+    reasoningSupport?: ReasoningSupport;
+    developerMessageSettings: DeveloperMessageSettings;
+    enableStreaming: boolean;
+    supportsStructuredOutput: boolean;
+}
 
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
@@ -46,7 +55,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     }
 
     protected calculateStatus(modelDescription: OpenAiModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
-        // Always mark custom models (models with url) as ready for now as we do not know about API Key requirements
+        // Custom models (with `url`) are always marked ready since their API key requirements are unknown.
         if (modelDescription.url) {
             return { status: 'ready' };
         }
@@ -80,8 +89,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             };
             const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl);
 
-            // Determine the effective API key for status
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
+            const metadata = this.resolveMetadata(modelDescription);
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
@@ -90,18 +99,19 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {
                     model: modelDescription.model,
-                    enableStreaming: modelDescription.enableStreaming,
+                    enableStreaming: metadata.enableStreaming,
                     url: modelDescription.url,
                     apiKey: apiKeyProvider,
                     apiVersion: apiVersionProvider,
                     deployment: modelDescription.deployment,
-                    developerMessageSettings: modelDescription.developerMessageSettings || 'developer',
-                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                    developerMessageSettings: metadata.developerMessageSettings,
+                    supportsStructuredOutput: metadata.supportsStructuredOutput,
                     status,
                     maxRetries: modelDescription.maxRetries,
                     useResponseApi: modelDescription.useResponseApi ?? false,
                     proxy: proxyUrl,
-                    reasoningSupport: modelDescription.reasoningSupport
+                    reasoningSupport: metadata.reasoningSupport,
+                    maxInputTokens: metadata.maxInputTokens
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -109,23 +119,41 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.id,
                         modelDescription.model,
                         status,
-                        modelDescription.enableStreaming,
+                        metadata.enableStreaming,
                         apiKeyProvider,
                         apiVersionProvider,
-                        modelDescription.supportsStructuredOutput,
+                        metadata.supportsStructuredOutput,
                         modelDescription.url,
                         modelDescription.deployment,
                         this.openAiModelUtils,
                         this.responseApiUtils,
-                        modelDescription.developerMessageSettings,
+                        metadata.developerMessageSettings,
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
                         proxyUrl,
-                        modelDescription.reasoningSupport
+                        metadata.reasoningSupport,
+                        metadata.maxInputTokens
                     )
                 ]);
             }
         }
+    }
+
+    /**
+     * Merges description overrides with model-id-based defaults from {@link getOpenAiModelDefaults}.
+     * Description fields win, allowing custom-endpoint preferences to override capabilities for
+     * non-OpenAI models. Custom endpoints (with a `url`) skip the context window lookup since we
+     * don't know which model is actually behind the endpoint.
+     */
+    protected resolveMetadata(description: OpenAiModelDescription): ResolvedModelMetadata {
+        const defaults = getOpenAiModelDefaults(description.model);
+        return {
+            maxInputTokens: description.url ? undefined : defaults.contextWindow,
+            reasoningSupport: description.reasoningSupport ?? defaults.reasoningSupport,
+            developerMessageSettings: description.developerMessageSettings ?? defaults.developerMessageSettings ?? 'developer',
+            enableStreaming: description.enableStreaming ?? defaults.supportsStreaming ?? true,
+            supportsStructuredOutput: description.supportsStructuredOutput ?? defaults.supportsStructuredOutput ?? true
+        };
     }
 
     removeLanguageModels(...modelIds: string[]): void {

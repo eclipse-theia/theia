@@ -133,6 +133,36 @@ describe('localization-manager#translateLanguage', () => {
         });
     });
 
+    it('should re-translate forced keys even if they exist in target', async () => {
+        const input = { a: 'new-a' };
+        const target = { a: 'old-translation' };
+        await manager.translateLanguage(input, target, 'EN', {
+            ...defaultOptions,
+            forceKeys: new Set(['a'])
+        });
+        assert.deepStrictEqual(target, { a: '[new-a]' });
+    });
+
+    it('should re-translate nested forced keys', async () => {
+        const input = { a: { b: 'new-b' } };
+        const target = { a: { b: 'old-translation' } };
+        await manager.translateLanguage(input, target, 'EN', {
+            ...defaultOptions,
+            forceKeys: new Set(['a/b'])
+        });
+        assert.deepStrictEqual(target, { a: { b: '[new-b]' } });
+    });
+
+    it('should not re-translate keys not in force set', async () => {
+        const input = { a: 'new-a', b: 'new-b' };
+        const target = { a: 'old-a', b: 'old-b' };
+        await manager.translateLanguage(input, target, 'EN', {
+            ...defaultOptions,
+            forceKeys: new Set(['a'])
+        });
+        assert.deepStrictEqual(target, { a: '[new-a]', b: 'old-b' });
+    });
+
     it('should pass context to the localization function', async () => {
         let receivedContext: string | undefined;
         const contextCapture = new LocalizationManager(async (parameters: DeeplParameters) => {

@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "Bir istek başarısız olduğunda maksimum yeniden deneme sayısı. Varsayılan olarak 3'tür."
           },
-          "mdDescription": "Anthropic API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse, `model` `id` olarak kullanılır.            \n            - verilen url'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global anthropic API anahtarının kullanıldığını belirtmek için `true` kullanın.            \n            - akışın kullanılmayacağını belirtmek için `enableStreaming: false` belirtin.            \n            - Prompt önbelleklemenin kullanılmayacağını belirtmek için `useCaching: false` belirtin. \n- Bir istek başarısız olduğunda maksimum yeniden deneme sayısını belirtmek için `maxRetries: <sayı>` belirtin. Varsayılan değer 3'tür.",
+          "mdDescription": "Anthropic API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse `model`, `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global Anthropic API anahtarının kullanıldığını belirtmek için `true` kullanın.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` belirtin.            \n            - Hızlı önbelleklemenin kullanılmayacağını belirtmek için `useCaching: false` belirtin.            \n            - Bir istek başarısız olduğunda maksimum yeniden deneme sayısını belirtmek için `maxRetries: <number>` belirtin. Varsayılan değer 3'tür.            \n            Akıl yürütme yetenekleri ve maksimum çıktı belirteci sınırı, uç noktanın `/v1/models` yanıtından türetilir.",
           "modelId": {
             "title": "Model Kimliği"
-          },
-          "reasoningApi": {
-            "title": "Hangi Anthropic akıl yürütme API şekli kullanılacak: uyarlanabilir düşünme için `effort` (Claude 4.6+), eski genişletilmiş düşünme için `budget` (Claude 4.0–4.5) veya devre dışı bırakmak için `null`. Varsayılan olarak model adından çıkarılır."
-          },
-          "supportsXHighEffort": {
-            "title": "Modelin Anthropic `xhigh` çaba değerini kabul edip etmediğini gösterir. Varsayılan olarak model adından çıkarılır."
           },
           "url": {
             "title": "Modelin barındırıldığı Anthropic API uyumlu uç nokta"
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "{0} ajanı için hazır bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "defaultAgent": {
           "description": "İsteğe bağlı: Kullanıcı sorgusunda @<agent-name> ile açıkça belirtilen bir ajan yoksa, çağrılacak Sohbet Ajanının <agent-name> adı. Varsayılan Ajan yapılandırılmamışsa, Theia'nın varsayılanları uygulanır."
+        },
+        "defaultToolConfirmation": {
+          "description": "\"ai-features.chat.toolConfirmation\" altında araca özgü bir girişi olmayan araçlar için kullanılan varsayılan onay davranışı. Otomatik olarak onaylanmadan önce açıkça onay gerektiren araçlar, bu ayardan bağımsız olarak her zaman varsayılan olarak \"onayla\" seçeneğine ayarlanır."
         },
         "fromClipboard": "$(clippy) Panodan",
         "fromClipboardDescription": "Panodan resmi yapıştır",
@@ -196,15 +193,15 @@
           "description": "Görev bağlamı açıklamalarının saklanacağı ve alınacağı çalışma alanı göreceli yolu. Boş değer olarak ayarlanırsa, oluşturulan görev bağlamları diske değil belleğe kaydedilir."
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "Onay almadan araçları otomatik olarak çalıştır"
+          },
           "confirm": {
             "description": "Araçları çalıştırmadan önce onay isteyin"
           },
-          "description": "Farklı araçlar için onay davranışını yapılandırın. Anahtar, araç kimliğidir; değer ise onay modudur. Tüm araçlar için genel bir varsayılan ayar belirlemek üzere anahtar olarak \"*\" kullanın.",
+          "description": "Tek tek araçlar için onay davranışını yapılandırın. Anahtar, araç kimliğidir; değer ise onay modudur. Tüm araçlar için varsayılan ayarı değiştirmek için \"ai-features.chat.defaultToolConfirmation\" kullanın.",
           "disabled": {
             "description": "Aracın çalıştırılmasını devre dışı bırak"
-          },
-          "yolo": {
-            "description": "Onay almadan araçları otomatik olarak çalıştır"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "Yetenek Yapılandırmasını Değiştir"
         },
         "chatInputAriaLabel": "Mesajınızı buraya yazın",
+        "chatRequestFailedWithDetail": "Sohbet isteği başarısız: {0}",
         "chatResponses": "Sohbet yanıtları",
         "clearAllSelections": "Arama dizesini ve yetenek seçimlerini temizle",
         "code-part-renderer": {
-          "copied": "Kopyalandı",
           "generatedCode": "Oluşturulan Kod"
         },
         "collapseAll": "Tümünü daralt",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "Komutun kimliği \"{0}\"dir, ancak Sohbet penceresinden çalıştırılamaz."
         },
-        "confirmDeleteChatMsg": "Bu sohbeti silmek istediğinizden emin misiniz?",
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "couldNotSendRequestToSession": "\"{0}\" isteği {1} oturumuna gönderilemedi.",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "Odak Sohbet Girişi",
         "focusResponse": "Odak Sohbet Yanıtı",
         "functions": "İşlevler",
-        "functionsDescription": "Theia uzantıları tarafından sağlanan yerleşik işlevler",
+        "functionsDescription": "{0}u uzantıları tarafından sağlanan yerleşik işlevler",
         "genericCapabilities": "Genel Yetenekler",
         "mcpFunctionsDescription": "Bağlı sunuculardan Model Bağlam Protokolü (MCP) işlevleri",
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
@@ -305,9 +301,6 @@
         "persistedSession": "Kalıcı oturum (geri yüklemek için tıklayın)",
         "promptFragmentsDescription": "Sohbete eklenecek özel komut istemi parçaları",
         "reasoning": {
-          "high": "Yüksek",
-          "low": "Düşük",
-          "medium": "Orta",
           "minimal": "Minimal"
         },
         "removeChat": "Sohbeti Kaldır",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "Önceki sohbet isteği başka bir temsilci tarafından ele alınmıştır. Claude Code diğer mesajları görmez.",
         "directory": "Dizin",
         "domain": "Etki alanı",
+        "edit": "{0} dosyasını düzenle",
         "editAutomatically": "Otomatik olarak düzenle",
         "editing": "Düzenleme",
         "editsCount": "{0} düzenlemeler",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "Bu aracı, Theia IDE'deki kod düzenleyicide satır içi kod tamamlama özelliği sağlar.",
+          "description": "Bu ajan, {0}'daki kod düzenleyicide satır içi kod tamamlama özelliği sağlar.",
           "vars": {
             "file": {
               "description": "Düzenlenmekte olan dosyanın URI'si"
@@ -587,7 +581,7 @@
           "expired": "Yetki süresi doldu veya reddedildi. Lütfen tekrar deneyin.",
           "hint": "Kodu girdikten ve yetkilendirdikten sonra, aşağıdaki \"Yetkilendirdim\" düğmesini tıklayın.",
           "initiating": "Kimlik doğrulama başlatılıyor...",
-          "instructions": "Theia'nın GitHub Copilot'u kullanmasına izin vermek için aşağıdaki URL'yi ziyaret edin ve kodu girin:",
+          "instructions": "{0}'ın GitHub Copilot'u kullanmasına izin vermek için aşağıdaki URL'yi ziyaret edin ve kodu girin:",
           "openGitHub": "GitHub'ı aç",
           "privacy": "Theia açık kaynaklı bir projedir. GitHub Copilot hizmetlerine bağlanmak için yalnızca GitHub kullanıcı adınıza erişim talep ediyoruz — başka hiçbir veriye erişilmez veya depolanmaz.",
           "success": "GitHub Copilot'a başarıyla giriş yapıldı!",
@@ -650,8 +644,8 @@
           "label": "AI Yapılandırması"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - Ajan Tamamlandı",
-          "namedAgentCompleted": "Theia - Ajan \"{0}\" Tamamlandı"
+          "agentCompleted": "{0} - Aracı Tamamlandı",
+          "namedAgentCompleted": "{0} - Aracı \"{1}\" Tamamlandı"
         },
         "capabilityVariable": {
           "argDescription": "Komut istemi parçası kimliği, isteğe bağlı olarak \"varsayılan açık\" veya \"varsayılan kapalı\" (varsayılan olarak kapalı) ifadesini takip eder.",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "Kod otomatik tamamlama senaryoları için en uygunudur."
+          },
+          "fast": {
+            "description": "Derin mantık gerektirmeyen keşif veya temel araç çağırma gibi daha basit görevler için daha hızlı ve daha ucuz modeller."
           },
           "summarize": {
             "description": "İçeriğin özetlenmesi ve yoğunlaştırılması için öncelik verilen modeller."
@@ -744,7 +741,7 @@
           "description": "Şu anda açık olan tüm dosyalara kısa referans (göreceli yollar, virgülle ayrılmış)"
         },
         "openEditorsVariable": {
-          "description": "Çalışma alanı kök dizinine göre, şu anda açık olan tüm dosyaların virgülle ayrılmış listesi."
+          "description": "Çalışma alanına göre yollar (ör. my-project/src/index.ts) olarak, şu anda açık olan tüm dosyaların virgülle ayrılmış listesi."
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "Değişken değerini görüntüleyemiyor.",
         "unableToResolveVariable": "Değişken çözülemiyor.",
         "variable-contribution": {
-          "builtInVariable": "Theia Yerleşik Değişken",
-          "currentAbsoluteFilePath": "Şu anda açık olan dosyanın mutlak yolu. Çoğu aracının göreceli dosya yolu (mevcut çalışma alanına göre) beklediğini lütfen unutmayın.",
-          "currentFileContent": "Şu anda açık olan dosyanın düz içeriği. Bu, içeriğin nereden geldiği bilgisini içermez. Çoğu aracının göreceli dosya yolu (mevcut çalışma alanına göre) ile daha iyi çalıştığını lütfen unutmayın.",
-          "currentRelativeDirPath": "Şu anda açık olan dosyayı içeren dizinin göreceli yolu.",
-          "currentRelativeFilePath": "Şu anda açık olan dosyanın göreceli yolu.",
-          "currentSelectedText": "Açık dosyada şu anda seçili olan düz metin. Bu, içeriğin nereden geldiği bilgisini hariç tutar. Çoğu aracının göreceli dosya yolu (mevcut çalışma alanına göre) ile daha iyi çalıştığını lütfen unutmayın.",
-          "dotRelativePath": "Şu anda açık olan dosyanın göreceli yoluna kısa bir referans ('currentRelativeFilePath')."
+          "builtInVariable": "{0} Yerleşik Değişken",
+          "currentAbsoluteFilePath": "Şu anda açık olan dosyanın mutlak yolu.",
+          "currentFileContent": "Şu anda açık olan dosyanın düz içeriği. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
+          "currentRelativeDirPath": "Şu anda açık olan dosyayı içeren dizinin çalışma alanına göre yolu (ör. my-project/src).",
+          "currentRelativeFilePath": "Şu anda açık olan dosyanın çalışma alanına göre yolu (ör. my-project/src/index.ts).",
+          "currentSelectedText": "Açılan dosyada şu anda seçili olan düz metin. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
+          "dotRelativePath": "Şu anda açık olan dosyanın çalışma alanına göre yoluna kısa bir başvuru ('currentRelativeFilePath')."
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "AI geçmişini aç...",
         "request-card": {
           "promptVariant": "Komut İstemi Varyantı",
-          "request": "Talep",
           "response": "Yanıt",
-          "timestamp": "Zaman damgası",
-          "title": "Talep"
+          "timestamp": "Zaman damgası"
         },
         "sortChronologically": {
           "tooltip": "Kronolojik olarak sıralama"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "Plan Modu",
             "planNext": "Plan Modu (Sonraki)",
             "simple": "Basit Mod"
           },
@@ -1041,7 +1035,7 @@
             "label": "AI komutu",
             "message": "{0} ile args ile geri çağırma yürütme. İlk arg, dinamik olarak kaydedilen komut için kaydedilen komut kimliğidir. Diğer args, işleyici için gerçek args'lardır."
           },
-          "description": "Bu ajan, kullanıcının şu anda çalıştığı araç olan Theia IDE içinde kullanıcının yürütebileceği tüm komutları bilir. Kullanıcı talebine göre doğru komutu bulabilir ve kullanıcının bunu yürütmesine izin verebilir.",
+          "description": "Bu aracı, kullanıcının çalıştırabileceği tüm komutları bilir. Kullanıcı isteğine göre doğru komutu bulabilir ve ardından kullanıcının bunu çalıştırmasına izin verebilir.",
           "response": {
             "customHandler": "Şunu deneyin:",
             "noCommand": "Üzgünüm, böyle bir komut bulamıyorum.",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Theia'da kullanılabilir komutların listesi."
+              "description": "Kullanılabilir komutların listesi."
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "Ajanın GitHub ile etkileşime girmesine olanak tanır. Bunun için ajan, sorunları, çekme isteklerini, yorumları ve depo içeriğini okuyup yazabilen GitHub ajanına yetki verebilir."
         },
         "githubRepoName": {
-          "description": "Mevcut GitHub deposunun adı (ör. \"eclipse-theia/theia\")"
+          "description": "Çalışma alanı kökleriyle ilişkili GitHub depoları (ör. \"eclipse-theia/theia\")"
         },
         "howToGetStarted": "Başlangıç",
         "model-selection-description": "[AI Yapılandırma Görünümü]({0}) içinde her bir AI ajanı tarafından hangi Büyük Dil Modellerinin (LLM) kullanılacağını seçin.",
@@ -1112,6 +1106,30 @@
           "progressMessage": "En uygun aracıyı belirleme",
           "response": {
             "delegatingToAgent": "`@{0}`'e devretme"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "Mimari, kullanım, kurallar ve testlerin keşfini Explore ajansına devreder. Devre dışı bırakıldığında, PR gözden geçiren kendi araçlarıyla keşif yapar.",
+              "name": "Delege Edilmiş Keşif"
+            },
+            "githubInfo": {
+              "description": "Pull istek meta verilerini, farkları, yorumları, denetimleri ve bağlantılı sorunları almak için GitHub aracısına yetki verir.",
+              "name": "GH PR Bilgisi"
+            },
+            "localCheckout": {
+              "description": "Pull isteğini yerel olarak kontrol eder ve mevcut çalışma ağacındaki değişiklikleri korur.",
+              "name": "Ödeme"
+            },
+            "localValidation": {
+              "description": "Pull isteği için yerel yükleme, derleme, lint, test veya benzer doğrulama görevlerini çalıştırır.",
+              "name": "Derleme"
+            },
+            "pendingGitHubReview": {
+              "description": "Kullanıcının açık onayından sonra, hazırlanan satır içi yorumlarla bekleyen bir çekme isteği incelemesi oluşturmak veya güncellemek için GitHub aracısına yetki verir.",
+              "name": "GH İncelemesi Bekleniyor"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "Hata mesajı",
           "lastActivity": "Son etkinlik",
           "lastMessage": "Son mesaj",
           "messages": "Mesajlar",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "UI'da özel modeli tanımlamak için kullanılan benzersiz bir tanımlayıcı."
           },
-          "mdDescription": "OpenAI API ile uyumlu özel modelleri, örneğin `vllm` aracılığıyla entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse, `model` `id` olarak kullanılır.            \n            - verilen url'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global OpenAI API anahtarının kullanıldığını belirtmek için `true` kullanın.            \n            - Azure'da verilen url'de sunulan API'ye erişmek için bir `apiVersion` sağlayın. Global OpenAI API sürümünün kullanıldığını belirtmek için `true` kullanın.            \n            - Azure dağıtımınız için bir `deployment` adı sağlayın.            \n            - Geliştirici mesajının nasıl dahil edileceğini kontrol etmek için `developerMessageSettings`'i `user`, `system`, `developer`, `mergeWithFollowingUserMessage` veya `skip` olarak ayarlayın (`user`, `system` ve `developer` rol olarak kullanılırken, `mergeWithFollowingUserMessage`, aşağıdaki kullanıcı mesajının önüne sistem mesajını ekler veya bir sonraki mesaj kullanıcı mesajı değilse sistem mesajını kullanıcı mesajına dönüştürür. `skip`, sistem mesajını kaldırır). Varsayılan değer `developer`'dır.            \n            - Yapılandırılmış çıktının kullanılmayacağını belirtmek için `supportsStructuredOutput: false` belirtin.\n- Akışın kullanılmayacağını belirtmek için `enableStreaming: false` belirtin.\n- Chat Completion API yerine daha yeni OpenAI Response API'yi kullanmak için `useResponseApi: true` belirtin (uyumlu uç nokta gerektirir).            \n            Daha fazla bilgi için [belgelerimize](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) bakın.",
+          "mdDescription": "Örneğin `vllm` aracılığıyla OpenAI API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse `model`, `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global OpenAI API anahtarının kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure'da verilen URL'de sunulan API'ye erişmek için bir `apiVersion` sağlayın. Global OpenAI API sürümünün kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure dağıtımınız için bir `deployment` adı sağlayın.            \n            - geliştirici mesajının nasıl dahil edileceğini kontrol etmek için `developerMessageSettings` değerini `user`, `system`, `developer`, `mergeWithFollowingUserMessage` veya `skip` seçeneklerinden birine ayarlayın (burada `user`, `system` ve `developer` bir rol olarak kullanılacak, `mergeWithFollowingUserMessage` ise takip eden kullanıcı mesajının başına sistem mesajını ekleyecek veya bir sonraki mesaj bir kullanıcı mesajı değilse sistem mesajını kullanıcı mesajına dönüştürecektir. `skip` ise sadece sistem mesajını kaldıracaktır).            Varsayılan değer `developer`'dır.            \n            - Yapılandırılmış çıktının kullanılmayacağını belirtmek için `supportsStructuredOutput: false` değerini belirtin.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` değerini belirtin.            \n            - Chat Completion API yerine daha yeni OpenAI Response API'sini kullanmak için `useResponseApi: true` değerini belirtin (uyumlu uç nokta gerektirir).            \n            - Sohbet akıl yürütme seçicisini etkinleştirmek için `reasoningSupport` belirtin. `supportedLevels` (ör. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) ve isteğe bağlı bir `defaultLevel` içeren bir nesne sağlayın.            \n            Daha fazla bilgi için [belgelerimize](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) bakın.",
           "modelId": {
             "title": "Model Kimliği"
           },
           "reasoningSupport": {
-            "title": "Modelin akıl yürütme yeteneklerini bildirir. Ayarlandığında, sohbet bu model için bir akıl yürütme seçici gösterir. Devre dışı bırakmak için `null` olarak ayarlayın. Varsayılan olarak model adından çıkarılır."
+            "title": "Modelin akıl yürütme yeteneklerini bildirir. Ayarlandığında, sohbet bu model için bir akıl yürütme seçici gösterir."
           },
           "supportsStructuredOutput": {
             "title": "Modelin yapılandırılmış çıktıyı destekleyip desteklemediğini gösterir. Varsayılan olarak `true`."
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "Terminal komutu hakkında soru sor...",
         "hitEnterConfirm": "Onaylamak için Enter tuşuna basın.",
         "howCanIHelp": "Nasıl yardımcı olabilirim?",
+        "terminalCommandBlockAIVariable": {
+          "description": "Yürütülen bir terminal komutunu ve buna karşılık gelen çıktıyı depolar.",
+          "index": {
+            "description": "Terminal geçmişindeki komut bloğunun dizini. Belirtilmezse varsayılan olarak son komut kullanılır."
+          },
+          "quickPick": {
+            "placeholder": "Komutları filtrelemek için yazın",
+            "title": "Terminal geçmişinden bir komut ve çıktısını seçin"
+          }
+        },
         "tryAgain": "Tekrar deneyin...",
         "useArrowsAlternatives": " veya ⇅ kullanarak alternatifleri göster..."
       },
@@ -1485,6 +1514,7 @@
             "title": "Model Kimliği"
           },
           "model": {
+            "provider": "Sağlayıcı",
             "title": "Model Adı"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "AI araçlarının okuyabileceği çalışma alanı dışındaki mutlak yolların veya dosya URI'lerinin (dizinler veya dosyalar) listesi. Kullanıcı ana dizinine atıfta bulunmak için `~` karakterini destekler. Varsayılan olarak boştur; yalnızca isteğe bağlıdır. getFileContent, findFilesByPattern, getWorkspaceFileList ve getWorkspaceDirectoryStructure tarafından desteklenir. Çalışma alanı güvenilir olmadığında, çalışma alanı kapsamındaki değerler yok sayılır. İzin verilen dizinler içindeki sembolik bağlantılar takip edilir ve izin verilen liste dışındaki dosyalara yönlendirebilir; yalnızca içeriğine güvendiğiniz dizinleri ekleyin.",
+          "title": "İzin Verilen Harici Yollar"
+        },
         "coderAgent": {
           "description": "Yazılım geliştiricilere yardımcı olmak için tasarlanmış, Theia IDE'ye entegre bir AI asistanı. Bu ajan, kullanıcıların çalışma alanına erişebilir, mevcut tüm dosya ve klasörlerin listesini alabilir ve bunların içeriğini geri getirebilir. Ayrıca, kullanıcıya dosya değişiklikleri önerebilir. Böylece, kullanıcıya kodlama görevlerinde veya dosya değişikliklerini içeren diğer görevlerde yardımcı olabilir."
         },
         "considerGitignore": {
-          "description": "Etkinleştirildiğinde, global .gitignore dosyasında (beklenen konum çalışma alanı köküdür) belirtilen dosya/klasörleri hariç tutar.",
+          "description": "Etkinleştirilirse, her çalışma alanı kök dizininde bulunan .gitignore kurallarıyla eşleşen dosya/klasörleri hariç tutar.",
           "title": ".gitignore'u düşünün."
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE'de AI Desteği mevcuttur!",
+        "header": "{0}'da AI desteği artık kullanılabilir!",
         "openAIChatView": "Başlamak için şimdi AI Sohbet Görünümünü açın!"
       },
       "apiComparator": "{0} API Uyumluluğu",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "AI Özellikleri",
       "hostedPlugin": "Barındırılan Eklenti",
+      "input": {
+        "browse": "Göz at"
+      },
       "toolbar": "Araç çubuğu"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "Çalışan Konteynere Ekle",
+        "attachError": "Konteynere bağlanılamadı: {0}",
+        "attachWarning": "Bir konteynere bağlanmak, içindeki kodu çalıştırır. Yalnızca kaynağına güvendiğiniz konteynerlere bağlanın.",
+        "attachWarningTitle": "Konteynere Ekle",
+        "attaching": "Konteynere bağlanma",
+        "cliAttachError": "Konteynere bağlanılamadı: {0}",
+        "cliContainerNotFound": "\"{0}\" konteyneri bulunamadı veya çalışmıyor.",
         "connect": "Konteynerde Yeniden Aç",
+        "enterCustomPath": "Özel yol girin...",
+        "enterWorkspacePath": "Konteynerin içindeki çalışma alanı yolunu girin",
+        "foundConfigMsg": "{0} adresinde bir devcontainer.json dosyası bulundu. Bu dosyanın ekleme sonrası ayarlarını (uzantılar, bağlantı noktası yönlendirme vb.) uygulamak ister misiniz?",
+        "foundConfigTitle": "Dev Container Yapılandırması Bulundu",
         "noDevcontainerFiles": "Çalışma alanında devcontainer.json dosyası bulunamadı. Devcontainer.json dosyasının bulunduğu bir .devcontainer dizini olduğundan emin olun.",
         "noRunningContainers": "Çalışan konteyner bulunamadı.",
         "rebuild": "Konteyneri Yeniden Oluştur",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "Konteynerde Yeniden Aç",
         "selectContainer": "Eklenecek çalışan bir konteyner seçin",
         "selectDevcontainer": "Bir devcontainer.json dosyası seçin",
+        "selectWorkspacePath": "Konteyner içindeki bir çalışma alanı yolu seçin",
         "suggestion": "Bu çalışma alanında bir geliştirme konteyneri yapılandırması bulunmaktadır. Konteynerde yeniden açmak ister misiniz?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "Grubu Sil",
       "deletePage": "Sayfayı Sil",
       "deleteTerminal": "Terminali Sil",
-      "group": "Grup",
       "label": "Terminaller",
       "maximizeBottomPanel": "Alt Paneli Maksimize Et",
       "minimizeBottomPanel": "Alt Paneli Küçült",
@@ -2298,6 +2345,7 @@
       "iconSet": "Simge Seti",
       "insertGroupLeft": "Grup Ayırıcı Ekle (Sol)",
       "insertGroupRight": "Grup Ayırıcı Ekle (Sağ)",
+      "jsonError": "toolbar.json dosyanızı okurken bir hata oluştu. Lütfen araç çubuğuna sağ tıklayıp \"Araç Çubuğunu Özelleştir\" seçeneğini seçerek dosyanın bozuk olup olmadığını kontrol edin. Ayrıca, \"Araç Çubuğu Varsayılanlarını Geri Yükle\" seçeneğini seçerek dosyayı varsayılan ayarlarına sıfırlayabilirsiniz.",
       "leftColumn": "Sol Sütun",
       "openJSON": "Araç Çubuğunu Özelleştir (JSON'u Aç)",
       "removeCommand": "Araç Çubuğundan Komutu Kaldır",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "Her iki kaynak da dizindir.",
-      "clickToManageTrust": "Güven ayarlarını yönetmek için tıklayın.",
       "compareWithEachOther": "Birbirleriyle Karşılaştır",
       "confirmDeletePermanently.description": "Çöp Kutusu kullanılarak \"{0}\" dosyası silinemedi. Bunun yerine kalıcı olarak silmek ister misiniz?",
       "confirmDeletePermanently.solution": "Tercihler bölümünden Çöp Kutusu'nun kullanımını devre dışı bırakabilirsiniz.",
@@ -2368,7 +2415,7 @@
       "removeFolder": "Aşağıdaki klasörü çalışma alanından kaldırmak istediğinizden emin misiniz?",
       "removeFolders": "Aşağıdaki klasörleri çalışma alanından silmek istediğinizden emin misiniz?",
       "restrictedModeDescription": "Bu çalışma alanı güvenilir olmadığı için bazı özellikler devre dışı bırakılmıştır.",
-      "restrictedModeNote": "*Lütfen dikkat: Çalışma alanı güven özelliği şu anda Theia'da geliştirme aşamasındadır; henüz tüm özellikler çalışma alanı güveniyle entegre edilmemiştir*",
+      "restrictedModeFeatures": "Görev yürütme, hata ayıklama, uzantılar ve yapay zeka gibi özellikler, potansiyel olarak zararlı kodlara karşı koruma sağlamak amacıyla devre dışı bırakılmıştır.",
       "schema": {
         "folders": {
           "description": "Çalışma alanındaki kök klasörler"
@@ -2376,9 +2423,11 @@
         "title": "Çalışma Alanı Dosyası"
       },
       "trashTitle": "{0}'ı Çöp Kutusu'na taşıyın",
-      "trustDialogMessage": "Yazarlara güveniyorsanız, bu klasördeki kodlar çalıştırılabilir.\n\nGüvenmiyorsanız, bazı özellikler devre dışı bırakılacaktır.\n\nÇalışma alanı güven özelliği şu anda Theia'da geliştirme aşamasındadır; henüz tüm özellikler çalışma alanı güveniyle entegre edilmemiştir.\nAyrıntılar için durum çubuğundaki \"Kısıtlı Mod\" göstergesini kontrol edin.",
+      "trustDialogMessage": "Yazarlara güveniyorsanız, görevler, hata ayıklama yapılandırmaları, uzantılar ve AI özellikleri dahil olmak üzere bu klasördeki kodlar çalıştırılabilir.",
+      "trustDialogRestricted": "Yazarlara güvenmiyorsanız, çalışma alanı Kısıtlı Modda açılır; bu modda, potansiyel olarak zararlı kodlara karşı koruma sağlamak amacıyla bu özellikler devre dışı bırakılır.",
       "trustEmptyWindow": "Boş çalışma alanının varsayılan olarak güvenilir olup olmadığını kontrol eder.",
       "trustEnabled": "Çalışma alanı güveninin etkinleştirilip etkinleştirilmeyeceğini kontrol eder. Devre dışı bırakıldığında, tüm çalışma alanları güvenilir olarak kabul edilir.",
+      "trustLearnMore": "Theia'nın Çalışma Alanı Güveni hakkında daha fazla bilgi edinin",
       "trustTrustedFolders": "Sorgulama yapılmadan güvenilen klasör URI'lerinin listesi.",
       "untitled-cleanup": "Başlıksız birçok çalışma alanı dosyası var gibi görünüyor. Lütfen {0} adresini kontrol edin ve kullanılmayan dosyaları silin.",
       "variables": {

@@ -44,7 +44,8 @@ describe('PromptVariableContribution', () => {
         // Set up PromptService
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
         const logger = sinon.createStubInstance(Logger);
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = logger;
         container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
         container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
 

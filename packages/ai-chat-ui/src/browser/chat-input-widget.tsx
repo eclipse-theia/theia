@@ -31,14 +31,14 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -67,7 +67,7 @@ import {
 } from './chat-view-preferences';
 import {
     buildBarTooltip,
-    CHAT_CONTEXT_WINDOW_SIZE,
+    CHAT_CONTEXT_WINDOW_SIZE_FALLBACK,
     computeSessionTokenUsage,
     decideTokenUsageWarning,
     getLatestTokenUsage,
@@ -147,6 +147,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextFileValidationService) @optional()
     protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(ILogger) @named('ai-chat-ui:AIChatInputWidget')
+    protected readonly logger: ILogger;
 
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
@@ -266,6 +269,8 @@ export class AIChatInputWidget extends ReactWidget {
     protected currentReasoningSupport?: ReasoningSupport;
     /** Id (`provider/model`) of the model that backs {@link currentReasoningSupport}; used to resolve preference defaults. */
     protected currentLanguageModelId?: string;
+    /** Context window (max input tokens) of the receiving agent's primary model; falls back to {@link CHAT_CONTEXT_WINDOW_SIZE_FALLBACK} when unknown. */
+    protected currentMaxInputTokens?: number;
     /** Saved reasoning selection for the receiving agent (loaded from {@link AISettingsService}); kept in sync with the persisted value. */
     protected savedReasoning?: ReasoningSettings;
 
@@ -333,15 +338,24 @@ export class AIChatInputWidget extends ReactWidget {
     protected async updateReasoningSupport(agentId: string | undefined): Promise<void> {
         let support: ReasoningSupport | undefined;
         let modelId: string | undefined;
+        let maxInputTokens: number | undefined;
         if (agentId) {
             const agent = this.chatAgentService.getAgent(agentId);
             if (agent) {
                 for (const requirement of agent.languageModelRequirements ?? []) {
                     try {
                         const model = await this.languageModelRegistry.selectLanguageModel({ agent: agent.id, ...requirement });
-                        if (model?.reasoningSupport) {
+                        if (!model) {
+                            continue;
+                        }
+                        if (maxInputTokens === undefined && model.maxInputTokens !== undefined) {
+                            maxInputTokens = model.maxInputTokens;
+                        }
+                        if (!support && model.reasoningSupport) {
                             support = model.reasoningSupport;
                             modelId = model.id;
+                        }
+                        if (support && maxInputTokens !== undefined) {
                             break;
                         }
                     } catch (error) {
@@ -350,9 +364,12 @@ export class AIChatInputWidget extends ReactWidget {
                 }
             }
         }
-        if (support !== this.currentReasoningSupport || modelId !== this.currentLanguageModelId) {
+        if (support !== this.currentReasoningSupport
+            || modelId !== this.currentLanguageModelId
+            || maxInputTokens !== this.currentMaxInputTokens) {
             this.currentReasoningSupport = support;
             this.currentLanguageModelId = modelId;
+            this.currentMaxInputTokens = maxInputTokens;
             this.update();
         }
     }
@@ -921,14 +938,14 @@ export class AIChatInputWidget extends ReactWidget {
         this.chatInputLastLineKey.set(isLastVisualOverall);
     }
 
-    /**
-     * Resolve the configured token usage warning threshold as an absolute token count.
-     * The preference is stored as a percentage of the context window; this method
-     * converts it using the current assumed context window size.
-     */
+    protected getContextWindowSize(): number {
+        return this.currentMaxInputTokens ?? CHAT_CONTEXT_WINDOW_SIZE_FALLBACK;
+    }
+
+    /** Converts the percentage-based preference to an absolute token count. */
     protected getTokenUsageWarningThreshold(): number {
         const percentage = this.getTokenUsageWarningThresholdPercentage();
-        return Math.round((percentage / 100) * CHAT_CONTEXT_WINDOW_SIZE);
+        return Math.round((percentage / 100) * this.getContextWindowSize());
     }
 
     protected getTokenUsageWarningThresholdPercentage(): number {
@@ -1052,7 +1069,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.update();
             }
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine receiving agent:', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -1209,7 +1226,7 @@ export class AIChatInputWidget extends ReactWidget {
                 await this.agentNotificationService.showCompletionNotification(agentId, options);
             }
         } catch (error) {
-            console.error('Failed to handle agent completion notification:', error);
+            this.logger.error('Failed to handle agent completion notification:', error);
         }
     }
 
@@ -1333,6 +1350,7 @@ export class AIChatInputWidget extends ReactWidget {
                 }}
                 tokenUsageEnabled={this.tokenUsageEnabled}
                 tokenUsageWarningThreshold={this.getTokenUsageWarningThreshold()}
+                contextWindowSize={this.getContextWindowSize()}
             />
         );
     }
@@ -1671,6 +1689,7 @@ interface ChatInputProperties {
     };
     tokenUsageEnabled?: boolean;
     tokenUsageWarningThreshold: number;
+    contextWindowSize: number;
 }
 
 // Utility to check if we have task context in the chat model
@@ -2101,9 +2120,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Token usage computation (cheap pure function walking the model's request list)
     const totalTokens = props.tokenUsageEnabled ? computeSessionTokenUsage(props.chatModel) : 0;
     const showTokenUsage = props.tokenUsageEnabled && totalTokens > 0;
-    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens, props.tokenUsageWarningThreshold) : '';
+    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens, props.tokenUsageWarningThreshold, props.contextWindowSize) : '';
     const tokenIsWarningOrError = tokenColorClass === 'token-usage-yellow' || tokenColorClass === 'token-usage-red';
-    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold) : undefined;
+    const tokenTooltip = showTokenUsage
+        ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold, props.contextWindowSize)
+        : undefined;
 
     return (
         <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
@@ -2141,7 +2162,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     isEnabled={props.isEnabled}
                     hoverService={props.hoverService}
                     tokenUsage={showTokenUsage ? {
-                        percent: Math.min((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100, 100),
+                        percent: Math.min((totalTokens / props.contextWindowSize) * 100, 100),
                         colorClass: tokenColorClass,
                         tooltip: tokenTooltip,
                     } : undefined}
@@ -2506,9 +2527,9 @@ const reasoningLevelLabel = (level: ReasoningLevel): string => {
     switch (level) {
         case 'off': return nls.localizeByDefault('Off');
         case 'minimal': return nls.localize('theia/ai/chat-ui/reasoning/minimal', 'Minimal');
-        case 'low': return nls.localize('theia/ai/chat-ui/reasoning/low', 'Low');
-        case 'medium': return nls.localize('theia/ai/chat-ui/reasoning/medium', 'Medium');
-        case 'high': return nls.localize('theia/ai/chat-ui/reasoning/high', 'High');
+        case 'low': return nls.localizeByDefault('Low');
+        case 'medium': return nls.localizeByDefault('Medium');
+        case 'high': return nls.localizeByDefault('High');
         case 'auto': return nls.localizeByDefault('Auto');
     }
 };
@@ -2742,10 +2763,7 @@ function buildContextUI(
                 // Use the path directly as the key (same as storage)
                 const validationResult = fileValidationState.get(element.arg);
                 if (validationResult) {
-                    if (validationResult.state === FileValidationState.INVALID_SECONDARY) {
-                        className = 'warning-file';
-                        validationMessage = validationResult.message;
-                    } else if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
+                    if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
                         className = 'invalid-file';
                         validationMessage = validationResult.message;
                     }

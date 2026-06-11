@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { deepFreeze, Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
+import { deepFreeze, Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/core';
 import { Key, KeyCode, Message, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
@@ -46,6 +46,10 @@ export const AUTO_UPDATE_TOGGLE_ID = 't-mv-auto-update-toggle';
 
 @injectable()
 export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
+
+    @inject(ILogger) @named('memory-inspector:MemoryOptionsWidget')
+    protected readonly logger: ILogger;
+
     static ID = 'memory-view-options-widget';
     static LABEL = nls.localize('theia/memory-inspector/memoryTitle', 'Memory');
     iconClass = 'memory-view-icon';
@@ -661,7 +665,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
             this.doShowMemoryErrors(true);
         } catch (err) {
             this.memoryReadError = this.getUserError(err);
-            console.error('Failed to read memory', err);
+            this.logger.error('Failed to read memory', err);
             this.doShowMemoryErrors();
             if (this.pinnedMemoryReadResult) {
                 this.pinnedMemoryReadResult.resolve(this.memoryReadResult);

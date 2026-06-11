@@ -17,9 +17,10 @@
 import { AgentService, CustomAgentDescription, PromptFragmentCustomizationService } from '@theia/ai-core';
 import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
 import { CustomAgentFactory } from './custom-agent-factory';
+import { ILogger } from '@theia/core';
 
 export const RERUN_CUSTOM_AGENT_MIGRATION_COMMAND: Command = Command.toLocalizedCommand(
     {
@@ -48,6 +49,9 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     @inject(MessageService) @optional()
     protected readonly messageService?: MessageService;
 
+    @inject(ILogger) @named('ai-chat:AICustomAgentsFrontendApplicationContribution')
+    protected readonly logger: ILogger;
+
     private knownCustomAgents: Map<string, CustomAgentDescription> = new Map();
 
     registerCommands(commands: CommandRegistry): void {
@@ -72,7 +76,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
 
     onStart(): void {
         this.customizationService?.onDidChangeCustomAgents(() => this.refreshCustomAgents());
-        this.refreshCustomAgents().catch(e => console.error('Failed to load custom agents', e));
+        this.refreshCustomAgents().catch(e => this.logger.error('Failed to load custom agents', e));
     }
 
     protected async refreshCustomAgents(): Promise<void> {
@@ -86,7 +90,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
         try {
             await this.customizationService.migrateCustomAgentsYaml();
         } catch (e) {
-            console.warn('Custom-agent auto-migration failed; continuing without migration', e);
+            this.logger.warn('Custom-agent auto-migration failed; continuing without migration', e);
         }
 
         const customAgents = await this.customizationService.getCustomAgents();

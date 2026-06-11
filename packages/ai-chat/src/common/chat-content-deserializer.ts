@@ -42,6 +42,7 @@ import {
     QuestionContentData
 } from './chat-model';
 import { SerializableChatResponseContentData } from './chat-model-serialization';
+import { createToolCallError } from '@theia/ai-core/lib/common/language-model';
 import { ContributionProvider, ILogger, MaybePromise } from '@theia/core';
 
 export const ChatContentDeserializer = Symbol('ChatContentDeserializer');
@@ -268,14 +269,22 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
 
         registry.register({
             kind: 'toolCall',
-            deserialize: (data: ToolCallContentData) => new ToolCallChatResponseContentImpl(
-                data.id,
-                data.name,
-                data.arguments,
-                data.finished,
-                data.result,
-                data.data
-            )
+            deserialize: (data: ToolCallContentData) => {
+                // Restored tool calls have no live handler, so always mark them finished.
+                // A persisted (partial) result is preserved as-is; otherwise we synthesize
+                // a stand-in so the LLM history stays valid when the chat continues.
+                const result = data.result ?? createToolCallError(
+                    'Tool call was interrupted. No result is available.'
+                );
+                return new ToolCallChatResponseContentImpl(
+                    data.id,
+                    data.name,
+                    data.arguments,
+                    true,
+                    result,
+                    data.data
+                );
+            }
         });
 
         registry.register({

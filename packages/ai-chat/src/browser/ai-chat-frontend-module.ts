@@ -60,6 +60,7 @@ import { DefaultPendingImageRegistry, PendingImageRegistry } from './pending-ima
 import { AgentDelegationTool } from './agent-delegation-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
+import { PendingToolConfirmationTracker } from './pending-tool-confirmation-tracker';
 import { ChatSessionStore } from '../common/chat-session-store';
 import { ChatSessionStoreImpl } from './chat-session-store-impl';
 import {
@@ -127,6 +128,7 @@ export default new ContainerModule(bind => {
     // Tool confirmation preferences
     bindChatToolPreferences(bind);
     bind(ToolConfirmationManager).toSelf().inSingletonScope();
+    bind(PendingToolConfirmationTracker).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
     bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined, CustomAgentPromptVariant[] | undefined]>(

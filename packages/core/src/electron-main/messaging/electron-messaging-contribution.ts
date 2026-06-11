@@ -25,6 +25,7 @@ import { MessagingService } from '../../node';
 import { ElectronMessagingService } from './electron-messaging-service';
 import { ElectronConnectionHandler } from './electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
+import { ILogger } from '../../common/logger';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
@@ -41,6 +42,9 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     @inject(ContributionProvider) @named(ElectronConnectionHandler)
     protected readonly connectionHandlers: ContributionProvider<ConnectionHandler>;
+
+    @inject(ILogger) @named('core:ElectronMessagingContribution')
+    protected readonly logger: ILogger;
 
     protected readonly channelHandlers = new ConnectionHandlers<Channel>();
 
@@ -76,7 +80,7 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
             const windowChannel = this.openChannels.get(sender.id) ?? this.createWindowChannel(sender);
             windowChannel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
         } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
+            this.logger.error('IPC: Failed to handle message', { error, data });
         }
     }
 
@@ -88,8 +92,8 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         multiplexer.onDidOpenChannel(openEvent => {
             const { channel, id } = openEvent;
             if (this.channelHandlers.route(id, channel)) {
-                console.debug(`Opening channel for service path '${id}'.`);
-                channel.onClose(() => console.debug(`Closing channel on service path '${id}'.`));
+                this.logger.debug(`Opening channel for service path '${id}'.`);
+                channel.onClose(() => this.logger.debug(`Closing channel on service path '${id}'.`));
             }
         });
         sender.once('did-navigate', () => this.deleteChannel(sender.id, 'Window was refreshed'));

@@ -129,6 +129,35 @@ describe('parseUserInteractionArgs', () => {
         expect(result!.interactions[0].links).to.have.length(1);
     });
 
+    it('should ignore invalid rightRef placeholders and keep multi-step file links', () => {
+        const emptyRightRefPlaceholder = {
+            path: '',
+            gitRef: '',
+            line: 0,
+            empty: false,
+            label: ''
+        };
+        const input = JSON.stringify({
+            interactions: ['README.md', 'package.json', 'CONTRIBUTING.md'].map((path, index) => ({
+                title: `File link: ${path}`,
+                message: 'Open the file link.',
+                links: [{
+                    ref: { path, gitRef: '', line: 1, empty: false, label: '' },
+                    rightRef: emptyRightRefPlaceholder,
+                    label: `Open ${path}`,
+                    autoOpen: index === 0
+                }]
+            }))
+        });
+
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions.map(step => step.links![0])).to.deep.equal([
+            { ref: { path: 'README.md', line: 1 }, label: 'Open README.md', autoOpen: true },
+            { ref: { path: 'package.json', line: 1 }, label: 'Open package.json', autoOpen: false },
+            { ref: { path: 'CONTRIBUTING.md', line: 1 }, label: 'Open CONTRIBUTING.md', autoOpen: false }
+        ]);
+    });
+
     it('should accept multiple steps in order', () => {
         const input = JSON.stringify({
             interactions: [

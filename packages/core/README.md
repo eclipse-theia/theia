@@ -85,12 +85,12 @@ export class SomeClass {
   - `@lumino/signaling` (from [`@lumino/signaling@^2.1.5`](https://www.npmjs.com/package/@lumino/signaling))
   - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.4`](https://www.npmjs.com/package/@lumino/virtualdom))
   - `@lumino/widgets` (from [`@lumino/widgets@2.7.5`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.5))
-  - `@theia/application-package` (from [`@theia/application-package@1.71.0`](https://www.npmjs.com/package/@theia/application-package/v/1.71.0))
-  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.71.0`](https://www.npmjs.com/package/@theia/application-package/v/1.71.0))
-  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.71.0`](https://www.npmjs.com/package/@theia/application-package/v/1.71.0))
-  - `@theia/request` (from [`@theia/request@1.71.0`](https://www.npmjs.com/package/@theia/request/v/1.71.0))
-  - `@theia/request/lib/proxy` (from [`@theia/request@1.71.0`](https://www.npmjs.com/package/@theia/request/v/1.71.0))
-  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.71.0`](https://www.npmjs.com/package/@theia/request/v/1.71.0))
+  - `@theia/application-package` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/request` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/request/lib/proxy` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
   - `fs-extra` (from [`fs-extra@^4.0.3`](https://www.npmjs.com/package/fs-extra))
   - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
   - `inversify` (from [`inversify@^6.2.2`](https://www.npmjs.com/package/inversify))
@@ -109,7 +109,7 @@ export class SomeClass {
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.0.0`](https://www.npmjs.com/package/markdown-it-emoji))
   - `react` (from [`react@^18.3.1`](https://www.npmjs.com/package/react))
   - `ws` (from [`ws@^8.20.0`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^15.4.1`](https://www.npmjs.com/package/yargs))
+  - `yargs` (from [`yargs@^17.7.2`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 

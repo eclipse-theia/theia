@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -24,6 +24,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common/filesystem-preferences';
 import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import { nls } from '@theia/core/lib/common/nls';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
@@ -42,6 +43,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     @inject(FileSystemPreferences)
     protected readonly fsPreferences: FileSystemPreferences;
+
+    @inject(ILogger) @named('workspace:WorkspaceDeleteHandler')
+    protected readonly logger: ILogger;
 
     /**
      * Determine if the command is visible.
@@ -157,7 +161,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
                 options.useTrash ? this.moveFileToTrash(uri, options) : this.deleteFilePermanently(uri, options)
             ]);
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
     }
 
@@ -169,7 +173,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         try {
             await this.fileService.delete(uri, { ...options, useTrash: true });
         } catch (error) {
-            console.error('Error deleting with trash:', error);
+            this.logger.error('Error deleting with trash:', error);
             if (await this.confirmDeletePermanently(uri)) {
                 return this.deleteFilePermanently(uri, options);
             }

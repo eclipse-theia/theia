@@ -145,6 +145,8 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
 
                 this.webviewsMain.hookWebview(widget);
                 widget.title.label = this.labelProvider.getName(resource);
+                widget.title.caption = resource.path.fsPath();
+                widget.title.iconClass = this.labelProvider.getIcon(resource) + ' file-icon';
 
                 const _cancellationSource = new CancellationTokenSource();
                 await this.proxy.$resolveWebviewEditor(

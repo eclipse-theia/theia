@@ -1,0 +1,56 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/** MCP-specific tweaks layered on top of the shared `.theia-vsx-extension` card. */
+
+.theia-vsx-extension-icon.theia-mcp-extension-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: none;
+}
+
+.theia-vsx-extension-icon.theia-mcp-extension-icon .codicon {
+    font-size: calc(var(--theia-vsx-extension-icon-size) * 0.65);
+    color: var(--theia-descriptionForeground);
+}
+
+.theia-mcp-extension-actions {
+    display: flex;
+    align-items: center;
+    /* Keep the action controls at full width when a long publisher string competes for space. */
+    flex-shrink: 0;
+}
+
+/* Invisible spacer reserving the same width VSX cards use for their context-menu gear,
+   so MCP and VSX action bars line up across the unified Extensions view. */
+.theia-mcp-extension-gear-placeholder {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.theia-mcp-extension-warning {
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+    font-size: 14px;
+}
+
+.theia-mcp-extension-link-stale-message {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) / 2);
+    font-size: 90%;
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+}

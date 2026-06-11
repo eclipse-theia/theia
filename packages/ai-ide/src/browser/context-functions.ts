@@ -106,7 +106,8 @@ export class AddFileToChatContext implements ToolProvider {
                 properties: {
                     filesToAdd: {
                         type: 'array',
-                        description: 'Array of relative file paths to bookmark (e.g., ["src/index.ts", "package.json"]). Paths are relative to the workspace root.',
+                        description: 'Array of file paths to bookmark ' +
+                            '(e.g., ["my-project/src/index.ts", "backend/package.json"]).',
                         items: { type: 'string' }
                     }
                 },
