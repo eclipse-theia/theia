@@ -19,9 +19,10 @@ import {
     type QaapDevPreviewProbeResponse,
 } from '../common/qaap-dev-preview';
 import { normalizeQaapPublicUrl } from './qaap-github-oauth-config';
+import { QaapDevPreviewTargetHostResolver } from './qaap-dev-preview-target-host';
 
 const PROBE_TIMEOUT_MS = 2500;
-const PROXY_TARGET_HOST = '127.0.0.1';
+const LOCAL_TARGET_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1', '[::1]', '0.0.0.0']);
 const TEXT_RESPONSE_PATTERN = /\b(?:text\/html|text\/css|application\/javascript|text\/javascript|application\/x-javascript)\b/i;
 
 function getQaapBackendListenPort(): number {
@@ -77,7 +78,14 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
             return;
         }
         const targetPath = req.url || '/';
-        this.forwardHttp(req, res, port, targetPath);
+        void this.forwardHttp(req, res, port, targetPath);
+    }
+
+    protected readonly targetHostResolver = new QaapDevPreviewTargetHostResolver();
+
+    /** Picks the loopback family the dev server actually listens on (IPv4 first, then IPv6). */
+    protected resolveTargetHost(port: number): Promise<string | undefined> {
+        return this.targetHostResolver.resolve(port);
     }
 
     protected handleWebSocketUpgrade(
@@ -92,10 +100,26 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
         }
         const query = (req.url ?? '').includes('?') ? (req.url ?? '').slice((req.url ?? '').indexOf('?')) : '';
         const path = `${parsed.targetPath}${query}`;
-        const headers = { ...req.headers, host: `${PROXY_TARGET_HOST}:${parsed.port}` };
+        void this.proxyWebSocket(req, socket, head, parsed.port, path);
+    }
+
+    protected async proxyWebSocket(
+        req: http.IncomingMessage,
+        socket: net.Socket,
+        head: Buffer,
+        port: number,
+        path: string,
+    ): Promise<void> {
+        const targetHost = await this.resolveTargetHost(port);
+        if (!targetHost) {
+            socket.destroy();
+            return;
+        }
+        // `localhost` keeps dev-server host checks happy regardless of loopback family.
+        const headers = { ...req.headers, host: `localhost:${port}` };
         const proxyReq = http.request({
-            hostname: PROXY_TARGET_HOST,
-            port: parsed.port,
+            hostname: targetHost,
+            port,
             path,
             method: req.method,
             headers,
@@ -123,14 +147,19 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
         proxyReq.end();
     }
 
-    protected forwardHttp(incoming: Request, outgoing: Response, targetPort: number, targetPath: string): void {
+    protected async forwardHttp(incoming: Request, outgoing: Response, targetPort: number, targetPath: string): Promise<void> {
+        const targetHost = await this.resolveTargetHost(targetPort);
+        if (!targetHost) {
+            outgoing.status(503).type('text/html').send(buildDevPreviewWaitingHtml(targetPort));
+            return;
+        }
         const headers: http.OutgoingHttpHeaders = { ...incoming.headers };
-        headers.host = `${PROXY_TARGET_HOST}:${targetPort}`;
+        headers.host = `localhost:${targetPort}`;
         headers['accept-encoding'] = 'identity';
         delete headers.connection;
 
         const proxyReq = http.request({
-            hostname: PROXY_TARGET_HOST,
+            hostname: targetHost,
             port: targetPort,
             path: targetPath,
             method: incoming.method,
@@ -185,7 +214,7 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
         }
         try {
             const parsed = new URL(location);
-            if (parsed.hostname === PROXY_TARGET_HOST || parsed.hostname === 'localhost') {
+            if (LOCAL_TARGET_HOSTNAMES.has(parsed.hostname)) {
                 parsed.host = '';
                 return `${QAAP_DEV_PREVIEW_PREFIX}/${targetPort}${parsed.pathname}${parsed.search}${parsed.hash}`;
             }
@@ -210,15 +239,20 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
         return port === getQaapBackendListenPort();
     }
 
-    protected probeLocalDevServer(port: number): Promise<boolean> {
+    protected async probeLocalDevServer(port: number): Promise<boolean> {
         if (!isAllowedDevPreviewPort(port) || this.isIdeListenPort(port)) {
-            return Promise.resolve(false);
+            return false;
+        }
+        const targetHost = await this.resolveTargetHost(port);
+        if (!targetHost) {
+            return false;
         }
         return new Promise(resolve => {
             const req = http.get({
-                host: PROXY_TARGET_HOST,
+                host: targetHost,
                 port,
                 path: '/',
+                headers: { host: `localhost:${port}` },
                 timeout: PROBE_TIMEOUT_MS,
             }, res => {
                 res.resume();

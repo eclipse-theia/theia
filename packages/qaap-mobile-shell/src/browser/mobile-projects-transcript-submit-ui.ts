@@ -27,6 +27,7 @@ import {
     type QaapAgentToolApprovalRules,
 } from '../common/qaap-agent-tool-approval-rules';
 import { isConversationTurnVisuallySettled } from '../common/qaap-transcript-turn-status';
+import { messageRequestsDevPreview } from '../common/qaap-transcript-preview-offer';
 import type { MobileProjectsConversations } from './mobile-projects-conversations';
 import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
@@ -114,13 +115,16 @@ export class MobileProjectsTranscriptSubmitUi {
             this.host.transcriptOpenSummary = created;
             this.host.transcriptComposerSummary = created;
             const activeChatHost = this.host.resolveActiveTranscriptChatHost();
+            const full = await getConversation(created.id);
             if (activeChatHost) {
-                const full = await getConversation(created.id);
                 this.host.transcriptLastFingerprint = undefined;
                 this.host.transcriptMessagesUi.renderTranscriptMessages(activeChatHost, full);
                 this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
             }
             this.host.applyTaskStartedToProject(created.cwd, content, created.id);
+            if (messageRequestsDevPreview(content)) {
+                this.host.transcriptLiveUi.onTranscriptUserMessageSubmitted(content, full);
+            }
             return;
         }
         if (this.host.transcriptComposerSummary?.id === summary.id) {
@@ -175,6 +179,9 @@ export class MobileProjectsTranscriptSubmitUi {
                 this.renderTranscriptSubmitMessages(refreshedChatHost, updated, summary);
             }
             this.host.applyTaskStartedToProject(summary.cwd, content, summary.id);
+            if (messageRequestsDevPreview(content)) {
+                this.host.transcriptLiveUi.onTranscriptUserMessageSubmitted(content, updated);
+            }
             this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
         } catch (error) {
             const rollbackChatHost = this.host.resolveActiveTranscriptChatHost();

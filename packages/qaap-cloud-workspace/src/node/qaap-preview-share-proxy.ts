@@ -12,16 +12,17 @@ import {
     isAllowedDevPreviewPort,
     parseQaapDevPreviewPort,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-dev-preview';
+import { QaapDevPreviewTargetHostResolver } from '@theia/qaap-mobile-shell/lib/node/qaap-dev-preview-target-host';
 import { QAAP_DEV_PREVIEW_PUBLIC_PREFIX, parseQaapPublicPreviewSharePath } from '../common/qaap-preview-share';
 import { QaapPreviewShareStore } from './qaap-preview-share-store';
-
-const PROXY_TARGET_HOST = '127.0.0.1';
 
 @injectable()
 export class QaapPreviewShareProxyContribution implements BackendApplicationContribution {
 
     @inject(QaapPreviewShareStore)
     protected readonly shares: QaapPreviewShareStore;
+
+    protected readonly targetHostResolver = new QaapDevPreviewTargetHostResolver();
 
     configure(app: Application): void {
         app.use(`${QAAP_DEV_PREVIEW_PUBLIC_PREFIX}/:token`, (req, res) => {
@@ -47,7 +48,7 @@ export class QaapPreviewShareProxyContribution implements BackendApplicationCont
             res.status(400).send('Invalid preview port');
             return;
         }
-        this.forwardHttp(req, res, port, req.url || '/');
+        await this.forwardHttp(req, res, port, req.url || '/');
     }
 
     protected async handleWebSocketUpgrade(
@@ -72,9 +73,15 @@ export class QaapPreviewShareProxyContribution implements BackendApplicationCont
         }
         const query = (req.url ?? '').includes('?') ? (req.url ?? '').slice((req.url ?? '').indexOf('?')) : '';
         const path = `${parsed.targetPath}${query}`;
-        const headers = { ...req.headers, host: `${PROXY_TARGET_HOST}:${port}` };
+        const targetHost = await this.targetHostResolver.resolve(port);
+        if (!targetHost) {
+            socket.destroy();
+            return;
+        }
+        // `localhost` keeps dev-server host checks happy regardless of loopback family.
+        const headers = { ...req.headers, host: `localhost:${port}` };
         const proxyReq = http.request({
-            hostname: PROXY_TARGET_HOST,
+            hostname: targetHost,
             port,
             path,
             method: req.method,
@@ -101,12 +108,17 @@ export class QaapPreviewShareProxyContribution implements BackendApplicationCont
         proxyReq.end();
     }
 
-    protected forwardHttp(incoming: Request, outgoing: Response, targetPort: number, targetPath: string): void {
+    protected async forwardHttp(incoming: Request, outgoing: Response, targetPort: number, targetPath: string): Promise<void> {
+        const targetHost = await this.targetHostResolver.resolve(targetPort);
+        if (!targetHost) {
+            outgoing.status(502).type('text/plain').send('Dev preview is not running.');
+            return;
+        }
         const headers: http.OutgoingHttpHeaders = { ...incoming.headers };
-        headers.host = `${PROXY_TARGET_HOST}:${targetPort}`;
+        headers.host = `localhost:${targetPort}`;
         delete headers.connection;
         const proxyReq = http.request({
-            hostname: PROXY_TARGET_HOST,
+            hostname: targetHost,
             port: targetPort,
             path: targetPath,
             method: incoming.method,

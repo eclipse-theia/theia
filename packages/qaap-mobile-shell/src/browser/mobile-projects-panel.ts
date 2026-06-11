@@ -1760,6 +1760,17 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
         await this.transcriptSurfacesUi.syncTranscriptPreviewFromConversation(project, summary, conv);
     }
 
+    protected beginTranscriptDevPreviewRequest(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): void {
+        this.transcriptSurfacesUi.beginTranscriptDevPreviewRequest(project, summary);
+    }
+
+    protected stageTranscriptPreviewReadyUrl(readyUrl: string): void {
+        this.transcriptSurfacesUi.stageTranscriptPreviewReadyUrl(readyUrl);
+    }
+
     protected ensureOverlayUi(): {
         parallel: MobileProjectsParallelUi;
         team: MobileProjectsTeamUi;

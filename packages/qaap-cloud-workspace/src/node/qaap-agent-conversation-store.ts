@@ -46,6 +46,10 @@ import {
 } from '@theia/qaap-mobile-shell/lib/common/qaap-cli-transcript-stream';
 import { QaapQaiqStreamAccumulator } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-stream';
 import { isConversationTurnVisuallySettled } from '@theia/qaap-mobile-shell/lib/common/qaap-transcript-turn-status';
+import {
+    buildAgentAutoContinuePrompt,
+    isIncompleteAgentTurn,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-turn-completion';
 import { patchConversationAutoApprove } from '../common/qaap-agent-conversation-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
@@ -86,6 +90,8 @@ export class QaapAgentConversationStore {
     protected readonly teamSynthesisTriggeredForLeader = new Set<string>();
     /** Leader turns waiting for the in-flight agent reply before auto-synthesis can run. */
     protected readonly pendingTeamSynthesisForLeader = new Set<string>();
+    /** Per user turn: how many auto-continue nudges were sent after a thinking-only stop. */
+    protected readonly autoContinueCountByUserMessage = new Map<string, number>();
     /** Per-task structured stdout parsers (QAIQ, Claude, Codex JSON, OpenCode, Antigravity). */
     protected readonly agentStreamByTaskId = new Map<string, QaapAgentStreamAccumulator>();
 
@@ -856,6 +862,41 @@ export class QaapAgentConversationStore {
             this.fire({ type: 'message', conversationId, cwd: withReply.cwd, message: agentMessage });
         }
         this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
+        this.maybeAutoContinueIncompleteTurn(conversationId, withReply, userMessageId);
+    }
+
+    protected maybeAutoContinueIncompleteTurn(
+        conversationId: string,
+        conv: QaapAgentConversation,
+        userMessageId: string,
+    ): void {
+        const userMessage = conv.messages.find(message => message.id === userMessageId);
+        const agentMessage = conv.messages[conv.messages.length - 1];
+        if (!userMessage || !agentMessage || agentMessage.role !== 'agent' || conv.status !== 'idle') {
+            return;
+        }
+        if (!isIncompleteAgentTurn(userMessage.content, agentMessage)) {
+            return;
+        }
+        const attempts = this.autoContinueCountByUserMessage.get(userMessageId) ?? 0;
+        if (attempts >= 2) {
+            return;
+        }
+        this.autoContinueCountByUserMessage.set(userMessageId, attempts + 1);
+        try {
+            this.postUserMessage(
+                conversationId,
+                buildAgentAutoContinuePrompt(userMessage.content),
+                conv.agentId,
+                conv.agentModel ?? conv.qaiqModel,
+                conv.autoApprove,
+                conv.interactionModeId,
+                conv.approvalPolicyId,
+                conv.toolApprovalRules,
+            );
+        } catch {
+            /* turn already replaced or cancelled */
+        }
     }
 
     protected appendAgentReply(conv: QaapAgentConversation, content: string): QaapAgentConversation {

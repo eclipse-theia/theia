@@ -32,13 +32,17 @@ export function isAgentMessageVisuallySettled(message: QaapAgentMessageDTO): boo
         if (hasUnfinishedTool) {
             return false;
         }
-        const hasText = message.segments.some(
-            segment => segment.type === 'text' && !!segment.content?.trim(),
-        );
         const hasFinishedTool = message.segments.some(
             segment => segment.type === 'tool' && segment.finished,
         );
-        return hasText || hasFinishedTool;
+        const hasText = message.segments.some(
+            segment => segment.type === 'text' && !!segment.content?.trim(),
+        );
+        if (hasText || hasFinishedTool) {
+            return true;
+        }
+        // Thinking-only snapshots are not a completed turn while the backend task is still running.
+        return false;
     }
     return !!(message.content?.trim());
 }
