@@ -4,7 +4,7 @@
 // *****************************************************************************
 
 import type { QaapAgentMessageDTO } from './qaap-agent-conversation-client';
-import { resolveTranscriptActivityStats } from './qaap-agent-transcript-segments';
+import { isTranscriptTodoTool, parseTranscriptTodoChecklist, resolveTranscriptActivityStats } from './qaap-agent-transcript-segments';
 import { extractDevPreviewUrlFromAgentText, messageRequestsDevPreview } from './qaap-transcript-preview-offer';
 
 const ACTIONABLE_TASK_RE = /\b(?:fix|explore|implement|build|run|test|debug|review|refactor|add|create|update|install|deploy|figure\s+out)\b/i;
@@ -49,12 +49,33 @@ function isExploreOnlyTaskMessage(userContent: string | undefined): boolean {
         && !/\b(?:build|run|install|fix|implement|deploy|start|figure\s+out)\b/i.test(text);
 }
 
+/** True when the latest TodoWrite checklist still has pending or in-progress items. */
+export function agentMessageHasOpenTodos(agentMessage: QaapAgentMessageDTO | undefined): boolean {
+    if (!agentMessage?.segments?.length) {
+        return false;
+    }
+    let latestTodoArgs: string | undefined;
+    for (const segment of agentMessage.segments) {
+        if (segment.type === 'tool' && segment.finished && isTranscriptTodoTool(segment.name) && segment.args) {
+            latestTodoArgs = segment.args;
+        }
+    }
+    if (!latestTodoArgs) {
+        return false;
+    }
+    const checklist = parseTranscriptTodoChecklist(latestTodoArgs);
+    return !!checklist?.some(item => item.status !== 'completed');
+}
+
 /** True when the agent produced a concrete outcome for the user request. */
 export function agentMessageDeliversTaskOutcome(
     userContent: string | undefined,
     agentMessage: QaapAgentMessageDTO | undefined,
 ): boolean {
     if (!agentMessage || agentMessage.role !== 'agent') {
+        return false;
+    }
+    if (agentMessageHasOpenTodos(agentMessage)) {
         return false;
     }
     const text = collectAgentVisibleText(agentMessage);
@@ -111,9 +132,9 @@ export function isIncompleteAgentTurn(
 
 export function buildAgentAutoContinuePrompt(userContent?: string): string {
     if (messageRequestsDevPreview(userContent)) {
-        return 'Continue this task now. Inspect package.json, install dependencies with one-shot Bash if needed, fix build issues, '
+        return 'Continue this task now. Complete every remaining todo item, inspect package.json, install dependencies with one-shot Bash if needed, fix build issues, '
             + 'and confirm the dev server port for preview. Do not stop after search, read, or planning text.';
     }
-    return 'Continue this task now. Use Read, Glob, or Grep to inspect the repo, then Bash for one-shot commands. '
+    return 'Continue this task now. Complete every remaining todo item, use Read, Glob, or Grep to inspect the repo, then Bash for one-shot commands. '
         + 'Do not stop after planning, searching, or thinking — finish the user request and report concrete results.';
 }
