@@ -16,12 +16,16 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import {
-    QaapChatMarkdownRenderMode,
-    renderChatMarkdownHtml,
+    QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS,
+    type QaapChatMarkdownRenderMode,
     resolveChatMarkdownRenderMode,
 } from '../common/qaap-chat-markdown-render';
+import {
+    applySyncChatMarkdownHost,
+    scheduleChatMarkdownWorkerRender,
+} from '../common/qaap-chat-markdown-worker-bridge';
 
-export const QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS = 'theia-mod-qaap-chat-stream-plain';
+export { QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS };
 
 export interface QaapMarkdownRenderProps {
     text: string | MarkdownString;
@@ -34,7 +38,7 @@ const QaapMarkdownRender: React.FC<QaapMarkdownRenderProps> = ({ text, openerSer
     return <div className={className} ref={ref}></div>;
 };
 
-/** Chat markdown renderer — shared markdown-it instance, RAF-coalesced paints, plain streaming when safe. */
+/** Chat markdown renderer — worker offload, RAF-coalesced paints, plain streaming when safe. */
 @injectable()
 export class QaapMarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
 
@@ -84,26 +88,40 @@ export const useQaapMarkdownRendering = (
             if (!host) {
                 return;
             }
+            const previousMarkdown = lastMarkdownRef.current;
             const mode = resolveChatMarkdownRenderMode(
                 markdownString,
-                lastMarkdownRef.current,
+                previousMarkdown,
                 lastModeRef.current,
             );
             if (mode === 'plain') {
                 host.classList.add(QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS);
+                host.classList.remove('theia-mod-markdown');
                 host.replaceChildren();
                 host.textContent = markdownString;
+                delete host.dataset.qaapStreamStableLength;
+                delete host.dataset.qaapStreamTotalLength;
                 lastMarkdownRef.current = markdownString;
                 lastModeRef.current = 'plain';
                 return;
             }
 
-            host.classList.remove(QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS);
-            const htmlHost = document.createElement('div');
-            htmlHost.innerHTML = renderChatMarkdownHtml(markdownString, skipSurroundingParagraph);
-            host.replaceChildren(htmlHost);
+            if (mode === 'worker') {
+                scheduleChatMarkdownWorkerRender(
+                    host,
+                    markdownString,
+                    previousMarkdown,
+                    lastModeRef.current,
+                    skipSurroundingParagraph,
+                );
+                lastMarkdownRef.current = markdownString;
+                lastModeRef.current = 'worker';
+                return;
+            }
+
+            applySyncChatMarkdownHost(host, markdownString, skipSurroundingParagraph);
             lastMarkdownRef.current = markdownString;
-            lastModeRef.current = 'full';
+            lastModeRef.current = 'sync';
         };
 
         if (!rafRef.current) {

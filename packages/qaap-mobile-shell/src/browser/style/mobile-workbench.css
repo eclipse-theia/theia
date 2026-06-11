@@ -1243,6 +1243,23 @@ body.theia-mobile-mod-landing-hub-list .theia-mobile-bottom-chrome-host > #theia
   line-height: 1.45;
 }
 
+.chat-view-widget .theia-mod-markdown .theia-transcript-stream-frozen,
+.chat-view-widget .theia-mod-markdown .theia-transcript-stream-tail {
+  display: contents;
+}
+
+.chat-view-widget .theia-mod-markdown .theia-transcript-stream-plain-preview {
+  font-family: var(--theia-ui-font-family);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-view-widget .theia-mod-markdown .theia-transcript-stream-plain-preview[hidden] {
+  display: none;
+}
+
 /* Vertical touch scroll: see qaap-mobile-touch-scroll.css */
 
 /* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the

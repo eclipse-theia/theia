@@ -8,6 +8,7 @@ import { parseHTML } from 'linkedom';
 import {
     chatMarkdownNeedsFenceParse,
     chatMarkdownNeedsInlineFormatting,
+    chatMarkdownShouldUseWorker,
     getSharedChatMarkdownIt,
     QAAP_CHAT_MARKDOWN_PLAIN_MAX_CHARS,
     resetSharedChatMarkdownItForTests,
@@ -36,11 +37,18 @@ describe('qaap-chat-markdown-render', () => {
         expect(resolveChatMarkdownRenderMode('hello world', 'hello ', 'plain')).to.equal('plain');
     });
 
-    it('resolveChatMarkdownRenderMode switches to full render for fences or inline markdown', () => {
+    it('resolveChatMarkdownRenderMode switches to worker or sync for fences or inline markdown', () => {
         expect(chatMarkdownNeedsFenceParse('```ts\nconst x = 1')).to.equal(true);
         expect(chatMarkdownNeedsInlineFormatting('**bold**')).to.equal(true);
-        expect(resolveChatMarkdownRenderMode('**bold**', '', undefined)).to.equal('full');
-        expect(resolveChatMarkdownRenderMode('text\n```\ncode', 'text\n', 'plain')).to.equal('full');
+        expect(resolveChatMarkdownRenderMode('**bold**', '', undefined)).to.equal('sync');
+        expect(resolveChatMarkdownRenderMode('text\n```\ncode', 'text\n', 'plain')).to.equal('worker');
+    });
+
+    it('chatMarkdownShouldUseWorker prefers worker for fences, long text, or formatted streams', () => {
+        expect(chatMarkdownShouldUseWorker('```\ncode')).to.equal(true);
+        expect(chatMarkdownShouldUseWorker('x'.repeat(QAAP_CHAT_MARKDOWN_PLAIN_MAX_CHARS))).to.equal(true);
+        expect(chatMarkdownShouldUseWorker('**' + 'word '.repeat(30))).to.equal(true);
+        expect(chatMarkdownShouldUseWorker('short plain')).to.equal(false);
     });
 
     it('getSharedChatMarkdownIt renders markdown syntax', () => {

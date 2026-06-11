@@ -10,12 +10,15 @@ import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 /** Plain-text streaming is enough below this size when no fences/formatting are present. */
 export const QAAP_CHAT_MARKDOWN_PLAIN_MAX_CHARS = 480;
 
+export const QAAP_CHAT_MARKDOWN_PLAIN_STREAM_CLASS = 'theia-mod-qaap-chat-stream-plain';
+
 const FENCE_PATTERN = /(^|\n)\s{0,3}(?:`{3,}|~{3,})/m;
 const INLINE_MARKDOWN_PATTERN = /[#*`_[\]|]/;
+const WORKER_INLINE_MIN_CHARS = 120;
 
 let sharedMarkdownIt: ReturnType<typeof markdownit> | undefined;
 
-export type QaapChatMarkdownRenderMode = 'plain' | 'full';
+export type QaapChatMarkdownRenderMode = 'plain' | 'worker' | 'sync';
 
 export function getSharedChatMarkdownIt(): ReturnType<typeof markdownit> {
     if (!sharedMarkdownIt) {
@@ -37,13 +40,24 @@ export function chatMarkdownNeedsInlineFormatting(text: string): boolean {
     return INLINE_MARKDOWN_PATTERN.test(text);
 }
 
+/** Off-thread markdown-it for long or formatted agent replies in ChatView. */
+export function chatMarkdownShouldUseWorker(text: string): boolean {
+    if (chatMarkdownNeedsFenceParse(text)) {
+        return true;
+    }
+    if (text.length >= QAAP_CHAT_MARKDOWN_PLAIN_MAX_CHARS) {
+        return true;
+    }
+    return chatMarkdownNeedsInlineFormatting(text) && text.length >= WORKER_INLINE_MIN_CHARS;
+}
+
 export function resolveChatMarkdownRenderMode(
     markdown: string,
     previousMarkdown: string,
     previousMode: QaapChatMarkdownRenderMode | undefined,
 ): QaapChatMarkdownRenderMode {
     if (chatMarkdownNeedsFenceParse(markdown)) {
-        return 'full';
+        return chatMarkdownShouldUseWorker(markdown) ? 'worker' : 'sync';
     }
     if (markdown.length <= QAAP_CHAT_MARKDOWN_PLAIN_MAX_CHARS && !chatMarkdownNeedsInlineFormatting(markdown)) {
         return 'plain';
@@ -55,7 +69,7 @@ export function resolveChatMarkdownRenderMode(
     ) {
         return 'plain';
     }
-    return 'full';
+    return chatMarkdownShouldUseWorker(markdown) ? 'worker' : 'sync';
 }
 
 export function sanitizeChatMarkdownHtml(html: string): string {
