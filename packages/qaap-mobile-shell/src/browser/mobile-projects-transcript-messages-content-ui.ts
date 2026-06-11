@@ -13,6 +13,13 @@ import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 
 export class MobileProjectsTranscriptMessagesContentUi {
+    /** Below this length every streaming tick re-parses markdown; above it we coalesce. */
+    protected static readonly STREAMING_MARKDOWN_MIN_CHARS = 1200;
+    /** Minimum growth before forcing a markdown re-parse during streaming. */
+    protected static readonly STREAMING_MARKDOWN_MIN_GROWTH = 80;
+    /** Max delay between full markdown parses while the agent row is still streaming. */
+    protected static readonly STREAMING_MARKDOWN_MAX_INTERVAL_MS = 120;
+
     constructor(protected readonly host: MobileProjectsTranscriptMessagesHost) { }
 
     normalizeTranscriptPreviewLink(href: string): string | undefined {
@@ -71,10 +78,45 @@ export class MobileProjectsTranscriptMessagesContentUi {
 
 
     renderTranscriptMarkdown(host: HTMLElement, content: string): void {
-        const html = this.host.transcriptMarkdownIt.render(this.linkifyTranscriptPreviewUrls(this.cleanTranscriptDisplayText(content)));
+        const clean = this.cleanTranscriptDisplayText(content).trim();
+        const html = this.host.transcriptMarkdownIt.render(this.linkifyTranscriptPreviewUrls(clean));
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true,
         });
+        host.dataset.transcriptStreamParsedLen = String(clean.length);
+        host.dataset.transcriptStreamParsedAt = String(Date.now());
+        host.querySelector('.theia-mobile-agent-streaming-text-tail')?.remove();
+        this.attachTranscriptMarkdownLinkHandler(host);
+    }
+
+    /** Throttled markdown for long streaming agent text — appends a plain tail between full parses. */
+    renderTranscriptStreamingMarkdown(host: HTMLElement, content: string): void {
+        const clean = this.cleanTranscriptDisplayText(content).trim();
+        const minChars = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MIN_CHARS;
+        if (clean.length < minChars) {
+            this.renderTranscriptMarkdown(host, clean);
+            return;
+        }
+        const lastParsedLen = Number(host.dataset.transcriptStreamParsedLen ?? '0');
+        const lastParsedAt = Number(host.dataset.transcriptStreamParsedAt ?? '0');
+        const now = Date.now();
+        const growth = clean.length - lastParsedLen;
+        const maxInterval = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MAX_INTERVAL_MS;
+        const minGrowth = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MIN_GROWTH;
+        if (growth >= minGrowth || now - lastParsedAt >= maxInterval || lastParsedLen === 0) {
+            this.renderTranscriptMarkdown(host, clean);
+            return;
+        }
+        let tail = host.querySelector<HTMLElement>('.theia-mobile-agent-streaming-text-tail');
+        if (!tail) {
+            tail = document.createElement('span');
+            tail.className = 'theia-mobile-agent-streaming-text-tail';
+            host.append(tail);
+        }
+        tail.textContent = clean.slice(lastParsedLen);
+    }
+
+    protected attachTranscriptMarkdownLinkHandler(host: HTMLElement): void {
         host.addEventListener('click', event => {
             let target = event.target as HTMLElement | null;
             while (target && target.tagName !== 'A') {

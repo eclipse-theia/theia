@@ -9,6 +9,7 @@ import {
     buildConversationTranscriptFingerprint,
     canPatchToolSegmentGrowth,
     canStreamPatchAgentAppendToolSegment,
+    canStreamPatchAgentSegmentsInPlace,
     canStreamPatchAgentTextContentOnly,
     canStreamPatchAgentToolsOnly,
     canStreamPatchStdoutAgentContentOnly,
@@ -352,5 +353,28 @@ describe('qaap-transcript-incremental-update', () => {
         const prev = { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false, result: 'a' };
         const next = { type: 'tool' as const, toolUseId: 't2', name: 'Bash', args: '{}', finished: false, result: 'ab' };
         expect(canPatchToolSegmentGrowth(prev, next)).to.equal(false);
+    });
+
+    it('canStreamPatchAgentSegmentsInPlace allows text and tool growth in one tick', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false, result: 'a' },
+                { type: 'text' as const, content: 'Hel' },
+            ],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false, result: 'ab' },
+                { type: 'text' as const, content: 'Hello' },
+            ],
+        };
+        expect(canStreamPatchAgentSegmentsInPlace(prevMsg, nextMsg)).to.equal(true);
+        expect(canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)).to.equal(false);
+        expect(canStreamPatchAgentToolsOnly(prevMsg, nextMsg)).to.equal(false);
     });
 });

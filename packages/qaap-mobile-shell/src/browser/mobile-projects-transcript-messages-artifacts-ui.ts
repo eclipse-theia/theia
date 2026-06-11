@@ -130,7 +130,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             if (!host) {
                 return false;
             }
-            this.toolUi.renderTranscriptRichContent(host, next.content ?? '');
+            const streaming = row.classList.contains('theia-mod-streaming');
+            this.toolUi.renderTranscriptRichContent(host, next.content ?? '', { streaming });
         }
         return true;
     }
@@ -142,7 +143,6 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         nextSegments: readonly QaapAgentMessageSegmentDTO[],
         conv?: QaapAgentConversationDTO,
     ): boolean {
-        let patched = false;
         for (let segmentIndex = 0; segmentIndex < nextSegments.length; segmentIndex++) {
             const previous = prevSegments[segmentIndex];
             const next = nextSegments[segmentIndex];
@@ -169,9 +169,8 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 return false;
             }
             this.patchTranscriptToolPill(pill, next, conv);
-            patched = true;
         }
-        return patched;
+        return true;
     }
 
     /** Append a new tool pill when a tool segment appears at the tail without rebuilding text blocks. */

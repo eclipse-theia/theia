@@ -337,6 +337,50 @@ export function canStreamPatchAgentToolsOnly(
     return sawToolPatch;
 }
 
+/**
+ * True when every changed segment is a patchable text growth and/or tool growth/finish
+ * in the same snapshot (same segment count).
+ */
+export function canStreamPatchAgentSegmentsInPlace(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    const prevSegments = prev.segments ?? [];
+    const nextSegments = next.segments ?? [];
+    if (prevSegments.length === 0 || prevSegments.length !== nextSegments.length) {
+        return false;
+    }
+    let sawChange = false;
+    for (let i = 0; i < prevSegments.length; i++) {
+        const p = prevSegments[i];
+        const n = nextSegments[i];
+        if (segmentsExactlyEqual(p, n)) {
+            continue;
+        }
+        if (p.type === 'text' && n.type === 'text') {
+            const previous = p.content ?? '';
+            const incoming = n.content ?? '';
+            if (incoming.startsWith(previous) && incoming.length > previous.length) {
+                sawChange = true;
+                continue;
+            }
+            return false;
+        }
+        if (p.type === 'tool' && n.type === 'tool') {
+            if (canPatchToolSegmentGrowth(p, n)) {
+                sawChange = true;
+                continue;
+            }
+            return false;
+        }
+        return false;
+    }
+    return sawChange;
+}
+
 /** A new tool segment appeared at the tail — prior segments are unchanged. */
 export function canStreamPatchAgentAppendToolSegment(
     prev: QaapAgentMessageDTO | undefined,

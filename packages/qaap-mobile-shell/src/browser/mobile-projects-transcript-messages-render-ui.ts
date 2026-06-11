@@ -7,7 +7,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
-import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentTextContentOnly, canStreamPatchAgentToolsOnly, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
+import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentSegmentsInPlace, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
 import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
@@ -372,6 +372,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             this.toolUi.renderTranscriptRichContent(
                 contentEl,
                 normalizeAgentMessageContentForDisplay(nextMsg.content),
+                { streaming: existingRow.classList.contains('theia-mod-streaming') },
             );
             return true;
         }
@@ -380,30 +381,31 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         }
         const nextSegments = nextMsg.segments ?? [];
         const prevSegments = prevMsg.segments ?? [];
-        const textPatch = canStreamPatchAgentTextContentOnly(prevMsg, nextMsg);
-        const toolsPatch = canStreamPatchAgentToolsOnly(prevMsg, nextMsg);
+        const segmentsInPlace = canStreamPatchAgentSegmentsInPlace(prevMsg, nextMsg);
         const appendTool = canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg);
-        if (!textPatch && !toolsPatch && !appendTool) {
+        if (!segmentsInPlace && !appendTool) {
             return false;
         }
-        if (textPatch && resolvedSegments?.length) {
-            if (!this.artifactsUi.patchStreamingAgentTextSegments(existingRow, prevSegments, nextSegments)) {
-                return false;
+        if (segmentsInPlace) {
+            if (resolvedSegments?.length) {
+                if (!this.artifactsUi.patchStreamingAgentTextSegments(existingRow, prevSegments, nextSegments)) {
+                    return false;
+                }
+            } else {
+                const contentEl = existingRow.querySelector<HTMLElement>('.theia-mobile-agent-transcript-content');
+                const lastText = [...nextSegments].reverse().find(segment => segment.type === 'text');
+                if (contentEl && lastText?.type === 'text') {
+                    this.toolUi.renderTranscriptRichContent(
+                        contentEl,
+                        lastText.content ?? '',
+                        { streaming: existingRow.classList.contains('theia-mod-streaming') },
+                    );
+                }
             }
-        } else if (textPatch) {
-            const contentEl = existingRow.querySelector<HTMLElement>('.theia-mobile-agent-transcript-content');
-            if (!contentEl) {
-                return false;
-            }
-            const lastText = [...nextSegments].reverse().find(segment => segment.type === 'text');
-            if (!lastText || lastText.type !== 'text') {
-                return false;
-            }
-            this.toolUi.renderTranscriptRichContent(contentEl, lastText.content ?? '');
-        }
-        if (toolsPatch) {
-            if (!this.artifactsUi.patchStreamingAgentToolSegments(existingRow, prevSegments, nextSegments, conv)) {
-                return false;
+            if (prevSegments.length === nextSegments.length) {
+                if (!this.artifactsUi.patchStreamingAgentToolSegments(existingRow, prevSegments, nextSegments, conv)) {
+                    return false;
+                }
             }
         }
         if (appendTool) {

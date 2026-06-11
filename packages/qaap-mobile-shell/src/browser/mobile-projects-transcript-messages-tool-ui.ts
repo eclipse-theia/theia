@@ -20,13 +20,21 @@ export class MobileProjectsTranscriptMessagesToolUi {
         protected readonly resolversUi: MobileProjectsTranscriptMessagesResolversUi,
     ) { }
 
-    renderTranscriptRichContent(host: HTMLElement, content: string): void {
+    renderTranscriptRichContent(
+        host: HTMLElement,
+        content: string,
+        options?: { readonly streaming?: boolean },
+    ): void {
         const clean = this.contentUi.cleanTranscriptDisplayText(content).trim();
         if (isTranscriptTerminalOutputText(clean)) {
-            host.append(this.createTranscriptTextTerminalWindow(clean));
+            host.replaceChildren(this.createTranscriptTextTerminalWindow(clean));
             return;
         }
         host.classList.add('theia-mod-markdown');
+        if (options?.streaming) {
+            this.contentUi.renderTranscriptStreamingMarkdown(host, clean);
+            return;
+        }
         this.contentUi.renderTranscriptMarkdown(host, clean);
     }
 
