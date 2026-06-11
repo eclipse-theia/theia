@@ -116,6 +116,8 @@ export interface QaapAgentConversation {
     readonly parallelRunId?: string;
     /** Base repository root a parallel-run variant was derived from (its own cwd is a worktree). */
     readonly parallelBaseCwd?: string;
+    /** Branch of the dedicated git worktree this conversation runs in (composer "New Worktree"). */
+    readonly worktreeBranch?: string;
     /** Working-tree snapshots captured per turn — the Timeline / rollback feature. */
     readonly checkpoints?: QaapConversationCheckpoint[];
     /**
@@ -157,6 +159,8 @@ export interface QaapAgentConversationSummary {
     readonly parallelRunId?: string;
     /** Base repository root a parallel-run variant was derived from. */
     readonly parallelBaseCwd?: string;
+    /** Branch of the dedicated git worktree this conversation runs in (composer "New Worktree"). */
+    readonly worktreeBranch?: string;
     /** In-flight tool/status label while {@link status} is `'streaming'`. */
     readonly activityLabel?: string;
     readonly linesAdded?: number;
@@ -205,6 +209,13 @@ export interface QaapCreateAgentConversationRequest {
     /** Marks this conversation as a parallel-run variant (grouped under {@link parallelBaseCwd}). */
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
+    /**
+     * When `true`, the server creates an isolated git worktree (new branch off HEAD of {@link cwd})
+     * and the conversation runs there instead of the repository's main working tree.
+     */
+    readonly worktree?: boolean;
+    /** Set by the server on worktree conversations — the branch backing the worktree. */
+    readonly worktreeBranch?: string;
     /** When `false`, tool calls need manual CLI approval on the VPS. */
     readonly autoApprove?: boolean;
     /** Resolved cross-project context (frontend PromptService), stored on the conversation. */
@@ -306,6 +317,7 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         forkedFromId: conv.forkedFromId,
         parallelRunId: conv.parallelRunId,
         parallelBaseCwd: conv.parallelBaseCwd,
+        worktreeBranch: conv.worktreeBranch,
         linkedPullRequest: conv.linkedPullRequest,
     };
     const metrics = buildConversationListMetrics({ status, messages: conv.messages });

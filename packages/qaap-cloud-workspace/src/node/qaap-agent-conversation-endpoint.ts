@@ -22,6 +22,7 @@ import {
     parseQaapAgentConversationWsClientMessage,
 } from '../common/qaap-agent-conversation-ws';
 import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
+import { QaapConversationWorktreeService } from './qaap-conversation-worktree';
 
 const SSE_HEARTBEAT_MS = 25_000;
 /** Ping interval for WebSocket connections — keeps the socket alive through proxies. */
@@ -40,6 +41,9 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
     @inject(QaapAgentConversationStore)
     protected readonly store: QaapAgentConversationStore;
 
+    @inject(QaapConversationWorktreeService)
+    protected readonly worktrees: QaapConversationWorktreeService;
+
     configure(app: Application): void {
         // List for one cwd (or all).
         app.get(QAAP_AGENT_CONVERSATION_API_PATH, (req, res) => {
@@ -54,7 +58,7 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             this.handleStream(req, res);
         });
         app.post(QAAP_AGENT_CONVERSATION_API_PATH, (req, res) => {
-            this.handleCreate(req, res);
+            void this.handleCreate(req, res);
         });
         app.get(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
             const conv = this.store.get(req.params.id);
@@ -207,15 +211,28 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         });
     }
 
-    protected handleCreate(req: Request, res: Response): void {
+    protected async handleCreate(req: Request, res: Response): Promise<void> {
         const body = (req.body ?? {}) as Partial<QaapCreateAgentConversationRequest>;
         if (typeof body.cwd !== 'string' || !body.cwd) {
             res.status(400).json({ error: '"cwd" is required.' });
             return;
         }
         try {
+            // "New Worktree" destination: run the conversation in an isolated git worktree,
+            // grouped under the originating repository via parallelBaseCwd.
+            let cwd = body.cwd;
+            let baseCwd: string | undefined;
+            let worktreeBranch: string | undefined;
+            if (body.worktree === true) {
+                const worktree = await this.worktrees.create(body.cwd);
+                baseCwd = body.cwd;
+                cwd = worktree.worktreePath;
+                worktreeBranch = worktree.branch;
+            }
             const conv = this.store.create({
-                cwd: body.cwd,
+                cwd,
+                ...(baseCwd ? { parallelBaseCwd: baseCwd } : {}),
+                ...(worktreeBranch ? { worktreeBranch } : {}),
                 agent: body.agent,
                 title: body.title,
                 message: body.message,

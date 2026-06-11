@@ -60,6 +60,8 @@ export interface QaapAgentConversationSummaryDTO {
     /** Set on parallel-run variant conversations — groups them under {@link parallelBaseCwd}. */
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
+    /** Branch of the dedicated git worktree this conversation runs in (composer "New Worktree"). */
+    readonly worktreeBranch?: string;
     readonly activityLabel?: string;
     readonly linesAdded?: number;
     readonly linesRemoved?: number;
@@ -138,6 +140,7 @@ export interface QaapAgentConversationDTO {
     readonly forkedFromId?: string;
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
+    readonly worktreeBranch?: string;
     readonly checkpoints?: QaapConversationCheckpointDTO[];
     readonly linkedPullRequest?: QaapLinkedPullRequest;
     readonly contextPreamble?: string;
@@ -186,6 +189,7 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         forkedFromId: conv.forkedFromId,
         parallelRunId: conv.parallelRunId,
         parallelBaseCwd: conv.parallelBaseCwd,
+        worktreeBranch: conv.worktreeBranch,
         linkedPullRequest: conv.linkedPullRequest,
         ...metrics,
         hasGitOperation,
@@ -219,6 +223,11 @@ export interface QaapCreateConversationBody {
     readonly contextPreamble?: string;
     readonly interactionModeId?: string;
     readonly approvalPolicyId?: string;
+    /**
+     * When `true`, the server provisions an isolated git worktree (new branch off HEAD of
+     * {@link cwd}) and the conversation runs there instead of the main working tree.
+     */
+    readonly worktree?: boolean;
 }
 
 export async function listConversationsForCwd(cwd: string): Promise<QaapAgentConversationSummaryDTO[]> {

@@ -42,12 +42,33 @@ stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').Mo
 stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
 }
 
+/** Where a new composer task runs: the project's working tree or a fresh isolated git worktree. */
+export type QaapComposerWorkspaceDestination = 'local' | 'worktree';
+
 export class MobileProjectsStickyComposerWorkspaceUi {
     private workspaceSheetAnchor: HTMLElement | undefined;
     private workspacePopoverCleanup: (() => void) | undefined;
     private workspacePopoverAlign: StickyComposerPopoverAlign = 'start';
+    /** Session-only "Run in" choice per project — resets to Local on reload. */
+    private readonly workspaceDestinationByProjectId = new Map<string, QaapComposerWorkspaceDestination>();
 
     constructor(protected readonly host: MobileProjectsStickyComposerWorkspaceHost) { }
+
+    resolveComposerWorkspaceDestination(project: MobileProjectEntry): QaapComposerWorkspaceDestination {
+        return this.workspaceDestinationByProjectId.get(project.id) ?? 'local';
+    }
+
+    resolveComposerWorkspaceDestinationLabel(project: MobileProjectEntry): string {
+        return this.resolveComposerWorkspaceDestination(project) === 'worktree'
+            ? nls.localize('qaap/composerWorkspace/destinationWorktree', 'New Worktree')
+            : nls.localize('qaap/composerWorkspace/destinationLocal', 'Local');
+    }
+
+    resolveComposerWorkspaceDestinationIconClass(project: MobileProjectEntry): string {
+        return this.resolveComposerWorkspaceDestination(project) === 'worktree'
+            ? 'codicon-repo-forked'
+            : 'codicon-device-desktop';
+    }
 
     closeComposerWorkspaceSheet(): void {
         this.workspacePopoverCleanup?.();
@@ -279,6 +300,87 @@ export class MobileProjectsStickyComposerWorkspaceUi {
             anchor,
             align: 'start',
             variant: 'project',
+        });
+        window.requestAnimationFrame(() => this.syncWorkspacePopoverPosition());
+    }
+    openComposerWorkspaceDestinationSheet(
+        project: MobileProjectEntry,
+        transcriptOverlay = false,
+        anchor?: HTMLElement,
+    ): void {
+        if (this.shouldUseWorkspacePopover(anchor)
+            && this.workspaceSheetAnchor === anchor
+            && this.host.stickyComposerWorkspaceSheet) {
+            this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
+            return;
+        }
+        this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
+        this.host.transcriptComposerUi.closeTranscriptComposerSheets();
+
+        const panel = document.createElement('section');
+        panel.className = 'theia-mobile-sticky-composer-sheet-panel';
+        const onClose = (): void => { this.host.stickyComposerSheetsUi.closeStickyComposerSheets(); };
+        panel.append(this.createComposerWorkspaceSheetHeader(
+            nls.localize('qaap/composerWorkspace/destinationSheetTitle', 'Run in'),
+            onClose,
+        ));
+
+        const list = document.createElement('div');
+        list.className = 'theia-mobile-sticky-composer-sheet-list';
+        const current = this.resolveComposerWorkspaceDestination(project);
+        const destinations: ReadonlyArray<{
+            readonly id: QaapComposerWorkspaceDestination;
+            readonly iconClass: string;
+            readonly label: string;
+        }> = [
+            {
+                id: 'local',
+                iconClass: 'codicon-device-desktop',
+                label: nls.localize('qaap/composerWorkspace/destinationLocal', 'Local'),
+            },
+            {
+                id: 'worktree',
+                iconClass: 'codicon-repo-forked',
+                label: nls.localize('qaap/composerWorkspace/destinationWorktree', 'New Worktree'),
+            },
+        ];
+        for (const destination of destinations) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theia-mobile-sticky-composer-sheet-option';
+            if (destination.id === current) {
+                btn.classList.add('theia-mod-selected');
+            }
+            const content = document.createElement('span');
+            content.className = 'theia-mobile-sticky-composer-sheet-option-content';
+            const icon = document.createElement('span');
+            icon.className = `codicon ${destination.iconClass} theia-mobile-sticky-composer-sheet-option-icon`;
+            icon.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-sticky-composer-sheet-option-label';
+            label.textContent = destination.label;
+            content.append(icon, label);
+            if (destination.id === current) {
+                const check = document.createElement('span');
+                check.className = 'codicon codicon-check theia-mobile-sticky-composer-sheet-option-check';
+                check.setAttribute('aria-hidden', 'true');
+                content.append(check);
+            }
+            btn.append(content);
+            btn.addEventListener('click', () => {
+                this.workspaceDestinationByProjectId.set(project.id, destination.id);
+                this.host.stickyComposerSheetsUi.closeStickyComposerSheets();
+                this.remountComposerWithWorkspaceBar(project);
+            });
+            list.append(btn);
+        }
+
+        panel.append(list);
+        this.mountComposerWorkspaceSheetPresentation(panel, {
+            transcriptOverlay,
+            anchor,
+            align: 'start',
+            variant: 'branch',
         });
         window.requestAnimationFrame(() => this.syncWorkspacePopoverPosition());
     }

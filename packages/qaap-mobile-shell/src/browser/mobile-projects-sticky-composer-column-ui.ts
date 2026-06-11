@@ -81,6 +81,12 @@ export class MobileProjectsStickyComposerColumnUi {
         onContextUsageBadgeMounted?: (badge: HTMLButtonElement) => void;
         onOpenContextUsageSheet?: (anchor: HTMLButtonElement) => void;
         showWorkspaceBar?: boolean;
+        /** "Run in" destination pill (Local / New Worktree) — only on the new-task composer. */
+        workspaceDestination?: {
+            readonly label: string;
+            readonly iconClass: string;
+            readonly onOpen: (anchor: HTMLButtonElement) => void;
+        };
         transcriptOverlay?: boolean;
     }): HTMLElement {
         const column = document.createElement('div');
@@ -216,6 +222,15 @@ export class MobileProjectsStickyComposerColumnUi {
                     );
                 },
             });
+            if (options.workspaceDestination) {
+                const destination = options.workspaceDestination;
+                branchWorkspaceBar.append(createStickyComposerWorkspacePill({
+                    iconClass: destination.iconClass,
+                    label: destination.label,
+                    ariaLabel: nls.localize('qaap/composerWorkspace/destinationAria', 'Run in: {0}', destination.label),
+                    onClick: anchor => destination.onOpen(anchor),
+                }));
+            }
         }
 
         toolbar.append(...toolbarItems);
