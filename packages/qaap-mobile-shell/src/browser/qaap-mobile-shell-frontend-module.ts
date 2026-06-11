@@ -27,8 +27,8 @@ import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
-import { createChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view/chat-view-tree-widget';
+import { createQaapChatViewTreeWidget } from './qaap-chat-view-tree-container';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import {
     QaapBootstrapInstallTool,
@@ -79,7 +79,10 @@ import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    rebind(ChatViewTreeWidget).toDynamicValue(ctx =>
+        createQaapChatViewTreeWidget(ctx.container)
+    );
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
     bind(MobileProjectsConversations).toSelf().inSingletonScope();
     bind(MobileWorkHubInboxStream).toSelf().inSingletonScope();
@@ -96,7 +99,7 @@ export default new ContainerModule(bind => {
         const child = ctx.container.createChild();
         child.bind(AIChatInputWidget).to(MobileProjectAIChatInputWidget);
         child.bind(ChatViewTreeWidget).toDynamicValue(treeCtx =>
-            createChatViewTreeWidget(treeCtx.container)
+            createQaapChatViewTreeWidget(treeCtx.container)
         );
         child.bind(ChatViewWidget).to(MobileProjectChatViewWidget);
         child.bind(MobileProjectChatViewWidget).toSelf();
