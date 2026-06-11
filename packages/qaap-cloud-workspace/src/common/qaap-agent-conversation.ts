@@ -11,6 +11,7 @@ import {
     type QaapAgentContextUsage,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-context-usage';
 import type { QaapLinkedPullRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import type { QaapAgentMessageWireDelta } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-message-wire-delta';
 import type { QaapCreateAgentTaskQaiqModel } from './qaap-agent-task';
 import type { QaapParallelRunVariantStats } from './qaap-parallel-run';
 
@@ -264,6 +265,13 @@ export type QaapAgentConversationEvent =
     | { readonly type: 'created'; readonly conversation: QaapAgentConversationSummary }
     | { readonly type: 'updated'; readonly conversation: QaapAgentConversationSummary }
     | { readonly type: 'message'; readonly conversationId: string; readonly cwd: string; readonly message: QaapAgentMessage }
+    | {
+        readonly type: 'message_delta';
+        readonly conversationId: string;
+        readonly cwd: string;
+        readonly messageId: string;
+        readonly delta: QaapAgentMessageWireDelta;
+    }
     | { readonly type: 'deleted'; readonly conversationId: string; readonly cwd: string }
     | { readonly type: 'parallel-run'; readonly runId: string; readonly variants: readonly QaapParallelRunVariantStats[] };
 

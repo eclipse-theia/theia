@@ -6,6 +6,9 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import * as http from 'http';
+import * as https from 'https';
+import { WebSocketServer, WebSocket as WsClient } from 'ws';
 import {
     QAAP_AGENT_CONVERSATION_API_PATH,
     QaapAgentConversationAllResponse,
@@ -14,9 +17,21 @@ import {
     QaapPostAgentMessageRequest,
     QaapUpdateAgentConversationRequest,
 } from '../common/qaap-agent-conversation';
+import {
+    QAAP_AGENT_CONVERSATION_WS_PATH,
+    parseQaapAgentConversationWsClientMessage,
+} from '../common/qaap-agent-conversation-ws';
 import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
 
 const SSE_HEARTBEAT_MS = 25_000;
+/** Ping interval for WebSocket connections — keeps the socket alive through proxies. */
+const WS_PING_MS = 25_000;
+/** Negotiate permessage-deflate so large tool-result JSON frames shrink on the wire. */
+const WS_PER_MESSAGE_DEFLATE = {
+    zlibDeflateOptions: { level: 6 },
+    zlibInflateOptions: { chunkSize: 16 * 1024 },
+    threshold: 1024,
+};
 
 /** HTTP surface for the persistent agent-conversation store. */
 @injectable()
@@ -114,6 +129,81 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         app.delete(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
             const ok = this.store.delete(req.params.id);
             res.status(ok ? 204 : 404).end();
+        });
+    }
+
+    onStart(server: http.Server | https.Server): void {
+        this.attachWebSocketServer(server);
+    }
+
+    /**
+     * Bidirectional WebSocket at {@link QAAP_AGENT_CONVERSATION_WS_PATH}. The server sends a
+     * `snapshot` on connect (equivalent to GET `/all`) and then streams the same
+     * {@link QaapAgentConversationEvent} payloads as SSE. Clients may send `cancel` for
+     * instant turn interruption without an extra HTTP round-trip.
+     */
+    protected attachWebSocketServer(server: http.Server | https.Server): void {
+        const wss = new WebSocketServer({ noServer: true, perMessageDeflate: WS_PER_MESSAGE_DEFLATE });
+
+        server.on('upgrade', (request, socket, head) => {
+            try {
+                const pathname = new URL(request.url ?? '', `http://${request.headers.host}`).pathname;
+                if (pathname === QAAP_AGENT_CONVERSATION_WS_PATH) {
+                    wss.handleUpgrade(request, socket as import('net').Socket, head, client => {
+                        wss.emit('connection', client, request);
+                    });
+                }
+            } catch {
+                socket.destroy();
+            }
+        });
+
+        wss.on('connection', (client: WsClient) => {
+            const snapshot = {
+                type: 'snapshot',
+                groups: this.store.listAllGroupedByCwd(),
+            };
+            client.send(JSON.stringify(snapshot));
+
+            const subscription = this.store.onDidChange(event => {
+                if (client.readyState !== WsClient.OPEN) {
+                    return;
+                }
+                client.send(JSON.stringify(event));
+            });
+
+            client.on('message', data => {
+                try {
+                    const parsed = parseQaapAgentConversationWsClientMessage(JSON.parse(String(data)));
+                    if (!parsed) {
+                        return;
+                    }
+                    if (parsed.op === 'cancel') {
+                        this.store.cancel(parsed.conversationId);
+                        return;
+                    }
+                    if (parsed.op === 'ping' && client.readyState === WsClient.OPEN) {
+                        client.send(JSON.stringify({ type: 'pong' }));
+                    }
+                } catch {
+                    /* drop malformed client frames */
+                }
+            });
+
+            const ping = setInterval(() => {
+                if (client.readyState === WsClient.OPEN) {
+                    client.ping();
+                } else {
+                    clearInterval(ping);
+                }
+            }, WS_PING_MS);
+
+            const cleanup = (): void => {
+                clearInterval(ping);
+                subscription.dispose();
+            };
+            client.on('close', cleanup);
+            client.on('error', cleanup);
         });
     }
 

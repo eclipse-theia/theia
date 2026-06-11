@@ -49,7 +49,7 @@ export class QaapParallelRunStore {
             if (event.type === 'parallel-run') {
                 return;
             }
-            const conversationId = event.type === 'message'
+            const conversationId = event.type === 'message' || event.type === 'message_delta'
                 ? event.conversationId
                 : event.type === 'updated' || event.type === 'created'
                     ? event.conversation.id

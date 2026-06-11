@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -11,16 +12,31 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     QAAP_AGENT_CONVERSATION_API_PATH,
-    QaapAgentConversationDTO,
-    QaapAgentConversationSummaryDTO,
-    QaapAgentMessageDTO,
+    QAAP_AGENT_CONVERSATION_WS_PATH,
+    cancelConversationHttp,
     listAllConversationGroups,
+    registerConversationLiveCancel,
+    type QaapAgentConversationDTO,
+    type QaapAgentConversationSummaryDTO,
+    type QaapAgentMessageDTO,
 } from '../common/qaap-agent-conversation-client';
+import {
+    QaapConversationStreamMetricsCollector,
+    countCompressedWireFields,
+    logQaapStreamMetrics,
+} from '../common/qaap-agent-stream-metrics';
+import {
+    expandAgentMessageForWire,
+    expandAgentMessageWireDelta,
+} from '../common/qaap-agent-message-wire-compress';
+import type { QaapAgentMessageWireDelta } from '../common/qaap-agent-message-wire-delta';
 import { normalizeAgentMessageContentForDisplay, resolveMessagePreviewText } from '../common/qaap-agent-message-content';
 import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
 const STREAM_URL = `${QAAP_AGENT_CONVERSATION_API_PATH}/stream`;
-const RECONNECT_DELAY_MS = 5_000;
+const SSE_RECONNECT_DELAY_MS = 5_000;
+/** Exponential backoff cap for WebSocket reconnects. */
+const WS_RECONNECT_MAX_MS = 30_000;
 
 interface ConversationCreatedEvent {
     readonly type: 'created' | 'updated';
@@ -32,6 +48,14 @@ interface ConversationMessageEvent {
     readonly cwd: string;
     readonly message: QaapAgentMessageDTO;
 }
+interface ConversationMessageDeltaEvent {
+    readonly type: 'message_delta';
+    readonly conversationId: string;
+    readonly cwd: string;
+    readonly messageId: string;
+    readonly delta: QaapAgentMessageWireDelta;
+}
+export type ConversationLiveMessageEvent = ConversationMessageEvent | ConversationMessageDeltaEvent;
 interface ConversationDeletedEvent {
     readonly type: 'deleted';
     readonly conversationId: string;
@@ -42,6 +66,21 @@ interface ConversationParallelRunEvent {
     readonly runId: string;
     readonly variants: import('../common/qaap-parallel-run-client').QaapParallelRunVariantStatsDTO[];
 }
+interface ConversationSnapshotEvent {
+    readonly type: 'snapshot';
+    readonly groups: ReadonlyArray<{
+        readonly cwd: string;
+        readonly conversations: ReadonlyArray<QaapAgentConversationSummaryDTO>;
+    }>;
+}
+type ConversationServerEvent =
+    | ConversationSnapshotEvent
+    | ConversationCreatedEvent
+    | ConversationMessageEvent
+    | ConversationMessageDeltaEvent
+    | ConversationDeletedEvent
+    | ConversationParallelRunEvent
+    | { readonly type: 'pong' };
 
 /**
  * Cross-project live view of agent conversations on the VPS. The Projects panel subscribes to
@@ -55,7 +94,13 @@ export class MobileProjectsConversations {
     protected readonly theiaByCwd = new Map<string, QaapAgentConversationSummaryDTO[]>();
     protected readonly theiaSessionFiles = new Map<string, URI>();
     protected source: EventSource | undefined;
-    protected reconnectHandle: number | undefined;
+    protected socket: WebSocket | undefined;
+    protected transport: 'ws' | 'sse' | 'none' = 'none';
+    protected sseReconnectHandle: number | undefined;
+    protected wsReconnectHandle: number | undefined;
+    protected wsReconnectAttempt = 0;
+    protected liveCancelDispose: Disposable = Disposable.NULL;
+    protected readonly streamMetrics = new QaapConversationStreamMetricsCollector('client');
     protected started = false;
     protected visibilityListenerInstalled = false;
 
@@ -63,9 +108,9 @@ export class MobileProjectsConversations {
     /** Fires whenever conversation state on the server changes (any project). */
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
-    protected readonly onDidReceiveMessageEmitter = new Emitter<ConversationMessageEvent>();
+    protected readonly onDidReceiveMessageEmitter = new Emitter<ConversationLiveMessageEvent>();
     /** Fires on each live SSE message chunk — includes structured segments for QAIQ/OpenCode. */
-    readonly onDidReceiveMessage: Event<ConversationMessageEvent> = this.onDidReceiveMessageEmitter.event;
+    readonly onDidReceiveMessage: Event<ConversationLiveMessageEvent> = this.onDidReceiveMessageEmitter.event;
 
     protected readonly onDidReceiveParallelRunEmitter = new Emitter<ConversationParallelRunEvent>();
     /** Fires when parallel-run variant diff stats change on the VPS. */
@@ -77,14 +122,14 @@ export class MobileProjectsConversations {
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
-    /** Idempotent — opens the SSE stream the first time it is called. */
+    /** Idempotent — opens the WebSocket (SSE fallback) feed the first time it is called. */
     start(): void {
         if (this.started) {
             return;
         }
         this.started = true;
-        void this.primeFromAll();
-        this.openStream();
+        this.liveCancelDispose = registerConversationLiveCancel(id => this.cancelConversationLive(id));
+        this.openWebSocket();
         this.installVisibilityReconnect();
     }
 
@@ -98,14 +143,10 @@ export class MobileProjectsConversations {
             if (document.visibilityState !== 'visible') {
                 return;
             }
-            this.source?.close();
-            this.source = undefined;
-            if (this.reconnectHandle !== undefined) {
-                window.clearTimeout(this.reconnectHandle);
-                this.reconnectHandle = undefined;
-            }
-            this.openStream();
-            void this.primeFromAll();
+            this.closeWebSocket();
+            this.closeSse();
+            this.clearReconnectTimers();
+            this.openWebSocket();
         };
         document.addEventListener('visibilitychange', reconnect);
         window.addEventListener('pageshow', reconnect);
@@ -289,115 +330,329 @@ export class MobileProjectsConversations {
     protected async primeFromAll(): Promise<void> {
         try {
             const groups = await listAllConversationGroups();
-            const next = new Map<string, QaapAgentConversationSummaryDTO[]>();
-            for (const group of groups) {
-                next.set(normalizeCwd(group.cwd), sortConversations([...group.conversations]));
-            }
-            this.byCwd.clear();
-            for (const [cwd, list] of next) {
-                this.byCwd.set(cwd, list);
-            }
-            this.onDidChangeEmitter.fire();
+            this.applyConversationGroups(groups);
         } catch {
-            /* SSE will reconcile */
+            /* live feed will reconcile */
         }
     }
 
-    protected openStream(): void {
-        if (typeof EventSource === 'undefined') {
+    protected applyConversationGroups(
+        groups: ReadonlyArray<{ readonly cwd: string; readonly conversations: ReadonlyArray<QaapAgentConversationSummaryDTO> }>,
+    ): void {
+        const next = new Map<string, QaapAgentConversationSummaryDTO[]>();
+        for (const group of groups) {
+            next.set(normalizeCwd(group.cwd), sortConversations([...group.conversations]));
+        }
+        this.byCwd.clear();
+        for (const [cwd, list] of next) {
+            this.byCwd.set(cwd, list);
+        }
+        this.onDidChangeEmitter.fire();
+    }
+
+    protected async cancelConversationLive(id: string): Promise<void> {
+        if (this.socket?.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({ op: 'cancel', conversationId: id }));
+            const existing = this.findSummaryById(id);
+            if (existing?.status === 'streaming') {
+                this.recordSnapshot({ ...existing, status: 'idle', updatedAt: Date.now() });
+            }
+            return;
+        }
+        await cancelConversationHttp(id);
+    }
+
+    protected openWebSocket(): void {
+        if (typeof WebSocket === 'undefined') {
+            this.openSseStream();
+            void this.primeFromAll();
+            return;
+        }
+        if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+            return;
+        }
+        try {
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const socket = new WebSocket(`${proto}//${window.location.host}${QAAP_AGENT_CONVERSATION_WS_PATH}`);
+            this.socket = socket;
+
+            socket.addEventListener('open', () => {
+                this.wsReconnectAttempt = 0;
+                this.transport = 'ws';
+                this.closeSse();
+                for (const list of this.byCwd.values()) {
+                    for (const conversation of list) {
+                        if (conversation.status === 'streaming') {
+                            this.streamMetrics.setTransport(conversation.id, 'ws');
+                        }
+                    }
+                }
+            });
+
+            socket.addEventListener('message', ev => {
+                try {
+                    this.dispatchServerPayload(JSON.parse(String(ev.data)) as ConversationServerEvent);
+                } catch {
+                    /* drop malformed payload */
+                }
+            });
+
+            socket.addEventListener('close', () => {
+                this.socket = undefined;
+                if (this.transport === 'ws') {
+                    this.transport = 'none';
+                }
+                this.openSseStream();
+                this.scheduleWebSocketReconnect();
+            });
+
+            socket.addEventListener('error', () => socket.close());
+        } catch {
+            this.openSseStream();
+            void this.primeFromAll();
+        }
+    }
+
+    protected openSseStream(): void {
+        if (this.transport === 'ws' || typeof EventSource === 'undefined' || this.source) {
             return;
         }
         try {
             const source = new EventSource(STREAM_URL);
             this.source = source;
-            source.addEventListener('created', ev => this.onCreatedOrUpdated(ev as MessageEvent));
-            source.addEventListener('updated', ev => this.onCreatedOrUpdated(ev as MessageEvent));
-            source.addEventListener('message', ev => this.onMessageEvent(ev as MessageEvent));
-            source.addEventListener('deleted', ev => this.onDeletedEvent(ev as MessageEvent));
-            source.addEventListener('parallel-run', ev => this.onParallelRunEvent(ev as MessageEvent));
-            source.addEventListener('error', () => this.scheduleReconnect());
+            this.transport = 'sse';
+            for (const list of this.byCwd.values()) {
+                for (const conversation of list) {
+                    if (conversation.status === 'streaming') {
+                        this.streamMetrics.setTransport(conversation.id, 'sse');
+                    }
+                }
+            }
+            source.addEventListener('created', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('updated', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('message', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('message_delta', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('deleted', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('parallel-run', ev => this.dispatchSseEvent(ev as MessageEvent));
+            source.addEventListener('error', () => this.scheduleSseReconnect());
         } catch {
-            this.scheduleReconnect();
+            this.scheduleSseReconnect();
         }
     }
 
-    protected scheduleReconnect(): void {
-        if (this.reconnectHandle !== undefined) {
-            return;
-        }
-        this.source?.close();
-        this.source = undefined;
-        this.reconnectHandle = window.setTimeout(() => {
-            this.reconnectHandle = undefined;
-            this.openStream();
-            void this.primeFromAll();
-        }, RECONNECT_DELAY_MS);
-    }
-
-    protected onCreatedOrUpdated(ev: MessageEvent): void {
+    protected dispatchSseEvent(ev: MessageEvent): void {
         try {
-            const payload = JSON.parse(ev.data) as ConversationCreatedEvent;
-            this.upsert(payload.conversation);
-            this.onDidChangeEmitter.fire();
+            this.dispatchServerPayload(JSON.parse(ev.data) as ConversationServerEvent);
         } catch {
             /* drop malformed payload */
         }
     }
 
-    protected onMessageEvent(ev: MessageEvent): void {
-        try {
-            const payload = JSON.parse(ev.data) as ConversationMessageEvent;
-            this.onDidReceiveMessageEmitter.fire(payload);
-            // We don't store full transcripts here (transcript sheet fetches its own copy);
-            // we just refresh the preview/updatedAt on the summary so the card reflects activity.
-            const list = lookupByCwd(this.byCwd, payload.cwd) ?? [];
-            const existing = list.find(c => c.id === payload.conversationId);
-            if (!existing) {
+    protected dispatchServerPayload(payload: ConversationServerEvent): void {
+        switch (payload.type) {
+            case 'snapshot':
+                this.applyConversationGroups(payload.groups);
+                return;
+            case 'created':
+            case 'updated':
+                this.upsert(payload.conversation);
+                this.recordClientStreamMetrics(payload);
+                this.onDidChangeEmitter.fire();
+                return;
+            case 'message':
+                void this.dispatchLiveMessage(payload);
+                return;
+            case 'message_delta':
+                void this.dispatchLiveMessageDelta(payload);
+                return;
+            case 'deleted': {
+                const cwd = normalizeCwd(payload.cwd);
+                const list = this.byCwd.get(cwd);
+                if (!list) {
+                    return;
+                }
+                const next = list.filter(c => c.id !== payload.conversationId);
+                if (next.length === 0) {
+                    this.byCwd.delete(cwd);
+                } else {
+                    this.byCwd.set(cwd, next);
+                }
                 this.onDidChangeEmitter.fire();
                 return;
             }
-            const updated: QaapAgentConversationSummaryDTO = {
-                ...existing,
-                updatedAt: payload.message.createdAt,
-                messageCount: payload.message.role === existing.lastMessageRole
-                    ? existing.messageCount
-                    : existing.messageCount + 1,
-                lastMessagePreview: excerpt(resolveMessagePreviewText(payload.message)),
-                lastMessageRole: payload.message.role,
-            };
-            this.upsert(updated);
-            this.onDidChangeEmitter.fire();
-        } catch {
-            /* drop malformed payload */
-        }
-    }
-
-    protected onDeletedEvent(ev: MessageEvent): void {
-        try {
-            const payload = JSON.parse(ev.data) as ConversationDeletedEvent;
-            const cwd = normalizeCwd(payload.cwd);
-            const list = this.byCwd.get(cwd);
-            if (!list) {
+            case 'parallel-run':
+                this.onDidReceiveParallelRunEmitter.fire(payload);
                 return;
-            }
-            const next = list.filter(c => c.id !== payload.conversationId);
-            if (next.length === 0) {
-                this.byCwd.delete(cwd);
-            } else {
-                this.byCwd.set(cwd, next);
-            }
-            this.onDidChangeEmitter.fire();
-        } catch {
-            /* drop */
+            case 'pong':
+                return;
+            default:
+                return;
         }
     }
 
-    protected onParallelRunEvent(ev: MessageEvent): void {
+    protected scheduleWebSocketReconnect(): void {
+        if (this.wsReconnectHandle !== undefined || typeof WebSocket === 'undefined') {
+            return;
+        }
+        const delay = Math.min(WS_RECONNECT_MAX_MS, 1_000 * (2 ** this.wsReconnectAttempt));
+        this.wsReconnectAttempt++;
+        this.wsReconnectHandle = window.setTimeout(() => {
+            this.wsReconnectHandle = undefined;
+            this.openWebSocket();
+        }, delay);
+    }
+
+    protected scheduleSseReconnect(): void {
+        if (this.sseReconnectHandle !== undefined || this.transport === 'ws') {
+            return;
+        }
+        this.closeSse();
+        this.sseReconnectHandle = window.setTimeout(() => {
+            this.sseReconnectHandle = undefined;
+            this.openSseStream();
+            void this.primeFromAll();
+        }, SSE_RECONNECT_DELAY_MS);
+    }
+
+    protected closeWebSocket(): void {
+        this.socket?.close();
+        this.socket = undefined;
+        if (this.transport === 'ws') {
+            this.transport = 'none';
+        }
+    }
+
+    protected closeSse(): void {
+        this.source?.close();
+        this.source = undefined;
+        if (this.transport === 'sse') {
+            this.transport = 'none';
+        }
+    }
+
+    protected clearReconnectTimers(): void {
+        if (this.sseReconnectHandle !== undefined) {
+            window.clearTimeout(this.sseReconnectHandle);
+            this.sseReconnectHandle = undefined;
+        }
+        if (this.wsReconnectHandle !== undefined) {
+            window.clearTimeout(this.wsReconnectHandle);
+            this.wsReconnectHandle = undefined;
+        }
+    }
+
+    protected async dispatchLiveMessage(payload: ConversationMessageEvent): Promise<void> {
         try {
-            const payload = JSON.parse(ev.data) as ConversationParallelRunEvent;
-            this.onDidReceiveParallelRunEmitter.fire(payload);
+            const message = await expandAgentMessageForWire(payload.message);
+            const expanded: ConversationMessageEvent = message === payload.message
+                ? payload
+                : { ...payload, message };
+            this.recordClientStreamMetrics(payload, expanded);
+            this.onDidReceiveMessageEmitter.fire(expanded);
+            this.refreshSummaryFromLiveMessage(expanded);
         } catch {
-            /* drop malformed payload */
+            /* drop payloads the browser cannot decompress */
+        }
+    }
+
+    protected async dispatchLiveMessageDelta(payload: ConversationMessageDeltaEvent): Promise<void> {
+        try {
+            const delta = await expandAgentMessageWireDelta(payload.delta);
+            const expanded: ConversationMessageDeltaEvent = delta === payload.delta
+                ? payload
+                : { ...payload, delta };
+            this.recordClientStreamMetrics(payload, expanded);
+            this.onDidReceiveMessageEmitter.fire(expanded);
+            this.refreshSummaryFromLiveDelta(expanded);
+        } catch {
+            /* drop payloads the browser cannot decompress */
+        }
+    }
+
+    protected recordClientStreamMetrics(
+        wirePayload: ConversationServerEvent,
+        expandedPayload?: ConversationServerEvent,
+    ): void {
+        if (wirePayload.type !== 'message'
+            && wirePayload.type !== 'message_delta'
+            && wirePayload.type !== 'updated') {
+            return;
+        }
+        const conversationId = wirePayload.type === 'updated'
+            ? wirePayload.conversation.id
+            : wirePayload.type === 'message' || wirePayload.type === 'message_delta'
+                ? wirePayload.conversationId
+                : undefined;
+        if (!conversationId) {
+            return;
+        }
+        if (wirePayload.type === 'updated' && wirePayload.conversation.status === 'streaming') {
+            this.streamMetrics.setTransport(conversationId, this.transport === 'ws' ? 'ws' : 'sse');
+        }
+        this.streamMetrics.recordWireEvent(conversationId, wirePayload.type, wirePayload, {
+            uncompressedPayload: expandedPayload,
+            compressedFieldCount: countCompressedWireFields(wirePayload),
+        });
+        if (wirePayload.type === 'updated' && wirePayload.conversation.status !== 'streaming') {
+            logQaapStreamMetrics(this.streamMetrics.finishTurn(conversationId));
+        }
+    }
+
+    protected refreshSummaryFromLiveMessage(payload: ConversationMessageEvent): void {
+        const list = lookupByCwd(this.byCwd, payload.cwd) ?? [];
+        const existing = list.find(c => c.id === payload.conversationId);
+        if (!existing) {
+            this.onDidChangeEmitter.fire();
+            return;
+        }
+        const updated: QaapAgentConversationSummaryDTO = {
+            ...existing,
+            updatedAt: Math.max(existing.updatedAt, payload.message.createdAt),
+            messageCount: payload.message.role === existing.lastMessageRole
+                ? existing.messageCount
+                : existing.messageCount + 1,
+            lastMessagePreview: excerpt(resolveMessagePreviewText(payload.message)),
+            lastMessageRole: payload.message.role,
+        };
+        this.upsert(updated);
+        this.onDidChangeEmitter.fire();
+    }
+
+    protected refreshSummaryFromLiveDelta(payload: ConversationMessageDeltaEvent): void {
+        const list = lookupByCwd(this.byCwd, payload.cwd) ?? [];
+        const existing = list.find(c => c.id === payload.conversationId);
+        if (!existing) {
+            this.onDidChangeEmitter.fire();
+            return;
+        }
+        const previewDelta = this.resolvePreviewDelta(payload.delta);
+        const updated: QaapAgentConversationSummaryDTO = {
+            ...existing,
+            updatedAt: Date.now(),
+            ...(previewDelta
+                ? { lastMessagePreview: excerpt(`${existing.lastMessagePreview ?? ''}${previewDelta}`) }
+                : {}),
+        };
+        this.upsert(updated);
+        this.onDidChangeEmitter.fire();
+    }
+
+    protected resolvePreviewDelta(delta: QaapAgentMessageWireDelta): string | undefined {
+        switch (delta.kind) {
+            case 'append_content':
+            case 'append_segment_text':
+                return delta.text;
+            case 'message_start':
+            case 'replace':
+                return resolveMessagePreviewText(delta.message);
+            case 'patch_tool':
+            case 'append_segment':
+            case 'noop':
+                return undefined;
+            default: {
+                const exhaustive: never = delta;
+                return exhaustive;
+            }
         }
     }
 

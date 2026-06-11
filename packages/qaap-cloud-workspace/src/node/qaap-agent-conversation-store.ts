@@ -53,6 +53,7 @@ import {
 import { patchConversationAutoApprove } from '../common/qaap-agent-conversation-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
 import { appendTeamDelegationToPrompt } from '../common/qaap-team-delegation';
+import { buildConversationAgentPrompt } from '../common/qaap-agent-conversation-prompt';
 import {
     areAllSubtasksSettled,
     buildTeamSynthesisUserMessage,
@@ -65,8 +66,23 @@ import { planConversationRewind } from '../common/qaap-agent-conversation-rewind
 import type { QaapParallelRunVariantStats } from '../common/qaap-parallel-run';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
+import { QaapAgentConversationSseBatcher } from '../common/qaap-agent-conversation-sse-batcher';
+import {
+    compressAgentMessageForWire,
+    compressAgentMessageWireDeltaForWire,
+} from './qaap-agent-message-wire-compress';
+import {
+    QaapConversationStreamMetricsCollector,
+    countCompressedWireFields,
+    logQaapStreamMetrics,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-stream-metrics';
+import {
+    computeAgentMessageWireDelta,
+    type QaapAgentMessageWireSnapshot,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-message-wire-delta';
 
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-conversations');
+const STREAMING_PERSIST_DEBOUNCE_MS = 500;
 const INDEX_PATH = path.join(STORE_DIR, 'index.json');
 
 /**
@@ -94,6 +110,13 @@ export class QaapAgentConversationStore {
     protected readonly autoContinueCountByUserMessage = new Map<string, number>();
     /** Per-task structured stdout parsers (QAIQ, Claude, Codex JSON, OpenCode, Antigravity). */
     protected readonly agentStreamByTaskId = new Map<string, QaapAgentStreamAccumulator>();
+    /** Last wire snapshot per agent message — drives incremental SSE deltas during streaming. */
+    protected readonly lastWireMessageById = new Map<string, QaapAgentMessageWireSnapshot>();
+    protected sseBatcher!: QaapAgentConversationSseBatcher;
+    protected persistTimer: ReturnType<typeof setTimeout> | undefined;
+    protected readonly streamMetrics = new QaapConversationStreamMetricsCollector('server');
+    /** Uncompressed wire payloads keyed by `conversationId:messageId` for compression savings. */
+    protected readonly wireMetricsBaselines = new Map<string, QaapAgentConversationEvent>();
 
     protected readonly onDidChangeEmitter = new Emitter<QaapAgentConversationEvent>();
     readonly onDidChange: Event<QaapAgentConversationEvent> = this.onDidChangeEmitter.event;
@@ -102,6 +125,10 @@ export class QaapAgentConversationStore {
 
     @postConstruct()
     protected init(): void {
+        this.sseBatcher = new QaapAgentConversationSseBatcher(event => {
+            this.recordStreamMetrics(event);
+            this.onDidChangeEmitter.fire(event);
+        });
         this.restoreReady = this.restoreFromDisk();
         this.taskRunner.onDidChangeTask(event => this.onTaskChanged(event));
     }
@@ -650,7 +677,7 @@ export class QaapAgentConversationStore {
     ): void {
         this.conversations.set(conversationId, next);
         this.fire({ type: 'updated', conversation: toConversationSummary(next) });
-        void this.persist();
+        this.flushPersist();
         this.pendingTeamSynthesisForLeader.delete(leaderTaskId);
         this.maybeTriggerTeamSynthesis(leaderTaskId, conversationId);
     }
@@ -696,7 +723,7 @@ export class QaapAgentConversationStore {
                 createdAt: now,
             };
             messages = [...conv.messages, message];
-            this.fire({ type: 'message', conversationId: conv.id, cwd: conv.cwd, message });
+            this.fireAgentMessageWireUpdate(conv.id, conv.cwd, agentId, message);
         } else {
             messages = conv.messages.map(message => message.id === agentMessageId
                 ? {
@@ -708,7 +735,7 @@ export class QaapAgentConversationStore {
             );
             const updated = messages.find(message => message.id === agentMessageId);
             if (updated) {
-                this.fire({ type: 'message', conversationId: conv.id, cwd: conv.cwd, message: updated });
+                this.fireAgentMessageWireUpdate(conv.id, conv.cwd, agentId, updated);
             }
         }
         const next: QaapAgentConversation = {
@@ -721,7 +748,7 @@ export class QaapAgentConversationStore {
         };
         this.conversations.set(conv.id, next);
         this.fire({ type: 'updated', conversation: toConversationSummary(next) });
-        void this.persist();
+        this.schedulePersist();
     }
 
     protected finalizeTurnContextUsage(conv: QaapAgentConversation, taskId: string, agentId: string): QaapAgentConversation {
@@ -859,7 +886,8 @@ export class QaapAgentConversationStore {
         this.conversations.set(conversationId, withReply);
         const agentMessage = withReply.messages[withReply.messages.length - 1];
         if (agentMessage) {
-            this.fire({ type: 'message', conversationId, cwd: withReply.cwd, message: agentMessage });
+            this.fireAgentMessageWireUpdate(conversationId, withReply.cwd, withReply.agentId, agentMessage, { forceFullMessage: true });
+            this.lastWireMessageById.delete(agentMessage.id);
         }
         this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
         this.maybeAutoContinueIncompleteTurn(conversationId, withReply, userMessageId);
@@ -1001,22 +1029,16 @@ export class QaapAgentConversationStore {
         const lastUser = conv.messages[conv.messages.length - 1];
         const skipDelegation = isTeamSynthesisUserMessage(lastUser.content);
         const history = conv.messages.slice(0, -1);
+        const latestUser = this.stripLeadingAgentMention(lastUser.content);
         if (history.length === 0) {
-            const seed = this.stripLeadingAgentMention(lastUser.content);
-            return skipDelegation ? seed : this.appendTeamDelegation(seed, conv.agentId);
+            return skipDelegation ? latestUser : this.appendTeamDelegation(latestUser, conv.agentId);
         }
-        const lines: string[] = [
-            'You are continuing an ongoing conversation. The transcript so far:',
-            '',
-        ];
-        for (const m of history) {
-            lines.push(`${m.role === 'user' ? 'USER' : 'ASSISTANT'}: ${m.content}`);
-            lines.push('');
-        }
-        lines.push('Now respond to the latest user message:');
-        lines.push('');
-        lines.push(`USER: ${this.stripLeadingAgentMention(lastUser.content)}`);
-        const transcript = lines.join('\n');
+        const transcript = buildConversationAgentPrompt({
+            history,
+            latestUserContent: latestUser,
+            contextPreamble: conv.contextPreamble,
+            contextWindowSize: conv.contextWindowSize,
+        });
         return skipDelegation ? transcript : this.appendTeamDelegation(transcript, conv.agentId);
     }
 
@@ -1040,7 +1062,123 @@ export class QaapAgentConversationStore {
     }
 
     protected fire(event: QaapAgentConversationEvent): void {
-        this.onDidChangeEmitter.fire(event);
+        this.sseBatcher.enqueue(event);
+    }
+
+    protected stageWireMetricsBaseline(
+        conversationId: string,
+        messageId: string,
+        baseline: QaapAgentConversationEvent,
+    ): void {
+        this.wireMetricsBaselines.set(`${conversationId}:${messageId}`, baseline);
+    }
+
+    protected recordStreamMetrics(event: QaapAgentConversationEvent): void {
+        const conversationId = event.type === 'message' || event.type === 'message_delta'
+            ? event.conversationId
+            : event.type === 'updated' || event.type === 'created'
+                ? event.conversation.id
+                : undefined;
+        if (!conversationId) {
+            return;
+        }
+        const baselineKey = event.type === 'message_delta'
+            ? `${event.conversationId}:${event.messageId}`
+            : event.type === 'message'
+                ? `${event.conversationId}:${event.message.id}`
+                : undefined;
+        const baseline = baselineKey ? this.wireMetricsBaselines.get(baselineKey) : undefined;
+        if (baselineKey) {
+            this.wireMetricsBaselines.delete(baselineKey);
+        }
+        this.streamMetrics.recordWireEvent(conversationId, event.type, event, {
+            uncompressedPayload: baseline,
+            compressedFieldCount: countCompressedWireFields(event),
+        });
+        if (event.type === 'updated' && event.conversation.status !== 'streaming') {
+            logQaapStreamMetrics(this.streamMetrics.finishTurn(conversationId));
+        }
+    }
+
+    protected fireAgentMessageWireUpdate(
+        conversationId: string,
+        cwd: string,
+        agentId: string,
+        message: QaapAgentMessage,
+        options?: { forceFullMessage?: boolean },
+    ): void {
+        const snapshot: QaapAgentMessageWireSnapshot = {
+            id: message.id,
+            role: message.role,
+            content: message.content,
+            segments: message.segments,
+            createdAt: message.createdAt,
+        };
+        if (options?.forceFullMessage) {
+            this.lastWireMessageById.set(message.id, snapshot);
+            const wireMessage = {
+                type: 'message' as const,
+                conversationId,
+                cwd,
+                message,
+            };
+            this.stageWireMetricsBaseline(conversationId, message.id, wireMessage);
+            this.fire({
+                ...wireMessage,
+                message: compressAgentMessageForWire(message),
+            });
+            return;
+        }
+        const previous = this.lastWireMessageById.get(message.id);
+        const delta = computeAgentMessageWireDelta(previous, snapshot, agentId);
+        if (delta.kind === 'noop') {
+            return;
+        }
+        this.lastWireMessageById.set(message.id, snapshot);
+        if (delta.kind === 'message_start' || delta.kind === 'replace') {
+            const wireMessage = {
+                type: 'message' as const,
+                conversationId,
+                cwd,
+                message: delta.message,
+            };
+            this.stageWireMetricsBaseline(conversationId, message.id, wireMessage);
+            this.fire({
+                ...wireMessage,
+                message: compressAgentMessageForWire(delta.message),
+            });
+            return;
+        }
+        const wireDelta = {
+            type: 'message_delta' as const,
+            conversationId,
+            cwd,
+            messageId: message.id,
+            delta,
+        };
+        this.stageWireMetricsBaseline(conversationId, message.id, wireDelta);
+        this.fire({
+            ...wireDelta,
+            delta: compressAgentMessageWireDeltaForWire(delta),
+        });
+    }
+
+    protected schedulePersist(): void {
+        if (this.persistTimer !== undefined) {
+            return;
+        }
+        this.persistTimer = setTimeout(() => {
+            this.persistTimer = undefined;
+            void this.persist();
+        }, STREAMING_PERSIST_DEBOUNCE_MS);
+    }
+
+    protected flushPersist(): void {
+        if (this.persistTimer !== undefined) {
+            clearTimeout(this.persistTimer);
+            this.persistTimer = undefined;
+        }
+        void this.persist();
     }
 
     /** Push live parallel-run diff stats to every connected conversation SSE client. */

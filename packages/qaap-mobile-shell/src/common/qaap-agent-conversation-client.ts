@@ -12,12 +12,28 @@ import {
 } from './qaap-agent-context-usage';
 import { resolveMessagePreviewText } from './qaap-agent-message-content';
 import type { QaapAgentToolApprovalRules } from './qaap-agent-tool-approval-rules';
+import type { QaapAgentWireCompressionEncoding } from './qaap-agent-wire-encoding';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 /**
  * HTTP helpers for the persistent VPS agent-conversation API.
  * Keep {@link QAAP_AGENT_CONVERSATION_API_PATH} in sync with `@theia/qaap-cloud-workspace`.
  */
 export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
+/** Keep in sync with `@theia/qaap-cloud-workspace` {@link QAAP_AGENT_CONVERSATION_WS_PATH}. */
+export const QAAP_AGENT_CONVERSATION_WS_PATH = `${QAAP_AGENT_CONVERSATION_API_PATH}/ws`;
+
+let conversationLiveCancel: ((id: string) => Promise<void>) | undefined;
+
+/** Registers a WebSocket-first cancel handler from {@link MobileProjectsConversations}. */
+export function registerConversationLiveCancel(handler: (id: string) => Promise<void>): Disposable {
+    conversationLiveCancel = handler;
+    return Disposable.create(() => {
+        if (conversationLiveCancel === handler) {
+            conversationLiveCancel = undefined;
+        }
+    });
+}
 
 export interface QaapAgentConversationSummaryDTO {
     readonly id: string;
@@ -68,8 +84,10 @@ export type QaapAgentMessageSegmentDTO =
         readonly toolUseId: string;
         readonly name: string;
         readonly args: string;
+        readonly argsEncoding?: QaapAgentWireCompressionEncoding;
         readonly finished: boolean;
         readonly result?: string;
+        readonly resultEncoding?: QaapAgentWireCompressionEncoding;
     };
 
 export interface QaapAgentMessageDTO {
@@ -350,7 +368,7 @@ export async function forkConversation(id: string): Promise<QaapAgentConversatio
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
-export async function cancelConversation(id: string): Promise<void> {
+export async function cancelConversationHttp(id: string): Promise<void> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/cancel`, {
         method: 'POST',
         credentials: 'include',
@@ -358,6 +376,15 @@ export async function cancelConversation(id: string): Promise<void> {
     if (!response.ok) {
         throw new Error(response.statusText);
     }
+}
+
+/** Cancels via WebSocket when the live feed is connected; falls back to HTTP POST /cancel. */
+export async function cancelConversation(id: string): Promise<void> {
+    if (conversationLiveCancel) {
+        await conversationLiveCancel(id);
+        return;
+    }
+    await cancelConversationHttp(id);
 }
 
 export async function retryConversation(id: string): Promise<QaapAgentConversationDTO> {
