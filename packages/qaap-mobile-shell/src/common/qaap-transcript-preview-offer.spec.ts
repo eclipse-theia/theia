@@ -9,6 +9,7 @@ import {
     conversationAwaitingDevPreview,
     conversationHasActiveDevServerRun,
     conversationHasActiveShellRun,
+    conversationMayAutoOpenTranscriptPreview,
     conversationRequestsDevPreview,
     extractDevPreviewUrlFromAgentText,
     findTranscriptPreviewPortHint,
@@ -151,5 +152,34 @@ describe('qaap-transcript-preview-offer', () => {
         expect(conversationHasActiveShellRun(conv)).to.equal(true);
         expect(conversationHasActiveDevServerRun(conv)).to.equal(false);
         expect(conversationAwaitingDevPreview(conv)).to.equal(true);
+    });
+
+    it('conversationMayAutoOpenTranscriptPreview never auto-opens while the turn is streaming', () => {
+        const base: QaapAgentConversationDTO = {
+            id: 'c4',
+            cwd: '/repo',
+            agentId: 'qaiq',
+            title: 'Run',
+            status: 'streaming',
+            createdAt: 1,
+            updatedAt: 2,
+            messages: [{
+                id: 'a1',
+                role: 'agent',
+                // A printed URL mid-turn must stage the offer, not switch the surface.
+                content: 'Dev server running at http://localhost:5175/',
+                createdAt: 2,
+                segments: [{
+                    type: 'tool',
+                    toolUseId: 't1',
+                    name: 'Bash',
+                    args: '{"command":"pnpm install"}',
+                    finished: true,
+                }],
+            }],
+        };
+        expect(conversationMayAutoOpenTranscriptPreview(base)).to.equal(false);
+        expect(conversationMayAutoOpenTranscriptPreview({ ...base, status: 'idle' })).to.equal(true);
+        expect(conversationMayAutoOpenTranscriptPreview(undefined)).to.equal(false);
     });
 });

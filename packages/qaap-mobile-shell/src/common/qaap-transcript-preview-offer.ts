@@ -5,7 +5,6 @@
 
 import type { QaapAgentConversationDTO, QaapAgentMessageSegmentDTO } from './qaap-agent-conversation-client';
 import { buildQaapDevPreviewUrl, parseQaapDevPreviewPort } from './qaap-dev-preview';
-import { isConversationTurnVisuallySettled } from './qaap-transcript-turn-status';
 
 const DEV_SERVER_COMMAND_RE = /\b(?:pnpm|npm|yarn|bun)\s+(?:run\s+)?(?:dev|start|serve|preview)\b|\b(?:vite|next\s+dev|nuxt\s+dev|astro\s+dev|remix\s+dev)\b|\bnpx\s+vite\b|\bnpx\s+next\b/i;
 const DEV_URL_IN_TEXT_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):(\d{2,5})(?:\/[^\s`*)\]]*)?/i;
@@ -241,18 +240,19 @@ export function conversationShouldKickoffDevPreviewBootstrap(conv: QaapAgentConv
     return conversationShouldProbeDefaultDevPreviewPorts(conv);
 }
 
-/** True when the UI may auto-switch to Preview and mount the iframe. */
+/**
+ * True when the UI may auto-switch to Preview and mount the iframe.
+ *
+ * Never auto-open mid-turn: the agent may still be installing dependencies or fixing the
+ * build, and pending approval prompts must stay visible in the transcript. While streaming,
+ * the ready URL is staged ("Preview ready" offer) and the preview opens automatically once
+ * the turn settles (see `finalizeTranscriptDevPreviewAfterSettle`).
+ */
 export function conversationMayAutoOpenTranscriptPreview(conv: QaapAgentConversationDTO | undefined): boolean {
     if (!conv) {
         return false;
     }
-    if (conv.status !== 'streaming') {
-        return true;
-    }
-    if (findTranscriptPreviewPortHint(conv) !== undefined) {
-        return true;
-    }
-    return conversationAgentFinishedTool(conv) && isConversationTurnVisuallySettled(conv);
+    return conv.status !== 'streaming';
 }
 
 /** Ports to probe while waiting for a dev server to bind. */
