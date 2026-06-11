@@ -7,6 +7,8 @@ import { expect } from 'chai';
 import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client';
 import {
     buildConversationTranscriptFingerprint,
+    canStreamPatchAgentTextContentOnly,
+    canStreamPatchStdoutAgentContentOnly,
     isStreamingTranscriptTailUnchanged,
     resolveStreamingTranscriptPatchKind,
     shouldForceTranscriptRenderOnStatusSettle,
@@ -237,5 +239,50 @@ describe('qaap-transcript-incremental-update', () => {
         const prev = conv({ updatedAt: 2, messages });
         const next = conv({ updatedAt: 99, messages });
         expect(isStreamingTranscriptTailUnchanged(prev, next)).to.equal(true);
+    });
+
+    it('canStreamPatchAgentTextContentOnly allows growing text when tools are unchanged', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+                { type: 'text' as const, content: 'Hel' },
+            ],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+                { type: 'text' as const, content: 'Hello' },
+            ],
+        };
+        expect(canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)).to.equal(true);
+    });
+
+    it('canStreamPatchAgentTextContentOnly rejects new tool segments', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [{ type: 'text' as const, content: 'Hi' }],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'text' as const, content: 'Hi' },
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false },
+            ],
+        };
+        expect(canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)).to.equal(false);
+    });
+
+    it('canStreamPatchStdoutAgentContentOnly allows stdout growth without segments', () => {
+        const prevMsg = { id: 'a1', role: 'agent' as const, content: 'Hel', createdAt: 1 };
+        const nextMsg = { id: 'a1', role: 'agent' as const, content: 'Hello', createdAt: 1 };
+        expect(canStreamPatchStdoutAgentContentOnly(prevMsg, nextMsg)).to.equal(true);
     });
 });

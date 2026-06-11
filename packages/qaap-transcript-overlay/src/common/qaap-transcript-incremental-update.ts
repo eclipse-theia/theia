@@ -178,8 +178,85 @@ export function isStreamingTranscriptTailUnchanged(
 /** Stable selector hook for incremental DOM patches. */
 export const TRANSCRIPT_MESSAGE_ID_ATTR = 'data-transcript-message-id';
 
+/** Index of a segment inside the agent message snapshot (for in-place text streaming patches). */
+export const TRANSCRIPT_SEGMENT_INDEX_ATTR = 'data-transcript-segment-index';
+
 /** Marks the live “thinking/acting” placeholder row while the agent has not replied yet. */
 export const TRANSCRIPT_ACTIVITY_ROW_ATTR = 'data-transcript-activity-row';
+
+function segmentToolFingerprint(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): string {
+    return `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}:${segment.name}`;
+}
+
+/**
+ * True when the agent tail changed only by growing existing text segment content — tools,
+ * thinking blocks, and segment cardinality stay identical so the DOM can patch markdown
+ * in place instead of rebuilding tool pills and expand state.
+ */
+export function canStreamPatchAgentTextContentOnly(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    const prevSegments = prev.segments ?? [];
+    const nextSegments = next.segments ?? [];
+    if (prevSegments.length === 0 || prevSegments.length !== nextSegments.length) {
+        return false;
+    }
+    let sawTextGrowth = false;
+    for (let i = 0; i < prevSegments.length; i++) {
+        const p = prevSegments[i];
+        const n = nextSegments[i];
+        if (p.type === 'tool' && n.type === 'tool') {
+            if (segmentToolFingerprint(p) !== segmentToolFingerprint(n)) {
+                return false;
+            }
+            continue;
+        }
+        if (p.type === 'text' && n.type === 'text') {
+            const previous = p.content ?? '';
+            const incoming = n.content ?? '';
+            if (incoming === previous) {
+                continue;
+            }
+            if (incoming.startsWith(previous) && incoming.length > previous.length) {
+                sawTextGrowth = true;
+                continue;
+            }
+            return false;
+        }
+        if (p.type !== n.type) {
+            return false;
+        }
+        // thinking / other non-tool segments must be byte-identical for a text-only patch
+        if (p.type !== 'tool' && p.type !== 'text') {
+            const previous = 'content' in p ? (p.content ?? '') : '';
+            const incoming = 'content' in n ? (n.content ?? '') : '';
+            if (previous !== incoming) {
+                return false;
+            }
+        }
+    }
+    return sawTextGrowth;
+}
+
+/** Stdout-style agents without structured segments — grow plain content only. */
+export function canStreamPatchStdoutAgentContentOnly(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    if ((prev.segments?.length ?? 0) > 0 || (next.segments?.length ?? 0) > 0) {
+        return false;
+    }
+    const previous = prev.content ?? '';
+    const incoming = next.content ?? '';
+    return incoming.startsWith(previous) && incoming.length > previous.length;
+}
 
 export function fingerprintAgentSegments(segments: readonly QaapAgentMessageSegmentDTO[]): string {
     return segments.map(segment => {

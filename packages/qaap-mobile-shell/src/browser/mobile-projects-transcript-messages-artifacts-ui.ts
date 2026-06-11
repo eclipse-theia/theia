@@ -10,7 +10,7 @@ import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-inter
 import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
 import { excerptTranscriptThought, extractInlineDiffPreview, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
-import { TRANSCRIPT_ACTIVITY_ROW_ATTR } from '../common/qaap-transcript-incremental-update';
+import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR } from '../common/qaap-transcript-incremental-update';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import type { MobileProjectsTranscriptMessagesToolUi } from './mobile-projects-transcript-messages-tool-ui';
@@ -40,9 +40,12 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         }
 
         // Hero content first — Cursor-style: intent/thought, then the visible answer, then artifacts.
-        for (const segment of segments) {
+        for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
+            const segment = segments[segmentIndex];
             if (segment.type === 'text' && (segment.content?.trim() ?? '').length > 0) {
-                body.append(this.toolUi.createTranscriptSegmentDetails(segment));
+                const textBlock = this.toolUi.createTranscriptSegmentDetails(segment);
+                textBlock.setAttribute(TRANSCRIPT_SEGMENT_INDEX_ATTR, String(segmentIndex));
+                body.append(textBlock);
             }
         }
 
@@ -104,6 +107,32 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             row.append(err);
         }
         return row;
+    }
+
+    /** In-place markdown refresh for streaming text segments — preserves tool pill expand state. */
+    patchStreamingAgentTextSegments(
+        row: HTMLElement,
+        prevSegments: readonly QaapAgentMessageSegmentDTO[],
+        nextSegments: readonly QaapAgentMessageSegmentDTO[],
+    ): boolean {
+        for (let segmentIndex = 0; segmentIndex < nextSegments.length; segmentIndex++) {
+            const previous = prevSegments[segmentIndex];
+            const next = nextSegments[segmentIndex];
+            if (next.type !== 'text' || previous.type !== 'text') {
+                continue;
+            }
+            if ((previous.content ?? '') === (next.content ?? '')) {
+                continue;
+            }
+            const host = row.querySelector<HTMLElement>(
+                `[${TRANSCRIPT_SEGMENT_INDEX_ATTR}="${segmentIndex}"]`,
+            );
+            if (!host) {
+                return false;
+            }
+            this.toolUi.renderTranscriptRichContent(host, next.content ?? '');
+        }
+        return true;
     }
 
     createTranscriptThoughtBriefBlock(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
