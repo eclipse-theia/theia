@@ -1234,6 +1234,15 @@ body.theia-mobile-mod-landing-hub-list .theia-mobile-bottom-chrome-host > #theia
   min-height: 0;
 }
 
+/* Fast plain-text streaming tail in ChatView before markdown-it paints inline syntax. */
+.chat-view-widget .theia-mod-qaap-chat-stream-plain {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--theia-ui-font-family);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 /* Vertical touch scroll: see qaap-mobile-touch-scroll.css */
 
 /* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the
