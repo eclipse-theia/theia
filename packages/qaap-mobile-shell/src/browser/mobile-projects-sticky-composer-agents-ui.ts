@@ -10,7 +10,7 @@ import {
     agentSupportsModelPicker,
     filterQaapComposerAgents,
     isTheiaCoderAgent,
-    QAAP_PRIMARY_AGENT_ID,
+    QAAP_COMPOSER_DEFAULT_AGENT_ID,
     readStoredAgent,
     readStoredAgentModel,
     reconcileStickyComposerAgent,
@@ -56,7 +56,7 @@ export class MobileProjectsStickyComposerAgentsUi {
         if (pinned && pinned !== 'task') {
             return pinned;
         }
-        return this.host.stickyComposerBackendAgents[0]?.id ?? QAAP_PRIMARY_AGENT_ID;
+        return this.host.stickyComposerBackendAgents[0]?.id ?? QAAP_COMPOSER_DEFAULT_AGENT_ID;
     }
     resolveStickyComposerAgentLabel(project?: MobileProjectEntry): string {
         const pinned = this.host.stickyComposerPinnedAgentId;

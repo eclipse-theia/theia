@@ -22,6 +22,7 @@ import {
     mergeComposerAgentPickerOptions,
     filterUiSelectableVpsAgents,
     migrateQaapProductAgentId,
+    QAAP_COMPOSER_DEFAULT_AGENT_ID,
     QAAP_PRIMARY_AGENT_ID,
     reconcileSelectedAgent,
     reconcileStickyComposerAgent,
@@ -99,12 +100,13 @@ describe('qaap-agent-task-client', () => {
         expect(ids).to.deep.equal(['qaiq']);
     });
 
-    it('reconcileSelectedAgent prefers QAIQ as the product default', () => {
+    it('reconcileSelectedAgent prefers OpenCode as the composer default', () => {
         const agents = [
             { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'opencode', label: 'OpenCode', available: true },
             { id: 'codex', label: 'Codex', available: true },
         ];
-        expect(reconcileSelectedAgent(undefined, agents, 'codex', undefined)).to.equal('qaiq');
+        expect(reconcileSelectedAgent(undefined, agents, 'codex', undefined)).to.equal('opencode');
     });
 
     it('reconcileSelectedAgent upgrades a stored openclaude pick to qaiq', () => {
@@ -157,17 +159,18 @@ describe('qaap-agent-task-client', () => {
         })).to.equal('qaiq');
     });
 
-    it('reconcileStickyComposerAgent defaults to QAIQ but honors an explicit VPS pick', () => {
+    it('reconcileStickyComposerAgent defaults to OpenCode but honors an explicit VPS pick', () => {
         const agents = [
             { id: 'qaiq', label: 'QAIQ', available: true },
+            { id: 'opencode', label: 'OpenCode', available: true },
             { id: 'codex', label: 'Codex', available: true },
         ];
         expect(reconcileStickyComposerAgent(THEIA_CODER_AGENT_ID, agents, 'codex', undefined, true))
-            .to.equal(QAAP_PRIMARY_AGENT_ID);
+            .to.equal(QAIQ_AGENT_ID);
         expect(reconcileStickyComposerAgent('codex', agents, 'codex', undefined, true))
             .to.equal('codex');
         expect(reconcileStickyComposerAgent(undefined, agents, 'codex', undefined, false))
-            .to.equal(QAAP_PRIMARY_AGENT_ID);
+            .to.equal(QAAP_COMPOSER_DEFAULT_AGENT_ID);
     });
 
     it('isStickyComposerAgentSelected matches Coder case-insensitively', () => {
