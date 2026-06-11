@@ -1873,8 +1873,13 @@ body.theia-mobile-mod-landing-hub-list .theia-mobile-bottom-chrome-host > #theia
   background: color-mix(in srgb, var(--theia-foreground) 10%, transparent);
 }
 
-.theia-mobile-projects-search-toggle[hidden] {
+.theia-mobile-projects-search-toggle[hidden],
+.theia-mobile-projects-new-chat-btn[hidden] {
   display: none !important;
+}
+
+.theia-mobile-projects-new-chat-btn .codicon {
+  font-size: 18px;
 }
 
 .theia-mobile-projects-title {
@@ -3472,6 +3477,18 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+.theia-mobile-projects.theia-mod-home.theia-mod-agents-hub-landing
+  .theia-mobile-projects-header-actions
+  .theia-mobile-projects-new-chat-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 44px;
+  max-height: 44px;
+  flex: 0 0 44px;
 }
 
 .theia-mobile-agents-hub-inline-transcript .theia-mobile-agent-transcript.theia-mod-empty-chat {
@@ -19573,4 +19590,148 @@ body.qaap-theme-light .theia-mobile-sticky-composer-commit-group.theia-mod-busy 
   margin-right: 5px;
   color: var(--theia-descriptionForeground);
   font-size: 12px;
+}
+
+/* =============================================================================
+|| Minimal flat tool rows (Claude app style).
+|| Collapsed tool calls render as plain prose lines — "Searched workspace ›",
+|| "Ran ls -la ›" — no card border, no background, no icon, no copy button,
+|| no status dot. The trailing chevron is the only affordance. The card surface
+|| (border + background + inner padding) only appears while a row is expanded;
+|| running rows keep the pulsing dot and failed rows turn red.
+============================================================================= */
+
+/* Tighter stack: rows sit together like log lines, not separated cards. */
+.theia-mobile-agent-tool-pills {
+  gap: 0;
+}
+
+/* Collapsed settled rows: drop the card chrome entirely. */
+.theia-mobile-agent-tool-pill:not([open]),
+.theia-mobile-agent-tool-window:not([open]),
+.theia-mobile-agent-shell-window:not([open]),
+.theia-mobile-agent-diff-card:not([open]) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.theia-mobile-agent-diff-card:not([open]) {
+  margin: 0 0 2px;
+}
+
+/* Slim one-line header while collapsed. */
+.theia-mobile-agent-tool-pill:not([open]) > summary,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-head,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-head,
+.theia-mobile-agent-diff-card:not([open]) > .theia-mobile-agent-diff-card-head {
+  min-height: 24px;
+  padding: 3px 2px;
+  gap: 5px;
+}
+
+/* Collapsed pressed feedback: faint wash instead of a card. */
+.theia-mobile-agent-tool-pill:not([open]) > summary:active,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-head:active,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-head:active,
+.theia-mobile-agent-diff-card:not([open]) > .theia-mobile-agent-diff-card-head:active {
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--theia-foreground, #fff) 5%, transparent);
+}
+
+/* No tool icons on collapsed rows — the verb already says what happened. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-tool-pill-icon,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-icon {
+  display: none;
+}
+
+/* Shell rows lose the boxed icon while collapsed — bare terminal glyph. */
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-icon-wrap {
+  display: none;
+}
+
+/* Verb + label read as one prose sentence in the UI font, slightly muted. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-tool-pill-verb,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-title,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-title {
+  color: color-mix(in srgb, var(--theia-foreground) 76%, var(--theia-descriptionForeground));
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-tool-pill-label {
+  flex: 0 1 auto;
+  font-family: var(--theia-ui-font-family, sans-serif);
+  font-size: 13px;
+  color: color-mix(in srgb, var(--theia-foreground) 76%, var(--theia-descriptionForeground));
+}
+
+/* Collapsed shell rows show the command inline, still mono but body-sized. */
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-title {
+  flex: 0 1 auto;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 12px;
+}
+
+/* Trailing chevron: small "›" after the text instead of a leading caret. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-tool-pill-chevron,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-chevron,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-chevron,
+.theia-mobile-agent-diff-card:not([open]) .theia-mobile-agent-diff-card-chevron {
+  order: 4;
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+/* Tail (status dot) stays rightmost after the chevron while collapsed. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-shell-tail,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-shell-tail,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-tail,
+.theia-mobile-agent-diff-card:not([open]) .theia-mobile-agent-shell-tail {
+  order: 5;
+  margin-left: 0;
+}
+
+/* Collapsed metadata (line/match counts, file dir) fades back. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-tool-badge,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-tool-badge {
+  opacity: 0.7;
+}
+
+/* No copy button and no green "done" dot on collapsed rows; keep the pulsing
+   running dot as the only status signal. */
+.theia-mobile-agent-tool-pill:not([open]) .theia-mobile-agent-shell-copy,
+.theia-mobile-agent-tool-window:not([open]) .theia-mobile-agent-shell-copy,
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-copy,
+.theia-mobile-agent-diff-card:not([open]) .theia-mobile-agent-shell-copy,
+.theia-mobile-agent-tool-pill.theia-mod-done:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-tool-window.theia-mod-done:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-shell-window.theia-mod-done:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-diff-card.theia-mod-done:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-tool-pill.theia-mod-failed:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-tool-window.theia-mod-failed:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-shell-window.theia-mod-failed:not([open]) .theia-mobile-agent-shell-state,
+.theia-mobile-agent-diff-card.theia-mod-failed:not([open]) .theia-mobile-agent-shell-state {
+  display: none;
+}
+
+/* Failed rows: red text instead of a red-bordered card while collapsed. */
+.theia-mobile-agent-tool-pill.theia-mod-failed:not([open]) .theia-mobile-agent-tool-pill-verb,
+.theia-mobile-agent-tool-pill.theia-mod-failed:not([open]) .theia-mobile-agent-tool-pill-label,
+.theia-mobile-agent-tool-window.theia-mod-failed:not([open]) .theia-mobile-agent-tool-title,
+.theia-mobile-agent-shell-window.theia-mod-failed:not([open]) .theia-mobile-agent-shell-title {
+  color: var(--theia-errorForeground, #f14c4c);
+}
+
+/* Expanded rows keep the card surface but breathe a little inside the flat stack. */
+.theia-mobile-agent-tool-pill[open],
+.theia-mobile-agent-tool-window[open],
+.theia-mobile-agent-shell-window[open],
+.theia-mobile-agent-diff-card[open] {
+  margin: 4px 0;
+}
+
+/* Collapsed shell rows: hide the green exit-code chip; keep it only on failure. */
+.theia-mobile-agent-shell-window:not([open]) .theia-mobile-agent-shell-exit-code:not(.theia-mod-failed) {
+  display: none;
 }

@@ -19,6 +19,7 @@ export interface MobileProjectsPanelChromeHost {
     titleRow: HTMLElement;
     headerBackBtn: HTMLButtonElement;
     sessionsMenuBtn: HTMLButtonElement;
+    headerNewChatBtn: HTMLButtonElement;
     titleEl: HTMLHeadingElement;
     titleAttentionEl: HTMLSpanElement;
     headerExecutionTabsHost: HTMLElement;
@@ -40,6 +41,7 @@ export interface MobileProjectsPanelChromeHost {
 
     handleHeaderBackClick(): void;
     openWorkHubSessionsSidebar(): void;
+    onHeaderNewChatClick(): Promise<void>;
     workHubSearchUi: import('./mobile-projects-work-hub-search-ui').MobileProjectsWorkHubSearchUi;
     onNewClick(): Promise<void>;
     onTitleTap(): void;
@@ -124,6 +126,20 @@ export class MobileProjectsPanelChromeUi {
         this.host.headerSurfacePickerHost.className = 'theia-mobile-projects-header-surface-picker';
         this.host.headerSurfacePickerHost.hidden = true;
 
+        this.host.headerNewChatBtn = document.createElement('button');
+        this.host.headerNewChatBtn.type = 'button';
+        this.host.headerNewChatBtn.className = 'theia-workbench-nav-btn theia-mobile-projects-new-chat-btn';
+        this.host.headerNewChatBtn.hidden = true;
+        this.host.headerNewChatBtn.setAttribute('aria-hidden', 'true');
+        this.host.headerNewChatBtn.title = nls.localize('qaap/sessionsSidebar/newChat', 'New agent');
+        this.host.headerNewChatBtn.setAttribute('aria-label', this.host.headerNewChatBtn.title);
+        this.host.headerNewChatBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span>';
+        this.host.headerNewChatBtn.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            void this.host.onHeaderNewChatClick();
+        });
+
         this.host.searchToggleBtn = document.createElement('button');
         this.host.searchToggleBtn.type = 'button';
         this.host.searchToggleBtn.className = 'theia-workbench-nav-btn theia-mobile-projects-search-toggle';
@@ -136,7 +152,12 @@ export class MobileProjectsPanelChromeUi {
             this.host.workHubSearchUi.openWorkHubSearchQuickPick();
         });
 
-        actions.append(this.host.headerSurfacePickerHost, this.host.searchToggleBtn, this.host.accountBtn);
+        actions.append(
+            this.host.headerSurfacePickerHost,
+            this.host.headerNewChatBtn,
+            this.host.searchToggleBtn,
+            this.host.accountBtn,
+        );
         headerMainRow.append(this.host.titleBlock, this.host.headerExecutionTabsHost, actions);
         header.append(headerMainRow);
 
