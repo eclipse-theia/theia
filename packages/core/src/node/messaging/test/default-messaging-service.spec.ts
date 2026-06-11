@@ -16,13 +16,14 @@
 
 import { expect } from 'chai';
 import { Container, injectable, preDestroy } from 'inversify';
-import { ConnectionHandler, bindContributionProvider, servicesPath } from '../../../common';
+import { ConnectionHandler, bindContributionProvider, servicesPath, ILogger } from '../../../common';
 import { BasicChannel, Channel } from '../../../common/message-rpc/channel';
 import { Uint8ArrayWriteBuffer } from '../../../common/message-rpc/uint8-array-message-buffer';
 import { ConnectionContainerModule } from '../connection-container-module';
 import { DefaultMessagingService, MessagingContainer } from '../default-messaging-service';
 import { FrontendConnectionService } from '../frontend-connection-service';
 import { MessagingService } from '../messaging-service';
+import { MockLogger } from '../../../common/test/mock-logger';
 
 describe('DefaultMessagingService', () => {
 
@@ -63,6 +64,7 @@ describe('DefaultMessagingService', () => {
                 }
             };
             container.bind(FrontendConnectionService).toConstantValue(frontendConnectionService);
+            container.bind(ILogger).to(MockLogger).inSingletonScope();
 
             const messagingService = container.get(DefaultMessagingService);
             messagingService.initialize();

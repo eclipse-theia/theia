@@ -17,7 +17,7 @@
 /* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
 import * as React from '@theia/core/shared/react';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
@@ -36,6 +36,7 @@ import { ScmService } from './scm-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { CorePreferences } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ScmTreeWidget extends TreeViewWelcomeWidget {
@@ -59,6 +60,8 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
     @inject(ThemeService) protected readonly themeService: ThemeService;
+    @inject(ILogger) @named('scm:ScmTreeWidget')
+    protected readonly logger: ILogger;
     @inject(ScmService) protected readonly scmService: ScmService;
 
     // TODO: Make TreeWidget generic to better type those fields.
@@ -426,7 +429,7 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
         try {
             await resource.open();
         } catch (e) {
-            console.error('Failed to open a SCM resource', e);
+            this.logger.error('Failed to open a SCM resource', e);
             return undefined;
         }
 

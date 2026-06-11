@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceService, PreferenceUtils } from '@theia/core';
+import { PreferenceService, PreferenceUtils, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     WorkspaceTrustService,
@@ -44,6 +44,9 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
     @inject(WorkspaceTrustService)
     protected workspaceTrustService: WorkspaceTrustService;
+
+    @inject(ILogger) @named('ai-mcp:McpFrontendApplicationContribution')
+    protected readonly logger: ILogger;
 
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
@@ -86,7 +89,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                         await this.stopAllServers();
                     }
                 } catch (error) {
-                    console.error('Failed to handle workspace trust change for MCP servers', error);
+                    this.logger.error('Failed to handle workspace trust change for MCP servers', error);
                 }
             });
         });
@@ -207,7 +210,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             } catch (e) {
                 // In some cases the deepEqual function throws an error, so we fall back to assuming that there is a difference
                 // This seems to happen in cases where the objects are structured differently, e.g. whole sub-objects are missing
-                console.debug('Failed to compare MCP server descriptions, assuming a difference', e);
+                this.logger.debug('Failed to compare MCP server descriptions, assuming a difference', e);
                 diff = true;
             }
             if (diff) {
@@ -217,7 +220,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
         this.prevServers = updatedServers;
         this.autoStartServers(updatedServers).catch(error => {
-            console.error('Failed to auto-start MCP servers after preference change', error);
+            this.logger.error('Failed to auto-start MCP servers after preference change', error);
         });
     }
 

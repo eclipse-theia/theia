@@ -30,12 +30,13 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from 'inversify';
-import { PreferenceService } from '@theia/core';
+import { PreferenceService, ILogger } from '@theia/core';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -142,6 +143,7 @@ describe('McpFrontendApplicationContribution', () => {
         container.bind(MCPFrontendService).toConstantValue(mockFrontendMCPService as unknown as MCPFrontendService);
         container.bind(WorkspaceTrustService).toConstantValue(mockWorkspaceTrustService as unknown as WorkspaceTrustService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService as unknown as WorkspaceService);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         contribution = container.get<McpFrontendApplicationContribution>(McpFrontendApplicationContribution) as TestableContribution;
     });

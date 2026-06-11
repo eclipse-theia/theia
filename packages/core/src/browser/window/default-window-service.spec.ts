@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { Container } from 'inversify';
-import { ContributionProvider } from '../../common';
+import { ContributionProvider, ILogger } from '../../common';
 import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { DefaultWindowService } from './default-window-service';
 import assert = require('assert');
+import { MockLogger } from '../../common/test/mock-logger';
 
 describe('DefaultWindowService', () => {
     class TestFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -42,6 +43,7 @@ describe('DefaultWindowService', () => {
             .toConstantValue({
                 'application.confirmExit': confirmExit,
             });
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         return container.get(DefaultWindowService);
     }
     it('onWillStop should be called on every contribution (never)', () => {

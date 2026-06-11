@@ -31,14 +31,14 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -147,6 +147,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextFileValidationService) @optional()
     protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(ILogger) @named('ai-chat-ui:AIChatInputWidget')
+    protected readonly logger: ILogger;
 
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
@@ -1066,7 +1069,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.update();
             }
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine receiving agent:', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -1223,7 +1226,7 @@ export class AIChatInputWidget extends ReactWidget {
                 await this.agentNotificationService.showCompletionNotification(agentId, options);
             }
         } catch (error) {
-            console.error('Failed to handle agent completion notification:', error);
+            this.logger.error('Failed to handle agent completion notification:', error);
         }
     }
 

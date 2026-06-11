@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CorePreferences, nls } from '@theia/core';
+import { CorePreferences, nls, ILogger } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -35,7 +35,7 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { FileChangeType, FileChangesEvent, FileOperation } from '../common/files';
 import { FileDialogService, SaveFileDialogProps } from './file-dialog';
@@ -94,6 +94,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
 
     @inject(UserWorkingDirectoryProvider)
     protected readonly workingDirectory: UserWorkingDirectoryProvider;
+
+    @inject(ILogger) @named('filesystem:FileSystemFrontendContribution')
+    protected readonly logger: ILogger;
 
     protected onDidChangeEditorFileEmitter = new Emitter<{ editor: NavigatableWidget, type: FileChangeType }>();
     readonly onDidChangeEditorFile = this.onDidChangeEditorFileEmitter.event;
@@ -171,7 +174,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             return fileUploadResult;
         } catch (e) {
             if (!isCancelled(e)) {
-                console.error(e);
+                this.logger.error(e);
             }
         }
     }
@@ -227,7 +230,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             try {
                 await operation();
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
             }
         });
     }

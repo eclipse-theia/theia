@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { environment, nls } from '@theia/core';
+import { environment, nls, ILogger } from '@theia/core';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
@@ -38,6 +38,9 @@ const CUSTOM_TITLE_ELEMENT_ID = 'theia-custom-title';
  */
 @injectable()
 export class WindowBlinkService {
+
+    @inject(ILogger) @named('ai-core:WindowBlinkService')
+    protected readonly logger: ILogger;
 
     @inject(WindowTitleService) @optional()
     protected readonly windowTitleService?: WindowTitleService;
@@ -68,7 +71,7 @@ export class WindowBlinkService {
             }
             return { success: true };
         } catch (error) {
-            console.warn('Failed to blink window:', error);
+            this.logger.warn('Failed to blink window:', error);
             try {
                 if (document.hidden) {
                     this.focusWindow();
@@ -196,7 +199,7 @@ export class WindowBlinkService {
                 }, 100);
             }
         } catch (error) {
-            console.debug('Could not focus window:', error);
+            this.logger.debug('Could not focus window:', error);
         }
     }
 

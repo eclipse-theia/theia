@@ -39,7 +39,7 @@ import {
     IdentifiableInlineCompletions,
     HoverWithId
 } from '../../common/plugin-api-rpc';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto,
@@ -86,6 +86,7 @@ import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -107,6 +108,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(FileUploadService)
     protected readonly fileUploadService: FileUploadService;
+
+    @inject(ILogger) @named('plugin-ext:LanguagesMainImpl')
+    protected readonly logger: ILogger;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -958,7 +962,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
             };
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
             return undefined;
         }
     }

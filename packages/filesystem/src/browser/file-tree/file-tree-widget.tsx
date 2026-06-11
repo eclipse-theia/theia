@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
@@ -26,7 +26,7 @@ import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { FileStat, FileType } from '../../common/files';
-import { isOSX } from '@theia/core';
+import { isOSX, ILogger } from '@theia/core';
 import { FileUploadService } from '../../common/upload/file-upload';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
@@ -44,6 +44,9 @@ export class FileTreeWidget extends CompressedTreeWidget {
 
     @inject(IconThemeService)
     protected readonly iconThemeService: IconThemeService;
+
+    @inject(ILogger) @named('filesystem:FileTreeWidget')
+    protected readonly logger: ILogger;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -201,7 +204,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
             }
         } catch (e) {
             if (!isCancelled(e)) {
-                console.error(e);
+                this.logger.error(e);
             }
         }
     }

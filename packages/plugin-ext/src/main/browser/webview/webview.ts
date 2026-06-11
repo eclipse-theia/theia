@@ -22,7 +22,7 @@
 
 import * as mime from 'mime';
 import { JSONExt } from '@theia/core/shared/@lumino/coreutils';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message, codicon } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -49,7 +49,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
-import { MenuPath } from '@theia/core';
+import { MenuPath, ILogger } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginViewWidget } from '../view/plugin-view-widget';
@@ -165,6 +165,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ILogger) @named('plugin-ext:WebviewWidget')
+    protected readonly logger: ILogger;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -626,7 +629,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             await this.ready.promise;
             this.postMessage(channel, data);
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
     }
 

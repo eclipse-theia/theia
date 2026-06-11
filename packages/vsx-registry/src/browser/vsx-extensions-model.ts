@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
@@ -35,6 +35,7 @@ import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -96,9 +97,12 @@ export class VSXExtensionsModel {
     @inject(ApplicationServer)
     protected readonly applicationServer: ApplicationServer;
 
+    @inject(ILogger) @named('vsx-registry:VSXExtensionsModel')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
-        this.initialized = this.doInit().catch(console.error);
+        this.initialized = this.doInit().catch(e => this.logger.error(e));
     }
 
     protected async doInit(): Promise<void> {
@@ -188,7 +192,7 @@ export class VSXExtensionsModel {
                     extension.update({ readme });
                 } catch (e) {
                     if (!VSXResponseError.is(e) || e.statusCode !== 404) {
-                        console.error(`[${id}]: failed to compile readme, reason:`, e);
+                        this.logger.error(`[${id}]: failed to compile readme, reason:`, e);
                     }
                 }
             }
@@ -201,7 +205,7 @@ export class VSXExtensionsModel {
         try {
             await this.updateInstalled();
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
 
         this.pluginWatcher.onDidDeploy(() => {
@@ -214,7 +218,7 @@ export class VSXExtensionsModel {
         try {
             await this.updateSearchResult();
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
     }
 
@@ -228,7 +232,7 @@ export class VSXExtensionsModel {
         try {
             await this.updateRecommended();
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
     }
 
@@ -320,7 +324,7 @@ export class VSXExtensionsModel {
             }
             return verified;
         } catch (error) {
-            console.error(error);
+            this.logger.error(error);
             return false;
         }
     }
@@ -505,7 +509,7 @@ export class VSXExtensionsModel {
         if (cached && (cached.deployed || cached.installed)) {
             return cached;
         }
-        console.error(`[${id}]: failed to refresh, reason:`, error);
+        this.logger.error(`[${id}]: failed to refresh, reason:`, error);
         return undefined;
     }
 

@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MCPFrontendService, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class MCPFrontendServiceImpl implements MCPFrontendService {
@@ -29,6 +30,9 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
+
+    @inject(ILogger) @named('ai-mcp:MCPFrontendServiceImpl')
+    protected readonly logger: ILogger;
 
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
@@ -101,7 +105,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         try {
             return await this.mcpServerManager.getTools(serverName);
         } catch (error) {
-            console.error('Error while trying to get tools: ' + error);
+            this.logger.error('Error while trying to get tools: ' + error);
             return undefined;
         }
     }
@@ -148,7 +152,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                     });
                     return { content };
                 } catch (error) {
-                    console.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
+                    this.logger.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
                     throw error;
                 }
             },
