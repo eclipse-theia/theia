@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { AgentService, CustomAgentDescription, PromptFragmentCustomizationService } from '@theia/ai-core';
-import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, ILogger, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
 import { CustomAgentFactory } from './custom-agent-factory';
-import { ILogger } from '@theia/core';
 
 export const RERUN_CUSTOM_AGENT_MIGRATION_COMMAND: Command = Command.toLocalizedCommand(
     {
