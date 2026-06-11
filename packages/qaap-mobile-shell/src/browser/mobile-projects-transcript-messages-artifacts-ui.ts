@@ -8,7 +8,8 @@ import { approveAgentRequest, rejectAgentRequest } from '../common/qaap-agent-ap
 import { type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
-import { excerptTranscriptThought, extractInlineDiffPreview, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
+import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
+import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
 import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
@@ -107,6 +108,16 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             }
         }
 
+        if (options?.streaming && conv) {
+            const meta = this.createTranscriptStreamMeta(conv, row);
+            if (meta) {
+                const status = document.createElement('div');
+                status.className = 'theia-mobile-agent-stream-status';
+                status.append(meta);
+                body.append(status);
+            }
+        }
+
         row.append(body);
         if (error) {
             const err = document.createElement('div');
@@ -177,6 +188,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 return false;
             }
             this.patchTranscriptToolPill(pill, previous, next, conv);
+            const group = pill.closest('.theia-mobile-agent-tool-group');
+            if (group instanceof HTMLElement) {
+                this.refreshTranscriptToolGroupSummary(group);
+            }
         }
         return true;
     }
@@ -237,12 +252,16 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         if (!strip) {
             strip = document.createElement('div');
             strip.className = 'theia-mobile-agent-tool-pills';
-            artifacts.prepend(strip);
+            artifacts.prepend(this.wrapTranscriptToolGroup(strip as HTMLElement));
         }
         if (strip.querySelector(`[${TRANSCRIPT_TOOL_USE_ID_ATTR}="${CSS.escape(segment.toolUseId)}"]`)) {
             return false;
         }
         strip.append(this.createTranscriptToolPill(segment, conv));
+        const group = strip.closest('.theia-mobile-agent-tool-group');
+        if (group instanceof HTMLElement) {
+            this.refreshTranscriptToolGroupSummary(group);
+        }
         return true;
     }
 
@@ -266,9 +285,14 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         pill.classList.toggle('theia-mod-running', !descriptor.finished);
         pill.classList.toggle('theia-mod-done', descriptor.finished);
         pill.classList.toggle('theia-mod-failed', descriptor.resultFailed);
+        const rowParts = this.resolveToolRowParts(segment, descriptor.kind);
+        const verb = pill.querySelector('.theia-mobile-agent-tool-pill-verb');
+        if (verb) {
+            verb.textContent = rowParts.verb;
+        }
         const label = pill.querySelector('.theia-mobile-agent-tool-pill-label');
         if (label) {
-            label.textContent = descriptor.label;
+            label.textContent = rowParts.detail;
         }
         if (this.resolversUi.isTranscriptPureReadTool(segment.name)
             && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, descriptor.kind)) {
@@ -394,7 +418,105 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             }
             strip.append(this.createTranscriptToolPill(segment, conv));
         }
-        return strip.childElementCount > 0 ? strip : undefined;
+        if (strip.childElementCount === 0) {
+            return undefined;
+        }
+        return this.wrapTranscriptToolGroup(strip);
+    }
+
+    /**
+     * Claude-Code-style collapsed activity line: one `details` row summarising the tool calls
+     * ("Ran 4 commands, read 6 files ›") that expands into the individual tool pills.
+     */
+    protected wrapTranscriptToolGroup(strip: HTMLElement): HTMLDetailsElement {
+        const group = document.createElement('details');
+        group.className = 'theia-mobile-agent-tool-group';
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-tool-group-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-tool-group-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-tool-group-label';
+        summary.append(chevron, label);
+        group.append(summary, strip);
+        this.refreshTranscriptToolGroupSummary(group);
+        return group;
+    }
+
+    /** Recompute the group summary label and open state from the pills currently inside. */
+    refreshTranscriptToolGroupSummary(group: HTMLElement): void {
+        const label = group.querySelector<HTMLElement>('.theia-mobile-agent-tool-group-label');
+        if (!label) {
+            return;
+        }
+        const pills = group.querySelectorAll('.theia-mobile-agent-tool-pill');
+        let shells = 0;
+        let fileReads = 0;
+        let searches = 0;
+        let edits = 0;
+        let otherTools = 0;
+        for (const pill of pills) {
+            if (pill.classList.contains('theia-mod-terminal')) {
+                shells++;
+            } else if (pill.classList.contains('theia-mod-reading')) {
+                fileReads++;
+            } else if (pill.classList.contains('theia-mod-searching')) {
+                searches++;
+            } else if (pill.classList.contains('theia-mod-editing')) {
+                edits++;
+            } else {
+                otherTools++;
+            }
+        }
+        label.textContent = this.formatTranscriptToolGroupLabel({ fileReads, searches, shells, edits, otherTools });
+        if (group instanceof HTMLDetailsElement
+            && group.querySelector('.theia-mobile-agent-tool-pill.theia-mod-running, .theia-mobile-agent-tool-pill.theia-mod-failed')) {
+            group.open = true;
+        }
+    }
+
+    /** "Ran 4 commands, read 6 files, edited 2 files, used 5 tools" — verb-first summary. */
+    protected formatTranscriptToolGroupLabel(stats: QaapTranscriptActivityStats): string {
+        const parts: string[] = [];
+        if (stats.shells > 0) {
+            parts.push(stats.shells === 1
+                ? nls.localize('qaap/mobileProjects/toolGroupOneCommand', 'Ran 1 command')
+                : nls.localize('qaap/mobileProjects/toolGroupCommands', 'Ran {0} commands', String(stats.shells)));
+        }
+        if (stats.edits > 0) {
+            parts.push(stats.edits === 1
+                ? nls.localize('qaap/mobileProjects/toolGroupOneEdit', 'edited 1 file')
+                : nls.localize('qaap/mobileProjects/toolGroupEdits', 'edited {0} files', String(stats.edits)));
+        }
+        if (stats.fileReads > 0) {
+            parts.push(stats.fileReads === 1
+                ? nls.localize('qaap/mobileProjects/toolGroupOneRead', 'read 1 file')
+                : nls.localize('qaap/mobileProjects/toolGroupReads', 'read {0} files', String(stats.fileReads)));
+        }
+        if (stats.searches > 0) {
+            parts.push(stats.searches === 1
+                ? nls.localize('qaap/mobileProjects/toolGroupOneSearch', 'searched once')
+                : nls.localize('qaap/mobileProjects/toolGroupSearches', 'searched {0} times', String(stats.searches)));
+        }
+        if (stats.otherTools > 0) {
+            parts.push(stats.otherTools === 1
+                ? nls.localize('qaap/mobileProjects/toolGroupOneTool', 'used 1 tool')
+                : nls.localize('qaap/mobileProjects/toolGroupTools', 'used {0} tools', String(stats.otherTools)));
+        }
+        const joined = parts.join(', ');
+        return joined.charAt(0).toUpperCase() + joined.slice(1);
+    }
+
+    /** Verb-first row label parts ("Ran" + command excerpt, "Read" + file name). */
+    protected resolveToolRowParts(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        kind: string,
+    ): ReturnType<typeof resolveTranscriptToolRowParts> {
+        return resolveTranscriptToolRowParts(kind, segment.name, {
+            path: this.resolversUi.extractTranscriptToolFullPath(segment.args),
+            command: this.resolversUi.extractTranscriptToolCommand(segment.args),
+        });
     }
 
     createTranscriptToolPill(
@@ -422,10 +544,14 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         const icon = document.createElement('span');
         icon.className = `codicon ${this.toolUi.transcriptToolIconClass(kind)} theia-mobile-agent-tool-pill-icon`;
         icon.setAttribute('aria-hidden', 'true');
+        const rowParts = this.resolveToolRowParts(segment, kind);
+        const verb = document.createElement('span');
+        verb.className = 'theia-mobile-agent-tool-pill-verb';
+        verb.textContent = rowParts.verb;
         const label = document.createElement('span');
         label.className = 'theia-mobile-agent-tool-pill-label';
-        label.textContent = descriptor?.label ?? segment.name;
-        summary.append(icon, label);
+        label.textContent = rowParts.detail;
+        summary.append(icon, verb, label);
         pill.append(summary);
         if (this.resolversUi.isTranscriptPureReadTool(segment.name)
             && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, kind)) {
@@ -486,6 +612,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         return wrap;
     }
 
+    /** Claude-Code-style diff card for the latest edit: "Edited <file> +N −N" header + numbered lines. */
     createTranscriptInlineDiffStrip(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
         const editSegment = [...segments].reverse().find(segment =>
             segment.type === 'tool'
@@ -495,29 +622,73 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         if (!editSegment || editSegment.type !== 'tool') {
             return undefined;
         }
-        const preview = extractInlineDiffPreview(this.resolversUi.formatTranscriptToolResult(editSegment.result!));
-        if (!preview?.length) {
+        const card = extractTranscriptDiffCard(this.resolversUi.formatTranscriptToolResult(editSegment.result!));
+        if (!card) {
             return undefined;
         }
-        const block = document.createElement('div');
-        block.className = 'theia-mobile-agent-inline-diff';
         const path = this.resolversUi.extractTranscriptToolFullPath(editSegment.args);
+        const fileName = path?.split('/').pop();
+
+        const details = document.createElement('details');
+        details.className = 'theia-mobile-agent-diff-card';
+        details.open = true;
+
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-diff-card-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-diff-card-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-diff-card-label';
+        label.textContent = fileName
+            ? nls.localize('qaap/mobileProjects/diffCardEditedFile', 'Edited {0}', fileName)
+            : nls.localize('qaap/mobileProjects/diffCardEdited', 'Edited a file');
+        const stats = document.createElement('span');
+        stats.className = 'theia-mobile-agent-diff-card-stats';
+        const addedBadge = document.createElement('span');
+        addedBadge.className = 'theia-mobile-agent-diff-card-added';
+        addedBadge.textContent = `+${card.added}`;
+        const removedBadge = document.createElement('span');
+        removedBadge.className = 'theia-mobile-agent-diff-card-removed';
+        removedBadge.textContent = `−${card.removed}`;
+        stats.append(addedBadge, removedBadge);
+        summary.append(chevron, label, stats);
+        details.append(summary);
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-diff-card-body';
         if (path) {
-            const head = document.createElement('div');
-            head.className = 'theia-mobile-agent-inline-diff-head';
-            head.textContent = this.resolversUi.compactTranscriptPath(path);
-            block.append(head);
+            const pathBar = document.createElement('div');
+            pathBar.className = 'theia-mobile-agent-diff-card-path';
+            pathBar.textContent = this.resolversUi.compactTranscriptPath(path);
+            body.append(pathBar);
         }
         const lines = document.createElement('pre');
-        lines.className = 'theia-mobile-agent-inline-diff-lines';
-        for (const line of preview) {
+        lines.className = 'theia-mobile-agent-diff-card-lines';
+        for (const line of card.lines) {
             const row = document.createElement('div');
-            row.className = `theia-mobile-agent-inline-diff-line theia-mod-${line.kind}`;
-            row.textContent = line.text;
+            row.className = `theia-mobile-agent-diff-card-line theia-mod-${line.kind}`;
+            const lineNo = document.createElement('span');
+            lineNo.className = 'theia-mobile-agent-diff-card-lineno';
+            lineNo.textContent = line.lineNumber !== undefined ? String(line.lineNumber) : '';
+            const marker = document.createElement('span');
+            marker.className = 'theia-mobile-agent-diff-card-marker';
+            marker.textContent = line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ' ';
+            const text = document.createElement('span');
+            text.className = 'theia-mobile-agent-diff-card-text';
+            text.textContent = line.text;
+            row.append(lineNo, marker, text);
             lines.append(row);
         }
-        block.append(lines);
-        return block;
+        body.append(lines);
+        if (card.truncated) {
+            const more = document.createElement('div');
+            more.className = 'theia-mobile-agent-diff-card-more';
+            more.textContent = nls.localize('qaap/mobileProjects/diffCardTruncated', '… more changes not shown');
+            body.append(more);
+        }
+        details.append(body);
+        return details;
     }
 
     formatTranscriptActivityMeta(stats: QaapTranscriptActivityStats): string {
@@ -876,8 +1047,49 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         label.className = 'theia-mobile-agent-stream-label';
         label.textContent = `${state.title}…`;
         line.append(dot, label);
+        const meta = this.createTranscriptStreamMeta(conv);
+        if (meta) {
+            line.append(meta);
+        }
         row.append(line);
         return row;
+    }
+
+    /**
+     * Claude-Code-style live status suffix: "· 1m 23s · ~4.2k tokens", ticking once per second.
+     * With `ownerRow`, the meta removes itself once the row leaves streaming.
+     */
+    protected createTranscriptStreamMeta(conv: QaapAgentConversationDTO, ownerRow?: HTMLElement): HTMLElement | undefined {
+        const turnStart = resolveTranscriptTurnStartMs(conv.messages);
+        if (turnStart === undefined) {
+            return undefined;
+        }
+        const meta = document.createElement('span');
+        meta.className = 'theia-mobile-agent-stream-meta';
+        const update = (): void => {
+            const parts = [formatTranscriptStreamElapsed(Date.now() - turnStart)];
+            const tokens = formatTranscriptStreamTokens(resolveTranscriptTurnStreamChars(
+                this.host.transcriptLastConv?.id === conv.id ? this.host.transcriptLastConv.messages : conv.messages,
+            ));
+            if (tokens) {
+                parts.push(tokens);
+            }
+            meta.textContent = `· ${parts.join(' · ')}`;
+        };
+        update();
+        const timer = window.setInterval(() => {
+            if (!meta.isConnected) {
+                window.clearInterval(timer);
+                return;
+            }
+            if (ownerRow && !ownerRow.classList.contains('theia-mod-streaming')) {
+                window.clearInterval(timer);
+                (meta.closest('.theia-mobile-agent-stream-status') ?? meta).remove();
+                return;
+            }
+            update();
+        }, 1000);
+        return meta;
     }
 
     resolveTranscriptStreamingActivity(conv: QaapAgentConversationDTO): { kind: string; title: string; detail: string } {

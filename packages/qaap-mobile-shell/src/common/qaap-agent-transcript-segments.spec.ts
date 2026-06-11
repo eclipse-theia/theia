@@ -8,11 +8,13 @@ import {
     classifyTranscriptToolActivityKind,
     excerptTranscriptThought,
     extractInlineDiffPreview,
+    extractTranscriptDiffCard,
     hasTranscriptActivityTimeline,
     isTranscriptThoughtExcerptTruncated,
     resolveTranscriptActivityStats,
     resolveTranscriptThinkingContent,
     resolveTranscriptToolPillDescriptors,
+    resolveTranscriptToolRowParts,
     shouldOpenTranscriptToolDetails,
     shouldRenderTranscriptToolSegmentInline,
 } from './qaap-agent-transcript-segments';
@@ -176,5 +178,71 @@ describe('excerptTranscriptThought', () => {
         expect(excerptTranscriptThought('  hello\nworld  ')).to.equal('hello world');
         expect(excerptTranscriptThought(long).endsWith('…')).to.equal(true);
         expect(isTranscriptThoughtExcerptTruncated(long)).to.equal(true);
+    });
+});
+
+describe('extractTranscriptDiffCard', () => {
+    const diff = [
+        '--- a/src/auth.ts',
+        '+++ b/src/auth.ts',
+        '@@ -10,3 +10,4 @@',
+        ' const a = 1;',
+        '-const b = 2;',
+        '+const b = 3;',
+        '+const c = 4;',
+        ' done();',
+    ].join('\n');
+
+    it('numbers lines from hunk headers and counts the whole diff', () => {
+        const card = extractTranscriptDiffCard(diff);
+        expect(card).to.not.equal(undefined);
+        expect(card!.added).to.equal(2);
+        expect(card!.removed).to.equal(1);
+        expect(card!.truncated).to.equal(false);
+        expect(card!.lines.map(line => [line.kind, line.lineNumber])).to.deep.equal([
+            ['remove', 11],
+            ['add', 11],
+            ['add', 12],
+        ]);
+    });
+
+    it('keeps full counts when the preview is truncated', () => {
+        const big = ['@@ -1,9 +1,9 @@', ...Array.from({ length: 9 }, (_, i) => `+line ${i}`)].join('\n');
+        const card = extractTranscriptDiffCard(big, 4);
+        expect(card!.lines).to.have.length(4);
+        expect(card!.added).to.equal(9);
+        expect(card!.truncated).to.equal(true);
+    });
+
+    it('works without hunk headers (no line numbers)', () => {
+        const card = extractTranscriptDiffCard('+added line\n-removed line');
+        expect(card!.lines.map(line => line.lineNumber)).to.deep.equal([undefined, undefined]);
+        expect(card!.added).to.equal(1);
+        expect(card!.removed).to.equal(1);
+    });
+
+    it('returns undefined for non-diff text', () => {
+        expect(extractTranscriptDiffCard('just some output\nwith lines')).to.equal(undefined);
+    });
+});
+
+describe('resolveTranscriptToolRowParts', () => {
+    it('builds verb-first parts per activity kind', () => {
+        expect(resolveTranscriptToolRowParts('terminal', 'Bash', { command: 'npm run compile' }))
+            .to.deep.equal({ verb: 'Ran', detail: 'npm run compile' });
+        expect(resolveTranscriptToolRowParts('reading', 'Read', { path: 'src/browser/foo.ts' }))
+            .to.deep.equal({ verb: 'Read', detail: 'foo.ts' });
+        expect(resolveTranscriptToolRowParts('editing', 'Edit'))
+            .to.deep.equal({ verb: 'Edited', detail: 'file' });
+        expect(resolveTranscriptToolRowParts('tool', 'web_search'))
+            .to.deep.equal({ verb: 'Used', detail: 'web search' });
+    });
+
+    it('excerpts long commands with collapsed whitespace', () => {
+        const long = `npm   run    ${'x'.repeat(80)}`;
+        const parts = resolveTranscriptToolRowParts('terminal', 'Bash', { command: long });
+        expect(parts.detail.length).to.be.at.most(65);
+        expect(parts.detail.endsWith('…')).to.equal(true);
+        expect(parts.detail.startsWith('npm run x')).to.equal(true);
     });
 });

@@ -177,6 +177,118 @@ export function extractInlineDiffPreview(text: string, maxLines = 6): QaapTransc
     return preview.length > 0 ? preview : undefined;
 }
 
+export interface QaapTranscriptDiffCardLine {
+    readonly kind: QaapTranscriptInlineDiffLineKind;
+    readonly text: string;
+    /** New-file line number for add/context lines, old-file number for removes (from `@@` hunks). */
+    readonly lineNumber?: number;
+}
+
+export interface QaapTranscriptDiffCard {
+    readonly lines: QaapTranscriptDiffCardLine[];
+    readonly added: number;
+    readonly removed: number;
+    readonly truncated: boolean;
+}
+
+/**
+ * Claude-Code-style diff card data from a unified diff: numbered changed lines plus total
+ * added/removed counts. Counts cover the whole diff even when the preview is truncated.
+ */
+export function extractTranscriptDiffCard(text: string, maxLines = 12): QaapTranscriptDiffCard | undefined {
+    const lines = text.split('\n');
+    const preview: QaapTranscriptDiffCardLine[] = [];
+    let added = 0;
+    let removed = 0;
+    let truncated = false;
+    let oldLine: number | undefined;
+    let newLine: number | undefined;
+    for (const line of lines) {
+        const hunk = /^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/.exec(line);
+        if (hunk) {
+            oldLine = Number(hunk[1]);
+            newLine = Number(hunk[2]);
+            continue;
+        }
+        if (line.startsWith('+++') || line.startsWith('---')) {
+            continue;
+        }
+        if (line.startsWith('+')) {
+            added++;
+            if (preview.length < maxLines) {
+                preview.push({ kind: 'add', text: line.slice(1), lineNumber: newLine });
+            } else {
+                truncated = true;
+            }
+            if (newLine !== undefined) {
+                newLine++;
+            }
+        } else if (line.startsWith('-')) {
+            removed++;
+            if (preview.length < maxLines) {
+                preview.push({ kind: 'remove', text: line.slice(1), lineNumber: oldLine });
+            } else {
+                truncated = true;
+            }
+            if (oldLine !== undefined) {
+                oldLine++;
+            }
+        } else if (line.startsWith(' ')) {
+            if (preview.length > 0 && preview.length < maxLines) {
+                preview.push({ kind: 'context', text: line.slice(1), lineNumber: newLine });
+            }
+            if (newLine !== undefined) {
+                newLine++;
+            }
+            if (oldLine !== undefined) {
+                oldLine++;
+            }
+        }
+    }
+    if (added === 0 && removed === 0) {
+        return undefined;
+    }
+    // Drop a trailing context line so the card ends on a real change.
+    while (preview.length > 0 && preview[preview.length - 1].kind === 'context') {
+        preview.pop();
+    }
+    return preview.length > 0 ? { lines: preview, added, removed, truncated } : undefined;
+}
+
+export interface QaapTranscriptToolRowParts {
+    /** Muted action prefix, e.g. "Ran", "Read", "Edited". */
+    readonly verb: string;
+    /** Emphasised description, e.g. the command excerpt or file name. */
+    readonly detail: string;
+}
+
+/** Compact a shell command for a one-line row label. */
+export function excerptTranscriptToolCommand(command: string, maxChars = 64): string {
+    const collapsed = command.replace(/\s+/g, ' ').trim();
+    return collapsed.length > maxChars ? `${collapsed.slice(0, maxChars).trimEnd()}…` : collapsed;
+}
+
+/** Claude-Code-style verb-first row label parts for a tool call. */
+export function resolveTranscriptToolRowParts(
+    kind: string,
+    toolName: string,
+    options?: { readonly path?: string; readonly command?: string },
+): QaapTranscriptToolRowParts {
+    const file = options?.path ? options.path.split('/').pop() ?? options.path : undefined;
+    switch (kind) {
+        case 'reading':
+            return { verb: 'Read', detail: file ?? 'file' };
+        case 'searching':
+            return { verb: 'Searched', detail: file ?? 'workspace' };
+        case 'terminal':
+            return { verb: 'Ran', detail: options?.command ? excerptTranscriptToolCommand(options.command) : 'command' };
+        case 'editing':
+            return { verb: 'Edited', detail: file ?? 'file' };
+        default:
+            return { verb: 'Used', detail: (toolName || 'tool').replace(/_/g, ' ') };
+    }
+}
+
 export interface QaapTranscriptToolPillDescriptor {
     readonly toolUseId: string;
     readonly label: string;
