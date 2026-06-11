@@ -39,6 +39,7 @@ export interface MobileProjectsTranscriptSubmitHost {
     transcriptOpenSummaryId: string | undefined;
     transcriptOpenSummary: QaapAgentConversationSummaryDTO | undefined;
     transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
+    transcriptLastConv: QaapAgentConversationDTO | undefined;
     transcriptLastFingerprint: string | undefined;
     transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
@@ -88,6 +89,36 @@ export class MobileProjectsTranscriptSubmitUi {
         this.host.transcriptMessagesUi.renderTranscriptMessages(chatHost, conv);
     }
 
+    /**
+     * Paint the outbound user bubble (and the streaming activity skeleton) synchronously from the
+     * cached conversation, before any network round-trip, so perceived send latency is zero.
+     */
+    protected renderInstantSubmitOptimistic(
+        summary: QaapAgentConversationSummaryDTO,
+        pendingUserMessage: QaapAgentConversationDTO['messages'][number],
+    ): void {
+        const cached = this.host.transcriptLastConv;
+        const chatHost = this.host.resolveActiveTranscriptChatHost();
+        if (!chatHost) {
+            return;
+        }
+        const baseConv: QaapAgentConversationDTO = cached?.id === summary.id ? cached : {
+            id: summary.id,
+            cwd: summary.cwd,
+            agentId: summary.agentId,
+            title: summary.title,
+            status: summary.status,
+            createdAt: summary.createdAt,
+            updatedAt: Date.now(),
+            messages: [],
+        };
+        this.renderTranscriptSubmitMessages(chatHost, {
+            ...baseConv,
+            status: 'streaming',
+            messages: [...baseConv.messages, pendingUserMessage],
+        }, summary);
+    }
+
     async submitTranscriptViaBackendConversation(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -104,6 +135,12 @@ export class MobileProjectsTranscriptSubmitUi {
         } = {},
     ): Promise<void> {
         if (this.host.transcriptHeaderUi.isPendingNewChatSummary(summary)) {
+            this.renderInstantSubmitOptimistic(summary, {
+                id: `pending-user-${Date.now()}`,
+                role: 'user',
+                content,
+                createdAt: Date.now(),
+            });
             const created = await this.host.createProjectChatSession(project, summary.cwd, content, {
                 selectedAgentId: options.selectedAgentId,
                 modeId: options.modeId,
@@ -137,6 +174,15 @@ export class MobileProjectsTranscriptSubmitUi {
             pinnedChatAgentId: options.selectedAgentId ?? options.widget?.pinnedAgent?.id ?? summary.agentId,
         }) ?? options.selectedAgentId ?? summary.agentId;
         const outbound = applyBackendInteractionModeToPrompt(content, options.modeId);
+        const pendingUserMessage = {
+            id: `pending-user-${Date.now()}`,
+            role: 'user' as const,
+            content: outbound,
+            createdAt: Date.now(),
+        };
+        // Zero perceived latency: paint the user bubble + activity skeleton from the cached
+        // conversation before the GET/POST round-trips; the server render below reconciles.
+        this.renderInstantSubmitOptimistic(summary, pendingUserMessage);
         let base = await getConversation(summary.id);
         if (base.status === 'streaming' && isConversationTurnVisuallySettled(base)) {
             await cancelConversation(summary.id);
@@ -145,12 +191,7 @@ export class MobileProjectsTranscriptSubmitUi {
         const optimistic: QaapAgentConversationDTO = {
             ...base,
             status: 'streaming',
-            messages: [...base.messages, {
-                id: `pending-user-${Date.now()}`,
-                role: 'user',
-                content: outbound,
-                createdAt: Date.now(),
-            }],
+            messages: [...base.messages, pendingUserMessage],
         };
         const activeChatHost = this.host.resolveActiveTranscriptChatHost();
         if (activeChatHost) {
