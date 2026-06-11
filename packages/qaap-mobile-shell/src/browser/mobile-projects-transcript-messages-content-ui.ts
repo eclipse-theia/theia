@@ -16,6 +16,8 @@ import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/brows
 import { extractDevPreviewPortFromUrl } from './qaap-transcript-preview-bootstrap';
 import { probeQaapDevPreviewPort } from './qaap-dev-preview-client';
 import { collapseExactRepeatedText } from '../common/qaap-qaiq-stream';
+import { prefersReducedMotion } from '../common/qaap-prefers-reduced-motion';
+import { nextStreamSmoothRevealLength } from '../common/qaap-transcript-stream-smooth';
 import {
     registerDeferredTranscriptMarkdown,
     type TranscriptDeferredMarkdownHydrate,
@@ -41,6 +43,14 @@ export function transcriptContentNeedsStreamingMarkdown(content: string): boolea
 
 const STREAM_STABLE_LENGTH_DATA = 'qaapStreamStableLength';
 const STREAM_TOTAL_LENGTH_DATA = 'qaapStreamTotalLength';
+
+/** Per-row token smoothing state: full received text vs. the prefix revealed so far. */
+interface TranscriptStreamSmoothEntry {
+    target: string;
+    revealed: number;
+    lastTickAt: number;
+    rafHandle: number | undefined;
+}
 
 export class MobileProjectsTranscriptMessagesContentUi {
 
@@ -175,6 +185,90 @@ export class MobileProjectsTranscriptMessagesContentUi {
             return;
         }
         if (!clean) {
+            this.cancelStreamSmoothing(host);
+            this.renderTranscriptStreamingMarkdownNow(host, clean);
+            return;
+        }
+        if (this.shouldBypassStreamSmoothing()) {
+            this.cancelStreamSmoothing(host);
+            this.renderTranscriptStreamingMarkdownNow(host, clean);
+            return;
+        }
+        const entry = this.streamSmoothEntries.get(host);
+        if (!entry || clean.length < entry.revealed) {
+            // First paint of this row (or replaced content): show everything received so far at
+            // once — smoothing only paces the deltas that arrive while the row stays mounted.
+            this.cancelStreamSmoothing(host);
+            this.streamSmoothEntries.set(host, {
+                target: clean,
+                revealed: clean.length,
+                lastTickAt: Date.now(),
+                rafHandle: undefined,
+            });
+            this.renderTranscriptStreamingMarkdownNow(host, clean);
+            return;
+        }
+        entry.target = clean;
+        this.ensureStreamSmoothTick(host, entry);
+    }
+
+    /** Token smoothing driver: reveal pending stream text at a steady pace via rAF ticks. */
+    protected readonly streamSmoothEntries = new WeakMap<HTMLElement, TranscriptStreamSmoothEntry>();
+
+    protected shouldBypassStreamSmoothing(): boolean {
+        return typeof window === 'undefined'
+            || typeof window.requestAnimationFrame !== 'function'
+            || prefersReducedMotion()
+            || (typeof document !== 'undefined' && document.hidden);
+    }
+
+    protected ensureStreamSmoothTick(host: HTMLElement, entry: TranscriptStreamSmoothEntry): void {
+        if (entry.rafHandle !== undefined || entry.revealed >= entry.target.length) {
+            return;
+        }
+        entry.lastTickAt = Date.now();
+        entry.rafHandle = window.requestAnimationFrame(() => this.runStreamSmoothTick(host));
+    }
+
+    protected runStreamSmoothTick(host: HTMLElement): void {
+        const entry = this.streamSmoothEntries.get(host);
+        if (!entry) {
+            return;
+        }
+        entry.rafHandle = undefined;
+        if (!host.isConnected) {
+            this.streamSmoothEntries.delete(host);
+            return;
+        }
+        const now = Date.now();
+        const elapsedMs = now - entry.lastTickAt;
+        entry.lastTickAt = now;
+        if (this.shouldBypassStreamSmoothing()) {
+            entry.revealed = entry.target.length;
+            this.renderTranscriptStreamingMarkdownNow(host, entry.target);
+            return;
+        }
+        entry.revealed = nextStreamSmoothRevealLength(entry.revealed, entry.target.length, elapsedMs);
+        this.renderTranscriptStreamingMarkdownNow(host, entry.target.slice(0, entry.revealed));
+        if (entry.revealed < entry.target.length) {
+            entry.rafHandle = window.requestAnimationFrame(() => this.runStreamSmoothTick(host));
+        }
+    }
+
+    protected cancelStreamSmoothing(host: HTMLElement): void {
+        const entry = this.streamSmoothEntries.get(host);
+        if (!entry) {
+            return;
+        }
+        if (entry.rafHandle !== undefined && typeof window !== 'undefined') {
+            window.cancelAnimationFrame(entry.rafHandle);
+        }
+        this.streamSmoothEntries.delete(host);
+    }
+
+    /** Renders streaming content for the already-revealed prefix (no smoothing). */
+    protected renderTranscriptStreamingMarkdownNow(host: HTMLElement, clean: string): void {
+        if (!clean) {
             host.replaceChildren();
             host.classList.remove(
                 'theia-mod-markdown',
@@ -260,12 +354,22 @@ export class MobileProjectsTranscriptMessagesContentUi {
 
     /** Upgrade every streaming host under `root` to full rendered markdown (turn settled). */
     settleTranscriptStreamingContent(root: ParentNode): void {
+        // Claude-Code-style: collapse tool groups once every pill inside finished successfully.
+        for (const group of root.querySelectorAll<HTMLDetailsElement>('details.theia-mobile-agent-tool-group[open]')) {
+            if (!group.querySelector('.theia-mobile-agent-tool-pill.theia-mod-running, .theia-mobile-agent-tool-pill.theia-mod-failed')) {
+                group.open = false;
+            }
+        }
         const selector = [
             `.${TRANSCRIPT_STREAMING_PLAIN_TEXT_CLASS}`,
             `.${TRANSCRIPT_STREAMING_INCREMENTAL_MARKDOWN_CLASS}`,
         ].join(', ');
         for (const host of root.querySelectorAll<HTMLElement>(selector)) {
-            const content = host.dataset.transcriptStreamSource ?? host.textContent ?? '';
+            // Prefer the smoother's full received text: the rendered DOM (and its dataset) may
+            // still hold only the revealed prefix when the turn settles mid-animation.
+            const pendingFullText = this.streamSmoothEntries.get(host)?.target;
+            this.cancelStreamSmoothing(host);
+            const content = pendingFullText ?? host.dataset.transcriptStreamSource ?? host.textContent ?? '';
             this.renderTranscriptMarkdown(host, content);
         }
     }
