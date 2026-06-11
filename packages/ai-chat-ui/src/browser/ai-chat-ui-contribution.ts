@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     CommandRegistry, Disposable, Emitter, Event, isOSX, MessageService, nls, PreferenceService,
-    QuickInputButton, QuickInputService, QuickPickItem
+    QuickInputButton, QuickInputService, QuickPickItem, QuickPickSeparator
 } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ConfirmDialog, FrontendApplicationContribution, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
@@ -209,16 +209,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(ChatCommands.SCROLL_LOCK_WIDGET, {
-            isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
-            isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
+            isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
+            isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
             execute: widget => this.withWidget(widget, chatWidget => {
                 chatWidget.lock();
                 return true;
             })
         });
         registry.registerCommand(ChatCommands.SCROLL_UNLOCK_WIDGET, {
-            isEnabled: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked),
-            isVisible: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked),
+            isEnabled: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked) && !this.activeSessionEmpty,
+            isVisible: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked) && !this.activeSessionEmpty,
             execute: widget => this.withWidget(widget, chatWidget => {
                 chatWidget.unlock();
                 return true;
@@ -247,6 +247,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
+                    && !activeSession.model.isEmpty()
                     && !this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
@@ -369,6 +370,11 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             keybinding: 'ctrlcmd+shift+l',
             when: chatScope
         });
+        keybindings.registerKeybinding({
+            command: AI_CHAT_SHOW_CHATS_COMMAND.id,
+            keybinding: 'ctrlcmd+alt+l',
+            when: chatScope
+        });
     }
 
     /**
@@ -417,6 +423,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeActiveStatus(() => sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeCanRun(() => sessionSummarizibilityChangedEmitter.fire());
+        this.onActiveSessionEmptyChanged(() => sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
@@ -446,63 +453,97 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     protected async askForChatSession(): Promise<QuickPickItem | undefined> {
-        const getItems = async (): Promise<QuickPickItem[]> => {
+        const getItems = async (): Promise<(QuickPickItem | QuickPickSeparator)[]> => {
             const activeSessions = this.chatService.getSessions()
                 .filter(session => session.title)
                 .map(session => ({
-                    session,
-                    isActive: true,
-                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0
-                }));
+                    isActive: true as const,
+                    id: session.id,
+                    title: session.title!,
+                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0,
+                    firstRequestText: session.model.getRequests().at(0)?.request.text,
+                    agentIconClass: session.pinnedAgent?.iconClass,
+                    agentName: session.pinnedAgent?.name
+                }))
+                .sort((a, b) => b.lastDate - a.lastDate);
 
             // Try to load persisted sessions, but don't fail if it doesn't work
-            let persistedSessions: Array<{ metadata: { sessionId: string; title: string; saveDate: number }; isActive: false; lastDate: number }> = [];
+            interface PersistedSessionPickItem {
+                isActive: false;
+                id: string;
+                title: string;
+                lastDate: number;
+                firstRequestText: undefined;
+                agentIconClass: string | undefined;
+                agentName: string | undefined;
+            }
+            let persistedSessions: PersistedSessionPickItem[] = [];
             try {
                 const persistedIndex = await this.chatService.getPersistedSessions();
-                const activeIds = new Set(activeSessions.map(s => s.session.id));
+                const activeIds = new Set(activeSessions.map(s => s.id));
                 persistedSessions = Object.values(persistedIndex)
                     .filter(metadata => !activeIds.has(metadata.sessionId))
-                    .map(metadata => ({
-                        metadata,
-                        isActive: false,
-                        lastDate: metadata.saveDate
-                    }));
+                    .map(metadata => {
+                        const agent = metadata.pinnedAgentId ? this.chatAgentService.getAgent(metadata.pinnedAgentId) : undefined;
+                        return {
+                            isActive: false as const,
+                            id: metadata.sessionId,
+                            title: metadata.title,
+                            lastDate: metadata.saveDate,
+                            firstRequestText: undefined,
+                            agentIconClass: agent?.iconClass,
+                            agentName: agent?.name
+                        };
+                    })
+                    .sort((a, b) => b.lastDate - a.lastDate);
             } catch (error) {
                 this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
                 // Continue with just active sessions
             }
 
-            // Combine and sort by last interaction/message date
-            const allSessions = [
-                ...activeSessions.map(s => ({
-                    isActive: true,
-                    id: s.session.id,
-                    title: s.session.title!,
-                    lastDate: s.lastDate,
-                    firstRequestText: s.session.model.getRequests().at(0)?.request.text
-                })),
-                ...persistedSessions.map(s => ({
-                    isActive: false,
-                    id: s.metadata.sessionId,
-                    title: s.metadata.title,
-                    lastDate: s.lastDate,
-                    firstRequestText: undefined
-                }))
-            ].sort((a, b) => b.lastDate - a.lastDate);
-
-            return allSessions.map(session => {
-                // Add icon for persisted sessions to visually distinguish them
-                const icon = session.isActive ? '' : '$(archive) ';
+            interface SessionPickItem {
+                isActive: boolean;
+                id: string;
+                title: string;
+                lastDate: number;
+                firstRequestText: string | undefined;
+                agentIconClass: string | undefined;
+                agentName: string | undefined;
+            }
+            const toItem = (session: SessionPickItem): QuickPickItem => {
+                // Mark restored sessions with an archive icon; active sessions get the pinned agent's icon
+                // to match the home view. QuickPick labels support inline codicons via `$(name)`, so we
+                // extract the codicon name from the agent's iconClass (e.g. "codicon codicon-foo" -> "foo").
+                let icon: string;
+                if (session.isActive) {
+                    const codiconName = session.agentIconClass?.match(/codicon-([\w-]+)/)?.[1] ?? 'comment-discussion';
+                    icon = `$(${codiconName}) `;
+                } else {
+                    icon = '$(archive) ';
+                }
                 const label = `${icon}${session.title}`;
-
-                return <QuickPickItem>({
+                // Mirror the home-view row subtitle: "@Agent · time ago"
+                const timeAgo = formatTimeAgo(session.lastDate);
+                const description = session.agentName ? `@${session.agentName} · ${timeAgo}` : timeAgo;
+                return {
                     label,
-                    description: formatTimeAgo(session.lastDate, false),
+                    description,
                     detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
-                });
-            });
+                };
+            };
+
+            const items: (QuickPickItem | QuickPickSeparator)[] = [];
+            if (activeSessions.length > 0) {
+                items.push({ type: 'separator', label: nls.localizeByDefault('Active') });
+                items.push(...activeSessions.map(toItem));
+            }
+            if (persistedSessions.length > 0) {
+                items.push({ type: 'separator', label: nls.localize('theia/ai/chat-ui/sectionRestored', 'Restored') });
+                items.push(...persistedSessions.map(toItem));
+            }
+            return items;
         };
 
         const defer = new Deferred<QuickPickItem | undefined>();

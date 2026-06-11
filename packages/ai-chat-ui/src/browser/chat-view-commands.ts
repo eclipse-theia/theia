@@ -92,5 +92,5 @@ export const AI_CHAT_SHOW_CHATS_COMMAND = Command.toLocalizedCommand({
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history'),
     category: ChatCommands.CHAT_CATEGORY,
-    label: 'Show Chats...'
-}, 'theia/ai-chat-ui/showChats');
+    label: 'Browse all chats...'
+}, 'theia/ai-chat-ui/browseAllChats');
