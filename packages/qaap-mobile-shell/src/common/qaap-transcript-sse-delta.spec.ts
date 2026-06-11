@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client';
 import {
     applyConversationMessageDelta,
+    agentMessageDeltaChanged,
     canApplySseMessageDelta,
     shouldSkipStreamingTranscriptRefetch,
 } from './qaap-transcript-sse-delta';
@@ -109,5 +110,58 @@ describe('applyConversationMessageDelta', () => {
         expect(next.messages).to.have.length(2);
         expect(next.messages[1]?.content).to.equal('Hello');
         expect(next.updatedAt).to.equal(21);
+    });
+
+    it('returns the same snapshot when the agent message did not change', () => {
+        const agent = {
+            id: 'agent-1',
+            role: 'agent' as const,
+            content: 'Hello',
+            segments: [{ type: 'text' as const, content: 'Hello' }],
+            createdAt: 20,
+        };
+        const conv = applyConversationMessageDelta(baseConv(), agent);
+        const again = applyConversationMessageDelta(conv, { ...agent, createdAt: 99 });
+        expect(again).to.equal(conv);
+        expect(agentMessageDeltaChanged(agent, { ...agent, createdAt: 99 })).to.equal(false);
+    });
+
+    it('reuses prefix message references when updating the streaming tail', () => {
+        const user = { id: 'user-1', role: 'user' as const, content: 'hi', createdAt: 5 };
+        const conv = { ...baseConv(), messages: [user] };
+        const withAgent = applyConversationMessageDelta(conv, {
+            id: 'agent-1',
+            role: 'agent',
+            content: 'Hel',
+            segments: [{ type: 'text', content: 'Hel' }],
+            createdAt: 20,
+        });
+        const next = applyConversationMessageDelta(withAgent, {
+            id: 'agent-1',
+            role: 'agent',
+            content: 'Hello',
+            segments: [{ type: 'text', content: 'Hello' }],
+            createdAt: 21,
+        });
+        expect(next.messages[0]).to.equal(user);
+    });
+
+    it('replaces an optimistic pending-user row when the real user message arrives via SSE', () => {
+        const pending = {
+            id: 'pending-user-123',
+            role: 'user' as const,
+            content: 'fix the bug',
+            createdAt: 15,
+        };
+        const conv = applyConversationMessageDelta(baseConv(), pending);
+        const next = applyConversationMessageDelta(conv, {
+            id: 'user-real-1',
+            role: 'user',
+            content: 'fix the bug',
+            createdAt: 16,
+        });
+        expect(next.messages).to.have.length(2);
+        expect(next.messages[1]?.id).to.equal('user-real-1');
+        expect(next.messages[1]?.content).to.equal('fix the bug');
     });
 });

@@ -8,6 +8,7 @@ import type {
     QaapAgentConversationSummaryDTO,
     QaapAgentMessageDTO,
 } from './qaap-transcript-agent-types';
+import { fingerprintAgentSegments } from './qaap-transcript-incremental-update';
 
 export interface QaapTranscriptSseMessageEvent {
     readonly conversationId: string;
@@ -61,19 +62,57 @@ export function shouldSkipStreamingTranscriptRefetch(
     return lastSseDeltaAt !== undefined && Date.now() - lastSseDeltaAt < graceMs;
 }
 
+function agentMessageSnapshotFingerprint(message: QaapAgentMessageDTO): string {
+    return `${message.content ?? ''}|${fingerprintAgentSegments(message.segments ?? [])}`;
+}
+
+/** True when an SSE payload would change the in-memory agent/user row. */
+export function agentMessageDeltaChanged(
+    previous: QaapAgentMessageDTO,
+    incoming: QaapAgentMessageDTO,
+): boolean {
+    if (previous.id !== incoming.id || previous.role !== incoming.role) {
+        return true;
+    }
+    return agentMessageSnapshotFingerprint(previous) !== agentMessageSnapshotFingerprint(incoming);
+}
+
 /** Merge one live SSE message into the in-memory conversation snapshot. */
 export function applyConversationMessageDelta(
     conv: QaapAgentConversationDTO,
     message: QaapAgentMessageDTO,
 ): QaapAgentConversationDTO {
     const index = conv.messages.findIndex(entry => entry.id === message.id);
-    const messages = index >= 0
-        ? conv.messages.map((entry, i) => (i === index ? message : entry))
-        : [...conv.messages, message];
+    if (index >= 0) {
+        const previous = conv.messages[index];
+        if (previous && !agentMessageDeltaChanged(previous, message)) {
+            return conv;
+        }
+    }
+    const updatedAt = Math.max(conv.updatedAt, message.createdAt);
+    let messages: QaapAgentMessageDTO[];
+    if (index >= 0) {
+        if (index === conv.messages.length - 1) {
+            messages = conv.messages.slice(0, index).concat(message);
+        } else {
+            messages = conv.messages.map((entry, i) => (i === index ? message : entry));
+        }
+    } else {
+        const last = conv.messages[conv.messages.length - 1];
+        if (
+            message.role === 'user'
+            && last?.role === 'user'
+            && last.id.startsWith('pending-user-')
+        ) {
+            messages = conv.messages.slice(0, -1).concat(message);
+        } else {
+            messages = conv.messages.concat(message);
+        }
+    }
     return {
         ...conv,
         messages,
         status: conv.status === 'streaming' ? 'streaming' : conv.status,
-        updatedAt: Math.max(conv.updatedAt, message.createdAt),
+        updatedAt,
     };
 }

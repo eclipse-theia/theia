@@ -6,7 +6,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { conversationToSummary, rewindConversationToMessage, type QaapAgentConversationDTO, type QaapAgentMessageDTO } from '../common/qaap-agent-conversation-client';
-import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
+import { resolveMessagePreviewText } from '../common/qaap-agent-message-content';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
@@ -37,8 +37,8 @@ export class MobileProjectsTranscriptMessagesUserUi {
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-user';
         const contentEl = document.createElement('div');
         contentEl.className = 'theia-mobile-agent-transcript-content';
-        const displayContent = normalizeAgentMessageContentForDisplay(msg.content);
-        this.toolUi.renderTranscriptRichContent(contentEl, displayContent, { defer });
+        const displayContent = resolveMessagePreviewText(msg);
+        this.toolUi.renderTranscriptRichContent(contentEl, displayContent, { defer, sync: !defer });
         row.append(contentEl);
         if (msg.error) {
             const err = document.createElement('div');
@@ -135,7 +135,7 @@ export class MobileProjectsTranscriptMessagesUserUi {
         if (!summary || this.host.transcriptOpenSummaryId !== conv.id) {
             return;
         }
-        const plainText = this.contentUi.cleanTranscriptDisplayText(normalizeAgentMessageContentForDisplay(msg.content)).trim();
+        const plainText = this.contentUi.cleanTranscriptDisplayText(resolveMessagePreviewText(msg)).trim();
         if (!plainText) {
             return;
         }

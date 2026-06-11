@@ -22,7 +22,9 @@ export class QaapTranscriptMarkdownWorkerClient {
     protected readonly pendingRequests = new Map<number, {
         readonly host: HTMLElement;
         readonly generation: number;
+        readonly content: string;
         readonly apply: TranscriptMarkdownApplyFn;
+        readonly fallbackSync: TranscriptMarkdownSyncParseFn;
     }>();
 
     static get(): QaapTranscriptMarkdownWorkerClient {
@@ -59,7 +61,7 @@ export class QaapTranscriptMarkdownWorkerClient {
         }
 
         const requestId = ++this.nextRequestId;
-        this.pendingRequests.set(requestId, { host, generation, apply });
+        this.pendingRequests.set(requestId, { host, generation, content, apply, fallbackSync });
         const request: TranscriptMarkdownWorkerRequest = {
             type: 'parse',
             requestId,
@@ -79,8 +81,7 @@ export class QaapTranscriptMarkdownWorkerClient {
                 this.handleWorkerMessage(event.data);
             };
             this.worker.onerror = () => {
-                this.workerFailed = true;
-                this.disposeWorkerOnly();
+                this.failWorkerAndFallbackPending();
             };
             return this.worker;
         } catch {
@@ -102,6 +103,18 @@ export class QaapTranscriptMarkdownWorkerClient {
             return;
         }
         pending.apply(pending.host, message.html, message.cleanLength);
+    }
+
+    protected failWorkerAndFallbackPending(): void {
+        this.workerFailed = true;
+        const pending = [...this.pendingRequests.values()];
+        this.disposeWorkerOnly();
+        for (const request of pending) {
+            if (!shouldApplyTranscriptMarkdownWorkerResult(this.hostGenerations.get(request.host), request.generation)) {
+                continue;
+            }
+            request.fallbackSync(request.host, request.content);
+        }
     }
 
     protected disposeWorkerOnly(): void {

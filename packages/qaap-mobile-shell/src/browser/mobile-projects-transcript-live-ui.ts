@@ -190,6 +190,9 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         const next = applyConversationMessageDelta(base, event.message);
+        if (next === base) {
+            return;
+        }
         this.ensureTranscriptLiveController().markSseDeltaApplied();
         if (TRANSCRIPT_SSE_COALESCE_RAF) {
             this.pendingSseRenderConv = next;

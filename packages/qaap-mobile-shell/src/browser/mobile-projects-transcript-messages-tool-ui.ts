@@ -9,6 +9,7 @@ import { shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegme
 import { isTranscriptErrorOutput, isTranscriptTerminalOutputText } from '../common/qaap-transcript-content-display';
 import { createTranscriptCodeView, resolveTranscriptCodeLanguage } from './qaap-transcript-code-view';
 import {
+    registerDeferredTranscriptMarkdown,
     registerDeferredTranscriptToolBody,
     type TranscriptDeferredToolBodyHydrate,
 } from './qaap-transcript-row-defer';
@@ -30,7 +31,7 @@ export class MobileProjectsTranscriptMessagesToolUi {
     renderTranscriptRichContent(
         host: HTMLElement,
         content: string,
-        options?: { readonly streaming?: boolean; readonly defer?: boolean },
+        options?: { readonly streaming?: boolean; readonly defer?: boolean; readonly sync?: boolean },
     ): void {
         const clean = this.contentUi.cleanTranscriptDisplayText(content).trim();
         if (isTranscriptTerminalOutputText(clean)) {
@@ -43,6 +44,17 @@ export class MobileProjectsTranscriptMessagesToolUi {
             return;
         }
         host.classList.add('theia-mod-markdown');
+        if (options?.sync) {
+            if (options.defer) {
+                host.classList.add('theia-mod-deferred-markdown');
+                const excerpt = clean.length > 180 ? `${clean.slice(0, 180).trimEnd()}…` : clean;
+                host.textContent = excerpt;
+                registerDeferredTranscriptMarkdown({ host, content: clean, streaming: options.streaming });
+                return;
+            }
+            this.contentUi.renderTranscriptMarkdownImmediate(host, clean);
+            return;
+        }
         if (options?.streaming) {
             this.contentUi.renderTranscriptStreamingMarkdown(host, clean, { defer: options?.defer });
             return;

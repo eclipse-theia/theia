@@ -115,6 +115,18 @@ export class MobileProjectsTranscriptMessagesContentUi {
         this.attachTranscriptMarkdownLinkHandler(host);
     }
 
+    /** Synchronous markdown for short fixed rows (user bubbles) — never leave an empty bubble while the worker loads. */
+    renderTranscriptMarkdownImmediate(host: HTMLElement, content: string): void {
+        const clean = this.cleanTranscriptDisplayText(content).trim();
+        if (!clean) {
+            host.replaceChildren();
+            host.classList.remove('theia-mod-markdown');
+            return;
+        }
+        host.classList.add('theia-mod-markdown');
+        this.renderTranscriptMarkdownSync(host, this.linkifyTranscriptPreviewUrls(clean));
+    }
+
     protected renderTranscriptDeferredMarkdownPlaceholder(host: HTMLElement, clean: string): void {
         host.classList.add('theia-mod-markdown', 'theia-mod-deferred-markdown');
         const excerpt = clean.length > 180 ? `${clean.slice(0, 180).trimEnd()}…` : clean;
