@@ -8,6 +8,10 @@ import { formatReadToolDetailFromArgs } from '../common/qaap-agent-conversation-
 import { shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegment } from '../common/qaap-agent-transcript-segments';
 import { isTranscriptErrorOutput, isTranscriptTerminalOutputText } from '../common/qaap-transcript-content-display';
 import { createTranscriptCodeView, resolveTranscriptCodeLanguage } from './qaap-transcript-code-view';
+import {
+    registerDeferredTranscriptToolBody,
+    type TranscriptDeferredToolBodyHydrate,
+} from './qaap-transcript-row-defer';
 import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
@@ -26,19 +30,24 @@ export class MobileProjectsTranscriptMessagesToolUi {
     renderTranscriptRichContent(
         host: HTMLElement,
         content: string,
-        options?: { readonly streaming?: boolean },
+        options?: { readonly streaming?: boolean; readonly defer?: boolean },
     ): void {
         const clean = this.contentUi.cleanTranscriptDisplayText(content).trim();
         if (isTranscriptTerminalOutputText(clean)) {
+            if (options?.defer) {
+                host.classList.add('theia-mod-deferred-terminal');
+                host.textContent = clean.split('\n').slice(0, 3).join('\n');
+                return;
+            }
             host.replaceChildren(this.createTranscriptTextTerminalWindow(clean));
             return;
         }
         host.classList.add('theia-mod-markdown');
         if (options?.streaming) {
-            this.contentUi.renderTranscriptStreamingMarkdown(host, clean);
+            this.contentUi.renderTranscriptStreamingMarkdown(host, clean, { defer: options?.defer });
             return;
         }
-        this.contentUi.renderTranscriptMarkdown(host, clean);
+        this.contentUi.renderTranscriptMarkdown(host, clean, { defer: options?.defer });
     }
 
     createTranscriptTextTerminalWindow(content: string): HTMLElement {
@@ -73,7 +82,10 @@ export class MobileProjectsTranscriptMessagesToolUi {
         return details;
     }
 
-    createTranscriptSegmentDetails(segment: QaapAgentMessageSegmentDTO): HTMLElement {
+    createTranscriptSegmentDetails(
+        segment: QaapAgentMessageSegmentDTO,
+        options?: { readonly defer?: boolean },
+    ): HTMLElement {
         if (segment.type === 'thinking') {
             const details = document.createElement('details');
             details.className = 'theia-mobile-agent-transcript-details theia-mod-thinking';
@@ -89,11 +101,11 @@ export class MobileProjectsTranscriptMessagesToolUi {
             if (this.resolversUi.isTranscriptShellTool(segment.name)) {
                 return this.createTranscriptShellDetails(segment);
             }
-            return this.createTranscriptToolWindow(segment);
+            return this.createTranscriptToolWindow(segment, options);
         }
         const block = document.createElement('div');
         block.className = 'theia-mobile-agent-transcript-content';
-        this.renderTranscriptRichContent(block, segment.content ?? '');
+        this.renderTranscriptRichContent(block, segment.content ?? '', { defer: options?.defer });
         return block;
     }
 
@@ -168,7 +180,10 @@ export class MobileProjectsTranscriptMessagesToolUi {
         return line;
     }
 
-    createTranscriptToolWindow(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): HTMLElement {
+    createTranscriptToolWindow(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        options?: { readonly defer?: boolean },
+    ): HTMLElement {
         const kind = this.resolversUi.resolveTranscriptToolKind(segment.name);
         const fullPath = this.resolversUi.extractTranscriptToolFullPath(segment.args);
         const target = fullPath ? this.resolversUi.compactTranscriptPath(fullPath)
@@ -195,12 +210,24 @@ export class MobileProjectsTranscriptMessagesToolUi {
 
         const details = document.createElement('details');
         details.className = `theia-mobile-agent-tool-window theia-mod-${kind}`;
-        details.open = this.resolversUi.shouldOpenTranscriptToolDetails(segment);
+        const shouldOpen = this.resolversUi.shouldOpenTranscriptToolDetails(segment);
+        details.open = shouldOpen;
         details.classList.add(segment.finished ? 'theia-mod-done' : 'theia-mod-running');
         details.append(head);
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-tool-body';
-        body.append(this.createTranscriptToolResultBody(segment, kind));
+        const deferBody = !!options?.defer && showResultBody && !shouldOpen;
+        if (deferBody) {
+            body.classList.add('theia-mod-deferred-tool-body');
+            const hydrate: TranscriptDeferredToolBodyHydrate = {
+                body,
+                segment,
+                kind,
+            };
+            registerDeferredTranscriptToolBody(hydrate);
+        } else {
+            body.append(this.createTranscriptToolResultBody(segment, kind));
+        }
         details.append(body);
         return details;
     }

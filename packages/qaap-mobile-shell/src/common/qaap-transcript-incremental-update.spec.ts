@@ -8,6 +8,7 @@ import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client'
 import {
     buildConversationTranscriptFingerprint,
     canPatchToolSegmentGrowth,
+    canStreamPatchAgentAppendTextSegment,
     canStreamPatchAgentAppendToolSegment,
     canStreamPatchAgentSegmentsInPlace,
     canStreamPatchAgentTextContentOnly,
@@ -348,6 +349,28 @@ describe('qaap-transcript-incremental-update', () => {
             ],
         };
         expect(canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg)).to.equal(true);
+    });
+
+    it('canStreamPatchAgentAppendTextSegment allows a new trailing text after tools', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+                { type: 'tool' as const, toolUseId: 't2', name: 'Bash', args: '{}', finished: true, result: 'done' },
+            ],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                ...prevMsg.segments,
+                { type: 'text' as const, content: 'Here is the answer' },
+            ],
+        };
+        expect(canStreamPatchAgentAppendTextSegment(prevMsg, nextMsg)).to.equal(true);
+        expect(canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg)).to.equal(false);
     });
 
     it('canPatchToolSegmentGrowth rejects tool id changes', () => {

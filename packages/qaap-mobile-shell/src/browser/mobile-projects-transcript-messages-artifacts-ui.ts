@@ -28,9 +28,14 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         segments: QaapAgentMessageSegmentDTO[],
         error?: string,
         conv?: QaapAgentConversationDTO,
+        options?: { readonly deferHeavyContent?: boolean },
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent';
+        const defer = !!options?.deferHeavyContent;
+        if (defer) {
+            row.setAttribute('data-transcript-row-deferred', '1');
+        }
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-transcript-segments';
 
@@ -43,7 +48,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
             const segment = segments[segmentIndex];
             if (segment.type === 'text' && (segment.content?.trim() ?? '').length > 0) {
-                const textBlock = this.toolUi.createTranscriptSegmentDetails(segment);
+                const textBlock = this.toolUi.createTranscriptSegmentDetails(segment, { defer });
                 textBlock.setAttribute(TRANSCRIPT_SEGMENT_INDEX_ATTR, String(segmentIndex));
                 body.append(textBlock);
             }
@@ -169,6 +174,38 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 return false;
             }
             this.patchTranscriptToolPill(pill, previous, next, conv);
+        }
+        return true;
+    }
+
+    /** Append a new text block when a text segment appears at the tail without rebuilding tool pills. */
+    appendStreamingAgentTextSegment(
+        row: HTMLElement,
+        nextSegments: readonly QaapAgentMessageSegmentDTO[],
+    ): boolean {
+        const segmentIndex = nextSegments.length - 1;
+        const segment = nextSegments[segmentIndex];
+        if (!segment || segment.type !== 'text') {
+            return false;
+        }
+        const segmentsBody = row.querySelector('.theia-mobile-agent-transcript-segments');
+        if (!segmentsBody) {
+            return false;
+        }
+        if (segmentsBody.querySelector(`[${TRANSCRIPT_SEGMENT_INDEX_ATTR}="${segmentIndex}"]`)) {
+            return false;
+        }
+        const textBlock = this.toolUi.createTranscriptSegmentDetails(segment);
+        textBlock.setAttribute(TRANSCRIPT_SEGMENT_INDEX_ATTR, String(segmentIndex));
+        const streaming = row.classList.contains('theia-mod-streaming');
+        if (streaming) {
+            this.toolUi.renderTranscriptRichContent(textBlock, segment.content ?? '', { streaming });
+        }
+        const artifacts = segmentsBody.querySelector('.theia-mobile-agent-transcript-artifacts');
+        if (artifacts) {
+            segmentsBody.insertBefore(textBlock, artifacts);
+        } else {
+            segmentsBody.append(textBlock);
         }
         return true;
     }

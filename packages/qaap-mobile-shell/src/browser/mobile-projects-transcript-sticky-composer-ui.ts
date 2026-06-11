@@ -27,6 +27,7 @@ import {
     type QaapAgentTaskAgentOption,
 } from '../common/qaap-agent-task-client';
 import { createComposerContextEntry } from '../common/qaap-composer-context-entry';
+import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
 import { resolveTranscriptEffectiveStatus } from '../common/qaap-transcript-turn-status';
 import type { MobileComposerAttachHandlers } from './qaap-mobile-composer-device-attach';
 import {
@@ -210,6 +211,10 @@ export class MobileProjectsTranscriptStickyComposerUi {
         protected readonly host: MobileProjectsTranscriptStickyComposerHost,
         protected readonly workHub: WorkHubTranscriptBridge,
     ) { }
+
+    protected isComposerBackgroundWorkAllowed(): boolean {
+        return isTranscriptDocumentVisible();
+    }
 
     protected peekTranscriptComposerChangedFilesExpanded(summaryId: string): boolean {
         return this.host.transcriptComposerChangedFilesExpandedById.get(summaryId) ?? true;
@@ -507,6 +512,9 @@ export class MobileProjectsTranscriptStickyComposerUi {
             readonly stats?: { readonly added: number; readonly removed: number };
         },
     ): Promise<void> {
+        if (!this.isComposerBackgroundWorkAllowed()) {
+            return;
+        }
         if (this.composerActivityGitFilesByConversationId.has(summary.id)) {
             return;
         }
@@ -735,6 +743,9 @@ export class MobileProjectsTranscriptStickyComposerUi {
     }
 
     refreshTranscriptComposerActivityIfNeeded(conv: QaapAgentConversationDTO): void {
+        if (!this.isComposerBackgroundWorkAllowed()) {
+            return;
+        }
         const summary = this.host.transcriptComposerSummary;
         const project = this.host.transcriptComposerProject;
         if (!summary || summary.id !== conv.id || !this.host.transcriptComposerHost?.isConnected) {

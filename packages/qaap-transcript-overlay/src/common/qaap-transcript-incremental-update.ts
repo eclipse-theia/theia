@@ -447,6 +447,27 @@ export function canStreamPatchAgentAppendToolSegment(
     return nextSegments[nextSegments.length - 1]?.type === 'tool';
 }
 
+/** A new text segment appeared at the tail — prior segments are unchanged. */
+export function canStreamPatchAgentAppendTextSegment(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    const prevSegments = prev.segments ?? [];
+    const nextSegments = next.segments ?? [];
+    if (nextSegments.length !== prevSegments.length + 1) {
+        return false;
+    }
+    for (let i = 0; i < prevSegments.length; i++) {
+        if (!segmentsExactlyEqual(prevSegments[i], nextSegments[i])) {
+            return false;
+        }
+    }
+    return nextSegments[nextSegments.length - 1]?.type === 'text';
+}
+
 export function fingerprintAgentSegments(segments: readonly QaapAgentMessageSegmentDTO[]): string {
     return segments.map(segment => {
         if (segment.type === 'tool') {

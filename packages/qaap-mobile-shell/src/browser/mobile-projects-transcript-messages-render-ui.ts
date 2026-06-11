@@ -7,11 +7,15 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
-import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentSegmentsInPlace, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
+import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendTextSegment, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentSegmentsInPlace, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
 import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
 import { attachTranscriptUserScrollPin } from './qaap-transcript-user-scroll-pin';
+import {
+    attachTranscriptRowDeferObserver,
+    shouldDeferTranscriptRowHeavyContent,
+} from './qaap-transcript-row-defer';
 import type { QaapAgentConversationDTO, QaapAgentMessageDTO, QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsTranscriptMessagesArtifactsUi } from './mobile-projects-transcript-messages-artifacts-ui';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
@@ -63,12 +67,17 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         const msg = conv.messages[index];
         const sameConversation = this.host.transcriptLastRenderedConversationId === conv.id;
         const previousLastMessageId = this.host.transcriptLastRenderedMessageId;
+        const deferHeavyContent = shouldDeferTranscriptRowHeavyContent({
+            messageIndex: index,
+            messageCount: conv.messages.length,
+            conversationStreaming: conv.status === 'streaming',
+        });
         let row: HTMLElement;
         const agentSegments = this.resolveTranscriptAgentSegments(conv, msg);
         if (msg.role === 'user') {
-            row = this.userUi.createTranscriptUserMessageRow(msg, conv);
+            row = this.userUi.createTranscriptUserMessageRow(msg, conv, { deferHeavyContent });
         } else if (agentSegments && agentSegments.length > 0) {
-            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, conv);
+            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, conv, { deferHeavyContent });
             if (msg.id) {
                 row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, msg.id);
             }
@@ -77,6 +86,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
                 msg.role,
                 normalizeAgentMessageContentForDisplay(msg.content),
                 msg.error,
+                { deferHeavyContent },
             );
         }
         if (index === conv.messages.length - 1 && sameConversation && previousLastMessageId && msg.id && msg.id !== previousLastMessageId) {
@@ -118,14 +128,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         if (wasNearBottom) {
             list.scrollToEnd();
         }
-        this.host.transcriptUserScrollPinDispose.dispose();
-        this.host.transcriptUserScrollPinDispose = new DisposableCollection(
-            attachTranscriptUserScrollPin(messageHost),
-            attachTranscriptScrollToBottomButton(host),
-        );
-        this.workHub.renderTeamSectionInTranscript(host, conv);
-        this.workHub.renderInlineApproval(host, conv);
-        this.host.transcriptHeaderUi.refreshTranscriptExecutionChrome();
+        this.attachTranscriptScrollChrome(host, messageHost, conv);
     }
 
     renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
@@ -182,10 +185,30 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             }
         }
         scrollElementToEnd(messageHost);
+        this.attachTranscriptScrollChrome(host, messageHost, conv);
+    }
+
+    protected attachTranscriptScrollChrome(
+        host: HTMLElement,
+        messageHost: HTMLElement,
+        conv: QaapAgentConversationDTO,
+    ): void {
         this.host.transcriptUserScrollPinDispose.dispose();
         this.host.transcriptUserScrollPinDispose = new DisposableCollection(
             attachTranscriptUserScrollPin(messageHost),
             attachTranscriptScrollToBottomButton(host),
+            attachTranscriptRowDeferObserver(messageHost, {
+                renderMarkdown: (target, content, streaming) => {
+                    if (streaming) {
+                        this.contentUi.renderTranscriptStreamingMarkdown(target, content);
+                    } else {
+                        this.contentUi.renderTranscriptMarkdown(target, content);
+                    }
+                },
+                renderToolBody: (target, segment, kind, streaming) => {
+                    target.append(this.toolUi.createTranscriptToolResultBody(segment, kind, { streaming }));
+                },
+            }),
         );
         this.workHub.renderTeamSectionInTranscript(host, conv);
         this.workHub.renderInlineApproval(host, conv);
@@ -383,7 +406,8 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         const prevSegments = prevMsg.segments ?? [];
         const segmentsInPlace = canStreamPatchAgentSegmentsInPlace(prevMsg, nextMsg);
         const appendTool = canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg);
-        if (!segmentsInPlace && !appendTool) {
+        const appendText = canStreamPatchAgentAppendTextSegment(prevMsg, nextMsg);
+        if (!segmentsInPlace && !appendTool && !appendText) {
             return false;
         }
         if (segmentsInPlace) {
@@ -413,6 +437,11 @@ export class MobileProjectsTranscriptMessagesRenderUi {
                 return false;
             }
         }
+        if (appendText) {
+            if (!this.artifactsUi.appendStreamingAgentTextSegment(existingRow, nextSegments)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -434,13 +463,21 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         role: 'user' | 'agent',
         content: string,
         error?: string,
+        options?: { readonly deferHeavyContent?: boolean },
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = `theia-mobile-agent-transcript-msg theia-mod-${role}`;
+        if (options?.deferHeavyContent) {
+            row.setAttribute('data-transcript-row-deferred', '1');
+        }
         // Ownership is conveyed by alignment and the bubble surface, so no redundant "You" label.
         const contentEl = document.createElement('div');
         contentEl.className = 'theia-mobile-agent-transcript-content';
-        this.toolUi.renderTranscriptRichContent(contentEl, normalizeAgentMessageContentForDisplay(content));
+        this.toolUi.renderTranscriptRichContent(
+            contentEl,
+            normalizeAgentMessageContentForDisplay(content),
+            { defer: options?.deferHeavyContent },
+        );
         row.append(contentEl);
         if (error) {
             const err = document.createElement('div');

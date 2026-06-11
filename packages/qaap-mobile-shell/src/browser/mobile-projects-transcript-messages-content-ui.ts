@@ -5,10 +5,15 @@
 
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { nls } from '@theia/core/lib/common/nls';
+import { QaapTranscriptMarkdownWorkerClient } from './qaap-transcript-markdown-worker-client';
 import { normalizePreviewUrlForSameOrigin } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
 import { extractDevPreviewPortFromUrl } from './qaap-transcript-preview-bootstrap';
 import { probeQaapDevPreviewPort } from './qaap-dev-preview-client';
 import { collapseExactRepeatedText } from '../common/qaap-qaiq-stream';
+import {
+    registerDeferredTranscriptMarkdown,
+    type TranscriptDeferredMarkdownHydrate,
+} from './qaap-transcript-row-defer';
 import { MobileSnackbar } from './mobile-snackbar';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
 
@@ -77,21 +82,57 @@ export class MobileProjectsTranscriptMessagesContentUi {
     }
 
 
-    renderTranscriptMarkdown(host: HTMLElement, content: string): void {
+    renderTranscriptMarkdown(host: HTMLElement, content: string, options?: { readonly defer?: boolean }): void {
         const clean = this.cleanTranscriptDisplayText(content).trim();
-        const html = this.host.transcriptMarkdownIt.render(this.linkifyTranscriptPreviewUrls(clean));
-        host.innerHTML = DOMPurify.sanitize(html, {
+        if (options?.defer) {
+            this.renderTranscriptDeferredMarkdownPlaceholder(host, clean);
+            return;
+        }
+        const linked = this.linkifyTranscriptPreviewUrls(clean);
+        QaapTranscriptMarkdownWorkerClient.get().requestParse(
+            host,
+            linked,
+            (target, html, cleanLength) => this.applyTranscriptMarkdownHtml(target, html, cleanLength),
+            (target, linkedContent) => this.renderTranscriptMarkdownSync(target, linkedContent),
+        );
+    }
+
+    /** Main-thread fallback when the markdown worker is unavailable. */
+    protected renderTranscriptMarkdownSync(host: HTMLElement, linkedContent: string): void {
+        const html = this.host.transcriptMarkdownIt.render(linkedContent);
+        const sanitized = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true,
         });
-        host.dataset.transcriptStreamParsedLen = String(clean.length);
+        this.applyTranscriptMarkdownHtml(host, sanitized, linkedContent.length);
+    }
+
+    /** Apply sanitized HTML from the worker (or sync fallback) without re-parsing markdown. */
+    protected applyTranscriptMarkdownHtml(host: HTMLElement, html: string, cleanLength: number): void {
+        host.innerHTML = html;
+        host.dataset.transcriptStreamParsedLen = String(cleanLength);
         host.dataset.transcriptStreamParsedAt = String(Date.now());
         host.querySelector('.theia-mobile-agent-streaming-text-tail')?.remove();
         this.attachTranscriptMarkdownLinkHandler(host);
     }
 
+    protected renderTranscriptDeferredMarkdownPlaceholder(host: HTMLElement, clean: string): void {
+        host.classList.add('theia-mod-markdown', 'theia-mod-deferred-markdown');
+        const excerpt = clean.length > 180 ? `${clean.slice(0, 180).trimEnd()}…` : clean;
+        host.textContent = excerpt;
+        const hydrate: TranscriptDeferredMarkdownHydrate = {
+            host,
+            content: clean,
+        };
+        registerDeferredTranscriptMarkdown(hydrate);
+    }
+
     /** Throttled markdown for long streaming agent text — appends a plain tail between full parses. */
-    renderTranscriptStreamingMarkdown(host: HTMLElement, content: string): void {
+    renderTranscriptStreamingMarkdown(host: HTMLElement, content: string, options?: { readonly defer?: boolean }): void {
         const clean = this.cleanTranscriptDisplayText(content).trim();
+        if (options?.defer) {
+            this.renderTranscriptDeferredMarkdownPlaceholder(host, clean);
+            return;
+        }
         const minChars = MobileProjectsTranscriptMessagesContentUi.STREAMING_MARKDOWN_MIN_CHARS;
         if (clean.length < minChars) {
             this.renderTranscriptMarkdown(host, clean);
@@ -117,6 +158,10 @@ export class MobileProjectsTranscriptMessagesContentUi {
     }
 
     protected attachTranscriptMarkdownLinkHandler(host: HTMLElement): void {
+        if (host.dataset.transcriptMarkdownLinks === '1') {
+            return;
+        }
+        host.dataset.transcriptMarkdownLinks = '1';
         host.addEventListener('click', event => {
             let target = event.target as HTMLElement | null;
             while (target && target.tagName !== 'A') {

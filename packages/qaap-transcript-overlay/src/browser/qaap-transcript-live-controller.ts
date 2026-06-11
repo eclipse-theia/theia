@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Event } from '@theia/core/lib/common/event';
 import type { QaapAgentConversationDTO, QaapAgentConversationSummaryDTO } from '../common/qaap-transcript-agent-types';
 import { buildConversationTranscriptFingerprint } from '../common/qaap-transcript-incremental-update';
@@ -19,6 +19,7 @@ export interface QaapTranscriptLiveRefreshOptions {
 }
 
 export interface QaapTranscriptLiveControllerDeps {
+    readonly isDocumentVisible?: () => boolean;
     readonly isWatching: (conversationId: string) => boolean;
     readonly getOpenSummary: () => QaapAgentConversationSummaryDTO | undefined;
     readonly setOpenSummary: (summary: QaapAgentConversationSummaryDTO) => void;
@@ -53,8 +54,15 @@ export class QaapTranscriptLiveController implements Disposable {
     protected scheduleRefresh: (() => void) | undefined;
     protected watchedConversationId: string | undefined;
     protected liveUpdatesDispose: Disposable = Disposable.NULL;
+    protected visibilityListenerInstalled = false;
 
     constructor(protected readonly deps: QaapTranscriptLiveControllerDeps) { }
+
+    protected isDocumentVisible(): boolean {
+        return this.deps.isDocumentVisible?.() ?? (
+            typeof document === 'undefined' || document.visibilityState === 'visible'
+        );
+    }
 
     get onScheduleRefresh(): (() => void) | undefined {
         return this.scheduleRefresh;
@@ -65,6 +73,9 @@ export class QaapTranscriptLiveController implements Disposable {
         this.clearRefreshTimer();
         const scheduleRefresh = (): void => {
             if (!this.deps.isWatching(conversationId)) {
+                return;
+            }
+            if (!this.isDocumentVisible()) {
                 return;
             }
             this.clearRefreshTimer();
@@ -80,6 +91,9 @@ export class QaapTranscriptLiveController implements Disposable {
                 this.stopWatch();
                 return;
             }
+            if (!this.isDocumentVisible()) {
+                return;
+            }
             const summary = this.deps.findSummaryById(conversationId);
             if (summary) {
                 this.handleSummaryUpdated(summary);
@@ -89,6 +103,7 @@ export class QaapTranscriptLiveController implements Disposable {
                 scheduleRefresh();
             }
         });
+        this.installVisibilityResume(conversationId, scheduleRefresh);
         this.startStreamingFallbackPoll(conversationId, scheduleRefresh);
         void this.refreshNow();
     }
@@ -100,6 +115,7 @@ export class QaapTranscriptLiveController implements Disposable {
         this.clearStreamingFallbackPoll();
         this.liveUpdatesDispose.dispose();
         this.liveUpdatesDispose = Disposable.NULL;
+        this.visibilityListenerInstalled = false;
     }
 
     dispose(): void {
@@ -141,6 +157,9 @@ export class QaapTranscriptLiveController implements Disposable {
     async refreshNow(options?: QaapTranscriptLiveRefreshOptions): Promise<void> {
         const conversationId = this.watchedConversationId;
         if (!conversationId || !this.deps.isWatching(conversationId)) {
+            return;
+        }
+        if (!this.isDocumentVisible()) {
             return;
         }
         if (this.refreshInFlight) {
@@ -188,6 +207,9 @@ export class QaapTranscriptLiveController implements Disposable {
                 this.clearStreamingFallbackPoll();
                 return;
             }
+            if (!this.isDocumentVisible()) {
+                return;
+            }
             const last = this.deps.getLastConv();
             if (last?.status !== 'streaming') {
                 this.clearStreamingFallbackPoll();
@@ -211,5 +233,34 @@ export class QaapTranscriptLiveController implements Disposable {
             clearIntervalFn(this.streamingPollTimer);
             this.streamingPollTimer = undefined;
         }
+    }
+
+    /** Resume debounced refetch + fallback poll when the tab returns to the foreground. */
+    protected installVisibilityResume(
+        conversationId: string,
+        scheduleRefresh: () => void,
+    ): void {
+        if (this.visibilityListenerInstalled || typeof document === 'undefined') {
+            return;
+        }
+        this.visibilityListenerInstalled = true;
+        const onVisible = (): void => {
+            if (!this.isDocumentVisible() || !this.deps.isWatching(conversationId)) {
+                return;
+            }
+            const last = this.deps.getLastConv();
+            if (last?.status === 'streaming') {
+                scheduleRefresh();
+                void this.refreshNow({ forcePoll: true });
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        this.liveUpdatesDispose = new DisposableCollection(
+            this.liveUpdatesDispose,
+            Disposable.create(() => {
+                document.removeEventListener('visibilitychange', onVisible);
+                this.visibilityListenerInstalled = false;
+            }),
+        );
     }
 }

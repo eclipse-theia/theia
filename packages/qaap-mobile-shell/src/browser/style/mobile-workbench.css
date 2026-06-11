@@ -15078,6 +15078,17 @@ body > .theia-mobile-transcript-files-menu {
   contain-intrinsic-size: auto 120px;
 }
 
+.theia-mobile-agent-transcript-content.theia-mod-deferred-markdown,
+.theia-mobile-agent-transcript-user-wrap[data-transcript-row-deferred] .theia-mobile-agent-transcript-content.theia-mod-deferred-markdown {
+  color: var(--theia-descriptionForeground, rgba(127, 127, 127, 0.85));
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.theia-mobile-agent-tool-body.theia-mod-deferred-tool-body {
+  min-height: 0;
+}
+
 .theia-mobile-agent-transcript-msg.theia-mod-new-message,
 .theia-mobile-agent-transcript-user-wrap.theia-mod-new-message,
 .theia-mobile-agent-segments.theia-mod-new-message {

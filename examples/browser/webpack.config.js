@@ -5,8 +5,15 @@
 // @ts-check
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const resolvePackagePath = require('resolve-package-path');
 const configs = require('./gen-webpack.config.js');
 const nodeConfig = require('./gen-webpack.node.config.js');
+
+/** Off-main-thread transcript markdown (markdown-it + DOMPurify). */
+const qaapTranscriptMarkdownWorkerEntry = path.join(
+    path.dirname(resolvePackagePath('@theia/qaap-mobile-shell', __dirname)),
+    'lib/browser/qaap-transcript-markdown-worker.js',
+);
 
 /**
  * Expose bundled modules on window.theia.moduleName namespace, e.g.
@@ -26,5 +33,38 @@ configs[0].plugins.push(new CopyWebpackPlugin({
 
 module.exports = [
     ...configs,
+    {
+        mode: configs[0].mode,
+        devtool: 'source-map',
+        entry: {
+            'qaap-transcript-markdown-worker': qaapTranscriptMarkdownWorkerEntry,
+        },
+        output: {
+            filename: '[name].js',
+            path: configs[0].output.path,
+            devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+            globalObject: 'self',
+        },
+        target: 'webworker',
+        resolve: {
+            extensions: ['.js'],
+            fallback: {
+                child_process: false,
+                crypto: false,
+                net: false,
+                path: require.resolve('path-browserify'),
+                process: false,
+                os: false,
+                timers: false,
+            },
+        },
+        module: {
+            rules: configs[0].module.rules.filter(rule => {
+                const test = rule.test && rule.test.toString();
+                return !test || test.includes('\\.js') || test.includes('wasm');
+            }),
+        },
+        ignoreWarnings: configs[0].ignoreWarnings,
+    },
     nodeConfig.config
 ];

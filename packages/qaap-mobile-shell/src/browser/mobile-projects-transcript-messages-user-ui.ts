@@ -23,17 +23,22 @@ export class MobileProjectsTranscriptMessagesUserUi {
     createTranscriptUserMessageRow(
         msg: QaapAgentMessageDTO,
         conv: QaapAgentConversationDTO,
+        options?: { readonly deferHeavyContent?: boolean },
     ): HTMLElement {
         const wrap = document.createElement('div');
         wrap.className = 'theia-mobile-agent-transcript-user-wrap';
         wrap.dataset.messageId = msg.id;
+        const defer = !!options?.deferHeavyContent;
+        if (defer) {
+            wrap.setAttribute('data-transcript-row-deferred', '1');
+        }
 
         const row = document.createElement('div');
         row.className = 'theia-mobile-agent-transcript-msg theia-mod-user';
         const contentEl = document.createElement('div');
         contentEl.className = 'theia-mobile-agent-transcript-content';
         const displayContent = normalizeAgentMessageContentForDisplay(msg.content);
-        this.toolUi.renderTranscriptRichContent(contentEl, displayContent);
+        this.toolUi.renderTranscriptRichContent(contentEl, displayContent, { defer });
         row.append(contentEl);
         if (msg.error) {
             const err = document.createElement('div');
