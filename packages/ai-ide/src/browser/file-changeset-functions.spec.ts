@@ -86,7 +86,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
 
         // Mock dependencies
         const mockWorkspaceScope = {
-            resolveRelativePath: async () => new URI('file:///workspace/test.txt')
+            resolveRelativePath: () => new URI('file:///workspace/test.txt')
         } as unknown as WorkspaceFunctionScope;
 
         const mockFileService = {

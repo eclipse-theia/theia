@@ -18,12 +18,8 @@ import { ChatModel, ResponseTokenUsage } from '@theia/ai-chat';
 import { nls } from '@theia/core/lib/common/nls';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
-/**
- * Provisional context window size used as the denominator for the indicator bar
- * fill and the tooltip's "Total: X / Y" display until per-model context sizes
- * are available. See issue #17323 comments for context.
- */
-export const CHAT_CONTEXT_WINDOW_SIZE = 200000;
+/** Fallback denominator for the token usage indicator when the active model does not report its own input limit. */
+export const CHAT_CONTEXT_WINDOW_SIZE_FALLBACK = 200000;
 
 export type TokenUsageWarningDecision = 'notify' | 'reset' | 'skip';
 
@@ -69,7 +65,7 @@ export function formatTokenCount(count: number | undefined): string {
  * total, the configured warning threshold, and the assumed context window size.
  * Yellow band: [threshold, contextWindowSize). Red band: [contextWindowSize, ∞).
  */
-export function getUsageColorClass(totalTokens: number, threshold: number, contextWindowSize: number = CHAT_CONTEXT_WINDOW_SIZE): string {
+export function getUsageColorClass(totalTokens: number, threshold: number, contextWindowSize: number = CHAT_CONTEXT_WINDOW_SIZE_FALLBACK): string {
     if (totalTokens === 0) {
         return 'token-usage-none';
     }
@@ -113,14 +109,19 @@ export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage |
     return undefined;
 }
 
-export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalTokens: number, threshold: number): MarkdownString | undefined {
+export function buildBarTooltip(
+    usage: ResponseTokenUsage | undefined,
+    totalTokens: number,
+    threshold: number,
+    contextWindowSize: number = CHAT_CONTEXT_WINDOW_SIZE_FALLBACK
+): MarkdownString | undefined {
     if (!usage) {
         return undefined;
     }
     const lines: string[] = [
         `**${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}**`
     ];
-    const colorClass = getUsageColorClass(totalTokens, threshold);
+    const colorClass = getUsageColorClass(totalTokens, threshold, contextWindowSize);
     if (colorClass === 'token-usage-yellow') {
         lines.push(`⚠ ${nls.localize('theia/ai/chat-ui/tokenUsageWarning', 'Token usage warning threshold reached.')}`, '');
     } else if (colorClass === 'token-usage-red') {
@@ -139,12 +140,12 @@ export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalToke
     if (cacheParts.length > 0) {
         lines.push(cacheParts.join(' | '));
     }
-    const percentage = Math.round((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100);
+    const percentage = Math.round((totalTokens / contextWindowSize) * 100);
     lines.push(nls.localize(
         'theia/ai/chat-ui/tokenUsageTooltipTotal',
         'Total: {0} / {1} ({2}%)',
         formatTokenCount(totalTokens),
-        formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE),
+        formatTokenCount(contextWindowSize),
         percentage
     ));
     return { value: lines.join('  \n') };

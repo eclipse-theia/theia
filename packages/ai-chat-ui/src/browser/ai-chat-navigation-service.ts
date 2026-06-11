@@ -80,8 +80,8 @@ export class AIChatNavigationService {
         this.onDidChangeEmitter.fire();
     }
 
-    /** Called by ChatViewWidget when a query is submitted on an empty (welcome screen) session. */
-    notifyQueryFromWelcomeScreen(sessionId: string): void {
+    /** Updates navigation history when the initial query creates a concrete chat session. */
+    notifyInitialQuery(sessionId: string): void {
         if (this.isNavigating) { return; }
         if (this.canGoBack && !this.canGoForward) {
             // Welcome was pushed forward via '+' from an existing session — it is acting as a

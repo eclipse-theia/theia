@@ -76,7 +76,6 @@ import { ContextFilesVariableContribution } from '../common/context-files-variab
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
-import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
@@ -125,6 +124,7 @@ import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
+import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -288,17 +288,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
+
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
 
-    bind(AIMCPConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIMCPConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
-        }))
-        .inSingletonScope();
     // Register the token usage configuration widget
     bind(AITokenUsageConfigurationWidget).toSelf();
     bind(WidgetFactory)
@@ -355,4 +349,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
+    bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
 });

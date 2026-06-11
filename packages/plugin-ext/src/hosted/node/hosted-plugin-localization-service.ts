@@ -18,11 +18,11 @@ import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { LazyLocalization, LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { Localization } from '@theia/core/lib/common/i18n/localization';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, Translation } from '../../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable, DisposableCollection, isObject, MaybePromise, nls, Path, URI } from '@theia/core';
+import { Disposable, DisposableCollection, isObject, MaybePromise, nls, Path, URI, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
 
@@ -47,6 +47,9 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
 
     @inject(EnvVariablesServer)
     protected readonly envVariables: EnvVariablesServer;
+
+    @inject(ILogger) @named('plugin-ext:HostedPluginLocalizationService')
+    protected readonly logger: ILogger;
 
     protected localizationDisposeMap = new Map<string, Disposable>();
     protected translationConfigFiles: Map<string, string> = new Map();
@@ -162,7 +165,7 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
                 return Localization.localize(localization, fullKey, original);
             }) as DeployedPlugin;
         } catch (err) {
-            console.error(`Failed to localize plugin '${pluginId}'.`, err);
+            this.logger.error(`Failed to localize plugin '${pluginId}'.`, err);
         }
         return plugin;
     }

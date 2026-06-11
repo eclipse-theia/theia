@@ -70,6 +70,7 @@ import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
+import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);
@@ -109,6 +110,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputCapabilitiesContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
     bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
+
+    bind(ToolConfirmationKeybindingContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ToolConfirmationKeybindingContribution);
+    bind(KeybindingContribution).toService(ToolConfirmationKeybindingContribution);
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);

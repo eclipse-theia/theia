@@ -165,26 +165,44 @@ export function parseSkillFile(content: string): { metadata: SkillDescription | 
 }
 
 /**
- * Combines skill directories with proper priority ordering.
- * Workspace directory has highest priority, followed by configured directories, then default.
- * First directory wins on duplicates.
+ * Provenance tier of a skill directory, used to dispatch tier-specific processing.
+ */
+export type SkillDirectoryTier = 'workspace' | 'configured' | 'default';
+
+/**
+ * A skill directory paired with the tier it originates from.
+ */
+export interface SkillDirectoryEntry {
+    /** Absolute filesystem path to the skill directory */
+    path: string;
+    /** Tier the directory belongs to */
+    tier: SkillDirectoryTier;
+}
+
+/**
+ * Combines skill directories with proper priority ordering and provenance.
+ * Workspace directories have highest priority, followed by configured directories, then defaults.
+ * First occurrence of a path wins on duplicates; later occurrences (regardless of tier) are dropped.
  */
 export function combineSkillDirectories(
-    workspaceSkillsDir: string | undefined,
+    workspaceSkillsDirs: string[],
     configuredDirectories: string[],
-    defaultSkillsDir: string | undefined
-): string[] {
-    const allDirectories: string[] = [];
-    if (workspaceSkillsDir) {
-        allDirectories.push(workspaceSkillsDir);
-    }
-    for (const dir of configuredDirectories) {
-        if (!allDirectories.includes(dir)) {
-            allDirectories.push(dir);
+    defaultSkillsDirs: string[]
+): SkillDirectoryEntry[] {
+    const seen = new Set<string>();
+    const result: SkillDirectoryEntry[] = [];
+    const tiers: Array<{ dirs: string[]; tier: SkillDirectoryTier }> = [
+        { dirs: workspaceSkillsDirs, tier: 'workspace' },
+        { dirs: configuredDirectories, tier: 'configured' },
+        { dirs: defaultSkillsDirs, tier: 'default' }
+    ];
+    for (const { dirs, tier } of tiers) {
+        for (const dir of dirs) {
+            if (!seen.has(dir)) {
+                seen.add(dir);
+                result.push({ path: dir, tier });
+            }
         }
     }
-    if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
-        allDirectories.push(defaultSkillsDir);
-    }
-    return allDirectories;
+    return result;
 }

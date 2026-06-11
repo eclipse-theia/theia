@@ -48,9 +48,10 @@ export class ChangeSetVariableContribution implements AIVariableContribution, AI
                 value: ''
             };
         }
-        const entries = await Promise.all(
-            context.model.changeSet.getElements().map(async element => `- file: ${await this.workspaceService.getWorkspaceRelativePath(element.uri)}, status: ${element.state}`)
-        );
+        const entries = context.model.changeSet.getElements().map(element => {
+            const rootPrefixedPath = this.workspaceService.getRootPrefixedPath(element.uri);
+            return `- file: ${rootPrefixedPath}, status: ${element.state}`;
+        });
         return {
             variable: CHANGE_SET_SUMMARY_VARIABLE,
             value: `## Previously Proposed Changes

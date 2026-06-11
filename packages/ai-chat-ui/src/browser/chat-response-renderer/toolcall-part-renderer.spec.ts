@@ -15,6 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
+import { OpenerService } from '@theia/core/lib/browser';
+import { ReactNode } from '@theia/core/shared/react';
+import { ToolCallPartRenderer } from './toolcall-part-renderer';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 describe('condenseArguments', () => {
@@ -271,6 +275,129 @@ describe('formatArgsForTooltip', () => {
         const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('\\[0\\]');
         expect(result.value).to.contain('\\[1\\]');
+    });
+
+});
+
+/**
+ * Test-only subclass that exposes the protected `renderResult` method and
+ * accepts a minimal `OpenerService` stub. `renderResult` only references the
+ * opener service indirectly through `<MarkdownRender>`, and the React tree is
+ * never mounted in these unit tests, so an empty stub is sufficient.
+ */
+class TestableToolCallPartRenderer extends ToolCallPartRenderer {
+    constructor() {
+        super();
+        this.openerService = {} as OpenerService;
+    }
+    callRenderResult(response: ToolCallChatResponseContent): ReactNode {
+        return this.renderResult(response);
+    }
+}
+
+interface RenderedNode {
+    type: string;
+    props: { children?: unknown; className?: string };
+}
+
+describe('ToolCallPartRenderer.renderResult', () => {
+
+    function renderResult(result: unknown): RenderedNode | undefined {
+        const renderer = new TestableToolCallPartRenderer();
+        const response = { kind: 'toolCall', result } as unknown as ToolCallChatResponseContent;
+        return renderer.callRenderResult(response) as RenderedNode | undefined;
+    }
+
+    it('returns undefined for an undefined result', () => {
+        expect(renderResult(undefined)).to.be.undefined;
+    });
+
+    it('returns undefined for an empty-string result (falsy after tryParse)', () => {
+        expect(renderResult('')).to.be.undefined;
+    });
+
+    it('renders primitive numeric result via <pre>{String(result)}</pre>', () => {
+        const node = renderResult(42)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal('42');
+    });
+
+    it('renders unparseable string result via <pre>{String(result)}</pre>', () => {
+        const node = renderResult('not json at all')!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal('not json at all');
+    });
+
+    it('renders proper ToolCallContent (array) via the response-content branch', () => {
+        const node = renderResult({ content: [{ type: 'text', text: 'hello' }] })!;
+        expect(node.type).to.equal('div');
+        expect(node.props.className).to.equal('theia-toolCall-response-content');
+    });
+
+    it('renders ToolCallContent that arrived as a JSON string via the response-content branch', () => {
+        const node = renderResult(JSON.stringify({ content: [{ type: 'text', text: 'hello' }] }))!;
+        expect(node.type).to.equal('div');
+        expect(node.props.className).to.equal('theia-toolCall-response-content');
+    });
+
+    // Regression: an object whose `content` field is not an array must not crash.
+    // This is the exact shape produced by `getWorkspaceFileList` (after multi-root
+    // support landed in v1.72.0) when a workspace entry happens to be literally
+    // named "content" (e.g. Hugo sites).
+    it('falls back to <pre>JSON</pre> when result has a non-array "content" key (regression)', () => {
+        const result = {
+            '.devcontainer': 'directory',
+            'config.yaml': 'file',
+            'content': 'directory',
+            'go.mod': 'file'
+        };
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> when content is a string (regression)', () => {
+        const result = { content: 'directory' };
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> when content is an object (regression)', () => {
+        const result = { content: { nested: true } };
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> when content is a number (regression)', () => {
+        const result = { content: 42 };
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> for JSON-string result whose parsed object has a non-array content key (regression)', () => {
+        // Byte-for-byte shape persisted by getWorkspaceFileList for a Hugo workspace.
+        const raw = '{".devcontainer":"directory","config.yaml":"file","content":"directory","go.mod":"file"}';
+        const node = renderResult(raw)!;
+        expect(node.type).to.equal('pre');
+        // The fallback stringifies the *parsed* object, not the original string.
+        expect(node.props.children).to.equal(JSON.stringify(JSON.parse(raw), undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> for plain objects without a content key', () => {
+        const result = { files: [] };
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+    it('falls back to <pre>JSON</pre> for top-level array results', () => {
+        const result = [{ file: 'a', matches: [] }];
+        const node = renderResult(result)!;
+        expect(node.type).to.equal('pre');
+        expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
     });
 
 });

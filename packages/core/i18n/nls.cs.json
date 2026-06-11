@@ -83,15 +83,9 @@
           "maxRetries": {
             "title": "Maximální počet opakovaných pokusů při selhání požadavku. Výchozí hodnota je 3."
           },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s Anthropic API. Požadované atributy jsou „model“ a „url“.            \n            Volitelně můžete            \n            - zadat jedinečné „id“ pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, bude jako `id` použito `model`.            \n            - poskytnout `apiKey` pro přístup k API poskytovanému na dané adrese URL. Použijte `true` pro označení použití globálního klíče API Anthropic.            \n            - zadat `enableStreaming: false` pro označení, že streamování nebude použito.            \n            - zadat `useCaching: false`, aby se označilo, že se nemá používat ukládání do mezipaměti. \n- zadat `maxRetries: <číslo>`, aby se označil maximální počet opakování při selhání požadavku. Výchozí hodnota je 3.",
+          "mdDescription": "Integrujte vlastní modely kompatibilní s API Anthropic. Požadované atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, jako `id` se použije `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na dané adrese URL. Použijte `true`, chcete-li označit použití globálního klíče API Anthropic.            \n            - zadejte `enableStreaming: false`, chcete-li označit, že se nemá používat streamování.            \n            - zadejte `useCaching: false`, abyste určili, že se nemá používat ukládání do mezipaměti.            \n            - zadejte `maxRetries: <number>`, abyste určili maximální počet opakovaných pokusů v případě selhání požadavku. Výchozí hodnota je 3.            \n            Schopnosti uvažování a maximální limit výstupních tokenů jsou odvozeny z odpovědi koncového bodu `/v1/models`.",
           "modelId": {
             "title": "ID modelu"
-          },
-          "reasoningApi": {
-            "title": "Který tvar API antropického uvažování použít: `effort` pro adaptivní uvažování (Claude 4.6+), `budget` pro starší rozšířené uvažování (Claude 4.0–4.5) nebo `null` pro deaktivaci. Ve výchozím nastavení se odvozuje od názvu modelu."
-          },
-          "supportsXHighEffort": {
-            "title": "Označuje, zda model akceptuje hodnotu úsilí Anthropic `xhigh`. Ve výchozím nastavení se odvozuje z názvu modelu."
           },
           "url": {
             "title": "Koncový bod kompatibilní s Anthropic API, kde je model hostován."
@@ -143,6 +137,9 @@
         "couldNotFindReadyLMforAgent": "Nenašel jsem připravený jazykový model pro agent {0}. Zkontrolujte prosím nastavení!",
         "defaultAgent": {
           "description": "Volitelné: <název agenta> chatového agenta, který má být vyvolán, pokud není v dotazu uživatele explicitně uveden žádný agent pomocí @<název agenta>. Pokud není nakonfigurován žádný výchozí agent, budou použity výchozí nastavení Theia."
+        },
+        "defaultToolConfirmation": {
+          "description": "Výchozí chování potvrzení používané pro nástroje, které nemají vlastní položku v „ai-features.chat.toolConfirmation“. Nástroje, které výslovně vyžadují potvrzení před automatickým schválením, se vždy standardně nastaví na „potvrdit“, bez ohledu na toto nastavení."
         },
         "fromClipboard": "$(clippy) Ze schránky",
         "fromClipboardDescription": "Vložit obrázek ze schránky",
@@ -196,15 +193,15 @@
           "description": "Relativní cesta v pracovním prostoru, ve které se uchovávají a ze které se načítávají popisy kontextu úkolů. Pokud je nastavena na prázdnou hodnotu, budou generované kontexty úkolů uloženy v paměti namísto na disku."
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "Spouštět nástroje automaticky bez potvrzení"
+          },
           "confirm": {
             "description": "Před spuštěním nástrojů požádejte o potvrzení."
           },
-          "description": "Nakonfigurujte chování potvrzení pro různé nástroje. Klíčem je ID nástroje, hodnotou je režim potvrzení. Použijte „*“ jako klíč pro nastavení globálního výchozího nastavení pro všechny nástroje.",
+          "description": "Nakonfigurujte chování potvrzení pro jednotlivé nástroje. Klíčem je ID nástroje, hodnotou je režim potvrzení. Chcete-li změnit výchozí nastavení pro všechny nástroje, použijte „ai-features.chat.defaultToolConfirmation“.",
           "disabled": {
             "description": "Zakázat spuštění nástroje"
-          },
-          "yolo": {
-            "description": "Automatické spouštění nástrojů bez potvrzení"
           }
         },
         "toolConfirmationTimeout": {
@@ -247,10 +244,10 @@
           "toggleCapabilities": "Přepínání konfigurace funkcí"
         },
         "chatInputAriaLabel": "Zadejte zde svou zprávu",
+        "chatRequestFailedWithDetail": "Žádost o chat selhala: {0}",
         "chatResponses": "Odpovědi v chatu",
         "clearAllSelections": "Vymazat vyhledávací řetězec a výběr funkcí",
         "code-part-renderer": {
-          "copied": "Zkopírováno",
           "generatedCode": "Generovaný kód"
         },
         "collapseAll": "Sbalit vše",
@@ -258,7 +255,6 @@
         "command-part-renderer": {
           "commandNotExecutable": "Příkaz má identifikátor „{0}“, ale nelze jej spustit z okna chatu."
         },
-        "confirmDeleteChatMsg": "Opravdu chcete tento chat smazat?",
         "copyCodeBlock": "Kopírovat blok kódu",
         "couldNotSendRequestToSession": "Nebylo možné odeslat požadavek „{0}“ do relace {1}",
         "delegation-response-renderer": {
@@ -293,7 +289,7 @@
         "focusInput": "Zaměření na zadávání textu v chatu",
         "focusResponse": "Odpověď v chatu Focus",
         "functions": "Funkce",
-        "functionsDescription": "Vestavěné funkce poskytované rozšířeními Theia",
+        "functionsDescription": "Vestavěné funkce poskytované rozšířeními {0}",
         "genericCapabilities": "Obecné schopnosti",
         "mcpFunctionsDescription": "Funkce protokolu Model Context Protocol (MCP) z připojených serverů",
         "noChatAgentsAvailable": "Žádní chatovací agenti nejsou k dispozici.",
@@ -305,9 +301,6 @@
         "persistedSession": "Trvalá relace (kliknutím obnovíte)",
         "promptFragmentsDescription": "Vlastní fragmenty výzev, které mají být zahrnuty do konverzace",
         "reasoning": {
-          "high": "Vysoká",
-          "low": "Nízká",
-          "medium": "Střední",
           "minimal": "Minimální"
         },
         "removeChat": "Odebrat chat",
@@ -399,6 +392,7 @@
         "differentAgentRequestWarning": "Předchozí požadavek na chat byl vyřízen jiným agentem. Claude Code tyto ostatní zprávy nevidí.",
         "directory": "Adresář",
         "domain": "Doména",
+        "edit": "Upravit {0}",
         "editAutomatically": "Automaticky upravit",
         "editing": "Úpravy",
         "editsCount": "{0} úpravy",
@@ -523,7 +517,7 @@
       },
       "completion": {
         "agent": {
-          "description": "Tento agent poskytuje doplňování kódu v editoru kódu v IDE Theia.",
+          "description": "Tento agent poskytuje automatické doplňování kódu v editoru kódu v aplikaci {0}.",
           "vars": {
             "file": {
               "description": "URI souboru, který se upravuje"
@@ -587,7 +581,7 @@
           "expired": "Oprávnění vypršelo nebo bylo zamítnuto. Zkuste to znovu.",
           "hint": "Po zadání kódu a autorizaci klikněte níže na „Autorizoval jsem“.",
           "initiating": "Zahájení ověřování...",
-          "instructions": "Chcete-li autorizovat Theia k používání GitHub Copilot, navštivte níže uvedenou URL adresu a zadejte kód:",
+          "instructions": "Chcete-li povolit aplikaci {0} používat GitHub Copilot, přejděte na níže uvedenou adresu URL a zadejte kód:",
           "openGitHub": "Otevřít GitHub",
           "privacy": "Theia je open-source projekt. Žádáme pouze o přístup k vašemu uživatelskému jménu GitHub, abychom se mohli připojit ke službám GitHub Copilot – žádné další údaje nejsou zpřístupňovány ani ukládány.",
           "success": "Úspěšně přihlášeno do GitHub Copilot!",
@@ -650,8 +644,8 @@
           "label": "Konfigurace AI"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia – Agent dokončeno",
-          "namedAgentCompleted": "Theia – Agent „{0}“ Dokončeno"
+          "agentCompleted": "{0} - Agent dokončil",
+          "namedAgentCompleted": "{0} - Agent „{1}“ Dokončeno"
         },
         "capabilityVariable": {
           "argDescription": "Identifikátor fragmentu výzvy, za kterým může následovat „výchozí zapnuto“ nebo „výchozí vypnuto“ (výchozí nastavení je vypnuto).",
@@ -681,6 +675,9 @@
           },
           "code-completion": {
             "description": "Nejvhodnější pro scénáře automatického doplňování kódu."
+          },
+          "fast": {
+            "description": "Rychlejší a levnější modely pro jednodušší úkoly, jako je průzkum nebo volání základních nástrojů, kde není vyžadováno hluboké uvažování."
           },
           "summarize": {
             "description": "Modely upřednostňované pro shrnutí a zhuštění obsahu."
@@ -744,7 +741,7 @@
           "description": "Krátký odkaz na všechny aktuálně otevřené soubory (relativní cesty, oddělené čárkami)"
         },
         "openEditorsVariable": {
-          "description": "Seznam všech aktuálně otevřených souborů oddělených čárkami, relativní k kořenovému adresáři pracovního prostoru."
+          "description": "Seznam všech aktuálně otevřených souborů oddělených čárkami jako cesty relativní k pracovnímu prostoru (např. my-project/src/index.ts)."
         },
         "preference": {
           "languageModelAliases": {
@@ -860,13 +857,13 @@
         "unableToDisplayVariableValue": "Nelze zobrazit hodnotu proměnné.",
         "unableToResolveVariable": "Nelze vyřešit proměnnou.",
         "variable-contribution": {
-          "builtInVariable": "Vestavěná proměnná Theia",
-          "currentAbsoluteFilePath": "Absolutní cesta k aktuálně otevřenému souboru. Vezměte prosím na vědomí, že většina agentů očekává relativní cestu k souboru (relativní k aktuálnímu pracovnímu prostoru).",
-          "currentFileContent": "Prostý obsah aktuálně otevřeného souboru. To nezahrnuje informace o tom, odkud obsah pochází. Vezměte prosím na vědomí, že většina agentů bude lépe fungovat s relativní cestou k souboru (relativní k aktuálnímu pracovnímu prostoru).",
-          "currentRelativeDirPath": "Relativní cesta k adresáři obsahujícímu aktuálně otevřený soubor.",
-          "currentRelativeFilePath": "Relativní cesta k aktuálně otevřenému souboru.",
-          "currentSelectedText": "Obyčejný text, který je aktuálně vybrán v otevřeném souboru. To nezahrnuje informace o tom, odkud obsah pochází. Vezměte prosím na vědomí, že většina agentů bude fungovat lépe s relativní cestou k souboru (relativní k aktuálnímu pracovnímu prostoru).",
-          "dotRelativePath": "Krátký odkaz na relativní cestu k aktuálně otevřenému souboru („currentRelativeFilePath“)."
+          "builtInVariable": "{0} Vestavěná proměnná",
+          "currentAbsoluteFilePath": "Absolutní cesta k aktuálně otevřenému souboru.",
+          "currentFileContent": "Čistý obsah aktuálně otevřeného souboru. To nezahrnuje informace o tom, odkud obsah pochází.",
+          "currentRelativeDirPath": "Cesta relativní k pracovnímu prostoru k adresáři obsahujícímu aktuálně otevřený soubor (např. my-project/src).",
+          "currentRelativeFilePath": "Cesta k aktuálně otevřenému souboru relativní k pracovnímu prostoru (např. my-project/src/index.ts).",
+          "currentSelectedText": "Obyčejný text, který je aktuálně vybrán v otevřeném souboru. To nezahrnuje informace o tom, odkud obsah pochází.",
+          "dotRelativePath": "Krátký odkaz na relativní cestu k aktuálně otevřenému souboru v rámci pracovního prostoru („currentRelativeFilePath“)."
         }
       },
       "editor": {
@@ -910,10 +907,8 @@
         "open-history-tooltip": "Otevřít historii AI...",
         "request-card": {
           "promptVariant": "Varianta výzvy",
-          "request": "Žádost",
           "response": "Odpověď",
-          "timestamp": "Časové razítko",
-          "title": "Žádost"
+          "timestamp": "Časové razítko"
         },
         "sortChronologically": {
           "tooltip": "Seřadit chronologicky"
@@ -1003,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "Režim plánu",
             "planNext": "Režim plánu (Další)",
             "simple": "Jednoduchý režim"
           },
@@ -1041,7 +1035,7 @@
             "label": "Příkaz AI",
             "message": "Provedení zpětného volání s argumenty {0}. První argument je identifikátor příkazu registrovaný pro dynamicky registrovaný příkaz. Ostatní argumenty jsou skutečné argumenty pro obslužnou funkci."
           },
-          "description": "Tento agent zná všechny příkazy, které může uživatel provést v rámci IDE Theia, nástroje, se kterým uživatel právě pracuje. Na základě požadavku uživatele může najít správný příkaz a poté jej nechat uživatele provést.",
+          "description": "Tento agent zná všechny příkazy, které může uživatel provést. Na základě požadavku uživatele dokáže najít správný příkaz a poté ho nechat uživatele provést.",
           "response": {
             "customHandler": "Zkuste provést následující:",
             "noCommand": "Je mi líto, takový příkaz nemohu najít.",
@@ -1049,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Seznam dostupných příkazů v Theia."
+              "description": "Seznam dostupných příkazů."
             }
           }
         },
@@ -1093,7 +1087,7 @@
           "description": "Umožňuje agentovi komunikovat s GitHubem. Za tímto účelem může agent delegovat na agenta GitHubu, který může číst a zapisovat problémy, žádosti o stažení, komentáře a obsah úložiště."
         },
         "githubRepoName": {
-          "description": "Název aktuálního repozitáře GitHub (např. „eclipse-theia/theia“)."
+          "description": "Repozitáře GitHub spojené s kořenovými adresáři pracovních prostorů (např. „eclipse-theia/theia“)"
         },
         "howToGetStarted": "Jak začít",
         "model-selection-description": "Vyberte, které velké jazykové modely (LLM) budou používat jednotlivé AI agenti v [zobrazení konfigurace AI]({0}).",
@@ -1112,6 +1106,30 @@
           "progressMessage": "Určení nejvhodnějšího agenta",
           "response": {
             "delegatingToAgent": "Delegování na „@{0}“"
+          }
+        },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "Deleguje prozkoumání architektury, použití, konvencí a testů na agenta Explore. Pokud je tato funkce zakázána, recenzent PR provádí prozkoumání pomocí vlastních nástrojů.",
+              "name": "Delegované prozkoumávání"
+            },
+            "githubInfo": {
+              "description": "Deleguje na agenta GitHubu načtení metadat pull requestů, rozdílů, komentářů, kontrol a propojených problémů.",
+              "name": "GH PR Info"
+            },
+            "localCheckout": {
+              "description": "Lokálně zkontroluje žádost o stažení a chrání stávající změny ve stromu práce.",
+              "name": "Pokladna"
+            },
+            "localValidation": {
+              "description": "Spouští lokální instalaci, sestavení, kontrolu kódu, testování nebo srovnatelné validační úlohy pro pull request.",
+              "name": "Sestavení"
+            },
+            "pendingGitHubReview": {
+              "description": "Deleguje na agenta GitHubu vytvoření nebo aktualizaci čekající revize žádosti o stažení s připravenými vloženými komentáři po výslovném potvrzení uživatelem.",
+              "name": "Čeká na schválení GH"
+            }
           }
         },
         "prReviewAgent": {
@@ -1174,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "Chybová zpráva",
           "lastActivity": "Poslední aktivita",
           "lastMessage": "Poslední zpráva",
           "messages": "Zprávy",
@@ -1336,12 +1355,12 @@
           "id": {
             "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
           },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s API OpenAI, například prostřednictvím `vllm`. Požadované atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, bude jako „id“ použito „model“.            \n            - poskytnout „apiKey“ pro přístup k API poskytovanému na dané adrese URL. Použijte „true“ pro označení použití globálního klíče API OpenAI.            \n            - poskytnout „apiVersion“ pro přístup k API poskytovanému na dané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n- zadat název `deployment` pro vaše nasazení Azure.            \n- nastavit `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste mohli ovládat, jak bude zpráva vývojáře zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` předřadí následující zprávu uživatele před systémovou zprávu            nebo převede systémovou zprávu na zprávu uživatele, pokud následující zpráva není zprávou uživatele. `skip` pouze odstraní systémovou zprávu).            Výchozí hodnota je `developer`.            \n            - Zadejte `supportsStructuredOutput: false`, chcete-li označit, že strukturovaný výstup nemá být použit.\n- Zadejte `enableStreaming: false`, chcete-li označit, že streamování nemá být použito.\n- Zadejte `useResponseApi: true`, chcete-li použít novější OpenAI Response API namísto Chat Completion API (vyžaduje kompatibilní koncový bod).            \n            Další informace naleznete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integrujte vlastní modely kompatibilní s OpenAI API, například přes `vllm`. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, jako `id` se použije `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na dané adrese URL. Použijte `true`, chcete-li označit použití globálního klíče API OpenAI.            \n            - zadejte `apiVersion` pro přístup k API poskytovanému na dané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n            - zadejte název `deployment` pro vaše nasazení v Azure.            \n            - nastavte `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste určili, jak bude zpráva pro vývojáře            zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` připojí systémovou zprávu jako předponu k následující uživatelské zprávě nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská. `skip` systémovou zprávu pouze odstraní). Výchozí hodnota je `developer`.            \n            - zadejte `supportsStructuredOutput: false`, abyste určili, že se nemá používat strukturovaný výstup.            \n            - zadejte `enableStreaming: false`, abyste určili, že se nemá používat streamování.            \n            - zadejte `useResponseApi: true`, abyste místo rozhraní API pro dokončování chatu používali novější rozhraní API OpenAI Response (vyžaduje kompatibilní koncový bod).            \n            - Zadejte `reasoningSupport`, chcete-li se přihlásit k selektoru chatového uvažování. Zadejte objekt s `supportedLevels` (např. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) a volitelným `defaultLevel`.            \n            Další informace najdete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "ID modelu"
           },
           "reasoningSupport": {
-            "title": "Deklaruje schopnosti modelu v oblasti uvažování. Pokud je nastaveno, chat zobrazí volič uvažování pro tento model. Nastavte na `null` pro deaktivaci. Ve výchozím nastavení se odvozuje z názvu modelu."
+            "title": "Definuje schopnosti modelu v oblasti uvažování. Po nastavení se v chatu zobrazí volič uvažování pro tento model."
           },
           "supportsStructuredOutput": {
             "title": "Označuje, zda model podporuje strukturovaný výstup. Výchozí hodnota je „true“."
@@ -1436,6 +1455,16 @@
         "askTerminalCommand": "Zeptejte se na příkaz terminálu...",
         "hitEnterConfirm": "Potvrďte stisknutím klávesy Enter.",
         "howCanIHelp": "Jak vám mohu pomoci?",
+        "terminalCommandBlockAIVariable": {
+          "description": "Ukládá provedený příkaz terminálu a jeho odpovídající výstup.",
+          "index": {
+            "description": "Index bloku příkazů v historii terminálu. Pokud není zadán, je výchozí hodnotou poslední příkaz."
+          },
+          "quickPick": {
+            "placeholder": "Zadejte text pro filtrování příkazů",
+            "title": "Vyberte příkaz a jeho výstup z historie terminálu"
+          }
+        },
         "tryAgain": "Zkuste to znovu...",
         "useArrowsAlternatives": " nebo použijte ⇅ pro zobrazení alternativ..."
       },
@@ -1485,6 +1514,7 @@
             "title": "ID modelu"
           },
           "model": {
+            "provider": "Poskytovatel",
             "title": "Název modelu"
           }
         },
@@ -1493,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "Seznam absolutních cest nebo URI souborů (adresářů nebo souborů) mimo pracovní prostor, které mohou číst nástroje AI. Podporuje znak `~` pro odkaz na domovský adresář uživatele. Ve výchozím nastavení prázdné; pouze na základě souhlasu. Respektováno funkcemi getFileContent, findFilesByPattern, getWorkspaceFileList a getWorkspaceDirectoryStructure. Hodnoty v rozsahu pracovního prostoru jsou ignorovány, pokud pracovní prostor není důvěryhodný. Symbolické odkazy uvnitř adresářů na seznamu povolených adresářů jsou sledovány a mohou odkazovat na soubory mimo seznam povolených adresářů; přidávejte pouze adresáře, jejichž obsahu důvěřujete.",
+          "title": "Povolené externí cesty"
+        },
         "coderAgent": {
           "description": "AI asistent integrovaný do Theia IDE, navržený pro pomoc softwarovým vývojářům. Tento agent má přístup k pracovnímu prostoru uživatele, může získat seznam všech dostupných souborů a složek a načíst jejich obsah. Dále může uživateli navrhovat úpravy souborů. Může tedy uživateli pomáhat s úkoly souvisejícími s kódováním nebo jinými úkoly zahrnujícími změny souborů."
         },
         "considerGitignore": {
-          "description": "Pokud je tato možnost povolena, vylučuje soubory/složky uvedené v globálním souboru .gitignore (očekávané umístění je kořenový adresář pracovního prostoru).",
+          "description": "Pokud je tato možnost povolena, vylučuje soubory/složky, které odpovídají pravidlům .gitignore nalezeným v kořenovém adresáři každého pracovního prostoru.",
           "title": "Zvažte .gitignore"
         },
         "createSkillAgent": {
@@ -1923,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Podpora AI v IDE Theia je k dispozici!",
+        "header": "Podpora AI v aplikaci „{0}“ je k dispozici!",
         "openAIChatView": "Otevřete nyní AI Chat View a zjistěte, jak začít!"
       },
       "apiComparator": "{0} Kompatibilita API",
@@ -2116,6 +2150,9 @@
     "preferences": {
       "ai-features": "Funkce AI",
       "hostedPlugin": "Hostovaný plugin",
+      "input": {
+        "browse": "Procházet"
+      },
       "toolbar": "Nástrojová lišta"
     },
     "preview": {
@@ -2131,7 +2168,17 @@
     "remote": {
       "dev-container": {
         "attach": "Připojit k běžícímu kontejneru",
+        "attachError": "Nepodařilo se připojit ke kontejneru: {0}",
+        "attachWarning": "Připojením ke kontejneru se spustí kód uvnitř něj. Připojujte se pouze ke kontejnerům, jejichž původu důvěřujete.",
+        "attachWarningTitle": "Připojit ke kontejneru",
+        "attaching": "Připojení ke kontejneru",
+        "cliAttachError": "Nepodařilo se připojit ke kontejneru: {0}",
+        "cliContainerNotFound": "Kontejner „{0}“ nebyl nalezen nebo není spuštěn.",
         "connect": "Znovu otevřít v kontejneru",
+        "enterCustomPath": "Zadejte vlastní cestu...",
+        "enterWorkspacePath": "Zadejte cestu k pracovnímu prostoru uvnitř kontejneru",
+        "foundConfigMsg": "Na adrese {0} byl nalezen soubor devcontainer.json. Chcete použít jeho nastavení po připojení (rozšíření, přesměrování portů atd.)?",
+        "foundConfigTitle": "Nalezena konfigurace Dev Container",
         "noDevcontainerFiles": "V pracovním prostoru nebyly nalezeny žádné soubory devcontainer.json. Ujistěte se, že máte adresář .devcontainer se souborem devcontainer.json.",
         "noRunningContainers": "Nebyly nalezeny žádné spuštěné kontejnery.",
         "rebuild": "Přestavět kontejner",
@@ -2139,6 +2186,7 @@
         "reopenInContainer": "Znovu otevřít v kontejneru",
         "selectContainer": "Vyberte spuštěný kontejner, ke kterému se chcete připojit",
         "selectDevcontainer": "Vyberte soubor devcontainer.json",
+        "selectWorkspacePath": "Vyberte cestu k pracovnímu prostoru uvnitř kontejneru",
         "suggestion": "Tento pracovní prostor má konfiguraci vývojového kontejneru. Chcete jej znovu otevřít v kontejneru?"
       },
       "port-forwarding": {
@@ -2269,7 +2317,6 @@
       "deleteGroup": "Odstranit skupinu",
       "deletePage": "Smazat stránku",
       "deleteTerminal": "Odstranit terminál",
-      "group": "Skupina",
       "label": "Terminály",
       "maximizeBottomPanel": "Maximalizovat spodní panel",
       "minimizeBottomPanel": "Minimalizovat spodní panel",
@@ -2298,6 +2345,7 @@
       "iconSet": "Sada ikon",
       "insertGroupLeft": "Vložit oddělovač skupin (vlevo)",
       "insertGroupRight": "Vložit oddělovač skupin (vpravo)",
+      "jsonError": "Při čtení souboru toolbar.json došlo k chybě. Zkontrolujte, zda není poškozen, kliknutím pravým tlačítkem myši na panel nástrojů a výběrem možnosti „Přizpůsobit panel nástrojů“. Můžete jej také obnovit do výchozího nastavení výběrem možnosti „Obnovit výchozí nastavení panelu nástrojů“.",
       "leftColumn": "Levý sloupec",
       "openJSON": "Customize Toolbar (Open JSON)",
       "removeCommand": "Odebrat příkaz z panelu nástrojů",
@@ -2343,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "Oba zdroje jsou adresáře.",
-      "clickToManageTrust": "Kliknutím spravujete nastavení důvěryhodnosti.",
       "compareWithEachOther": "Porovnejte mezi sebou",
       "confirmDeletePermanently.description": "Nepodařilo se odstranit „{0}“ pomocí koše. Chcete místo toho provést trvalé odstranění?",
       "confirmDeletePermanently.solution": "Používání koše můžete deaktivovat v nastavení.",
@@ -2368,7 +2415,7 @@
       "removeFolder": "Opravdu chcete odstranit následující složku z pracovního prostoru?",
       "removeFolders": "Opravdu chcete odstranit následující složky z pracovního prostoru?",
       "restrictedModeDescription": "Některé funkce jsou zakázány, protože tento pracovní prostor není důvěryhodný.",
-      "restrictedModeNote": "*Upozornění: Funkce důvěryhodnosti pracovního prostoru je v současné době ve vývoji v Theia; ne všechny funkce jsou zatím integrovány do důvěryhodnosti pracovního prostoru.*",
+      "restrictedModeFeatures": "Funkce jako provádění úloh, ladění, rozšíření a AI jsou zakázány z důvodu ochrany před potenciálně škodlivým kódem.",
       "schema": {
         "folders": {
           "description": "Kořenové složky v pracovním prostoru"
@@ -2376,9 +2423,11 @@
         "title": "Pracovní prostor Soubor"
       },
       "trashTitle": "Přesunout „{0}“ do koše",
-      "trustDialogMessage": "Pokud důvěřujete autorům, může být kód v této složce spuštěn.\n\nPokud ne, některé funkce budou deaktivovány.\n\nFunkce důvěryhodnosti pracovního prostoru je v současné době ve vývoji v Theia; ne všechny funkce jsou zatím integrovány s důvěryhodností pracovního prostoru.\nPodrobnosti najdete v indikátoru „Omezený režim“ ve stavovém řádku.",
+      "trustDialogMessage": "Pokud autorům důvěřujete, může být kód v této složce spuštěn, včetně úkolů, konfigurací ladění, rozšíření a funkcí AI.",
+      "trustDialogRestricted": "Pokud autorům nedůvěřujete, pracovní prostor se otevře v omezeném režimu, který tyto funkce deaktivuje, aby vás chránil před potenciálně škodlivým kódem.",
       "trustEmptyWindow": "Ovládá, zda je prázdný pracovní prostor ve výchozím nastavení důvěryhodný.",
       "trustEnabled": "Ovládá, zda je povolena důvěryhodnost pracovního prostoru. Pokud je zakázána, jsou všechny pracovní prostory důvěryhodné.",
+      "trustLearnMore": "Další informace o důvěryhodnosti pracovního prostoru Theia",
       "trustTrustedFolders": "Seznam adres URI složek, které jsou důvěryhodné bez vyžádání.",
       "untitled-cleanup": "Zdá se, že existuje mnoho souborů pracovního prostoru bez názvu. Zkontrolujte prosím {0} a odstraňte všechny nepoužívané soubory.",
       "variables": {

@@ -89,8 +89,7 @@ export class ScmDecorationsService {
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {
-                const query = { path: editor.uri['codeUri'].fsPath, ref: '' };
-                const uri = editor.uri.withScheme(currentRepo.provider.id).withQuery(JSON.stringify(query));
+                const uri = currentRepo.toUriAtRef(editor.uri, '');
                 const previousResource = await this.resourceProvider(uri);
                 try {
                     const previousContent = await previousResource.readContents();

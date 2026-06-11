@@ -178,7 +178,7 @@ const CopyToClipboardButton = (props: { code: string, clipboardService: Clipboar
     }, [code, clipboardService]);
 
     const iconClass = copied ? 'codicon-check' : 'codicon-copy';
-    const title = copied ? nls.localize('theia/ai/chat-ui/code-part-renderer/copied', 'Copied') : nls.localizeByDefault('Copy');
+    const title = copied ? nls.localizeByDefault('Copied') : nls.localizeByDefault('Copy');
     return <div className={`button codicon ${iconClass}`} title={title} role='button' onClick={copyCodeToClipboard}></div>;
 };
 

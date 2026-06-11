@@ -50,7 +50,12 @@ export class TerminalBackendContribution implements MessagingService.Contributio
                 output.on('data', chunk => {
                     buffer.push(chunk);
                 });
+                const toDisposeOnProcessClose = termProcess.onClose(() => {
+                    buffer.flush();
+                    channel.close();
+                });
                 channel.onClose(() => {
+                    toDisposeOnProcessClose.dispose();
                     buffer.dispose();
                     output.dispose();
                 });

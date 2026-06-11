@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { Emitter, Event } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { Emitter, Event, ILogger } from '@theia/core';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import {
     CopilotAuthService,
@@ -49,6 +49,9 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
 
     @inject(KeyStoreService)
     protected readonly keyStoreService: KeyStoreService;
+
+    @inject(ILogger) @named('ai-copilot:CopilotAuthServiceImpl')
+    protected readonly logger: ILogger;
 
     @inject(CopilotOAuthConfig)
     protected readonly oauthConfig: CopilotOAuthConfig;
@@ -127,7 +130,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
             });
 
             if (!response.ok) {
-                console.error(`Token request failed: ${response.status}`);
+                this.logger.error(`Token request failed: ${response.status}`);
                 continue;
             }
 
@@ -177,12 +180,12 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
             }
 
             if (data.error === 'expired_token' || data.error === 'access_denied') {
-                console.error(`Authorization failed: ${data.error} - ${data.error_description}`);
+                this.logger.error(`Authorization failed: ${data.error} - ${data.error_description}`);
                 return false;
             }
 
             if (data.error) {
-                console.error(`Unexpected error: ${data.error} - ${data.error_description}`);
+                this.logger.error(`Unexpected error: ${data.error} - ${data.error_description}`);
                 return false;
             }
         }
@@ -209,7 +212,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
                 return userData.login;
             }
         } catch (error) {
-            console.warn('Failed to fetch GitHub user info:', error);
+            this.logger.warn('Failed to fetch GitHub user info:', error);
         }
         return undefined;
     }
@@ -238,7 +241,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
                 return this.cachedState;
             }
         } catch (error) {
-            console.warn('Failed to retrieve Copilot credentials:', error);
+            this.logger.warn('Failed to retrieve Copilot credentials:', error);
         }
 
         this.cachedState = { isAuthenticated: false };
@@ -253,7 +256,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
                 return credentials.accessToken;
             }
         } catch (error) {
-            console.warn('Failed to retrieve Copilot access token:', error);
+            this.logger.warn('Failed to retrieve Copilot access token:', error);
         }
         return undefined;
     }
@@ -262,7 +265,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
         try {
             await this.keyStoreService.deletePassword(this.oauthConfig.keystoreService, this.oauthConfig.keystoreAccount);
         } catch (error) {
-            console.warn('Failed to delete Copilot credentials:', error);
+            this.logger.warn('Failed to delete Copilot credentials:', error);
         }
 
         const newState: CopilotAuthState = { isAuthenticated: false };

@@ -73,7 +73,7 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
                     provider: {
                         type: 'string',
                         enum: ['openai', 'anthropic'],
-                        title: nls.localizeByDefault('Provider')
+                        title: nls.localize('theia/ai/vercelai/models/model/provider', 'Provider')
                     }
                 },
                 required: ['id', 'model', 'provider']
@@ -116,7 +116,7 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
                     provider: {
                         type: 'string',
                         enum: ['openai', 'anthropic'],
-                        title: nls.localizeByDefault('Provider')
+                        title: nls.localize('theia/ai/vercelai/models/model/provider', 'Provider')
                     },
                     apiKey: {
                         type: ['string', 'boolean'],

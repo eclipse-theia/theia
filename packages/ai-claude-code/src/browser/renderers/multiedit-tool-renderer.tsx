@@ -19,14 +19,14 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface EditOperation {
     old_string: string;
@@ -51,6 +51,9 @@ export class MultiEditToolRenderer implements ChatResponsePartRenderer<ToolCallC
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(ILogger) @named('ai-claude-code:MultiEditToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'MultiEdit') {
             return 15; // Higher than default ToolCallPartRenderer (10)
@@ -68,7 +71,7 @@ export class MultiEditToolRenderer implements ChatResponsePartRenderer<ToolCallC
                 editorManager={this.editorManager}
             />;
         } catch (error) {
-            console.warn('Failed to parse MultiEdit tool input:', error);
+            this.logger.warn('Failed to parse MultiEdit tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseMultiEditToolData', 'Failed to parse MultiEdit tool data')}</div>;
         }
     }
@@ -170,7 +173,7 @@ const MultiEditToolComponent: React.FC<{
             {input.edits.map((edit, index) => (
                 <div key={index} className="claude-code-tool edit-preview">
                     <div className="claude-code-tool edit-preview-header">
-                        <span className="claude-code-tool edit-preview-title">{nls.localizeByDefault('Edit {0}', index + 1)}</span>
+                        <span className="claude-code-tool edit-preview-title">{nls.localize('theia/ai/claude-code/edit', 'Edit {0}', index + 1)}</span>
                         {edit.replace_all && (
                             <span className="claude-code-tool edit-preview-badge">
                                 {nls.localizeByDefault('Replace All')}

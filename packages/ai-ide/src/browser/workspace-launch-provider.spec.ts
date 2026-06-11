@@ -20,6 +20,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import { PreferenceService } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
 import { Container } from '@theia/core/shared/inversify';
 import {
     LaunchListProvider,
@@ -32,6 +34,25 @@ import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-opti
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugCompound } from '@theia/debug/lib/common/debug-compound';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
+import { WorkspaceFunctionScope } from './workspace-functions';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+
+const makeTrustAwareReader = (): TrustAwarePreferenceReader => ({
+    get: <T>(_name: string, fallback?: T) => fallback,
+    ready: Promise.resolve(),
+    onDidChangeTrust: () => ({ dispose: () => { } })
+} as unknown as TrustAwarePreferenceReader);
+
+const makeEnvVariablesServer = (): EnvVariablesServer => ({
+    getHomeDirUri: async () => 'file:///home/test',
+    getExecPath: async () => '',
+    getVariables: async () => [],
+    getValue: async () => undefined,
+    getConfigDirUri: async () => 'file:///home/test/.config'
+} as unknown as EnvVariablesServer);
 
 disableJSDOM();
 
@@ -53,6 +74,23 @@ describe('Launch Management Tool Providers', () => {
 
     beforeEach(() => {
         container = new Container();
+
+        const mockWorkspaceService = {
+            tryGetRoots: () => [
+                { resource: new URI('file:///workspace') }
+            ],
+            roots: Promise.resolve([
+                { resource: new URI('file:///workspace') }
+            ]),
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue({} as FileService);
+        container.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
 
         const mockConfigs = createMockConfigurations();
 
@@ -96,9 +134,12 @@ describe('Launch Management Tool Providers', () => {
             .bind(DebugSessionManager)
             .toConstantValue(mockDebugSessionManager as DebugSessionManager);
 
-        launchListProvider = container.resolve(LaunchListProvider);
-        launchRunnerProvider = container.resolve(LaunchRunnerProvider);
-        launchStopProvider = container.resolve(LaunchStopProvider);
+        container.bind(LaunchListProvider).toSelf();
+        container.bind(LaunchRunnerProvider).toSelf();
+        container.bind(LaunchStopProvider).toSelf();
+        launchListProvider = container.get(LaunchListProvider);
+        launchRunnerProvider = container.get(LaunchRunnerProvider);
+        launchStopProvider = container.get(LaunchStopProvider);
     });
 
     function createMockConfigurations(): DebugSessionOptions[] {
@@ -125,14 +166,14 @@ describe('Launch Management Tool Providers', () => {
             {
                 name: 'Node.js Debug',
                 configuration: config1,
-                workspaceFolderUri: '/workspace',
+                workspaceFolderUri: 'file:///workspace',
             },
             {
                 name: 'Python Debug',
                 configuration: config2,
-                workspaceFolderUri: '/workspace',
+                workspaceFolderUri: 'file:///workspace',
             },
-            { name: 'Launch All', compound, workspaceFolderUri: '/workspace' },
+            { name: 'Launch All', compound, workspaceFolderUri: 'file:///workspace' },
         ];
     }
 
@@ -159,7 +200,7 @@ describe('Launch Management Tool Providers', () => {
             expect(configurations.map((c: { name: string }) => c.name)).to.include('Python Debug');
             expect(configurations.map((c: { name: string }) => c.name)).to.include('Launch All');
             // All configurations should show running: false since no sessions are active
-            configurations.forEach((config: { name: string; running: boolean }) => {
+            configurations.forEach((config: { name: string; running: boolean; workspaceRoot?: string }) => {
                 expect(config.running).to.equal(false);
             });
         });
@@ -186,6 +227,18 @@ describe('Launch Management Tool Providers', () => {
             expect(configurations).to.have.lengthOf(1);
             expect(configurations[0].name).to.equal('Python Debug');
             expect(configurations[0].running).to.equal(false);
+        });
+
+        it('should include workspace root info in listed configurations', async () => {
+            const tool = launchListProvider.getTool();
+            const result = await tool.handler('{"filter":""}');
+            expect(result).to.be.a('string');
+            const configurations = JSON.parse(result as string);
+
+            // All configs in our mock are scoped to 'file:///workspace' whose basename is 'workspace'
+            configurations.forEach((config: { name: string; running: boolean; workspaceRoot?: string }) => {
+                expect(config.workspaceRoot).to.equal('workspace');
+            });
         });
     });
 
@@ -321,6 +374,84 @@ describe('Launch Management Tool Providers', () => {
             expect(result).to.be.a('string');
             expect(result).to.contain('No active session found');
             expect(result).to.contain('Unknown Config');
+        });
+    });
+
+    describe('Multi-root disambiguation', () => {
+        it('should report ambiguity when same config name exists in multiple roots', async () => {
+            const multiRootContainer = new Container();
+
+            const multiRootWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') }
+                ],
+                roots: Promise.resolve([
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') }
+                ]),
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+            multiRootContainer.bind(FileService).toConstantValue({} as FileService);
+            multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
+            multiRootContainer.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            multiRootContainer.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+            multiRootContainer.bind(WorkspaceFunctionScope).toSelf();
+
+            const debugConfig: DebugConfiguration = {
+                name: 'Start App',
+                type: 'node',
+                request: 'launch',
+                program: 'app.js',
+            };
+
+            const duplicateConfigs: DebugSessionOptions[] = [
+                { name: 'Start App', configuration: debugConfig, workspaceFolderUri: 'file:///home/user/frontend' },
+                { name: 'Start App', configuration: debugConfig, workspaceFolderUri: 'file:///home/user/backend' },
+            ];
+
+            const mockConfigManager = {
+                load: () => Promise.resolve(),
+                get all(): IterableIterator<DebugSessionOptions> {
+                    return duplicateConfigs[Symbol.iterator]();
+                },
+            };
+
+            const mockSessionManager = {
+                start: async () => ({ id: 'test-session', configuration: { name: 'Start App' } }),
+                terminateSession: () => Promise.resolve(),
+                currentSession: undefined,
+                sessions: [],
+            };
+
+            multiRootContainer.bind(DebugConfigurationManager).toConstantValue(mockConfigManager as unknown as DebugConfigurationManager);
+            multiRootContainer.bind(DebugSessionManager).toConstantValue(mockSessionManager as unknown as DebugSessionManager);
+            multiRootContainer.bind(LaunchRunnerProvider).toSelf();
+            multiRootContainer.bind(LaunchListProvider).toSelf();
+
+            // Listing should show both configs with their respective roots
+            const listTool = multiRootContainer.get(LaunchListProvider).getTool();
+            const listResult = await listTool.handler('{"filter":""}');
+            const configs = JSON.parse(listResult as string);
+            expect(configs).to.have.lengthOf(2);
+            expect(configs[0].workspaceRoot).to.equal('frontend');
+            expect(configs[1].workspaceRoot).to.equal('backend');
+
+            // Running without workspaceRoot should report ambiguity
+            const runTool = multiRootContainer.get(LaunchRunnerProvider).getTool();
+            const ambiguousResult = await runTool.handler('{"configurationName":"Start App"}');
+            expect(ambiguousResult).to.be.a('string');
+            expect(ambiguousResult as string).to.include('Ambiguous');
+            expect(ambiguousResult as string).to.include('frontend');
+            expect(ambiguousResult as string).to.include('backend');
+
+            // Running with workspaceRoot should succeed
+            const disambiguatedResult = await runTool.handler('{"configurationName":"Start App","workspaceRoot":"frontend"}');
+            expect(disambiguatedResult).to.be.a('string');
+            expect(disambiguatedResult as string).to.not.include('Ambiguous');
+            expect(disambiguatedResult as string).to.include('started');
         });
     });
 });

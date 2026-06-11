@@ -16,6 +16,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { pathToFileURL } from 'url';
 import resolvePackagePath = require('resolve-package-path');
 
 import type { Plugin, PluginBuild } from 'esbuild';
@@ -118,6 +119,54 @@ export function exposeModulePlugin(): Plugin {
     };
 }
 
+/**
+ * Rewrites the `sources` field of emitted source maps so each entry is an
+ * absolute `file://` URL.
+ *
+ * esbuild has no `sourceRoot` option, and by default emits sources as paths
+ * relative to the `.map` file (e.g. `../../../../packages/foo.ts`). Browser
+ * debug adapters resolve those against the served bundle URL, where `..`
+ * cannot traverse above the HTTP host root, so the path collapses and the
+ * debugger can no longer find the original source on disk. Absolute file URLs
+ * work uniformly across both Node and Chrome debug adapters and remove the
+ * need for `sourceMapPathOverrides` in launch configurations.
+ *
+ * No-op when source maps are disabled.
+ */
+export function sourceMapPathsPlugin(): Plugin {
+    return {
+        name: 'theia-source-map-paths',
+        setup(build: PluginBuild): void {
+            const { outdir, sourcemap } = build.initialOptions;
+            if (!outdir || !sourcemap) {
+                return;
+            }
+            build.onEnd(async () => {
+                const entries = await fs.promises.readdir(outdir, { recursive: true });
+                await Promise.all(entries.map(async entry => {
+                    if (!entry.endsWith('.map')) {
+                        return;
+                    }
+                    const mapPath = path.join(outdir, entry);
+                    const raw = await fs.promises.readFile(mapPath, 'utf8');
+                    const map = JSON.parse(raw);
+                    if (!Array.isArray(map.sources)) {
+                        return;
+                    }
+                    const mapDir = path.dirname(mapPath);
+                    map.sources = map.sources.map((source: string) => {
+                        if (source.startsWith('..')) {
+                            return pathToFileURL(path.resolve(mapDir, source)).href;
+                        }
+                        return source;
+                    });
+                    await fs.promises.writeFile(mapPath, JSON.stringify(map));
+                }));
+            });
+        }
+    };
+}
+
 export function problemMatcherPlugin(watch: boolean, type: string): Plugin {
     const buildType = watch ? 'watch' : 'build';
     const prefix = `[${buildType}/${type}]`;
@@ -201,7 +250,8 @@ class PluginImpl implements Plugin {
                 }
             }
             return {
-                path: join(resolveModulePath(name), 'watcher.node')
+                path: join(resolveModulePath(name), 'watcher.node'),
+                namespace: 'node-file'
             };
         });
         build.onLoad({ filter: /bindings[\\\/]bindings\.js$/ }, async () => ({
@@ -220,6 +270,14 @@ class PluginImpl implements Plugin {
             // so Node.js resolves them at runtime relative to the bundle's __dirname, where
             // the prebuilt .node files are placed by copyNodePtySpawnHelper().
             contents = 'const __nativePtyRequire = require;\n' + contents.replace(/\brequire\(/g, '__nativePtyRequire(');
+            return { contents, loader: 'js' };
+        });
+        build.onLoad({ filter: /node_modules[/\\]@stroncium[/\\]procfs[/\\]lib[/\\]parsers\.js$/ }, async args => {
+            let contents = await fs.promises.readFile(args.path, 'utf8');
+            // esbuild expands `require(`./parsers/${name}`)` into a glob lookup whose
+            // keys include the `.js` extension, but the runtime call passes the bare
+            // name and misses. Append `.js` so the runtime key matches the map.
+            contents = contents.replace('require(`./parsers/${name}`)', 'require(`./parsers/${name}.js`)');
             return { contents, loader: 'js' };
         });
         build.onEnd(() => {

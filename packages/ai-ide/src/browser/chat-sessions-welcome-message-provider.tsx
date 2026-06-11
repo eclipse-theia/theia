@@ -16,13 +16,17 @@
 
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import { ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import {
+    ChatAgentService, ChatRequestModel, ChatResponseContent, ChatService, ChatSession, ChatSessionMetadata,
+    ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
+} from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
-import { Card, CardActionButton, codicon, HoverService, buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
+import { ApplicationShell, Card, CardActionButton, codicon, HoverService, buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -137,6 +141,50 @@ function useTimeAgo(date: number): string {
     return formatTimeAgo(date);
 }
 
+/** Read an error message from a completed-with-error response, if any. */
+function getResponseErrorMessage(response: ChatRequestModel['response']): string | undefined {
+    if (response.errorObject?.message) {
+        return response.errorObject.message;
+    }
+    const errorPart = response.response.content.find(ErrorChatResponseContent.is);
+    return errorPart?.asDisplayString?.();
+}
+
+/**
+ * Build a DOM fragment that renders a {@link FormattedProviderError} for the tooltip.
+ * Details are intentionally omitted — the hover popup is not interactive, so a
+ * <details> expander wouldn't work. The full payload is available in the chat output.
+ */
+function renderFormattedProviderError(error: FormattedProviderError): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'theia-chat-session-tooltip-error';
+    const prefix = document.createElement('span');
+    prefix.className = 'theia-chat-session-tooltip-error-prefix';
+    prefix.textContent = error.status
+        ? `${nls.localizeByDefault('Error')} ${error.status}:`
+        : `${nls.localizeByDefault('Error')}:`;
+    wrapper.appendChild(prefix);
+    const headline = error.message.length > TOOLTIP_SNIPPET_MAX_LENGTH
+        ? error.message.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
+        : error.message;
+    wrapper.appendChild(document.createTextNode(' ' + headline));
+    return wrapper;
+}
+
+/** Collect display text from response content, excluding thinking parts. */
+function responseToTooltipString(content: ChatResponseContent[]): string {
+    return content
+        .filter(c => !ThinkingChatResponseContent.is(c))
+        .map(c => {
+            if (ChatResponseContent.hasAsString(c)) {
+                return c.asString();
+            }
+            return undefined;
+        })
+        .filter((text): text is string => text !== undefined && text !== '')
+        .join('\n\n');
+}
+
 interface ChatSessionCardProps {
     session: ChatSessionMetadata;
     chatService: ChatService;
@@ -157,13 +205,29 @@ function ChatSessionCard(
 
     const timeAgo = useTimeAgo(session.saveDate);
     const [isWorking, setIsWorking] = React.useState(false);
+    const [hasError, setHasError] = React.useState(session.hasError === true);
     const hasUnread = useUnreadMessages(session.sessionId, unreadState);
+
+    // Sync error state from metadata when it changes after initial render
+    React.useEffect(() => {
+        setHasError(session.hasError === true);
+    }, [session.hasError]);
+
+    // Resolve the agent for icon and display name
+    const agent = session.pinnedAgentId ? chatAgentService.getAgent(session.pinnedAgentId) : undefined;
+    const agentIcon = agent?.iconClass ?? codicon('comment-discussion');
+    const subtitle = agent ? `@${agent.name} \u00b7 ${timeAgo}` : timeAgo;
 
     React.useEffect(() => {
         const trash = new DisposableCollection();
 
         const attach = (s: ChatSession) => {
-            const recompute = () => setIsWorking(s.model.getRequests().some(ChatRequestModel.isInProgress));
+            const recompute = () => {
+                const requests = s.model.getRequests();
+                setIsWorking(requests.some(ChatRequestModel.isInProgress));
+                const lastReq = requests.at(-1);
+                setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
+            };
             recompute();
             s.model.onDidChange(recompute, undefined, trash);
         };
@@ -199,9 +263,9 @@ function ChatSessionCard(
         }
         if (!hoverActiveRef.current || !chatSession) { return; }
 
-        const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer, hasUnread);
+        const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError);
         hoverService.requestHover({ content, target, position: 'left' });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError]);
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []); // Block mouseEnter proceeding on unmount
 
     const handleMouseLeave = React.useCallback(() => {
@@ -218,20 +282,26 @@ function ChatSessionCard(
         }
     }, [hoverService]);
 
+    const wrapperClass = [
+        'theia-chat-session-card-wrapper',
+        isWorking && 'theia-chat-session-card-working',
+        hasError && !isWorking && 'theia-chat-session-card-error'
+    ].filter(Boolean).join(' ');
+
     return (
         <div ref={wrapperRef}
-            className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
+            className={wrapperClass}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onMouseOver={handleMouseOver}>
             <Card
-                icon={isWorking ? `${codicon('loading')} theia-animation-spin` : codicon('comment-discussion')}
+                icon={isWorking ? `${codicon('loading')} theia-animation-spin` : agentIcon}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
-                subtitle={timeAgo}
+                subtitle={subtitle}
                 actionButtons={actionButtons}
                 onClick={onClick}
             />
-            {hasUnread && !isWorking && <div className="theia-chat-session-badge-unread" />}
+            {hasUnread && !isWorking && !hasError && <div className="theia-chat-session-badge-unread" />}
         </div>
     );
 }
@@ -239,7 +309,7 @@ function ChatSessionCard(
 function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
     agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean
+    isUnread: boolean, isRunning: boolean, hasError: boolean
 ): HTMLElement {
     const requests = session.model.getRequests();
     const lastRequest = requests.at(-1);
@@ -247,7 +317,17 @@ function buildSessionTooltip(
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
-    if (isUnread) {
+    if (isRunning) {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-running-tooltip';
+        badge.textContent = nls.localizeByDefault('Running');
+        container.appendChild(badge);
+    } else if (hasError) {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-error-tooltip';
+        badge.textContent = nls.localizeByDefault('Error');
+        container.appendChild(badge);
+    } else if (isUnread) {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-unread-tooltip';
         badge.textContent = nls.localize('theia/ai/ide/tooltip/unread', 'Unread');
@@ -256,36 +336,39 @@ function buildSessionTooltip(
 
     if (lastRequest) {
         const lastResponse = lastRequest.response;
-        let messageText: string | undefined;
+        const errorText = hasError ? getResponseErrorMessage(lastResponse) : undefined;
 
-        if (lastResponse.isComplete && !lastResponse.isError) {
-            // Show the agent's response text (already markdown)
-            messageText = lastResponse.response.asString() || undefined;
-        } else if (!lastResponse.isComplete) {
-            // Request is still pending / no response yet — show the user's request text
-            messageText = lastRequest.request.text || undefined;
-        } else {
-            // Failure response — find the most recent successful exchange
-            const lastSuccessfulRequest = requests.findLast(r => r.response.isComplete && !r.response.isError);
-            messageText = lastSuccessfulRequest?.response.response.asString() || undefined;
-        }
-
-        if (messageText) {
-            const snippet = messageText.length > TOOLTIP_SNIPPET_MAX_LENGTH
-                ? messageText.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
-                : messageText;
+        if (errorText) {
             const label = document.createElement('div');
             label.className = 'theia-chat-session-tooltip-label';
-            label.textContent = nls.localize('theia/ai/ide/tooltip/lastMessage', 'Last message');
+            label.textContent = nls.localize('theia/ai/ide/tooltip/errorMessage', 'Error message');
             container.appendChild(label);
-
-            const snippetEl = document.createElement('div');
-            snippetEl.className = 'theia-chat-session-tooltip-snippet';
-            snippetEl.appendChild(markdownRenderer.render({ value: snippet }).element);
-            container.appendChild(snippetEl);
+            container.appendChild(renderFormattedProviderError(formatProviderError(errorText)));
 
             const hr = document.createElement('hr');
             container.appendChild(hr);
+        } else {
+            const messageText = lastResponse.isComplete
+                ? (responseToTooltipString(lastResponse.response.content) || undefined)
+                : (lastRequest.request.text || undefined);
+
+            if (messageText) {
+                const snippet = messageText.length > TOOLTIP_SNIPPET_MAX_LENGTH
+                    ? messageText.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
+                    : messageText;
+                const label = document.createElement('div');
+                label.className = 'theia-chat-session-tooltip-label';
+                label.textContent = nls.localize('theia/ai/ide/tooltip/lastMessage', 'Last message');
+                container.appendChild(label);
+
+                const snippetEl = document.createElement('div');
+                snippetEl.className = 'theia-chat-session-tooltip-snippet';
+                snippetEl.appendChild(markdownRenderer.render({ value: snippet }).element);
+                container.appendChild(snippetEl);
+
+                const hr = document.createElement('hr');
+                container.appendChild(hr);
+            }
         }
     }
 
@@ -349,6 +432,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     protected _inputEnabled = false;
 
@@ -474,7 +560,18 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         session.model.onDidChange(() => {
             const current = session.model.getRequests();
             if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
-                if (!state.unread) {
+                // Only silently update the seen counts (instead of flashing the unread badge)
+                // when the user is actually looking at this session: it must be the active
+                // session AND the chat view must currently be the focused widget. Otherwise,
+                // the user may have switched away (e.g. to the editor) while the chat agent
+                // is still running, and we want the badge to appear so they notice the new
+                // response when they return.
+                const activeSession = this.chatService.getActiveSession();
+                const chatViewFocused = ChatViewWidget.findActive(this.shell) !== undefined;
+                if (chatViewFocused && activeSession && activeSession.id === session.id) {
+                    state.seenRequests = current.length;
+                    state.seenCompleted = this.countCompleted(current);
+                } else if (!state.unread) {
                     state.unread = true;
                     this.onUnreadChangedEmitter.fire(session.id);
                 }

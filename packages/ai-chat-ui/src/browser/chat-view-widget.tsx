@@ -14,9 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import {
+    ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings,
+    formatProviderError, formattedProviderErrorToShortString, isActiveSessionChangedEvent, MutableChatModel
+} from '@theia/ai-chat';
 import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
-import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
+import { ApplicationShell, BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
@@ -246,7 +249,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         if (chatRequest.text.length === 0) { return; }
 
         if (this.chatSession.model.isEmpty()) {
-            this.navigationService.notifyQueryFromWelcomeScreen(this.chatSession.id);
+            this.navigationService.notifyInitialQuery(this.chatSession.id);
         }
 
         // Include all variables (context + pending image attachments) in the request
@@ -264,8 +267,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         }
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
-                this.messageService.error(responseModel.errorObject?.message ??
-                    nls.localize('theia/ai/chat-ui/errorChatInvocation', 'An error occurred during chat service invocation.'));
+                const rawError = responseModel.errorObject?.message;
+                const message = rawError
+                    ? nls.localize('theia/ai/chat-ui/chatRequestFailedWithDetail',
+                        'Chat request failed: {0}',
+                        formattedProviderErrorToShortString(formatProviderError(rawError)))
+                    : nls.localize('theia/ai/chat-ui/errorChatInvocation',
+                        'An error occurred during chat service invocation.');
+                this.messageService.error(message);
             }
         }).finally(() => {
             this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
@@ -331,5 +340,37 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     getSettings(): ChatSessionSettings | undefined {
         return this.chatSession.model.settings;
+    }
+
+    get sessionId(): string {
+        return this.chatSession.id;
+    }
+}
+
+export namespace ChatViewWidget {
+    /**
+     * Returns the active `ChatViewWidget` if the shell's active widget is one,
+     * or if focus is inside one of its child widgets (e.g. the input or tree).
+     */
+    export function findActive(shell: ApplicationShell): ChatViewWidget | undefined {
+        const activeWidget = shell.activeWidget;
+        if (activeWidget instanceof ChatViewWidget) {
+            return activeWidget;
+        }
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLElement) {
+            const widget = shell.findWidgetForElement(activeElement);
+            if (widget instanceof ChatViewWidget) {
+                return widget;
+            }
+            let parent = widget?.parent;
+            while (parent) {
+                if (parent instanceof ChatViewWidget) {
+                    return parent;
+                }
+                parent = parent.parent;
+            }
+        }
+        return undefined;
     }
 }

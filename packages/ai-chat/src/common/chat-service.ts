@@ -455,9 +455,11 @@ export class ChatServiceImpl implements ChatService {
             return Promise.resolve();
         }
 
-        // Store session with title and pinned agent info
+        // Store session with title, pinned agent info, last interaction timestamp, and error state
+        const lastRequest = session.model.getRequests().at(-1);
+        const hasError = lastRequest?.response.isComplete === true && lastRequest?.response.isError === true;
         return this.sessionStore.storeSessions(
-            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
+            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id, lastInteraction: session.lastInteraction?.getTime(), hasError }
         ).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
         });

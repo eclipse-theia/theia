@@ -28,3 +28,4 @@ export * from './parsed-chat-request';
 export * from './context-variables';
 export * from './chat-tool-request-service';
 export * from './chat-tool-confirmation-timeout';
+export * from './provider-error-formatter';

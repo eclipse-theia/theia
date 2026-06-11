@@ -1,6 +1,6 @@
 {
   "name": "@theia/cli",
-  "version": "1.71.0",
+  "version": "1.72.0",
   "description": "Theia CLI.",
   "publishConfig": {
     "access": "public"
@@ -32,12 +32,12 @@
     "clean": "theiaext clean"
   },
   "dependencies": {
-    "@theia/application-manager": "1.71.0",
-    "@theia/application-package": "1.71.0",
-    "@theia/ffmpeg": "1.71.0",
-    "@theia/localization-manager": "1.71.0",
-    "@theia/ovsx-client": "1.71.0",
-    "@theia/request": "1.71.0",
+    "@theia/application-manager": "1.72.0",
+    "@theia/application-package": "1.72.0",
+    "@theia/ffmpeg": "1.72.0",
+    "@theia/localization-manager": "1.72.0",
+    "@theia/ovsx-client": "1.72.0",
+    "@theia/request": "1.72.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^10.0.10",
     "@types/node-fetch": "^2.6.13",
@@ -51,12 +51,12 @@
     "log-update": "^4.0.0",
     "mocha": "^10.8.2",
     "patch-package": "^8.0.1",
-    "puppeteer": "23.1.0",
-    "puppeteer-core": "23.1.0",
+    "puppeteer": "25.1.0",
+    "puppeteer-core": "25.1.0",
     "puppeteer-to-istanbul": "1.4.0",
     "temp": "^0.9.4",
     "tslib": "^2.8.1",
-    "yargs": "^15.4.1"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

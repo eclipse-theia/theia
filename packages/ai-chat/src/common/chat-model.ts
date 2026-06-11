@@ -488,7 +488,6 @@ export interface ToolCallContentData {
     id?: string;
     name?: string;
     arguments?: string;
-    finished?: boolean;
     result?: ToolCallResult;
     data?: Record<string, string>;
 }
@@ -568,12 +567,32 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
     whenFinished: Promise<void>;
+    /**
+     * Provider-specific metadata about the tool call that the language model needs back on
+     * subsequent turns (e.g. Google's `thoughtSignature`, cache pointers). The full record is
+     * passed to the model via {@link toLanguageModelMessage} as `ToolUseMessage.data`.
+     */
     data?: Record<string, string>;
+    /**
+     * Fires when the serialized form of this tool call changes outside of the agent's stream
+     * (e.g. after a renderer persists intermediate state via {@link updateResult}). The
+     * parent {@link ChatResponse} forwards this event so chat-session auto-save picks up
+     * the change.
+     */
+    readonly onDidChange: Event<void>;
     confirm(): void;
     deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
     /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
     requestUserConfirmation(): void;
+    /**
+     * Update the tool call's result without marking it finished. Use this to persist
+     * intermediate state for long-running tools (e.g. the user-interaction wizard) so
+     * progress survives chat-session reloads. On restore the tool call is always marked
+     * finished (no live handler exists anymore), so a partial result must be
+     * self-describing; consumers should not rely on `finished` to tell partial from final.
+     */
+    updateResult(result: ToolCallResult): void;
     /**
      * Mark the tool call as completed with the given result.
      *
@@ -2310,7 +2329,17 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _whenFinished: Promise<void>;
     protected _finishedResolver?: () => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
+    protected readonly _onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange: Event<void> = this._onDidChangeEmitter.event;
+
+    constructor(
+        id?: string,
+        name?: string,
+        arg_string?: string,
+        finished?: boolean,
+        result?: ToolCallResult,
+        data?: Record<string, string>
+    ) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
@@ -2426,6 +2455,11 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
+    updateResult(result: ToolCallResult): void {
+        this._result = result;
+        this._onDidChangeEmitter.fire();
+    }
+
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
@@ -2436,6 +2470,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._finished = true;
         this._result = result;
         this.resolveFinished();
+        this._onDidChangeEmitter.fire();
     }
 
     protected resolveFinished(): void {
@@ -2523,16 +2558,19 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     toSerializable(): SerializableChatResponseContentData<ToolCallContentData> {
-        return {
-            kind: 'toolCall',
-            data: {
-                id: this._id,
-                name: this._name,
-                arguments: this._arguments,
-                finished: this._finished,
-                result: this._result
-            }
+        // `finished` is intentionally not persisted: on restore there is no live handler,
+        // so every restored tool call is necessarily finished. Whether the result is
+        // partial or final must be encoded in the result itself.
+        const data: ToolCallContentData = {
+            id: this._id,
+            name: this._name,
+            arguments: this._arguments,
+            result: this._result
         };
+        if (this._data && Object.keys(this._data).length > 0) {
+            data.data = this._data;
+        }
+        return { kind: 'toolCall', data };
     }
 }
 
@@ -2793,6 +2831,10 @@ class ChatResponseImpl implements ChatResponse {
                 fittingTool.merge?.(nextContent);
             } else {
                 this._content.push(nextContent);
+                // Forward content-level change events (e.g. partial-result updates from a
+                // renderer) so auto-save can persist them. Without this, mutations that
+                // don't go through addContent/merge are invisible to listeners.
+                nextContent.onDidChange(() => this._onDidChangeEmitter.fire());
             }
         } else {
             const lastElement = this._content.length > 0

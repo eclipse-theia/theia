@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
-import { CancellationToken, DisposableCollection, Emitter, nls, URI } from '@theia/core';
+import { CancellationToken, DisposableCollection, Emitter, nls, URI, ILogger } from '@theia/core';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -101,6 +101,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(MonacoCodeActionService)
     protected readonly codeActionService: MonacoCodeActionService;
 
+    @inject(ILogger) @named('ai-chat:ChangeSetFileElement')
+    protected readonly logger: ILogger;
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
 
@@ -259,7 +261,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     get originalContent(): string | undefined {
         if (!this._initialized && this._initializationPromise) {
-            console.warn('Accessing originalContent before initialization is complete. Consider using async methods.');
+            this.logger.warn('Accessing originalContent before initialization is complete. Consider using async methods.');
         }
         return this._originalContent;
     }
@@ -339,7 +341,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             await model.save();
             this.state = 'applied';
         } catch (error) {
-            console.error('Failed to apply changes with Monaco:', error);
+            this.logger.error('Failed to apply changes with Monaco:', error);
             await this.writeChanges(contents);
         } finally {
             modelReference?.dispose();
@@ -391,7 +393,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
                 this._changeResource?.update({ contents: this.targetState });
             }
         } catch (error) {
-            console.warn('Failed to apply code actions to target state:', error);
+            this.logger.warn('Failed to apply code actions to target state:', error);
             this._targetStateWithCodeActions = targetState;
         } finally {
             tempModel?.dispose();
@@ -429,7 +431,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
                 insertFinalNewline(model);
             }
         } catch (error) {
-            console.warn('Failed to apply formatting:', error);
+            this.logger.warn('Failed to apply formatting:', error);
         }
     }
 

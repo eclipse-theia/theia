@@ -15,9 +15,28 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatResponseModel } from './chat-model';
+import { MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
 
 describe('MutableChatResponseModel', () => {
+    describe('content change propagation', () => {
+        it('should fire onDidChange when a tool call\'s result is updated after it was added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('partial');
+
+            // The response model must observe the change so auto-save can persist
+            // intermediate state. Without this propagation, mutations that don't go
+            // through addContent/merge (e.g. renderer-side partial results) would be
+            // lost on reload.
+            expect(fireCount).to.equal(1);
+        });
+    });
+
     describe('setTokenUsage', () => {
         it('should also add a token usage entry', () => {
             const response = new MutableChatResponseModel('req-1');
