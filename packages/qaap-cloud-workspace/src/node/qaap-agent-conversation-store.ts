@@ -65,6 +65,7 @@ import {
 import { planConversationRewind } from '../common/qaap-agent-conversation-rewind';
 import type { QaapParallelRunVariantStats } from '../common/qaap-parallel-run';
 import type { QaapAgentTask, QaapAgentTaskEvent, QaapCreateAgentTaskRequest } from '../common/qaap-agent-task';
+import { resolveTaskAgentModel } from '../common/qaap-agent-task';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import { QaapAgentConversationSseBatcher } from '../common/qaap-agent-conversation-sse-batcher';
 import {
@@ -80,6 +81,11 @@ import {
     computeAgentMessageWireDelta,
     type QaapAgentMessageWireSnapshot,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-agent-message-wire-delta';
+import {
+    agentModelKey,
+    agentTurnHasRetryableEmptyOutput,
+    resolveNextFallbackAgentModel,
+} from '../common/qaap-agent-model-fallback';
 
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-conversations');
 const STREAMING_PERSIST_DEBOUNCE_MS = 500;
@@ -108,6 +114,8 @@ export class QaapAgentConversationStore {
     protected readonly pendingTeamSynthesisForLeader = new Set<string>();
     /** Per user turn: how many auto-continue nudges were sent after a thinking-only stop. */
     protected readonly autoContinueCountByUserMessage = new Map<string, number>();
+    /** Per user turn: model keys already attempted before a fallback retry. */
+    protected readonly modelFallbackTriedByUserMessage = new Map<string, Set<string>>();
     /** Per-task structured stdout parsers (QAIQ, Claude, Codex JSON, OpenCode, Antigravity). */
     protected readonly agentStreamByTaskId = new Map<string, QaapAgentStreamAccumulator>();
     /** Last wire snapshot per agent message — drives incremental SSE deltas during streaming. */
@@ -830,6 +838,20 @@ export class QaapAgentConversationStore {
         const log = this.filterAgentLogChunk((detail?.log ?? '').trim());
         const structuredParsed = log ? this.parseStructuredLog(conv.agentId, log) : undefined;
         if (task.state !== 'completed') {
+            const agentMessage = agentMessageId
+                ? withUsageBaseline.messages.find(message => message.id === agentMessageId)
+                : undefined;
+            if (this.maybeRetryTurnWithFallbackModel(
+                conversationId,
+                userMessageId,
+                agentMessageId,
+                task,
+                withUsageBaseline,
+                agentMessage,
+                startSha,
+            )) {
+                return;
+            }
             const reason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
             const errored = this.markUserMessageFailed(withUsageBaseline, userMessageId, reason);
             const failureBody = log ? resolveAgentLogDisplayText(conv.agentId, log) : '';
@@ -889,8 +911,80 @@ export class QaapAgentConversationStore {
             this.fireAgentMessageWireUpdate(conversationId, withReply.cwd, withReply.agentId, agentMessage, { forceFullMessage: true });
             this.lastWireMessageById.delete(agentMessage.id);
         }
+        this.modelFallbackTriedByUserMessage.delete(userMessageId);
         this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
         this.maybeAutoContinueIncompleteTurn(conversationId, withReply, userMessageId);
+    }
+
+    /**
+     * When a model-backed agent exits before producing a real answer, retry the same user turn
+     * with the next curated fallback model so the thread keeps moving without user intervention.
+     */
+    protected maybeRetryTurnWithFallbackModel(
+        conversationId: string,
+        userMessageId: string,
+        agentMessageId: string | undefined,
+        task: QaapAgentTask,
+        conv: QaapAgentConversation,
+        agentMessage: QaapAgentMessage | undefined,
+        startSha?: string,
+    ): boolean {
+        if (task.state !== 'failed' || !agentSupportsModelPicker(conv.agentId)) {
+            return false;
+        }
+        if (!agentTurnHasRetryableEmptyOutput(agentMessage)) {
+            return false;
+        }
+        const currentModel = conv.agentModel
+            ?? conv.qaiqModel
+            ?? resolveTaskAgentModel(task);
+        const tried = this.modelFallbackTriedByUserMessage.get(userMessageId) ?? new Set<string>();
+        const currentKey = agentModelKey(currentModel);
+        if (currentKey) {
+            tried.add(currentKey);
+        }
+        const nextModel = resolveNextFallbackAgentModel(conv.agentId, currentModel, tried);
+        if (!nextModel) {
+            this.modelFallbackTriedByUserMessage.delete(userMessageId);
+            return false;
+        }
+        const messages = conv.messages
+            .filter(message => message.id !== agentMessageId)
+            .map(message => message.id === userMessageId
+                ? { ...message, error: undefined, taskId: undefined }
+                : message);
+        const retryConv: QaapAgentConversation = {
+            ...conv,
+            status: 'streaming',
+            updatedAt: Date.now(),
+            messages,
+            agentModel: nextModel,
+            qaiqModel: nextModel,
+        };
+        let spawned: QaapAgentTask;
+        try {
+            spawned = this.taskRunner.create(this.buildTaskCreateRequest(retryConv, conv.agentId));
+        } catch {
+            return false;
+        }
+        const nextKey = agentModelKey(nextModel);
+        if (nextKey) {
+            tried.add(nextKey);
+        }
+        this.modelFallbackTriedByUserMessage.set(userMessageId, tried);
+        const messagesWithTask = retryConv.messages.map(message => message.id === userMessageId
+            ? { ...message, taskId: spawned.id }
+            : message);
+        const nextConv = { ...retryConv, messages: messagesWithTask };
+        this.conversations.set(conversationId, nextConv);
+        this.fire({ type: 'updated', conversation: toConversationSummary(nextConv) });
+        this.taskToConversation.set(spawned.id, {
+            conversationId,
+            userMessageId,
+            startSha,
+        });
+        void this.persist();
+        return true;
     }
 
     protected maybeAutoContinueIncompleteTurn(

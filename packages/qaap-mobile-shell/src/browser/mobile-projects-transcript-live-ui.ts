@@ -190,10 +190,15 @@ export class MobileProjectsTranscriptLiveUi {
         }
         const message = this.resolveLiveSseMessage(event);
         if (!message) {
+            // Wire delta against a message the local snapshot never received (e.g. its
+            // message_start was dropped) — silently skipping would wedge the transcript
+            // for the rest of the turn, so re-sync once via GET instead.
+            this.scheduleSseDeltaResync();
             return;
         }
         const base = this.host.transcriptLastConv;
         if (!canApplySseMessageDelta(base, event.conversationId, message)) {
+            this.scheduleSseDeltaResync();
             return;
         }
         const next = applyConversationMessageDelta(base, message);
@@ -207,6 +212,23 @@ export class MobileProjectsTranscriptLiveUi {
             return;
         }
         this.applyTranscriptSseRender(next, message);
+    }
+
+    protected sseDeltaResyncTimer: number | undefined;
+
+    /**
+     * A live delta arrived that cannot merge into the local snapshot (divergent base,
+     * missing message, stale status). One debounced GET re-syncs the open transcript so
+     * the stream recovers instead of staying frozen until the user reloads.
+     */
+    protected scheduleSseDeltaResync(): void {
+        if (this.sseDeltaResyncTimer !== undefined) {
+            return;
+        }
+        this.sseDeltaResyncTimer = window.setTimeout(() => {
+            this.sseDeltaResyncTimer = undefined;
+            void this.refreshOpenTranscriptConversation({ forcePoll: true });
+        }, 250);
     }
 
     protected resolveLiveSseMessage(event: ConversationLiveMessageEvent): QaapAgentMessageDTO | undefined {
@@ -571,6 +593,10 @@ export class MobileProjectsTranscriptLiveUi {
 
     stopTranscriptLiveWatch(): void {
         this.transcriptTurnVisuallySettledActive = false;
+        if (this.sseDeltaResyncTimer !== undefined) {
+            window.clearTimeout(this.sseDeltaResyncTimer);
+            this.sseDeltaResyncTimer = undefined;
+        }
         if (this.sseRenderRafId) {
             cancelAnimationFrame(this.sseRenderRafId);
             this.sseRenderRafId = 0;

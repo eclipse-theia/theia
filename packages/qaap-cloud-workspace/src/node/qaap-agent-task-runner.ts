@@ -54,6 +54,10 @@ import {
 } from '../common/qaap-qaiq-stdio-approvals';
 import { findQaiqDevServerGuardDenial } from '../common/qaap-agent-dev-server-guard';
 import {
+    buildQaiqNetworkToolDenialMessage,
+    resolveQaiqControlRequestAutoAction,
+} from '../common/qaap-qaiq-control-auto-response';
+import {
     resolveAgentAutoApprove,
 } from '../common/qaap-agent-auto-approve';
 import { filterAgentProcessLogChunk } from '../common/qaap-agent-log-filter';
@@ -245,6 +249,8 @@ export class QaapAgentTaskRunner {
     protected readonly stdinPrompts = new Map<string, string>();
     /** Unanswered `can_use_tool` control requests per task — the pause-and-wait approval queue. */
     protected readonly pendingQaiqControlRequests = new Map<string, QaapQaiqPendingControlRequest[]>();
+    /** Tasks using QAIQ stream-json stdin — never answer with legacy `y`/`n` lines. */
+    protected readonly qaiqStdioTasks = new Set<string>();
     /** Agents whose CLI was found on PATH at startup, keyed by id. */
     protected readonly detectedAgents = new Map<string, AgentCandidate>();
     /** Random token shared with spawned agents so they can call back via `qaap-task`. */
@@ -1111,6 +1117,9 @@ export class QaapAgentTaskRunner {
             pending.splice(pending.indexOf(entry), 1);
             return true;
         }
+        if (this.qaiqStdioTasks.has(taskId)) {
+            return false;
+        }
         if (!this.stdinInteractiveTasks.has(taskId)) {
             return false;
         }
@@ -1199,6 +1208,7 @@ export class QaapAgentTaskRunner {
             this.stdinInteractiveTasks.add(task.id);
         }
         if (stdioPrompt !== undefined) {
+            this.qaiqStdioTasks.add(task.id);
             this.stdinPrompts.delete(task.id);
             // stream-json input: the prompt travels over stdin, which stays open
             // for control_responses until the end-of-turn `result` message.
@@ -1245,13 +1255,26 @@ export class QaapAgentTaskRunner {
                     continue;
                 }
                 if (event.type === 'control-request') {
-                    // Dev servers must run in the Qaap bootstrap terminal, not shell tools that
-                    // time out — auto-deny with guidance so the agent replies with the port instead.
-                    const devServerDenial = findQaiqDevServerGuardDenial(event.request);
-                    if (devServerDenial) {
-                        logStream.write('\n[qaap] auto-denied long-lived dev-server shell command; Qaap manages dev servers via the preview bootstrap.\n');
+                    const autoAction = resolveQaiqControlRequestAutoAction(
+                        task.command,
+                        task.autoApprove,
+                        event.request,
+                    );
+                    if (autoAction !== 'queue') {
+                        const devServerDenial = findQaiqDevServerGuardDenial(event.request);
+                        const denyMessage = devServerDenial
+                            ?? (autoAction === 'deny' && event.request.toolName
+                                ? buildQaiqNetworkToolDenialMessage(event.request.toolName)
+                                : undefined);
+                        if (devServerDenial) {
+                            logStream.write('\n[qaap] auto-denied long-lived dev-server shell command; Qaap manages dev servers via the preview bootstrap.\n');
+                        }
                         try {
-                            child.stdin?.write(buildQaiqControlResponseLine(event.request, 'reject', { denyMessage: devServerDenial }));
+                            child.stdin?.write(buildQaiqControlResponseLine(
+                                event.request,
+                                autoAction === 'allow' ? 'approve' : 'reject',
+                                denyMessage ? { denyMessage } : {},
+                            ));
                         } catch {
                             // stdin already closed — the turn is over anyway.
                         }
@@ -1300,6 +1323,7 @@ export class QaapAgentTaskRunner {
             this.stdinInteractiveTasks.delete(task.id);
             this.stdinPrompts.delete(task.id);
             this.pendingQaiqControlRequests.delete(task.id);
+            this.qaiqStdioTasks.delete(task.id);
             // A SIGTERM-killed task is already marked 'cancelled' by cancel().
             if (this.tasks.get(task.id)?.state !== 'running') {
                 return;
