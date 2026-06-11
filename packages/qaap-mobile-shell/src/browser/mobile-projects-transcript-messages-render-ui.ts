@@ -7,7 +7,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { normalizeAgentMessageContentForDisplay } from '../common/qaap-agent-message-content';
 import { parseAgentLogForTranscript } from '../common/qaap-cli-transcript-stream';
 import { dedupeAgentMessageTextSegments } from '../common/qaap-qaiq-stream';
-import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentTextContentOnly, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
+import { isStreamingTranscriptTailUnchanged, resolveStreamingTranscriptPatchKind, TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_MESSAGE_ID_ATTR, canStreamPatchAgentAppendToolSegment, canStreamPatchAgentTextContentOnly, canStreamPatchAgentToolsOnly, canStreamPatchStdoutAgentContentOnly } from '../common/qaap-transcript-incremental-update';
 import { isTranscriptScrollNearBottom } from '../common/qaap-transcript-user-scroll-pin';
 import { scrollElementToEnd } from '../common/qaap-prefers-reduced-motion';
 import { attachTranscriptScrollToBottomButton } from './qaap-transcript-scroll-to-bottom';
@@ -242,7 +242,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             const existing = messageHost.querySelector<HTMLElement>(
                 `[${TRANSCRIPT_MESSAGE_ID_ATTR}="${CSS.escape(lastAgent.id)}"]`,
             );
-            if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments)) {
+            if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments, conv)) {
                 this.markTranscriptMessageRow(existing, lastAgent.id, true);
                 this.removeTranscriptActivityRow(messageHost);
                 this.host.transcriptLastConv = conv;
@@ -319,7 +319,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
 
         if (patchKind === 'last-agent') {
             const existing = list.findRowByAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, lastAgent.id);
-            if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments)) {
+            if (existing && this.tryPatchStreamingAgentTextContent(existing, prevLast, lastAgent, segments, conv)) {
                 this.markTranscriptMessageRow(existing, lastAgent.id, true);
                 this.host.transcriptLastConv = conv;
                 list.setItemCount(conv.messages.length);
@@ -362,6 +362,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         prevMsg: QaapAgentMessageDTO | undefined,
         nextMsg: QaapAgentMessageDTO,
         resolvedSegments: QaapAgentMessageSegmentDTO[] | undefined,
+        conv?: QaapAgentConversationDTO,
     ): boolean {
         if (canStreamPatchStdoutAgentContentOnly(prevMsg, nextMsg)) {
             const contentEl = existingRow.querySelector<HTMLElement>('.theia-mobile-agent-transcript-content');
@@ -374,26 +375,42 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             );
             return true;
         }
-        if (!prevMsg || !canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)) {
+        if (!prevMsg) {
             return false;
         }
         const nextSegments = nextMsg.segments ?? [];
         const prevSegments = prevMsg.segments ?? [];
-        if (nextSegments.length === 0) {
+        const textPatch = canStreamPatchAgentTextContentOnly(prevMsg, nextMsg);
+        const toolsPatch = canStreamPatchAgentToolsOnly(prevMsg, nextMsg);
+        const appendTool = canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg);
+        if (!textPatch && !toolsPatch && !appendTool) {
             return false;
         }
-        if (resolvedSegments?.length) {
-            return this.artifactsUi.patchStreamingAgentTextSegments(existingRow, prevSegments, nextSegments);
+        if (textPatch && resolvedSegments?.length) {
+            if (!this.artifactsUi.patchStreamingAgentTextSegments(existingRow, prevSegments, nextSegments)) {
+                return false;
+            }
+        } else if (textPatch) {
+            const contentEl = existingRow.querySelector<HTMLElement>('.theia-mobile-agent-transcript-content');
+            if (!contentEl) {
+                return false;
+            }
+            const lastText = [...nextSegments].reverse().find(segment => segment.type === 'text');
+            if (!lastText || lastText.type !== 'text') {
+                return false;
+            }
+            this.toolUi.renderTranscriptRichContent(contentEl, lastText.content ?? '');
         }
-        const contentEl = existingRow.querySelector<HTMLElement>('.theia-mobile-agent-transcript-content');
-        if (!contentEl) {
-            return false;
+        if (toolsPatch) {
+            if (!this.artifactsUi.patchStreamingAgentToolSegments(existingRow, prevSegments, nextSegments, conv)) {
+                return false;
+            }
         }
-        const lastText = [...nextSegments].reverse().find(segment => segment.type === 'text');
-        if (!lastText || lastText.type !== 'text') {
-            return false;
+        if (appendTool) {
+            if (!this.artifactsUi.appendStreamingAgentToolSegment(existingRow, nextSegments, conv)) {
+                return false;
+            }
         }
-        this.toolUi.renderTranscriptRichContent(contentEl, lastText.content ?? '');
         return true;
     }
 

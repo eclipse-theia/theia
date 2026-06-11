@@ -181,11 +181,53 @@ export const TRANSCRIPT_MESSAGE_ID_ATTR = 'data-transcript-message-id';
 /** Index of a segment inside the agent message snapshot (for in-place text streaming patches). */
 export const TRANSCRIPT_SEGMENT_INDEX_ATTR = 'data-transcript-segment-index';
 
+/** Stable id for incremental updates to a rendered tool pill. */
+export const TRANSCRIPT_TOOL_USE_ID_ATTR = 'data-transcript-tool-use-id';
+
 /** Marks the live “thinking/acting” placeholder row while the agent has not replied yet. */
 export const TRANSCRIPT_ACTIVITY_ROW_ATTR = 'data-transcript-activity-row';
 
 function segmentToolFingerprint(segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>): string {
     return `t:${segment.toolUseId}:${segment.finished ? '1' : '0'}:${segment.args?.length ?? 0}:${segment.result?.length ?? 0}:${segment.name}`;
+}
+
+function segmentContentFingerprint(segment: QaapAgentMessageSegmentDTO): string {
+    if (segment.type === 'tool') {
+        return segmentToolFingerprint(segment);
+    }
+    return `${segment.type}:${segment.content?.length ?? 0}:${segment.content ?? ''}`;
+}
+
+function segmentsExactlyEqual(
+    prev: QaapAgentMessageSegmentDTO,
+    next: QaapAgentMessageSegmentDTO,
+): boolean {
+    return segmentContentFingerprint(prev) === segmentContentFingerprint(next);
+}
+
+/** Tool segment grew (streaming result/args) or finished — safe to patch the existing pill. */
+export function canPatchToolSegmentGrowth(
+    prev: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+    next: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+): boolean {
+    if (prev.toolUseId !== next.toolUseId || prev.name !== next.name) {
+        return false;
+    }
+    if (prev.finished && !next.finished) {
+        return false;
+    }
+    const previousArgs = prev.args ?? '';
+    const incomingArgs = next.args ?? '';
+    if (incomingArgs !== previousArgs && !(incomingArgs.startsWith(previousArgs) && incomingArgs.length >= previousArgs.length)) {
+        return false;
+    }
+    const previousResult = prev.result ?? '';
+    const incomingResult = next.result ?? '';
+    if (incomingResult !== previousResult
+        && !(incomingResult.startsWith(previousResult) && incomingResult.length >= previousResult.length)) {
+        return false;
+    }
+    return segmentToolFingerprint(prev) !== segmentToolFingerprint(next);
 }
 
 /**
@@ -256,6 +298,64 @@ export function canStreamPatchStdoutAgentContentOnly(
     const previous = prev.content ?? '';
     const incoming = next.content ?? '';
     return incoming.startsWith(previous) && incoming.length > previous.length;
+}
+
+/**
+ * True when only tool segments changed in a patchable way (streaming result/args or finish),
+ * while text/thinking blocks stay byte-identical.
+ */
+export function canStreamPatchAgentToolsOnly(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    const prevSegments = prev.segments ?? [];
+    const nextSegments = next.segments ?? [];
+    if (prevSegments.length === 0 || prevSegments.length !== nextSegments.length) {
+        return false;
+    }
+    let sawToolPatch = false;
+    for (let i = 0; i < prevSegments.length; i++) {
+        const p = prevSegments[i];
+        const n = nextSegments[i];
+        if (p.type === 'tool' && n.type === 'tool') {
+            if (segmentToolFingerprint(p) === segmentToolFingerprint(n)) {
+                continue;
+            }
+            if (!canPatchToolSegmentGrowth(p, n)) {
+                return false;
+            }
+            sawToolPatch = true;
+            continue;
+        }
+        if (!segmentsExactlyEqual(p, n)) {
+            return false;
+        }
+    }
+    return sawToolPatch;
+}
+
+/** A new tool segment appeared at the tail — prior segments are unchanged. */
+export function canStreamPatchAgentAppendToolSegment(
+    prev: QaapAgentMessageDTO | undefined,
+    next: QaapAgentMessageDTO | undefined,
+): boolean {
+    if (!prev || !next || prev.id !== next.id) {
+        return false;
+    }
+    const prevSegments = prev.segments ?? [];
+    const nextSegments = next.segments ?? [];
+    if (nextSegments.length !== prevSegments.length + 1) {
+        return false;
+    }
+    for (let i = 0; i < prevSegments.length; i++) {
+        if (!segmentsExactlyEqual(prevSegments[i], nextSegments[i])) {
+            return false;
+        }
+    }
+    return nextSegments[nextSegments.length - 1]?.type === 'tool';
 }
 
 export function fingerprintAgentSegments(segments: readonly QaapAgentMessageSegmentDTO[]): string {

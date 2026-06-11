@@ -7,7 +7,10 @@ import { expect } from 'chai';
 import type { QaapAgentConversationDTO } from './qaap-agent-conversation-client';
 import {
     buildConversationTranscriptFingerprint,
+    canPatchToolSegmentGrowth,
+    canStreamPatchAgentAppendToolSegment,
     canStreamPatchAgentTextContentOnly,
+    canStreamPatchAgentToolsOnly,
     canStreamPatchStdoutAgentContentOnly,
     isStreamingTranscriptTailUnchanged,
     resolveStreamingTranscriptPatchKind,
@@ -284,5 +287,70 @@ describe('qaap-transcript-incremental-update', () => {
         const prevMsg = { id: 'a1', role: 'agent' as const, content: 'Hel', createdAt: 1 };
         const nextMsg = { id: 'a1', role: 'agent' as const, content: 'Hello', createdAt: 1 };
         expect(canStreamPatchStdoutAgentContentOnly(prevMsg, nextMsg)).to.equal(true);
+    });
+
+    it('canStreamPatchAgentToolsOnly allows streaming tool result growth', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{"cmd":"npm test"}', finished: false, result: 'line1' },
+            ],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{"cmd":"npm test"}', finished: false, result: 'line1\nline2' },
+            ],
+        };
+        expect(canStreamPatchAgentToolsOnly(prevMsg, nextMsg)).to.equal(true);
+        expect(canStreamPatchAgentTextContentOnly(prevMsg, nextMsg)).to.equal(false);
+    });
+
+    it('canStreamPatchAgentToolsOnly allows tool finish without text changes', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Read', args: '{}', finished: false, result: 'ok' },
+                { type: 'text' as const, content: 'Done' },
+            ],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'tool' as const, toolUseId: 't1', name: 'Read', args: '{}', finished: true, result: 'ok' },
+                { type: 'text' as const, content: 'Done' },
+            ],
+        };
+        expect(canStreamPatchAgentToolsOnly(prevMsg, nextMsg)).to.equal(true);
+    });
+
+    it('canStreamPatchAgentAppendToolSegment allows a new trailing tool', () => {
+        const prevMsg = {
+            id: 'a1',
+            role: 'agent' as const,
+            content: '',
+            createdAt: 1,
+            segments: [{ type: 'text' as const, content: 'Planning' }],
+        };
+        const nextMsg = {
+            ...prevMsg,
+            segments: [
+                { type: 'text' as const, content: 'Planning' },
+                { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false },
+            ],
+        };
+        expect(canStreamPatchAgentAppendToolSegment(prevMsg, nextMsg)).to.equal(true);
+    });
+
+    it('canPatchToolSegmentGrowth rejects tool id changes', () => {
+        const prev = { type: 'tool' as const, toolUseId: 't1', name: 'Bash', args: '{}', finished: false, result: 'a' };
+        const next = { type: 'tool' as const, toolUseId: 't2', name: 'Bash', args: '{}', finished: false, result: 'ab' };
+        expect(canPatchToolSegmentGrowth(prev, next)).to.equal(false);
     });
 });

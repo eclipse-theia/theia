@@ -10,7 +10,7 @@ import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-inter
 import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
 import { excerptTranscriptThought, extractInlineDiffPreview, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
-import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR } from '../common/qaap-transcript-incremental-update';
+import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesResolversUi } from './mobile-projects-transcript-messages-resolvers-ui';
 import type { MobileProjectsTranscriptMessagesToolUi } from './mobile-projects-transcript-messages-tool-ui';
@@ -135,6 +135,128 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         return true;
     }
 
+    /** In-place tool pill refresh — preserves expand state while result/args stream or finish. */
+    patchStreamingAgentToolSegments(
+        row: HTMLElement,
+        prevSegments: readonly QaapAgentMessageSegmentDTO[],
+        nextSegments: readonly QaapAgentMessageSegmentDTO[],
+        conv?: QaapAgentConversationDTO,
+    ): boolean {
+        let patched = false;
+        for (let segmentIndex = 0; segmentIndex < nextSegments.length; segmentIndex++) {
+            const previous = prevSegments[segmentIndex];
+            const next = nextSegments[segmentIndex];
+            if (next.type !== 'tool' || previous.type !== 'tool') {
+                continue;
+            }
+            if (previous.toolUseId !== next.toolUseId || previous.name !== next.name) {
+                return false;
+            }
+            const previousResult = previous.result ?? '';
+            const incomingResult = next.result ?? '';
+            const previousArgs = previous.args ?? '';
+            const incomingArgs = next.args ?? '';
+            const unchanged = previous.finished === next.finished
+                && previousResult === incomingResult
+                && previousArgs === incomingArgs;
+            if (unchanged) {
+                continue;
+            }
+            const pill = row.querySelector<HTMLDetailsElement>(
+                `[${TRANSCRIPT_TOOL_USE_ID_ATTR}="${CSS.escape(next.toolUseId)}"]`,
+            );
+            if (!pill) {
+                return false;
+            }
+            this.patchTranscriptToolPill(pill, next, conv);
+            patched = true;
+        }
+        return patched;
+    }
+
+    /** Append a new tool pill when a tool segment appears at the tail without rebuilding text blocks. */
+    appendStreamingAgentToolSegment(
+        row: HTMLElement,
+        nextSegments: readonly QaapAgentMessageSegmentDTO[],
+        conv?: QaapAgentConversationDTO,
+    ): boolean {
+        const segment = nextSegments[nextSegments.length - 1];
+        if (!segment || segment.type !== 'tool') {
+            return false;
+        }
+        const segmentsBody = row.querySelector('.theia-mobile-agent-transcript-segments');
+        if (!segmentsBody) {
+            return false;
+        }
+        let artifacts = segmentsBody.querySelector('.theia-mobile-agent-transcript-artifacts');
+        if (!artifacts) {
+            artifacts = document.createElement('div');
+            artifacts.className = 'theia-mobile-agent-transcript-artifacts';
+            segmentsBody.append(artifacts);
+        }
+        let strip = artifacts.querySelector('.theia-mobile-agent-tool-pills');
+        if (!strip) {
+            strip = document.createElement('div');
+            strip.className = 'theia-mobile-agent-tool-pills';
+            artifacts.prepend(strip);
+        }
+        if (strip.querySelector(`[${TRANSCRIPT_TOOL_USE_ID_ATTR}="${CSS.escape(segment.toolUseId)}"]`)) {
+            return false;
+        }
+        strip.append(this.createTranscriptToolPill(segment, conv));
+        return true;
+    }
+
+    patchTranscriptToolPill(
+        pill: HTMLDetailsElement,
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        conv?: QaapAgentConversationDTO,
+    ): void {
+        const manualApproval = !!conv && conversationUsesInteractiveApprovals(conv);
+        const descriptors = resolveTranscriptToolPillDescriptors([segment], {
+            resolvePath: args => this.resolversUi.extractTranscriptToolFullPath(args),
+        });
+        const descriptor = descriptors[0];
+        if (!descriptor) {
+            return;
+        }
+        const wasOpen = pill.open;
+        const wasFailed = pill.classList.contains('theia-mod-failed');
+        pill.className = `theia-mobile-agent-tool-pill theia-mod-${descriptor.kind}`;
+        pill.classList.toggle('theia-mod-running', !descriptor.finished);
+        pill.classList.toggle('theia-mod-done', descriptor.finished);
+        pill.classList.toggle('theia-mod-failed', descriptor.resultFailed);
+        const label = pill.querySelector('.theia-mobile-agent-tool-pill-label');
+        if (label) {
+            label.textContent = descriptor.label;
+        }
+        if (this.resolversUi.isTranscriptPureReadTool(segment.name)
+            && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, descriptor.kind)) {
+            pill.querySelector('.theia-mobile-agent-tool-pill-body')?.remove();
+            pill.open = wasOpen;
+            return;
+        }
+        let body = pill.querySelector('.theia-mobile-agent-tool-pill-body');
+        if (!body) {
+            body = document.createElement('div');
+            body.className = 'theia-mobile-agent-tool-pill-body';
+            pill.append(body);
+        }
+        body.replaceChildren();
+        if (manualApproval && isPendingTranscriptToolSegment(segment)) {
+            body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
+        }
+        body.append(this.toolUi.createTranscriptToolResultBody(segment, descriptor.kind));
+        if (descriptor.resultFailed && !wasFailed) {
+            pill.open = shouldOpenTranscriptToolDetails({
+                finished: descriptor.finished,
+                resultFailed: descriptor.resultFailed,
+            });
+        } else {
+            pill.open = wasOpen;
+        }
+    }
+
     createTranscriptThoughtBriefBlock(segments: QaapAgentMessageSegmentDTO[]): HTMLElement | undefined {
         const thinking = resolveTranscriptThinkingContent(segments);
         const stats = resolveTranscriptActivityStats(segments);
@@ -186,7 +308,6 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         segments: QaapAgentMessageSegmentDTO[],
         conv?: QaapAgentConversationDTO,
     ): HTMLElement | undefined {
-        const manualApproval = !!conv && conversationUsesInteractiveApprovals(conv);
         const toolSegments = segments.filter((segment): segment is Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> =>
             segment.type === 'tool',
         );
@@ -205,39 +326,53 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             if (segment?.type !== 'tool') {
                 continue;
             }
-            const pill = document.createElement('details');
-            pill.className = `theia-mobile-agent-tool-pill theia-mod-${descriptor.kind}`;
-            pill.classList.toggle('theia-mod-running', !descriptor.finished);
-            pill.classList.toggle('theia-mod-done', descriptor.finished);
-            pill.classList.toggle('theia-mod-failed', descriptor.resultFailed);
-            pill.open = shouldOpenTranscriptToolDetails({
-                finished: descriptor.finished,
-                resultFailed: descriptor.resultFailed,
-            });
-            const summary = document.createElement('summary');
-            summary.className = 'theia-mobile-agent-tool-pill-summary';
-            const icon = document.createElement('span');
-            icon.className = `codicon ${this.toolUi.transcriptToolIconClass(descriptor.kind)} theia-mobile-agent-tool-pill-icon`;
-            icon.setAttribute('aria-hidden', 'true');
-            const label = document.createElement('span');
-            label.className = 'theia-mobile-agent-tool-pill-label';
-            label.textContent = descriptor.label;
-            summary.append(icon, label);
-            pill.append(summary);
-            if (this.resolversUi.isTranscriptPureReadTool(segment.name) && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, descriptor.kind)) {
-                strip.append(pill);
-                continue;
-            }
-            const body = document.createElement('div');
-            body.className = 'theia-mobile-agent-tool-pill-body';
-            if (manualApproval && isPendingTranscriptToolSegment(segment)) {
-                body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
-            }
-            body.append(this.toolUi.createTranscriptToolResultBody(segment, descriptor.kind));
-            pill.append(body);
-            strip.append(pill);
+            strip.append(this.createTranscriptToolPill(segment, conv));
         }
         return strip.childElementCount > 0 ? strip : undefined;
+    }
+
+    createTranscriptToolPill(
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+        conv?: QaapAgentConversationDTO,
+    ): HTMLDetailsElement {
+        const manualApproval = !!conv && conversationUsesInteractiveApprovals(conv);
+        const descriptors = resolveTranscriptToolPillDescriptors([segment], {
+            resolvePath: args => this.resolversUi.extractTranscriptToolFullPath(args),
+        });
+        const descriptor = descriptors[0];
+        const kind = descriptor?.kind ?? this.resolversUi.resolveTranscriptToolKind(segment.name);
+        const pill = document.createElement('details');
+        pill.className = `theia-mobile-agent-tool-pill theia-mod-${kind}`;
+        pill.setAttribute(TRANSCRIPT_TOOL_USE_ID_ATTR, segment.toolUseId);
+        pill.classList.toggle('theia-mod-running', !(descriptor?.finished ?? segment.finished));
+        pill.classList.toggle('theia-mod-done', descriptor?.finished ?? segment.finished);
+        pill.classList.toggle('theia-mod-failed', descriptor?.resultFailed ?? false);
+        pill.open = shouldOpenTranscriptToolDetails({
+            finished: descriptor?.finished ?? segment.finished,
+            resultFailed: descriptor?.resultFailed ?? false,
+        });
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-tool-pill-summary';
+        const icon = document.createElement('span');
+        icon.className = `codicon ${this.toolUi.transcriptToolIconClass(kind)} theia-mobile-agent-tool-pill-icon`;
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-tool-pill-label';
+        label.textContent = descriptor?.label ?? segment.name;
+        summary.append(icon, label);
+        pill.append(summary);
+        if (this.resolversUi.isTranscriptPureReadTool(segment.name)
+            && !this.resolversUi.shouldShowTranscriptToolResultBody(segment, kind)) {
+            return pill;
+        }
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-tool-pill-body';
+        if (manualApproval && isPendingTranscriptToolSegment(segment)) {
+            body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
+        }
+        body.append(this.toolUi.createTranscriptToolResultBody(segment, kind));
+        pill.append(body);
+        return pill;
     }
 
     createTranscriptToolApprovalActions(
