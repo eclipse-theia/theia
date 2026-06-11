@@ -406,7 +406,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
                 activeServers: ['running-autostart', 'oauth-in-flight', 'local-starting'],
                 prevServers: [
                     { name: 'running-autostart', command: 'node', autostart: true },
-                    { name: 'oauth-in-flight', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } },
+                    { name: 'oauth-in-flight', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} },
                     { name: 'local-starting', command: 'node', autostart: false }
                 ],
                 onStop: name => stopped.push(name)
@@ -521,7 +521,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             const prompts: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
-                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} }
                 ],
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: () => false,
@@ -551,7 +551,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             const cancelled: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
-                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} }
                 ],
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: () => false,
@@ -581,7 +581,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             const cancelled: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
-                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} }
                 ],
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: () => false,
@@ -603,7 +603,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             const started: string[] = [];
             const contribution = createContribution({
                 prevServers: [
-                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} }
                 ],
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: name => name === 'oauth-server',
@@ -625,7 +625,7 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             const prompts: ProgressMessage[] = [];
             const contribution = createContribution({
                 prevServers: [
-                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: { enabled: true } }
+                    { name: 'oauth-server', serverUrl: 'https://mcp.example.com/mcp', autostart: true, oauth: {} }
                 ],
                 blockedServers: ['oauth-server'],
                 hasStoredOAuthCredentials: name => name === 'oauth-server',

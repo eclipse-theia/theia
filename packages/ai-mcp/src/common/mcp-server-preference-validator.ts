@@ -37,13 +37,20 @@ interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
     oauth?: MCPOAuthConfig;
 }
 
-type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
+export type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
 
 export interface MCPServersPreference {
     [name: string]: MCPServersPreferenceValue
 }
 
-function isValue(obj: unknown): obj is MCPServersPreferenceValue {
+export namespace MCPServersPreference {
+    /** Type guard for a single MCP servers preference entry; shares the OAuth-aware validation rules. */
+    export function isValue(obj: unknown): obj is MCPServersPreferenceValue {
+        return isPreferenceValue(obj);
+    }
+}
+
+function isPreferenceValue(obj: unknown): obj is MCPServersPreferenceValue {
     if (!obj || typeof obj !== 'object') {
         return false;
     }
@@ -56,7 +63,7 @@ function isValue(obj: unknown): obj is MCPServersPreferenceValue {
     if (isLocal && 'oauth' in candidate && !isAbsentOAuth(candidate.oauth)) {
         return false;
     }
-    if (isRemote && isOAuthConfig(candidate.oauth) && candidate.oauth.enabled && !!candidate.serverAuthToken) {
+    if (isRemote && !isAbsentOAuth(candidate.oauth) && !!candidate.serverAuthToken) {
         return false;
     }
     return (!('command' in candidate) || typeof candidate.command === 'string') &&
@@ -71,7 +78,7 @@ function isValue(obj: unknown): obj is MCPServersPreferenceValue {
             && Object.values(candidate.headers).every(value => typeof value === 'string')) &&
         (!('oauth' in candidate) || isAbsentOAuth(candidate.oauth) || isOAuthConfig(candidate.oauth)) &&
         (!('registryMetadata' in candidate) || isRegistryMetadata(candidate.registryMetadata));
-        }
+}
 
 function isAbsentOAuth(obj: unknown): boolean {
     // User-authored JSON can contain an explicit null; treat it like an absent OAuth field.
@@ -81,19 +88,18 @@ function isAbsentOAuth(obj: unknown): boolean {
 
 function isOAuthConfig(obj: unknown): obj is MCPOAuthConfig {
     return !!obj && typeof obj === 'object' &&
-        (!('enabled' in obj) || typeof obj.enabled === 'boolean') &&
         (!('clientId' in obj) || typeof obj.clientId === 'string') &&
         (!('scopes' in obj) || Array.isArray(obj.scopes) && obj.scopes.every(scope => typeof scope === 'string')) &&
         (!('authorizationServer' in obj) || typeof obj.authorizationServer === 'string' && isHttpOrHttpsUrl(obj.authorizationServer)) &&
         (!('resource' in obj) || typeof obj.resource === 'string' && isHttpOrHttpsUrl(obj.resource));
-        }
+}
 
-        function isRegistryMetadata(obj: unknown): obj is MCPRegistryMetadata {
-        return !!obj && typeof obj === 'object'
+function isRegistryMetadata(obj: unknown): obj is MCPRegistryMetadata {
+    return !!obj && typeof obj === 'object'
         && 'serverId' in obj && typeof obj.serverId === 'string'
         && (!('version' in obj) || typeof obj.version === 'string')
         && (!('configHash' in obj) || typeof obj.configHash === 'string');
-        }
+}
 
 /**
  * Returns `true` if `value` parses as a URL with an http(s) scheme.
@@ -127,8 +133,7 @@ function describeInvalidReason(value: unknown): string | undefined {
     if (isLocal && 'oauth' in candidate && !isAbsentOAuth(candidate.oauth)) {
         return 'OAuth is only valid for remote MCP servers.';
     }
-    if (isRemote && !!candidate.serverAuthToken
-        && isOAuthConfig(candidate.oauth) && candidate.oauth.enabled) {
+    if (isRemote && !!candidate.serverAuthToken && !isAbsentOAuth(candidate.oauth)) {
         return 'Configure either a static serverAuthToken or OAuth, not both.';
     }
     const fieldMismatch = describeFieldMismatch(candidate);
@@ -174,7 +179,7 @@ function describeFieldMismatch(candidate: Record<string, unknown>): string | und
         return 'Field "registryMetadata" must be an object with a string "serverId".';
     }
     return undefined;
-    }
+}
 
 /** Diagnostic-only helper for {@link describeFieldMismatch}; do not surface to end users without localizing. */
 function describeOAuthFieldMismatch(value: unknown): string | undefined {
@@ -199,7 +204,7 @@ export function filterValidValues(servers: unknown): MCPServersPreference {
         return result;
     }
     for (const [name, value] of Object.entries(servers)) {
-        if (isValue(value)) {
+        if (isPreferenceValue(value)) {
             result[name] = value;
         } else {
             const reason = describeInvalidReason(value);

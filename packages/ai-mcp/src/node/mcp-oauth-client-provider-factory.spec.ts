@@ -18,46 +18,44 @@ import { expect } from 'chai';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
 import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
 import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
 
 const FRONTEND_CALLBACK_URL = 'http://frontend.example/mcp/oauth/callback';
-const LOOPBACK_CALLBACK_URL = 'http://127.0.0.1:28932/mcp/oauth/callback';
+const EFFECTIVE_REDIRECT_URL = 'http://127.0.0.1:28932/mcp/oauth/callback';
 
-function createFactory(callbackEndpoint?: MCPOAuthCallbackEndpoint): { factory: MCPOAuthClientProviderFactory, calls: { frontend: number } } {
-    const calls = { frontend: 0 };
+function createFactory(): { factory: MCPOAuthClientProviderFactory, calls: { redirect: number } } {
+    const calls = { redirect: 0 };
     const factory = new MCPOAuthClientProviderFactory();
     (factory as unknown as { keyStore: KeyStoreService }).keyStore = {} as KeyStoreService;
     (factory as unknown as { callbackService: MCPOAuthCallbackService }).callbackService =
         { createState: () => 'state' } as unknown as MCPOAuthCallbackService;
     (factory as unknown as { frontendDelegate: MCPOAuthFrontendDelegate }).frontendDelegate = {
         openExternal: async () => undefined,
-        getCallbackUrl: async () => { calls.frontend++; return FRONTEND_CALLBACK_URL; },
+        getCallbackUrl: async () => FRONTEND_CALLBACK_URL,
+        getEffectiveRedirectUrl: async () => { calls.redirect++; return EFFECTIVE_REDIRECT_URL; },
         setClient: () => undefined,
         disconnectClient: () => undefined
     };
-    (factory as unknown as { callbackEndpoint?: MCPOAuthCallbackEndpoint }).callbackEndpoint = callbackEndpoint;
     return { factory, calls };
 }
 
 describe('MCPOAuthClientProviderFactory', () => {
 
-    it('advertises the loopback redirect URL when an MCPOAuthCallbackEndpoint is bound (Electron)', async () => {
-        const { factory, calls } = createFactory({ getRedirectUrl: async () => LOOPBACK_CALLBACK_URL });
+    it("advertises the frontend delegate's effective redirect URL", async () => {
+        const { factory, calls } = createFactory();
 
         const provider = await factory.create('srv', 'https://mcp.example.com/mcp', {}, { interactive: false });
 
-        expect(provider.redirectUrl).to.equal(LOOPBACK_CALLBACK_URL);
-        // The endpoint takes precedence; the connection-scoped frontend delegate is not consulted.
-        expect(calls.frontend).to.equal(0);
+        expect(provider.redirectUrl).to.equal(EFFECTIVE_REDIRECT_URL);
+        expect(calls.redirect).to.equal(1);
     });
 
-    it('falls back to the frontend delegate callback URL when no endpoint is bound (browser/hosted)', async () => {
-        const { factory, calls } = createFactory(undefined);
+    it('caches the redirect URL across provider creations on the same connection', async () => {
+        const { factory, calls } = createFactory();
 
-        const provider = await factory.create('srv', 'https://mcp.example.com/mcp', {}, { interactive: false });
+        await factory.create('srv', 'https://mcp.example.com/mcp', {}, { interactive: false });
+        await factory.create('other', 'https://mcp.example.com/mcp', {}, { interactive: false });
 
-        expect(provider.redirectUrl).to.equal(FRONTEND_CALLBACK_URL);
-        expect(calls.frontend).to.equal(1);
+        expect(calls.redirect).to.equal(1);
     });
 });

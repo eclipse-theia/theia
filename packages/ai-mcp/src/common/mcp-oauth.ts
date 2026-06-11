@@ -17,7 +17,6 @@
 export const MCP_OAUTH_CALLBACK_PATH = '/mcp/oauth/callback';
 
 export interface MCPOAuthConfig {
-    enabled?: boolean;
     clientId?: string;
     /**
      * Optional client secret for authorization servers that require a pre-registered confidential
@@ -54,6 +53,12 @@ export const MCPOAuthFrontendDelegate = Symbol('MCPOAuthFrontendDelegate');
 export interface MCPOAuthFrontendDelegate extends Pick<MCPOAuthFrontendDelegateClient, 'openExternal' | 'getCallbackUrl'> {
     setClient(client: MCPOAuthFrontendDelegateClient): void;
     disconnectClient(client: MCPOAuthFrontendDelegateClient): void;
+    /**
+     * The OAuth redirect URL actually advertised to authorization servers: the Electron loopback
+     * callback URL when the loopback endpoint is bound, otherwise the frontend's origin-based
+     * callback URL. Lets UI surfaces show users which redirect URI to register with a provider.
+     */
+    getEffectiveRedirectUrl(): Promise<string>;
 }
 
 export const mcpOAuthFrontendDelegatePath = '/services/mcpOAuthFrontendDelegate';

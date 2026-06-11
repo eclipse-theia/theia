@@ -62,12 +62,11 @@ Example configuration:\n\
   "oauth-protected-server": {\n\
     "serverUrl": "YOUR_OAUTH_PROTECTED_MCP_SERVER_URL",\n\
     "oauth": {\n\
-      "enabled": true,\n\
       "clientId": "OPTIONAL_CLIENT_ID",\n\
       "scopes": ["OPTIONAL_SCOPE"]\n\
     }\n\
   }\n\
-}\n```'),
+  }\n```'),
             additionalProperties: {
                 type: 'object',
                 properties: {
@@ -129,17 +128,12 @@ Example configuration:\n\
                         type: 'object',
                         title: nls.localize('theia/ai/mcp/servers/oauth/title', 'OAuth'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/mdDescription',
-                            'Optional OAuth 2.1 configuration for remote MCP servers that require authorization. Theia uses public clients with PKCE by default; ' +
+                            'Optional OAuth 2.1 configuration for remote MCP servers that require authorization. ' +
+                            'The presence of this object enables OAuth for the server; remove it to disable OAuth. ' +
+                            'Theia uses public clients with PKCE by default; ' +
                             'configure a client secret only for servers that require a pre-registered confidential client. ' +
                             'Changes take effect after restarting the MCP server.'),
                         properties: {
-                            enabled: {
-                                type: 'boolean',
-                                title: nls.localize('theia/ai/mcp/servers/oauth/enabled/title', 'Enable OAuth'),
-                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/enabled/mdDescription',
-                                    'Enable OAuth authorization for this MCP server.'),
-                                default: false
-                            },
                             clientId: {
                                 type: 'string',
                                 title: nls.localize('theia/ai/mcp/servers/oauth/clientId/title', 'Client ID'),

@@ -208,7 +208,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             isInFlight: () => false,
             stop: async () => { calls.push('stop'); },
             getCachedDescription: () => ({
-                name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true, clientId: 'old', scopes: ['old'] }
+                name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { clientId: 'old', scopes: ['old'] }
             }),
             update: () => { calls.push('update'); },
             setWorkspaceRoots: () => { },
@@ -222,7 +222,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         };
 
         await manager.addOrUpdateServer({
-            name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true, clientId: 'new', scopes: ['new'] }
+            name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { clientId: 'new', scopes: ['new'] }
         });
 
         expect(calls).to.deep.equal(['clear', 'update']);
@@ -237,7 +237,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             isInFlight: () => false,
             stop: async () => { calls.push('stop'); },
             getCachedDescription: () => ({
-                name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true, clientId: 'old', scopes: ['old'] }
+                name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { clientId: 'old', scopes: ['old'] }
             }),
             update: () => { calls.push('update'); },
             setWorkspaceRoots: () => { },
@@ -251,7 +251,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         };
 
         await manager.addOrUpdateServer({
-            name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true, clientId: 'new', scopes: ['new'] }
+            name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { clientId: 'new', scopes: ['new'] }
         });
 
         expect(calls).to.deep.equal(['stop', 'clear', 'update']);
@@ -265,7 +265,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             isStopped: () => false,
             isInFlight: () => false,
             stop: async () => { calls.push('stop'); },
-            getCachedDescription: () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } }),
+            getCachedDescription: () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {} }),
             update: () => { calls.push('update'); },
             setWorkspaceRoots: () => { },
             onDidUpdateStatus: () => ({ dispose: () => { } })
@@ -288,12 +288,12 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         const initialDescription = {
             name: 'asana',
             serverUrl: 'https://mcp.example.com/mcp',
-            oauth: { enabled: true, clientId: 'old', scopes: ['old'] },
+            oauth: { clientId: 'old', scopes: ['old'] },
             // resolve mixed in by getDescription path; the rewrite changes the credential scope.
             resolve: async () => ({
                 name: 'asana',
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: true, clientId: 'new', scopes: ['new'] }
+                oauth: { clientId: 'new', scopes: ['new'] }
             })
         };
         const server = {
@@ -323,7 +323,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         const sameConfiguration = {
             name: 'asana',
             serverUrl: 'https://mcp.example.com/mcp',
-            oauth: { enabled: true, clientId: 'static' }
+            oauth: { clientId: 'static' }
         };
         const server = {
             isRunning: () => false,
@@ -366,10 +366,10 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
                 name: 'asana',
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: true,
-                oauth: { enabled: true, clientId: 'static' },
+                oauth: { clientId: 'static', scopes: ['mcp.read'] },
                 resolve: async () => ({
                     // Same fields, different insertion order. JSON.stringify would compare unequal.
-                    oauth: { clientId: 'static', enabled: true },
+                    oauth: { scopes: ['mcp.read'], clientId: 'static' },
                     autostart: true,
                     serverUrl: 'https://mcp.example.com/mcp',
                     name: 'asana'
@@ -389,11 +389,9 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         expect(calls).to.deep.equal(['start']);
     });
 
-    it('does not restart a running server when toggling oauth.enabled=false through the dialog (key dropped vs. retained)', async () => {
-        // connectionDescription must normalize { oauth: { enabled: false, ... } } and a missing oauth key as
-        // equivalent. Without this normalization, the dialog (which drops the oauth key entirely when the
-        // checkbox is off) would compare unequal to a JSON edit that left `{ oauth: { enabled: false } }`
-        // in place, triggering a needless restart for a no-op configuration change.
+    it('does not restart a running server when an update leaves the oauth configuration unchanged', async () => {
+        // `connectionDescription` projects the oauth object by presence: an identical oauth block must
+        // compare equal so a no-op preference write does not bounce the connection.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
         const server = {
@@ -404,7 +402,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             getCachedDescription: () => ({
                 name: 'asana',
                 serverUrl: 'https://mcp.example.com/mcp',
-                oauth: { enabled: false, clientId: 'leftover' }
+                oauth: { clientId: 'static' }
             }),
             update: () => { calls.push('update'); },
             setWorkspaceRoots: () => { },
@@ -417,10 +415,37 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             clear: async () => { calls.push('clear'); }
         };
 
-        // Dialog edit: oauthEnabled was already false, dialog drops the oauth key entirely.
-        await manager.addOrUpdateServer({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp' });
+        // Only the non-connection `autostart` field changes; the oauth block is identical.
+        await manager.addOrUpdateServer({
+            name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { clientId: 'static' }, autostart: false
+        });
 
         expect(calls).to.deep.equal(['update']);
+    });
+
+    it('restarts a running server when an oauth block is added (presence enables OAuth)', async () => {
+        const calls: string[] = [];
+        const manager = new MCPServerManagerImpl();
+        const server = {
+            isRunning: () => true,
+            isStopped: () => false,
+            isInFlight: () => false,
+            stop: async () => { calls.push('stop'); },
+            getCachedDescription: () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp' }),
+            update: () => { calls.push('update'); },
+            setWorkspaceRoots: () => { },
+            onDidUpdateStatus: () => ({ dispose: () => { } })
+        };
+        (manager as unknown as { servers: Map<string, MCPServer> }).servers = new Map([
+            ['asana', server as unknown as MCPServer]
+        ]);
+        (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = {
+            clear: async () => { calls.push('clear'); }
+        };
+
+        await manager.addOrUpdateServer({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {} });
+
+        expect(calls).to.deep.equal(['stop', 'update']);
     });
 
     it('stops an in-flight server (AuthenticationRequired) before applying a connection-affecting update', async () => {
@@ -433,7 +458,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
             isStopped: () => false,
             isInFlight: () => true,
             stop: async () => { calls.push('stop'); },
-            getCachedDescription: () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } }),
+            getCachedDescription: () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {} }),
             update: () => { calls.push('update'); },
             setWorkspaceRoots: () => { },
             onDidUpdateStatus: () => ({ dispose: () => { } })
@@ -448,7 +473,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // The user changes serverUrl while mid sign-in. The connection projection differs (the URL
         // changed), so stop must run before update. cancel of the in-flight OAuth is now MCPServer.stop()'s
         // responsibility, observed at the unit level via authProvider.cancel() in the MCPServer spec.
-        await manager.addOrUpdateServer({ name: 'asana', serverUrl: 'https://mcp.example.com/other', oauth: { enabled: true } });
+        await manager.addOrUpdateServer({ name: 'asana', serverUrl: 'https://mcp.example.com/other', oauth: {} });
 
         expect(calls).to.deep.equal(['stop', 'clear', 'update']);
     });

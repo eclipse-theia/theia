@@ -23,7 +23,7 @@ import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { MCPServerManager } from '../common/mcp-server-manager';
+import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import type { MCPFrontendServiceImpl } from './mcp-frontend-service';
 const MCPFrontendServiceImplConstructor: new () => MCPFrontendServiceImpl = require('./mcp-frontend-service').MCPFrontendServiceImpl;
 
@@ -76,7 +76,7 @@ describe('MCPFrontendServiceImpl', () => {
         (service as unknown as { promptService: PromptService }).promptService = promptService as unknown as PromptService;
         (service as unknown as { mcpServerManager: Partial<MCPServerManager> }).mcpServerManager = {
             startServer: async () => { },
-            getServerDescription: async () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true } }),
+            getServerDescription: async () => ({ name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {} }),
             hasStoredOAuthCredentials: async () => false,
             getTools: async () => ({
                 tools: [{
@@ -126,7 +126,7 @@ describe('MCPFrontendServiceImpl', () => {
                     captures.startServerCalls.push({ name, options: opts });
                 },
                 getServerDescription: async () => ({
-                    name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: { enabled: true }
+                    name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {}
                 }),
                 getTools: async () => ({ tools: [] })
             };
@@ -169,6 +169,81 @@ describe('MCPFrontendServiceImpl', () => {
             expect(captures.startServerCalls).to.deep.equal([]);
             expect(errorMessages).to.have.length(1);
             expect(errorMessages[0]).to.contain('trusted workspace');
+        });
+    });
+
+    describe('signIn', () => {
+        const OAUTH_DESCRIPTION: MCPServerDescription = { name: 'asana', serverUrl: 'https://mcp.example.com/mcp', oauth: {} };
+
+        function buildSignInService(options: {
+            description?: MCPServerDescription,
+            afterStartStatus?: MCPServerStatus,
+            workspaceTrusted?: boolean,
+            errorMessages?: string[]
+        }): { target: MCPFrontendServiceImpl, calls: string[] } {
+            const calls: string[] = [];
+            const target = new MCPFrontendServiceImplConstructor();
+            (target as unknown as { toolInvocationRegistry: ToolInvocationRegistry }).toolInvocationRegistry = toolRegistry as unknown as ToolInvocationRegistry;
+            (target as unknown as { promptService: PromptService }).promptService = promptService as unknown as PromptService;
+            let started = false;
+            (target as unknown as { mcpServerManager: Partial<MCPServerManager> }).mcpServerManager = {
+                stopServer: async (name: string) => { calls.push(`stop:${name}`); },
+                startServer: async (name: string, opts?: { interactive?: boolean }) => {
+                    started = true;
+                    calls.push(`start:${name}:${String(!!opts?.interactive)}`);
+                },
+                getServerDescription: async () => started && options.description
+                    ? { ...options.description, status: options.afterStartStatus }
+                    : options.description
+            };
+            (target as unknown as { workspaceTrustService: Partial<WorkspaceTrustService> }).workspaceTrustService = {
+                getWorkspaceTrust: async () => options.workspaceTrusted ?? true
+            };
+            (target as unknown as { messageService: MessageService }).messageService = {
+                error: ((message: string) => { options.errorMessages?.push(String(message)); return Promise.resolve(); })
+            } as unknown as MessageService;
+            return { target, calls };
+        }
+
+        it('returns false without touching the server when the server is not OAuth-enabled', async () => {
+            const { target, calls } = buildSignInService({
+                description: { name: 'asana', serverUrl: 'https://mcp.example.com/mcp' }
+            });
+
+            expect(await target.signIn('asana')).to.be.false;
+            expect(calls).to.deep.equal([]);
+        });
+
+        it('returns false and surfaces an error toast when the workspace is untrusted', async () => {
+            const errorMessages: string[] = [];
+            const { target, calls } = buildSignInService({
+                description: OAUTH_DESCRIPTION, workspaceTrusted: false, errorMessages
+            });
+
+            expect(await target.signIn('asana')).to.be.false;
+            expect(calls).to.deep.equal([]);
+            expect(errorMessages).to.have.length(1);
+            expect(errorMessages[0]).to.contain('trusted workspace');
+        });
+
+        it('stops, starts interactively, and stops again when the sign-in connects', async () => {
+            // The leading stop cancels a stale in-flight authorization; the trailing stop leaves the
+            // server offline (sign-in only stores tokens, it must not leave the server running).
+            const { target, calls } = buildSignInService({
+                description: OAUTH_DESCRIPTION, afterStartStatus: MCPServerStatus.Connected
+            });
+
+            expect(await target.signIn('asana')).to.be.true;
+            expect(calls).to.deep.equal(['stop:asana', 'start:asana:true', 'stop:asana']);
+        });
+
+        it('returns false without a trailing stop when the sign-in does not connect', async () => {
+            const { target, calls } = buildSignInService({
+                description: OAUTH_DESCRIPTION, afterStartStatus: MCPServerStatus.AuthenticationRequired
+            });
+
+            expect(await target.signIn('asana')).to.be.false;
+            expect(calls).to.deep.equal(['stop:asana', 'start:asana:true']);
         });
     });
 });

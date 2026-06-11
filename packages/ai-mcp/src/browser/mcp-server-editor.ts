@@ -218,10 +218,16 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         const serverConfig = formData.serverType === 'local'
             ? this.toLocalConfig(formData)
             : this.toRemoteConfig(formData);
+        const merged: Record<string, unknown> = { ...existing, ...serverConfig };
+        // Preserving extra fields must not retain keys of another server type (e.g. a leftover
+        // `oauth` block after switching to "Remote"), which would make the stored entry invalid.
+        for (const staleKey of STALE_KEYS_BY_SERVER_TYPE[formData.serverType]) {
+            delete merged[staleKey];
+        }
         try {
             await this.preferenceService.set(
                 MCP_SERVERS_PREF,
-                { ...currentServers, [serverName]: { ...existing, ...serverConfig } },
+                { ...currentServers, [serverName]: merged },
                 PreferenceScope.User
             );
         } catch (error) {
@@ -252,7 +258,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         if (isRemoteMCPServerDescription(server)) {
             return {
                 name: server.name,
-                serverType: server.oauth?.enabled ? 'remote-oauth' : 'remote',
+                serverType: server.oauth ? 'remote-oauth' : 'remote',
                 command: '',
                 args: '',
                 env: '',
@@ -313,6 +319,12 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     }
 }
 
+const STALE_KEYS_BY_SERVER_TYPE: Record<MCPServerFormData['serverType'], readonly string[]> = {
+    'local': ['serverUrl', 'serverAuthToken', 'serverAuthTokenHeader', 'headers', 'oauth'],
+    'remote': ['command', 'args', 'env', 'oauth'],
+    'remote-oauth': ['command', 'args', 'env', 'serverAuthToken', 'serverAuthTokenHeader']
+};
+
 function parseKeyValuePairs(input: string): Record<string, string> | undefined {
     if (!input.trim()) {
         return undefined;
@@ -337,7 +349,6 @@ function toOAuthConfig(formData: MCPServerFormData): MCPOAuthConfig | undefined 
     }
     const scopes = formData.oauthScopes.trim() ? formData.oauthScopes.trim().split(/\s+/) : undefined;
     return {
-        enabled: true,
         ...(formData.oauthClientId.trim() && { clientId: formData.oauthClientId.trim() }),
         ...(formData.oauthClientSecret.trim() && { clientSecret: formData.oauthClientSecret.trim() }),
         ...(scopes && { scopes }),

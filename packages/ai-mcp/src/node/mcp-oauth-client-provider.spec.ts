@@ -70,6 +70,10 @@ class TestFrontendDelegate implements MCPOAuthFrontendDelegate {
     async getCallbackUrl(): Promise<string> {
         return 'http://localhost/mcp/oauth/callback';
     }
+
+    async getEffectiveRedirectUrl(): Promise<string> {
+        return this.getCallbackUrl();
+    }
 }
 
 const TEST_SERVER_URL = 'https://mcp.example.com/mcp';
@@ -102,7 +106,7 @@ describe('MCPOAuthClientProvider', () => {
         callbackService = new MCPOAuthCallbackService();
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, scopes: ['mcp.read'] },
+            config: { scopes: ['mcp.read'] },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -206,13 +210,13 @@ describe('MCPOAuthClientProvider', () => {
         await keyStore.setPassword('theia-ai-mcp-oauth', TEST_TOKEN_ACCOUNT,
             JSON.stringify({ access_token: 'stale', token_type: 'Bearer' }));
 
-        expect(await store.hasTokens('test server', TEST_SERVER_URL, { enabled: true })).to.be.false;
+        expect(await store.hasTokens('test server', TEST_SERVER_URL, {})).to.be.false;
     });
 
     it('uses configured static client information', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, clientId: 'client' },
+            config: { clientId: 'client' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -230,7 +234,7 @@ describe('MCPOAuthClientProvider', () => {
         // the SDK keys its token-endpoint auth method off client_secret presence in clientInformation().
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, clientId: 'client', clientSecret: 'secret' },
+            config: { clientId: 'client', clientSecret: 'secret' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -246,7 +250,7 @@ describe('MCPOAuthClientProvider', () => {
     it('does not store dynamic client information for static client configuration', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, clientId: 'client' },
+            config: { clientId: 'client' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -301,7 +305,7 @@ describe('MCPOAuthClientProvider', () => {
     it('scopes stored tokens by server URL', async () => {
         const otherProvider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true },
+            config: {},
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: 'https://other.example.com/mcp',
@@ -322,7 +326,7 @@ describe('MCPOAuthClientProvider', () => {
         await keyStore.setPassword('theia-ai-mcp-oauth', TEST_TOKEN_ACCOUNT,
             JSON.stringify({ access_token: 'access', token_type: 'Bearer', expires_in: 3600 }));
 
-        expect(await store.hasTokens('test server', TEST_SERVER_URL, { enabled: true })).to.be.false;
+        expect(await store.hasTokens('test server', TEST_SERVER_URL, {})).to.be.false;
     });
 
     it('treats unexpired access tokens as usable for non-interactive starts', async () => {
@@ -332,7 +336,7 @@ describe('MCPOAuthClientProvider', () => {
             access_token: 'access', token_type: 'Bearer', expires_in: 3600, saved_at: Date.now()
         }));
 
-        expect(await store.hasTokens('test server', TEST_SERVER_URL, { enabled: true })).to.be.true;
+        expect(await store.hasTokens('test server', TEST_SERVER_URL, {})).to.be.true;
     });
 
     it('treats expired access tokens without refresh token as not usable for non-interactive starts', async () => {
@@ -342,7 +346,7 @@ describe('MCPOAuthClientProvider', () => {
             access_token: 'access', token_type: 'Bearer', expires_in: 3600, saved_at: Date.now() - 7200 * 1000
         }));
 
-        expect(await store.hasTokens('test server', TEST_SERVER_URL, { enabled: true })).to.be.false;
+        expect(await store.hasTokens('test server', TEST_SERVER_URL, {})).to.be.false;
     });
 
     it('treats refreshable tokens as usable for non-interactive starts', async () => {
@@ -351,7 +355,7 @@ describe('MCPOAuthClientProvider', () => {
         await keyStore.setPassword('theia-ai-mcp-oauth', TEST_TOKEN_ACCOUNT,
             JSON.stringify({ access_token: 'access', token_type: 'Bearer', refresh_token: 'refresh' }));
 
-        expect(await store.hasTokens('test server', TEST_SERVER_URL, { enabled: true })).to.be.true;
+        expect(await store.hasTokens('test server', TEST_SERVER_URL, {})).to.be.true;
     });
 
     it('opens authorization URL externally', async () => {
@@ -422,7 +426,7 @@ describe('MCPOAuthClientProvider', () => {
     it('returns undefined discovery state for authorization server override without stored discovery', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, authorizationServer: 'https://auth.example.com' },
+            config: { authorizationServer: 'https://auth.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -438,7 +442,7 @@ describe('MCPOAuthClientProvider', () => {
     it('rejects discovery state when authorization server override does not match', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, authorizationServer: 'https://auth.example.com' },
+            config: { authorizationServer: 'https://auth.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -462,7 +466,7 @@ describe('MCPOAuthClientProvider', () => {
         await provider.saveDiscoveryState({ authorizationServerUrl: 'https://auth.example.com' });
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, authorizationServer: 'https://auth.example.com' },
+            config: { authorizationServer: 'https://auth.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -479,7 +483,7 @@ describe('MCPOAuthClientProvider', () => {
         await provider.saveDiscoveryState({ authorizationServerUrl: 'https://old.example.com' });
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, authorizationServer: 'https://auth.example.com' },
+            config: { authorizationServer: 'https://auth.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -508,7 +512,7 @@ describe('MCPOAuthClientProvider', () => {
     it('accepts compatible configured resources', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, resource: 'https://mcp.example.com' },
+            config: { resource: 'https://mcp.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -526,7 +530,7 @@ describe('MCPOAuthClientProvider', () => {
     it('rejects incompatible configured resources', async () => {
         provider = new MCPOAuthClientProvider({
             serverName: 'test server',
-            config: { enabled: true, resource: 'https://other.example.com' },
+            config: { resource: 'https://other.example.com' },
             callbackUrl: 'http://localhost/mcp/oauth/callback',
             stateValue: 'state-1',
             credentialScope: TEST_SERVER_URL,
@@ -561,7 +565,7 @@ describe('MCPOAuthClientProvider', () => {
 
     it('factory returns the same active state for repeated state calls in one authorization round', async () => {
         const factory = newFactory(keyStore, frontendDelegate, callbackService);
-        const createdProvider = await factory.create('test server', 'https://mcp.example.com/mcp', { enabled: true }, { interactive: true });
+        const createdProvider = await factory.create('test server', 'https://mcp.example.com/mcp', {}, { interactive: true });
 
         expect(createdProvider.state()).to.equal(createdProvider.state());
     });
@@ -572,9 +576,9 @@ describe('MCPOAuthClientProvider', () => {
         // the same keystore, so clear() removes its tokens but does not touch the callback service.
         const factory = newFactory(keyStore, frontendDelegate, callbackService);
         const store = newCredentialStore(keyStore);
-        const createdProvider = await factory.create('test server', 'https://mcp.example.com/mcp', { enabled: true }, { interactive: true });
+        const createdProvider = await factory.create('test server', 'https://mcp.example.com/mcp', {}, { interactive: true });
         await createdProvider.saveTokens({ access_token: 'access', token_type: 'Bearer' });
-        const otherProvider = await factory.create('other server', 'https://mcp.example.com/mcp', { enabled: true }, { interactive: true });
+        const otherProvider = await factory.create('other server', 'https://mcp.example.com/mcp', {}, { interactive: true });
         await otherProvider.saveTokens({ access_token: 'other-access', token_type: 'Bearer' });
 
         await store.clear('test server');
