@@ -33,6 +33,16 @@ describe('qaap-agent-approval-flags', () => {
         expect(command).not.to.include('acceptEdits');
     });
 
+    it('approve-for-me strips template acceptEdits before injecting allowed-tools', () => {
+        const command = applyAgentApprovalPolicyToCommand(
+            "qaiq --permission-mode acceptEdits --print -p 'hi'",
+            { agentId: 'qaiq', approvalPolicyId: 'approve-for-me', autoApprove: true },
+        );
+        expect(command).to.include('--permission-mode default');
+        expect(command).to.include('--allowed-tools');
+        expect(command).not.to.include('acceptEdits');
+    });
+
     it('approve-for-me uses acceptEdits for Claude instead of full skip', () => {
         const command = applyAgentApprovalPolicyToCommand(
             "claude --print -p 'hi'",

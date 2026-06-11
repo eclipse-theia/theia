@@ -10,6 +10,7 @@ export type QaapQaiqControlAutoAction = 'allow' | 'deny' | 'queue';
 
 const NETWORK_TOOL_NAMES = new Set(['WebSearch', 'WebFetch', 'Fetch']);
 const SHELL_TOOL_NAMES = new Set(['Bash', 'Shell', 'ShellCommand', 'run_terminal_cmd']);
+const SUBAGENT_TOOL_NAMES = new Set(['Agent', 'Task']);
 
 function parseAllowedTools(command: string): Set<string> | undefined {
     const match = /--allowed-tools\s+([^\s-][^\s]*)/.exec(command);
@@ -25,6 +26,10 @@ function isNetworkTool(toolName: string): boolean {
 
 function isShellTool(toolName: string): boolean {
     return SHELL_TOOL_NAMES.has(toolName.trim());
+}
+
+function isSubagentTool(toolName: string): boolean {
+    return SUBAGENT_TOOL_NAMES.has(toolName.trim());
 }
 
 /**
@@ -53,7 +58,7 @@ export function resolveQaiqControlRequestAutoAction(
     if (allowedTools) {
         return allowedTools.has(toolName) ? 'allow' : 'deny';
     }
-    if (isNetworkTool(toolName) || isShellTool(toolName)) {
+    if (isNetworkTool(toolName) || isShellTool(toolName) || isSubagentTool(toolName)) {
         return 'deny';
     }
     return 'allow';

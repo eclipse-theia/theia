@@ -86,6 +86,7 @@ import {
     agentTurnHasRetryableEmptyOutput,
     resolveNextFallbackAgentModel,
 } from '../common/qaap-agent-model-fallback';
+import { finalizeUnfinishedAgentToolSegments } from '../common/qaap-agent-transcript-segment-finalize';
 
 const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-conversations');
 const STREAMING_PERSIST_DEBOUNCE_MS = 500;
@@ -830,7 +831,10 @@ export class QaapAgentConversationStore {
             contextWindowSize: usageFinalized.contextWindowSize,
         };
         if (task.state === 'cancelled') {
-            const next: QaapAgentConversation = { ...withUsageBaseline, status: 'idle', updatedAt: Date.now() };
+            const cancelledReason = 'Turn cancelled.';
+            const finalized = this.finalizeStreamingAgentMessage(withUsageBaseline, agentMessageId, cancelledReason);
+            const next: QaapAgentConversation = { ...finalized, status: 'idle', updatedAt: Date.now() };
+            this.publishFinalizedAgentMessage(conversationId, next, agentMessageId);
             this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, next);
             return;
         }
@@ -858,7 +862,9 @@ export class QaapAgentConversationStore {
             const withReply = failureBody && !agentMessageId
                 ? this.appendAgentReply(errored, failureBody)
                 : errored;
-            this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, withReply);
+            const finalized = this.finalizeStreamingAgentMessage(withReply, agentMessageId, reason);
+            this.publishFinalizedAgentMessage(conversationId, finalized, agentMessageId);
+            this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, finalized);
             return;
         }
         let withReply: QaapAgentConversation;
@@ -1039,6 +1045,47 @@ export class QaapAgentConversationStore {
     protected markUserMessageFailed(conv: QaapAgentConversation, messageId: string, reason: string): QaapAgentConversation {
         const messages = conv.messages.map(m => m.id === messageId ? { ...m, error: reason } : m);
         return { ...conv, status: 'failed', updatedAt: Date.now(), messages };
+    }
+
+    protected finalizeStreamingAgentMessage(
+        conv: QaapAgentConversation,
+        agentMessageId: string | undefined,
+        interruptionReason: string,
+    ): QaapAgentConversation {
+        if (!agentMessageId) {
+            return conv;
+        }
+        const messages = conv.messages.map(message => {
+            if (message.id !== agentMessageId || message.role !== 'agent') {
+                return message;
+            }
+            const hadUnfinishedTool = message.segments?.some(
+                segment => segment.type === 'tool' && !segment.finished,
+            );
+            if (!hadUnfinishedTool) {
+                return message;
+            }
+            return {
+                ...message,
+                segments: finalizeUnfinishedAgentToolSegments(message.segments, interruptionReason),
+            };
+        });
+        return { ...conv, messages };
+    }
+
+    protected publishFinalizedAgentMessage(
+        conversationId: string,
+        conv: QaapAgentConversation,
+        agentMessageId: string | undefined,
+    ): void {
+        if (!agentMessageId) {
+            return;
+        }
+        const agentMessage = conv.messages.find(message => message.id === agentMessageId);
+        if (agentMessage) {
+            this.fireAgentMessageWireUpdate(conversationId, conv.cwd, conv.agentId, agentMessage, { forceFullMessage: true });
+            this.lastWireMessageById.delete(agentMessage.id);
+        }
     }
 
     /** Agent for the current user turn: `@mention` in this message beats the picker, then stored agent. */

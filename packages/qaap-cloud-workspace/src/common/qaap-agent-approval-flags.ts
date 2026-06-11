@@ -103,7 +103,7 @@ function applyQaiqApprovalFlags(
     policyId: QaapAgentApprovalPolicyId,
     rules: QaapAgentToolApprovalRules | undefined,
 ): string {
-    const withoutLegacy = stripFlagToken(command, '--dangerously-skip-permissions');
+    const withoutLegacy = stripQaiqPermissionFlags(command);
     if (policyId === 'approve-for-me' && rules) {
         const flags = formatQaiqApproveForMeFlags(rules);
         return injectAfterPattern(withoutLegacy, /\b(qaiq|openclaude)\b/, flags);
@@ -207,6 +207,15 @@ function stripClaudeApprovalFlags(command: string): string {
         /--permission-mode\s+(?:default|acceptEdits|bypassPermissions|plan|dontAsk)\b/g,
         /--allowed-tools\s+[^\s]+(?:\s+[^\s-][^\s]*)*/g,
         /--disallowed-tools\s+[^\s]+(?:\s+[^\s-][^\s]*)*/g,
+    ]);
+}
+
+function stripQaiqPermissionFlags(command: string): string {
+    return stripFlagTokens(command, [
+        '--dangerously-skip-permissions',
+        /--permission-mode\s+(?:default|acceptEdits|bypassPermissions|plan|dontAsk)\b/g,
+        /--allowed-tools\s+[^\s-][^\s]*/g,
+        /--disallowed-tools\s+[^\s-][^\s]*/g,
     ]);
 }
 

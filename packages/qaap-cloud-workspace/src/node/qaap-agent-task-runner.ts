@@ -828,7 +828,9 @@ export class QaapAgentTaskRunner {
         let command: string;
         const interaction: QaapQaiqInteractionFlagOptions = {
             interactionModeId,
-            approvalPolicyId: approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
+            approvalPolicyId: approvalPolicyId === 'approve-for-me'
+                ? undefined
+                : approvalPolicyId as QaapAgentApprovalPolicyId | undefined,
             autoApprove: autoApprove ? true : false,
         };
         const approvalOptions = {

@@ -36,4 +36,11 @@ describe('qaap-qaiq-control-auto-response', () => {
             toolName: 'WebSearch',
         })).to.equal('allow');
     });
+
+    it('denies Agent subagents under approve-for-me allowed-tools', () => {
+        expect(resolveQaiqControlRequestAutoAction(approveForMeCommand, true, {
+            requestId: 'req-1',
+            toolName: 'Agent',
+        })).to.equal('deny');
+    });
 });
