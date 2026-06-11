@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import type { QaapAgentMessageDTO } from './qaap-agent-conversation-client';
 import {
     agentMessageDeliversTaskOutcome,
+    agentMessageHasOpenTodos,
     buildAgentAutoContinuePrompt,
     isActionableAgentTaskMessage,
     isIncompleteAgentTurn,
@@ -108,6 +109,92 @@ describe('qaap-agent-turn-completion', () => {
 
     it('buildAgentAutoContinuePrompt nudges tool use', () => {
         expect(buildAgentAutoContinuePrompt()).to.include('Read');
+        expect(buildAgentAutoContinuePrompt()).to.include('remaining todo');
         expect(buildAgentAutoContinuePrompt(RUN_APP_PROMPT)).to.include('package.json');
+    });
+
+    it('agentMessageHasOpenTodos reads the latest TodoWrite checklist', () => {
+        const agent: QaapAgentMessageDTO = {
+            id: 'a1',
+            role: 'agent',
+            content: '',
+            createdAt: 2,
+            segments: [
+                {
+                    type: 'tool',
+                    toolUseId: 't1',
+                    name: 'TodoWrite',
+                    args: JSON.stringify({
+                        todos: [
+                            { content: 'Find component', status: 'completed' },
+                            { content: 'Add tests', status: 'pending' },
+                        ],
+                    }),
+                    finished: true,
+                },
+            ],
+        };
+        expect(agentMessageHasOpenTodos(agent)).to.equal(true);
+        expect(agentMessageHasOpenTodos({
+            ...agent,
+            segments: [{
+                type: 'tool',
+                toolUseId: 't2',
+                name: 'TodoWrite',
+                args: JSON.stringify({
+                    todos: [
+                        { content: 'Find component', status: 'completed' },
+                        { content: 'Add tests', status: 'completed' },
+                    ],
+                }),
+                finished: true,
+            }],
+        })).to.equal(false);
+    });
+
+    it('isIncompleteAgentTurn detects partial todo progress with edits', () => {
+        const agent: QaapAgentMessageDTO = {
+            id: 'a1',
+            role: 'agent',
+            content: 'Created one test file.',
+            createdAt: 2,
+            segments: [
+                {
+                    type: 'tool',
+                    toolUseId: 't1',
+                    name: 'TodoWrite',
+                    args: JSON.stringify({
+                        todos: [
+                            { content: 'Locate MovieTimeline.tsx', status: 'completed' },
+                            { content: 'Add unit tests', status: 'completed' },
+                            { content: 'Add integration tests', status: 'pending' },
+                            { content: 'Run test suite', status: 'pending' },
+                        ],
+                    }),
+                    finished: true,
+                },
+                {
+                    type: 'tool',
+                    toolUseId: 't2',
+                    name: 'Grep',
+                    args: '{"pattern":"MovieTimeline"}',
+                    finished: true,
+                },
+                {
+                    type: 'tool',
+                    toolUseId: 't3',
+                    name: 'Write',
+                    args: '{"path":"MovieTimeline.spec.ts"}',
+                    finished: true,
+                },
+                {
+                    type: 'text',
+                    content: 'Created one test file.',
+                },
+            ],
+        };
+        const prompt = 'Implement tests for MovieTimeline and run the suite.';
+        expect(agentMessageDeliversTaskOutcome(prompt, agent)).to.equal(false);
+        expect(isIncompleteAgentTurn(prompt, agent)).to.equal(true);
     });
 });
