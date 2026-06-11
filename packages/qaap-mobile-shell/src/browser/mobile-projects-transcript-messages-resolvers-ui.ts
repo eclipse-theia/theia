@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { extractToolArgFilePath } from '../common/qaap-agent-conversation-list-metrics';
 import { formatToolActivityLabel, parseDiffStatsFromText } from '../common/qaap-agent-conversation-list-metrics';
 import { shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegment } from '../common/qaap-agent-transcript-segments';
 import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
@@ -243,19 +244,7 @@ export class MobileProjectsTranscriptMessagesResolversUi {
 
 
     extractTranscriptToolFullPath(argsJson: string): string | undefined {
-        try {
-            const args = JSON.parse(argsJson) as Record<string, unknown>;
-            const path = typeof args.path === 'string'
-                ? args.path
-                : typeof args.file_path === 'string'
-                    ? args.file_path
-                    : typeof args.filename === 'string'
-                        ? args.filename
-                        : undefined;
-            return path?.trim() || undefined;
-        } catch {
-            return undefined;
-        }
+        return extractToolArgFilePath(argsJson);
     }
 
 

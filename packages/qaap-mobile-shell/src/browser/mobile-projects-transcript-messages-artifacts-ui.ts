@@ -7,7 +7,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { approveAgentRequest, rejectAgentRequest } from '../common/qaap-agent-approval-client';
 import { type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
-import { formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
+import { formatReadToolDetailFromArgs, formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
 import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, isTranscriptTodoTool, parseTranscriptTodoChecklist, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
 import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
@@ -525,6 +525,12 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
         kind: string,
     ): ReturnType<typeof resolveTranscriptToolRowParts> {
+        if (this.resolversUi.isTranscriptPureReadTool(segment.name)) {
+            const readDetail = formatReadToolDetailFromArgs(segment.args);
+            if (readDetail) {
+                return { verb: 'Read', detail: readDetail };
+            }
+        }
         return resolveTranscriptToolRowParts(kind, segment.name, {
             path: this.resolversUi.extractTranscriptToolFullPath(segment.args),
             command: this.resolversUi.extractTranscriptToolCommand(segment.args),
