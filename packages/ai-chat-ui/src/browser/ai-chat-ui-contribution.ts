@@ -15,15 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import {
+    CommandRegistry, Disposable, Emitter, Event, isOSX, MessageService, nls, PreferenceService,
+    QuickInputButton, QuickInputService, QuickPickItem
+} from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { ConfirmDialog, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, FrontendApplicationContribution, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { Command } from '@theia/core/lib/common';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -56,6 +60,18 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly messageService: MessageService;
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    /**
+     * Context key set to true while the chat view widget is the active widget in the shell.
+     * Broader than `chatInputFocus`/`chatResponseFocus` (which require DOM focus on a specific
+     * sub-widget): clicks on non-focusable parts of the chat view still flip this key, so chat
+     * view keybindings remain available.
+     */
+    protected chatViewActiveKey: ContextKey<boolean>;
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
     @inject(AIActivationService)
@@ -71,6 +87,23 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
      */
     protected hasPersistedSessions = false;
 
+    /**
+     * Tracks whether the currently active session is empty (= the home / overview is shown).
+     * Used to hide toolbar items that only make sense within an open chat (Back to Chats,
+     * lock/unlock auto-scroll, Summarize Current Session, ...).
+     */
+    protected activeSessionEmpty = true;
+    /** Model listener for the active session; disposed and re-bound on active-session changes. */
+    protected activeSessionModelListener: Disposable | undefined;
+    protected readonly onActiveSessionEmptyChangedEmitter = new Emitter<void>();
+    /** Fires when {@link isActiveSessionEmpty} flips. Consumed by toolbar items that hide on the overview. */
+    readonly onActiveSessionEmptyChanged: Event<void> = this.onActiveSessionEmptyChangedEmitter.event;
+
+    /** True when the chat view currently displays the home/overview (the active session has no requests). */
+    get isActiveSessionEmpty(): boolean {
+        return this.activeSessionEmpty;
+    }
+
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
         tooltip: nls.localizeByDefault('Rename Chat'),
@@ -79,9 +112,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
-
-    @inject(AIChatNavigationService)
-    protected readonly navigationService: AIChatNavigationService;
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
@@ -108,6 +138,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             if (event.focus) {
                 this.openView({ activate: true });
             }
+            this.attachToActiveSession();
         });
 
         // Re-check persisted sessions when storage preferences change
@@ -118,6 +149,44 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
 
         this.checkPersistedSessions();
+        this.attachToActiveSession();
+
+        this.chatViewActiveKey = this.contextKeyService.createKey<boolean>('chatViewActive', false);
+        this.updateChatViewActiveKey();
+        this.shell.onDidChangeActiveWidget(() => this.updateChatViewActiveKey());
+        this.shell.onDidChangeCurrentWidget(() => this.updateChatViewActiveKey());
+    }
+
+    protected updateChatViewActiveKey(): void {
+        const active = this.shell.activeWidget instanceof ChatViewWidget
+            || this.shell.currentWidget instanceof ChatViewWidget;
+        this.chatViewActiveKey.set(active);
+    }
+
+    /**
+     * (Re-)attach a model listener to the currently active session so the Back to Chats
+     * toolbar item can react when the user submits the first message and the welcome view
+     * is replaced by the chat tree.
+     */
+    protected attachToActiveSession(): void {
+        this.activeSessionModelListener?.dispose();
+        this.activeSessionModelListener = undefined;
+        const session = this.chatService.getActiveSession();
+        if (!session) {
+            this.setActiveSessionEmpty(true);
+            return;
+        }
+        this.setActiveSessionEmpty(session.model.isEmpty());
+        this.activeSessionModelListener = session.model.onDidChange(() => {
+            this.setActiveSessionEmpty(session.model.isEmpty());
+        });
+    }
+
+    protected setActiveSessionEmpty(empty: boolean): void {
+        if (this.activeSessionEmpty !== empty) {
+            this.activeSessionEmpty = empty;
+            this.onActiveSessionEmptyChangedEmitter.fire();
+        }
     }
 
     async initializeLayout(): Promise<void> {
@@ -243,16 +312,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isVisible: () => this.activationService.isActive,
             isEnabled: () => this.activationService.canRun
         });
-        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
-            execute: () => this.navigationService.back(),
-            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoBack),
-            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
-        });
-        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_FORWARD, {
-            execute: () => this.navigationService.forward(),
-            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoForward),
-            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
-        });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
             isVisible: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -296,37 +355,51 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
     }
 
-    registerToolbarItems(registry: TabBarToolbarRegistry): void {
-        const navigationChangedEmitter = new Emitter<void>();
-        this.navigationService.onDidChange(() => navigationChangedEmitter.fire());
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
+        super.registerKeybindings(keybindings);
+        // Scoped to chat view active so we don't shadow global bindings (e.g. ctrl+shift+l =
+        // "Select All Occurrences" in editors). We use chatViewActive in addition to the more
+        // specific input/response focus keys so clicks on non-focusable parts of the chat view
+        // (e.g. plain markdown text in a response) don't silently disable the keybindings.
+        // Avoid plain Ctrl+L: Monaco binds it to "Expand Line Selection" inside the chat input
+        // (a Monaco editor) and wins when the input has focus.
+        const chatScope = '(chatInputFocus || chatResponseFocus || chatViewActive)';
+        keybindings.registerKeybinding({
+            command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
+            keybinding: 'ctrlcmd+shift+l',
+            when: chatScope
+        });
+    }
 
-        registry.registerItem({
-            id: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
-            command: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
-            tooltip: nls.localize('theia/ai-chat-ui/navigate-back', 'Navigate Back'),
-            onDidChange: navigationChangedEmitter.event,
-            priority: 0,
-            when: ENABLE_AI_CONTEXT_KEY
-        });
-        registry.registerItem({
-            id: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
-            command: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
-            tooltip: nls.localize('theia/ai-chat-ui/navigate-forward', 'Navigate Forward'),
-            onDidChange: navigationChangedEmitter.event,
-            priority: 0,
-            when: ENABLE_AI_CONTEXT_KEY
-        });
+    /**
+     * Returns the command label suffixed with its primary keybinding (if any), e.g.
+     * "Go Back (Ctrl+L)". Used to surface keyboard shortcuts in toolbar tooltips.
+     */
+    protected tooltipWithKeybinding(command: Command): string {
+        const label = command.label ?? command.id;
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
+        if (bindings.length === 0) {
+            return label;
+        }
+        const accelerator = this.keybindingRegistry.acceleratorFor(bindings[0], '+').join(' ');
+        return accelerator ? `${label} (${accelerator})` : label;
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.label,
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget),
+            tooltip: this.tooltipWithKeybinding(AI_CHAT_NEW_CHAT_WINDOW_COMMAND),
+            onDidChange: this.onActiveSessionEmptyChangedEmitter.event,
+            // Hide on the overview itself (the active session is empty); only show when there
+            // is an actual chat to return from.
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget) && !this.activeSessionEmpty,
             when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: AI_CHAT_SHOW_CHATS_COMMAND.label,
+            tooltip: this.tooltipWithKeybinding(AI_CHAT_SHOW_CHATS_COMMAND),
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });

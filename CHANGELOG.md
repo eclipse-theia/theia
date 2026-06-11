@@ -7,10 +7,12 @@
 ## 1.73.0 - tbd
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-chat-ui] replaced the back/forward navigation stack with a single Go Back button in the chat view header (hidden on the overview); added `Ctrl/Cmd+Shift+L` to trigger it
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
+- [ai-chat-ui] removed `AIChatNavigationService` along with the `ai-chat-ui.navigate-back` and `ai-chat-ui.navigate-forward` commands; the chat view header now shows a single Go Back button (`ai-chat-ui.new-chat`, label changed from "New Chat" to "Go Back", icon changed from `add` to `arrow-left`)
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
