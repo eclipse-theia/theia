@@ -15507,6 +15507,22 @@ body > .theia-mobile-transcript-files-menu {
   display: contents;
 }
 
+.theia-mobile-agent-transcript-content.theia-mod-streaming-hybrid .theia-transcript-stream-plain-preview {
+  font-family: var(--theia-code-font-family, ui-monospace, monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.theia-mobile-agent-transcript-content.theia-mod-streaming-hybrid.theia-mod-markdown .theia-transcript-stream-plain-preview {
+  margin-top: 0;
+}
+
+.theia-mobile-agent-transcript-content.theia-mod-streaming-hybrid .theia-transcript-stream-plain-preview[hidden] {
+  display: none;
+}
+
 .theia-mobile-agent-transcript-content.theia-mod-markdown {
   white-space: normal;
   overflow-x: auto;
