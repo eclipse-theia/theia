@@ -32,9 +32,13 @@ export const QAAP_AGENT_TASK_API_PATH = '/qaap/api/agent-tasks';
 export const SHELL_AGENT_ID = 'shell';
 export const THEIA_CODER_AGENT_ID = 'Coder';
 export const QAIQ_AGENT_ID = 'qaiq';
+export const OPENCODE_AGENT_ID = 'opencode';
 
-/** Primary VPS agent for the Qaap product (composer default, new sessions). */
+/** Legacy product default — still used for QAIQ-specific parsing and explicit QAIQ pins. */
 export const QAAP_PRIMARY_AGENT_ID = QAIQ_AGENT_ID;
+
+/** Composer / Work Hub default when no per-project agent is stored. */
+export const QAAP_COMPOSER_DEFAULT_AGENT_ID = OPENCODE_AGENT_ID;
 
 /** UI/storage id before the QAIQ rename; still accepted when resolving selection. */
 export const LEGACY_OPENCLAUDE_AGENT_ID = 'openclaude';
@@ -216,12 +220,15 @@ export function reconcileSelectedAgent(
     if (stored && ids.has(stored)) {
         return stored;
     }
-    if (!normalizedCurrent && !stored && ids.has(QAAP_PRIMARY_AGENT_ID)) {
-        return QAAP_PRIMARY_AGENT_ID;
+    if (!normalizedCurrent && !stored && ids.has(QAAP_COMPOSER_DEFAULT_AGENT_ID)) {
+        return QAAP_COMPOSER_DEFAULT_AGENT_ID;
     }
     const normalizedDefault = migrateQaapProductAgentId(defaultAgent);
     if (normalizedDefault && ids.has(normalizedDefault)) {
         return normalizedDefault;
+    }
+    if (ids.has(QAAP_COMPOSER_DEFAULT_AGENT_ID)) {
+        return QAAP_COMPOSER_DEFAULT_AGENT_ID;
     }
     if (ids.has(QAAP_PRIMARY_AGENT_ID)) {
         return QAAP_PRIMARY_AGENT_ID;
@@ -255,7 +262,7 @@ export function filterQaapComposerAgents(
 
 /**
  * Sticky/transcript composer agent picker — honors the current/stored choice, then defaults to
- * {@link QAAP_PRIMARY_AGENT_ID} when available.
+ * {@link QAAP_COMPOSER_DEFAULT_AGENT_ID} when available.
  */
 export function reconcileStickyComposerAgent(
     current: string | undefined,

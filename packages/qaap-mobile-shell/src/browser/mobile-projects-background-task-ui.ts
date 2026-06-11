@@ -20,7 +20,7 @@ import {
     fetchAgentTaskListAll,
     isTheiaCoderAgent,
     isTheiaCoderMention,
-    QAAP_PRIMARY_AGENT_ID,
+    QAAP_COMPOSER_DEFAULT_AGENT_ID,
     readStoredAgent,
     resolveBackendAgentForTurn,
     resolveStoredAgentModelForSubmit,
@@ -138,7 +138,7 @@ export class MobileProjectsBackgroundTaskUi {
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
         },
     ): Promise<QaapAgentConversationSummaryDTO> {
-        const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId ?? QAAP_PRIMARY_AGENT_ID);
+        const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId ?? QAAP_COMPOSER_DEFAULT_AGENT_ID);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
         const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
         const approvalPolicyId = options.approvalPolicyId
