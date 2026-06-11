@@ -45,16 +45,23 @@ export class QaapAgentApprovalStore {
                     continue;
                 }
                 const taskId = this.conversationStore.getActiveTaskIdForConversation(conv.id);
-                for (const item of extractPendingToolApprovals(conv, taskId)) {
-                    byId.set(item.id, item);
+                // Only advertise approvals the running process can actually answer:
+                // QAIQ stdio tasks pause on explicit control requests; legacy stdin
+                // tasks accept y/n lines for segment- or log-detected prompts; tasks
+                // without an interactive stdin have nothing to approve.
+                const channel = taskId ? this.taskRunner.getApprovalChannel(taskId) : 'none';
+                if (channel === 'stdin') {
+                    for (const item of extractPendingToolApprovals(conv, taskId)) {
+                        byId.set(item.id, item);
+                    }
                 }
-                if (taskId) {
+                if (taskId && channel === 'qaiq-stdio') {
                     for (const pending of this.taskRunner.listPendingQaiqControlRequests(taskId)) {
                         const item = buildControlRequestApproval(conv, taskId, pending);
                         byId.set(item.id, item);
                     }
                 }
-                if (taskId) {
+                if (taskId && channel === 'stdin') {
                     const detail = await this.taskRunner.detail(taskId);
                     const prompt = extractPendingPromptApproval(conv, taskId, detail?.log);
                     if (prompt && !byId.has(prompt.id)) {

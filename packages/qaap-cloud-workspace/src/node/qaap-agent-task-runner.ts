@@ -1096,6 +1096,25 @@ export class QaapAgentTaskRunner {
     }
 
     /**
+     * How a running task can receive approval answers:
+     * `'qaiq-stdio'` — QAIQ control protocol (only pending `can_use_tool` requests are answerable),
+     * `'stdin'` — legacy interactive stdin (`y`/`n` lines),
+     * `'none'` — no channel; approval prompts cannot be delivered to this process.
+     */
+    getApprovalChannel(taskId: string): 'qaiq-stdio' | 'stdin' | 'none' {
+        if (!this.processes.get(taskId)?.stdin) {
+            return 'none';
+        }
+        if (this.qaiqStdioTasks.has(taskId)) {
+            return 'qaiq-stdio';
+        }
+        if (this.stdinInteractiveTasks.has(taskId)) {
+            return 'stdin';
+        }
+        return 'none';
+    }
+
+    /**
      * Best-effort reply to a CLI permission prompt for a manual-approval task.
      *
      * QAIQ stdio-approval runs answer the matching `can_use_tool` control request

@@ -10,6 +10,7 @@ import {
     type QaapAgentConversationDTO,
     type QaapAgentConversationSummaryDTO,
     type QaapAgentMessageDTO,
+    type QaapAgentMessageSegmentDTO,
 } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import {
@@ -26,7 +27,8 @@ import {
     canApplySseMessageDelta,
     shouldSkipStreamingTranscriptRefetch,
 } from '../common/qaap-transcript-sse-delta';
-import { isPendingTranscriptToolSegment, resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
+import { findTranscriptToolApproval, isPendingTranscriptToolSegment, resolveTranscriptInlineApproval } from '../common/qaap-transcript-approval-inline';
+import { TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
 import {
     clearTranscriptPendingApprovalBar,
     mountTranscriptPendingApprovalBar,
@@ -49,6 +51,7 @@ import {
     buildConversationTranscriptFingerprint,
     mergeConversationTranscriptFingerprint,
     shouldForceTranscriptRenderOnStatusSettle,
+    TRANSCRIPT_TOOL_USE_ID_ATTR,
 } from '../common/qaap-transcript-incremental-update';
 import { warmAgentTurnPath } from '../common/qaap-agent-turn-warm';
 import { isTranscriptDocumentVisible } from '../common/qaap-transcript-document-visibility';
@@ -688,6 +691,11 @@ export class MobileProjectsTranscriptLiveUi {
         this.syncTranscriptPendingApproval(conv);
     }
 
+    /** Whether the backend reports a real, answerable approval for this tool call. */
+    hasPendingTranscriptToolApproval(conversationId: string, toolUseId: string): boolean {
+        return !!findTranscriptToolApproval(this.host.cachedAgentApprovals, conversationId, toolUseId);
+    }
+
     syncTranscriptPendingApproval(conv: QaapAgentConversationDTO): void {
         const chatHost = this.resolveActiveTranscriptChatHost();
         if (chatHost) {
@@ -700,42 +708,93 @@ export class MobileProjectsTranscriptLiveUi {
             }
             return;
         }
+        if (chatHost) {
+            this.reconcileTranscriptInlineToolApprovalCards(chatHost, conv);
+        }
         const pending = resolveTranscriptInlineApproval(this.host.cachedAgentApprovals, conv.id);
         const showPending = !!pending
             && !(pending.kind === 'tool'
                 && pending.toolUseId
-                && this.hasVisiblePendingToolSegment(conv, pending.toolUseId));
+                && this.hasInlineToolApprovalCard(chatHost, pending.toolUseId));
         const pendingId = showPending ? pending!.id : undefined;
         if (pendingId === this.lastMountedApprovalId) {
             return;
         }
         this.lastMountedApprovalId = pendingId;
+        const respond = (action: typeof approveAgentRequest): void => {
+            if (!pending) {
+                return;
+            }
+            void action(pending.id).then(result => {
+                if (!result.ok && result.error) {
+                    MobileSnackbar.show(result.error, { kind: 'warning', duration: 3200 });
+                }
+                this.stopTranscriptApprovalRefresh();
+                void this.refreshTranscriptApprovals();
+                this.ensureTranscriptConversationRefresh();
+            });
+        };
         mountTranscriptPendingApprovalBar(
             this.host.transcriptComposerHost,
             showPending ? pending : undefined,
             {
-                onApprove: () => {
-                    if (!pending) {
-                        return;
-                    }
-                    void approveAgentRequest(pending.id).then(() => {
-                        this.stopTranscriptApprovalRefresh();
-                        void this.refreshTranscriptApprovals();
-                        this.ensureTranscriptConversationRefresh();
-                    });
-                },
-                onReject: () => {
-                    if (!pending) {
-                        return;
-                    }
-                    void rejectAgentRequest(pending.id).then(() => {
-                        this.stopTranscriptApprovalRefresh();
-                        void this.refreshTranscriptApprovals();
-                        this.ensureTranscriptConversationRefresh();
-                    });
-                },
+                onApprove: () => respond(approveAgentRequest),
+                onReject: () => respond(rejectAgentRequest),
             },
         );
+    }
+
+    /**
+     * Keep the per-pill "Allow <tool>?" cards in sync with the approvals the backend
+     * actually reported: mount a card on the matching pill when a real approval is
+     * pending and drop cards whose approval was answered or never existed. Without
+     * this, every still-running tool segment looked like a permission prompt.
+     */
+    protected reconcileTranscriptInlineToolApprovalCards(chatHost: HTMLElement, conv: QaapAgentConversationDTO): void {
+        const pills = chatHost.querySelectorAll<HTMLDetailsElement>(`details[${TRANSCRIPT_TOOL_USE_ID_ATTR}]`);
+        pills.forEach(pill => {
+            const toolUseId = pill.getAttribute(TRANSCRIPT_TOOL_USE_ID_ATTR);
+            if (!toolUseId) {
+                return;
+            }
+            const segment = this.findTranscriptToolSegment(conv, toolUseId);
+            const shouldShow = !!segment
+                && isPendingTranscriptToolSegment(segment)
+                && this.hasPendingTranscriptToolApproval(conv.id, toolUseId);
+            const card = pill.querySelector(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}`);
+            if (shouldShow && !card && segment) {
+                let body = pill.querySelector<HTMLElement>('.theia-mobile-agent-tool-pill-body');
+                if (!body) {
+                    body = document.createElement('div');
+                    body.className = 'theia-mobile-agent-tool-pill-body';
+                    pill.append(body);
+                }
+                body.prepend(this.host.transcriptMessagesUi.createTranscriptToolApprovalActions(conv.id, segment));
+                pill.open = true;
+            } else if (!shouldShow && card) {
+                card.remove();
+            }
+        });
+    }
+
+    protected hasInlineToolApprovalCard(chatHost: HTMLElement | undefined, toolUseId: string): boolean {
+        return !!chatHost?.querySelector(
+            `details[${TRANSCRIPT_TOOL_USE_ID_ATTR}="${CSS.escape(toolUseId)}"] .${TRANSCRIPT_APPROVAL_CARD_CLASS}`,
+        );
+    }
+
+    protected findTranscriptToolSegment(
+        conv: QaapAgentConversationDTO,
+        toolUseId: string,
+    ): Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> | undefined {
+        for (let i = conv.messages.length - 1; i >= 0; i--) {
+            for (const segment of conv.messages[i].segments ?? []) {
+                if (segment.type === 'tool' && segment.toolUseId === toolUseId) {
+                    return segment;
+                }
+            }
+        }
+        return undefined;
     }
 
     stopTranscriptPreviewOfferRefresh(): void {
@@ -826,15 +885,6 @@ export class MobileProjectsTranscriptLiveUi {
 
     renderTranscriptInlinePreviewOffer(_host: HTMLElement, _previewUrl: string): void {
         /* Preview opens in the Preview tab via refreshTranscriptPreviewOffer. */
-    }
-
-    protected hasVisiblePendingToolSegment(conv: QaapAgentConversationDTO, toolUseId: string): boolean {
-        const agentMessage = [...conv.messages].reverse().find(message => message.role === 'agent');
-        return !!agentMessage?.segments?.some(segment =>
-            segment.type === 'tool'
-            && segment.toolUseId === toolUseId
-            && isPendingTranscriptToolSegment(segment),
-        );
     }
 
     ensureTranscriptConversationRefresh(): void {
