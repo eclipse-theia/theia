@@ -203,9 +203,9 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
         return this.logConfigChangedEvent.event;
     }
 
-    public logLevelFor(name: string): LogLevel {
-        if (name in this._logLevels) {
-            return this._logLevels[name];
+    logLevelFor(loggerName: string): LogLevel {
+        if (loggerName in this._logLevels) {
+            return this._logLevels[loggerName];
         }
 
         const keys = Object.keys(this._logLevels);
@@ -214,7 +214,7 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
 
             if (pattern.includes('*')) {
                 const regex = this.getWildcardRegex(pattern);
-                if (regex.test(name)) {
+                if (regex.test(loggerName)) {
                     return this._logLevels[pattern];
                 }
             }

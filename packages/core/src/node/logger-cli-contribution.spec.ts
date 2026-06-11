@@ -273,7 +273,7 @@ describe('log-level-cli-contribution', () => {
             await cli.setArguments(args);
         }
 
-        it('should respect exact matches if they are evaluated last (or only)', async () => {
+        it('should respect exact matches without wildcards', async () => {
             await setupLogLevels({
                 'unrelated:Service': 'debug'
             });
