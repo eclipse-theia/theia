@@ -92,6 +92,8 @@ export class MobileProjectsBackgroundTaskUi {
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+            /** Run the task in a fresh isolated git worktree instead of the project's working tree. */
+            worktree?: boolean;
         } = {},
     ): Promise<void> {
         const cwd = await this.ensureInlineComposerCwd(project);
@@ -136,6 +138,7 @@ export class MobileProjectsBackgroundTaskUi {
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+            worktree?: boolean;
         },
     ): Promise<QaapAgentConversationSummaryDTO> {
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId ?? QAAP_COMPOSER_DEFAULT_AGENT_ID);
@@ -154,6 +157,7 @@ export class MobileProjectsBackgroundTaskUi {
             message,
             interactionModeId: options.modeId,
             approvalPolicyId,
+            ...(options.worktree === true ? { worktree: true } : {}),
             ...(contextPreamble ? { contextPreamble } : {}),
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
             ...(options.autoApprove === false

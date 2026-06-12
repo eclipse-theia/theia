@@ -15,6 +15,7 @@ import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import { QaapCloudOrchestrator } from './qaap-cloud-orchestrator';
 import { QaapCloudWorkspaceEndpoint } from './qaap-cloud-workspace-endpoint';
 import { QaapCloudWorkspaceStore } from './qaap-cloud-workspace-store';
+import { QaapConversationWorktreeService } from './qaap-conversation-worktree';
 import { QaapDeployRunner } from './qaap-deploy-runner';
 import { QaapDockerOrchestrator } from './qaap-docker-orchestrator';
 import { QaapParallelRunEndpoint } from './qaap-parallel-run-endpoint';
@@ -46,6 +47,7 @@ export default new ContainerModule((bind, _unbind, _isBound, _rebind, _unbindAsy
     bind(QaapAgentTaskEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapAgentTaskEndpoint);
     bind(QaapAgentConversationStore).toSelf().inSingletonScope();
+    bind(QaapConversationWorktreeService).toSelf().inSingletonScope();
     bind(QaapAgentConversationEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapAgentConversationEndpoint);
     bind(QaapAgentApprovalStore).toSelf().inSingletonScope();

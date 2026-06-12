@@ -113,6 +113,13 @@ export class MobileProjectsTranscriptMessagesUi {
         this.renderUi.renderTranscriptMessages(host, conv);
     }
 
+    createTranscriptToolApprovalActions(
+        conversationId: string,
+        segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
+    ): HTMLElement {
+        return this.artifactsUi.createTranscriptToolApprovalActions(conversationId, segment);
+    }
+
     settleVisuallySettledAgentTranscript(messageHost: HTMLElement, conv: QaapAgentConversationDTO): void {
         this.renderUi.settleVisuallySettledAgentTranscript(messageHost, conv);
     }

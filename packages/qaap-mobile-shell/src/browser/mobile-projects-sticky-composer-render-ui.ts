@@ -98,6 +98,7 @@ stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').Mo
 stickyComposerAgentsUi: import('./mobile-projects-sticky-composer-agents-ui').MobileProjectsStickyComposerAgentsUi;
 stickyComposerContextUi: import('./mobile-projects-sticky-composer-context-ui').MobileProjectsStickyComposerContextUi;
 stickyComposerColumnUi: import('./mobile-projects-sticky-composer-column-ui').MobileProjectsStickyComposerColumnUi;
+stickyComposerWorkspaceUi: import('./mobile-projects-sticky-composer-workspace-ui').MobileProjectsStickyComposerWorkspaceUi;
 isProjectDetailView(): boolean;
 projectsService: MobileProjectsService;
 transcriptComposerSendRefresh: (() => void) | undefined;
@@ -281,6 +282,7 @@ export class MobileProjectsStickyComposerRenderUi {
                     ...submitOptions,
                     openConversation: false,
                     forceVps: true,
+                    worktree: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestination(project) === 'worktree',
                     approvalPolicyId: showApprovalPolicy
                         ? reconcileAgentApprovalPolicyId(this.host.stickyComposerApprovalPolicyId, cwd)
                         : undefined,
@@ -345,6 +347,13 @@ export class MobileProjectsStickyComposerRenderUi {
                 );
             },
             showWorkspaceBar: this.host.composerHeaderUi.shouldShowComposerWorkspaceBar(),
+            workspaceDestination: {
+                label: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestinationLabel(project),
+                iconClass: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestinationIconClass(project),
+                onOpen: anchor => {
+                    this.host.stickyComposerWorkspaceUi.openComposerWorkspaceDestinationSheet(project, false, anchor);
+                },
+            },
         });
         const modeHint = describeComposerInteractionMode(this.host.stickyComposerModeId);
         if (modeHint) {

@@ -217,6 +217,7 @@ export class QaapAgentConversationStore {
             messages: [],
             ...(request.parallelRunId ? { parallelRunId: request.parallelRunId } : {}),
             ...(request.parallelBaseCwd ? { parallelBaseCwd: request.parallelBaseCwd } : {}),
+            ...(request.worktreeBranch ? { worktreeBranch: request.worktreeBranch } : {}),
             ...(request.autoApprove === false ? { autoApprove: false } : {}),
             ...(request.contextPreamble ? { contextPreamble: request.contextPreamble } : {}),
             ...(request.interactionModeId ? { interactionModeId: request.interactionModeId } : {}),

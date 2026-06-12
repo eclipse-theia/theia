@@ -73,3 +73,11 @@ export function buildTranscriptApprovalCard(
     card.append(head, separator, actions);
     return card;
 }
+
+/** Disable / re-enable both actions while an approve/reject request is in flight. */
+export function setTranscriptApprovalCardBusy(card: HTMLElement, busy: boolean): void {
+    card.querySelectorAll('button').forEach(button => {
+        button.disabled = busy;
+    });
+    card.classList.toggle('theia-mod-busy', busy);
+}

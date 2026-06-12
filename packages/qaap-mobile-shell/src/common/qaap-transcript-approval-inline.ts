@@ -21,6 +21,19 @@ export function buildTranscriptToolApprovalId(conversationId: string, toolUseId:
     return `${conversationId}:tool:${toolUseId}`;
 }
 
+/** The actual pending approval for one tool call, if the backend reported one. */
+export function findTranscriptToolApproval(
+    approvals: readonly QaapAgentApprovalRequestDTO[],
+    conversationId: string,
+    toolUseId: string,
+): QaapAgentApprovalRequestDTO | undefined {
+    return approvals.find(approval =>
+        approval.kind === 'tool'
+        && approval.conversationId === conversationId
+        && approval.toolUseId === toolUseId,
+    );
+}
+
 export function isPendingTranscriptToolSegment(
     segment: QaapAgentMessageSegmentDTO,
 ): segment is Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }> {

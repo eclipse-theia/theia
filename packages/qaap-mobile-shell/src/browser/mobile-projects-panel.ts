@@ -397,6 +397,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     protected readonly titleAttentionEl: HTMLSpanElement;
     protected readonly headerBackBtn: HTMLButtonElement;
     protected readonly sessionsMenuBtn: HTMLButtonElement;
+    protected readonly headerNewChatBtn: HTMLButtonElement;
     protected readonly newFabBtn: HTMLButtonElement;
     protected readonly headerSurfacePickerHost: HTMLElement;
     protected readonly headerExecutionTabsHost: HTMLElement;
@@ -1143,6 +1144,10 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
 
     protected async onWorkHubSessionsSidebarNewChat(): Promise<void> {
         await this.sessionsSidebarUi.onWorkHubSessionsSidebarNewChat();
+    }
+
+    protected async onHeaderNewChatClick(): Promise<void> {
+        await this.onWorkHubSessionsSidebarNewChat();
     }
 
     /** Mockup `newChat()`: misma vista vacía que Agents (idle), no una sesión paralela. */
