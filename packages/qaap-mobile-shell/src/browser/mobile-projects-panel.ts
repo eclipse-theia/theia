@@ -400,6 +400,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     protected readonly headerNewChatBtn: HTMLButtonElement;
     protected readonly newFabBtn: HTMLButtonElement;
     protected readonly headerSurfacePickerHost: HTMLElement;
+    protected readonly headerExecutionCluster: HTMLElement;
     protected readonly headerExecutionTabsHost: HTMLElement;
     protected headerSurfacePicker?: QaapSegmentedFieldController<QaapComposerSurface>;
     protected headerExecutionTabsProjectId: string | undefined;

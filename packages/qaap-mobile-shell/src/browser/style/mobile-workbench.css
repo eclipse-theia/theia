@@ -1898,6 +1898,14 @@ body.theia-mobile-mod-landing-hub-list .theia-mobile-bottom-chrome-host > #theia
   font-family: var(--theia-ui-font-family);
 }
 
+.theia-mobile-projects-header-execution-cluster {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
 .theia-mobile-projects-header-actions {
   flex-shrink: 0;
   display: inline-flex;
@@ -3480,7 +3488,7 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
 }
 
 .theia-mobile-projects.theia-mod-home.theia-mod-agents-hub-landing
-  .theia-mobile-projects-header-actions
+  .theia-mobile-projects-header-execution-cluster
   .theia-mobile-projects-new-chat-btn {
   width: 44px;
   height: 44px;
@@ -8324,16 +8332,34 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
 }
 
 /* Agents hub shell — keep surface picker on the title row; title ellipsizes instead of clipping tabs. */
+.theia-mobile-projects.theia-mod-agents-hub-shell-active .theia-mobile-projects-header-execution-cluster {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  gap: 0;
+}
+
 .theia-mobile-projects.theia-mod-agents-hub-shell-active .theia-mobile-projects-header-execution-tabs {
   flex: 0 0 auto;
   flex-shrink: 0;
   max-width: none;
-  margin-left: 4px;
+  margin-left: 0;
 }
 
-/* Projects header: tabs are a sibling of title-block — keep Chat + overflow aligned to the title row. */
-.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs {
+/* Projects header: + and tabs travel as one cluster to the right of the title row. */
+.theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs {
+  margin-left: 0;
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster,
+.theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster,
+.theia-mobile-projects.theia-mod-home.theia-mod-agents-hub-landing .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster {
+  align-self: center;
+  position: relative;
+  z-index: 3;
+}
+
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs,
+.theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs {
   align-self: center;
   margin-left: 0;
   margin-top: 0;
@@ -8341,8 +8367,8 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   z-index: 3;
 }
 
-.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs:not([hidden]),
-.theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs:not([hidden]) {
+.theia-mobile-projects.theia-mod-project-detail .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs:not([hidden]),
+.theia-mobile-projects.theia-mod-agents-hub-inline-active .theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs:not([hidden]) {
   display: flex;
   align-items: center;
 }
@@ -12704,7 +12730,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 
 /* Inline execution tabs — same row as project title, right-aligned. */
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
   flex: 0 1 auto;
@@ -12725,14 +12751,14 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 }
 
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs::-webkit-scrollbar,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs::-webkit-scrollbar,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs::-webkit-scrollbar,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs::-webkit-scrollbar {
   display: none;
 }
 
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs.theia-mod-header-inline .theia-mobile-transcript-tab,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs.theia-mod-header-inline .theia-mobile-transcript-tab,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs.theia-mod-header-inline .theia-mobile-transcript-tab,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs.theia-mod-header-inline .theia-mobile-transcript-tab {
   flex: 0 0 auto;
@@ -12760,7 +12786,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 }
 
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon {
   font-size: 18px;
@@ -12768,7 +12794,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 }
 
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label {
   display: none !important;
@@ -12802,7 +12828,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 }
 
 .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon-select,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-icon-select,
 .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon-select,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-icon-select {
   min-width: 44px;
@@ -12866,7 +12892,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 
 @media (pointer: coarse) {
   .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
   .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
     gap: 6px;
@@ -12881,14 +12907,14 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
 
 @media (min-width: 560px) {
   .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
   .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs,
 .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs {
     gap: 4px;
   }
 
   .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab,
   .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs .theia-mobile-transcript-tab,
   .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab {
     min-width: 36px;
@@ -12899,7 +12925,7 @@ body.theia-mobile-mod-active-transcript #theia-top-panel {
   }
 
   .theia-mobile-projects-title-row > .theia-mobile-projects-header-execution-tabs,
-.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
+.theia-mobile-projects-header-main > .theia-mobile-projects-header-execution-cluster > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tab-label,
   .theia-mobile-agent-log-title-row > .theia-mobile-projects-header-execution-tabs .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label,
   .theia-mobile-agent-log-title-row > .theia-mobile-transcript-tabs .theia-mobile-transcript-tab-label {
     display: none !important;

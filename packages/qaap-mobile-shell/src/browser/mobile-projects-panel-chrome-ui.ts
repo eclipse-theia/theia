@@ -22,6 +22,7 @@ export interface MobileProjectsPanelChromeHost {
     headerNewChatBtn: HTMLButtonElement;
     titleEl: HTMLHeadingElement;
     titleAttentionEl: HTMLSpanElement;
+    headerExecutionCluster: HTMLElement;
     headerExecutionTabsHost: HTMLElement;
     subtitleEl: HTMLElement;
     accountBtn: HTMLButtonElement;
@@ -101,6 +102,8 @@ export class MobileProjectsPanelChromeUi {
         this.host.titleAttentionEl.className = 'theia-mobile-projects-title-attention';
         this.host.titleAttentionEl.hidden = true;
         this.host.titleAttentionEl.setAttribute('aria-hidden', 'true');
+        this.host.headerExecutionCluster = document.createElement('div');
+        this.host.headerExecutionCluster.className = 'theia-mobile-projects-header-execution-cluster';
         this.host.headerExecutionTabsHost = document.createElement('div');
         this.host.headerExecutionTabsHost.className = 'theia-mobile-projects-header-execution-tabs';
         this.host.headerExecutionTabsHost.hidden = true;
@@ -152,13 +155,16 @@ export class MobileProjectsPanelChromeUi {
             this.host.workHubSearchUi.openWorkHubSearchQuickPick();
         });
 
+        this.host.headerExecutionCluster.append(
+            this.host.headerNewChatBtn,
+            this.host.headerExecutionTabsHost,
+        );
         actions.append(
             this.host.headerSurfacePickerHost,
-            this.host.headerNewChatBtn,
             this.host.searchToggleBtn,
             this.host.accountBtn,
         );
-        headerMainRow.append(this.host.titleBlock, this.host.headerExecutionTabsHost, actions);
+        headerMainRow.append(this.host.titleBlock, this.host.headerExecutionCluster, actions);
         header.append(headerMainRow);
 
         this.host.filtersHost = document.createElement('div');
