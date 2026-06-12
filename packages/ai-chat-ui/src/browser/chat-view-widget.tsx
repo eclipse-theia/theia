@@ -246,7 +246,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             ? { text: '' }
             : typeof query === 'string'
                 ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections }
-                : { ...query, capabilityOverrides, genericCapabilitySelections, serverToolSelections };
+                // For an already-built request (e.g. an edited+resent message), keep its own selections
+                // instead of overwriting them with the (undefined) explicit arguments.
+                : {
+                    ...query,
+                    capabilityOverrides: capabilityOverrides ?? query.capabilityOverrides,
+                    genericCapabilitySelections: genericCapabilitySelections ?? query.genericCapabilitySelections,
+                    serverToolSelections: serverToolSelections ?? query.serverToolSelections
+                };
         if (chatRequest.text.length === 0) { return; }
 
         if (this.chatSession.model.isEmpty()) {
