@@ -18,6 +18,7 @@ import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupp
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleGenAI, Model } from '@google/genai';
 import { GoogleModel } from './google-language-model';
+import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 
 export interface GoogleLanguageModelRetrySettings {
@@ -123,7 +124,8 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                     retrySettingsProvider,
                     metadata.reasoningSupport,
                     metadata.reasoningApi,
-                    metadata.maxInputTokens
+                    metadata.maxInputTokens,
+                    GOOGLE_SERVER_TOOLS
                 )
             ]);
         }

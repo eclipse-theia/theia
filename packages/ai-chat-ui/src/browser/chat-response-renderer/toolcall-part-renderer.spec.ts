@@ -66,8 +66,13 @@ describe('condenseArguments', () => {
         expect(result).to.equal('{\u2026}');
     });
 
-    it('shows [\u2026] for single array param', () => {
+    it('renders primitive array values inline for single array param', () => {
         const result = condenseArguments('{"items": [1, 2, 3]}');
+        expect(result).to.equal('1, 2, 3');
+    });
+
+    it('still shows [\u2026] for arrays containing objects', () => {
+        const result = condenseArguments('{"items": [{"a": 1}, {"b": 2}]}');
         expect(result).to.equal('[\u2026]');
     });
 

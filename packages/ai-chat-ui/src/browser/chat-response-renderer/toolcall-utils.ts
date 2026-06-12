@@ -186,6 +186,11 @@ export function condenseArguments(args: string): string | undefined {
         if (typeof value === 'string') {
             return truncateString(value, MAX_CONDENSED_VALUE_LENGTH);
         } else if (Array.isArray(value)) {
+            // Primitive arrays render inline (e.g. {"queries": ["foo"]} as `foo`) so simple
+            // single-array args carry useful information instead of a bare ellipsis.
+            if (value.every(v => typeof v !== 'object' || v === undefined)) {
+                return value.map(v => typeof v === 'string' ? v : String(v)).join(', ');
+            }
             return '[\u2026]';
         } else if (typeof value === 'object' && !!value) {
             return '{\u2026}';

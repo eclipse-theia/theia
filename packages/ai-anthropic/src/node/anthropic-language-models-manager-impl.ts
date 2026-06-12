@@ -20,6 +20,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
@@ -108,7 +109,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     metadata.reasoningSupport,
                     metadata.reasoningApi,
                     metadata.supportsXHighEffort,
-                    metadata.maxInputTokens
+                    metadata.maxInputTokens,
+                    ANTHROPIC_SERVER_TOOLS
                 )
             ]);
         }

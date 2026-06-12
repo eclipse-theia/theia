@@ -59,6 +59,11 @@ export interface AgentSettings {
      */
     genericCapabilitySelections?: GenericCapabilitySelections;
     /**
+     * User selections for provider server tools, keyed by model vendor to preserve provider
+     * specificity. Each value holds the enabled server tool ids for that vendor.
+     */
+    serverToolSelections?: Record<string, string[]>;
+    /**
      * Persisted reasoning selection for this agent. When set, the chat input's reasoning selector
      * is initialized to this value at session start instead of falling back to the preference
      * default or the model's declared default.

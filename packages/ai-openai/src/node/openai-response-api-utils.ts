@@ -296,6 +296,9 @@ export class OpenAiResponseApiUtils {
                 });
             } else if (LanguageModelMessage.isThinkingMessage(message)) {
                 // Pass
+            } else if (LanguageModelMessage.isServerToolUseMessage(message)) {
+                // 'server_tool_use' replay messages can appear when switching providers within a
+                // session; OpenAI has no equivalent, so they are skipped.
             } else {
                 unreachable(message);
             }
