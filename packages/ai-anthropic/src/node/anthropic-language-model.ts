@@ -28,6 +28,9 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    ServerToolCallResponsePart,
+    ServerToolDescriptor,
+    ToolCallContent,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -37,8 +40,16 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
+import { ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
 
 export const DEFAULT_MAX_TOKENS = 4096;
+
+/**
+ * Key under which the raw Anthropic server tool result block is stored on the server tool call's `data`,
+ * so it can be reconstructed faithfully on replay. The human-readable `result` summary is kept separately
+ * for rendering (see {@link buildServerToolResultPart}).
+ */
+export const ANTHROPIC_RESULT_BLOCK_DATA_KEY = 'anthropicResultBlock';
 
 interface ToolCallback {
     readonly name: string;
@@ -56,6 +67,39 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ type: 'tool_result', tool_use_id: message.tool_use_id, content: formatToolCallResult(message.content) }];
+    } else if (LanguageModelMessage.isServerToolUseMessage(message)) {
+        // Reconstruct the server tool invocation and its result so Anthropic can replay the prior turn.
+        // The raw provider result block was stored on the message's `data` (see buildServerToolResultPart);
+        // fall back to `result` for forward compatibility if it is missing.
+        const useBlock: Anthropic.Messages.ServerToolUseBlockParam = {
+            type: 'server_tool_use',
+            id: message.id,
+            name: message.name as Anthropic.Messages.ServerToolUseBlockParam['name'],
+            input: message.input
+        };
+        let resultContent: unknown = message.result;
+        const rawBlock = message.data?.[ANTHROPIC_RESULT_BLOCK_DATA_KEY];
+        if (rawBlock) {
+            try {
+                resultContent = JSON.parse(rawBlock);
+            } catch {
+                // keep message.result as the fallback
+            }
+        }
+        if (message.name === ANTHROPIC_WEB_SEARCH) {
+            const resultBlock: Anthropic.Messages.WebSearchToolResultBlockParam = {
+                type: 'web_search_tool_result',
+                tool_use_id: message.id,
+                content: resultContent as unknown as Anthropic.Messages.WebSearchToolResultBlockParam['content']
+            };
+            return [useBlock, resultBlock];
+        }
+        const fetchResultBlock: Anthropic.Messages.WebFetchToolResultBlockParam = {
+            type: 'web_fetch_tool_result',
+            tool_use_id: message.id,
+            content: resultContent as unknown as Anthropic.Messages.WebFetchToolResultBlockParam['content']
+        };
+        return [useBlock, fetchResultBlock];
     } else if (LanguageModelMessage.isImageMessage(message)) {
         if (ImageContent.isBase64(message.image)) {
             return [{ type: 'image', source: { type: 'base64', media_type: mimeTypeToMediaType(message.image.mimeType), data: message.image.base64data } }];
@@ -219,10 +263,38 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
 }
 
 /**
+ * Builds a finished server tool call stream part from a provider result block. The raw block is stored on
+ * `data` for faithful replay, while `result` holds a compact, human-readable summary for rendering (the raw
+ * fetched document / search payload would otherwise render as an unreadable JSON blob).
+ */
+function buildServerToolResultPart(
+    serverToolCalls: readonly ToolCallback[],
+    toolUseId: string,
+    nativeName: string,
+    result: ToolCallContent,
+    rawContent: unknown
+): ServerToolCallResponsePart {
+    const matching = serverToolCalls.find(call => call.id === toolUseId);
+    return {
+        server_tool_calls: [{
+            id: toolUseId,
+            name: matching?.name ?? nativeName,
+            arguments: matching?.args,
+            finished: true,
+            result,
+            data: { [ANTHROPIC_RESULT_BLOCK_DATA_KEY]: JSON.stringify(rawContent) }
+        }]
+    };
+}
+
+/**
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
  */
 export class AnthropicModel implements LanguageModel {
+
+    /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
+    readonly vendor = 'anthropic';
 
     constructor(
         public readonly id: string,
@@ -238,7 +310,8 @@ export class AnthropicModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public serverTools?: ServerToolDescriptor[]
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -303,6 +376,9 @@ export class AnthropicModel implements LanguageModel {
 
                 const toolCalls: ToolCallback[] = [];
                 let toolCall: ToolCallback | undefined;
+                // Server tools are executed by Anthropic; we surface their invocations/results but do not call any client handler.
+                const serverToolCalls: ToolCallback[] = [];
+                let serverToolCall: ToolCallback | undefined;
                 const currentMessages: Message[] = [];
                 let currentMessage: Message | undefined = undefined;
                 let currentOutputTokens: number = 0;
@@ -323,6 +399,29 @@ export class AnthropicModel implements LanguageModel {
                                 toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
                                 yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
                             }
+                            if (contentBlock.type === 'server_tool_use') {
+                                serverToolCall = { name: contentBlock.name, args: '', id: contentBlock.id, index: event.index };
+                                yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: '', finished: false }] };
+                            }
+                            if (contentBlock.type === 'web_fetch_tool_result') {
+                                // Result blocks are delivered complete (not streamed). Surface them as a finished server tool call.
+                                const fetchContent = contentBlock.content;
+                                const result: ToolCallContent = fetchContent.type === 'web_fetch_result'
+                                    ? { content: [{ type: 'text', text: `Fetched ${fetchContent.url}${fetchContent.content.title ? ` — ${fetchContent.content.title}` : ''}` }] }
+                                    : createToolCallError(`Web fetch failed: ${fetchContent.error_code}`);
+                                yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_WEB_FETCH, result, fetchContent);
+                            }
+                            if (contentBlock.type === 'web_search_tool_result') {
+                                const searchContent = contentBlock.content;
+                                let result: ToolCallContent;
+                                if (Array.isArray(searchContent)) {
+                                    const lines = searchContent.map(entry => [entry.title, entry.url].filter(Boolean).join(' — ')).filter(line => line.length > 0);
+                                    result = { content: [{ type: 'text', text: lines.length > 0 ? lines.join('\n') : 'No search results.' }] };
+                                } else {
+                                    result = createToolCallError(`Web search failed: ${searchContent.error_code}`);
+                                }
+                                yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_WEB_SEARCH, result, searchContent);
+                            }
                         } else if (event.type === 'content_block_delta') {
                             const delta = event.delta;
                             if (delta.type === 'thinking_delta') {
@@ -338,10 +437,18 @@ export class AnthropicModel implements LanguageModel {
                                 toolCall.args += delta.partial_json;
                                 yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
                             }
+                            if (serverToolCall && delta.type === 'input_json_delta') {
+                                serverToolCall.args += delta.partial_json;
+                                yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: serverToolCall.args, finished: false }] };
+                            }
                         } else if (event.type === 'content_block_stop') {
                             if (toolCall && toolCall.index === event.index) {
                                 toolCalls.push(toolCall);
                                 toolCall = undefined;
+                            }
+                            if (serverToolCall && serverToolCall.index === event.index) {
+                                serverToolCalls.push(serverToolCall);
+                                serverToolCall = undefined;
                             }
                         } else if (event.type === 'message_delta') {
                             currentOutputTokens = event.usage.output_tokens;
@@ -425,21 +532,31 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
-    protected createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
-        if (request.tools?.length === 0) {
-            return undefined;
-        }
-        const tools = request.tools?.map(tool => ({
+    protected createTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
+        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool => ({
             name: tool.name,
             description: tool.description,
             input_schema: tool.parameters
         } as Anthropic.Messages.Tool));
-        if (this.useCaching) {
-            if (tools?.length) {
-                tools[tools.length - 1].cache_control = { type: 'ephemeral' };
-            }
+        // Cache the client tools as before; server tools are appended afterwards.
+        if (this.useCaching && tools.length) {
+            tools[tools.length - 1].cache_control = { type: 'ephemeral' };
         }
-        return tools;
+        tools.push(...this.createServerTools(request));
+        return tools.length ? tools : undefined;
+    }
+
+    /** Translates the enabled server tool ids on the request into native Anthropic server tool params. */
+    protected createServerTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] {
+        const enabled = request.serverTools ?? [];
+        const serverTools: Anthropic.Messages.ToolUnion[] = [];
+        if (enabled.includes(ANTHROPIC_WEB_FETCH)) {
+            serverTools.push({ type: 'web_fetch_20250910', name: 'web_fetch' });
+        }
+        if (enabled.includes(ANTHROPIC_WEB_SEARCH)) {
+            serverTools.push({ type: 'web_search_20250305', name: 'web_search' });
+        }
+        return serverTools;
     }
 
     protected async handleNonStreamingRequest(

@@ -26,6 +26,7 @@ import {
     ChatRequestParserImpl,
     ChatService,
     ToolCallChatResponseContentFactory,
+    ServerToolCallResponseContentFactory,
     PinChatAgent,
     ChatServiceFactory,
     ChatAgentServiceFactory
@@ -176,6 +177,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
     bindRootContributionProvider(bind, ChangeSetDecorator);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
+    bind(ServerToolCallResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();

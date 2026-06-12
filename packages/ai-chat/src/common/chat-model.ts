@@ -26,6 +26,7 @@ import {
     ReasoningSettings,
     ResolvedAIContextVariable,
     ResolvedAIVariable,
+    ServerToolUseMessage,
     TextMessage,
     ThinkingMessage,
     ToolCallResult,
@@ -313,6 +314,12 @@ export interface ChatRequest {
      * from the capabilities panel dropdowns.
      */
     readonly genericCapabilitySelections?: GenericCapabilitySelections;
+
+    /**
+     * Server tool selections for this request, keyed by model vendor. Only the entry matching
+     * the actually selected model's vendor is applied when sending the request.
+     */
+    readonly serverToolSelections?: Record<string, string[]>;
 }
 
 export interface ChatContext {
@@ -492,6 +499,14 @@ export interface ToolCallContentData {
     data?: Record<string, string>;
 }
 
+export interface ServerToolCallContentData {
+    id?: string;
+    name?: string;
+    arguments?: string;
+    result?: ToolCallResult;
+    data?: Record<string, string>;
+}
+
 export interface CommandContentData {
     commandId?: string;
     commandLabel?: string;
@@ -604,6 +619,28 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
      * language model eventually yields the results, but they should be identical.
      */
     complete(result: ToolCallResult): void;
+}
+
+/**
+ * A tool the provider executed on its own infrastructure (a server tool). Unlike
+ * {@link ToolCallChatResponseContent}, it has no confirmation members because it is
+ * auto-approved/server-executed; the invocation and its result are surfaced together.
+ */
+export interface ServerToolCallChatResponseContent extends Required<ChatResponseContent> {
+    kind: 'serverToolCall';
+    id?: string;
+    name?: string;
+    arguments?: string;
+    finished: boolean;
+    result?: ToolCallResult;
+    /** Provider-specific metadata needed to faithfully reconstruct the server tool on replay. */
+    data?: Record<string, string>;
+}
+
+export namespace ServerToolCallChatResponseContent {
+    export function is(obj: unknown): obj is ServerToolCallChatResponseContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'serverToolCall';
+    }
 }
 
 export interface ThinkingChatResponseContent
@@ -1781,7 +1818,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._request = {
             text: reqData.text,
             capabilityOverrides: reqData.capabilityOverrides,
-            genericCapabilitySelections: reqData.genericCapabilitySelections
+            genericCapabilitySelections: reqData.genericCapabilitySelections,
+            serverToolSelections: reqData.serverToolSelections
         };
         this._agentId = reqData.agentId;
         this._data = {};
@@ -2025,7 +2063,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             } : undefined,
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
             capabilityOverrides: this.request.capabilityOverrides,
-            genericCapabilitySelections: this.request.genericCapabilitySelections
+            genericCapabilitySelections: this.request.genericCapabilitySelections,
+            serverToolSelections: this.request.serverToolSelections
         };
     }
 
@@ -2574,6 +2613,118 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 }
 
+export class ServerToolCallChatResponseContentImpl implements ServerToolCallChatResponseContent {
+    readonly kind = 'serverToolCall';
+    protected _id?: string;
+    protected _name?: string;
+    protected _arguments?: string;
+    protected _finished: boolean;
+    protected _result?: ToolCallResult;
+    protected _data?: Record<string, string>;
+
+    constructor(
+        id?: string,
+        name?: string,
+        arg_string?: string,
+        finished?: boolean,
+        result?: ToolCallResult,
+        data?: Record<string, string>
+    ) {
+        this._id = id;
+        this._name = name;
+        this._arguments = arg_string;
+        this._finished = finished ?? false;
+        this._result = result;
+        this._data = data;
+    }
+
+    get id(): string | undefined {
+        return this._id;
+    }
+
+    get name(): string | undefined {
+        return this._name;
+    }
+
+    get arguments(): string | undefined {
+        return this._arguments;
+    }
+
+    get finished(): boolean {
+        return this._finished;
+    }
+
+    get result(): ToolCallResult | undefined {
+        return this._result;
+    }
+
+    get data(): Record<string, string> | undefined {
+        return this._data;
+    }
+
+    asString(): string {
+        return '';
+    }
+
+    asDisplayString(): string {
+        return `Server tool call: ${this._name}(${this._arguments ?? ''})`;
+    }
+
+    merge(nextChatResponseContent: ChatResponseContent): boolean {
+        if (!ServerToolCallChatResponseContent.is(nextChatResponseContent) || nextChatResponseContent.id !== this._id) {
+            return false;
+        }
+        this._finished = nextChatResponseContent.finished;
+        if (nextChatResponseContent.result !== undefined) {
+            this._result = nextChatResponseContent.result;
+        }
+        const args = nextChatResponseContent.arguments;
+        if (args && args.length > 0) {
+            this._arguments = args;
+        }
+        if (nextChatResponseContent.name) {
+            this._name = nextChatResponseContent.name;
+        }
+        this._data = { ...nextChatResponseContent.data, ...this._data };
+        return true;
+    }
+
+    protected parseArgumentsSafe(): object {
+        try {
+            return JSON.parse(this._arguments!);
+        } catch (error) {
+            console.warn(`Failed to parse server tool call arguments for tool '${this._name}': ${error instanceof Error ? error.message : String(error)}`);
+            return {};
+        }
+    }
+
+    toLanguageModelMessage(): ServerToolUseMessage {
+        return {
+            actor: 'ai',
+            type: 'server_tool_use',
+            id: this._id ?? '',
+            name: this._name ?? '',
+            input: this._arguments && this._arguments.length !== 0 ? this.parseArgumentsSafe() : {},
+            result: this._result,
+            data: this._data
+        };
+    }
+
+    toSerializable(): SerializableChatResponseContentData<ServerToolCallContentData> {
+        // Like tool calls, `finished` is not persisted: a restored server tool call is always finished.
+        const data: ServerToolCallContentData = {
+            id: this._id,
+            name: this._name,
+            arguments: this._arguments,
+            result: this._result
+        };
+        if (this._data && Object.keys(this._data).length > 0) {
+            data.data = this._data;
+        }
+        return { kind: 'serverToolCall', data };
+    }
+}
+
 export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
     id: 'ai-chat.command-chat-response.generic'
 };
@@ -2835,6 +2986,14 @@ class ChatResponseImpl implements ChatResponse {
                 // renderer) so auto-save can persist them. Without this, mutations that
                 // don't go through addContent/merge are invisible to listeners.
                 nextContent.onDidChange(() => this._onDidChangeEmitter.fire());
+            }
+        } else if (ServerToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
+            // Server tool calls are matched by id (the start and result blocks arrive as separate stream parts).
+            const fittingTool = this._content.find(c => ServerToolCallChatResponseContent.is(c) && c.id === nextContent.id);
+            if (fittingTool !== undefined && ChatResponseContent.hasMerge(fittingTool)) {
+                fittingTool.merge(nextContent);
+            } else {
+                this._content.push(nextContent);
             }
         } else {
             const lastElement = this._content.length > 0

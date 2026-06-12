@@ -28,6 +28,7 @@ import {
     GenericCapabilitySelections,
     getTextOfResponse,
     isLanguageModelStreamResponsePart,
+    isServerToolCallResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
@@ -43,6 +44,7 @@ import {
     PromptService,
     ResolvedPromptFragment,
     PromptVariantSet,
+    ServerToolCall,
     TextMessage,
     ToolCall,
     ToolRequest,
@@ -69,6 +71,7 @@ import {
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
     ToolCallArgumentsDeltaContent,
+    ServerToolCallChatResponseContentImpl,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
     ResponseTokenUsage,
@@ -506,11 +509,19 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const settings = { ...agentSettings, ...providerSettings };
         const dedupedTools = this.deduplicateTools(toolRequests);
         const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
+        // Only apply server tool selections stored for the actually selected model's vendor, and only
+        // those ids the model actually declares. This keeps selections provider-specific (e.g. an Anthropic
+        // selection is never sent to a Gemini model).
+        const vendor = languageModel.vendor;
+        const enabledServerTools = vendor
+            ? (request.request.serverToolSelections?.[vendor] ?? []).filter(id => languageModel.serverTools?.some(tool => tool.id === id))
+            : [];
         return this.languageModelService.sendRequest(
             languageModel,
             {
                 messages,
                 tools,
+                serverTools: enabledServerTools.length > 0 ? enabledServerTools : undefined,
                 settings,
                 reasoning: commonSettings?.reasoning,
                 agentId: this.id,
@@ -617,10 +628,30 @@ export class ToolCallChatResponseContentFactory {
     }
 }
 
+/**
+ * Factory for creating ServerToolCallChatResponseContent instances (provider-executed server tools).
+ */
+@injectable()
+export class ServerToolCallResponseContentFactory {
+    create(serverToolCall: ServerToolCall): ChatResponseContent {
+        return new ServerToolCallChatResponseContentImpl(
+            serverToolCall.id,
+            serverToolCall.name,
+            serverToolCall.arguments,
+            serverToolCall.finished,
+            serverToolCall.result,
+            serverToolCall.data
+        );
+    }
+}
+
 @injectable()
 export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     @inject(ToolCallChatResponseContentFactory)
     protected toolCallResponseContentFactory: ToolCallChatResponseContentFactory;
+
+    @inject(ServerToolCallResponseContentFactory)
+    protected serverToolCallResponseContentFactory: ServerToolCallResponseContentFactory;
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
@@ -707,6 +738,14 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return toolCallContents;
             }
         }
+        if (isServerToolCallResponsePart(token)) {
+            const serverToolCalls = token.server_tool_calls;
+            if (serverToolCalls !== undefined) {
+                return serverToolCalls.map(serverToolCall =>
+                    this.createServerToolCallResponseContent(serverToolCall)
+                );
+            }
+        }
         if (isThinkingResponsePart(token)) {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
@@ -728,5 +767,13 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
      */
     protected createToolCallResponseContent(toolCall: ToolCall): ChatResponseContent {
         return this.toolCallResponseContentFactory.create(toolCall);
+    }
+
+    /**
+     * Creates a ServerToolCallChatResponseContent from the provided server tool call data.
+     * Subclasses can override this to customize how provider-executed server tools are rendered.
+     */
+    protected createServerToolCallResponseContent(serverToolCall: ServerToolCall): ChatResponseContent {
+        return this.serverToolCallResponseContentFactory.create(serverToolCall);
     }
 }

@@ -17,12 +17,13 @@
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequirement } from '@theia/ai-core';
+import { LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse, LanguageModelService, ServerToolDescriptor, UserRequest } from '@theia/ai-core';
 import { AbstractChatAgent, ChatAgentLocation } from './chat-agents';
 import {
     MutableChatModel,
     MutableChatRequestModel,
     ChatModel,
+    ChatRequest,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
 } from './chat-model';
@@ -41,11 +42,15 @@ class TestChatAgent extends AbstractChatAgent {
     public async exposeGetMessages(model: ChatModel, includeResponseInProgress = false): Promise<LanguageModelMessage[]> {
         return this.getMessages(model, includeResponseInProgress);
     }
+
+    public exposeSendLlmRequest(request: MutableChatRequestModel, languageModel: LanguageModel): Promise<LanguageModelResponse> {
+        return this.sendLlmRequest(request, [], [], languageModel);
+    }
 }
 
-function createParsedRequest(text: string): ParsedChatRequest {
+function createParsedRequest(text: string, request?: Partial<ChatRequest>): ParsedChatRequest {
     return {
-        request: { text },
+        request: { text, ...request },
         parts: [
             new ParsedChatRequestTextPart({ start: 0, endExclusive: text.length }, text)
         ],
@@ -120,5 +125,60 @@ describe('AbstractChatAgent.getMessages', () => {
             .filter(m => m.actor === 'ai');
         expect(aiTextMessages).to.have.lengthOf(1);
         expect(aiTextMessages[0].text).to.equal('Partial reply before cancel');
+    });
+});
+
+describe('AbstractChatAgent.sendLlmRequest server tools', () => {
+
+    const ANTHROPIC_SERVER_TOOLS: ServerToolDescriptor[] = [
+        { id: 'web_fetch', name: 'Web Fetch' },
+        { id: 'web_search', name: 'Web Search' }
+    ];
+
+    function createModel(vendor: string, serverTools?: ServerToolDescriptor[]): LanguageModel {
+        return {
+            id: `${vendor}/model`,
+            vendor,
+            status: { status: 'ready' as const },
+            serverTools,
+            async request(): Promise<LanguageModelResponse> { return { text: '' }; }
+        } as unknown as LanguageModel;
+    }
+
+    function setup(languageModel: LanguageModel, serverToolSelections?: Record<string, string[]>): { agent: TestChatAgent; captured: () => UserRequest | undefined } {
+        const agent = new TestChatAgent();
+        let capturedRequest: UserRequest | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (agent as any).languageModelService = {
+            sessions: [],
+            onSessionChanged: () => ({ dispose: () => { } }),
+            async sendRequest(_model: LanguageModel, sentRequest: UserRequest): Promise<LanguageModelResponse> {
+                capturedRequest = sentRequest;
+                return { text: '' };
+            }
+        } as unknown as LanguageModelService;
+
+        const chatModel = new MutableChatModel(ChatAgentLocation.Panel);
+        const request = chatModel.addRequest(createParsedRequest('Hello', { serverToolSelections }));
+        agent.exposeSendLlmRequest(request, languageModel);
+        return { agent, captured: () => capturedRequest };
+    }
+
+    it('sends server tools for the selected model vendor, intersected with the model\'s declared tools', () => {
+        const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
+        const { captured } = setup(model, { anthropic: ['web_fetch', 'unknown_tool'] });
+        expect(captured()!.serverTools).to.deep.equal(['web_fetch']);
+    });
+
+    it('does not send selections stored for a different vendor', () => {
+        const model = createModel('google', [{ id: 'url_context', name: 'URL Context' }]);
+        const { captured } = setup(model, { anthropic: ['web_fetch'] });
+        expect(captured()!.serverTools).to.equal(undefined);
+    });
+
+    it('leaves serverTools undefined when there are no selections', () => {
+        const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
+        const { captured } = setup(model, undefined);
+        expect(captured()!.serverTools).to.equal(undefined);
     });
 });

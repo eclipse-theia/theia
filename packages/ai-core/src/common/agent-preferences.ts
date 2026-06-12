@@ -133,6 +133,16 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                                 description: nls.localize('theia/ai/agents/genericCapabilitySelections/variables', 'Selected variable names')
                             }
                         }
+                    },
+                    serverToolSelections: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/agents/serverToolSelections/title', 'Server Tool Selections'),
+                        markdownDescription: nls.localize('theia/ai/agents/serverToolSelections/mdDescription',
+                            'User selections for provider server tools, keyed by model vendor. Each value holds the enabled server tool ids for that vendor.'),
+                        additionalProperties: {
+                            type: 'array',
+                            items: { type: 'string' }
+                        }
                     }
                 },
                 required: ['languageModelRequirements']
