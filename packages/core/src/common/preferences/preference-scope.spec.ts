@@ -20,11 +20,11 @@ import { PreferenceScope } from './preference-scope';
 describe('PreferenceScope', () => {
 
     it('getScopes() should return numbers from broadest to narrowest', () => {
-        expect(PreferenceScope.getScopes()).deep.equal([0, 1, 2, 3]);
+        expect(PreferenceScope.getScopes()).deep.equal([0, 1, 2, 3, 4]);
     });
 
     it('getReversedScopes() should return numbers from narrowest to broadest', () => {
-        expect(PreferenceScope.getReversedScopes()).deep.equal([3, 2, 1, 0]);
+        expect(PreferenceScope.getReversedScopes()).deep.equal([4, 3, 2, 1, 0]);
     });
 
     it('getScopeNames() should return the names of scopes broader than the current one', () => {
@@ -36,11 +36,13 @@ describe('PreferenceScope', () => {
         expect(PreferenceScope.is(PreferenceScope.User)).to.be.true;
         expect(PreferenceScope.is(PreferenceScope.Workspace)).to.be.true;
         expect(PreferenceScope.is(PreferenceScope.Folder)).to.be.true;
+        expect(PreferenceScope.is(PreferenceScope.Session)).to.be.true;
         expect(PreferenceScope.is(0)).to.be.true;
         expect(PreferenceScope.is(1)).to.be.true;
         expect(PreferenceScope.is(2)).to.be.true;
         expect(PreferenceScope.is(3)).to.be.true;
-        expect(PreferenceScope.is(4)).to.be.false;
+        expect(PreferenceScope.is(4)).to.be.true;
+        expect(PreferenceScope.is(5)).to.be.false;
         expect(PreferenceScope.is(-1)).to.be.false;
         expect(PreferenceScope.is({})).to.be.false;
         expect(PreferenceScope.is('Default')).to.be.false;
