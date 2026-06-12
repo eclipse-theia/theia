@@ -291,7 +291,7 @@ export function resolveEffectiveConversationStatus(conv: QaapAgentConversation):
     if (conv.status === 'streaming') {
         return 'streaming';
     }
-    if (conv.status === 'failed' || conv.messages.some(message => message.role === 'user' && message.error)) {
+    if (conv.status === 'failed' || conv.messages.some(message => !!message.error)) {
         return 'failed';
     }
     return conv.status;

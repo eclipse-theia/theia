@@ -6,7 +6,10 @@
 import { expect } from 'chai';
 import {
     detectAgentFailureKind,
+    extractAgentLogFailureHint,
+    formatStoredAgentFailureMessage,
     localizeAgentFailureMessage,
+    localizeGenericAgentFailureMessage,
     resolveAgentTurnFailureMessage,
 } from './qaap-agent-failure-message';
 
@@ -33,13 +36,49 @@ describe('qaap-agent-failure-message', () => {
             .to.equal('model_unavailable');
     });
 
+    it('detectAgentFailureKind recognizes auth, timeout, and network failures', () => {
+        expect(detectAgentFailureKind('invalid_api_key'))
+            .to.equal('auth');
+        expect(detectAgentFailureKind('request timed out after 90s'))
+            .to.equal('timeout');
+        expect(detectAgentFailureKind('fetch failed: ECONNREFUSED'))
+            .to.equal('network');
+    });
+
+    it('extractAgentLogFailureHint surfaces JSON and terminal error lines', () => {
+        expect(extractAgentLogFailureHint('{"error":{"message":"provider rejected the request"}}'))
+            .to.equal('provider rejected the request');
+        expect(extractAgentLogFailureHint('info\nError: something went wrong\n'))
+            .to.equal('Error: something went wrong');
+    });
+
     it('resolveAgentTurnFailureMessage maps known logs to product copy', () => {
         const friendly = resolveAgentTurnFailureMessage(
             'There was an issue with the selected model.',
-            'Agent failed (exit 1).',
+            { state: 'failed', exitCode: 1 },
         );
         expect(friendly).to.equal(localizeAgentFailureMessage('model_unavailable'));
-        expect(resolveAgentTurnFailureMessage('', 'Agent failed (exit 1).'))
-            .to.equal('Agent failed (exit 1).');
+    });
+
+    it('resolveAgentTurnFailureMessage prefers log hints over generic failed copy', () => {
+        const friendly = resolveAgentTurnFailureMessage(
+            'stderr\nError: command not found: qaiq\n',
+            { state: 'failed', exitCode: 1 },
+        );
+        expect(friendly).to.contain('command not found: qaiq');
+    });
+
+    it('resolveAgentTurnFailureMessage returns humanized copy when the log is empty', () => {
+        expect(resolveAgentTurnFailureMessage('', { state: 'failed', exitCode: 1 }))
+            .to.equal(localizeGenericAgentFailureMessage('failed', 1));
+        expect(resolveAgentTurnFailureMessage('', { state: 'interrupted' }))
+            .to.equal(localizeGenericAgentFailureMessage('interrupted'));
+    });
+
+    it('formatStoredAgentFailureMessage upgrades legacy exit-code copy', () => {
+        expect(formatStoredAgentFailureMessage('Agent failed (exit 1).'))
+            .to.equal(localizeGenericAgentFailureMessage('failed', 1));
+        expect(formatStoredAgentFailureMessage('Agent interrupted.'))
+            .to.equal(localizeGenericAgentFailureMessage('interrupted'));
     });
 });

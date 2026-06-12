@@ -153,10 +153,41 @@ function resolveEffectiveConversationStatus(conv: QaapAgentConversationDTO): Qaa
     if (conv.status === 'streaming') {
         return 'streaming';
     }
-    if (conv.status === 'failed' || conv.messages.some(message => message.role === 'user' && message.error)) {
+    if (conv.status === 'failed' || conv.messages.some(message => !!message.error)) {
         return 'failed';
     }
     return conv.status;
+}
+
+/** Move legacy user-turn errors onto the following agent row for transcript rendering. */
+export function normalizeAgentConversationFailures(conv: QaapAgentConversationDTO): QaapAgentConversationDTO {
+    if (!conv.messages.some(message => message.role === 'user' && message.error?.trim())) {
+        return conv;
+    }
+    const messages = conv.messages.map(message => ({ ...message }));
+    for (let index = 0; index < messages.length; index++) {
+        const message = messages[index];
+        if (message.role !== 'user' || !message.error?.trim()) {
+            continue;
+        }
+        const failureReason = message.error;
+        messages[index] = { ...message, error: undefined };
+        const next = messages[index + 1];
+        if (next?.role === 'agent') {
+            if (!next.error?.trim()) {
+                messages[index + 1] = { ...next, error: failureReason };
+            }
+            continue;
+        }
+        messages.splice(index + 1, 0, {
+            id: `${message.id}:turn-failure`,
+            role: 'agent',
+            content: '',
+            error: failureReason,
+            createdAt: message.createdAt + 1,
+        });
+    }
+    return { ...conv, messages };
 }
 
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {

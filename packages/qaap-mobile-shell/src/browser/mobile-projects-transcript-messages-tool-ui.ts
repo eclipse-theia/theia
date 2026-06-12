@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { formatStoredAgentFailureMessage } from '../common/qaap-agent-failure-message';
 import { formatReadToolDetailFromArgs } from '../common/qaap-agent-conversation-list-metrics';
 import { isTranscriptTodoTool, parseTranscriptTodoChecklist, shouldOpenTranscriptToolDetails as shouldOpenTranscriptToolDetailsSegment } from '../common/qaap-agent-transcript-segments';
 import { isTranscriptErrorOutput, isTranscriptTerminalOutputText } from '../common/qaap-transcript-content-display';
@@ -64,6 +65,55 @@ export class MobileProjectsTranscriptMessagesToolUi {
             return;
         }
         this.contentUi.renderTranscriptMarkdown(host, clean, { defer: options?.defer });
+    }
+
+    createTranscriptAgentFailureDialog(error: string, technicalContent?: string): HTMLElement {
+        const formatted = formatStoredAgentFailureMessage(error);
+        const details = document.createElement('details');
+        details.className = 'theia-mobile-agent-shell-window theia-mod-failed theia-mod-turn-failure';
+        details.open = true;
+
+        const summary = document.createElement('summary');
+        summary.className = 'theia-mobile-agent-shell-head';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-agent-shell-chevron codicon codicon-chevron-right';
+        chevron.setAttribute('aria-hidden', 'true');
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'theia-mobile-agent-shell-icon-wrap';
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-agent-shell-icon codicon codicon-warning';
+        icon.setAttribute('aria-hidden', 'true');
+        iconWrap.append(icon);
+        const label = document.createElement('span');
+        label.className = 'theia-mobile-agent-shell-title';
+        label.textContent = nls.localize('qaap/mobileProjects/transcriptTurnFailed', 'Task failed');
+        summary.append(chevron, iconWrap, label);
+        this.appendTranscriptShellSummaryTail(summary, {
+            finished: true,
+            failed: true,
+            copyFrom: () => {
+                const technical = technicalContent?.trim();
+                return technical && technical !== formatted
+                    ? `${formatted}\n\n${this.contentUi.cleanTranscriptDisplayText(technical)}`
+                    : formatted;
+            },
+        });
+
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-shell-body';
+        const message = document.createElement('p');
+        message.className = 'theia-mobile-agent-turn-failure-message';
+        message.textContent = formatted;
+        body.append(message);
+        const technical = technicalContent?.trim();
+        if (technical && technical !== formatted && technical !== error.trim()) {
+            body.append(this.createTranscriptClampedPre(
+                this.contentUi.cleanTranscriptDisplayText(technical),
+                'theia-mobile-agent-shell-output',
+            ));
+        }
+        details.append(summary, body);
+        return details;
     }
 
     createTranscriptTextTerminalWindow(content: string): HTMLElement {

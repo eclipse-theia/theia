@@ -40,12 +40,6 @@ export class MobileProjectsTranscriptMessagesUserUi {
         const displayContent = resolveMessagePreviewText(msg);
         this.toolUi.renderTranscriptRichContent(contentEl, displayContent, { defer, sync: !defer });
         row.append(contentEl);
-        if (msg.error) {
-            const err = document.createElement('div');
-            err.className = 'theia-mobile-agent-transcript-error';
-            err.textContent = msg.error;
-            row.append(err);
-        }
         wrap.append(row);
 
         const plainText = this.contentUi.cleanTranscriptDisplayText(displayContent).trim();

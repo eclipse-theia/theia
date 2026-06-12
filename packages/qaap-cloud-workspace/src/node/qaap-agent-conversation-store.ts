@@ -308,8 +308,18 @@ export class QaapAgentConversationStore {
             task = this.taskRunner.create(this.buildTaskCreateRequest(next, turnAgentId));
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            next = this.markUserMessageFailed(next, userMessage.id, message);
+            const failed = this.markTurnFailed(next, {
+                userMessageId: userMessage.id,
+                reason: message,
+            });
+            next = failed.conv;
             this.conversations.set(id, next);
+            const agentMessage = failed.agentMessageId
+                ? next.messages.find(entry => entry.id === failed.agentMessageId)
+                : undefined;
+            if (agentMessage) {
+                this.fire({ type: 'message', conversationId: id, cwd: next.cwd, message: agentMessage });
+            }
             this.fire({ type: 'updated', conversation: toConversationSummary(next) });
             void this.persist();
             return next;
@@ -858,15 +868,20 @@ export class QaapAgentConversationStore {
             )) {
                 return;
             }
-            const genericReason = `Agent ${task.state}${task.exitCode !== undefined ? ` (exit ${task.exitCode})` : ''}.`;
-            const reason = resolveAgentTurnFailureMessage(log, genericReason);
-            const errored = this.markUserMessageFailed(withUsageBaseline, userMessageId, reason);
+            const reason = resolveAgentTurnFailureMessage(log, {
+                state: task.state === 'interrupted' ? 'interrupted' : 'failed',
+                exitCode: task.exitCode,
+            });
             const failureBody = log ? resolveAgentLogDisplayText(conv.agentId, log) : '';
-            const withReply = failureBody && !agentMessageId
-                ? this.appendAgentReply(errored, failureBody)
-                : errored;
-            const finalized = this.finalizeStreamingAgentMessage(withReply, agentMessageId, reason);
-            this.publishFinalizedAgentMessage(conversationId, finalized, agentMessageId);
+            const failed = this.markTurnFailed(withUsageBaseline, {
+                userMessageId,
+                agentMessageId,
+                reason,
+                failureBody,
+            });
+            const resolvedAgentMessageId = failed.agentMessageId ?? agentMessageId;
+            const finalized = this.finalizeStreamingAgentMessage(failed.conv, resolvedAgentMessageId, reason);
+            this.publishFinalizedAgentMessage(conversationId, finalized, resolvedAgentMessageId);
             this.finishLeaderTurnAndMaybeSynthesize(conversationId, task.id, finalized);
             return;
         }
@@ -1045,9 +1060,45 @@ export class QaapAgentConversationStore {
         };
     }
 
-    protected markUserMessageFailed(conv: QaapAgentConversation, messageId: string, reason: string): QaapAgentConversation {
-        const messages = conv.messages.map(m => m.id === messageId ? { ...m, error: reason } : m);
-        return { ...conv, status: 'failed', updatedAt: Date.now(), messages };
+    protected markTurnFailed(
+        conv: QaapAgentConversation,
+        options: {
+            readonly userMessageId: string;
+            readonly agentMessageId?: string;
+            readonly reason: string;
+            readonly failureBody?: string;
+        },
+    ): { readonly conv: QaapAgentConversation; readonly agentMessageId?: string } {
+        let agentMessageId = options.agentMessageId;
+        let messages = conv.messages.map(message => message.id === options.userMessageId
+            ? { ...message, error: undefined }
+            : message
+        );
+        if (agentMessageId) {
+            messages = messages.map(message => message.id === agentMessageId && message.role === 'agent'
+                ? { ...message, error: options.reason }
+                : message
+            );
+        } else {
+            const failureMessage: QaapAgentMessage = {
+                id: randomUUID(),
+                role: 'agent',
+                content: options.failureBody?.trim() ?? '',
+                error: options.reason,
+                createdAt: Date.now(),
+            };
+            agentMessageId = failureMessage.id;
+            messages = [...messages, failureMessage];
+        }
+        return {
+            conv: {
+                ...conv,
+                status: 'failed',
+                updatedAt: Date.now(),
+                messages,
+            },
+            agentMessageId,
+        };
     }
 
     protected finalizeStreamingAgentMessage(

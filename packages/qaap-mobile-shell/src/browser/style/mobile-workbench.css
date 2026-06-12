@@ -17614,6 +17614,17 @@ body > .theia-mobile-transcript-files-menu {
   margin-top: 2px;
 }
 
+.theia-mobile-agent-shell-window.theia-mod-turn-failure .theia-mobile-agent-shell-icon.codicon-warning {
+  color: var(--theia-errorForeground, #c72e0f);
+}
+
+.theia-mobile-agent-turn-failure-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--theia-foreground);
+}
+
 .theia-mobile-agent-transcript-readonly {
   padding: 10px 16px 14px;
   border-top: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.18));

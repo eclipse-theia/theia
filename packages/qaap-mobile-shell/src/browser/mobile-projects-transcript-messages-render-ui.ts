@@ -18,7 +18,7 @@ import {
     attachTranscriptRowDeferObserver,
     shouldDeferTranscriptRowHeavyContent,
 } from './qaap-transcript-row-defer';
-import type { QaapAgentConversationDTO, QaapAgentMessageDTO, QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
+import { normalizeAgentConversationFailures, type QaapAgentConversationDTO, type QaapAgentMessageDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import type { MobileProjectsTranscriptMessagesArtifactsUi } from './mobile-projects-transcript-messages-artifacts-ui';
 import type { MobileProjectsTranscriptMessagesContentUi } from './mobile-projects-transcript-messages-content-ui';
 import type { MobileProjectsTranscriptMessagesHost } from './mobile-projects-transcript-messages-ui';
@@ -81,26 +81,32 @@ export class MobileProjectsTranscriptMessagesRenderUi {
     }
 
     createTranscriptMessageRowAtIndex(conv: QaapAgentConversationDTO, index: number): HTMLElement {
-        const msg = conv.messages[index];
-        const sameConversation = this.host.transcriptLastRenderedConversationId === conv.id;
+        const normalized = normalizeAgentConversationFailures(conv);
+        const msg = normalized.messages[index];
+        const sameConversation = this.host.transcriptLastRenderedConversationId === normalized.id;
         const previousLastMessageId = this.host.transcriptLastRenderedMessageId;
         const deferHeavyContent = shouldDeferTranscriptRowHeavyContent({
             messageIndex: index,
-            messageCount: conv.messages.length,
-            conversationStreaming: conv.status === 'streaming',
+            messageCount: normalized.messages.length,
+            conversationStreaming: normalized.status === 'streaming',
         });
-        const streamingTail = index === conv.messages.length - 1
+        const streamingTail = index === normalized.messages.length - 1
             && msg.role === 'agent'
-            && isTranscriptAgentTailStreaming(conv);
+            && isTranscriptAgentTailStreaming(normalized);
         let row: HTMLElement;
-        const agentSegments = this.resolveTranscriptAgentSegments(conv, msg);
+        const agentSegments = this.resolveTranscriptAgentSegments(normalized, msg);
         if (msg.role === 'user') {
-            row = this.userUi.createTranscriptUserMessageRow(msg, conv, { deferHeavyContent });
+            row = this.userUi.createTranscriptUserMessageRow(msg, normalized, { deferHeavyContent });
         } else if (agentSegments && agentSegments.length > 0) {
-            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, conv, {
+            row = this.artifactsUi.createTranscriptAgentSegmentsRow(agentSegments, msg.error, normalized, {
                 deferHeavyContent,
                 streaming: streamingTail,
             });
+            if (msg.id) {
+                row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, msg.id);
+            }
+        } else if (msg.role === 'agent' && msg.error?.trim()) {
+            row = this.createTranscriptAgentFailureRow(msg, { deferHeavyContent });
             if (msg.id) {
                 row.setAttribute(TRANSCRIPT_MESSAGE_ID_ATTR, msg.id);
             }
@@ -108,7 +114,7 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             row = this.createTranscriptMessageRow(
                 msg.role,
                 normalizeAgentMessageContentForDisplay(msg.content),
-                msg.error,
+                undefined,
                 { deferHeavyContent, streaming: streamingTail },
             );
         }
@@ -130,12 +136,13 @@ export class MobileProjectsTranscriptMessagesRenderUi {
     }
 
     renderTranscriptMessagesVirtual(host: HTMLElement, conv: QaapAgentConversationDTO): void {
-        this.host.transcriptLastConv = conv;
+        const normalized = normalizeAgentConversationFailures(conv);
+        this.host.transcriptLastConv = normalized;
         const messageHost = this.resolveTranscriptMessageHost(host);
         messageHost.classList.remove('theia-mod-empty-chat');
         messageHost.classList.add('theia-mod-virtual-scroll');
 
-        const list = this.host.transcriptUi.mount(messageHost, conv, index => {
+        const list = this.host.transcriptUi.mount(messageHost, normalized, index => {
             const current = this.host.transcriptLastConv;
             if (!current) {
                 return document.createElement('div');
@@ -143,11 +150,11 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             return this.createTranscriptMessageRowAtIndex(current, index);
         });
 
-        const wasNearBottom = list.isNearBottom() || conv.status === 'streaming';
-        list.setItemCount(conv.messages.length);
-        list.setFooter(this.buildTranscriptVirtualFooter(conv));
-        this.host.transcriptLastRenderedConversationId = conv.id;
-        this.host.transcriptLastRenderedMessageId = conv.messages.at(-1)?.id;
+        const wasNearBottom = list.isNearBottom() || normalized.status === 'streaming';
+        list.setItemCount(normalized.messages.length);
+        list.setFooter(this.buildTranscriptVirtualFooter(normalized));
+        this.host.transcriptLastRenderedConversationId = normalized.id;
+        this.host.transcriptLastRenderedMessageId = normalized.messages.at(-1)?.id;
         if (wasNearBottom) {
             list.scrollToEnd();
         }
@@ -509,10 +516,26 @@ export class MobileProjectsTranscriptMessagesRenderUi {
         }
     }
 
+    createTranscriptAgentFailureRow(
+        msg: QaapAgentMessageDTO,
+        options?: { readonly deferHeavyContent?: boolean },
+    ): HTMLElement {
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-agent-transcript-msg theia-mod-agent';
+        if (options?.deferHeavyContent) {
+            row.setAttribute('data-transcript-row-deferred', '1');
+        }
+        const body = document.createElement('div');
+        body.className = 'theia-mobile-agent-transcript-segments';
+        body.append(this.toolUi.createTranscriptAgentFailureDialog(msg.error ?? '', msg.content));
+        row.append(body);
+        return row;
+    }
+
     createTranscriptMessageRow(
         role: 'user' | 'agent',
         content: string,
-        error?: string,
+        _error?: string,
         options?: { readonly deferHeavyContent?: boolean; readonly streaming?: boolean },
     ): HTMLElement {
         const row = document.createElement('div');
@@ -529,12 +552,6 @@ export class MobileProjectsTranscriptMessagesRenderUi {
             { defer: options?.deferHeavyContent, streaming: options?.streaming },
         );
         row.append(contentEl);
-        if (error) {
-            const err = document.createElement('div');
-            err.className = 'theia-mobile-agent-transcript-error';
-            err.textContent = error;
-            row.append(err);
-        }
         return row;
     }
 }

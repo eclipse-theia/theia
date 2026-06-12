@@ -121,13 +121,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             }
         }
 
-        row.append(body);
         if (error) {
-            const err = document.createElement('div');
-            err.className = 'theia-mobile-agent-transcript-error';
-            err.textContent = error;
-            row.append(err);
+            body.append(this.toolUi.createTranscriptAgentFailureDialog(error));
         }
+        row.append(body);
         return row;
     }
 
