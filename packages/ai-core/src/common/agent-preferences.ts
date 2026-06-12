@@ -79,9 +79,10 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                     completionNotification: {
                         type: 'string',
                         enum: [...NOTIFICATION_TYPES],
-                        title: nls.localize('theia/ai/agents/completionNotification/title', 'Completion Notification'),
+                        title: nls.localize('theia/ai/agents/completionNotification/title', 'Notification'),
                         markdownDescription: nls.localize('theia/ai/agents/completionNotification/mdDescription',
-                            'Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n\
+                            'Notification behavior when this agent needs your attention, i.e. it completed a task or requests your input. \
+                    If not set, the global default notification setting will be used.\n\
                     - `os-notification`: Show OS/system notifications\n\
                     - `message`: Show notifications in the status bar/message area\n\
                     - `blink`: Blink or highlight the UI\n\

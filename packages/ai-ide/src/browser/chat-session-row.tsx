@@ -102,6 +102,7 @@ export function ChatSessionRow(props: ChatSessionRowComponentProps): React.React
 
     const timeAgo = useTimeAgo(session.saveDate, formatTimeAgo);
     const [isWorking, setIsWorking] = React.useState(false);
+    const [isWaitingForInput, setIsWaitingForInput] = React.useState(false);
     const [hasError, setHasError] = React.useState(session.hasError === true);
     const hasUnread = useUnreadMessages(session.sessionId, unreadState);
 
@@ -122,6 +123,7 @@ export function ChatSessionRow(props: ChatSessionRowComponentProps): React.React
             const recompute = () => {
                 const requests = s.model.getRequests();
                 setIsWorking(requests.some(ChatRequestModel.isInProgress));
+                setIsWaitingForInput(requests.some(r => r.response.isWaitingForInput));
                 const lastReq = requests.at(-1);
                 setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
             };
@@ -159,11 +161,11 @@ export function ChatSessionRow(props: ChatSessionRowComponentProps): React.React
         // once the session is actually opened.
         const loadedSession = chatService.getSession(session.sessionId);
         const content = loadedSession
-            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError)
+            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput)
             : buildRestoredSessionTooltip(session, chatAgentService);
         if (!hoverActiveRef.current) { return; }
         hoverService.requestHover({ content, target, position: 'left' });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput]);
 
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []);
 
@@ -186,15 +188,25 @@ export function ChatSessionRow(props: ChatSessionRowComponentProps): React.React
         }
     }, [onClick]);
 
+    // A session waiting for input is still "in progress" (ChatRequestModel.isInProgress is true),
+    // so the waiting state takes precedence over the generic working spinner: it signals that the
+    // user, not the agent, needs to act.
+    const showWorking = isWorking && !isWaitingForInput;
     const showUnread = hasUnread && !isWorking && !hasError;
+    const waitingForInputLabel = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
     const rowClasses = [
         'theia-chat-session-row',
-        isWorking && 'theia-chat-session-row-working',
+        isWaitingForInput && 'theia-chat-session-row-attention',
+        showWorking && 'theia-chat-session-row-working',
         hasError && !isWorking && 'theia-chat-session-row-error',
         showUnread && 'theia-chat-session-row-unread'
     ].filter(Boolean).join(' ');
 
-    const iconClass = isWorking ? `${codicon('loading')} theia-animation-spin` : agentIcon;
+    const iconClass = isWaitingForInput
+        ? codicon('bell')
+        : showWorking
+            ? `${codicon('loading')} theia-animation-spin`
+            : agentIcon;
 
     return (
         <div ref={rowRef}
@@ -216,6 +228,10 @@ export function ChatSessionRow(props: ChatSessionRowComponentProps): React.React
                 {showUnread && (
                     <span className="theia-chat-session-row-unread-dot"
                         aria-label={nls.localize('theia/ai/ide/tooltip/unread', 'Unread')} />
+                )}
+                {isWaitingForInput && (
+                    <span className="theia-chat-session-row-attention-dot"
+                        aria-label={waitingForInputLabel} />
                 )}
             </div>
             <div className="theia-chat-session-row-content">

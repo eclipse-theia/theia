@@ -2909,7 +2909,10 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _progressMessages: ChatProgressMessage[];
     protected _response: ChatResponseImpl;
     protected _isComplete: boolean;
-    protected _isWaitingForInput: boolean;
+    // Reference count of in-flight requests for user input (agent questions and pending tool-call
+    // confirmations). The response is "waiting for input" while this is greater than zero, so that
+    // multiple parallel confirmations all have to resolve before the waiting state clears.
+    protected _waitingForInputCount: number = 0;
     protected _agentId?: string;
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
@@ -2936,7 +2939,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
             this._id = generateUuid();
             this._progressMessages = [];
             this._isComplete = false;
-            this._isWaitingForInput = false;
+            this._waitingForInputCount = 0;
             this._isError = false;
         }
 
@@ -2956,7 +2959,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
         // Do not restore waitingForInput state - when a session is restored,
         // the agent that was waiting for input is no longer running
-        this._isWaitingForInput = false;
+        this._waitingForInputCount = 0;
         // TODO: Restore progressMessages?
         this._progressMessages = [];
         this._promptVariantId = data.promptVariantId;
@@ -3026,7 +3029,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     }
 
     get isWaitingForInput(): boolean {
-        return this._isWaitingForInput;
+        return this._waitingForInputCount > 0;
     }
 
     get agentId(): string | undefined {
@@ -3071,14 +3074,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     complete(): void {
         this._isComplete = true;
-        this._isWaitingForInput = false;
+        this._waitingForInputCount = 0;
         this._onDidChangeEmitter.fire();
     }
 
     cancel(): void {
         this._cancellationToken.cancel();
         this._isComplete = true;
-        this._isWaitingForInput = false;
+        this._waitingForInputCount = 0;
 
         // Ensure any pending tool confirmations are canceled when the chat is canceled
         try {
@@ -3100,12 +3103,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
     }
 
     waitForInput(): void {
-        this._isWaitingForInput = true;
+        this._waitingForInputCount++;
         this._onDidChangeEmitter.fire();
     }
 
     stopWaitingForInput(): void {
-        this._isWaitingForInput = false;
+        if (this._waitingForInputCount > 0) {
+            this._waitingForInputCount--;
+        }
         this._onDidChangeEmitter.fire();
     }
 
@@ -3119,7 +3124,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     error(error: Error): void {
         this._isComplete = true;
-        this._isWaitingForInput = false;
+        this._waitingForInputCount = 0;
         this._isError = true;
         this._errorObject = error;
         this._onDidChangeEmitter.fire();

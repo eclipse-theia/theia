@@ -6,6 +6,7 @@
 
 ## 1.73.0 - tbd
 
+- [ai-chat] indicated and notified when a chat session is waiting for user input: the chat overview marks the session (bell icon, attention dot, bold title, tooltip badge) and a notification is shown; agent questions, tool confirmations, and the user-interaction tool now share this state
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-ide] redesigned the chat session overview as a list with Active/Restored sections, agent icon per row, contextual toolbar (Go Back, Browse all chats..., lock/summarize hidden on the overview), and keybindings `Ctrl+Shift+L` (Go Back) and `Ctrl+Alt+L` (Browse all chats...)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
@@ -17,6 +18,7 @@
 - [ai-ide] renamed `ChatSessionCardActionContribution` to `ChatSessionItemActionContribution` (and `DefaultChatSessionCardActionContribution` to `DefaultChatSessionItemActionContribution`, `ChatSessionCardAction` to `ChatSessionItemAction`); the symbol and file were renamed to reflect the new list-row UI
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-core] renamed `AgentCompletionNotificationService` to `AgentNotificationService`, `CompletionNotificationOptions` to `AgentNotificationOptions`, and the `showCompletionNotification(agentId, options)` method to `showNotification(agentId, kind, options)`; `OSNotificationService.showAgentCompletionNotification(...)` was renamed to `showAgentNotification(agentName, kind, ...)`. These now cover both task-completion and input-needed notifications via a notification kind
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 ## 1.72.0 - 5/28/2026

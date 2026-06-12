@@ -76,7 +76,7 @@ const NotificationDescription = ({ onOpenNotificationSettings }: { onOpenNotific
     return (
         <div className="ai-configuration-description">
             {nls.localize('theia/ai/core/agentConfiguration/completionNotificationDescriptionPrefix',
-                'Select how you want to be notified when this agent completes its task. "Default" uses the ')}
+                'Select how you want to be notified when this agent needs your attention, i.e. it completes its task or requests your input. "Default" uses the ')}
             <a href="#" onClick={e => { e.preventDefault(); onOpenNotificationSettings(); }}>{linkText}</a>.
         </div>
     );

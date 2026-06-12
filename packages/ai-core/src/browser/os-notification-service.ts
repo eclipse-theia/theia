@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { environment } from '@theia/core';
+import { AgentNotificationKind, AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '../common/notification-types';
 
 /**
  * Configuration options for OS notifications
@@ -149,33 +150,44 @@ export class OSNotificationService {
     }
 
     /**
-     * Show a notification specifically for agent completion
-     * This is a convenience method with pre-configured options for agent notifications
+     * Show a notification for an agent event (task completed or input needed).
+     * This is a convenience method with pre-configured options for agent notifications.
      *
-     * @param agentName The name of the agent that completed
+     * @param agentName The name of the agent
+     * @param kind Whether the agent completed its task or needs user input
      * @param sessionTitle Optional title of the chat session for identification
      * @param onClickCallback Optional callback to invoke when the notification is clicked
      * @returns Promise resolving to the notification result
      */
-    async showAgentCompletionNotification(
+    async showAgentNotification(
         agentName: string,
+        kind: AgentNotificationKind,
         sessionTitle?: string,
         onClickCallback?: () => void,
     ): Promise<OSNotificationResult> {
-        const title = nls.localize('theia/ai-core/agentCompletionTitle', 'Agent "{0}" Task Completed', agentName);
-        const body = sessionTitle
-            ? nls.localize('theia/ai-core/agentCompletionMessageWithSession',
-                'Agent "{0}" has completed its task in "{1}".', agentName, sessionTitle)
-            : nls.localize('theia/ai-core/agentCompletionMessage',
-                'Agent "{0}" has completed its task.', agentName);
+        const inputNeeded = kind === AGENT_NOTIFICATION_KIND_INPUT_NEEDED;
+        const title = inputNeeded
+            ? nls.localize('theia/ai-core/agentInputNeededTitle', 'Agent "{0}" Needs Your Input', agentName)
+            : nls.localize('theia/ai-core/agentCompletionTitle', 'Agent "{0}" Task Completed', agentName);
+        const body = inputNeeded
+            ? (sessionTitle
+                ? nls.localize('theia/ai-core/agentInputNeededMessageWithSession',
+                    'Agent "{0}" needs your input in "{1}".', agentName, sessionTitle)
+                : nls.localize('theia/ai-core/agentInputNeededMessage',
+                    'Agent "{0}" needs your input.', agentName))
+            : (sessionTitle
+                ? nls.localize('theia/ai-core/agentCompletionMessageWithSession',
+                    'Agent "{0}" has completed its task in "{1}".', agentName, sessionTitle)
+                : nls.localize('theia/ai-core/agentCompletionMessage',
+                    'Agent "{0}" has completed its task.', agentName));
 
         return this.showNotification(title, {
             body,
-            icon: this.getAgentCompletionIcon(),
-            tag: `agent-completion-${agentName}-${sessionTitle ?? 'default'}`,
+            icon: this.getAgentNotificationIcon(),
+            tag: `agent-${kind}-${agentName}-${sessionTitle ?? 'default'}`,
             requireInteraction: false,
             data: {
-                type: 'agent-completion',
+                type: `agent-${kind}`,
                 agentName,
                 sessionTitle,
                 timestamp: Date.now()
@@ -276,11 +288,11 @@ export class OSNotificationService {
     }
 
     /**
-     * Get the icon URL for agent completion notifications
+     * Get the icon URL for agent notifications
      *
      * @returns The icon URL or undefined if not available
      */
-    private getAgentCompletionIcon(): string | undefined {
+    private getAgentNotificationIcon(): string | undefined {
         // This could return a path to an icon file
         // For now, we'll return undefined to use the default system icon
         return undefined;
