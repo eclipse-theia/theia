@@ -115,6 +115,10 @@ export interface SerializableChatRequestData {
      * Contains user-selected skills, functions, MCP tools, etc.
      */
     genericCapabilitySelections?: GenericCapabilitySelections;
+    /**
+     * Server tool selections for this request, keyed by model vendor.
+     */
+    serverToolSelections?: Record<string, string[]>;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

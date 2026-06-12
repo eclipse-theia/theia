@@ -235,13 +235,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         query?: string | ChatRequest,
         modeId?: string,
         capabilityOverrides?: Record<string, boolean>,
-        genericCapabilitySelections?: GenericCapabilitySelections
+        genericCapabilitySelections?: GenericCapabilitySelections,
+        serverToolSelections?: Record<string, string[]>
     ): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections }
-                : { ...query, capabilityOverrides, genericCapabilitySelections };
+                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections }
+                : { ...query, capabilityOverrides, genericCapabilitySelections, serverToolSelections };
         if (chatRequest.text.length === 0) { return; }
 
         // Include all variables (context + pending image attachments) in the request

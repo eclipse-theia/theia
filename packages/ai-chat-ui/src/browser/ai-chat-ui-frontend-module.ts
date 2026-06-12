@@ -35,6 +35,7 @@ import {
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
     ToolCallPartRenderer,
+    ServerToolCallPartRenderer,
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
@@ -177,6 +178,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(ServerToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
