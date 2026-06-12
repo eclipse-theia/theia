@@ -51,7 +51,8 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
     }
 
     override registerCommands(commands: CommandRegistry): void {
-        // Upstream already registered these command ids; registerHandler prepends a higher-priority handler.
+        super.registerCommands(commands);
+        // registerHandler prepends Qaap behavior (empty preview tab, no quick-input) over upstream handlers.
         commands.registerHandler(MiniBrowserCommands.PREVIEW.id, {
             execute: widget => this.preview(widget),
             isEnabled: widget => this.canPreviewWidget(widget),
