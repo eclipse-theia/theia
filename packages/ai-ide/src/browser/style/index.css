@@ -867,6 +867,28 @@
   padding-top: calc(var(--theia-ui-padding) * 8);
 }
 
+/* Compact greeting used when the home view also shows recent sessions */
+.theia-WelcomeMessage-Compact {
+  padding-top: calc(var(--theia-ui-padding) * 2);
+}
+
+.theia-WelcomeMessage-Compact .theia-WelcomeMessage-Logo {
+  margin-bottom: calc(var(--theia-ui-padding));
+}
+
+.theia-WelcomeMessage-Compact .theia-WelcomeMessage-Content h2 {
+  font-size: var(--theia-ui-font-size2);
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.theia-WelcomeMessage-Compact .theia-WelcomeMessage-Content p {
+  margin-bottom: calc(var(--theia-ui-padding) * 0.75);
+}
+
+.theia-WelcomeMessage-Compact .theia-WelcomeMessage-Alert {
+  margin-top: calc(var(--theia-ui-padding) * 1.5);
+}
+
 .theia-WelcomeMessage-Content {
   text-align: center;
   padding: 0 calc(var(--theia-ui-padding) * 2);
@@ -1074,56 +1096,222 @@
 }
 
 .theia-WelcomeMessage-SessionsSection {
-  padding-left: calc(var(--theia-ui-padding) * 3);
-  padding-right: calc(var(--theia-ui-padding) * 3);
+  padding-left: calc(var(--theia-ui-padding) * 2);
+  padding-right: calc(var(--theia-ui-padding) * 2);
   box-sizing: border-box;
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
-.theia-WelcomeMessage-SessionsSection h2 {
-  font-size: var(--theia-ui-font-size3);
-}
-
-.theia-WelcomeMessage-SessionCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 320px));
-  grid-auto-rows: 1fr;
-  justify-content: center;
-  gap: calc(var(--theia-ui-padding) * 1.5);
+.theia-WelcomeMessage-SessionsList {
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  min-height: 0;
 }
 
-.theia-WelcomeMessage-SessionCards>* {
+.theia-WelcomeMessage-SessionsGroup {
   display: flex;
   flex-direction: column;
 }
 
-.theia-WelcomeMessage-SessionCards .theia-Card {
-  flex: 1;
+.theia-WelcomeMessage-SessionsGroup+.theia-WelcomeMessage-SessionsGroup {
+  margin-top: var(--theia-ui-padding);
 }
 
-.theia-WelcomeMessage-BrowseAllLink {
-  margin-top: calc(var(--theia-ui-padding) * 2);
-  padding-bottom: calc(var(--theia-ui-padding) * 2);
-  text-align: center;
+.theia-WelcomeMessage-SessionsHeader {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 500;
+  padding: var(--theia-ui-padding) var(--theia-ui-padding) calc(var(--theia-ui-padding) / 2);
 }
 
-.theia-WelcomeMessage-BrowseAllLink a {
-  color: var(--theia-textLink-foreground);
-  cursor: pointer;
+.theia-WelcomeMessage-SessionsFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0 calc(var(--theia-ui-padding) / 2);
+  margin-top: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding);
   font-size: var(--theia-ui-font-size1);
 }
 
-.theia-WelcomeMessage-BrowseAllLink a:hover {
-  text-decoration: underline;
+.theia-WelcomeMessage-FooterLink {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.theia-WelcomeMessage-FooterLink:hover,
+.theia-WelcomeMessage-FooterLink:focus {
+  color: var(--theia-textLink-activeForeground);
+}
+
+/* Markdown-rendered anchors inside the welcome view (e.g. "Learn more", "Tools configuration view")
+   use a real href, so the browser would normally underline them. Strip the underline so they
+   visually match the footer link convention; hover still flips the color for affordance. */
+.theia-WelcomeMessage a {
+  text-decoration: none;
+}
+
+.theia-WelcomeMessage a:hover,
+.theia-WelcomeMessage a:focus {
+  text-decoration: none;
+  color: var(--theia-textLink-activeForeground);
+}
+
+/* Chat session list rows */
+.theia-chat-session-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+  min-height: calc(var(--theia-ui-font-size1) * 2.5);
+}
+
+.theia-chat-session-row:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-chat-session-row:focus,
+.theia-chat-session-row:focus-within {
+  background-color: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-chat-session-row-icon-col {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  flex-shrink: 0;
+}
+
+.theia-chat-session-row-unread-dot {
+  position: absolute;
+  top: -1px;
+  left: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  border: 1px solid var(--theia-editor-background);
+  pointer-events: none;
+}
+
+.theia-chat-session-row-unread .theia-chat-session-row-title {
+  font-weight: 600;
+}
+
+.theia-chat-session-row-archive-icon {
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-chat-session-row-agent-icon {
+  color: var(--theia-icon-foreground);
+}
+
+.theia-chat-session-row-working .theia-chat-session-row-agent-icon {
+  color: var(--theia-focusBorder);
+}
+
+.theia-chat-session-row-error .theia-chat-session-row-agent-icon,
+.theia-chat-session-row-error .theia-chat-session-row-archive-icon {
+  color: var(--theia-errorForeground);
+}
+
+/* When the row is focused (selection background), let the icons inherit the selection
+   foreground so they stay readable on the highlighted background. */
+.theia-chat-session-row:focus .theia-chat-session-row-agent-icon,
+.theia-chat-session-row:focus .theia-chat-session-row-archive-icon,
+.theia-chat-session-row:focus-within .theia-chat-session-row-agent-icon,
+.theia-chat-session-row:focus-within .theia-chat-session-row-archive-icon {
+  color: inherit;
+}
+
+.theia-chat-session-row-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theia-chat-session-row-title-line {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  min-width: 0;
+}
+
+.theia-chat-session-row-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-chat-session-row-subtitle {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-chat-session-row:focus-within .theia-chat-session-row-subtitle,
+.theia-chat-session-row:focus .theia-chat-session-row-subtitle {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.theia-chat-session-row-actions {
+  display: none;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 4);
+  flex-shrink: 0;
+}
+
+.theia-chat-session-row:hover .theia-chat-session-row-actions,
+.theia-chat-session-row:focus-within .theia-chat-session-row-actions,
+.theia-chat-session-row:focus .theia-chat-session-row-actions {
+  display: inline-flex;
+}
+
+.theia-chat-session-row-action {
+  background: transparent;
+  border: none;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  padding: calc(var(--theia-ui-padding) / 4);
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theia-chat-session-row-action:hover {
+  background-color: var(--theia-toolbar-hoverBackground, var(--theia-list-hoverBackground));
+}
+
+.theia-chat-session-row:focus-within .theia-chat-session-row-action,
+.theia-chat-session-row:focus .theia-chat-session-row-action {
+  color: inherit;
 }
 
 .theia-chat-session-badge-unread-tooltip,
 .theia-chat-session-badge-running-tooltip,
-.theia-chat-session-badge-error-tooltip {
+.theia-chat-session-badge-error-tooltip,
+.theia-chat-session-badge-restored-tooltip {
   font-size: var(--theia-ui-font-size0);
   font-weight: 600;
   border-radius: calc(var(--theia-ui-padding) * 0.75);
@@ -1145,6 +1333,12 @@
 .theia-chat-session-badge-error-tooltip {
   color: var(--theia-activityBarBadge-foreground);
   background-color: var(--theia-errorForeground);
+}
+
+.theia-chat-session-badge-restored-tooltip {
+  color: var(--theia-foreground);
+  background-color: var(--theia-editorWidget-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
 }
 
 .theia-chat-session-tooltip-label {
@@ -1199,41 +1393,6 @@
   word-break: break-word;
 }
 
-.theia-chat-session-card-wrapper {
-  position: relative;
-}
-
-.theia-chat-session-card-working .theia-Card-icon {
-  color: var(--theia-focusBorder);
-}
-
-.theia-chat-session-card-error .theia-Card-icon {
-  color: var(--theia-errorForeground);
-}
-
-.theia-chat-session-card-error .theia-Card-interactive:hover {
-  border-color: var(--theia-errorForeground);
-}
-
-.theia-chat-session-card-error .theia-Card-interactive:focus {
-  outline-color: var(--theia-errorForeground);
-}
-
-.theia-chat-session-badge-unread {
-  position: absolute;
-  top: calc(var(--theia-ui-padding) * 1.5);
-  left: calc(var(--theia-ui-padding) * 1.5);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--theia-activityBarBadge-background);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.theia-chat-session-card-error .theia-chat-session-badge-unread {
-  background-color: var(--theia-errorForeground);
-}
 
 /*
  * AI Tools Configuration Widget Styles
