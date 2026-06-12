@@ -106,7 +106,13 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         }
     }
 
-    get(target: unknown, property: string, receiver: unknown): unknown {
+    get(target: unknown, property: string | symbol, receiver: unknown): unknown {
+        // React 19 dev mode calls Object.prototype.toString when handling prop diffs, which
+        // probes Symbol.toStringTag. Throwing should be avoided in this case, it crashes the React DOM.
+        if (property === Symbol.toStringTag) {
+            return undefined;
+        }
+
         if (typeof property !== 'string') {
             throw new Error(`Unexpected property: ${String(property)}`);
         }
@@ -156,7 +162,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         }
     }
 
-    set(target: unknown, property: string, value: unknown, receiver: unknown): boolean {
+    set(target: unknown, property: string | symbol, value: unknown, receiver: unknown): boolean {
         if (typeof property !== 'string') {
             throw new Error(`Unexpected property: ${String(property)}`);
         }
@@ -212,8 +218,8 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         return properties;
     }
 
-    getOwnPropertyDescriptor(target: unknown, property: string): PropertyDescriptor {
-        if (this.ownKeys().includes(property)) {
+    getOwnPropertyDescriptor(target: unknown, property: string | symbol): PropertyDescriptor {
+        if (typeof property === 'string' && this.ownKeys().includes(property)) {
             return {
                 enumerable: true,
                 configurable: true

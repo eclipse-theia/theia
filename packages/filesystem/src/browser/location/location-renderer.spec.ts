@@ -174,7 +174,7 @@ describe('LocationListRenderer', () => {
             service.location = location;
             const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
 
-            const selectElement = r.testRenderSelectInput() as React.ReactElement;
+            const selectElement = r.testRenderSelectInput() as React.ReactElement<{ value: string }>;
 
             expect(selectElement.props.value).to.equal(location.toString());
             r.dispose();
@@ -190,7 +190,7 @@ describe('LocationListRenderer', () => {
             const newLocation = URI.fromFilePath('/c:/Users');
             service.location = newLocation;
 
-            const selectElement = r.testRenderSelectInput() as React.ReactElement;
+            const selectElement = r.testRenderSelectInput() as React.ReactElement<{ value: string }>;
 
             expect(selectElement.props.value).to.equal(newLocation.toString());
             r.dispose();

@@ -26,8 +26,6 @@
     "@types/lodash.throttle": "^4.1.9",
     "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-emoji": "^3.0.1",
-    "@types/react": "^18.3.28",
-    "@types/react-dom": "^18.3.7",
     "@types/route-parser": "^0.1.7",
     "@types/safer-buffer": "^2.1.3",
     "@types/uuid": "^9.0.8",
@@ -60,8 +58,6 @@
     "msgpackr": "^1.11.12",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "1.5.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "react-tooltip": "^4.5.1",
     "react-virtuoso": "^2.19.1",
     "reflect-metadata": "^0.2.2",
@@ -77,10 +73,20 @@
     "yargs": "^17.7.2"
   },
   "peerDependencies": {
-    "@theia/electron": "*"
+    "@theia/electron": "*",
+    "@types/react": "^18.3.0 || ^19.0.0",
+    "@types/react-dom": "^18.3.0 || ^19.0.0",
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0"
   },
   "peerDependenciesMeta": {
     "@theia/electron": {
+      "optional": true
+    },
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
       "optional": true
     }
   },
@@ -215,8 +221,12 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.72.0",
     "@theia/re-exports": "1.72.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "minimist": "^1.2.8",
-    "nodejs-file-downloader": "4.13.0"
+    "nodejs-file-downloader": "4.13.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -104,7 +104,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
     }
 
-    protected showErrorHover(spanRef: React.RefObject<HTMLSpanElement>, error: string): void {
+    protected showErrorHover(spanRef: React.RefObject<HTMLSpanElement | null>, error: string): void {
         this.hoverService.requestHover({ content: error, target: spanRef.current!, position: 'left' });
     }
 
