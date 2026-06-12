@@ -99,6 +99,21 @@ interface ParentCheckboxProps {
     hoverService: HoverService;
 }
 
+/** Warning icon shown next to server tool entries (and the "Server Tools" category), explaining auto-approval. */
+const ServerToolWarning: React.FC<{ hoverService: HoverService, content: string }> = ({ hoverService, content }) => (
+    <span
+        className="codicon codicon-warning theia-GenericCapabilities-ServerTool-Warning"
+        onMouseEnter={e => {
+            e.stopPropagation();
+            hoverService.requestHover({
+                content,
+                target: e.currentTarget as HTMLElement,
+                position: 'bottom'
+            });
+        }}
+    />
+);
+
 /** Component for rendering parent node checkbox with indeterminate state support */
 const ParentCheckbox: React.FC<ParentCheckboxProps> = ({ checkboxState, name, onClick, hoverService }) => {
     // eslint-disable-next-line no-null/no-null
@@ -232,14 +247,14 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             }
             const selected = new Set(serverTools.selectedIds);
             return {
-                id: `root-serverTools-${serverTools.vendor}`,
+                id: 'root-serverTools',
                 type: 'root',
-                name: serverTools.providerName,
+                name: nls.localize('theia/ai/chat-ui/serverTools', 'Server Tools'),
                 isServerTool: true,
                 children: [{
                     id: `group-serverTools-${serverTools.vendor}`,
                     type: 'group' as const,
-                    name: nls.localize('theia/ai/chat-ui/serverTools', 'Server Tools'),
+                    name: serverTools.providerName,
                     isServerTool: true,
                     children: serverTools.tools.map(tool => ({
                         id: `item-serverTools-${tool.id}`,
@@ -329,8 +344,8 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             // Only collapse when search was cleared, not on every re-render
             setExpandedNodes(new Set());
         }
-    // Only react to search query and filtered tree changes, not focusedNodeId.
-    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
+        // Only react to search query and filtered tree changes, not focusedNodeId.
+        // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
     }, [searchQuery, filteredTree]);
 
     // Get all visible node IDs for keyboard navigation
@@ -643,20 +658,11 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                         onChange={() => { /* handled by parent div onClick */ }}
                         tabIndex={-1}
                     />
-                    {node.isServerTool && (
-                        <span
-                            className="codicon codicon-warning theia-GenericCapabilities-ServerTool-Warning"
-                            onMouseEnter={e => {
-                                e.stopPropagation();
-                                hoverService.requestHover({
-                                    content: nls.localize('theia/ai/chat-ui/serverToolWarning',
-                                        'This tool is auto-approved when selected. It may be executed by the model at any time.'),
-                                    target: e.currentTarget as HTMLElement,
-                                    position: 'bottom'
-                                });
-                            }}
-                        />
-                    )}
+                    {node.isServerTool && <ServerToolWarning
+                        hoverService={hoverService}
+                        content={nls.localize('theia/ai/chat-ui/serverToolWarning',
+                            'This tool is auto-approved when selected. It may be executed by the model at any time.')}
+                    />}
                     <span className="theia-GenericCapabilities-TreeItem-Name">{node.name}</span>
                 </div>
             );
@@ -665,6 +671,13 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
         // Root or group node
         const isRoot = node.type === 'root';
         const checkboxState = getParentCheckboxState(node);
+        let rootNameTooltip: string | undefined;
+        if (isRoot && node.isServerTool) {
+            rootNameTooltip = nls.localize('theia/ai/chat-ui/serverToolsDescription',
+                "Server tools are executed server-side by the LLM on the vendor's infrastructure.");
+        } else if (isRoot && node.capabilityType) {
+            rootNameTooltip = `${node.name}: ${ROOT_DESCRIPTIONS[node.capabilityType]?.() || node.name}`;
+        }
 
         return (
             <div key={node.id} className={`theia-GenericCapabilities-TreeNode${isRoot ? ' root' : ' group'}`}>
@@ -684,12 +697,16 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                         hoverService={hoverService}
                     />
                     <span className={`codicon ${isExpanded ? 'codicon-chevron-down' : 'codicon-chevron-right'} theia-GenericCapabilities-TreeNode-Chevron`} />
+                    {isRoot && node.isServerTool && <ServerToolWarning
+                        hoverService={hoverService}
+                        content={nls.localize('theia/ai/chat-ui/serverToolsWarning',
+                            'These tools are auto-approved when selected. They may be executed by the model at any time.')}
+                    />}
                     <span
                         className="theia-GenericCapabilities-TreeNode-Name"
-                        onMouseEnter={isRoot && node.capabilityType ? e => {
-                            const description = ROOT_DESCRIPTIONS[node.capabilityType!]?.() || node.name;
+                        onMouseEnter={rootNameTooltip ? e => {
                             hoverService.requestHover({
-                                content: `${node.name}: ${description}`,
+                                content: rootNameTooltip!,
                                 target: e.currentTarget as HTMLElement,
                                 position: 'bottom'
                             });
