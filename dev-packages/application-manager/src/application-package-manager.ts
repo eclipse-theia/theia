@@ -18,7 +18,7 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
-import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
+import { ApplicationPackage, ApplicationPackageOptions, applyLocalEnvFile } from '@theia/application-package';
 import { BundlerGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
@@ -176,6 +176,9 @@ export class ApplicationPackageManager {
     }
 
     start(args: string[] = []): cp.ChildProcess {
+        // Ensure application `.env` is loaded into this process before forking the backend
+        // so runtime vars (e.g. QAAP_SKIP_AUTH) reach the child via fork env inheritance.
+        applyLocalEnvFile(this.pck.projectPath);
         if (this.pck.isElectron()) {
             return this.startElectron(args);
         } else if (this.pck.isBrowserOnly()) {
