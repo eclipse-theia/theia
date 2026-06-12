@@ -18,6 +18,7 @@
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors
   - renamed DebugSessionFactory.get to DebugSessionFactory.createSession and removed the manager parameter
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [workspace] The `class WorkspaceService` has been split into `interface WorkspaceService` and `class WorkspaceServiceImpl`. Adopters who extend the WorkspaceService class need to extend WorkspaceServiceImpl from now on. Adopters who just inject WorkspaceService do not need to change anything. [#17123](https://github.com/eclipse-theia/theia/pull/17123)
 
 ## 1.72.0 - 5/28/2026
 

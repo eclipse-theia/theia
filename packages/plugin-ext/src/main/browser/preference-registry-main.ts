@@ -65,7 +65,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
         this.preferenceService = container.get(PreferenceService);
         const preferenceProviderProvider = container.get<PreferenceProviderProvider>(PreferenceProviderProvider);
         const preferenceServiceImpl = container.get(PreferenceServiceImpl);
-        const workspaceService = container.get(WorkspaceService);
+        const workspaceService: WorkspaceService = container.get(WorkspaceService);
 
         this.toDispose.push(preferenceServiceImpl.onPreferencesChanged(changes => {
             // it HAS to be synchronous to propagate changes before update/remove response
