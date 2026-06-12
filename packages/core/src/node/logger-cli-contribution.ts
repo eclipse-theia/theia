@@ -38,6 +38,7 @@ export interface LogLevels {
 export class LogLevelCliContribution implements CliContribution, Disposable {
 
     protected _logLevels: LogLevels = {};
+    protected wildcardRegexCache = new Map<string, RegExp>();
     protected asyncSubscriptions: AsyncSubscription[] = [];
     protected toDispose = new DisposableCollection();
 
@@ -190,6 +191,7 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
 
             this._defaultLogLevel = newDefaultLogLevel;
             this._logLevels = newLogLevels;
+            this.wildcardRegexCache.clear();
 
             console.log(`Successfully read new log config from ${filename}.`);
         } catch (e) {
@@ -202,13 +204,23 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
     }
 
     logLevelFor(loggerName: string): LogLevel {
-        const level = this._logLevels[loggerName];
-
-        if (level !== undefined) {
-            return level;
-        } else {
-            return this.defaultLogLevel;
+        if (loggerName in this._logLevels) {
+            return this._logLevels[loggerName];
         }
+
+        const keys = Object.keys(this._logLevels);
+        for (let i = keys.length - 1; i >= 0; i--) {
+            const pattern = keys[i];
+
+            if (pattern.includes('*')) {
+                const regex = this.getWildcardRegex(pattern);
+                if (regex.test(loggerName)) {
+                    return this._logLevels[pattern];
+                }
+            }
+        }
+
+        return this.defaultLogLevel;
     }
 
     /**
@@ -222,5 +234,21 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
         }
 
         return level;
+    }
+
+    /**
+     * Converts a wildcard string into a strict regular expression and caches it.
+     * Example: "ai-core*" -> /^ai-core.*$/
+     */
+    protected getWildcardRegex(pattern: string): RegExp {
+        let regex = this.wildcardRegexCache.get(pattern);
+        if (!regex) {
+            const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            const regexString = `^${escapedPattern.replace(/\*/g, '.*')}$`;
+
+            regex = new RegExp(regexString);
+            this.wildcardRegexCache.set(pattern, regex);
+        }
+        return regex;
     }
 }
