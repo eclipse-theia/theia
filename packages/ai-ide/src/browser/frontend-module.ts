@@ -125,6 +125,12 @@ import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
 import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
+import { CommitMessageAgent } from './commit-message-agent';
+import { CommitMessageRunner } from './commit-message-runner';
+import { CommitMessageCommandContribution } from './commit-message-command-contribution';
+import { GetGitChangesTool } from './git-changes-tool';
+import { AiAwareScmCommitWidget } from './ai-aware-scm-commit-widget';
+import { ScmCommitWidget } from '@theia/scm/lib/browser/scm-commit-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -350,4 +356,16 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
+
+    // CommitMessageAgent is intentionally NOT bound as a `ChatAgent`: it is a single-purpose
+    // agent driven from the SCM commit widget via `CommitMessageRunner` and should not appear
+    // in chat `@`-mention completion or the chat agent list. The `Agent` binding registers
+    // its prompt fragments with the prompt service.
+    bind(CommitMessageAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CommitMessageAgent);
+    bindToolProvider(GetGitChangesTool, bind);
+    bind(CommitMessageRunner).toSelf().inSingletonScope();
+    bind(CommitMessageCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(CommitMessageCommandContribution);
+    rebind(ScmCommitWidget).to(AiAwareScmCommitWidget);
 });
