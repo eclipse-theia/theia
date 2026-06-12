@@ -31,6 +31,13 @@ export interface AnthropicModelDescription {
     useCaching: boolean;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Indicate whether the beta Messages API shall be used. `false` by default. */
+    useBetaEndpoints?: boolean;
+    /**
+     * Absolute path to the folder below which the files of Anthropic's built-in memory tool are stored (in a `memories` subdirectory).
+     * If set, the memory tool is offered to the model. If `undefined`, the memory tool is disabled.
+     */
+    memoryToolFolder?: string;
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

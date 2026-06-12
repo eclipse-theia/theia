@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
-import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { AnthropicMemoryTool, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
+import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolRequest, UserRequest } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
 
@@ -609,6 +610,265 @@ describe('AnthropicModel', () => {
             const model = createNonReasoningModel('claude-3-5-sonnet-20241022');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
             expect(result.thinking).to.equal(undefined);
+        });
+    });
+
+    describe('endpoint selection (useBetaEndpoints)', () => {
+        /** Builds a mock Anthropic client that records which endpoint was used and returns minimal valid responses. */
+        function buildEndpointRecordingAnthropic(calls: string[]): Anthropic {
+            const streamFactory = (label: string) => (_params: object) => {
+                calls.push(label);
+                async function* iterate(): AsyncGenerator<object> {
+                    yield { type: 'message_start', message: { usage: { input_tokens: 1, output_tokens: 0 } } };
+                    yield { type: 'message_stop' };
+                }
+                const iter = iterate();
+                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                return iter;
+            };
+            const createFactory = (label: string) => async (_params: object) => {
+                calls.push(label);
+                return { content: [{ type: 'text', text: 'ok' }], usage: { input_tokens: 1, output_tokens: 2 } };
+            };
+            return {
+                messages: { stream: streamFactory('messages.stream'), create: createFactory('messages.create') },
+                beta: { messages: { stream: streamFactory('beta.messages.stream'), create: createFactory('beta.messages.create') } }
+            } as unknown as Anthropic;
+        }
+
+        function createEndpointTestModel(calls: string[], enableStreaming: boolean, useBetaEndpoints?: boolean): AnthropicModel {
+            return new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildEndpointRecordingAnthropic(calls);
+                }
+            }(
+                'test-id', 'claude-opus-4-5', { status: 'ready' },
+                enableStreaming, false, () => 'test-key', undefined, DEFAULT_MAX_TOKENS,
+                3, undefined, undefined, undefined, undefined, undefined, useBetaEndpoints
+            );
+        }
+
+        const request: UserRequest = {
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            agentId: 'test',
+            sessionId: 'test-session',
+            requestId: 'test-req'
+        };
+
+        async function drainStream(model: AnthropicModel): Promise<void> {
+            const response = await model.request(request);
+            if ('stream' in response) {
+                const parts: LanguageModelStreamResponsePart[] = [];
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+        }
+
+        it('uses the standard streaming endpoint by default', async () => {
+            const calls: string[] = [];
+            await drainStream(createEndpointTestModel(calls, true));
+            expect(calls).to.deep.equal(['messages.stream']);
+        });
+
+        it('uses the beta streaming endpoint when useBetaEndpoints is enabled', async () => {
+            const calls: string[] = [];
+            await drainStream(createEndpointTestModel(calls, true, true));
+            expect(calls).to.deep.equal(['beta.messages.stream']);
+        });
+
+        it('uses the standard non-streaming endpoint by default', async () => {
+            const calls: string[] = [];
+            const response = await createEndpointTestModel(calls, false).request(request);
+            expect(calls).to.deep.equal(['messages.create']);
+            expect('text' in response && response.text).to.equal('ok');
+        });
+
+        it('uses the beta non-streaming endpoint when useBetaEndpoints is enabled', async () => {
+            const calls: string[] = [];
+            const response = await createEndpointTestModel(calls, false, true).request(request);
+            expect(calls).to.deep.equal(['beta.messages.create']);
+            expect('text' in response && response.text).to.equal('ok');
+        });
+    });
+
+    describe('memory tool integration', () => {
+        class MemoryTestModel extends AnthropicModel {
+            public executedArgs: string[] = [];
+            public streamParams: Anthropic.MessageCreateParams[] = [];
+            public eventQueue: object[][] = [];
+
+            constructor(memoryToolFolder?: string, useCaching: boolean = false) {
+                super('test-id', 'claude-opus-4-5', { status: 'ready' }, true, useCaching,
+                    () => 'test-key', undefined, DEFAULT_MAX_TOKENS, 3,
+                    undefined, undefined, undefined, undefined, undefined, undefined, memoryToolFolder);
+            }
+
+            public callCreateTools(request: LanguageModelRequest): Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined {
+                return this.createTools(this.withMemoryTool(request));
+            }
+
+            protected override createMemoryTool(): AnthropicMemoryTool | undefined {
+                if (!this.memoryToolFolder) {
+                    return undefined;
+                }
+                const executedArgs = this.executedArgs;
+                return {
+                    execute: (args: string) => {
+                        executedArgs.push(args);
+                        return Promise.resolve('direct memory result');
+                    }
+                } as unknown as AnthropicMemoryTool;
+            }
+
+            protected override initializeAnthropic(): Anthropic {
+                const streamParams = this.streamParams;
+                const eventQueue = this.eventQueue;
+                return {
+                    messages: {
+                        stream: (params: Anthropic.MessageCreateParams) => {
+                            streamParams.push(params);
+                            const events = eventQueue.shift() ?? [];
+                            async function* iterate(): AsyncGenerator<object> {
+                                for (const event of events) {
+                                    yield event;
+                                }
+                            }
+                            const iter = iterate();
+                            (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                            (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                            return iter;
+                        }
+                    }
+                } as unknown as Anthropic;
+            }
+        }
+
+        const someTool = {
+            id: 'other',
+            name: 'other',
+            description: 'some tool',
+            parameters: { type: 'object', properties: {} },
+            handler: async () => 'other result'
+        } as const;
+
+        function memoryToolRequest(executedArgs: string[]): ToolRequest {
+            return {
+                id: MEMORY_TOOL_NAME,
+                name: MEMORY_TOOL_NAME,
+                description: 'memory tool',
+                parameters: { type: 'object', properties: {} },
+                handler: async args => {
+                    executedArgs.push(args);
+                    return 'memory result';
+                }
+            };
+        }
+
+        it('does not offer the memory tool when no memory folder is configured', () => {
+            const model = new MemoryTestModel();
+            expect(model.callCreateTools({ messages: [] })).to.equal(undefined);
+            const tools = model.callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools).to.have.lengthOf(1);
+            expect(tools![0].name).to.equal('other');
+        });
+
+        it('offers the native memory tool when activated even without request tools', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('offers the native memory tool in addition to request tools when activated', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools).to.have.lengthOf(2);
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME });
+            expect(tools![1].name).to.equal('other');
+        });
+
+        it('filters out conflicting request tools named like the memory tool', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [memoryToolRequest([])] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('adds a cache control breakpoint to the memory tool when it is the last tool and caching is enabled', () => {
+            const tools = new MemoryTestModel('/tmp/memory', true).callCreateTools({ messages: [] });
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME, cache_control: { type: 'ephemeral' } });
+        });
+
+        function memoryCallEventQueue(): object[][] {
+            return [
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 10, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu_1', name: 'memory' } },
+                    { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"command":"view","path":"/memories"}' } },
+                    { type: 'content_block_stop', index: 0 },
+                    { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                    { type: 'message_stop' }
+                ],
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 12, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'done' } },
+                    { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } },
+                    { type: 'message_stop' }
+                ]
+            ];
+        }
+
+        function chatRequest(tools?: ToolRequest[]): UserRequest {
+            return {
+                messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+                agentId: 'test',
+                sessionId: 'test-session',
+                requestId: 'test-req',
+                tools
+            };
+        }
+
+        async function drainRequest(model: MemoryTestModel, request: UserRequest): Promise<LanguageModelStreamResponsePart[]> {
+            const response = await model.request(request);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            return parts;
+        }
+
+        it('executes memory tool calls directly and feeds the result back to the model', async () => {
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            const parts = await drainRequest(model, chatRequest());
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(model.streamParams).to.have.lengthOf(2);
+            expect(model.streamParams[0].tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+            const followUpMessages = model.streamParams[1].messages;
+            expect(followUpMessages[followUpMessages.length - 1]).to.deep.equal({
+                role: 'user',
+                content: [{ type: 'tool_result', tool_use_id: 'tu_1', content: 'direct memory result' }]
+            });
+            const finishedToolCall = parts.find(part =>
+                'tool_calls' in part && part.tool_calls?.some(call => call.finished && call.result !== undefined));
+            expect(finishedToolCall, 'expected a finished memory tool call part').to.not.equal(undefined);
+        });
+
+        it('executes memory tool calls directly even when the request contains a conflicting memory tool', async () => {
+            const executedArgs: string[] = [];
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            await drainRequest(model, chatRequest([memoryToolRequest(executedArgs)]));
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(executedArgs).to.deep.equal([]);
+            const followUpMessages = model.streamParams[1].messages;
+            expect(followUpMessages[followUpMessages.length - 1]).to.deep.equal({
+                role: 'user',
+                content: [{ type: 'tool_result', tool_use_id: 'tu_1', content: 'direct memory result' }]
+            });
         });
     });
 });

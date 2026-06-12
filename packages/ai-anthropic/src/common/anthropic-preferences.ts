@@ -19,6 +19,9 @@ import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
+export const USE_BETA_ENDPOINTS_PREF = 'ai-features.anthropic.useBetaEndpoints';
+export const MEMORY_TOOL_PREF = 'ai-features.anthropic.memoryTool';
+export const MEMORY_TOOL_FOLDER_PREF = 'ai-features.anthropic.memoryToolFolder';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
@@ -43,6 +46,32 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [USE_BETA_ENDPOINTS_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/anthropic/useBetaEndpoints/mdDescription',
+                'Use the Anthropic beta Messages API instead of the standard one. When enabled, a `betas` array in the model request settings is sent as the\
+            `anthropic-beta` header, allowing beta features such as `context_management` to be used in the request settings.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryTool/mdDescription',
+                'Activate Anthropic\'s built-in memory tool (`memory_20250818`) for all Anthropic models, letting them store and consult information across\
+            conversations in memory files in the configured memory tool folder. Memory tool commands are executed directly by Theia, without the\
+            tool confirmation flow.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_FOLDER_PREF]: {
+            type: 'string',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryToolFolder/mdDescription',
+                'The folder below which the memory tool stores its files (in a `memories` subdirectory, mirroring the model\'s virtual `/memories` root).\
+            Relative paths are resolved against the first workspace root; absolute paths are used as-is. If the path is relative and no workspace is open,\
+            the memory tool is disabled.'),
+            default: 'memory',
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
