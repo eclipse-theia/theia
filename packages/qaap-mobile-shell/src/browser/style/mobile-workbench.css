@@ -3118,6 +3118,24 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   pointer-events: none !important;
 }
 
+/* Open IDE: editor + preview must stay visible even if Work Hub body classes linger. */
+body.theia-mobile-mod-desktop-ide #theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel,
+body.theia-mobile-mod-desktop-ide.theia-mobile-mod-workhub-composer-header
+  #theia-app-shell.theia-mod-mobile-one-column
+  #theia-main-content-panel,
+body.theia-mobile-mod-desktop-ide.theia-mobile-mod-workhub-no-bottom-chrome
+  #theia-app-shell.theia-mod-mobile-one-column
+  #theia-main-content-panel {
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+body.theia-mobile-mod-desktop-ide.theia-mobile-mod-workhub-no-bottom-chrome .theia-mobile-bottom-chrome-host,
+body.theia-mobile-mod-desktop-ide.theia-mobile-mod-workhub-no-bottom-chrome #theia-statusBar {
+  display: flex !important;
+  pointer-events: auto !important;
+}
+
 /* Agents primary surface — same as landing: never stack chat over restored editor tabs. */
 body.theia-mobile-mod-workhub-composer-header
   #theia-app-shell.theia-mod-mobile-one-column

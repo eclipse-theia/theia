@@ -134,6 +134,9 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
     }> {
         const contentArea = super.createContentArea(parent);
         contentArea.classList.add('qaap-preview-content-area');
+        // Use contentArea refs — constructor assigns `this.frame` only after createContentArea returns.
+        const frame = contentArea.frame;
+        const transparentOverlay = contentArea.transparentOverlay;
 
         const split = document.createElement('div');
         split.className = 'qaap-preview-split';
@@ -144,18 +147,17 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         const inspectorSlot = document.createElement('aside');
         inspectorSlot.className = 'qaap-preview-inspector-slot';
 
-        contentArea.insertBefore(split, this.frame);
-        frameSlot.append(this.frame);
-        if (this.transparentOverlay.parentElement === contentArea) {
-            frameSlot.append(this.transparentOverlay);
+        contentArea.insertBefore(split, frame);
+        frameSlot.append(frame);
+        if (transparentOverlay.parentElement === contentArea) {
+            frameSlot.append(transparentOverlay);
         }
         const loadIndicator = contentArea.querySelector(`.${MiniBrowserContentStyle.PRE_LOAD}`);
         if (loadIndicator instanceof HTMLElement && loadIndicator.parentElement === contentArea) {
-            frameSlot.insertBefore(loadIndicator, this.frame);
+            frameSlot.insertBefore(loadIndicator, frame);
         }
         split.append(frameSlot, inspectorSlot);
         wirePreviewInspectorResize(split, inspectorSlot, this.toDispose);
-        this.ensureInlineInspector(inspectorSlot);
         return contentArea;
     }
 
@@ -176,6 +178,13 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        const inspectorSlot = this.node.querySelector('.qaap-preview-inspector-slot');
+        if (inspectorSlot instanceof HTMLElement) {
+            this.ensureInlineInspector(inspectorSlot);
+            if (this.framePicker && this.inlineInspector) {
+                this.framePicker.connectInlineInspector(this.inlineInspector);
+            }
+        }
         if (!this.surfaceHandle) {
             this.surfaceHandle = this.previewSurfaces.registerMiniBrowserContent(this, this.toDispose);
         }

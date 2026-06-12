@@ -226,25 +226,33 @@ var QaapMiniBrowserOpenHandler = function () {
         /** Opens preview with toolbar URL input; no quick-input prompt. */
         QaapMiniBrowserOpenHandler_1.prototype.openEmptyPreview = function () {
             return __awaiter(this, void 0, void 0, function () {
-                var props;
+                var area, props;
                 return __generator(this, function (_a) {
-                    props = {
-                        name: nls_1.nls.localize(mini_browser_open_handler_1.MiniBrowserCommands.PREVIEW_CATEGORY_KEY, mini_browser_open_handler_1.MiniBrowserCommands.PREVIEW_CATEGORY),
-                        toolbar: 'show',
-                        widgetOptions: {
-                            area: this.isMobileOneColumn() ? 'main' : 'right'
-                        },
-                        resetBackground: false,
-                        iconClass: (0, browser_1.codicon)('preview'),
-                        openFor: 'preview'
-                    };
-                    return [2 /*return*/, this.open(mini_browser_open_handler_1.MiniBrowserOpenHandler.PREVIEW_URI, props)];
+                    switch (_a.label) {
+                        case 0:
+                            area = this.previewArea();
+                            return [4 /*yield*/, this.closePreviewIfNeedsFreshAttach(area)];
+                        case 1:
+                            _a.sent();
+                            props = {
+                                name: nls_1.nls.localize(mini_browser_open_handler_1.MiniBrowserCommands.PREVIEW_CATEGORY_KEY, mini_browser_open_handler_1.MiniBrowserCommands.PREVIEW_CATEGORY),
+                                toolbar: 'show',
+                                widgetOptions: {
+                                    area: area,
+                                    mode: 'tab-after'
+                                },
+                                resetBackground: false,
+                                iconClass: (0, browser_1.codicon)('preview'),
+                                openFor: 'preview'
+                            };
+                            return [2 /*return*/, this.open(mini_browser_open_handler_1.MiniBrowserOpenHandler.PREVIEW_URI, props)];
+                    }
                 });
             });
         };
         QaapMiniBrowserOpenHandler_1.prototype.openPreviewForProduct = function (startPage) {
             return __awaiter(this, void 0, void 0, function () {
-                var trimmed, mapped, err_1, props;
+                var trimmed, mapped, err_1, props, area;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -267,6 +275,10 @@ var QaapMiniBrowserOpenHandler = function () {
                         case 4: return [4 /*yield*/, this.getOpenPreviewProps(mapped)];
                         case 5:
                             props = _a.sent();
+                            area = props.widgetOptions && props.widgetOptions.area || this.previewArea();
+                            return [4 /*yield*/, this.closePreviewIfNeedsFreshAttach(area)];
+                        case 6:
+                            _a.sent();
                             return [2 /*return*/, this.open(mini_browser_open_handler_1.MiniBrowserOpenHandler.PREVIEW_URI, props)];
                     }
                 });
@@ -295,12 +307,38 @@ var QaapMiniBrowserOpenHandler = function () {
                                 startPage: startPage,
                                 toolbar: 'show',
                                 widgetOptions: {
-                                    area: this.isMobileOneColumn() ? 'main' : 'right'
+                                    area: this.previewArea(),
+                                    mode: 'tab-after'
                                 },
                                 resetBackground: resetBackground,
                                 iconClass: (0, browser_1.codicon)('preview'),
                                 openFor: 'preview'
                             }];
+                    }
+                });
+            });
+        };
+        QaapMiniBrowserOpenHandler_1.prototype.previewArea = function () {
+            return this.isMobileOneColumn() ? 'main' : 'right';
+        };
+        QaapMiniBrowserOpenHandler_1.prototype.closePreviewIfNeedsFreshAttach = function (area) {
+            return __awaiter(this, void 0, void 0, function () {
+                var existing, currentArea;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.getWidget(mini_browser_open_handler_1.MiniBrowserOpenHandler.PREVIEW_URI)];
+                        case 1:
+                            existing = _a.sent();
+                            if (!(existing === null || existing === void 0 ? void 0 : existing.isAttached)) {
+                                return [2 /*return*/];
+                            }
+                            currentArea = this.shell.getAreaFor(existing);
+                            if (!(this.isMobileOneColumn() || (currentArea && currentArea !== area))) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.shell.closeWidget(existing.id, { save: false })];
+                        case 2:
+                            _a.sent();
+                            _a.label = 3;
+                        case 3: return [2 /*return*/];
                     }
                 });
             });

@@ -107,6 +107,8 @@ import {
     setMobileWorkHubComposerHeaderChrome,
     setMobileWorkHubHideBottomChrome,
 } from './mobile-projects-open';
+import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
+import { QaapMiniBrowserOpenHandler } from '@theia/qaap-adapters/lib/browser/qaap-mini-browser-open-handler';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
@@ -137,6 +139,8 @@ const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
+/** Shared preview tab id ({@link MiniBrowserOpenHandler.PREVIEW_URI}). */
+const MINI_BROWSER_PREVIEW_WIDGET_ID = 'mini-browser:__minibrowser__preview__';
 const GETTING_STARTED_WIDGET_COMMAND = 'getting.started.widget';
 const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 const OPEN_AI_CONFIGURATION_COMMAND = 'aiConfiguration:open';
@@ -266,6 +270,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
+
+    @inject(QaapMiniBrowserOpenHandler)
+    protected readonly miniBrowserOpenHandler: QaapMiniBrowserOpenHandler;
 
     @inject(FileService)
     protected readonly fileService: FileService;
@@ -2131,7 +2138,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected isWorkHubLandingBottomBar(): boolean {
-        if (!this.mobileActive) {
+        if (!this.mobileActive || peekPreferDesktopIde()) {
             return false;
         }
         if (document.body.classList.contains('theia-mobile-mod-workhub-composer-header')
@@ -2174,6 +2181,14 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected syncMobileHubPrimaryBottomChrome(): void {
+        if (peekPreferDesktopIde()) {
+            setMobileWorkHubHideBottomChrome(false);
+            setMobileWorkHubComposerHeaderChrome(false);
+            if (this.bottomChromeHost) {
+                this.bottomChromeHost.setAttribute('aria-hidden', 'false');
+            }
+            return;
+        }
         const hideBottomChrome = this.isWorkHubLandingBottomBar();
         setMobileWorkHubHideBottomChrome(hideBottomChrome);
         if (hideBottomChrome) {
@@ -2863,7 +2878,16 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             } catch (e) {
                 console.error(`[qaap-mobile-shell] bottom bar command failed: ${commandId}`, e);
             }
+            this.relayoutMainPreviewWidgets();
             this.scheduleSnapAndUiRefresh();
+        }
+    }
+
+    protected relayoutMainPreviewWidgets(): void {
+        for (const widget of toArray(this.shell.mainPanel.widgets())) {
+            if (widget.id.startsWith('mini-browser:')) {
+                this.relayoutSheetTree(widget);
+            }
         }
     }
 
@@ -2932,73 +2956,148 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected getActivePreviewWidget(): LuminoWidget | undefined {
         const active = this.shell.activeWidget ?? this.shell.currentWidget;
-        if (active?.id.startsWith('mini-browser:') && this.shell.getAreaFor(active) === 'main') {
+        if (active?.id === MINI_BROWSER_PREVIEW_WIDGET_ID && this.shell.getAreaFor(active) === 'main') {
             return active;
         }
         return undefined;
     }
 
+    protected findPreviewWidget(): LuminoWidget | undefined {
+        for (const area of ['main', 'right', 'left', 'bottom'] as ApplicationShell.Area[]) {
+            const match = this.shell.getWidgets(area).find(widget => widget.id === MINI_BROWSER_PREVIEW_WIDGET_ID);
+            if (match) {
+                return match;
+            }
+        }
+        return undefined;
+    }
+
+    protected getMainPreviewWidget(): LuminoWidget | undefined {
+        return this.shell.getWidgets('main').find(widget => widget.id === MINI_BROWSER_PREVIEW_WIDGET_ID);
+    }
+
+    /** True when the preview tab has mini-browser chrome (not a layout-restore shell with no content). */
+    protected isMainPreviewWidgetLive(preview: LuminoWidget): boolean {
+        if (!preview.isAttached) {
+            return false;
+        }
+        return !!preview.node.querySelector(
+            '.theia-mini-browser-toolbar, .theia-mini-browser-toolbar-read-only, .qaap-mini-browser-shell .theia-mini-browser'
+        );
+    }
+
+    protected async closeStaleMainPreviewWidget(): Promise<void> {
+        const preview = this.getMainPreviewWidget();
+        if (!preview || this.isMainPreviewWidgetLive(preview)) {
+            return;
+        }
+        await this.shell.closeWidget(preview.id, { save: false });
+    }
+
+    /** Preview lives in the editor column — never behind Work Hub chrome that hides `#theia-main-content-panel`. */
+    protected ensureMobilePreviewEditorVisible(): void {
+        if (!this.mobileActive) {
+            return;
+        }
+        setMobileWorkHubHideBottomChrome(false);
+        setMobileWorkHubComposerHeaderChrome(false);
+        setMobileActiveTranscriptChrome(false);
+        document.body.classList.remove('theia-mobile-mod-landing');
+        if (!peekPreferDesktopIde()) {
+            markPreferDesktopIde();
+        }
+    }
+
+    protected async activateMainPreviewWidget(): Promise<boolean> {
+        const preview = this.getMainPreviewWidget();
+        if (!preview || !this.isMainPreviewWidgetLive(preview)) {
+            return false;
+        }
+        await this.shell.activateWidget(preview.id);
+        this.relayoutMainPreviewWidgets();
+        return true;
+    }
+
+    protected async relocatePreviewToMainIfNeeded(): Promise<void> {
+        const preview = this.findPreviewWidget();
+        if (!preview?.isAttached) {
+            return;
+        }
+        if (this.shell.getAreaFor(preview) === 'main') {
+            return;
+        }
+        await this.shell.closeWidget(preview.id, { save: false });
+    }
+
     protected async toggleMobilePreview(): Promise<void> {
         this.hideProjectsPanel();
         this.hidePullRequestPanel();
+        this.ensureMobilePreviewEditorVisible();
         const activePreview = this.getActivePreviewWidget();
         if (activePreview) {
             activePreview.close();
             this.scheduleSnapAndUiRefresh();
             return;
         }
+        if (await this.activateMainPreviewWidget()) {
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        await this.relocatePreviewToMainIfNeeded();
+        await this.closeStaleMainPreviewWidget();
         if (this.shouldDismissSheetsForButton('preview')) {
             await this.dismissSheetsAsync();
         }
-        // Smart path: when a previously detected dev server URL exists, jump straight to it instead
-        // of prompting for a URL. Falls back to the generic Open URL prompt otherwise.
-        if (this.projectBootstrap.previewUrl) {
-            try {
+        // Always mount mini-browser chrome first — never block the UI on install/dev-server bootstrap.
+        await this.openMobilePreviewInMain();
+        void this.bootstrapMobilePreviewInBackground();
+    }
+
+    /** After the preview tab is visible, attach to an existing URL or start install/dev as needed. */
+    protected async bootstrapMobilePreviewInBackground(): Promise<void> {
+        try {
+            if (this.projectBootstrap.previewUrl) {
                 await this.projectBootstrap.focusPreview();
-            } catch (e) {
-                console.error('[qaap-mobile-shell] focusPreview failed', e);
+                await this.activateMainPreviewWidget();
+                return;
             }
-            this.scheduleSnapAndUiRefresh();
-            return;
-        }
-        const phase = this.projectBootstrap.phase;
-        const descriptor = this.projectBootstrap.descriptor;
-        if (phase === 'run-failed' && this.projectBootstrap.needsInstall && descriptor?.installCommand) {
-            try {
+            const phase = this.projectBootstrap.phase;
+            const descriptor = this.projectBootstrap.descriptor;
+            if (phase === 'run-failed' && this.projectBootstrap.needsInstall && descriptor?.installCommand) {
                 await this.projectBootstrap.runInstall();
-            } catch (e) {
-                console.error('[qaap-mobile-shell] runInstall failed', e);
+                return;
             }
-            this.scheduleSnapAndUiRefresh();
-            return;
-        }
-        if (descriptor?.devCommand && (phase === 'ready-to-run' || phase === 'starting' || phase === 'run-failed')) {
-            try {
+            if (descriptor?.devCommand && (phase === 'ready-to-run' || phase === 'starting' || phase === 'run-failed')) {
                 await this.projectBootstrap.runDevServer();
-            } catch (e) {
-                console.error('[qaap-mobile-shell] runDevServer failed', e);
+                return;
             }
-            this.scheduleSnapAndUiRefresh();
-            return;
-        }
-        if (phase === 'detected' && descriptor?.installCommand) {
-            try {
+            if (phase === 'detected' && descriptor?.installCommand) {
                 await this.projectBootstrap.runInstall();
-            } catch (e) {
-                console.error('[qaap-mobile-shell] runInstall failed', e);
             }
+        } catch (e) {
+            console.error('[qaap-mobile-shell] bootstrapMobilePreviewInBackground failed', e);
+        } finally {
+            this.relayoutMainPreviewWidgets();
             this.scheduleSnapAndUiRefresh();
+        }
+    }
+
+    protected async openMobilePreviewInMain(): Promise<void> {
+        try {
+            await this.miniBrowserOpenHandler.openEmptyPreviewTab();
+        } catch (e) {
+            console.error('[qaap-mobile-shell] openEmptyPreviewTab failed', e);
             return;
         }
-        const commandId = MINI_BROWSER_OPEN_URL;
-        if (this.commands.getCommand(commandId) && this.commands.isEnabled(commandId)) {
-            try {
-                await this.commands.executeCommand(commandId);
-            } catch (e) {
-                console.error(`[qaap-mobile-shell] bottom bar command failed: ${commandId}`, e);
+        if (!await this.activateMainPreviewWidget()) {
+            const preview = await this.miniBrowserOpenHandler.getByUri(MiniBrowserOpenHandler.PREVIEW_URI);
+            if (preview) {
+                await this.shell.activateWidget(preview.id);
             }
-            this.scheduleSnapAndUiRefresh();
         }
+        this.relayoutMainPreviewWidgets();
+        this.requestFullShellRelayout();
+        this.scheduleSnapAndUiRefresh();
     }
 
     /**

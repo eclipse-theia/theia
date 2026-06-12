@@ -13,7 +13,9 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { MonacoQuickInputLayout } from '@theia/monaco/lib/browser/monaco-quick-input-layout';
+import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
 import { MiniBrowserContent } from '@theia/mini-browser/lib/browser/mini-browser-content';
+import { QaapMiniBrowser } from './qaap-mini-browser';
 import { QaapMiniBrowserContent } from './qaap-mini-browser-content';
 import { QaapMiniBrowserOpenHandler } from './qaap-mini-browser-open-handler';
 import { DefaultQaapMiniBrowserLifecycle } from './default-qaap-mini-browser-lifecycle';
@@ -48,6 +50,9 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     if (isBound(MonacoQuickInputLayout)) {
         rebind(MonacoQuickInputLayout).to(QaapMonacoQuickInputLayoutBridge).inSingletonScope();
     }
+
+    bind(QaapMiniBrowser).toSelf();
+    rebind(MiniBrowser).to(QaapMiniBrowser);
 
     bind(QaapMiniBrowserContent).toSelf();
     rebind(MiniBrowserContent).to(QaapMiniBrowserContent);

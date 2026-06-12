@@ -13,6 +13,23 @@
   margin-top: 0;
 }
 
+/* Mini-browser dock tab: stretch the Lumino shell so toolbar + iframe are visible on mobile IDE. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-mini-browser-shell,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .lm-DockPanel-widget[id^="mini-browser:"] {
+  display: flex !important;
+  flex-direction: column;
+  min-height: 0;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .qaap-mini-browser-shell > .theia-mini-browser {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100% !important;
+  width: 100% !important;
+}
+
 #theia-main-content-panel:has(.theia-mini-browser) .lm-TabBar.theia-tabBar-multirow[data-orientation="horizontal"] {
   min-height: var(--theia-horizontal-toolbar-height);
 }

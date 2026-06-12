@@ -6,7 +6,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, PanelLayout } from '@theia/core/lib/browser';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
@@ -17,6 +17,7 @@ import { MiniBrowserOpenHandler, MiniBrowserCommands } from '@theia/mini-browser
 import { MiniBrowserOpenerOptions } from '@theia/mini-browser/lib/browser/mini-browser-opener-options';
 import { formatMiniBrowserNavigateError, normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
 import { isMiniBrowserPreviewPlaceholderUrl } from './qaap-mini-browser-defaults';
+import { QaapMiniBrowser } from './qaap-mini-browser';
 
 /**
  * Qaap mobile / URL preview behavior for mini-browser open handler.
@@ -27,23 +28,48 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
     @inject(MessageService)
     protected readonly messages: MessageService;
 
+    override async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+        const widget = await super.open(uri, options);
+        if (uri.isEqual(MiniBrowserOpenHandler.PREVIEW_URI) && this.isMobileOneColumn()) {
+            const area = this.shell.getAreaFor(widget);
+            if (area === 'main') {
+                await this.shell.activateWidget(widget.id);
+            }
+        }
+        this.relayoutPreviewWidget(widget);
+        return widget;
+    }
+
+    protected override async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+        const widget = await super.getOrCreateWidget(uri, options);
+        const layout = widget.layout as PanelLayout;
+        if (!layout.widgets.length || layout.widgets[0].isDisposed) {
+            const props = await this.options(uri, options);
+            widget.setProps(props);
+        }
+        return widget;
+    }
+
     override registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({
-            ...MiniBrowserCommands.PREVIEW,
-            iconClass: codicon('play')
-        }, {
+        // Upstream already registered these command ids; registerHandler prepends a higher-priority handler.
+        commands.registerHandler(MiniBrowserCommands.PREVIEW.id, {
             execute: widget => this.preview(widget),
             isEnabled: widget => this.canPreviewWidget(widget),
             isVisible: widget => this.canPreviewWidget(widget)
         });
-        commands.registerCommand(MiniBrowserCommands.OPEN_SOURCE, {
+        commands.registerHandler(MiniBrowserCommands.OPEN_SOURCE.id, {
             execute: widget => this.openSource(widget),
             isEnabled: widget => !!this.getSourceUri(widget),
             isVisible: widget => !!this.getSourceUri(widget)
         });
-        commands.registerCommand(MiniBrowserCommands.OPEN_URL, {
+        commands.registerHandler(MiniBrowserCommands.OPEN_URL.id, {
             execute: (...args: unknown[]) => this.openUrl(this.coerceUrlCommandArg(args))
         });
+    }
+
+    /** Mobile bottom bar: open toolbar + empty iframe without quick-input. */
+    async openEmptyPreviewTab(): Promise<MiniBrowser | undefined> {
+        return this.openEmptyPreview();
     }
 
     protected coerceUrlCommandArg(args: unknown[]): string | undefined {
@@ -87,11 +113,14 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
 
     /** Opens preview with toolbar URL input; no quick-input prompt. */
     protected async openEmptyPreview(): Promise<MiniBrowser | undefined> {
+        const area = this.previewArea();
+        await this.closePreviewIfNeedsFreshAttach(area);
         const props: MiniBrowserOpenerOptions = {
             name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
             toolbar: 'show',
             widgetOptions: {
-                area: this.isMobileOneColumn() ? 'main' : 'right'
+                area,
+                mode: 'tab-after'
             },
             resetBackground: false,
             iconClass: codicon('preview'),
@@ -118,6 +147,7 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
             return undefined;
         }
         const props = await this.getOpenPreviewProps(mapped);
+        await this.closePreviewIfNeedsFreshAttach(props.widgetOptions?.area ?? this.previewArea());
         return this.open(MiniBrowserOpenHandler.PREVIEW_URI, props);
     }
 
@@ -133,12 +163,28 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
             startPage,
             toolbar: 'show',
             widgetOptions: {
-                area: this.isMobileOneColumn() ? 'main' : 'right'
+                area: this.previewArea(),
+                mode: 'tab-after'
             },
             resetBackground,
             iconClass: codicon('preview'),
             openFor: 'preview'
         };
+    }
+
+    protected previewArea(): ApplicationShell.Area {
+        return this.isMobileOneColumn() ? 'main' : 'right';
+    }
+
+    protected async closePreviewIfNeedsFreshAttach(area: ApplicationShell.Area): Promise<void> {
+        const existing = await this.getWidget(MiniBrowserOpenHandler.PREVIEW_URI);
+        if (!existing?.isAttached) {
+            return;
+        }
+        const currentArea = this.shell.getAreaFor(existing);
+        if (currentArea && currentArea !== area) {
+            await this.shell.closeWidget(existing.id, { save: false });
+        }
     }
 
     protected isMobileOneColumn(): boolean {
@@ -147,5 +193,11 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
         }
         const shellNode = document.getElementById('theia-app-shell');
         return !!shellNode?.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
+    }
+
+    protected relayoutPreviewWidget(widget: MiniBrowser): void {
+        if (widget instanceof QaapMiniBrowser) {
+            widget.scheduleChromeRelayout();
+        }
     }
 }
