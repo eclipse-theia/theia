@@ -338,6 +338,8 @@ export interface MobileProjectsPanelOptions {
     clipboard?: ClipboardService;
     /** Reads AI provider settings (API keys + model lists) for the QAIQ model submenu. */
     readPreference?: (key: string) => unknown;
+    /** Registered BYOK language models from AI Configuration (same source as the agents UI). */
+    getRegisteredLanguageModels?: () => Promise<ReadonlyArray<{ readonly id: string; readonly name?: string }>>;
     /** Monaco quick input — Work Hub search opens as a top overlay instead of an inline field. */
     quickInputService?: QuickInputService;
     /** Generates commit messages automatically from the diff for the commit split-button. */
@@ -596,6 +598,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     protected readonly previewInspectorDeps: MobileProjectsPanelOptions['previewInspectorDeps'];
     protected readonly previewClipboard: MobileProjectsPanelOptions['clipboard'];
     protected readonly readPreference: MobileProjectsPanelOptions['readPreference'];
+    protected readonly getRegisteredLanguageModels: MobileProjectsPanelOptions['getRegisteredLanguageModels'];
     protected readonly quickInputService: QuickInputService | undefined;
     protected readonly commitMessageAi: MobileProjectsPanelOptions['commitMessageAi'];
     protected readonly openPreferencesSheet: MobileProjectsPanelOptions['openPreferencesSheet'];
@@ -676,6 +679,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
         this.previewInspectorDeps = options.previewInspectorDeps;
         this.previewClipboard = options.clipboard;
         this.readPreference = options.readPreference;
+        this.getRegisteredLanguageModels = options.getRegisteredLanguageModels;
         this.quickInputService = options.quickInputService;
         this.commitMessageAi = options.commitMessageAi;
         this.openPreferencesSheet = options.openPreferencesSheet;

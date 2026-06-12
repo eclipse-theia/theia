@@ -658,7 +658,10 @@ export class QaapAgentTaskRunner {
         if (!this.preferenceService) {
             return [];
         }
-        return listQaiqModelsFromPreferences(key => this.preferenceService!.get(key));
+        return listQaiqModelsFromPreferences(
+            key => this.preferenceService!.get(key),
+            key => process.env[key],
+        );
     }
 
     /** Model options for the mobile agent picker (native CLI catalog, or Settings on the browser for Qwen). */

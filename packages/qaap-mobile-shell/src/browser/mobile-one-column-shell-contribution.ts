@@ -30,7 +30,7 @@ import { ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell
 import { StatusBarImpl } from '@theia/core/lib/browser/status-bar/status-bar';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ChatService } from '@theia/ai-chat';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableService, FrontendLanguageModelRegistry } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { QuickInputService } from '@theia/core';
@@ -257,6 +257,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(FrontendLanguageModelRegistry) @optional()
+    protected readonly languageModelRegistry?: FrontendLanguageModelRegistry;
 
     @inject(MobileProjectChatViewWidgetFactory)
     protected readonly mobileProjectChatViewWidgetFactory: MobileProjectChatViewWidgetFactory;
@@ -1314,6 +1317,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 },
                 clipboard: this.clipboardService,
                 readPreference: key => this.preferenceService.get(key),
+                getRegisteredLanguageModels: this.languageModelRegistry
+                    ? () => this.languageModelRegistry!.getLanguageModels()
+                    : undefined,
                 quickInputService: this.quickInputService,
                 commitMessageAi: this.commitMessageAi,
                 openPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),

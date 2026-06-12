@@ -138,6 +138,9 @@ export const QAAP_QAIQ_BYOK_PROVIDERS: readonly QaapQaiqByokProviderDescriptor[]
     },
 ];
 
+/** Schema default — must not count as a user-configured Ollama endpoint. */
+export const OLLAMA_DEFAULT_HOST = 'http://localhost:11434';
+
 const VENDOR_LOOKUP = buildVendorLookup(QAAP_QAIQ_BYOK_PROVIDERS);
 
 function buildVendorLookup(
@@ -174,16 +177,70 @@ function readStringList(readPref: QaapPreferenceReader, key: string): string[] {
         .filter(Boolean);
 }
 
-export function vendorHasByokCredential(readPref: QaapPreferenceReader, vendor: string): boolean {
-    const descriptor = findQaiqByokProvider(vendor);
-    return !!descriptor && !!readString(readPref, descriptor.credentialPref);
-}
-
 export function providerHasByokCredential(
     readPref: QaapPreferenceReader,
     descriptor: QaapQaiqByokProviderDescriptor,
 ): boolean {
+    if (descriptor.vendor === 'ollama') {
+        for (const pref of descriptor.modelListPrefs) {
+            if (readStringList(readPref, pref).length > 0) {
+                return true;
+            }
+        }
+        const host = readString(readPref, descriptor.credentialPref);
+        return !!host && host !== OLLAMA_DEFAULT_HOST;
+    }
     return !!readString(readPref, descriptor.credentialPref);
+}
+
+export function providerHasByokCredentialOrEnv(
+    readPref: QaapPreferenceReader,
+    descriptor: QaapQaiqByokProviderDescriptor,
+    readEnv?: (key: string) => string | undefined,
+): boolean {
+    if (providerHasByokCredential(readPref, descriptor)) {
+        return true;
+    }
+    if (!readEnv || !descriptor.credentialEnv?.length) {
+        return false;
+    }
+    return descriptor.credentialEnv.some(mapping => !!readEnv(mapping.env)?.trim());
+}
+
+export function vendorHasByokCredential(
+    readPref: QaapPreferenceReader,
+    vendor: string,
+    readEnv?: (key: string) => string | undefined,
+): boolean {
+    const descriptor = findQaiqByokProvider(vendor);
+    return !!descriptor && providerHasByokCredentialOrEnv(readPref, descriptor, readEnv);
+}
+
+export function providerHasConfiguredModelList(
+    readPref: QaapPreferenceReader,
+    descriptor: QaapQaiqByokProviderDescriptor,
+): boolean {
+    for (const pref of descriptor.modelListPrefs) {
+        if (readStringList(readPref, pref).length > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function listExplicitByokModelIds(
+    readPref: QaapPreferenceReader,
+    descriptor: QaapQaiqByokProviderDescriptor,
+): string[] {
+    const models: string[] = [];
+    for (const pref of descriptor.modelListPrefs) {
+        models.push(...readStringList(readPref, pref));
+    }
+    let unique = [...new Set(models)];
+    if (descriptor.vendor === 'openrouter') {
+        unique = filterOpenRouterModelSlugs(unique);
+    }
+    return unique;
 }
 
 export function listByokModelIds(
@@ -208,8 +265,18 @@ export function listByokModelIds(
 export function listByokModelsFromDescriptor(
     readPref: QaapPreferenceReader,
     descriptor: QaapQaiqByokProviderDescriptor,
+    readEnv?: (key: string) => string | undefined,
 ): QaapQaiqModelOption[] {
-    if (!providerHasByokCredential(readPref, descriptor)) {
+    const explicitIds = listExplicitByokModelIds(readPref, descriptor);
+    if (explicitIds.length > 0) {
+        return explicitIds.map(modelId => ({
+            vendor: descriptor.vendor,
+            provider: descriptor.provider,
+            modelId,
+            label: modelId,
+        }));
+    }
+    if (!providerHasByokCredentialOrEnv(readPref, descriptor, readEnv)) {
         return [];
     }
     return listByokModelIds(readPref, descriptor).map(modelId => ({

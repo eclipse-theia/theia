@@ -1,9 +1,16 @@
 import { expect } from 'chai';
 import {
+    OLLAMA_DEFAULT_HOST,
     QAAP_QAIQ_BYOK_PROVIDERS,
     vendorHasByokCredential,
 } from './qaap-qaiq-byok-provider-registry';
-import { groupQaiqModelsByProvider, listQaiqModelsFromPreferences } from './qaap-qaiq-model-catalog';
+import {
+    groupQaiqModelsByProvider,
+    isQaiqByokLanguageModelId,
+    listQaiqModelsFromPreferences,
+    listQaiqModelsFromRegisteredLanguageModels,
+    mergeQaiqModelOptions,
+} from './qaap-qaiq-model-catalog';
 
 describe('QAAP_QAIQ_BYOK_PROVIDERS', () => {
     it('defines credential and model prefs for every provider', () => {
@@ -75,6 +82,43 @@ describe('listQaiqModelsFromPreferences', () => {
         expect(models.some(m => m.vendor === 'huggingface')).to.be.true;
     });
 
+    it('returns explicitly configured models even without an API key', () => {
+        const models = listQaiqModelsFromPreferences(key => {
+            if (key === 'ai-features.openrouter.openrouterModels') {
+                return ['nvidia/nemotron-3-super-120b-a12b:free'];
+            }
+            return undefined;
+        });
+        expect(models.some(m => m.vendor === 'openrouter' && m.modelId === 'nvidia/nemotron-3-super-120b-a12b:free')).to.be.true;
+    });
+
+    it('does not treat the default Ollama host as configured', () => {
+        const models = listQaiqModelsFromPreferences(key => {
+            if (key === 'ai-features.ollama.ollamaHost') {
+                return OLLAMA_DEFAULT_HOST;
+            }
+            return undefined;
+        });
+        expect(models.some(m => m.vendor === 'ollama')).to.be.false;
+    });
+
+    it('includes providers configured only via runtime env vars', () => {
+        const models = listQaiqModelsFromPreferences(
+            () => undefined,
+            key => (key === 'OPENROUTER_API_KEY' ? 'sk-env' : undefined),
+        );
+        expect(models.some(m => m.vendor === 'openrouter')).to.be.true;
+    });
+
+    it('merges workspace and browser model lists', () => {
+        const merged = mergeQaiqModelOptions(
+            [{ vendor: 'openrouter', provider: 'openai', modelId: 'a', label: 'a' }],
+            [{ vendor: 'nvidia', provider: 'openai', modelId: 'b', label: 'b' }],
+            [{ vendor: 'openrouter', provider: 'openai', modelId: 'a', label: 'a' }],
+        );
+        expect(merged).to.have.length(2);
+    });
+
     it('skips providers without credentials', () => {
         expect(vendorHasByokCredential(() => undefined, 'huggingface')).to.be.false;
         expect(vendorHasByokCredential(key => {
@@ -89,6 +133,18 @@ describe('listQaiqModelsFromPreferences', () => {
             }
             return undefined;
         }, 'gemini')).to.be.true;
+    });
+
+    it('maps registered language models from AI Configuration', () => {
+        const models = listQaiqModelsFromRegisteredLanguageModels([
+            { id: 'openrouter/nvidia/nemotron-3-super-120b-a12b:free', name: 'Nemotron free' },
+            { id: 'anthropic/claude-opus-4-7', name: 'Claude Opus 4.7' },
+            { id: 'copilot/gpt-4o', name: 'Copilot' },
+        ]);
+        expect(models).to.have.length(2);
+        expect(models.some(m => m.vendor === 'openrouter')).to.be.true;
+        expect(models.some(m => m.vendor === 'anthropic')).to.be.true;
+        expect(isQaiqByokLanguageModelId('copilot/gpt-4o')).to.be.false;
     });
 
     it('groups models by vendor', () => {

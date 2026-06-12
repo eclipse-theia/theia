@@ -43,6 +43,8 @@ import {
     formatQaiqModelProviderLabel,
     groupQaiqModelsByProvider,
     listQaiqModelsFromPreferences,
+    listQaiqModelsFromRegisteredLanguageModels,
+    mergeQaiqModelOptions,
 } from '../common/qaap-qaiq-model-catalog';
 import { THEIA_CODER_AGENT_ID } from '../common/qaap-agent-task-client';
 import {
@@ -89,6 +91,8 @@ preparedCwdByProjectId: Map<string, string>;
 projectsService: MobileProjectsService;
 chatAgentService?: import('@theia/ai-chat/lib/common/chat-agent-service').ChatAgentService;
     readPreference?: (key: string) => unknown;
+    getRegisteredLanguageModels?: () => Promise<ReadonlyArray<{ readonly id: string; readonly name?: string }>>;
+stickyComposerQaiqModels: QaapQaiqModelOption[];
 stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
 stickyComposerAgentsUi: import('./mobile-projects-sticky-composer-agents-ui').MobileProjectsStickyComposerAgentsUi;
 stickyComposerWorkspaceUi: import('./mobile-projects-sticky-composer-workspace-ui').MobileProjectsStickyComposerWorkspaceUi;
@@ -666,9 +670,14 @@ export class MobileProjectsStickyComposerSheetsUi {
     }
     async resolveModelsForAgentPicker(agentId: string): Promise<QaapQaiqModelOption[]> {
         if (agentUsesSettingsModelCatalog(agentId)) {
-            return this.host.readPreference
+            const fromWorkspace = this.host.stickyComposerQaiqModels ?? [];
+            const fromPreferences = this.host.readPreference
                 ? listQaiqModelsFromPreferences(this.host.readPreference)
                 : [];
+            const registered = this.host.getRegisteredLanguageModels
+                ? listQaiqModelsFromRegisteredLanguageModels(await this.host.getRegisteredLanguageModels())
+                : [];
+            return mergeQaiqModelOptions(registered, fromWorkspace, fromPreferences);
         }
         try {
             return await fetchAgentModelsForAgent(agentId);
