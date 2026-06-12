@@ -84,10 +84,20 @@ describe('GetTaskContextFunction', () => {
         expect(result).to.equal('attached plan content');
     });
 
-    it('returns the most recent summary stored for the current session when no id is given', async () => {
+    it('returns the plain summary when a single task context exists for the session', async () => {
         const fn = makeGetTaskContextFunction(makeStorage([SESSION_A_SUMMARY, SESSION_B_SUMMARY]));
-        const result = await fn.getTool().handler(JSON.stringify({}), makeContext(['ctx-attached']));
+        const result = await fn.getTool().handler(JSON.stringify({}), makeContext([]));
         expect(result).to.equal('session plan content');
+    });
+
+    it('returns all task contexts stored for the session or attached to the chat context when no id is given', async () => {
+        const fn = makeGetTaskContextFunction(makeStorage([SESSION_A_SUMMARY, SESSION_B_SUMMARY]));
+        const result = await fn.getTool().handler(JSON.stringify({}), makeContext(['ctx-attached'])) as string;
+        expect(result).to.contain('2 task contexts are available');
+        expect(result).to.contain('## Task 1: "Plan From Session B" (id: ctx-session)');
+        expect(result).to.contain('session plan content');
+        expect(result).to.contain('## Task 2: "Plan From Session A" (id: ctx-attached) [attached to chat context]');
+        expect(result).to.contain('attached plan content');
     });
 
     it('falls back to a task context attached to the chat context when none exists for the session', async () => {
@@ -101,15 +111,43 @@ describe('GetTaskContextFunction', () => {
         const result = await fn.getTool().handler(JSON.stringify({}), makeContext([]));
         expect(result).to.equal('No task context found for this session or attached to the chat context. Use createTaskContext to create one.');
     });
+
+    it('ignores attached task contexts that cannot be resolved', async () => {
+        const fn = makeGetTaskContextFunction(makeStorage([]));
+        const result = await fn.getTool().handler(JSON.stringify({}), makeContext(['ctx-missing']));
+        expect(result).to.equal('No task context found for this session or attached to the chat context. Use createTaskContext to create one.');
+    });
 });
 
 describe('ListTaskContextsFunction', () => {
     it('lists session task contexts and attached task contexts', async () => {
         const fn = makeListTaskContextsFunction(makeStorage([SESSION_A_SUMMARY, SESSION_B_SUMMARY]));
         const result = await fn.getTool().handler('{}', makeContext(['ctx-attached'])) as string;
+        expect(result).to.contain('Task contexts available in this chat:');
         expect(result).to.contain('"Plan From Session B" (id: ctx-session)');
         expect(result).to.contain('"Plan From Session A" (id: ctx-attached) [attached to chat context]');
         expect(result).to.contain('Most recent: "Plan From Session B"');
+    });
+
+    it('resolves attached labels via the storage service when they are not part of getAll', async () => {
+        const storage = {
+            getAll: () => [],
+            get: async (id: string) => id === 'ctx-attached' ? SESSION_A_SUMMARY : undefined,
+            store: async () => { },
+            open: async () => { },
+            delete: async () => false
+        } as unknown as TaskContextStorageService;
+        const fn = makeListTaskContextsFunction(storage);
+        const result = await fn.getTool().handler('{}', makeContext(['ctx-attached'])) as string;
+        expect(result).to.contain('"Plan From Session A" (id: ctx-attached) [attached to chat context]');
+        expect(result).to.not.contain('"ctx-attached"');
+    });
+
+    it('skips attached task contexts that cannot be resolved', async () => {
+        const fn = makeListTaskContextsFunction(makeStorage([SESSION_B_SUMMARY]));
+        const result = await fn.getTool().handler('{}', makeContext(['ctx-missing'])) as string;
+        expect(result).to.contain('"Plan From Session B" (id: ctx-session)');
+        expect(result).to.not.contain('ctx-missing');
     });
 
     it('marks the attached task context as most recent when no session task context exists', async () => {
@@ -121,6 +159,6 @@ describe('ListTaskContextsFunction', () => {
     it('reports when no task contexts exist', async () => {
         const fn = makeListTaskContextsFunction(makeStorage([SESSION_A_SUMMARY]));
         const result = await fn.getTool().handler('{}', makeContext([]));
-        expect(result).to.equal('No task contexts found for this session.');
+        expect(result).to.equal('No task contexts found for this session or attached to the chat context.');
     });
 });
