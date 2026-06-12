@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider, CustomAgentPromptVariant } from '@theia/ai-core/lib/common';
 import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -131,13 +131,14 @@ export default new ContainerModule(bind => {
     bind(PendingToolConfirmationTracker).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
-    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined]>(
-        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string, showInChat?: boolean) => {
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined, CustomAgentPromptVariant[] | undefined]>(
+        ctx => (id, name, description, prompt, defaultLLM, showInChat, promptVariants) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
             agent.description = description;
             agent.prompt = prompt;
+            agent.promptVariants = promptVariants;
             agent.languageModelRequirements = [{
                 purpose: 'chat',
                 identifier: defaultLLM,
@@ -157,7 +158,9 @@ export default new ContainerModule(bind => {
 
             return agent;
         });
-    bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
+    bind(AICustomAgentsFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AICustomAgentsFrontendApplicationContribution);
+    bind(CommandContribution).toService(AICustomAgentsFrontendApplicationContribution);
 
     bind(ContextVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ContextVariableLabelProvider);

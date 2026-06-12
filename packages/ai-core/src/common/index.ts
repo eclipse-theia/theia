@@ -37,5 +37,6 @@ export * from './ai-variable-resource';
 export * from './configurable-in-memory-resources';
 export * from './notification-types';
 export * from './skill';
+export * from './frontmatter';
 export * from './capability-utils';
 export * from './tool-constants';
