@@ -189,6 +189,7 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     ): Promise<void>;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
     stickyComposerColumnUi: import('./mobile-projects-sticky-composer-column-ui').MobileProjectsStickyComposerColumnUi;
+    stickyComposerWorkspaceUi: import('./mobile-projects-sticky-composer-workspace-ui').MobileProjectsStickyComposerWorkspaceUi;
     stickyComposerContextUi: import('./mobile-projects-sticky-composer-context-ui').MobileProjectsStickyComposerContextUi;
     stickyComposerRenderUi: import('./mobile-projects-sticky-composer-render-ui').MobileProjectsStickyComposerRenderUi;
     stickyComposerSheetsUi: import('./mobile-projects-sticky-composer-sheets-ui').MobileProjectsStickyComposerSheetsUi;
@@ -1145,6 +1146,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
                                 modeId,
                                 variables,
                                 autoApprove,
+                                worktree: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestination(project) === 'worktree',
                                 approvalPolicyId: reconcileAgentApprovalPolicyId(
                                     this.host.transcriptComposerApprovalPolicyId,
                                     summary.cwd,
@@ -1224,6 +1226,21 @@ export class MobileProjectsTranscriptStickyComposerUi {
                 );
             },
             showWorkspaceBar: this.host.composerHeaderUi.shouldShowComposerWorkspaceBar(summary),
+            // Destination only applies while the summary is the idle placeholder (submit creates a
+            // new conversation); once a real conversation exists its cwd is fixed.
+            workspaceDestination: isAgentsHubIdleConversationSummary(summary)
+                ? {
+                    label: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestinationLabel(project),
+                    iconClass: this.host.stickyComposerWorkspaceUi.resolveComposerWorkspaceDestinationIconClass(project),
+                    onOpen: anchor => {
+                        this.host.stickyComposerWorkspaceUi.openComposerWorkspaceDestinationSheet(
+                            project,
+                            !this.host.agentsHubShellActive,
+                            anchor,
+                        );
+                    },
+                }
+                : undefined,
             transcriptOverlay: !this.host.agentsHubShellActive,
         });
         const modeHint = describeComposerInteractionMode(this.host.transcriptComposerModeId);
