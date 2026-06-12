@@ -28,17 +28,21 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangeType, WatchOptions } from '@theia/filesystem/lib/common/files';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common/filesystem-preferences';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export class MainFileSystemEventService implements MainFileSystemEventServiceShape {
 
     private readonly toDispose = new DisposableCollection();
     private readonly watches = new Map<number, Disposable>();
+    /** Ancestor-of-workspace roots already skipped, to avoid logging on every re-registration. */
+    private readonly skippedWatchRoots = new Set<string>();
 
     constructor(
         rpc: RPCProtocol,
         container: interfaces.Container,
         private readonly fileService = container.get(FileService),
-        private readonly preferences = container.get<FileSystemPreferences>(FileSystemPreferences)
+        private readonly preferences = container.get<FileSystemPreferences>(FileSystemPreferences),
+        private readonly workspaceService = container.get(WorkspaceService)
     ) {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
 
@@ -84,6 +88,11 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
             throw new Error(`There is already a watch request for the key ${session}`);
         }
         const uri = URI.fromComponents(resource);
+        if (this.shouldSkipWatch(uri, options)) {
+            // Register a no-op disposable so the session is tracked and `$unwatch` still works.
+            this.watches.set(session, Disposable.NULL);
+            return;
+        }
         // Plugin-created watchers (`vscode.workspace.createFileSystemWatcher`) arrive here with an
         // empty `excludes` list. Language servers frequently request recursive watches rooted at
         // absolute paths outside the workspace (e.g. JDT-LS's per-project globs), so apply the
@@ -91,6 +100,40 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
         const watch = this.fileService.watch(uri, { ...options, excludes: this.getExcludes(uri, options.excludes) });
         this.toDispose.push(watch);
         this.watches.set(session, watch);
+    }
+
+    /**
+     * Whether a plugin-requested watch should not be registered at all.
+     *
+     * Theia's backend ignores the `recursive` flag and always watches recursively. A NON-recursive
+     * watch rooted at a strict ancestor of a workspace root - e.g. a language server (such as
+     * `redhat.java` / JDT-LS) watching the PARENT of the workspace folder via
+     * `RelativePattern(parentDir, folderName)` purely to detect deletion of the folder itself -
+     * would therefore be turned into a recursive crawl of every sibling subtree under that parent,
+     * i.e. thousands of inodes the workspace does not own, which can exhaust the OS file-watch
+     * budget. `files.watcherExclude` cannot bound it because the root is outside the workspace, so
+     * the only effective mitigation is to not register the watch.
+     *
+     * Explicit recursive requests are honored as-is, and watches on or inside a workspace root are
+     * left untouched.
+     */
+    protected shouldSkipWatch(uri: URI, options: WatchOptions): boolean {
+        if (options.recursive) {
+            return false;
+        }
+        const isAncestorOfWorkspace = this.workspaceService.tryGetRoots().some(
+            root => uri.isEqualOrParent(root.resource) && !uri.isEqual(root.resource)
+        );
+        if (isAncestorOfWorkspace) {
+            const key = uri.toString();
+            if (!this.skippedWatchRoots.has(key)) {
+                this.skippedWatchRoots.add(key);
+                console.warn('[MainFileSystemEventService] skipping non-recursive watch rooted at an ancestor of the '
+                    + `workspace (the backend would recursively crawl sibling trees): ${key}`);
+            }
+            return true;
+        }
+        return false;
     }
 
     protected getExcludes(uri: URI, requested: string[] = []): string[] {
