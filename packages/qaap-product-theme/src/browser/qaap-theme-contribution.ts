@@ -6,6 +6,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { getThemeMode, type Theme } from '@theia/core/lib/common/theme';
 
 /**
  * Toggles `qaap-theme-light` / `qaap-theme-dark` on `document.body` when the
@@ -36,19 +37,20 @@ export class QaapThemeContribution implements FrontendApplicationContribution {
     protected readonly themeService: ThemeService;
 
     onStart(): void {
-        this.applyClass(this.themeService.getCurrentTheme().id);
+        this.applyTheme(this.themeService.getCurrentTheme());
         this.themeService.onDidColorThemeChange(event => {
-            this.applyClass(event.newTheme.id);
+            this.applyTheme(event.newTheme);
         });
     }
 
-    protected applyClass(themeId: string): void {
+    protected applyTheme(theme: Theme): void {
         const body = document.body;
+        body.dataset.theiaThemeMode = getThemeMode(theme.type);
         // Clear any previous Qaap class so theme switches don't leave both on.
         for (const cssClass of QaapThemeContribution.QAAP_THEME_IDS.values()) {
             body.classList.remove(cssClass);
         }
-        const next = QaapThemeContribution.QAAP_THEME_IDS.get(themeId);
+        const next = QaapThemeContribution.QAAP_THEME_IDS.get(theme.id);
         if (next) {
             body.classList.add(next);
         }

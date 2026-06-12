@@ -8,6 +8,7 @@ describe('qaap-llm-provider-branding', () => {
 
     it('maps BYOK vendors to brand keys', () => {
         expect(resolveLlmProviderBrandKey('openai', 'gpt-5.5')).to.equal('openai');
+        expect(resolveLlmProviderBrandKey('openrouter')).to.equal('openrouter');
         expect(resolveLlmProviderBrandKey('nvidia', 'meta/llama-3.3-70b-instruct')).to.equal('nvidia');
         expect(resolveLlmProviderBrandKey('gemini', 'gemini-2.5-flash')).to.equal('gemini');
     });
@@ -21,8 +22,11 @@ describe('qaap-llm-provider-branding', () => {
 
     it('returns svg brands for known providers', () => {
         expect(resolveLlmProviderBrand('anthropic')?.imageUrl).to.match(/^data:image\/png;base64,/);
-        expect(resolveLlmProviderBrand('openai')?.tone).to.equal('dark');
-        expect(resolveLlmProviderBrand('openai')?.imageUrl).to.match(/^data:image\/png;base64,/);
+        expect(resolveLlmProviderBrand('openai')?.tone).to.equal('brand');
+        expect(resolveLlmProviderBrand('openai')?.imageUrlLight).to.match(/^data:image\/png;base64,/);
+        expect(resolveLlmProviderBrand('openai')?.imageUrlDark).to.match(/^data:image\/png;base64,/);
+        expect(resolveLlmProviderBrand('openrouter')?.imageUrlLight).to.match(/^data:image\/png;base64,/);
+        expect(resolveLlmProviderBrand('openrouter')?.imageUrlDark).to.match(/^data:image\/png;base64,/);
         expect(resolveLlmProviderBrand('huggingface')?.imageUrl).to.match(/^data:image\/png;base64,/);
         expect(resolveLlmProviderBrand('ollama')?.imageUrl).to.match(/^data:image\/png;base64,/);
         expect(resolveLlmProviderBrand('openrouter', 'moonshotai/kimi-k2.6:free')?.imageUrl).to.match(/^data:image\/png;base64,/);

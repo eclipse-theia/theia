@@ -7908,6 +7908,24 @@ body:has(.theia-mobile-agent-transcript-root.theia-mod-visible) .theia-mobile-pr
   background: transparent;
 }
 
+.theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-dark {
+  display: none;
+}
+
+.theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-light {
+  display: block;
+}
+
+body[data-theia-theme-mode="dark"] .theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-light,
+body.qaap-theme-dark .theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-light {
+  display: none;
+}
+
+body[data-theia-theme-mode="dark"] .theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-dark,
+body.qaap-theme-dark .theia-qaap-llm-provider-icon.theia-mod-theme-adaptive .theia-mod-llm-icon-for-dark {
+  display: block;
+}
+
 .theia-qaap-agent-sheet-model-option {
   min-height: 40px;
   font-size: 14px;
