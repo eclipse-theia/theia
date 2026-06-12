@@ -623,6 +623,133 @@ export class MobileProjectsService {
         this.hubView = normalized;
     }
 
+    peekCachedProjects(): MobileProjectEntry[] {
+        const sessionMap = readLocalProjectSessions();
+        const entries: MobileProjectEntry[] = [];
+        const seen = new Set<string>();
+        const hiddenIds = this.readHiddenProjectIds();
+        const pinnedIds = this.readPinnedProjectIds();
+        const current = this.workspaceService.workspace?.resource;
+
+        for (const session of sessionMap.values()) {
+            const entry = this.cachedSessionToEntry(session, pinnedIds, current);
+            if (!entry || hiddenIds.has(entry.id) || seen.has(entry.id)) {
+                continue;
+            }
+            seen.add(entry.id);
+            entries.push(entry);
+        }
+
+        for (const stored of this.readCustomProjects()) {
+            if (hiddenIds.has(stored.id) || seen.has(stored.id)) {
+                continue;
+            }
+            seen.add(stored.id);
+            entries.push(this.storedToEntry(stored, pinnedIds));
+        }
+
+        return this.overlayActiveTasks(this.sortProjectsByRecent(
+            this.collapseCurrentWorkspaceDuplicates(entries)
+        ));
+    }
+
+    protected cachedSessionToEntry(
+        session: QaapProjectSessionSummary,
+        pinnedIds: Set<string>,
+        current: URI | undefined,
+    ): MobileProjectEntry | undefined {
+        if (session.repoKey.startsWith('github:')) {
+            return this.cachedGithubSessionToEntry(session, pinnedIds, current);
+        }
+        if (session.repoKey.startsWith('ws:')) {
+            return this.cachedWorkspaceSessionToEntry(session, pinnedIds, current);
+        }
+        return undefined;
+    }
+
+    protected cachedGithubSessionToEntry(
+        session: QaapProjectSessionSummary,
+        pinnedIds: Set<string>,
+        current: URI | undefined,
+    ): MobileProjectEntry | undefined {
+        const fullName = session.repoKey.slice('github:'.length);
+        const [owner, name] = fullName.split('/');
+        if (!owner || !name) {
+            return undefined;
+        }
+        const currentFullName = this.currentGithubRepositoryFullName();
+        const isCurrent = fullName.toLowerCase() === currentFullName;
+        const entry: MobileProjectEntry = {
+            id: session.repoKey,
+            name: this.resolveDisplayName(session.repoKey, name),
+            color: mobileProjectColorForName(fullName),
+            branch: session.branch || 'main',
+            status: session.agentState ?? (isCurrent ? 'working' : 'idle'),
+            task: session.lastTask?.trim()
+                || (isCurrent
+                    ? nls.localize('qaap/mobileProjects/currentGithubTask', 'Open in this QAAP workspace')
+                    : nls.localize('qaap/mobileProjects/githubRepo', 'GitHub repository')),
+            progress: session.agentState === 'working' || isCurrent ? 0.35 : 0,
+            agents: session.agentState === 'working' || session.agentState === 'review' || isCurrent
+                ? [{ role: 'ai', color: '#3B6FA0' }]
+                : [],
+            lastActive: session.lastActiveAt ? this.relativeUpdatedAt(session.lastActiveAt) : '—',
+            lastActiveAt: session.lastActiveAt,
+            tokens: session.tokens ?? '—',
+            cost: session.cost ?? '—',
+            pinned: this.isPinned(session.repoKey, pinnedIds, isCurrent),
+            uri: isCurrent ? current : undefined,
+            github: {
+                owner,
+                name,
+                fullName,
+                htmlUrl: `https://github.com/${fullName}`,
+                private: false,
+            },
+            isCurrent,
+            previewUrl: session.previewUrl,
+        };
+        return this.applySessionToEntry(entry, session);
+    }
+
+    protected cachedWorkspaceSessionToEntry(
+        session: QaapProjectSessionSummary,
+        pinnedIds: Set<string>,
+        current: URI | undefined,
+    ): MobileProjectEntry | undefined {
+        const rawUri = session.repoKey.slice('ws:'.length);
+        if (!rawUri) {
+            return undefined;
+        }
+        const uri = new URI(rawUri);
+        const isCurrent = current?.toString() === uri.toString();
+        const name = this.labelProvider.getName(uri);
+        const entry: MobileProjectEntry = {
+            id: session.repoKey,
+            name: this.resolveDisplayName(session.repoKey, name),
+            color: mobileProjectColorForName(name),
+            branch: session.branch || uri.path.base,
+            status: session.agentState ?? (isCurrent ? 'working' : 'idle'),
+            task: session.lastTask?.trim()
+                || (isCurrent
+                    ? nls.localize('qaap/mobileProjects/currentTask', 'Active workspace')
+                    : nls.localize('qaap/mobileProjects/recentTask', 'Tap to open workspace')),
+            progress: session.agentState === 'working' || isCurrent ? 0.35 : 0,
+            agents: session.agentState === 'working' || session.agentState === 'review' || isCurrent
+                ? [{ role: 'ai', color: '#3B6FA0' }]
+                : [],
+            lastActive: session.lastActiveAt ? this.relativeUpdatedAt(session.lastActiveAt) : '—',
+            lastActiveAt: session.lastActiveAt,
+            tokens: session.tokens ?? '—',
+            cost: session.cost ?? '—',
+            pinned: this.isPinned(session.repoKey, pinnedIds, isCurrent),
+            uri,
+            isCurrent,
+            previewUrl: session.previewUrl,
+        };
+        return this.applySessionToEntry(entry, session);
+    }
+
     async loadProjects(): Promise<MobileProjectEntry[]> {
         // Open the SSE stream the first time projects are queried — the panel will subscribe to
         // tracker changes to live-update cards as VPS tasks start/finish.

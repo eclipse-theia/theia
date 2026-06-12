@@ -147,9 +147,8 @@ export class MobileProjectsPanelLifecycleUi {
     }
 
     async show(options?: { preferredHubView?: MobileProjectsHubView }): Promise<void> {
-        this.host.projects = await this.host.projectsService.loadProjects();
-        await this.host.conversations?.refreshTheiaChatSessionsForProjects(this.host.projects);
-        await this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries();
+        const startedAt = typeof performance !== 'undefined' ? performance.now() : 0;
+        const firstShow = !this.host.visible;
         this.host.filter = this.host.projectsService.getFilter();
         this.host.tasksHubSurface = 'task';
         if (options?.preferredHubView !== undefined) {
@@ -164,7 +163,49 @@ export class MobileProjectsPanelLifecycleUi {
                 this.host.hubView = this.host.hubQueryUi.redirectHubView(storedHubView);
             }
         }
+        this.host.visible = true;
+        this.host.root.hidden = false;
+        this.host.root.setAttribute('aria-hidden', 'false');
+        this.host.root.classList.add('theia-mod-visible');
+        if (firstShow && this.host.projects.length === 0) {
+            const cachedProjects = this.host.projectsService.peekCachedProjects();
+            if (cachedProjects.length > 0) {
+                this.host.projects = cachedProjects;
+            }
+        }
         this.host.render();
+        document.addEventListener('pointerdown', this.host.onDocumentPointerDown, true);
+        this.updateAccountAvatar();
+        this.startVisibleHubServices();
+        this.subscribeToActiveTasks();
+        this.host.syncLandingHubListChrome();
+        this.reportFirstShowTiming(startedAt, firstShow);
+        this.schedulePrimeVisiblePanelData(firstShow);
+    }
+
+    protected reportFirstShowTiming(startedAt: number, firstShow: boolean): void {
+        if (!firstShow || !startedAt || typeof performance === 'undefined') {
+            return;
+        }
+        const elapsed = Math.round(performance.now() - startedAt);
+        if (elapsed > 50) {
+            console.debug(`[qaap-mobile-shell] Work Hub first show painted in ${elapsed}ms`);
+        }
+    }
+
+    protected schedulePrimeVisiblePanelData(afterFirstPaint: boolean): void {
+        if (!afterFirstPaint || typeof window === 'undefined') {
+            void this.primeVisiblePanelData();
+            return;
+        }
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                void this.primeVisiblePanelData();
+            });
+        });
+    }
+
+    protected startVisibleHubServices(): void {
         if (this.host.hubView === 'diff') {
             void this.host.refreshDiffHubView();
         }
@@ -182,14 +223,29 @@ export class MobileProjectsPanelLifecycleUi {
         if (this.host.hubView === 'home') {
             this.host.refreshHomeHubData(false);
         }
-        this.host.visible = true;
-        this.host.root.hidden = false;
-        this.host.root.setAttribute('aria-hidden', 'false');
-        this.host.root.classList.add('theia-mod-visible');
-        document.addEventListener('pointerdown', this.host.onDocumentPointerDown, true);
-        this.updateAccountAvatar();
-        this.subscribeToActiveTasks();
-        this.host.syncLandingHubListChrome();
+    }
+
+    protected async primeVisiblePanelData(): Promise<void> {
+        try {
+            const projects = await this.host.projectsService.loadProjects();
+            if (!this.host.visible) {
+                return;
+            }
+            this.host.projects = projects;
+            await Promise.all([
+                this.host.conversations?.refreshTheiaChatSessionsForProjects(projects) ?? Promise.resolve(),
+                this.host.chatServiceSummariesUi.refreshChatServiceSessionSummaries(),
+            ]);
+            if (!this.host.visible) {
+                return;
+            }
+            this.host.filter = this.host.projectsService.getFilter();
+            this.host.render();
+            this.updateAccountAvatar();
+            this.host.syncLandingHubListChrome();
+        } catch (err) {
+            console.warn('[qaap-mobile-shell] Failed to prime Work Hub data:', err);
+        }
     }
 
     hide(): void {

@@ -24,6 +24,7 @@ import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcrip
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
 import type { MobileProjectsTranscriptSheetUi } from './mobile-projects-transcript-sheet-ui';
 import type { MobileProjectsExecutionSurfaceTabsUi } from './mobile-projects-execution-surface-tabs-ui';
+import type { MobileProjectsTasksHubUi } from './mobile-projects-tasks-hub-ui';
 import { disposeComposerContextEntries, type StickyComposerContextEntry } from '../common/qaap-composer-context-entry';
 
 /** Panel surface for the Agents Hub inline execution shell (tasks landing). */
@@ -34,6 +35,7 @@ export interface MobileProjectsAgentsHubInlineHost {
     scroll: HTMLElement;
     root: HTMLElement;
     projects: MobileProjectEntry[];
+    tasksFirstLoadPending: boolean;
     agentsHubLegacyInbox: boolean;
     agentsHubSelectedProjectId: string | undefined;
     agentsHubShellActive: boolean;
@@ -74,6 +76,7 @@ export interface MobileProjectsAgentsHubInlineHost {
     transcriptUserScrollPinDispose: Disposable;
     transcriptTheiaSessionByConversationId: Map<string, string>;
     transcriptUi: MobileProjectsTranscriptUi;
+    tasksHubUi: MobileProjectsTasksHubUi;
     headerExecutionTabsHost: HTMLElement;
     preparedCwdByProjectId: Map<string, string>;
     projectsService: MobileProjectsService;
@@ -171,6 +174,16 @@ export class MobileProjectsAgentsHubInlineUi {
     renderAgentsHubExecutionShell(): void {
         const project = this.resolveAgentsHubShellProject();
         if (!project) {
+            if (this.host.tasksFirstLoadPending) {
+                this.host.agentsHubShellActive = false;
+                const root = document.createElement('div');
+                root.className = 'theia-mobile-tasks-hub-root theia-mod-agents-loading';
+                root.append(this.host.tasksHubUi.createTasksLoadingState());
+                this.host.scroll.append(root);
+                this.host.updateTasksAttentionChrome();
+                this.host.renderSubtitle();
+                return;
+            }
             this.host.agentsHubShellActive = false;
             const note = document.createElement('div');
             note.className = 'theia-mobile-agent-transcript-empty theia-mod-no-project';

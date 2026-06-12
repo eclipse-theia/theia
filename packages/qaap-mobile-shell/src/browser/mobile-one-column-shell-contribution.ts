@@ -391,16 +391,26 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         void this.bootstrapWorkHubSurfaceAfterLayout();
     }
 
-    /** Wait for workspace before choosing Agents vs IDE (MRU open is async). */
+    /** Paint Work Hub immediately; hydrate workspace-dependent state once MRU restore is ready. */
     protected async bootstrapWorkHubSurfaceAfterLayout(): Promise<void> {
+        this.onMediaChange();
+        if (this.shouldActivateMobileLayout() && !peekPreferDesktopIde()) {
+            if (!this.mobileActive) {
+                this.enterMobileLayout();
+            }
+            if (!this.tryBootstrapMobileAgentsChat()) {
+                void this.showMobileProjectsHome('tasks');
+            }
+            this.scheduleSnapAndUiRefresh();
+        }
         await this.workspaceService.ready;
         this.onMediaChange();
         if (this.mobileActive) {
             await this.collapseMobileSideSheets();
             if (!peekPreferDesktopIde()) {
                 this.applyMobileProjectsPanelDismissAfterReload();
-                if (!this.tryBootstrapMobileAgentsChat()) {
-                    this.ensureMobileProjectsHomeVisible();
+                if (!this.tryBootstrapMobileAgentsChat() && !this.projectsPanel?.isVisible()) {
+                    void this.showMobileProjectsHome('tasks');
                 }
             }
             this.scheduleSnapAndUiRefresh();
@@ -1504,7 +1514,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             id: QAAP_WORK_HUB_OVERVIEW_COMMAND,
             label: nls.localize('qaap/accountMenu/workHubOverview', 'Work Hub overview'),
         }, {
-            execute: () => this.openMobileWorkHubLanding('home'),
+            execute: () => this.openMobileWorkHubLanding('tasks'),
             isEnabled: () => this.mobileActive,
             isVisible: () => matchesMobileOneColumnLayout(),
         });
@@ -1668,7 +1678,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.shell.isExpanded('bottom')) {
             await this.shell.collapsePanel('bottom');
         }
-        await this.showMobileProjectsHome();
+        await this.showMobileProjectsHome('tasks');
     }
 
     protected async showMobileProjectsHome(preferredHubView?: MobileProjectsHubView): Promise<void> {
