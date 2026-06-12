@@ -14,6 +14,7 @@ on:
       - 'packages/qaap-adapters/**'
       - 'packages/qaap-element-inspector/**'
       - 'packages/qaap-ai-config/**'
+      - 'packages/qaap-cloud-workspace/**'
       - 'packages/core/src/browser/shell/mobile-layout-state.ts'
   pull_request:
     branches:
@@ -28,6 +29,7 @@ on:
       - 'packages/qaap-adapters/**'
       - 'packages/qaap-element-inspector/**'
       - 'packages/qaap-ai-config/**'
+      - 'packages/qaap-cloud-workspace/**'
       - 'packages/core/src/browser/shell/mobile-layout-state.ts'
   workflow_dispatch:
 

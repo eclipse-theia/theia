@@ -1,4 +1,4 @@
-// Auto-generated from resources/llm-providers/*.png — re-run: node packages/qaap-mobile-shell/scripts/qaap-llm-provider-icons-sync.js
+// Auto-generated from resources/llm-providers/*.png — re-run: npm run sync:llm-provider-icons --prefix packages/qaap-mobile-shell
 
 export const LLM_PROVIDER_ICON_DATA_URLS: Readonly<Record<string, string>> = {
     'anthropic': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0ElEQVR4AbSR3RHCMAyDA4sBk1Emo5uBPl/U2CFPcHBW/SNHSum5/fj7i8CmSz07lCKuejKDUzlivgGLd9Fk4APUAE70iJXAYEdlISa5brPAhQ1hF4js+GAg5FkR4IpAO83L1HZ0zrMiYGXcgUU856Bn1IH8CrP70jFOtXaIWsCH4flcLxVAqcSHqAUOxbI+msz7NWKGAO6A9ZsepwlqI+zuzHBDIJTU8ccBlSWKY2c8i69AgzPofEk4wgETGNHv3IAGmFxleGCOOoCAh1/lNwAAAP//reWlGwAAAAZJREFUAwBUFichfAqOYgAAAABJRU5ErkJggg==',

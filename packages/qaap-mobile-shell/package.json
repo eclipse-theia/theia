@@ -59,7 +59,10 @@
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
+    "precompile": "node scripts/qaap-llm-provider-icons-sync.js",
     "compile": "theiaext compile",
+    "sync:llm-provider-icons": "node scripts/qaap-llm-provider-icons-sync.js",
+    "check:llm-provider-icons": "node scripts/qaap-llm-provider-icons-sync.js --check",
     "lint": "theiaext lint",
     "test": "theiaext test",
     "watch": "theiaext watch"

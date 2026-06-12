@@ -145,6 +145,7 @@ export const MOBILE_VERTICAL_SCROLL_SELECTORS = [
     '.qaap-diff-review-hunks',
     '.qaap-diff-review-files',
     '.theia-mobile-pr-diff',
+    '.qaap-project-bootstrap-picker',
     '.gs-container',
     '.monaco-editor .overflow-guard',
 ] as const;

@@ -14,6 +14,7 @@ const OVERLAY_SCROLL_HOSTS = [
     '.theia-mobile-work-hub-sessions-sidebar-scroll',
     '.theia-mobile-sticky-composer-sheet-list',
     '.theia-qaap-approval-policy-sheet-list',
+    '.qaap-project-bootstrap-picker',
 ] as const;
 
 describe('mobile-vertical-touch-scroll', () => {
