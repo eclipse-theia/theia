@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    createToolCallError,
     ImageContent,
     LanguageModel,
     LanguageModelMessage,
@@ -27,7 +26,7 @@ import {
     ReasoningApi,
     ReasoningSupport,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -137,6 +136,22 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
     }
 }
 
+/** Parameters for constructing a {@link GoogleModel}. */
+export interface GoogleModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+}
+
+export const GoogleLanguageModelFactory = Symbol('GoogleLanguageModelFactory');
+export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleModel;
+
 /**
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
@@ -152,7 +167,8 @@ export class GoogleModel implements LanguageModel {
         public retrySettings: () => GoogleLanguageModelRetrySettings,
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -328,27 +344,12 @@ export class GoogleModel implements LanguageModel {
                     // Process tool calls if any exist
                     const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
-                        // Collect tool results
-                        const toolResult = await Promise.all(toolCalls.map(async tc => {
-                            const tool = request.tools?.find(t => t.name === tc.name);
-                            let result;
-                            if (!tool) {
-                                result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-                            } else {
-                                try {
-                                    result = await tool.handler(tc.args, ToolInvocationContext.create(tc.id));
-                                } catch (e) {
-                                    console.error(`Error executing tool ${tc.name}:`, e);
-                                    result = createToolCallError(e.message || 'Tool execution failed');
-                                }
-                            }
-                            return {
-                                name: tc.name,
-                                result: result,
-                                id: tc.id,
-                                arguments: tc.args,
-                            };
-                        }));
+                        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
+                        const toolResult = await that.toolCallExecutor.executeToolCalls(
+                            toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args })),
+                            request.tools,
+                            { cancellationToken }
+                        );
 
                         // Generate tool call responses
                         const calls = toolResult.map(tr => ({

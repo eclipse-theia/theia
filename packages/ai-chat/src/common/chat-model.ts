@@ -2789,6 +2789,8 @@ class ChatResponseImpl implements ChatResponse {
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
     protected _responseRepresentationForDisplay: string;
+    /** Forwarding listeners on per-content change events, disposed and rebuilt whenever the content is reset. */
+    protected readonly toDisposeOnClearContent = new DisposableCollection();
 
     constructor() {
         this._content = [];
@@ -2799,6 +2801,7 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     clearContent(): void {
+        this.toDisposeOnClearContent.dispose();
         this._content = [];
         this._updateResponseRepresentation();
         this._onDidChangeEmitter.fire();
@@ -2833,8 +2836,10 @@ class ChatResponseImpl implements ChatResponse {
                 this._content.push(nextContent);
                 // Forward content-level change events (e.g. partial-result updates from a
                 // renderer) so auto-save can persist them. Without this, mutations that
-                // don't go through addContent/merge are invisible to listeners.
-                nextContent.onDidChange(() => this._onDidChangeEmitter.fire());
+                // don't go through addContent/merge are invisible to listeners. Registered against
+                // toDisposeOnClearContent so the subscription is disposed when the content is cleared,
+                // otherwise re-adding the same content (as the stream parser does on every text token) leaks listeners.
+                nextContent.onDidChange(() => this._onDidChangeEmitter.fire(), undefined, this.toDisposeOnClearContent);
             }
         } else {
             const lastElement = this._content.length > 0

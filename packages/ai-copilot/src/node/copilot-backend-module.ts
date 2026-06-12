@@ -16,6 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ToolCallExecutor } from '@theia/ai-core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
     CopilotLanguageModelsManager,
@@ -26,6 +27,7 @@ import {
 } from '../common';
 import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
+import { CopilotLanguageModel, CopilotLanguageModelFactory, CopilotLanguageModelParams } from './copilot-language-model';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
@@ -34,6 +36,21 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 
     bind(CopilotLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(CopilotLanguageModelsManager).toService(CopilotLanguageModelsManagerImpl);
+
+    bind(CopilotLanguageModelFactory).toFactory<CopilotLanguageModel, [CopilotLanguageModelParams]>(
+        ({ container }) => params => new CopilotLanguageModel(
+            params.id,
+            params.model,
+            params.status,
+            params.enableStreaming,
+            params.supportsStructuredOutput,
+            params.maxRetries,
+            params.accessTokenProvider,
+            params.enterpriseUrlProvider,
+            params.userAgentProvider,
+            container.get(ToolCallExecutor)
+        )
+    );
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<CopilotAuthServiceClient>(

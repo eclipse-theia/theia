@@ -33,6 +33,9 @@ class TestableOpenAiModel extends OpenAiModel {
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
     }
+    public callCreateTools(request: LanguageModelRequest): unknown {
+        return this.createTools(request);
+    }
 }
 
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
@@ -99,6 +102,22 @@ describe('OpenAiModel reasoning translation', () => {
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
             expect(result.reasoning).to.equal(undefined);
             expect(result.reasoning_effort).to.equal(undefined);
+        });
+    });
+
+    describe('createTools', () => {
+        it('produces plain function tool definitions without an embedded handler function', () => {
+            const model = createModel('gpt-4o', undefined);
+            const tools = model.callCreateTools({
+                messages: [],
+                tools: [{ id: 't', name: 't', parameters: { type: 'object', properties: {} }, handler: async () => 'x' }]
+            }) as Array<{ type: string; function: Record<string, unknown> }>;
+
+            expect(tools).to.have.lengthOf(1);
+            expect(tools[0].type).to.equal('function');
+            expect(tools[0].function.name).to.equal('t');
+            // The SDK runTools() runner is no longer used, so no executable function is embedded.
+            expect('function' in tools[0].function).to.equal(false);
         });
     });
 });

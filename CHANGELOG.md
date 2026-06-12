@@ -8,6 +8,8 @@
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [ai-anthropic, ai-google, ai-ollama, ai-openai, ai-copilot] added rebindable `<provider>LanguageModelFactory` bindings for instantiating provider language models [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-core] executed a model turn's tool calls concurrently, including parallel agent delegations, instead of sequentially, via a new injectable `ToolCallExecutor` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
@@ -18,6 +20,9 @@
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors
   - renamed DebugSessionFactory.get to DebugSessionFactory.createSession and removed the manager parameter
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [ai-openai] `OpenAiResponseApiUtils` is now bound in the connection-scoped backend container instead of the root container, so it can no longer be injected into root-scoped services [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] `OpenAiLanguageModelsManagerImpl` no longer injects `OpenAiModelUtils` or `OpenAiResponseApiUtils` (the `openAiModelUtils` and `responseApiUtils` protected fields were removed); provider models are now constructed via the injected `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai, ai-copilot] `OpenAiModel.createTools()` and `CopilotLanguageModel.createTools()` now return `ChatCompletionTool[]` instead of `RunnableToolFunctionWithoutParse[]`, because the OpenAI SDK `runTools` runner is no longer used [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 
 ## 1.72.0 - 5/28/2026
 

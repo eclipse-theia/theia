@@ -15,18 +15,29 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ToolCallExecutor } from '@theia/ai-core';
 import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common/ollama-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OllamaLanguageModelsManagerImpl } from './ollama-language-models-manager-impl';
+import { OllamaLanguageModelFactory, OllamaModel, OllamaModelParams } from './ollama-language-model';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { OllamaPreferencesSchema } from '../common/ollama-preferences';
-
-export const OllamaModelFactory = Symbol('OllamaModelFactory');
 
 // We use a connection module to handle AI services separately for each frontend.
 const ollamaConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OllamaLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OllamaLanguageModelsManager).toService(OllamaLanguageModelsManagerImpl);
+    bind(OllamaLanguageModelFactory).toFactory<OllamaModel, [OllamaModelParams]>(
+        ({ container }) => params => new OllamaModel(
+            params.id,
+            params.model,
+            params.status,
+            params.host,
+            params.proxy,
+            params.reasoningSupport,
+            container.get(ToolCallExecutor)
+        )
+    );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OllamaLanguageModelsManager))
     ).inSingletonScope();

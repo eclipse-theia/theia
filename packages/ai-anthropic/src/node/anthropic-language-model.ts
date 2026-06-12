@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import {
-    createToolCallError,
     ImageContent,
     ImageMimeType,
     LanguageModel,
@@ -29,7 +28,7 @@ import {
     ReasoningApi,
     ReasoningSupport,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
@@ -218,6 +217,27 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
     return result;
 }
 
+/** Parameters for constructing an {@link AnthropicModel}. */
+export interface AnthropicModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens?: number;
+    maxRetries?: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    supportsXHighEffort?: boolean;
+    maxInputTokens?: number;
+}
+
+export const AnthropicLanguageModelFactory = Symbol('AnthropicLanguageModelFactory');
+export type AnthropicLanguageModelFactory = (params: AnthropicModelParams) => AnthropicModel;
+
 /**
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
@@ -238,7 +258,8 @@ export class AnthropicModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -379,16 +400,12 @@ export class AnthropicModel implements LanguageModel {
                     }
                 }
                 if (toolCalls.length > 0) {
-                    const toolResult = await Promise.all(toolCalls.map(async tc => {
-                        const tool = request.tools?.find(t => t.name === tc.name);
-                        const argsObject = tc.args.length === 0 ? '{}' : tc.args;
-                        const handlerResult = tool
-                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
-                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-
-                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
-
-                    }));
+                    // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
+                    const toolResult = await that.toolCallExecutor.executeToolCalls(
+                        toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args })),
+                        request.tools,
+                        { cancellationToken }
+                    );
 
                     const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result, function: { name: tr.name, arguments: tr.arguments } }));
                     yield { tool_calls: calls };

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage } from '@theia/ai-core';
+import { LanguageModelMessage, LanguageModelRequest } from '@theia/ai-core';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { CopilotLanguageModel } from './copilot-language-model';
 
@@ -36,6 +36,10 @@ class TestableCopilotLanguageModel extends CopilotLanguageModel {
 
     public callProcessMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
         return this.processMessages(messages);
+    }
+
+    public callCreateTools(request: LanguageModelRequest): unknown {
+        return this.createTools(request);
     }
 }
 
@@ -102,5 +106,21 @@ describe('CopilotLanguageModel - processMessages', () => {
         const result = model.callProcessMessages(messages);
         expect(result).to.have.lengthOf(3);
         expect(result[2]).to.deep.equal({ role: 'assistant', content: 'final answer' });
+    });
+});
+
+describe('CopilotLanguageModel - createTools', () => {
+    it('produces plain function tool definitions without an embedded handler function', () => {
+        const model = new TestableCopilotLanguageModel();
+        const tools = model.callCreateTools({
+            messages: [],
+            tools: [{ id: 't', name: 't', parameters: { type: 'object', properties: {} }, handler: async () => 'x' }]
+        }) as Array<{ type: string; function: Record<string, unknown> }>;
+
+        expect(tools).to.have.lengthOf(1);
+        expect(tools[0].type).to.equal('function');
+        expect(tools[0].function.name).to.equal('t');
+        // The SDK runTools() runner is no longer used, so no executable function is embedded.
+        expect('function' in tools[0].function).to.equal(false);
     });
 });

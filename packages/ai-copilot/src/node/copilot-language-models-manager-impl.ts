@@ -19,7 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
-import { CopilotLanguageModel } from './copilot-language-model';
+import { CopilotLanguageModel, CopilotLanguageModelFactory } from './copilot-language-model';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 /**
@@ -31,6 +31,9 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(CopilotLanguageModelFactory)
+    protected readonly copilotLanguageModelFactory: CopilotLanguageModelFactory;
 
     @inject(CopilotAuthServiceImpl)
     protected readonly authService: CopilotAuthServiceImpl;
@@ -84,17 +87,17 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
-                    new CopilotLanguageModel(
-                        modelDescription.id,
-                        modelDescription.model,
+                    this.copilotLanguageModelFactory({
+                        id: modelDescription.id,
+                        model: modelDescription.model,
                         status,
-                        modelDescription.enableStreaming,
-                        modelDescription.supportsStructuredOutput,
-                        modelDescription.maxRetries,
-                        () => this.authService.getAccessToken(),
-                        () => this.enterpriseUrl,
-                        () => this.oauthConfig.userAgent
-                    )
+                        enableStreaming: modelDescription.enableStreaming,
+                        supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                        maxRetries: modelDescription.maxRetries,
+                        accessTokenProvider: () => this.authService.getAccessToken(),
+                        enterpriseUrlProvider: () => this.enterpriseUrl,
+                        userAgentProvider: () => this.oauthConfig.userAgent
+                    })
                 ]);
             }
         }

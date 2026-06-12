@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ToolCallExecutor } from '@theia/ai-core';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common/anthropic-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
+import { AnthropicLanguageModelFactory, AnthropicModel, AnthropicModelParams } from './anthropic-language-model';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 
@@ -25,6 +27,25 @@ import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(AnthropicLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(AnthropicLanguageModelsManager).toService(AnthropicLanguageModelsManagerImpl);
+    bind(AnthropicLanguageModelFactory).toFactory<AnthropicModel, [AnthropicModelParams]>(
+        ({ container }) => params => new AnthropicModel(
+            params.id,
+            params.model,
+            params.status,
+            params.enableStreaming,
+            params.useCaching,
+            params.apiKey,
+            params.url,
+            params.maxTokens,
+            params.maxRetries,
+            params.proxy,
+            params.reasoningSupport,
+            params.reasoningApi,
+            params.supportsXHighEffort,
+            params.maxInputTokens,
+            container.get(ToolCallExecutor)
+        )
+    );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(AnthropicLanguageModelsManager))
     ).inSingletonScope();

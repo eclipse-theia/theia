@@ -24,15 +24,15 @@ import {
     UserRequest,
     ImageContent,
     LanguageModelStatus,
-    ReasoningSupport
+    ReasoningSupport,
+    ToolCallExecutor
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
-import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
-import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
+import { ChatCompletionStreamingAsyncIterator } from './openai-chat-completion-stream';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
@@ -66,6 +66,28 @@ export class MistralFixedOpenAI extends OpenAI {
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
 export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
+
+/** Parameters for constructing an {@link OpenAiModel}. */
+export interface OpenAiModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    apiVersion: () => string | undefined;
+    supportsStructuredOutput: boolean;
+    url: string | undefined;
+    deployment: string | undefined;
+    developerMessageSettings?: DeveloperMessageSettings;
+    maxRetries?: number;
+    useResponseApi?: boolean;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    maxInputTokens?: number;
+}
+
+export const OpenAiLanguageModelFactory = Symbol('OpenAiLanguageModelFactory');
+export type OpenAiLanguageModelFactory = (params: OpenAiModelParams) => OpenAiModel;
 
 export class OpenAiModel implements LanguageModel {
 
@@ -107,7 +129,8 @@ export class OpenAiModel implements LanguageModel {
         public useResponseApi: boolean = false,
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -144,29 +167,32 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-        let runner: ChatCompletionStream;
         const tools = this.createTools(request);
 
         if (tools) {
-            runner = openai.chat.completions.runTools({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                tools: tools,
-                tool_choice: 'auto',
-                ...settings
-            }, {
-                ...this.runnerOptions, maxRetries: this.maxRetries
-            });
-        } else {
-            runner = openai.chat.completions.stream({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                ...settings
-            });
+            // Drive the tool loop ourselves so that the tool calls of a single turn run concurrently.
+            return {
+                stream: new ChatCompletionStreamingAsyncIterator({
+                    openai,
+                    model: this.model,
+                    request,
+                    messages: this.processMessages(request.messages),
+                    settings,
+                    tools,
+                    maxChatCompletions: this.runnerOptions.maxChatCompletions ?? 100,
+                    maxRetries: this.maxRetries,
+                    toolCallExecutor: this.toolCallExecutor,
+                    cancellationToken
+                })
+            };
         }
 
+        const runner = openai.chat.completions.stream({
+            model: this.model,
+            messages: this.processMessages(request.messages),
+            stream: true,
+            ...settings
+        });
         return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
@@ -217,16 +243,15 @@ export class OpenAiModel implements LanguageModel {
         };
     }
 
-    protected createTools(request: LanguageModelRequest): RunnableToolFunctionWithoutParse[] | undefined {
+    protected createTools(request: LanguageModelRequest): ChatCompletionTool[] | undefined {
         return request.tools?.map(tool => ({
             type: 'function',
             function: {
                 name: tool.name,
                 description: tool.description,
-                parameters: tool.parameters,
-                function: (args_string: string) => tool.handler(args_string)
+                parameters: tool.parameters
             }
-        } as RunnableToolFunctionWithoutParse));
+        } as unknown as ChatCompletionTool));
     }
 
     protected initializeOpenAi(): OpenAI {

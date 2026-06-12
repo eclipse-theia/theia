@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ToolCallExecutor } from '@theia/ai-core';
 import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl';
+import { GoogleLanguageModelFactory, GoogleModel, GoogleModelParams } from './google-language-model';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { GooglePreferencesSchema } from '../common/google-preferences';
 
@@ -25,6 +27,20 @@ import { GooglePreferencesSchema } from '../common/google-preferences';
 const geminiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(GoogleLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(GoogleLanguageModelsManager).toService(GoogleLanguageModelsManagerImpl);
+    bind(GoogleLanguageModelFactory).toFactory<GoogleModel, [GoogleModelParams]>(
+        ({ container }) => params => new GoogleModel(
+            params.id,
+            params.model,
+            params.status,
+            params.enableStreaming,
+            params.apiKey,
+            params.retrySettings,
+            params.reasoningSupport,
+            params.reasoningApi,
+            params.maxInputTokens,
+            container.get(ToolCallExecutor)
+        )
+    );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(GoogleLanguageModelsManager))
     ).inSingletonScope();

@@ -15,20 +15,19 @@
 // *****************************************************************************
 
 import {
-    createToolCallError,
     ImageContent,
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
-    ToolInvocationContext,
+    ToolCallExecutor,
     ToolRequest,
     ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, unreachable } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
@@ -61,6 +60,10 @@ interface ToolCall {
  */
 @injectable()
 export class OpenAiResponseApiUtils {
+
+    // Injected when resolved via DI; the initializer keeps direct instantiation (e.g. in tests) working.
+    @inject(ToolCallExecutor)
+    readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor();
 
     /**
      * Handles Response API requests with proper tool calling cycles.
@@ -613,66 +616,43 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     }
 
     protected async executeToolCalls(): Promise<void> {
-        for (const [itemId, toolCall] of this.currentToolCalls) {
-            if (toolCall.executed) {
-                continue;
-            }
+        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
+        // The per-call `onResult` hook below preserves the original side effects (streaming the
+        // finished tool-call event and recording the result/error consumed by prepareNextIteration).
+        const pending = [...this.currentToolCalls].filter(([, toolCall]) => !toolCall.executed);
 
-            const tool = this.request.tools?.find(t => t.name === toolCall.name);
-            if (tool) {
-                try {
-                    const result = await tool.handler(toolCall.arguments, ToolInvocationContext.create(itemId));
-                    toolCall.result = result;
+        await this.utils.toolCallExecutor.executeToolCalls(
+            pending.map(([itemId, toolCall]) => ({ id: itemId, name: toolCall.name, arguments: toolCall.arguments })),
+            this.request.tools,
+            {
+                cancellationToken: this.cancellationToken,
+                onResult: outcome => {
+                    const toolCall = this.currentToolCalls.get(outcome.id)!;
+                    if (outcome.notFound) {
+                        toolCall.error = new Error(`Tool ${toolCall.name} not found`);
+                    } else if (outcome.error) {
+                        toolCall.error = outcome.error;
+                    } else {
+                        toolCall.result = outcome.result;
+                    }
 
-                    // Yield the tool call completion
+                    // Yield the tool call completion (success result, or the error content)
                     this.handleIncoming({
                         tool_calls: [{
-                            id: itemId,
+                            id: outcome.id,
                             finished: true,
                             function: {
                                 name: toolCall.name,
                                 arguments: toolCall.arguments
                             },
-                            result
+                            result: outcome.result
                         }]
                     });
-                } catch (error) {
-                    console.error(`Error executing tool ${toolCall.name}:`, error);
-                    toolCall.error = error instanceof Error ? error : new Error(String(error));
 
-                    // Yield the tool call error
-                    this.handleIncoming({
-                        tool_calls: [{
-                            id: itemId,
-                            finished: true,
-                            function: {
-                                name: toolCall.name,
-                                arguments: toolCall.arguments
-                            },
-                            result: createToolCallError(error instanceof Error ? error.message : String(error))
-                        }]
-                    });
+                    toolCall.executed = true;
                 }
-            } else {
-                console.warn(`Tool ${toolCall.name} not found in request tools`);
-                toolCall.error = new Error(`Tool ${toolCall.name} not found`);
-
-                // Yield the tool call error
-                this.handleIncoming({
-                    tool_calls: [{
-                        id: itemId,
-                        finished: true,
-                        function: {
-                            name: toolCall.name,
-                            arguments: toolCall.arguments
-                        },
-                        result: createToolCallError(`Tool '${toolCall.name}' not found in the available tools for this request.`, 'tool-not-available')
-                    }]
-                });
             }
-
-            toolCall.executed = true;
-        }
+        );
     }
 
     protected prepareNextIteration(): void {

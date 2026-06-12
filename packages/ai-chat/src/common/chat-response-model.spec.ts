@@ -35,6 +35,28 @@ describe('MutableChatResponseModel', () => {
             // lost on reload.
             expect(fireCount).to.equal(1);
         });
+
+        it('does not leak content-change listeners when content is repeatedly cleared and re-added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+
+            // The stream parser clears and re-adds prior content (e.g. a preceding tool call) on
+            // every streamed text token. Each re-add must not accumulate another forwarding listener.
+            for (let i = 0; i < 50; i++) {
+                response.response.clearContent();
+                response.response.addContents([toolCall]);
+            }
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('partial');
+
+            // A single content change must propagate exactly once regardless of how many times the
+            // content was re-added; otherwise each re-add leaks another listener on the content.
+            expect(fireCount).to.equal(1);
+        });
     });
 
     describe('setTokenUsage', () => {
