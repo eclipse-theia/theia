@@ -30,12 +30,14 @@ import { ElectronMessagingContribution } from './messaging/electron-messaging-co
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { ElectronConnectionHandler } from './messaging/electron-connection-handler';
+import { bindLogger } from '../node/logger-backend-module';
 
 const electronSecurityToken: ElectronSecurityToken = { value: generateUuid() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any)[ElectronSecurityToken] = electronSecurityToken;
 
 export default new ContainerModule(bind => {
+    bindLogger(bind);
     bind(Stopwatch).toConstantValue(new SimpleStopwatch('electron main', () => performance.now()));
     bind(ElectronMainApplication).toSelf().inSingletonScope();
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();
