@@ -39,6 +39,7 @@ import {
     createPickerSheetOptionButton,
     createToolApprovalRuleToggle,
 } from './qaap-agent-ui';
+import { appendLlmProviderIcon } from '../common/qaap-llm-provider-branding';
 import {
     formatQaiqModelProviderLabel,
     groupQaiqModelsByProvider,
@@ -858,11 +859,16 @@ export class MobileProjectsStickyComposerSheetsUi {
             section.className = 'theia-qaap-agent-sheet-provider';
             const label = document.createElement('div');
             label.className = 'theia-qaap-agent-sheet-provider-label';
-            label.textContent = formatQaiqModelProviderLabel(vendor);
+            appendLlmProviderIcon(label, vendor, providerModels[0]?.modelId, 'sm');
+            const labelText = document.createElement('span');
+            labelText.textContent = formatQaiqModelProviderLabel(vendor);
+            label.append(labelText);
             section.append(label);
             for (const model of providerModels) {
                 section.append(createPickerSheetOptionButton({
                     label: model.label || model.modelId,
+                    llmVendor: model.vendor,
+                    llmModelId: model.modelId,
                     selected: isSameAgentModel(storedModel, model),
                     onSelect: () => onSelect(model),
                 }));

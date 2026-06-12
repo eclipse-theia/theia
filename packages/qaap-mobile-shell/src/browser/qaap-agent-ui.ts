@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { appendAgentBrandIcon, createAgentBrandIcon, resolveAgentBrand } from '../common/qaap-agent-branding';
+import { appendLlmProviderIcon } from '../common/qaap-llm-provider-branding';
 import type { QaapAgentApprovalPolicyOption } from '../common/qaap-sticky-composer-approval-policy';
 
 export type QaapAgentUiSize = 'sm' | 'md';
@@ -201,10 +202,12 @@ export function populateApprovalPolicyToolbarButton(
     button.append(icon, chevron);
 }
 
-/** Picker row for model lists (no agent brand icon). */
+/** Picker row for model lists (optional LLM provider icon). */
 export function createPickerSheetOptionButton(options: {
     readonly label: string;
     readonly selected?: boolean;
+    readonly llmVendor?: string;
+    readonly llmModelId?: string;
     readonly onSelect: () => void;
 }): HTMLButtonElement {
     const btn = document.createElement('button');
@@ -215,6 +218,9 @@ export function createPickerSheetOptionButton(options: {
     }
     const content = document.createElement('span');
     content.className = 'theia-mobile-sticky-composer-sheet-option-content';
+    if (options.llmVendor) {
+        appendLlmProviderIcon(content, options.llmVendor, options.llmModelId, 'sm');
+    }
     const labelEl = document.createElement('span');
     labelEl.className = 'theia-mobile-sticky-composer-sheet-option-label';
     labelEl.textContent = options.label;
