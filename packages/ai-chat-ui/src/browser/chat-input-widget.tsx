@@ -378,9 +378,6 @@ export class AIChatInputWidget extends ReactWidget {
                 }
             }
         }
-        // TEMPORARY server-tools diagnostic (remove once the capabilities-panel issue is resolved).
-        console.warn(`[server-tools] agent=${agentId ?? '<none>'} resolvedModel=${modelId ?? '<none>'} `
-            + `vendor=${vendor ?? '<none>'} serverTools=${serverTools ? serverTools.map(t => t.id).join(',') : '<none>'} reasoning=${!!support}`);
         if (support !== this.currentReasoningSupport
             || modelId !== this.currentLanguageModelId
             || maxInputTokens !== this.currentMaxInputTokens

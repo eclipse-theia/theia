@@ -722,8 +722,10 @@ export class ChatViewTreeWidget extends TreeWidget {
                         widget = this.inputWidgetFactory({
                             node: editableNode,
                             initialValue: editableNode.request.message.request.text,
-                            onQuery: async query => {
-                                editableNode.request.submitEdit({ text: query });
+                            onQuery: async (query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections) => {
+                                // Carry the edit widget's current selections so an edited+resent request honors
+                                // the capabilities (e.g. enabled server tools) the user picked while editing.
+                                editableNode.request.submitEdit({ text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections });
                             },
                             branch: editableNode.branch
                         });
