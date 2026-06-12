@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { LanguageModel, LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
 import { CopilotLanguageModel } from './copilot-language-model';
+import { CopilotSdkLanguageModel } from './copilot-sdk-language-model';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 /**
@@ -38,7 +40,11 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
     @inject(CopilotOAuthConfig)
     protected readonly oauthConfig: CopilotOAuthConfig;
 
+    @inject(CopilotSdkClientProvider)
+    protected readonly sdkClientProvider: CopilotSdkClientProvider;
+
     protected enterpriseUrl: string | undefined;
+    protected useSdk = false;
     protected readonly toDispose = new DisposableCollection();
 
     @postConstruct()
@@ -56,6 +62,17 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
         this.enterpriseUrl = url;
     }
 
+    setUseSdk(useSdk: boolean): void {
+        if (this.useSdk === useSdk) {
+            return;
+        }
+        this.useSdk = useSdk;
+        // Release any running CLI process when leaving SDK mode.
+        if (!useSdk) {
+            this.sdkClientProvider.reset();
+        }
+    }
+
     protected async calculateStatus(): Promise<LanguageModelStatus> {
         const authState = await this.authService.getAuthState();
         if (authState.isAuthenticated) {
@@ -71,33 +88,51 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
 
             if (model) {
-                if (!(model instanceof CopilotLanguageModel)) {
+                if (model instanceof CopilotSdkLanguageModel) {
+                    await this.languageModelRegistry.patchLanguageModel<CopilotSdkLanguageModel>(modelDescription.id, {
+                        model: modelDescription.model,
+                        status,
+                        maxRetries: modelDescription.maxRetries
+                    });
+                } else if (model instanceof CopilotLanguageModel) {
+                    await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(modelDescription.id, {
+                        model: modelDescription.model,
+                        enableStreaming: modelDescription.enableStreaming,
+                        supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                        status,
+                        maxRetries: modelDescription.maxRetries
+                    });
+                } else {
                     console.warn(`Copilot: model ${modelDescription.id} is not a Copilot model`);
                     continue;
                 }
-                await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(modelDescription.id, {
-                    model: modelDescription.model,
-                    enableStreaming: modelDescription.enableStreaming,
-                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
-                    status,
-                    maxRetries: modelDescription.maxRetries
-                });
             } else {
-                this.languageModelRegistry.addLanguageModels([
-                    new CopilotLanguageModel(
-                        modelDescription.id,
-                        modelDescription.model,
-                        status,
-                        modelDescription.enableStreaming,
-                        modelDescription.supportsStructuredOutput,
-                        modelDescription.maxRetries,
-                        () => this.authService.getAccessToken(),
-                        () => this.enterpriseUrl,
-                        () => this.oauthConfig.userAgent
-                    )
-                ]);
+                this.languageModelRegistry.addLanguageModels([this.createLanguageModel(modelDescription, status)]);
             }
         }
+    }
+
+    protected createLanguageModel(modelDescription: CopilotModelDescription, status: LanguageModelStatus): LanguageModel {
+        if (this.useSdk) {
+            return new CopilotSdkLanguageModel(
+                modelDescription.id,
+                modelDescription.model,
+                status,
+                modelDescription.maxRetries,
+                () => this.sdkClientProvider.getClient()
+            );
+        }
+        return new CopilotLanguageModel(
+            modelDescription.id,
+            modelDescription.model,
+            status,
+            modelDescription.enableStreaming,
+            modelDescription.supportsStructuredOutput,
+            modelDescription.maxRetries,
+            () => this.authService.getAccessToken(),
+            () => this.enterpriseUrl,
+            () => this.oauthConfig.userAgent
+        );
     }
 
     removeLanguageModels(...modelIds: string[]): void {
@@ -109,7 +144,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
         const allModels = await this.languageModelRegistry.getLanguageModels();
 
         for (const model of allModels) {
-            if (model instanceof CopilotLanguageModel && model.id.startsWith(`${COPILOT_PROVIDER_ID}/`)) {
+            if ((model instanceof CopilotLanguageModel || model instanceof CopilotSdkLanguageModel) && model.id.startsWith(`${COPILOT_PROVIDER_ID}/`)) {
                 await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(model.id, {
                     status
                 });
@@ -118,6 +153,15 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
     }
 
     async fetchAvailableModelIds(): Promise<string[]> {
+        if (this.useSdk) {
+            try {
+                return await this.sdkClientProvider.listModelIds();
+            } catch (error) {
+                console.warn('Copilot: failed to fetch available models via the Copilot SDK:', error);
+                return [];
+            }
+        }
+
         const accessToken = await this.authService.getAccessToken();
         if (!accessToken) {
             return [];

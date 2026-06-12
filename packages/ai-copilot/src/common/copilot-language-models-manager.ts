@@ -69,6 +69,11 @@ export interface CopilotLanguageModelsManager {
      */
     setEnterpriseUrl(url: string | undefined): void;
     /**
+     * Enable or disable routing through the official Copilot CLI via `@github/copilot-sdk`
+     * instead of the direct REST API.
+     */
+    setUseSdk(useSdk: boolean): void;
+    /**
      * Refresh the status of all Copilot models (e.g., after authentication state changes).
      */
     refreshModelsStatus(): Promise<void>;

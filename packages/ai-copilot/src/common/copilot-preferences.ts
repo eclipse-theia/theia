@@ -20,6 +20,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 export const COPILOT_ENABLED_PREF = 'ai-features.copilot.enabled';
 export const COPILOT_MODEL_OVERRIDES_PREF = 'ai-features.copilot.modelOverrides';
 export const COPILOT_ENTERPRISE_URL_PREF = 'ai-features.copilot.enterpriseUrl';
+export const COPILOT_USE_SDK_PREF = 'ai-features.copilot.useSdk';
 
 export const CopilotPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -49,6 +50,18 @@ export const CopilotPreferencesSchema: PreferenceSchema = {
                 'GitHub Enterprise domain for Copilot API (e.g., `github.mycompany.com`). Leave empty for GitHub.com.'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: ''
+        },
+        [COPILOT_USE_SDK_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/copilot/useSdk/mdDescription',
+                'Experimental: route GitHub Copilot through the official Copilot CLI via the `@github/copilot-sdk` instead of '
+                + 'the direct REST API. This makes the full, up-to-date model lineup available (the direct REST integration only '
+                + 'exposes a baseline set such as GPT-4o). The Copilot CLI is launched as a background process and authenticated '
+                + 'with your existing Copilot sign-in.\n\n'
+                + '**Known prototype limitations:** chat is handled as single-turn requests, tool calling is disabled, and '
+                + 'structured output is not supported on this path. Leave disabled to use the direct REST integration.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+            default: false
         }
     }
 };
