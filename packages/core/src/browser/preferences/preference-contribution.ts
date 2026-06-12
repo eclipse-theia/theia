@@ -22,16 +22,24 @@ import { isObject } from '../../common/types';
 import { PreferenceSchemaServiceImpl } from '../../common/preferences/preference-schema-service';
 import { PreferenceContribution, PreferenceSchemaService } from '../../common/preferences/preference-schema';
 import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-preference-provider';
+import { SessionPreferenceProvider } from '../../common/preferences/session-preference-provider';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 import { FrontendConfigPreferenceContribution } from './frontend-config-preference-contributions';
 import { bindPreferenceConfigurations } from '../../common/preferences/preference-configurations';
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bindPreferenceConfigurations(bind);
-    bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User, PreferenceScope.Workspace, PreferenceScope.Folder]);
+    bind(ValidPreferenceScopes).toConstantValue([
+        PreferenceScope.Default,
+        PreferenceScope.User,
+        PreferenceScope.Workspace,
+        PreferenceScope.Folder,
+        PreferenceScope.Session
+    ]);
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
     bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
+    bind(PreferenceProvider).to(SessionPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Session);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
     bindRootContributionProvider(bind, PreferenceContribution);
     bind(PreferenceContribution).to(FrontendConfigPreferenceContribution).inSingletonScope();
