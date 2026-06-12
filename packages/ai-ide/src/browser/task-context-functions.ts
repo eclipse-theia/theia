@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { assertChatContext } from '@theia/ai-chat';
+import { assertChatContext, ChatToolContext } from '@theia/ai-chat';
 import { Summary, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
+import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { generateUuid } from '@theia/core';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
@@ -28,6 +29,42 @@ import {
     LIST_TASK_CONTEXTS_FUNCTION_ID,
     REWRITE_TASK_CONTEXT_FUNCTION_ID
 } from '../common/task-context-function-ids';
+
+export function getAttachedTaskContextIds(ctx: ChatToolContext): string[] {
+    return ctx.request.session.context.getVariables()
+        .filter(candidate => candidate.variable.id === TASK_CONTEXT_VARIABLE.id && !!candidate.arg)
+        .map(candidate => candidate.arg!);
+}
+
+interface CollectedTaskContexts {
+    sessionSummaries: Summary[];
+    attachedSummaries: Summary[];
+}
+
+async function collectTaskContextSummaries(storageService: TaskContextStorageService, ctx: ChatToolContext): Promise<CollectedTaskContexts> {
+    // Use root session if this is a delegated session, otherwise use current session
+    const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
+    const sessionSummaries = storageService.getAll().filter(candidate => candidate.sessionId === targetSessionId);
+    // Also resolve task contexts attached to the chat context, e.g. plans from previous sessions, skipping unresolvable ids
+    const attachedCandidates = await Promise.all(
+        getAttachedTaskContextIds(ctx)
+            .filter(id => !sessionSummaries.some(candidate => candidate.id === id))
+            .map(id => storageService.get(id))
+    );
+    const attachedSummaries = attachedCandidates.filter((candidate): candidate is Summary => candidate !== undefined);
+    return { sessionSummaries, attachedSummaries };
+}
+
+async function findTaskContextSummary(storageService: TaskContextStorageService, ctx: ChatToolContext, taskContextId?: string): Promise<Summary | undefined> {
+    if (taskContextId) {
+        return storageService.get(taskContextId);
+    }
+    const { sessionSummaries, attachedSummaries } = await collectTaskContextSummaries(storageService, ctx);
+    if (sessionSummaries.length > 0) {
+        return sessionSummaries[sessionSummaries.length - 1];
+    }
+    return attachedSummaries[attachedSummaries.length - 1];
+}
 
 @injectable()
 export class CreateTaskContextFunction implements ToolProvider {
@@ -42,7 +79,8 @@ export class CreateTaskContextFunction implements ToolProvider {
             name: CreateTaskContextFunction.ID,
             description: 'Create a new task context (implementation plan) for the current session. ' +
                 'The plan will be stored and opened in the editor so the user can see it. ' +
-                'Use this to document the implementation plan after exploring the codebase.',
+                'Use this to document the implementation plan after exploring the codebase. ' +
+                'Check for an existing task context with getTaskContext first to avoid creating a duplicate plan.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -101,14 +139,18 @@ export class GetTaskContextFunction implements ToolProvider {
             id: GetTaskContextFunction.ID,
             name: GetTaskContextFunction.ID,
             description: 'Read the current task context (implementation plan). ' +
-                'Always call this before editing to ensure you have the latest version, ' +
+                'Call this before creating a plan or todo list to check whether a task context already exists — ' +
+                'if one exists and matches the current task, follow it instead of creating a new plan. ' +
+                'Without a taskContextId, returns all task contexts created in this session or attached to the chat context (e.g. plans from previous sessions). ' +
+                'If multiple are returned, identify the relevant ones by their titles, e.g. via listTaskContexts, and re-read a specific plan via its taskContextId. ' +
+                'Always call this before acting on or editing the plan to ensure you have the latest version, ' +
                 'as the user may have edited the plan directly in the editor.',
             parameters: {
                 type: 'object',
                 properties: {
                     taskContextId: {
                         type: 'string',
-                        description: 'Optional task context ID. If not provided, returns the task context for the current session.'
+                        description: 'Optional task context ID. If not provided, returns all task contexts for the current session or attached to the chat context.'
                     }
                 },
                 required: []
@@ -123,22 +165,28 @@ export class GetTaskContextFunction implements ToolProvider {
                     const parsed = args ? JSON.parse(args) : {};
                     const taskContextId: string | undefined = parsed.taskContextId;
 
-                    let summary: Summary | undefined;
                     if (taskContextId) {
-                        summary = await this.storageService.get(taskContextId);
-                    } else {
-                        const allSummaries = this.storageService.getAll();
-                        // Use root session if this is a delegated session, otherwise use current session
-                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
-                        summary = sessionSummaries[sessionSummaries.length - 1];
+                        const summary = await findTaskContextSummary(this.storageService, ctx, taskContextId);
+                        if (!summary) {
+                            return 'No task context found for this session or attached to the chat context. Use createTaskContext to create one.';
+                        }
+                        return summary.summary;
                     }
 
-                    if (!summary) {
-                        return 'No task context found for this session. Use createTaskContext to create one.';
+                    const { sessionSummaries, attachedSummaries } = await collectTaskContextSummaries(this.storageService, ctx);
+                    const allSummaries = [...sessionSummaries, ...attachedSummaries];
+                    if (allSummaries.length === 0) {
+                        return 'No task context found for this session or attached to the chat context. Use createTaskContext to create one.';
                     }
-
-                    return summary.summary;
+                    if (allSummaries.length === 1) {
+                        return allSummaries[0].summary;
+                    }
+                    const sections = allSummaries.map((summary, index) => {
+                        const attachedSuffix = attachedSummaries.includes(summary) ? ' [attached to chat context]' : '';
+                        return `## Task ${index + 1}: "${summary.label}" (id: ${summary.id})${attachedSuffix}\n\n${summary.summary}`;
+                    });
+                    return `${allSummaries.length} task contexts are available. Identify the ones matching the current task by their titles; ` +
+                        `pass a taskContextId to re-read a specific plan.\n\n${sections.join('\n\n')}`;
                 } catch (error) {
                     return JSON.stringify({ error: `Failed to get task context: ${error.message}` });
                 }
@@ -196,19 +244,10 @@ export class EditTaskContextFunction implements ToolProvider {
                 try {
                     const { oldContent, newContent, taskContextId } = JSON.parse(args);
 
-                    let summary: Summary | undefined;
-                    if (taskContextId) {
-                        summary = await this.storageService.get(taskContextId);
-                    } else {
-                        const allSummaries = this.storageService.getAll();
-                        // Use root session if this is a delegated session, otherwise use current session
-                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
-                        summary = sessionSummaries[sessionSummaries.length - 1];
-                    }
+                    const summary = await findTaskContextSummary(this.storageService, ctx, taskContextId);
 
                     if (!summary) {
-                        return 'No task context found for this session. Use createTaskContext to create one first.';
+                        return 'No task context found for this session or attached to the chat context. Use createTaskContext to create one first.';
                     }
 
                     const replacement: Replacement = { oldContent, newContent };
@@ -249,7 +288,7 @@ export class ListTaskContextsFunction implements ToolProvider {
         return {
             id: ListTaskContextsFunction.ID,
             name: ListTaskContextsFunction.ID,
-            description: 'List all task contexts (plans) for the current session. ' +
+            description: 'List all task contexts (plans) for the current session, including task contexts attached to the chat context. ' +
                 'Use this to see what plans exist and their IDs.',
             parameters: {
                 type: 'object',
@@ -263,20 +302,22 @@ export class ListTaskContextsFunction implements ToolProvider {
                 }
 
                 try {
-                    const allSummaries = this.storageService.getAll();
-                    // Use root session if this is a delegated session, otherwise use current session
-                    const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
-                    const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
+                    const { sessionSummaries, attachedSummaries } = await collectTaskContextSummaries(this.storageService, ctx);
 
-                    if (sessionSummaries.length === 0) {
-                        return 'No task contexts found for this session.';
+                    if (sessionSummaries.length === 0 && attachedSummaries.length === 0) {
+                        return 'No task contexts found for this session or attached to the chat context.';
                     }
 
-                    const list = sessionSummaries.map((s, i) =>
-                        `${i + 1}. "${s.label}" (id: ${s.id})`
+                    const entries = [
+                        ...sessionSummaries.map(s => ({ id: s.id, label: s.label, attached: false })),
+                        ...attachedSummaries.map(s => ({ id: s.id, label: s.label, attached: true }))
+                    ];
+                    const list = entries.map((entry, i) =>
+                        `${i + 1}. "${entry.label}" (id: ${entry.id})${entry.attached ? ' [attached to chat context]' : ''}`
                     ).join('\n');
+                    const defaultEntry = sessionSummaries.length > 0 ? sessionSummaries[sessionSummaries.length - 1] : attachedSummaries[attachedSummaries.length - 1];
 
-                    return `Task contexts for this session:\n${list}\n\nMost recent: "${sessionSummaries[sessionSummaries.length - 1].label}"`;
+                    return `Task contexts available in this chat:\n${list}\n\nMost recent: "${defaultEntry.label}"`;
                 } catch (error) {
                     return JSON.stringify({ error: `Failed to list task contexts: ${error.message}` });
                 }
@@ -323,19 +364,10 @@ export class RewriteTaskContextFunction implements ToolProvider {
                 try {
                     const { content, taskContextId } = JSON.parse(args);
 
-                    let summary: Summary | undefined;
-                    if (taskContextId) {
-                        summary = await this.storageService.get(taskContextId);
-                    } else {
-                        const allSummaries = this.storageService.getAll();
-                        // Use root session if this is a delegated session, otherwise use current session
-                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
-                        summary = sessionSummaries[sessionSummaries.length - 1];
-                    }
+                    const summary = await findTaskContextSummary(this.storageService, ctx, taskContextId);
 
                     if (!summary) {
-                        return 'No task context found for this session. Use createTaskContext to create one first.';
+                        return 'No task context found for this session or attached to the chat context. Use createTaskContext to create one first.';
                     }
 
                     const updatedSummary: Summary = {
