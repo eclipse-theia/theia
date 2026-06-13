@@ -4,7 +4,8 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { animationFrame, UnsafeWidgetUtilities, WidgetManager } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { animationFrame, UnsafeWidgetUtilities, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { MessageLoop } from '@lumino/messaging';
 import { Widget as LuminoWidget } from '@lumino/widgets';
 import { PreferencesWidget } from '@theia/preferences/lib/browser/views/preference-widget';
@@ -18,6 +19,7 @@ export class MobileWorkHubPreferencesSheet {
     protected visible = false;
     protected preferencesWidget: PreferencesWidget | undefined;
     protected widgetHostResizeObserver: ResizeObserver | undefined;
+    protected windowResizeListener: (() => void) | undefined;
 
     protected readonly onKeyDown = (ev: KeyboardEvent): void => {
         if (ev.key === 'Escape' && this.visible) {
@@ -26,7 +28,10 @@ export class MobileWorkHubPreferencesSheet {
         }
     };
 
-    constructor(protected readonly widgetManager: WidgetManager) {
+    constructor(
+        protected readonly widgetManager: WidgetManager,
+        protected readonly preferenceService?: PreferenceService,
+    ) {
         this.node = document.createElement('div');
         this.node.className = 'theia-mobile-work-hub-preferences';
         this.node.setAttribute('role', 'dialog');
@@ -88,20 +93,26 @@ export class MobileWorkHubPreferencesSheet {
         this.node.setAttribute('aria-hidden', 'false');
         this.visible = true;
         document.addEventListener('keydown', this.onKeyDown, true);
+        this.windowResizeListener = () => { this.scheduleLayoutSync(widget); };
+        window.addEventListener('resize', this.windowResizeListener, { passive: true });
         this.observeWidgetHostResize(widget);
-        this.syncWidgetLayout(widget);
-        if (typeof query === 'string') {
+        this.scheduleLayoutSync(widget);
+        await animationFrame(2);
+        if (typeof query === 'string' && this.visible) {
             await this.applyPreferencesQuery(widget, query);
         }
-        await animationFrame(2);
         if (this.visible) {
-            this.syncWidgetLayout(widget);
+            this.scheduleLayoutSync(widget);
         }
     }
 
     hide(): void {
         if (!this.visible) {
             return;
+        }
+        if (this.windowResizeListener) {
+            window.removeEventListener('resize', this.windowResizeListener);
+            this.windowResizeListener = undefined;
         }
         this.unobserveWidgetHostResize();
         this.detachWidget();
@@ -131,6 +142,14 @@ export class MobileWorkHubPreferencesSheet {
             this.widgetHost.appendChild(widget.node);
         }
         widget.node.classList.add('theia-mobile-work-hub-preferences-embed');
+        widget.node.style.flex = '1 1 auto';
+        widget.node.style.minHeight = '0';
+        widget.node.style.height = '100%';
+        widget.node.style.width = '100%';
+        if (widget.isHidden) {
+            widget.show();
+        }
+        widget.update();
     }
 
     protected detachWidget(): void {
@@ -145,18 +164,29 @@ export class MobileWorkHubPreferencesSheet {
         }
     }
 
-    protected syncWidgetLayout(widget: PreferencesWidget): void {
+    protected scheduleLayoutSync(widget: Widget, attempt = 0): void {
         requestAnimationFrame(() => {
-            if (!this.visible || !this.widgetHost.isConnected) {
-                return;
-            }
-            const rect = this.widgetHost.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) {
-                return;
-            }
-            MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
-            this.applyMobilePreferencesEditorHeight(widget, rect);
+            requestAnimationFrame(() => {
+                this.syncWidgetLayout(widget, attempt);
+            });
         });
+    }
+
+    protected syncWidgetLayout(widget: Widget, attempt = 0): void {
+        if (!this.visible || !this.widgetHost.isConnected) {
+            return;
+        }
+        const rect = this.widgetHost.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            if (attempt < 16) {
+                this.scheduleLayoutSync(widget, attempt + 1);
+            }
+            return;
+        }
+        MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
+        if (widget instanceof PreferencesWidget) {
+            this.applyMobilePreferencesEditorHeight(widget, rect);
+        }
     }
 
     /** Lumino Panel does not always stretch the editor; fill remaining sheet height for scroll. */
@@ -188,7 +218,7 @@ export class MobileWorkHubPreferencesSheet {
             return;
         }
         this.widgetHostResizeObserver = new ResizeObserver(() => {
-            this.syncWidgetLayout(widget);
+            this.scheduleLayoutSync(widget);
         });
         this.widgetHostResizeObserver.observe(this.widgetHost);
     }
@@ -200,20 +230,64 @@ export class MobileWorkHubPreferencesSheet {
 
     /** Match `CommonCommands.OPEN_PREFERENCES` once the embedded widget has rendered. */
     protected async applyPreferencesQuery(widget: PreferencesWidget, query: string): Promise<void> {
+        await this.preferenceService?.ready;
         await animationFrame(2);
         if (!this.visible) {
             return;
         }
         const searchId = PreferencesSearchbarWidget.SEARCHBAR_ID;
-        for (let attempt = 0; attempt < 8; attempt++) {
-            const searchInput = widget.node.querySelector<HTMLInputElement>(`#${searchId}`);
-            if (searchInput) {
-                await widget.setSearchTerm(query);
-                this.syncWidgetLayout(widget);
+        for (let attempt = 0; attempt < 40; attempt++) {
+            if (!this.visible) {
                 return;
+            }
+            const searchInput = widget.node.querySelector<HTMLInputElement>(`#${CSS.escape(searchId)}`);
+            if (searchInput) {
+                await this.commitPreferencesSearch(widget, searchInput, query);
+                if (await this.waitForPreferencesContent(widget)) {
+                    this.scheduleLayoutSync(widget);
+                    return;
+                }
             }
             await animationFrame();
         }
+        await this.commitPreferencesSearch(widget, undefined, query);
+        await this.waitForPreferencesContent(widget);
+        this.scheduleLayoutSync(widget);
+    }
+
+    protected async commitPreferencesSearch(
+        widget: PreferencesWidget,
+        searchInput: HTMLInputElement | undefined,
+        query: string,
+    ): Promise<void> {
+        const scopedInput = searchInput
+            ?? widget.node.querySelector<HTMLInputElement>(`#${CSS.escape(PreferencesSearchbarWidget.SEARCHBAR_ID)}`);
+        if (scopedInput && scopedInput.value === query) {
+            scopedInput.value = '';
+            await widget.setSearchTerm('');
+            await animationFrame();
+        }
         await widget.setSearchTerm(query);
+        if (scopedInput && scopedInput.value !== query) {
+            scopedInput.value = query;
+            scopedInput.dispatchEvent(new Event('input', { bubbles: true }));
+            scopedInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    protected async waitForPreferencesContent(widget: PreferencesWidget): Promise<boolean> {
+        for (let attempt = 0; attempt < 30; attempt++) {
+            if (!this.visible) {
+                return false;
+            }
+            const editor = widget.node.querySelector('.preferences-editor-widget');
+            const hasPreferences = !!editor?.querySelector('.single-pref, .settings-section-category-title');
+            const hasNoResults = widget.node.querySelector('.settings-main.no-results') !== null;
+            if (hasPreferences || hasNoResults) {
+                return true;
+            }
+            await animationFrame();
+        }
+        return false;
     }
 }

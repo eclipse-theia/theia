@@ -10321,6 +10321,13 @@ body.theia-mobile-mod-landing
   flex-direction: column;
 }
 
+.theia-mobile-work-hub-preferences-widget-host > #settings_widget,
+.theia-mobile-work-hub-preferences-widget-host > .theia-settings-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .theia-mobile-work-hub-preferences-embed.theia-settings-container {
   flex: 1 1 auto;
   min-height: 0;

@@ -1656,7 +1656,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected async openWorkHubPreferencesSheet(query?: string): Promise<void> {
         if (!this.workHubPreferencesSheet) {
-            this.workHubPreferencesSheet = new MobileWorkHubPreferencesSheet(this.widgetManager);
+            this.workHubPreferencesSheet = new MobileWorkHubPreferencesSheet(this.widgetManager, this.preferenceService);
             document.body.appendChild(this.workHubPreferencesSheet.node);
             this.toDispose.push(Disposable.create(() => {
                 this.workHubPreferencesSheet?.dispose();
