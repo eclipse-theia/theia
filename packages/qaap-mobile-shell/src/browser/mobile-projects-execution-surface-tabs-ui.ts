@@ -266,6 +266,9 @@ export class MobileProjectsExecutionSurfaceTabsUi {
         this.host.agentsHubInlineExecutionRoot?.setAttribute('data-active-surface', tab);
         this.host.transcriptSheet?.querySelector('.theia-mobile-agent-log-sheet')?.setAttribute('data-active-surface', tab);
         this.host.root.querySelector('.theia-mobile-projects-detail-surfaces-body')?.setAttribute('data-active-surface', tab);
+        if (tab !== 'preview') {
+            this.host.transcriptSurfacesUi.suspendTranscriptPreviewIframe();
+        }
     }
 
     mountExecutionSurfaceTabContent(

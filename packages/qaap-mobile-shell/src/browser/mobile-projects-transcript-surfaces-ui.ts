@@ -499,6 +499,30 @@ export class MobileProjectsTranscriptSurfacesUi {
         this.transcriptPreviewMountedUrl = undefined;
     }
 
+    /**
+     * Tear down the preview iframe when another execution tab is active so embedded
+     * dev servers (e.g. Vite HMR) stop running in a hidden `display:none` host.
+     * Keeps the last preview URL staged for a fast remount when Preview is opened again.
+     */
+    suspendTranscriptPreviewIframe(): void {
+        const chrome = this.host.transcriptEmbeddedPreview;
+        if (!chrome) {
+            return;
+        }
+        const isEmptyPlaceholder = chrome.root.classList.contains('theia-mod-empty-preview');
+        const stagedUrl = this.transcriptPreviewMountedUrl ?? this.getTranscriptEmbeddedPreviewUrl();
+        chrome.dispose();
+        this.host.transcriptEmbeddedPreview = undefined;
+        this.executionPreviewHost()?.replaceChildren();
+        if (isEmptyPlaceholder) {
+            this.transcriptPreviewMountedUrl = undefined;
+            return;
+        }
+        if (stagedUrl) {
+            this.transcriptPreviewProbeReadyUrl = normalizePreviewUrlForSameOrigin(stagedUrl);
+        }
+    }
+
     protected clearTranscriptEmptyPreviewChrome(): void {
         const root = this.host.transcriptEmbeddedPreview?.root;
         if (!root?.classList.contains('theia-mod-empty-preview')) {
@@ -587,6 +611,20 @@ export class MobileProjectsTranscriptSurfacesUi {
 
         this.stopTranscriptPreviewTabProbe();
         const readyUrl = normalizePreviewUrlForSameOrigin(probe.previewUrl);
+        if (this.host.executionSurfaceTabsUi.activeExecutionTab(project) !== 'preview') {
+            this.stageTranscriptPreviewReadyUrl(readyUrl);
+            if (latestProject.previewUrl !== readyUrl) {
+                const updatedProject = { ...latestProject, previewUrl: readyUrl };
+                this.host.projects = this.host.projects.map(candidate => candidate.id === updatedProject.id
+                    ? updatedProject
+                    : candidate);
+                if (this.host.transcriptOpenProject?.id === updatedProject.id) {
+                    this.host.transcriptOpenProject = updatedProject;
+                }
+                void this.host.projectsService.recordProjectPreviewUrl(updatedProject, readyUrl).catch(() => undefined);
+            }
+            return;
+        }
         if (this.transcriptPreviewMountedUrl === readyUrl
             && this.host.transcriptEmbeddedPreview?.root.isConnected === true
             && host.contains(this.host.transcriptEmbeddedPreview.root)

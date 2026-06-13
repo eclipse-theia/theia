@@ -69,6 +69,10 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
 
     protected inspectorToggleButton: HTMLButtonElement | undefined;
 
+    protected suspendedPreviewUrl: string | undefined;
+
+    protected previewFrameSuspended = false;
+
     get previewFrame(): HTMLIFrameElement {
         return this.frame;
     }
@@ -163,9 +167,46 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
 
     protected override go(location: string, options?: Parameters<MiniBrowserContent['go']>[1]): Promise<void> {
         const normalized = normalizePreviewUrlForSameOrigin(location);
+        this.previewFrameSuspended = false;
         const result = super.go(normalized, options);
         this.previewChrome?.recordNavigationIntent(location);
         return result;
+    }
+
+    /** Unloads the iframe (about:blank) while keeping the URL for {@link resumePreviewFrame}. */
+    suspendPreviewFrame(): void {
+        if (this.previewFrameSuspended) {
+            return;
+        }
+        const current = this.frameSrc() || this.input.value.trim();
+        if (current) {
+            this.suspendedPreviewUrl = normalizePreviewUrlForSameOrigin(current);
+        }
+        this.previewFrameSuspended = true;
+        this.frame.src = 'about:blank';
+    }
+
+    /** Restores a URL previously suspended via {@link suspendPreviewFrame}. */
+    resumePreviewFrame(): void {
+        if (!this.previewFrameSuspended) {
+            return;
+        }
+        this.previewFrameSuspended = false;
+        const url = this.suspendedPreviewUrl ?? this.effectiveStartPage();
+        this.suspendedPreviewUrl = undefined;
+        if (url) {
+            void this.go(url, { showLoadIndicator: true, preserveFocus: false });
+        }
+    }
+
+    protected override onBeforeShow(msg: Message): void {
+        super.onBeforeShow(msg);
+        this.resumePreviewFrame();
+    }
+
+    protected override onAfterHide(msg: Message): void {
+        super.onAfterHide(msg);
+        this.suspendPreviewFrame();
     }
 
     protected effectiveStartPage(): string | undefined {

@@ -9,6 +9,8 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { syncQaapMiniBrowserPreviewSuspension } from '@theia/qaap-adapters/lib/browser/qaap-mini-browser-preview-frame';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -39,6 +41,7 @@ import {
     terminalOutputNextDevLock,
 } from './qaap-project-bootstrap-dev-errors';
 import { MobileProjectsService } from './mobile-projects-service';
+import { peekPreferDesktopIde } from './mobile-projects-open';
 
 /** Terminal titles created by {@link QaapProjectBootstrapService.spawnCommand}. */
 const BOOTSTRAP_DEV_TERMINAL_TITLE_PREFIX = 'Dev (';
@@ -143,6 +146,9 @@ export class QaapProjectBootstrapService {
 
     @inject(MobileProjectsService)
     protected readonly hubProjects: MobileProjectsService;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly stateEmitter = new Emitter<QaapBootstrapStateChange>();
@@ -972,11 +978,19 @@ export class QaapProjectBootstrapService {
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('qaap-bootstrap-preview-opened', { detail: { url } }));
             }
+            this.syncMiniBrowserPreviewSuspensionAfterOpen();
         } catch (e) {
             console.error('[qaap-project-bootstrap] failed to open preview', e);
             this._error = e instanceof Error ? e.message : String(e);
             this.setPhase('run-failed');
         }
+    }
+
+    protected syncMiniBrowserPreviewSuspensionAfterOpen(): void {
+        if (!matchesMobileOneColumnLayout()) {
+            return;
+        }
+        syncQaapMiniBrowserPreviewSuspension(this.shell, peekPreferDesktopIde());
     }
 
     protected async spawnCommand(options: {

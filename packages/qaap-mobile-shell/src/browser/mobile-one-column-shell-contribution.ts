@@ -109,6 +109,7 @@ import {
 } from './mobile-projects-open';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { QaapMiniBrowserOpenHandler } from '@theia/qaap-adapters/lib/browser/qaap-mini-browser-open-handler';
+import { syncQaapMiniBrowserPreviewSuspension } from '@theia/qaap-adapters/lib/browser/qaap-mini-browser-preview-frame';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
@@ -2043,6 +2044,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.refreshBottomBar();
                 this.updateBackdropVisibility();
                 this.requestSheetRelayout();
+                this.syncIdeMiniBrowserPreviewSuspension();
             };
             void Promise.all([
                 this.shell.leftPanelHandler.state.pendingUpdate,
@@ -2050,6 +2052,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.getBottomPanelPendingUpdate(),
             ]).then(snap, snap);
         });
+    }
+
+    /** Pause mini-browser dev-server iframes while Work Hub is foreground (avoids Vite HMR console noise). */
+    protected syncIdeMiniBrowserPreviewSuspension(): void {
+        const userViewingIdePreview = peekPreferDesktopIde() && !!this.getActivePreviewWidget();
+        syncQaapMiniBrowserPreviewSuspension(this.shell, userViewingIdePreview);
     }
 
     /**
