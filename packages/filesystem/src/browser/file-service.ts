@@ -274,6 +274,12 @@ export class TextFileOperationError extends FileOperationError {
 }
 
 /**
+ * The default time, in milliseconds, after which {@link FileService.activateProvider} gives up waiting
+ * for a provider to be registered for a scheme and rejects the activation instead of hanging forever.
+ */
+export const DEFAULT_PROVIDER_ACTIVATION_TIMEOUT = 90_000;
+
+/**
  * The {@link FileService} is the common facade responsible for all interactions with file systems.
  * It manages all registered {@link FileSystemProvider}s and
  *  forwards calls to the responsible {@link FileSystemProvider}, determined by the scheme.
@@ -409,6 +415,27 @@ export class FileService {
         if (!activation) {
             const deferredActivation = new Deferred<FileSystemProvider>();
             this.activations.set(scheme, activation = deferredActivation.promise);
+            // Resolve the activation as soon as a provider is registered for the scheme. Otherwise a
+            // slow or dangling `onWillActivateFileSystemProvider` listener whose `waitUntil` promise
+            // never settles would wedge this activation (and everything awaiting it) forever. See #17506.
+            const registration = this.onDidChangeFileSystemProviderRegistrations(event => {
+                if (event.added && event.scheme === scheme && event.provider) {
+                    deferredActivation.resolve(event.provider);
+                }
+            });
+            // Backstop: reject the activation if no provider is registered within the timeout, rather than
+            // hanging forever when a listener's `waitUntil` promise never settles. On rejection the scheme is
+            // removed from `activations` so that a later attempt can retry once the connection recovers.
+            const timeout = setTimeout(() => {
+                const error = new Error();
+                error.name = 'ENOPRO';
+                error.message = `Activation of file system provider for scheme ${scheme} timed out`;
+                deferredActivation.reject(error);
+            }, this.getActivationTimeout());
+            deferredActivation.promise.then(
+                () => { registration.dispose(); clearTimeout(timeout); },
+                () => { registration.dispose(); clearTimeout(timeout); this.activations.delete(scheme); }
+            );
             WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme }).then(() => {
                 provider = this.providers.get(scheme);
                 if (!provider) {
@@ -422,6 +449,10 @@ export class FileService {
             }).catch(e => deferredActivation.reject(e));
         }
         return activation;
+    }
+
+    protected getActivationTimeout(): number {
+        return DEFAULT_PROVIDER_ACTIVATION_TIMEOUT;
     }
 
     hasProvider(scheme: string): boolean {
