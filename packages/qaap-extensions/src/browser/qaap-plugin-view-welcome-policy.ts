@@ -7,8 +7,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
 
 @injectable()
-export class QaapPluginViewWelcomePolicy extends PluginViewWelcomePolicy {
-    override shouldRegisterExplorerOpenFolderWelcome(): boolean {
+export class QaapPluginViewWelcomePolicy implements PluginViewWelcomePolicy {
+    shouldRegisterExplorerOpenFolderWelcome(): boolean {
         return false;
     }
 }

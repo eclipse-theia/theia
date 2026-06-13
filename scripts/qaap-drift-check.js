@@ -92,18 +92,14 @@ const ALLOWED = [
     // renderer/contribution adjustments). These are intentional fork edits and
     // not full-featured forks of the package; deeper feature changes are
     // tracked in qaap-drift-baseline.txt pending extraction.
-    // ai-ide: workspace launch / model alias UI / prompt template tweaks for product
-    /^packages\/ai-ide\/package\.json$/,
-    /^packages\/ai-ide\/tsconfig\.json$/,
+    // ai-ide: LanguageModelOptionContribution seam + model alias UI hooks for product
     /^packages\/ai-ide\/src\/browser\/frontend-module\.ts$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/agent-configuration-widget\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-renderer\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-option-contribution\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
-    /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
     // Protected parseListLaunchConfigurationArgs hook for empty tool-arg guard.
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
-    /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
     // ---- Qaap product tooling / editor config (not upstream Theia) --------
     /^\.cursor\/rules\/work-hub-reload-default\.mdc$/,
     /^\.tool-ui\/agent\.json$/,
@@ -119,7 +115,7 @@ const ALLOWED = [
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
-    // ---- Plugin host customizations (small upstream patches) ---------------
+    // Optional PluginViewWelcomePolicy DI seam for cloud IDE (no Open Folder welcome).
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-welcome-policy\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.

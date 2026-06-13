@@ -101,8 +101,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
 
-    @inject(PluginViewWelcomePolicy)
-    protected readonly welcomePolicy: PluginViewWelcomePolicy;
+    @inject(PluginViewWelcomePolicy) @optional()
+    protected readonly welcomePolicy?: PluginViewWelcomePolicy;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -181,7 +181,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
         this.widgetManager.onDidCreateWidget(event => {
-            if (event.widget instanceof FileNavigatorWidget && this.welcomePolicy.shouldRegisterExplorerOpenFolderWelcome()) {
+            if (event.widget instanceof FileNavigatorWidget && (this.welcomePolicy?.shouldRegisterExplorerOpenFolderWelcome() ?? true)) {
                 const disposable = new DisposableCollection();
                 disposable.push(this.registerViewWelcome({
                     view: 'explorer',
