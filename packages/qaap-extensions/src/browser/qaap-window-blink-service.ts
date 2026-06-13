@@ -28,11 +28,4 @@ export class QaapWindowBlinkService extends WindowBlinkService {
     notifyAgentNeedsConfirmation(agentName?: string): void {
         void this.blinkWindow(agentName);
     }
-
-    protected override getBlinkAlertTitle(agentName?: string): string {
-        const app = FrontendApplicationConfigProvider.get().applicationName;
-        return '🔔 ' + (agentName
-            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', '{0} - Agent "{1}" Completed', app, agentName)
-            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', '{0} - Agent Completed', app));
-    }
 }
