@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "mustache": "^4.2.0",
-    "semver": "^7.7.4",
+    "semver": "^7.8.1",
     "tslib": "^2.8.1",
     "yargs": "^17.7.2"
   },
@@ -34,7 +34,7 @@
     "@types/chai": "^4.3.0",
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
-    "@types/yargs": "^17",
+    "@types/yargs": "^17.0.35",
     "typescript": "~5.9.3"
   }
 }
