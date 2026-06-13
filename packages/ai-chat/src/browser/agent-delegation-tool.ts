@@ -23,6 +23,7 @@ import {
     ChatAgentServiceFactory,
     ChatChangeEvent,
     ChatRequest,
+    ChatResponseContent,
     ChatService,
     ChatServiceFactory,
     ChatToolContext,
@@ -30,6 +31,7 @@ import {
     MutableChatRequestModel,
     MutableChatResponseModel,
     ChatRequestInvocation,
+    ThinkingChatResponseContent,
 } from '../common';
 import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
 
@@ -213,7 +215,11 @@ export class AgentDelegationTool implements ToolProvider {
                 try {
                     // Wait for completion to return the final result as tool output
                     const result = await response.responseCompleted;
-                    const stringResult = result.response.asString();
+                    const nonThinkingContent = result.response.content.filter(c => !ThinkingChatResponseContent.is(c));
+                    const stringResult = nonThinkingContent
+                        .map(c => ChatResponseContent.hasAsString(c) ? c.asString() : undefined)
+                        .filter((text): text is string => text !== undefined && text !== '')
+                        .join('\n\n');
 
                     // Clean up the session and parent-child link after completion
                     childModelDisposable?.dispose();
