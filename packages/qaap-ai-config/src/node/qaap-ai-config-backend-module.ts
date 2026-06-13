@@ -5,7 +5,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ShellExecutionServerImpl } from '@theia/ai-terminal/lib/node/shell-execution-server-impl';
+import { patchAnthropicModelForQaapHistory } from './qaap-anthropic-model-patch';
 import { QaapShellExecutionServerImpl } from './qaap-shell-execution-server-impl';
+
+patchAnthropicModelForQaapHistory();
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(ShellExecutionServerImpl).to(QaapShellExecutionServerImpl).inSingletonScope();

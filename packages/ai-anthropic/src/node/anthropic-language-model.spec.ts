@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages, pruneOldHistoryTurns } from './anthropic-language-model';
+import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
 import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -214,71 +214,6 @@ describe('AnthropicModel', () => {
         });
     });
 
-    describe('pruneOldHistoryTurns', () => {
-        const userText = (text: string) => ({ role: 'user' as const, content: [{ type: 'text' as const, text }] });
-        const assistantText = (text: string) => ({ role: 'assistant' as const, content: [{ type: 'text' as const, text }] });
-        const toolResult = (id: string, text: string) => ({
-            role: 'user' as const,
-            content: [{ type: 'tool_result' as const, tool_use_id: id, content: text }]
-        });
-
-        it('returns messages unchanged when under the turn limit', () => {
-            const messages = [userText('a'), assistantText('A'), userText('b'), assistantText('B')];
-            expect(pruneOldHistoryTurns(messages, 5)).to.equal(messages);
-        });
-
-        it('keeps only the last N human turns when over the limit', () => {
-            const messages = [
-                userText('t1'), assistantText('r1'),
-                userText('t2'), assistantText('r2'),
-                userText('t3'), assistantText('r3'),
-                userText('t4'), assistantText('r4')
-            ];
-            const result = pruneOldHistoryTurns(messages, 2);
-            // Keeps t3, r3, t4, r4 — last 2 human turns.
-            expect(result).to.have.lengthOf(4);
-            expect((result[0].content as { text: string }[])[0].text).to.equal('t3');
-            expect((result[3].content as { text: string }[])[0].text).to.equal('r4');
-        });
-
-        it('does not split a tool_use/tool_result round-trip', () => {
-            // A "turn" here is t1 → a1(tool_use) → tool_result(user) → a2 → t2 → ...
-            // Cutting at the tool_result user message would orphan the tool_use; pruning must
-            // only cut at human user messages.
-            const messages = [
-                userText('t1'),
-                assistantText('a1 with tool_use'),
-                toolResult('tool_1', 'result_1'),
-                assistantText('a1 final'),
-                userText('t2'),
-                assistantText('a2')
-            ];
-            const result = pruneOldHistoryTurns(messages, 1);
-            // Only one human turn kept → t2 onward. The earlier tool_result is dropped along with its tool_use.
-            expect(result).to.have.lengthOf(2);
-            expect((result[0].content as { text: string }[])[0].text).to.equal('t2');
-            expect((result[1].content as { text: string }[])[0].text).to.equal('a2');
-        });
-
-        it('handles string content as a human turn', () => {
-            const messages = [
-                { role: 'user' as const, content: 't1' },
-                assistantText('r1'),
-                { role: 'user' as const, content: 't2' },
-                assistantText('r2')
-            ];
-            const result = pruneOldHistoryTurns(messages, 1);
-            expect(result).to.have.lengthOf(2);
-            expect(result[0].content).to.equal('t2');
-        });
-
-        it('returns messages unchanged for empty arrays or non-positive limits', () => {
-            expect(pruneOldHistoryTurns([], 10)).to.deep.equal([]);
-            const messages = [userText('a')];
-            expect(pruneOldHistoryTurns(messages, 0)).to.equal(messages);
-        });
-    });
-
     describe('addCacheControlToLastMessage', () => {
         it('should preserve all content blocks when adding cache control to parallel tool calls', () => {
             const messages = [
@@ -350,46 +285,6 @@ describe('AnthropicModel', () => {
                 text: 'Simple text message',
                 cache_control: { type: 'ephemeral' }
             });
-        });
-
-        it('should add a rolling read breakpoint to the previous user message in multi-turn history', () => {
-            const messages = [
-                { role: 'user' as const, content: [{ type: 'text' as const, text: 'turn 1' }] },
-                { role: 'assistant' as const, content: [{ type: 'text' as const, text: 'reply 1' }] },
-                { role: 'user' as const, content: [{ type: 'text' as const, text: 'turn 2' }] },
-                { role: 'assistant' as const, content: [{ type: 'text' as const, text: 'reply 2' }] },
-                { role: 'user' as const, content: [{ type: 'text' as const, text: 'turn 3' }] }
-            ];
-
-            const result = addCacheControlToLastMessage(messages);
-
-            expect(result).to.have.lengthOf(5);
-            // Write breakpoint on the last (current) user message.
-            expect(result[4].content[0]).to.deep.equal({
-                type: 'text', text: 'turn 3', cache_control: { type: 'ephemeral' }
-            });
-            // Read breakpoint on the previous user message (recovers prior turn's cache).
-            expect(result[2].content[0]).to.deep.equal({
-                type: 'text', text: 'turn 2', cache_control: { type: 'ephemeral' }
-            });
-            // Assistant messages and the first user message remain uncached.
-            expect(result[0].content[0]).to.not.have.property('cache_control');
-            expect(result[1].content[0]).to.not.have.property('cache_control');
-            expect(result[3].content[0]).to.not.have.property('cache_control');
-        });
-
-        it('should add only the write breakpoint when there is no prior user message', () => {
-            const messages = [
-                { role: 'assistant' as const, content: [{ type: 'text' as const, text: 'assistant only' }] },
-                { role: 'user' as const, content: [{ type: 'text' as const, text: 'first user' }] }
-            ];
-
-            const result = addCacheControlToLastMessage(messages);
-
-            expect(result[1].content[0]).to.deep.equal({
-                type: 'text', text: 'first user', cache_control: { type: 'ephemeral' }
-            });
-            expect(result[0].content[0]).to.not.have.property('cache_control');
         });
 
         it('should not modify original messages', () => {
