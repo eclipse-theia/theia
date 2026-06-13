@@ -11,6 +11,7 @@ import {
 } from '../common/qaap-agent-conversation-client';
 import { resolveQaapAgentTaskVisualStatus } from '../common/qaap-agent-task-visual-status';
 import { SHELL_AGENT_ID } from '../common/qaap-agent-task-client';
+import { formatConversationComposerSessionMeta } from '../common/qaap-conversation-composer-state';
 import { readStoredComposerSurface, type QaapComposerSurface } from '../common/qaap-composer-surface';
 import { createAgentTaskBadge } from './qaap-agent-ui';
 import type { MobileProjectsActiveTasks, MobileProjectTaskView } from './mobile-projects-active-tasks';
@@ -650,6 +651,20 @@ export class MobileProjectsProjectRowsUi {
             }
             taskBody.append(taskTitleRow);
 
+            const sessionMeta = summary
+                ? formatConversationComposerSessionMeta(summary, agentId => this.resolveConversationAgentLabel({
+                    ...summary,
+                    agentId,
+                }))
+                : undefined;
+
+            if (compact && sessionMeta) {
+                const metaRow = document.createElement('div');
+                metaRow.className = 'theia-mobile-projects-task-foot theia-mod-sidebar-compact-meta';
+                metaRow.textContent = sessionMeta;
+                taskBody.append(metaRow);
+            }
+
             if (!compact) {
                 const footRow = document.createElement('div');
                 footRow.className = 'theia-mobile-projects-task-foot';
@@ -659,7 +674,7 @@ export class MobileProjectsProjectRowsUi {
                     || SHELL_AGENT_ID;
                 const agentChip = createAgentTaskBadge({
                     agentId,
-                    label: agentLabel,
+                    label: sessionMeta ?? agentLabel,
                 });
                 footRow.append(agentChip);
                 if (summary?.linkedPullRequest?.number) {

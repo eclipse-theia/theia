@@ -55,6 +55,14 @@ export interface QaapAgentConversationSummaryDTO {
     readonly paused?: boolean;
     /** When `false`, tool calls need manual CLI approval on the VPS. */
     readonly autoApprove?: boolean;
+    /** Last explicit model picked in the composer for this thread. */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    /** Last composer interaction mode (`agent`, `plan`, `ask`). */
+    readonly interactionModeId?: string;
+    /** Last composer approval preset id. */
+    readonly approvalPolicyId?: string;
     /** Id of the parent conversation when this one was created via fork. */
     readonly forkedFromId?: string;
     /** Set on parallel-run variant conversations — groups them under {@link parallelBaseCwd}. */
@@ -217,6 +225,11 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         priority: conv.priority,
         paused: conv.paused,
         autoApprove: conv.autoApprove === false ? false : undefined,
+        ...(conv.agentModel ?? conv.qaiqModel
+            ? { agentModel: conv.agentModel ?? conv.qaiqModel }
+            : {}),
+        ...(conv.interactionModeId ? { interactionModeId: conv.interactionModeId } : {}),
+        ...(conv.approvalPolicyId ? { approvalPolicyId: conv.approvalPolicyId } : {}),
         forkedFromId: conv.forkedFromId,
         parallelRunId: conv.parallelRunId,
         parallelBaseCwd: conv.parallelBaseCwd,

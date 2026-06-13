@@ -154,6 +154,14 @@ export interface QaapAgentConversationSummary {
     readonly paused?: boolean;
     /** Present and `false` when the user disabled YOLO for this thread. */
     readonly autoApprove?: boolean;
+    /** Last explicit model picked in the composer for this thread. */
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    /** Last composer interaction mode (`agent`, `plan`, `ask`). */
+    readonly interactionModeId?: string;
+    /** Last composer approval preset id. */
+    readonly approvalPolicyId?: string;
     readonly forkedFromId?: string;
     /** Set on variant conversations of a parallel run — groups them in the Chats inbox. */
     readonly parallelRunId?: string;
@@ -314,6 +322,11 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         priority: conv.priority || undefined,
         paused: conv.paused || undefined,
         autoApprove: conv.autoApprove === false ? false : undefined,
+        ...(conv.agentModel ?? conv.qaiqModel
+            ? { agentModel: conv.agentModel ?? conv.qaiqModel }
+            : {}),
+        ...(conv.interactionModeId ? { interactionModeId: conv.interactionModeId } : {}),
+        ...(conv.approvalPolicyId ? { approvalPolicyId: conv.approvalPolicyId } : {}),
         forkedFromId: conv.forkedFromId,
         parallelRunId: conv.parallelRunId,
         parallelBaseCwd: conv.parallelBaseCwd,

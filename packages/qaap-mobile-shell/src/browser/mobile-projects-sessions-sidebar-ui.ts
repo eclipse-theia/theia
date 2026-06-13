@@ -63,8 +63,9 @@ isProjectDetailView(): boolean;
 transcriptSheet: HTMLElement | undefined;
 agentsHubInlineActive: boolean;
 visible: boolean;
-transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
-executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
+    transcriptSheetUi: import('./mobile-projects-transcript-sheet-ui').MobileProjectsTranscriptSheetUi;
+    transcriptStickyComposerUi: import('./mobile-projects-transcript-sticky-composer-ui').MobileProjectsTranscriptStickyComposerUi;
+    executionSurfaceTabsUi: import('./mobile-projects-execution-surface-tabs-ui').MobileProjectsExecutionSurfaceTabsUi;
 closeAgentsHubSession(): void;
 renderHeader(): void;
 renderSubtitle(): void;
@@ -535,6 +536,11 @@ export class MobileProjectsSessionsSidebarUi {
             if (this.host.agentsHubInlineActive) {
                 this.host.closeAgentsHubSession();
             }
+            const cwd = this.host.projectsService.getProjectCwd(project);
+            const defaultAgent = (cwd ? readStoredAgent(cwd) : undefined)
+                ?? this.host.activeTasks?.getDefaultAgent()
+                ?? SHELL_AGENT_ID;
+            this.host.transcriptStickyComposerUi.resetToProjectComposerDefaults(project, defaultAgent);
             this.host.executionSurfaceTabsUi.setExecutionSurfaceTab(project, 'messages');
             if (this.host.visible) {
                 this.host.renderHeader();

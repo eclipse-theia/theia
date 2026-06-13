@@ -18,12 +18,9 @@ import {
     type QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
 import {
-    agentSupportsModelPicker,
+    QAAP_COMPOSER_DEFAULT_AGENT_ID,
     QAAP_PRIMARY_AGENT_ID,
-    readStoredAgentModel,
     resolveExplicitAgentForSubmit,
-    writeStoredAgent,
-    writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
 } from '../common/qaap-agent-task-client';
 import { warmAgentTurnPath } from '../common/qaap-agent-turn-warm';
@@ -36,29 +33,29 @@ import {
     resolveVpsContextUsageBreakdown,
 } from './qaap-chat-context-usage-panel';
 import {
-    buildUpdateConversationComposerPatch,
+    applyConversationComposerPrefs,
+    applyProjectComposerDefaults,
+    buildRuntimeComposerPersistPatch,
     clearConversationComposerDraft,
     extractConversationComposerPrefs,
+    extractConversationComposerPrefsFromSummary,
     readConversationComposerDraft,
     writeConversationComposerDraft,
-} from '../common/qaap-conversation-composer-prefs';
+} from '../common/qaap-conversation-composer-state';
 import {
     describeComposerInteractionMode,
     reconcileComposerModeId,
     resolveComposerModeLabel,
     resolveStickyComposerModes,
-    writeStoredComposerMode,
 } from '../common/qaap-sticky-composer-mode';
 import {
     agentSupportsApprovalPolicy,
     reconcileAgentApprovalPolicyId,
     resolveComposerAutoApprove,
-    writeStoredAgentApprovalPolicy,
     type QaapAgentApprovalPolicyId,
 } from '../common/qaap-sticky-composer-approval-policy';
 import {
     reconcileAgentToolApprovalRules,
-    writeStoredAgentToolApprovalRules,
     type QaapAgentToolApprovalRules,
 } from '../common/qaap-agent-tool-approval-rules';
 import {
@@ -845,22 +842,20 @@ export class MobileProjectsTranscriptStickyComposerUi {
         if (summary.source === 'theia-chat' || isAgentsHubIdleConversationSummary(summary)) {
             return;
         }
-        const prefs = extractConversationComposerPrefs(conv);
+        this.applyTranscriptComposerPrefs(extractConversationComposerPrefs(conv), project, summary, conv.id);
+    }
+
+    protected applyTranscriptComposerPrefs(
+        prefs: ReturnType<typeof extractConversationComposerPrefs>,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        conversationId: string,
+    ): void {
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        this.host.transcriptComposerPrefsConvId = conv.id;
+        applyConversationComposerPrefs(prefs, cwd, conversationId);
+        this.host.transcriptComposerPrefsConvId = conversationId;
         this.host.transcriptComposerPinnedAgentId = prefs.agentId;
         this.host.transcriptComposerAgentModel = prefs.agentModel;
-        if (cwd) {
-            writeStoredAgent(cwd, prefs.agentId);
-            if (prefs.agentModel) {
-                writeStoredAgentModel(cwd, prefs.agentId, prefs.agentModel);
-            }
-            if (prefs.interactionModeId) {
-                writeStoredComposerMode(cwd, prefs.interactionModeId);
-            }
-            writeStoredAgentApprovalPolicy(cwd, prefs.approvalPolicyId);
-            writeStoredAgentToolApprovalRules(cwd, prefs.toolApprovalRules);
-        }
         const modes = resolveStickyComposerModes(prefs.agentId, this.host.chatAgentService);
         this.host.transcriptComposerModeId = reconcileComposerModeId(
             prefs.interactionModeId,
@@ -872,7 +867,26 @@ export class MobileProjectsTranscriptStickyComposerUi {
             cwd,
         );
         this.host.transcriptComposerToolApprovalRules = prefs.toolApprovalRules;
-        this.host.transcriptComposerDraft = readConversationComposerDraft(conv.id);
+        this.host.transcriptComposerDraft = readConversationComposerDraft(conversationId);
+    }
+
+    resetToProjectComposerDefaults(
+        project: MobileProjectEntry,
+        defaultAgentId: string = QAAP_COMPOSER_DEFAULT_AGENT_ID,
+    ): void {
+        const cwd = this.host.projectsService.getProjectCwd(project);
+        const runtime = applyProjectComposerDefaults(cwd, defaultAgentId);
+        this.host.transcriptComposerPrefsConvId = undefined;
+        this.host.transcriptComposerPinnedAgentId = runtime.pinnedAgentId;
+        this.host.transcriptComposerAgentModel = runtime.agentModel;
+        const modes = resolveStickyComposerModes(runtime.pinnedAgentId, this.host.chatAgentService);
+        this.host.transcriptComposerModeId = reconcileComposerModeId(runtime.modeId, modes, cwd);
+        this.host.transcriptComposerApprovalPolicyId = reconcileAgentApprovalPolicyId(
+            runtime.approvalPolicyId,
+            cwd,
+        );
+        this.host.transcriptComposerToolApprovalRules = runtime.toolApprovalRules;
+        this.host.transcriptComposerDraft = '';
     }
 
     async hydrateTranscriptComposerPrefs(
@@ -882,13 +896,18 @@ export class MobileProjectsTranscriptStickyComposerUi {
         if (summary.source === 'theia-chat' || isAgentsHubIdleConversationSummary(summary)) {
             return false;
         }
+        if (this.host.transcriptComposerPrefsConvId === summary.id) {
+            return false;
+        }
+        const prefsFromSummary = extractConversationComposerPrefsFromSummary(summary);
+        if (prefsFromSummary && (summary.agentModel ?? summary.qaiqModel ?? summary.interactionModeId)) {
+            this.applyTranscriptComposerPrefs(prefsFromSummary, project, summary, summary.id);
+            return true;
+        }
         const conv = this.host.transcriptLastConv?.id === summary.id
             ? this.host.transcriptLastConv
             : await getConversation(summary.id).catch(() => undefined);
         if (!conv || conv.id !== summary.id) {
-            return false;
-        }
-        if (this.host.transcriptComposerPrefsConvId === conv.id) {
             return false;
         }
         this.applyTranscriptComposerPrefsFromConversation(conv, project, summary);
@@ -954,22 +973,15 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }
         const agentId = this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary);
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
-        const patch = buildUpdateConversationComposerPatch({
-            agentId,
-            ...(agentSupportsModelPicker(agentId)
-                ? { agentModel: this.host.transcriptComposerAgentModel ?? readStoredAgentModel(cwd, agentId) }
-                : {}),
-            ...(this.host.transcriptComposerModeId ? { interactionModeId: this.host.transcriptComposerModeId } : {}),
-            ...(this.host.transcriptComposerApprovalPolicyId
-                ? {
-                    approvalPolicyId: this.host.transcriptComposerApprovalPolicyId,
-                    toolApprovalRules: reconcileAgentToolApprovalRules(
-                        this.host.transcriptComposerApprovalPolicyId,
-                        cwd,
-                        this.host.transcriptComposerToolApprovalRules,
-                    ),
-                }
-                : {}),
+        const patch = buildRuntimeComposerPersistPatch(agentId, cwd, {
+            agentModel: this.host.transcriptComposerAgentModel,
+            modeId: this.host.transcriptComposerModeId,
+            approvalPolicyId: this.host.transcriptComposerApprovalPolicyId,
+            toolApprovalRules: reconcileAgentToolApprovalRules(
+                this.host.transcriptComposerApprovalPolicyId,
+                cwd,
+                this.host.transcriptComposerToolApprovalRules,
+            ),
         });
         if (Object.keys(patch).length === 0) {
             return;
@@ -980,7 +992,11 @@ export class MobileProjectsTranscriptStickyComposerUi {
             if (this.host.transcriptLastConv?.id === updated.id) {
                 this.host.transcriptLastConv = updated;
             }
-            this.host.conversations?.recordSnapshot(conversationToSummary(updated));
+            const updatedSummary = conversationToSummary(updated);
+            this.host.conversations?.recordSnapshot(updatedSummary);
+            if (this.host.transcriptOpenSummary?.id === summary.id) {
+                this.host.transcriptOpenSummary = updatedSummary;
+            }
         } catch {
             /* best-effort — composer still works for the current runtime */
         }

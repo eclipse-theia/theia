@@ -82,6 +82,11 @@ export interface QaapAgentConversationSummaryDTO {
     readonly priority?: boolean;
     readonly paused?: boolean;
     readonly autoApprove?: boolean;
+    readonly agentModel?: QaapCreateAgentTaskQaiqModel;
+    /** @deprecated Use {@link agentModel}. */
+    readonly qaiqModel?: QaapCreateAgentTaskQaiqModel;
+    readonly interactionModeId?: string;
+    readonly approvalPolicyId?: string;
     readonly forkedFromId?: string;
     readonly parallelRunId?: string;
     readonly parallelBaseCwd?: string;
