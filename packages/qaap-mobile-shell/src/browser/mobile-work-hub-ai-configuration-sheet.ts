@@ -101,8 +101,9 @@ export class MobileWorkHubAiConfigurationSheet {
         this.scheduleLayoutSync(widget);
         await animationFrame(2);
         if (this.visible) {
+            await this.waitForAiConfigurationReady(widget);
             this.aiConfigurationSelectionService.selectConfigurationTab(tabId);
-            await animationFrame(2);
+            await this.waitForAiConfigurationContent(widget);
             this.scheduleLayoutSync(widget);
         }
     }
@@ -143,6 +144,14 @@ export class MobileWorkHubAiConfigurationSheet {
             this.widgetHost.appendChild(widget.node);
         }
         widget.node.classList.add('theia-mobile-work-hub-ai-config-embed');
+        widget.node.style.flex = '1 1 auto';
+        widget.node.style.minHeight = '0';
+        widget.node.style.height = '100%';
+        widget.node.style.width = '100%';
+        if (widget.isHidden) {
+            widget.show();
+        }
+        widget.update();
     }
 
     protected detachWidget(): void {
@@ -150,23 +159,62 @@ export class MobileWorkHubAiConfigurationSheet {
         if (!widget) {
             return;
         }
-        this.clearMobileAiConfigurationDetailHeight(widget);
+        this.clearMobileAiConfigurationLayout(widget);
         widget.node.classList.remove('theia-mobile-work-hub-ai-config-embed');
+        widget.node.style.removeProperty('flex');
+        widget.node.style.removeProperty('min-height');
+        widget.node.style.removeProperty('height');
+        widget.node.style.removeProperty('width');
         if (widget.isAttached) {
             UnsafeWidgetUtilities.detach(widget);
         }
     }
 
-    protected syncWidgetLayout(widget: Widget): void {
+    protected scheduleLayoutSync(widget: Widget, attempt = 0): void {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                this.syncWidgetLayout(widget, attempt);
+            });
+        });
+    }
+
+    protected syncWidgetLayout(widget: Widget, attempt = 0): void {
         if (!this.visible || !this.widgetHost.isConnected) {
             return;
         }
         const rect = this.widgetHost.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) {
+            if (attempt < 16) {
+                this.scheduleLayoutSync(widget, attempt + 1);
+            }
             return;
         }
         MessageLoop.sendMessage(widget, new LuminoWidget.ResizeMessage(rect.width, rect.height));
-        this.applyMobileAiConfigurationDetailHeight(widget.node, rect);
+        if (widget instanceof AIConfigurationContainerWidget) {
+            this.applyMobileAiConfigurationLayout(widget.node, rect);
+        }
+    }
+
+    protected applyMobileAiConfigurationLayout(root: HTMLElement, hostRect: DOMRectReadOnly): void {
+        const dock = root.querySelector<HTMLElement>('.ai-configuration-widget');
+        if (dock) {
+            const dockTop = dock.getBoundingClientRect().top - hostRect.top;
+            const dockHeight = Math.max(240, Math.floor(hostRect.height - dockTop));
+            dock.style.height = `${dockHeight}px`;
+            dock.style.minHeight = `${dockHeight}px`;
+            dock.style.maxHeight = `${dockHeight}px`;
+            dock.style.boxSizing = 'border-box';
+        }
+        this.applyMobileAiConfigurationDetailHeight(root, hostRect);
+    }
+
+    protected clearMobileAiConfigurationLayout(widget: AIConfigurationContainerWidget): void {
+        const dock = widget.node.querySelector<HTMLElement>('.ai-configuration-widget');
+        dock?.style.removeProperty('height');
+        dock?.style.removeProperty('min-height');
+        dock?.style.removeProperty('max-height');
+        dock?.style.removeProperty('box-sizing');
+        this.clearMobileAiConfigurationDetailHeight(widget);
     }
 
     protected applyMobileAiConfigurationDetailHeight(root: HTMLElement, hostRect: DOMRectReadOnly): void {
@@ -191,11 +239,45 @@ export class MobileWorkHubAiConfigurationSheet {
         }
     }
 
-    protected scheduleLayoutSync(widget: Widget): void {
-        requestAnimationFrame(() => {
-            this.syncWidgetLayout(widget);
-            requestAnimationFrame(() => this.syncWidgetLayout(widget));
-        });
+    protected unobserveWidgetHostResize(): void {
+        this.widgetHostResizeObserver?.disconnect();
+        this.widgetHostResizeObserver = undefined;
+    }
+
+    protected async waitForAiConfigurationReady(widget: AIConfigurationContainerWidget): Promise<void> {
+        for (let attempt = 0; attempt < 40; attempt++) {
+            if (!this.visible) {
+                return;
+            }
+            const hasTabs = widget.node.querySelector('.ai-configuration-widget .lm-TabBar-tab') !== null;
+            const hasActivePanel = widget.node.querySelector('.ai-configuration-widget .lm-DockPanel-widget') !== null;
+            if (hasTabs && hasActivePanel) {
+                return;
+            }
+            await animationFrame();
+        }
+    }
+
+    protected async waitForAiConfigurationContent(widget: AIConfigurationContainerWidget): Promise<boolean> {
+        for (let attempt = 0; attempt < 30; attempt++) {
+            if (!this.visible) {
+                return false;
+            }
+            const root = widget.node;
+            const hasListItems = (root.querySelectorAll('.ai-configuration-list-item-label').length > 0);
+            const hasDetailContent = !!root.querySelector(
+                '.ai-configuration-detail .ai-configuration-widget-content, '
+                + '.ai-configuration-detail .ai-configuration-table, '
+                + '.ai-configuration-detail .ai-configuration-empty-state, '
+                + '.ai-configuration-detail .settings-section',
+            );
+            const hasTabBar = root.querySelector('.ai-configuration-widget .lm-TabBar-tab') !== null;
+            if (hasTabBar && (hasListItems || hasDetailContent)) {
+                return true;
+            }
+            await animationFrame();
+        }
+        return false;
     }
 
     protected observeWidgetHostResize(widget: Widget): void {
@@ -207,10 +289,5 @@ export class MobileWorkHubAiConfigurationSheet {
             this.scheduleLayoutSync(widget);
         });
         this.widgetHostResizeObserver.observe(this.widgetHost);
-    }
-
-    protected unobserveWidgetHostResize(): void {
-        this.widgetHostResizeObserver?.disconnect();
-        this.widgetHostResizeObserver = undefined;
     }
 }
