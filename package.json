@@ -18,6 +18,7 @@
     "@types/node": "22",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.9.1",
+    "@types/yargs": "^17",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "@typescript-eslint/parser": "^7.18.0",
@@ -56,7 +57,7 @@
     "tslint": "^5.12.0",
     "typedoc": "0.28.13",
     "typescript": "~5.9.3",
-    "yargs": "^15.3.1"
+    "yargs": "^17.7.2"
   },
   "scripts": {
     "all": "npm -s install && npm run -s lint && npm run -s build",

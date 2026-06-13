@@ -105,8 +105,6 @@ const ALLOWED = [
     /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/core\/README\.md$/,
-    /^packages\/core\/package\.json$/,
-    /^packages\/core\/src\/node\/logger-cli-contribution\.spec\.ts$/,
     /^packages\/ai-chat-ui\/src\/browser\/style\/index\.css$/,
     /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
     /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
