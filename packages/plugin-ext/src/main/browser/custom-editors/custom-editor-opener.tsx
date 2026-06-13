@@ -201,7 +201,14 @@ export class CustomEditorOpener implements OpenHandler {
 
     selectorMatches(selector: CustomEditorSelector, resource: URI): boolean {
         if (selector.filenamePattern) {
-            if (match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase())) {
+            const filenamePattern = selector.filenamePattern.toLowerCase();
+            // Mirror VS Code's editor-association matching (editorResolverService#globMatchesResource):
+            // a pattern containing a path separator is matched against the full `scheme:path`,
+            // a plain pattern is matched against the basename only.
+            const target = filenamePattern.includes('/')
+                ? `${resource.scheme}:${resource.path.toString()}`.toLowerCase()
+                : resource.path.base.toLowerCase();
+            if (match(filenamePattern, target)) {
                 return true;
             }
         }
