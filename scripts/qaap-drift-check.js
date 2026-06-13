@@ -119,7 +119,6 @@ const ALLOWED = [
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     // ---- Plugin host customizations (small upstream patches) ---------------
-    /^packages\/plugin-ext\/src\/main\/browser\/plugin-ext-frontend-module\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-welcome-policy\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.

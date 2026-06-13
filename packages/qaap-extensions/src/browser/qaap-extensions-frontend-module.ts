@@ -117,7 +117,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     rebind(WorkspaceTrustDialogFactory).toService(QaapWorkspaceTrustDialogFactory);
 
     rebind(WebviewResourceCache).to(QaapWebviewResourceCache).inSingletonScope();
-    rebind(PluginViewWelcomePolicy).to(QaapPluginViewWelcomePolicy).inSingletonScope();
+
+    bind(QaapPluginViewWelcomePolicy).toSelf().inSingletonScope();
+    bind(PluginViewWelcomePolicy).toService(QaapPluginViewWelcomePolicy);
 
     bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);

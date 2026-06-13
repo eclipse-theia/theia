@@ -40,7 +40,6 @@ import { EditorModelService } from './text-editor-model-service';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry';
-import { PluginViewWelcomePolicy } from './view/plugin-view-welcome-policy';
 import { TextContentResourceResolver } from './workspace-main';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
@@ -247,7 +246,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             container.get<ViewContainer.Factory>(ViewContainer.Factory)(identifier)
     })).inSingletonScope();
     bind(PluginSharedStyle).toSelf().inSingletonScope();
-    bind(PluginViewWelcomePolicy).toSelf().inSingletonScope();
     bind(PluginViewRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(PluginViewRegistry);
 
