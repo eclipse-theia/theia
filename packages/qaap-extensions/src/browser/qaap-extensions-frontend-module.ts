@@ -47,6 +47,8 @@ import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-f
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
+import { EditorVariableContribution } from '@theia/editor/lib/browser/editor-variable-contribution';
+import { QaapEditorVariableContribution } from './qaap-editor-variable-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -117,4 +119,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
+
+    bind(QaapEditorVariableContribution).toSelf().inSingletonScope();
+    rebind(EditorVariableContribution).toService(QaapEditorVariableContribution);
 });

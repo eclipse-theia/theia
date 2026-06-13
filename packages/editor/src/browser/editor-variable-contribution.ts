@@ -31,12 +31,7 @@ export class EditorVariableContribution implements VariableContribution {
             description: 'The current line number in the currently opened file',
             resolve: () => {
                 const editor = this.getCurrentEditor();
-                try {
-                    const cursor = editor?.cursor;
-                    return cursor ? `${cursor.line + 1}` : undefined;
-                } catch {
-                    return undefined;
-                }
+                return editor ? `${editor.cursor.line + 1}` : undefined;
             }
         });
         variables.registerVariable({

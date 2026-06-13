@@ -110,11 +110,8 @@ const ALLOWED = [
     /^scripts\/extract-sticky-composer-batch\.py$/,
     /^scripts\/wire-mobile-projects-orphans\.py$/,
     // ---- Misc product seams in upstream Theia packages ---------------------
-    /^packages\/core\/README\.md$/,
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-product-chrome\.ts$/,
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
-    /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
-    /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,
