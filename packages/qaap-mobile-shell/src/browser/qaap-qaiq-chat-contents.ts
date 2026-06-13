@@ -9,7 +9,7 @@ import {
     MutableChatResponseModel,
     ThinkingChatResponseContentImpl,
 } from '@theia/ai-chat/lib/common/chat-model';
-import { syncStreamResponseContents } from '@theia/ai-chat/lib/common/sync-stream-response-contents';
+import { syncStreamResponseContents } from '../common/qaap-sync-stream-response-contents';
 import { ClaudeCodeToolCallChatResponseContent } from '@theia/ai-claude-code/lib/browser/claude-code-tool-call-content';
 import { QaapAgentMessageSegment, normalizeQaiqToolName } from '../common/qaap-qaiq-stream';
 import type { QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';

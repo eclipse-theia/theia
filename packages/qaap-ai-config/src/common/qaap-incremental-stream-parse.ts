@@ -17,7 +17,7 @@ import {
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
 } from '@theia/ai-chat/lib/common/chat-model';
-import { syncStreamResponseContents } from '@theia/ai-chat/lib/common/sync-stream-response-contents';
+import { syncStreamResponseContents } from '@theia/qaap-mobile-shell/lib/common/qaap-sync-stream-response-contents';
 
 export interface QaapStreamParsingAgentHost {
     parseContents(text: string, request: MutableChatRequestModel): ChatResponseContent[];

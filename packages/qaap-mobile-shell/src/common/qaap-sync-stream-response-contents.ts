@@ -1,15 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
-//
-// This program and the accompanying materials are made available under the
-// terms of the Eclipse Public License v. 2.0 which is available at
-// http://www.eclipse.org/legal/epl-2.0.
-//
-// This Source Code may also be made available under the following Secondary
-// Licenses when the conditions for such availability set forth in the Eclipse
-// Public License v. 2.0 are satisfied: GNU General Public License, version 2
-// with the GNU Classpath Exception which is available at
-// https://www.gnu.org/software/classpath/license.html.
+// Copyright (C) 2026 EclipseSource GmbH and Qaap product fork.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
@@ -25,7 +15,7 @@ import {
     ThinkingChatResponseContent,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContent,
-} from './chat-model';
+} from '@theia/ai-chat/lib/common/chat-model';
 
 /** Mutable chat response surface used while applying streamed parse results. */
 export interface MutableStreamChatResponse {
@@ -39,9 +29,6 @@ export interface MutableStreamChatResponse {
 /**
  * Incrementally sync parsed stream parts into an existing response, preserving object
  * identity for in-flight markdown, thinking, code, and tool-call blocks.
- *
- * Falls back to replacing the stream segment when structure changes (for example when
- * an incomplete fenced code block becomes a distinct code part).
  */
 export function syncStreamResponseContents(
     response: MutableStreamChatResponse,

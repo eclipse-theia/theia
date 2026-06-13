@@ -76,7 +76,6 @@ import {
 } from './chat-model';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
-import { syncStreamResponseContents } from './sync-stream-response-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ImageContextVariable, ResolvedImageContextVariable } from './image-context-variable';
 
@@ -680,7 +679,13 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 completeTextBuffer += token.content;
 
                 const parsedContents = this.parseContents(completeTextBuffer, request);
-                syncStreamResponseContents(request.response.response, startIndex, parsedContents);
+                const contentBeforeMarker = startIndex > 0
+                    ? request.response.response.content.slice(0, startIndex)
+                    : [];
+
+                request.response.response.clearContent();
+                request.response.response.addContents(contentBeforeMarker);
+                request.response.response.addContents(parsedContents);
             }
         }
     }
