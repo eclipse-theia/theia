@@ -113,6 +113,8 @@ const ALLOWED = [
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
     // Defensive lineNumber resolve when editor cursor is unavailable.
     /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
+    // Treat legacy Canceled errors as unresolved variables instead of console noise.
+    /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,
     // Protected MCP delegate reregistration + resource URI hooks for product layer.
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,

@@ -9,11 +9,8 @@ import '../../src/browser/style/qaap-login.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
-import { VariableResolverService } from '@theia/variable-resolver/lib/browser/variable-resolver-service';
-import { QaapVariableResolverService } from './qaap-variable-resolver-service';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { CodeCompletionAgent, CodeCompletionAgentImpl } from '@theia/ai-code-completion/lib/browser/code-completion-agent';
 import { WindowBlinkService } from '@theia/ai-core/lib/browser/window-blink-service';
 import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
 import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
@@ -34,7 +31,6 @@ import { QaapMissionUndoContribution } from './qaap-mission-undo-contribution';
 import { QaapPushNotificationContribution } from './qaap-push-notification-contribution';
 import { QaapShellCommandPermissionService } from './qaap-shell-command-permission-service';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
-import { QaapCodeCompletionAgentImpl } from './qaap-code-completion-agent';
 import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
@@ -68,10 +64,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapWindowBlinkService).toSelf().inSingletonScope();
     rebind(WindowBlinkService).toService(QaapWindowBlinkService);
-
-    bind(QaapCodeCompletionAgentImpl).toSelf().inSingletonScope();
-    rebind(CodeCompletionAgentImpl).toService(QaapCodeCompletionAgentImpl);
-    rebind(CodeCompletionAgent).toService(QaapCodeCompletionAgentImpl);
 
     bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);
@@ -116,7 +108,4 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
-
-    bind(QaapVariableResolverService).toSelf().inSingletonScope();
-    rebind(VariableResolverService).toService(QaapVariableResolverService);
 });
