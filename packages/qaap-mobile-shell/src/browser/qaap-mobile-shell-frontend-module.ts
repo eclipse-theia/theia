@@ -68,6 +68,7 @@ import { createQaapScmWidgetContainer } from './qaap-scm-tree-widget';
 import { QaapSelectComponentOverlayContribution } from './qaap-select-component-overlay-contribution';
 import { QaapChatMicTranscribeContribution } from './qaap-chat-mic-transcribe-contribution';
 import { QaapChatInputCodexLayoutContribution } from './qaap-chat-input-codex-contribution';
+import { QaapChatInputProductContribution } from './qaap-chat-input-product-contribution';
 import { MobileConnectionStatusContribution } from './mobile-connection-status-contribution';
 import { MobileChatSessionRestoreContribution } from './mobile-chat-session-restore-contribution';
 import { QaapQaiqChatAgentContribution } from './qaap-qaiq-chat-agent-contribution';
@@ -151,6 +152,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(QaapChatMicTranscribeContribution);
     bind(QaapChatInputCodexLayoutContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapChatInputCodexLayoutContribution);
+    bind(QaapChatInputProductContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapChatInputProductContribution);
     bind(QaapChatPreferencesContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(QaapChatPreferencesContribution);
     bind(MobileConnectionStatusContribution).toSelf().inSingletonScope();

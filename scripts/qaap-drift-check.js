@@ -103,9 +103,15 @@ const ALLOWED = [
     /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
     /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
+    // ---- Qaap product tooling / editor config (not upstream Theia) --------
+    /^\.cursor\/rules\/work-hub-reload-default\.mdc$/,
+    /^\.tool-ui\/agent\.json$/,
+    /^scripts\/extract-sessions-sidebar\.py$/,
+    /^scripts\/extract-sticky-composer-batch\.py$/,
+    /^scripts\/wire-mobile-projects-orphans\.py$/,
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/core\/README\.md$/,
-    /^packages\/ai-chat-ui\/src\/browser\/style\/index\.css$/,
+    /^packages\/ai-chat-ui\/src\/browser\/chat-input-product-chrome\.ts$/,
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
     /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
     /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,

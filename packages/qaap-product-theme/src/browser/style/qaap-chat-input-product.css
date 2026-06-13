@@ -1,0 +1,160 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-ChatInput[data-ai-disabled="true"] {
+  opacity: var(--theia-mod-disabled-opacity);
+}
+
+.theia-ChatInput[data-ai-disabled="true"] .theia-ChatInput-Editor,
+.theia-ChatInput[data-ai-disabled="true"] .theia-ChatInputOptions,
+.theia-ChatInput[data-ai-disabled="true"] .theia-ChatInput-CapabilitiesPanel,
+.theia-ChatInput[data-ai-disabled="true"] .theia-capabilities-collapsed-bar {
+  pointer-events: none;
+}
+
+.theia-ChatInput-ChatContext ul {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.theia-ChatInput-ChatContext-Element {
+  max-width: min(280px, 70vw);
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.theia-ChatInput-StatusBar {
+  min-height: 25px;
+  padding: 2px calc(var(--theia-ui-padding) * 2 / 3) 3px calc(var(--theia-ui-padding) * 2 / 3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  box-sizing: border-box;
+}
+
+.theia-ChatInput-StatusBar.pending {
+  color: var(--theia-editorInfo-foreground);
+}
+
+.theia-ChatInput-StatusBar.disabled {
+  color: var(--theia-input-disabledForeground);
+}
+
+.theia-ChatInput-StatusBar.disabled .theia-ChatInput-StatusText {
+  color: var(--theia-input-disabledForeground);
+}
+
+.theia-ChatInput-StatusPrimary,
+.theia-ChatInput-StatusPills {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-ChatInput-StatusPrimary {
+  flex: 1;
+}
+
+.theia-ChatInput-StatusText {
+  flex: 0 0 auto;
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-ChatInput-StatusDetail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-ChatInput-StatePill {
+  height: 18px;
+  max-width: 110px;
+  padding: 0 calc(var(--theia-ui-padding) / 2);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 3);
+  border-radius: 4px;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  background: var(--theia-editor-background);
+  color: var(--theia-descriptionForeground);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.theia-ChatInput-StatePill.active {
+  color: var(--theia-foreground);
+  border-color: var(--theia-focusBorder);
+}
+
+.theia-ChatInput-StatePill.error {
+  color: var(--theia-errorForeground);
+  border-color: var(--theia-inputValidation-errorBorder);
+}
+
+.theia-ChatInput-StatePill.unsaved {
+  border-style: dashed;
+}
+
+.theia-ChatInput-QuickCommands {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: 2px calc(var(--theia-ui-padding) * 2 / 3) 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.theia-ChatInput-QuickCommandsLabel {
+  flex: 0 0 auto;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-ChatInput-QuickCommand {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  cursor: pointer;
+}
+
+.theia-ChatInput-QuickCommand span:last-child {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-ChatInput-QuickCommand:hover {
+  background: var(--theia-list-hoverBackground);
+}
+
+.theia-ChatInput-QuickCommand:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.theia-ChatInput-QuickCommand:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
