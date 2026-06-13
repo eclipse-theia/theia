@@ -16,6 +16,7 @@
 
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import * as React from '@theia/core/shared/react';
 import URI from '@theia/core/lib/common/uri';
@@ -50,9 +51,9 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
         this.accept();
     }
 
-    /** Override in product layers (e.g. to use {@link FrontendApplicationConfig.applicationName}). */
+    /** Override in product layers to customize the development-host label in the trust dialog. */
     protected getTrustDevelopmentHostLabel(): string {
-        return 'Theia';
+        return FrontendApplicationConfigProvider.get().applicationName;
     }
 
     protected render(): React.ReactNode {

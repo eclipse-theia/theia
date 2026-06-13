@@ -26,7 +26,6 @@ import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribu
 import { WorkspaceFrontendContribution } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
 import { WebviewResourceCache } from '@theia/plugin-ext/lib/main/browser/webview/webview-resource-cache';
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
-import { WorkspaceTrustDialogFactory } from '@theia/workspace/lib/browser/workspace-trust-dialog-factory';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
 import { QaapAiPreferenceBrandingContribution, QaapAiPreferenceBrandingStartup } from './qaap-ai-preference-branding-contribution';
 import { QaapHubActionsContribution } from './qaap-hub-actions-contribution';
@@ -46,7 +45,6 @@ import { QaapPreviewContribution } from './qaap-preview-contribution';
 import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-contribution';
 import { QaapWebviewResourceCache } from './qaap-webview-resource-cache';
 import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
-import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-factory';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
@@ -112,9 +110,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapPreviewContribution).toSelf().inSingletonScope();
     rebind(PreviewContribution).toService(QaapPreviewContribution);
-
-    bind(QaapWorkspaceTrustDialogFactory).toSelf().inSingletonScope();
-    rebind(WorkspaceTrustDialogFactory).toService(QaapWorkspaceTrustDialogFactory);
 
     rebind(WebviewResourceCache).to(QaapWebviewResourceCache).inSingletonScope();
 

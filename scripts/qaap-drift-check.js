@@ -61,6 +61,7 @@ const ALLOWED = [
     /^packages\/mini-browser\/src\/browser\/mini-browser-content\.ts$/,
     /^packages\/monaco\/src\/browser\/monaco-frontend-module\.ts$/,
     /^packages\/monaco\/src\/browser\/monaco-quick-input-service\.ts$/,
+    // WorkspaceTrustDialogFactory + getTrustDevelopmentHostLabel hooks for branding.
     /^packages\/workspace\/src\/browser\/workspace-trust-dialog\.tsx$/,
     /^packages\/workspace\/src\/browser\/workspace-trust-dialog-factory\.ts$/,
     /^packages\/workspace\/src\/browser\/workspace-trust-service\.ts$/,
