@@ -20,6 +20,7 @@ import '../../src/browser/language-status/editor-language-status.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContribution, WidgetStatusBarContribution } from '@theia/core/lib/browser';
+import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager, EditorAccess, ActiveEditorAccess, CurrentEditorAccess, EditorSelectionResolver } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
@@ -31,6 +32,7 @@ import { EditorNavigationContribution } from './editor-navigation-contribution';
 import { NavigationLocationUpdater } from './navigation/navigation-location-updater';
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { NavigationLocationSimilarity } from './navigation/navigation-location-similarity';
+import { EditorVariableContribution } from './editor-variable-contribution';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { QuickEditorService } from './quick-editor-service';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
@@ -78,8 +80,7 @@ export default new ContainerModule(bind => {
     bind(NavigationLocationUpdater).toSelf().inSingletonScope();
     bind(NavigationLocationSimilarity).toSelf().inSingletonScope();
 
-    // Editor variables (lineNumber, selectedText, currentText) are registered by
-    // @theia/qaap-extensions (QaapEditorVariableContribution).
+    bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
 
     [
         FrontendApplicationContribution,

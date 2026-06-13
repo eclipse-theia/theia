@@ -111,8 +111,8 @@ const ALLOWED = [
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-product-chrome\.ts$/,
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
-    // Editor variable registration moved to @theia/qaap-extensions.
-    /^packages\/editor\/src\/browser\/editor-frontend-module\.ts$/,
+    // Defensive lineNumber resolve when editor cursor is unavailable.
+    /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
     // Protected MCP delegate reregistration + resource URI hooks for product layer.
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,

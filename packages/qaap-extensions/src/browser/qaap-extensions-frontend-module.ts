@@ -9,7 +9,6 @@ import '../../src/browser/style/qaap-login.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
-import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser/variable-resolver-service';
 import { QaapVariableResolverService } from './qaap-variable-resolver-service';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
@@ -48,7 +47,6 @@ import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
-import { QaapEditorVariableContribution } from './qaap-editor-variable-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -118,9 +116,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
-
-    bind(QaapEditorVariableContribution).toSelf().inSingletonScope();
-    bind(VariableContribution).toService(QaapEditorVariableContribution);
 
     bind(QaapVariableResolverService).toSelf().inSingletonScope();
     rebind(VariableResolverService).toService(QaapVariableResolverService);
