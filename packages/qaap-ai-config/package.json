@@ -4,6 +4,7 @@
   "description": "Qaap — AI agent prompts and Coder workflow configuration (product layer)",
   "dependencies": {
     "@theia/ai-anthropic": "1.71.0",
+    "@theia/ai-codex": "1.71.0",
     "@theia/ai-chat": "1.71.0",
     "@theia/ai-core": "1.71.0",
     "@theia/ai-google": "1.71.0",

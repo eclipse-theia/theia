@@ -78,7 +78,7 @@ export class QaapChatViewTreeWidget extends ChatViewTreeWidget {
         ]);
     }
 
-    protected override trackLiveResponse(request: ChatRequestModel): void {
+    protected trackLiveResponse(request: ChatRequestModel): void {
         if (request.response.isComplete) {
             return;
         }

@@ -55,11 +55,9 @@ export const CODEX_OUTPUT_TOKENS_KEY = 'codexOutputTokens';
 export const CODEX_TOOL_CALLS_KEY = 'codexToolCalls';
 
 const CODEX_FILE_CHANGE_ORIGINALS_KEY = 'codexFileChangeOriginals';
-const CODEX_STREAMED_TEXT_KEY = 'codexStreamedText';
 // const CODEX_CHANGESET_TITLE = nls.localize('theia/ai/codex/changeSetTitle', 'Codex Applied Changes');
 
 type ToolInvocationItem = CommandExecutionItem | FileChangeItem | McpToolCallItem | WebSearchItem | TodoListItem;
-type StreamedTextItem = Extract<ThreadItem, { type: 'agent_message' | 'reasoning' }>;
 
 /**
  * Chat agent for OpenAI Codex integration.
@@ -142,15 +140,6 @@ export class CodexChatAgent implements ChatAgent {
             request.addData(CODEX_TOOL_CALLS_KEY, toolCalls);
         }
         return toolCalls;
-    }
-
-    protected getStreamedText(request: MutableChatRequestModel): Map<string, string> {
-        let streamedText = request.getDataByKey(CODEX_STREAMED_TEXT_KEY) as Map<string, string> | undefined;
-        if (!streamedText) {
-            streamedText = new Map();
-            request.addData(CODEX_STREAMED_TEXT_KEY, streamedText);
-        }
-        return streamedText;
     }
 
     protected async handleEvent(event: ThreadEvent, request: MutableChatRequestModel): Promise<void> {
@@ -246,31 +235,6 @@ export class CodexChatAgent implements ChatAgent {
                 existingCall.update(this.extractToolArguments(item));
                 request.response.response.responseContentChanged();
             }
-        } else if (item.type === 'agent_message' || item.type === 'reasoning') {
-            this.appendStreamedTextDelta(item, request);
-        }
-    }
-
-    protected appendStreamedTextDelta(item: StreamedTextItem, request: MutableChatRequestModel): void {
-        const streamedText = this.getStreamedText(request);
-        const previousText = streamedText.get(item.id) ?? '';
-        if (item.text === previousText) {
-            return;
-        }
-
-        const delta = item.text.startsWith(previousText)
-            ? item.text.substring(previousText.length)
-            : item.text;
-        streamedText.set(item.id, item.text);
-
-        if (!delta) {
-            return;
-        }
-
-        if (item.type === 'agent_message') {
-            request.response.response.addContent(new MarkdownChatResponseContentImpl(delta));
-        } else {
-            request.response.response.addContent(new ThinkingChatResponseContentImpl(delta, ''));
         }
     }
 
@@ -614,10 +578,14 @@ export class CodexChatAgent implements ChatAgent {
                 request.response.response.addContent(newToolCall);
             }
         } else if (item.type === 'reasoning') {
-            this.appendStreamedTextDelta(item, request);
+            request.response.response.addContent(
+                new ThinkingChatResponseContentImpl(item.text, '')
+            );
 
         } else if (item.type === 'agent_message') {
-            this.appendStreamedTextDelta(item, request);
+            request.response.response.addContent(
+                new MarkdownChatResponseContentImpl(item.text)
+            );
         } else if (item.type === 'error') {
             request.response.response.addContent(
                 new ErrorChatResponseContentImpl(new Error(item.message))

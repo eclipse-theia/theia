@@ -15,7 +15,10 @@ import { LanguageModelOptionContribution } from '@theia/ai-ide/lib/browser/ai-co
 import { QaapLanguageModelOptionContribution } from './qaap-language-model-option-contribution';
 import { QaapIncrementalStreamParsingContribution } from './qaap-incremental-stream-parsing-contribution';
 
-export default new ContainerModule(bind => {
+import { CodexChatAgent } from '@theia/ai-codex/lib/browser/codex-chat-agent';
+import { QaapCodexChatAgent } from './qaap-codex-chat-agent';
+
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapCoderPromptContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCoderPromptContribution);
 
@@ -30,4 +33,7 @@ export default new ContainerModule(bind => {
 
     bind(QaapIncrementalStreamParsingContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapIncrementalStreamParsingContribution);
+
+    bind(QaapCodexChatAgent).toSelf().inSingletonScope();
+    rebind(CodexChatAgent).toService(QaapCodexChatAgent);
 });

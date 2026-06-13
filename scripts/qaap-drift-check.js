@@ -106,6 +106,7 @@ const ALLOWED = [
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/core\/README\.md$/,
     /^packages\/ai-chat-ui\/src\/browser\/style\/index\.css$/,
+    /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
     /^packages\/editor\/src\/browser\/editor-variable-contribution\.ts$/,
     /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,

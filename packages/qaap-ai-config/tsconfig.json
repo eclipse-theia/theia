@@ -16,6 +16,9 @@
       "path": "../ai-chat"
     },
     {
+      "path": "../ai-codex"
+    },
+    {
       "path": "../ai-core"
     },
     {
