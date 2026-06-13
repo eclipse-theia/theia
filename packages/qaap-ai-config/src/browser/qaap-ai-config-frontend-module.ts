@@ -14,6 +14,8 @@ import { QaapAiModelDefaultsContribution } from './qaap-ai-model-defaults-contri
 import { LanguageModelOptionContribution } from '@theia/ai-ide/lib/browser/ai-configuration/language-model-option-contribution';
 import { QaapLanguageModelOptionContribution } from './qaap-language-model-option-contribution';
 import { QaapIncrementalStreamParsingContribution } from './qaap-incremental-stream-parsing-contribution';
+import { LaunchListProvider } from '@theia/ai-ide/lib/browser/workspace-launch-provider';
+import { QaapLaunchListProvider } from './qaap-launch-list-provider';
 
 import { CodexChatAgent } from '@theia/ai-codex/lib/browser/codex-chat-agent';
 import { QaapCodexChatAgent } from './qaap-codex-chat-agent';
@@ -42,4 +44,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapSkillService).toSelf().inSingletonScope();
     rebind(DefaultSkillService).toService(QaapSkillService);
     rebind(SkillService).toService(QaapSkillService);
+
+    bind(QaapLaunchListProvider).toSelf().inSingletonScope();
+    rebind(LaunchListProvider).toService(QaapLaunchListProvider);
 });

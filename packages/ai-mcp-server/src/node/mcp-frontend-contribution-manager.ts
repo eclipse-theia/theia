@@ -70,7 +70,7 @@ export class MCPFrontendContributionManager {
     /**
      * Unregister frontend contributions from a specific delegate
      */
-    private unregisterFrontendContributionsFromDelegate(delegateId: string): void {
+    protected unregisterFrontendContributionsFromDelegate(delegateId: string): void {
         if (!this.mcpServer) {
             this.logger.warn('MCP server not set, cannot unregister frontend contributions');
             return;
@@ -116,7 +116,7 @@ export class MCPFrontendContributionManager {
             return;
         }
 
-        this.unregisterFrontendContributionsFromDelegate(delegateId);
+        this.prepareDelegateReregistration(delegateId);
 
         try {
             await this.registerFrontendToolsFromDelegate(delegate, delegateId);
@@ -133,6 +133,21 @@ export class MCPFrontendContributionManager {
             this.logger.warn(`Failed to register frontend MCP contributions from delegate ${delegateId}: ${error}`);
             // Don't re-throw to prevent server startup failure
         }
+    }
+
+    /**
+     * Hook for product layers that need to clear stale delegate registrations before re-registering.
+     */
+    protected prepareDelegateReregistration(_delegateId: string): void {
+        // extension point
+    }
+
+    protected toRegisteredResourceUri(resourceUri: string, _delegateId: string): string {
+        return resourceUri;
+    }
+
+    protected toOriginalResourceUri(href: string): string {
+        return href;
     }
 
     /**
@@ -210,14 +225,12 @@ export class MCPFrontendContributionManager {
             const resources = await delegate.listResources(this.serverId);
 
             for (const resource of resources) {
-                const delegateResourceUri = `${resource.uri}#mcp-delegate-${delegateId}`;
                 const registeredResource = this.mcpServer.resource(
                     `${resource.name}_${delegateId}`,
-                    delegateResourceUri,
+                    this.toRegisteredResourceUri(resource.uri, delegateId),
                     async uri => {
                         try {
-                            const originalUri = uri.href.replace(/#mcp-delegate-[^#]+$/, '');
-                            const result = await delegate.readResource(this.serverId!, originalUri);
+                            const result = await delegate.readResource(this.serverId!, this.toOriginalResourceUri(uri.href));
                             return result as unknown as ReadResourceResult;
                         } catch (error) {
                             this.logger.error(`Error reading frontend resource ${resource.name}:`, error);

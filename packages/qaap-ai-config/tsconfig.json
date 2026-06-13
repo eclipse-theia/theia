@@ -28,6 +28,9 @@
       "path": "../ai-ide"
     },
     {
+      "path": "../ai-mcp-server"
+    },
+    {
       "path": "../ai-terminal"
     },
     {

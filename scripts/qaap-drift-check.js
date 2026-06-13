@@ -101,6 +101,7 @@ const ALLOWED = [
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-option-contribution\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
+    // Protected parseListLaunchConfigurationArgs hook for empty tool-arg guard.
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
     /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
     // ---- Qaap product tooling / editor config (not upstream Theia) --------
@@ -114,7 +115,7 @@ const ALLOWED = [
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
     // Editor variable registration moved to @theia/qaap-extensions.
     /^packages\/editor\/src\/browser\/editor-frontend-module\.ts$/,
-    // Idempotent MCP frontend delegate registration (reconnect / setMCPServer after addFrontendDelegate).
+    // Protected MCP delegate reregistration + resource URI hooks for product layer.
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
