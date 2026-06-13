@@ -54,7 +54,8 @@ import {
 } from '../common/qaap-qaiq-stdio-approvals';
 import { findQaiqDevServerGuardDenial } from '../common/qaap-agent-dev-server-guard';
 import {
-    buildQaiqNetworkToolDenialMessage,
+    buildQaiqAutoDeniedToolMessage,
+    buildQaiqQueuedApprovalTimeoutMessage,
     resolveQaiqControlRequestAutoAction,
 } from '../common/qaap-qaiq-control-auto-response';
 import {
@@ -137,6 +138,12 @@ const INDEX_PATH = path.join(STORE_DIR, 'index.json');
 const MAX_LOG_BYTES = 512 * 1024;
 /** Kill agent CLIs that sit silent for too long, usually waiting for auth/quota/input. */
 const IDLE_TASK_TIMEOUT_MS = 20 * 60 * 1000;
+/**
+ * Auto-approve runs ("approve for me") queue gated shell/network tools to the approvals UI,
+ * but must not hang forever if nobody is watching — deny after this grace period so the
+ * agent can finish the turn with the tools it has.
+ */
+const QUEUED_APPROVAL_GRACE_TIMEOUT_MS = 5 * 60 * 1000;
 
 /** Auth token file shared between the backend and the `qaap-task` helper. */
 const TOKEN_PATH = path.join(os.homedir(), '.qaap', 'task-token');
@@ -249,6 +256,8 @@ export class QaapAgentTaskRunner {
     protected readonly stdinPrompts = new Map<string, string>();
     /** Unanswered `can_use_tool` control requests per task — the pause-and-wait approval queue. */
     protected readonly pendingQaiqControlRequests = new Map<string, QaapQaiqPendingControlRequest[]>();
+    /** Grace timers (per task, per requestId) auto-denying queued approvals of auto-approve runs. */
+    protected readonly queuedApprovalTimers = new Map<string, Map<string, NodeJS.Timeout>>();
     /** Tasks using QAIQ stream-json stdin — never answer with legacy `y`/`n` lines. */
     protected readonly qaiqStdioTasks = new Set<string>();
     /** Agents whose CLI was found on PATH at startup, keyed by id. */
@@ -1139,6 +1148,7 @@ export class QaapAgentTaskRunner {
                 return false;
             }
             pending.splice(pending.indexOf(entry), 1);
+            this.clearQueuedApprovalTimer(taskId, entry.requestId);
             return true;
         }
         if (this.qaiqStdioTasks.has(taskId)) {
@@ -1153,6 +1163,64 @@ export class QaapAgentTaskRunner {
             return true;
         } catch {
             return false;
+        }
+    }
+
+    /**
+     * Arm the grace timer for a queued `can_use_tool` request of an auto-approve run.
+     * If nobody answers from the approvals UI in time, the request is denied with
+     * guidance so the agent finishes the turn instead of hanging or insta-failing.
+     */
+    protected scheduleQueuedApprovalTimeout(
+        taskId: string,
+        request: QaapQaiqPendingControlRequest,
+        logStream: fs.WriteStream,
+    ): void {
+        const timers = this.queuedApprovalTimers.get(taskId) ?? new Map<string, NodeJS.Timeout>();
+        this.queuedApprovalTimers.set(taskId, timers);
+        const timer = setTimeout(() => {
+            timers.delete(request.requestId);
+            const pending = this.pendingQaiqControlRequests.get(taskId);
+            const index = pending?.findIndex(entry => entry.requestId === request.requestId) ?? -1;
+            if (!pending || index < 0) {
+                return;
+            }
+            pending.splice(index, 1);
+            const toolName = request.toolName ?? 'Tool';
+            logStream.write(`\n[qaap] approval for ${toolName} not granted within `
+                + `${Math.round(QUEUED_APPROVAL_GRACE_TIMEOUT_MS / 1000)}s — auto-denied.\n`);
+            try {
+                this.processes.get(taskId)?.stdin?.write(buildQaiqControlResponseLine(
+                    request,
+                    'reject',
+                    { denyMessage: buildQaiqQueuedApprovalTimeoutMessage(toolName) },
+                ));
+            } catch {
+                // stdin already closed — the turn is over anyway.
+            }
+        }, QUEUED_APPROVAL_GRACE_TIMEOUT_MS);
+        timers.set(request.requestId, timer);
+    }
+
+    protected clearQueuedApprovalTimer(taskId: string, requestId: string): void {
+        const timers = this.queuedApprovalTimers.get(taskId);
+        const timer = timers?.get(requestId);
+        if (timers && timer) {
+            clearTimeout(timer);
+            timers.delete(requestId);
+            if (timers.size === 0) {
+                this.queuedApprovalTimers.delete(taskId);
+            }
+        }
+    }
+
+    protected clearQueuedApprovalTimers(taskId: string): void {
+        const timers = this.queuedApprovalTimers.get(taskId);
+        if (timers) {
+            for (const timer of timers.values()) {
+                clearTimeout(timer);
+            }
+            this.queuedApprovalTimers.delete(taskId);
         }
     }
 
@@ -1288,7 +1356,7 @@ export class QaapAgentTaskRunner {
                         const devServerDenial = findQaiqDevServerGuardDenial(event.request);
                         const denyMessage = devServerDenial
                             ?? (autoAction === 'deny' && event.request.toolName
-                                ? buildQaiqNetworkToolDenialMessage(event.request.toolName)
+                                ? buildQaiqAutoDeniedToolMessage(event.request.toolName)
                                 : undefined);
                         if (devServerDenial) {
                             logStream.write('\n[qaap] auto-denied long-lived dev-server shell command; Qaap manages dev servers via the preview bootstrap.\n');
@@ -1307,12 +1375,18 @@ export class QaapAgentTaskRunner {
                     const pending = this.pendingQaiqControlRequests.get(task.id) ?? [];
                     pending.push(event.request);
                     this.pendingQaiqControlRequests.set(task.id, pending);
+                    // "Request approval" runs wait indefinitely; auto-approve runs get a
+                    // grace window so an unattended turn still finishes.
+                    if (task.autoApprove !== false) {
+                        this.scheduleQueuedApprovalTimeout(task.id, event.request, logStream);
+                    }
                 } else if (event.type === 'control-cancel') {
                     const pending = this.pendingQaiqControlRequests.get(task.id);
                     const index = pending?.findIndex(entry => entry.requestId === event.requestId) ?? -1;
                     if (pending && index >= 0) {
                         pending.splice(index, 1);
                     }
+                    this.clearQueuedApprovalTimer(task.id, event.requestId);
                 } else if (event.type === 'result') {
                     // End of turn — close stdin so the headless CLI exits.
                     try {
@@ -1347,6 +1421,7 @@ export class QaapAgentTaskRunner {
             this.stdinInteractiveTasks.delete(task.id);
             this.stdinPrompts.delete(task.id);
             this.pendingQaiqControlRequests.delete(task.id);
+            this.clearQueuedApprovalTimers(task.id);
             this.qaiqStdioTasks.delete(task.id);
             // A SIGTERM-killed task is already marked 'cancelled' by cancel().
             if (this.tasks.get(task.id)?.state !== 'running') {

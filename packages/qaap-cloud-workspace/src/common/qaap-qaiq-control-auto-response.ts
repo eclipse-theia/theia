@@ -33,8 +33,12 @@ function isSubagentTool(toolName: string): boolean {
 }
 
 /**
- * Headless QAIQ stdio runs cannot block on the mobile approvals UI when the composer
- * preset is auto-approve. Resolve allow/deny immediately from the spawned CLI flags.
+ * Resolve a QAIQ stdio `control_request` against the spawned CLI flags.
+ *
+ * Tools the policy auto-allows resolve immediately; gated shell/network tools are
+ * queued to the approvals UI so the user can grant them mid-turn (the runner applies
+ * a grace timeout so an unattended run still finishes). Only subagents and the
+ * dev-server guard auto-deny — those can never be approved interactively.
  */
 export function resolveQaiqControlRequestAutoAction(
     command: string,
@@ -54,18 +58,31 @@ export function resolveQaiqControlRequestAutoAction(
     if (!toolName) {
         return 'allow';
     }
+    // Subagents bypass the stdio control protocol once running, so approving them
+    // interactively cannot work — deny with guidance instead.
+    if (isSubagentTool(toolName)) {
+        return 'deny';
+    }
     const allowedTools = parseAllowedTools(command);
     if (allowedTools) {
-        return allowedTools.has(toolName) ? 'allow' : 'deny';
+        return allowedTools.has(toolName) ? 'allow' : 'queue';
     }
-    if (isNetworkTool(toolName) || isShellTool(toolName) || isSubagentTool(toolName)) {
-        return 'deny';
+    if (isNetworkTool(toolName) || isShellTool(toolName)) {
+        return 'queue';
     }
     return 'allow';
 }
 
-export function buildQaiqNetworkToolDenialMessage(toolName: string): string {
-    return `${toolName} is not auto-approved under the current approval policy. `
-        + 'Enable network or shell access in the composer approval settings, switch to Full access, '
-        + 'or ask the agent to continue without web search.';
+/** Deny guidance for tools that can never be approved mid-turn (subagents). */
+export function buildQaiqAutoDeniedToolMessage(toolName: string): string {
+    return `${toolName} is not available in this run. `
+        + 'Do the work directly in this conversation instead of delegating to a subagent, '
+        + 'and do not retry the call unchanged.';
+}
+
+/** Deny guidance when a queued approval expired without a user response. */
+export function buildQaiqQueuedApprovalTimeoutMessage(toolName: string): string {
+    return `${toolName} was not approved in time under the current approval policy. `
+        + 'Continue without it, or tell the user they can enable shell/network access in the '
+        + 'composer approval settings or switch to Full access and ask you to retry.';
 }

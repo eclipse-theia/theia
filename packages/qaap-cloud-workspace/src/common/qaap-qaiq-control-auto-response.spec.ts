@@ -16,11 +16,25 @@ describe('qaap-qaiq-control-auto-response', () => {
         })).to.equal('queue');
     });
 
-    it('denies WebSearch under approve-for-me allowed-tools', () => {
+    it('queues WebSearch under approve-for-me allowed-tools so the user can grant it', () => {
         expect(resolveQaiqControlRequestAutoAction(approveForMeCommand, true, {
             requestId: 'req-1',
             toolName: 'WebSearch',
-        })).to.equal('deny');
+        })).to.equal('queue');
+    });
+
+    it('queues Bash under approve-for-me allowed-tools so the user can grant it', () => {
+        expect(resolveQaiqControlRequestAutoAction(approveForMeCommand, true, {
+            requestId: 'req-1',
+            toolName: 'Bash',
+        })).to.equal('queue');
+    });
+
+    it('queues shell/network tools when no allowed-tools list is present', () => {
+        expect(resolveQaiqControlRequestAutoAction('qaiq --permission-mode default', true, {
+            requestId: 'req-1',
+            toolName: 'WebFetch',
+        })).to.equal('queue');
     });
 
     it('allows Read under approve-for-me allowed-tools', () => {
@@ -37,10 +51,22 @@ describe('qaap-qaiq-control-auto-response', () => {
         })).to.equal('allow');
     });
 
-    it('denies Agent subagents under approve-for-me allowed-tools', () => {
+    it('denies Agent subagents — they cannot be approved interactively', () => {
         expect(resolveQaiqControlRequestAutoAction(approveForMeCommand, true, {
             requestId: 'req-1',
             toolName: 'Agent',
+        })).to.equal('deny');
+        expect(resolveQaiqControlRequestAutoAction('qaiq --permission-mode default', true, {
+            requestId: 'req-2',
+            toolName: 'Task',
+        })).to.equal('deny');
+    });
+
+    it('denies long-lived dev-server shell commands even with auto-approve', () => {
+        expect(resolveQaiqControlRequestAutoAction('qaiq --permission-mode bypassPermissions', true, {
+            requestId: 'req-1',
+            toolName: 'Bash',
+            toolInput: { command: 'pnpm dev' },
         })).to.equal('deny');
     });
 });
