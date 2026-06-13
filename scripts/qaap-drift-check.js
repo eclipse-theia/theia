@@ -118,7 +118,6 @@ const ALLOWED = [
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
-    /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,
     // ---- Plugin host customizations (small upstream patches) ---------------
     /^packages\/plugin-ext\/src\/main\/browser\/plugin-ext-frontend-module\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,

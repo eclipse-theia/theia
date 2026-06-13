@@ -10,6 +10,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser/variable-resolver-service';
+import { QaapVariableResolverService } from './qaap-variable-resolver-service';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { CodeCompletionAgent, CodeCompletionAgentImpl } from '@theia/ai-code-completion/lib/browser/code-completion-agent';
@@ -122,4 +124,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapEditorVariableContribution).toSelf().inSingletonScope();
     bind(VariableContribution).toService(QaapEditorVariableContribution);
+
+    bind(QaapVariableResolverService).toSelf().inSingletonScope();
+    rebind(VariableResolverService).toService(QaapVariableResolverService);
 });

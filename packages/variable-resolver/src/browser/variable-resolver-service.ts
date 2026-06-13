@@ -177,10 +177,6 @@ export namespace VariableResolverService {
                 if (isCancelled(e)) {
                     throw e;
                 }
-                if (e instanceof Error && (e.name === 'Canceled' || e.message === 'Canceled')) {
-                    this.resolved.set(name, undefined);
-                    return;
-                }
                 this.resolved.set(name, undefined);
                 console.error(`Failed to resolve '${name}' variable:`, e);
             }
