@@ -65,6 +65,7 @@ export interface MessageOptions {
      * `0` and negative values are treated as no timeout.
      */
     readonly timeout?: number;
+    readonly source?: string;
 }
 
 export interface ProgressMessageOptions extends MessageOptions {
