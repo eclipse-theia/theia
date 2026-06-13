@@ -58,6 +58,7 @@ export class MobileProjectsStickyComposerColumnUi {
         setDraft: (value: string) => void;
         resolveAgentLabel: () => string;
         resolveAgentId: () => string;
+        resolveModelLabel?: () => string | undefined;
         composerCwd?: string;
         modes?: readonly ChatMode[];
         resolveModeLabel?: () => string;
@@ -149,11 +150,12 @@ export class MobileProjectsStickyComposerColumnUi {
         agentBtn.className = 'theia-mobile-projects-sticky-composer-agent';
         const agentLabel = options.resolveAgentLabel();
         const agentId = options.resolveAgentId();
-        const modelLabel = this.host.stickyComposerAgentsUi.resolveStickyComposerModelLabel(
-            agentId,
-            options.project,
-            options.composerCwd,
-        );
+        const modelLabel = options.resolveModelLabel?.()
+            ?? this.host.stickyComposerAgentsUi.resolveStickyComposerModelLabel(
+                agentId,
+                options.project,
+                options.composerCwd,
+            );
         agentBtn.title = modelLabel
             ? nls.localize('qaap/mobileProjects/stickyComposerAgentWithModel', 'Agent: {0}, model: {1}', agentLabel, modelLabel)
             : nls.localize('qaap/mobileProjects/stickyComposerAgent', 'Agent: {0}', agentLabel);

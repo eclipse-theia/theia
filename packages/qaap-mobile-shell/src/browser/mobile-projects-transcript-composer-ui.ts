@@ -16,10 +16,13 @@ import {
     QAAP_COMPOSER_DEFAULT_AGENT_ID,
     QAAP_PRIMARY_AGENT_ID,
     readStoredAgent,
+    readStoredAgentModel,
+    agentSupportsModelPicker,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
     writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
+    type QaapCreateAgentTaskQaiqModel,
     type QaapQaiqModelOption,
 } from '../common/qaap-agent-task-client';
 import {
@@ -60,6 +63,7 @@ export interface MobileProjectsTranscriptComposerHost {
     transcriptComposerApprovalSheet: HTMLElement | undefined;
     stickyComposerWorkspaceSheet: HTMLElement | undefined;
     transcriptComposerPinnedAgentId: string | undefined;
+    transcriptComposerAgentModel: QaapCreateAgentTaskQaiqModel | undefined;
     transcriptComposerModeId: string | undefined;
     transcriptComposerPrefsConvId: string | undefined;
     transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
@@ -135,6 +139,23 @@ export class MobileProjectsTranscriptComposerUi {
             return fromList;
         }
         return this.host.projectRowsUi.resolveConversationAgentLabel(this.host.transcriptComposerSummary);
+    }
+
+    resolveTranscriptComposerModelLabel(
+        agentId: string,
+        cwd: string | undefined,
+    ): string | undefined {
+        if (!agentSupportsModelPicker(agentId)) {
+            return undefined;
+        }
+        const summaryId = this.host.transcriptComposerSummary?.id;
+        if (summaryId && this.host.transcriptComposerPrefsConvId === summaryId) {
+            const fromMemory = this.host.transcriptComposerAgentModel;
+            if (fromMemory?.modelId) {
+                return fromMemory.modelId;
+            }
+        }
+        return readStoredAgentModel(cwd, agentId)?.modelId;
     }
 
     async refreshTranscriptComposerAgents(project: MobileProjectEntry): Promise<void> {
@@ -261,6 +282,7 @@ export class MobileProjectsTranscriptComposerUi {
                 onSelectAgent: (agentId, model) => {
                     this.host.transcriptComposerPinnedAgentId = agentId;
                     this.host.transcriptComposerPrefsConvId = summary.id;
+                    this.host.transcriptComposerAgentModel = model;
                     if (cwd) {
                         writeStoredAgent(cwd, agentId);
                         if (model) {

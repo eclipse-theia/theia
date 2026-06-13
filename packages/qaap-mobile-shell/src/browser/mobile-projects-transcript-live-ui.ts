@@ -987,7 +987,7 @@ export class MobileProjectsTranscriptLiveUi {
             if (this.host.transcriptComposerSummary?.id === full.id
                 && this.host.transcriptComposerPrefsConvId !== full.id) {
                 this.host.transcriptStickyComposerUi.applyTranscriptComposerPrefsFromConversation(full, activeProject, activeSummary);
-                this.host.transcriptComposerSendRefresh?.();
+                this.host.transcriptStickyComposerUi.remountTranscriptStickyComposer();
             }
             if (fingerprintUnchanged && !forceStatusSettle) {
                 if (conversationUsesInteractiveApprovals(full)) {

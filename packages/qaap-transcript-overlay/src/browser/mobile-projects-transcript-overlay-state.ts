@@ -14,6 +14,7 @@ import {
     type QaapAgentConversationSummaryDTO,
     type QaapAgentTaskAgentOption,
     type QaapAgentToolApprovalRules,
+    type QaapCreateAgentTaskQaiqModel,
     type QaapGitHistoryCommit,
     type QaapQaiqModelOption,
     type StickyComposerContextEntry,
@@ -58,6 +59,7 @@ export const TRANSCRIPT_OVERLAY_STATE_KEYS = [
     'transcriptComposerQueueExpanded',
     'transcriptComposerChangedFilesExpandedById',
     'transcriptComposerPinnedAgentId',
+    'transcriptComposerAgentModel',
     'transcriptComposerDraft',
     'transcriptFollowUpQueue',
     'transcriptFollowUpFlushInFlight',
@@ -159,6 +161,7 @@ export class TranscriptOverlayState {
     transcriptComposerQueueExpanded = true;
     readonly transcriptComposerChangedFilesExpandedById = new Map<string, boolean>();
     transcriptComposerPinnedAgentId: string | undefined;
+    transcriptComposerAgentModel: QaapCreateAgentTaskQaiqModel | undefined;
     transcriptComposerDraft = '';
     readonly transcriptFollowUpQueue = new TranscriptFollowUpQueue();
     transcriptFollowUpFlushInFlight = false;

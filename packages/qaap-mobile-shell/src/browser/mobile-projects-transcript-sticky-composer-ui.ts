@@ -146,6 +146,7 @@ export interface MobileProjectsTranscriptStickyComposerHost {
     transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
     transcriptComposerPinnedAgentId: string | undefined;
+    transcriptComposerAgentModel: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel | undefined;
     transcriptComposerPrefsConvId: string | undefined;
     transcriptComposerDraftPersistTimer: number | undefined;
     transcriptComposerPrefsPersistTimer: number | undefined;
@@ -848,6 +849,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
         this.host.transcriptComposerPrefsConvId = conv.id;
         this.host.transcriptComposerPinnedAgentId = prefs.agentId;
+        this.host.transcriptComposerAgentModel = prefs.agentModel;
         if (cwd) {
             writeStoredAgent(cwd, prefs.agentId);
             if (prefs.agentModel) {
@@ -906,6 +908,16 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }, 280);
     }
 
+    flushTranscriptComposerDraft(conversationId: string | undefined): void {
+        if (this.host.transcriptComposerDraftPersistTimer !== undefined) {
+            window.clearTimeout(this.host.transcriptComposerDraftPersistTimer);
+            this.host.transcriptComposerDraftPersistTimer = undefined;
+        }
+        if (conversationId) {
+            writeConversationComposerDraft(conversationId, this.host.transcriptComposerDraft);
+        }
+    }
+
     schedulePersistTranscriptComposerPrefs(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -922,6 +934,17 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }, 320);
     }
 
+    async flushTranscriptComposerPrefs(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        if (this.host.transcriptComposerPrefsPersistTimer !== undefined) {
+            window.clearTimeout(this.host.transcriptComposerPrefsPersistTimer);
+            this.host.transcriptComposerPrefsPersistTimer = undefined;
+        }
+        await this.persistTranscriptComposerPrefs(project, summary);
+    }
+
     async persistTranscriptComposerPrefs(
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
@@ -934,7 +957,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
         const patch = buildUpdateConversationComposerPatch({
             agentId,
             ...(agentSupportsModelPicker(agentId)
-                ? { agentModel: readStoredAgentModel(cwd, agentId) }
+                ? { agentModel: this.host.transcriptComposerAgentModel ?? readStoredAgentModel(cwd, agentId) }
                 : {}),
             ...(this.host.transcriptComposerModeId ? { interactionModeId: this.host.transcriptComposerModeId } : {}),
             ...(this.host.transcriptComposerApprovalPolicyId
@@ -963,12 +986,40 @@ export class MobileProjectsTranscriptStickyComposerUi {
         }
     }
 
+    protected async ensureTranscriptComposerPrefsForMount(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        if (summary.source === 'theia-chat' || isAgentsHubIdleConversationSummary(summary)) {
+            this.host.transcriptComposerAgentModel = undefined;
+            return;
+        }
+        if (this.host.transcriptLastConv?.id === summary.id
+            && this.host.transcriptComposerPrefsConvId !== summary.id) {
+            this.applyTranscriptComposerPrefsFromConversation(this.host.transcriptLastConv, project, summary);
+            return;
+        }
+        if (this.host.transcriptComposerPrefsConvId === summary.id) {
+            return;
+        }
+        await this.hydrateTranscriptComposerPrefs(project, summary);
+    }
+
     mountTranscriptStickyComposer(
         host: HTMLElement,
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
         chatHost: HTMLElement,
     ): void {
+        void this.mountTranscriptStickyComposerAsync(host, project, summary, chatHost);
+    }
+
+    protected async mountTranscriptStickyComposerAsync(
+        host: HTMLElement,
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        chatHost: HTMLElement,
+    ): Promise<void> {
         const cwd = this.host.projectsService.getProjectCwd(project) ?? summary.cwd;
         warmAgentTurnPath(cwd, {
             warmLiveTransport: () => this.host.conversations?.warmLiveTransport(),
@@ -987,23 +1038,17 @@ export class MobileProjectsTranscriptStickyComposerUi {
         this.host.transcriptComposerProject = project;
         this.host.transcriptComposerSummary = summary;
         this.host.transcriptComposerSendRefresh = undefined;
+        await this.ensureTranscriptComposerPrefsForMount(project, summary);
+        if (this.host.transcriptComposerHost !== host
+            || this.host.transcriptComposerSummary?.id !== summary.id) {
+            return;
+        }
         // Conversations share the project's working tree — a git snapshot cached while another
         // session was open can be stale (e.g. committed meanwhile). Refetch per (re)mount so the
         // Changes pill + commit button reflect this conversation's current pending changes.
         this.composerActivityGitFilesByConversationId.delete(summary.id);
         this.host.stickyComposerContextUsageDispose.dispose();
         host.replaceChildren();
-        if (this.host.transcriptLastConv?.id === summary.id
-            && this.host.transcriptComposerPrefsConvId !== summary.id) {
-            this.applyTranscriptComposerPrefsFromConversation(this.host.transcriptLastConv, project, summary);
-        } else if (this.host.transcriptLastConv?.id !== summary.id) {
-            void this.hydrateTranscriptComposerPrefs(project, summary).then(applied => {
-                if (!applied) {
-                    return;
-                }
-                this.host.transcriptComposerSendRefresh?.();
-            });
-        }
         const shell = document.createElement('div');
         shell.className = 'theia-mobile-projects-sticky-composer';
         const isLegacyTheiaChat = summary.source === 'theia-chat';
@@ -1058,6 +1103,10 @@ export class MobileProjectsTranscriptStickyComposerUi {
             },
             resolveAgentLabel: () => this.host.transcriptComposerUi.resolveTranscriptComposerAgentLabel(),
             resolveAgentId: () => this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary),
+            resolveModelLabel: () => this.host.transcriptComposerUi.resolveTranscriptComposerModelLabel(
+                this.host.transcriptComposerUi.resolveTranscriptComposerPinnedAgentId(project, summary),
+                cwd,
+            ),
             modes,
             resolveModeLabel: () => resolveComposerModeLabel(modes, this.host.transcriptComposerModeId),
             onOpenModeSheet: modes.length > 1

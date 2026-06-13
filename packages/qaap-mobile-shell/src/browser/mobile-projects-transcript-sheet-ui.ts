@@ -67,6 +67,7 @@ export interface MobileProjectsTranscriptSheetHost {
     transcriptComposerSummary: QaapAgentConversationSummaryDTO | undefined;
     transcriptComposerContext: StickyComposerContextEntry[];
     transcriptComposerPinnedAgentId: string | undefined;
+    transcriptComposerAgentModel: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel | undefined;
     transcriptComposerModeId: string | undefined;
     transcriptComposerApprovalPolicyId: import('../common/qaap-sticky-composer-approval-policy').QaapAgentApprovalPolicyId | undefined;
     transcriptComposerDraft: string;
@@ -145,6 +146,12 @@ export class MobileProjectsTranscriptSheetUi {
             await this.workHub.openInlineTranscript(project, summary);
             return;
         }
+        const previousProject = this.host.transcriptOpenProject;
+        const previousSummary = this.host.transcriptOpenSummary;
+        if (previousProject && previousSummary && previousSummary.id !== summary.id) {
+            this.host.transcriptStickyComposerUi.flushTranscriptComposerDraft(previousSummary.id);
+            await this.host.transcriptStickyComposerUi.flushTranscriptComposerPrefs(previousProject, previousSummary);
+        }
         this.host.replacingTranscriptSheet = true;
         this.closeTranscriptSheet();
         this.host.replacingTranscriptSheet = false;
@@ -212,13 +219,14 @@ export class MobileProjectsTranscriptSheetUi {
         this.bindTranscriptSheetDismiss(back, backdrop);
 
         this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
+        await this.host.transcriptLiveUi.refreshOpenTranscriptConversation({ forcePoll: true });
 
         this.host.transcriptComposerPrefsConvId = undefined;
+        this.host.transcriptComposerAgentModel = undefined;
         void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
         this.host.transcriptStickyComposerUi.mountTranscriptStickyComposer(chatInputHost, project, summary, chatHost);
         this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab('messages');
         this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, 'messages');
-        await this.host.transcriptLiveUi.refreshOpenTranscriptConversation({ forcePoll: true });
     }
 
     bindTranscriptSheetDismiss(back: HTMLButtonElement, backdrop: HTMLElement): void {
@@ -283,6 +291,7 @@ export class MobileProjectsTranscriptSheetUi {
         disposeComposerContextEntries(this.host.transcriptComposerContext);
         this.host.transcriptComposerContext = [];
         this.host.transcriptComposerPinnedAgentId = undefined;
+        this.host.transcriptComposerAgentModel = undefined;
         this.host.transcriptComposerModeId = undefined;
         this.host.transcriptComposerApprovalPolicyId = undefined;
         this.host.transcriptComposerPrefsConvId = undefined;

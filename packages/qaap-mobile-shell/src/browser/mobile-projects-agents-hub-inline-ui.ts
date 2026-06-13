@@ -19,6 +19,7 @@ import type { MobileProjectEntry } from './mobile-projects-types';
 import type { MobileProjectsService } from './mobile-projects-service';
 import type { MobileProjectsTranscriptUi } from './mobile-projects-transcript-ui';
 import type { MobileProjectsTranscriptComposerUi } from './mobile-projects-transcript-composer-ui';
+import type { MobileProjectsTranscriptStickyComposerUi } from './mobile-projects-transcript-sticky-composer-ui';
 import type { MobileProjectsTranscriptHeaderUi } from './mobile-projects-transcript-header-ui';
 import type { MobileProjectsTranscriptLiveUi } from './mobile-projects-transcript-live-ui';
 import type { MobileProjectsTranscriptMessagesUi } from './mobile-projects-transcript-messages-ui';
@@ -67,6 +68,7 @@ export interface MobileProjectsAgentsHubInlineHost {
     transcriptComposerMountKey: string | undefined;
     transcriptComposerContext: StickyComposerContextEntry[];
     transcriptComposerPinnedAgentId: string | undefined;
+    transcriptComposerAgentModel: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel | undefined;
     transcriptComposerModeId: string | undefined;
     transcriptComposerApprovalPolicyId: import('../common/qaap-sticky-composer-approval-policy').QaapAgentApprovalPolicyId | undefined;
     transcriptComposerPrefsConvId: string | undefined;
@@ -84,6 +86,7 @@ export interface MobileProjectsAgentsHubInlineHost {
     transcriptSheetUi: MobileProjectsTranscriptSheetUi;
     executionSurfaceTabsUi: MobileProjectsExecutionSurfaceTabsUi;
     transcriptComposerUi: MobileProjectsTranscriptComposerUi;
+    transcriptStickyComposerUi: MobileProjectsTranscriptStickyComposerUi;
     transcriptHeaderUi: MobileProjectsTranscriptHeaderUi;
     transcriptLiveUi: MobileProjectsTranscriptLiveUi;
     transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
@@ -387,6 +390,12 @@ export class MobileProjectsAgentsHubInlineUi {
         project: MobileProjectEntry,
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
+        const previousProject = this.host.transcriptOpenProject;
+        const previousSummary = this.host.transcriptOpenSummary;
+        if (previousProject && previousSummary && previousSummary.id !== summary.id) {
+            this.host.transcriptStickyComposerUi.flushTranscriptComposerDraft(previousSummary.id);
+            await this.host.transcriptStickyComposerUi.flushTranscriptComposerPrefs(previousProject, previousSummary);
+        }
         if (this.host.agentsHubInlineActive) {
             this.host.replacingTranscriptSheet = true;
             this.closeAgentsHubSession();
@@ -409,6 +418,7 @@ export class MobileProjectsAgentsHubInlineUi {
             this.host.renderSubtitle();
         }
         this.host.transcriptComposerPrefsConvId = undefined;
+        this.host.transcriptComposerAgentModel = undefined;
         this.host.transcriptComposerMountKey = undefined;
         void this.host.transcriptComposerUi.refreshTranscriptComposerAgents(project);
         this.host.executionSurfaceTabsUi.setExecutionSurfaceTab(project, 'messages');
@@ -420,10 +430,10 @@ export class MobileProjectsAgentsHubInlineUi {
             this.host.transcriptLastSseDeltaAt = undefined;
             this.syncAgentsHubInlineExecutionHeader(project, summary);
             this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab('messages');
-            this.renderAgentsHubShellChat(connectedChatHost, project, summary);
-            this.host.stickyComposerRenderUi.renderStickyComposer();
             this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, connectedChatHost);
             await this.host.transcriptLiveUi.refreshOpenTranscriptConversation({ forcePoll: true });
+            this.renderAgentsHubShellChat(connectedChatHost, project, summary);
+            this.host.stickyComposerRenderUi.renderStickyComposer();
             return;
         }
         if (!this.host.agentsHubInlineExecutionRoot?.isConnected) {
@@ -436,12 +446,12 @@ export class MobileProjectsAgentsHubInlineUi {
         const chatHost = this.host.agentsHubInlineChatHost;
         this.host.executionSurfaceTabsUi.showOnlyExecutionSurfaceTab('messages');
         this.host.executionSurfaceTabsUi.mountTranscriptSurfaceTab(project, summary, 'messages');
-        this.host.stickyComposerRenderUi.renderStickyComposer();
         if (chatHost) {
-            this.renderAgentsHubShellChat(chatHost, project, summary);
             this.host.transcriptLiveUi.scheduleTranscriptConversationRefresh(project, summary, chatHost);
             await this.host.transcriptLiveUi.refreshOpenTranscriptConversation({ forcePoll: true });
+            this.renderAgentsHubShellChat(chatHost, project, summary);
         }
+        this.host.stickyComposerRenderUi.renderStickyComposer();
     }
 
     closeAgentsHubSession(): void {
@@ -453,6 +463,7 @@ export class MobileProjectsAgentsHubInlineUi {
         disposeComposerContextEntries(this.host.transcriptComposerContext);
         this.host.transcriptComposerContext = [];
         this.host.transcriptComposerPinnedAgentId = undefined;
+        this.host.transcriptComposerAgentModel = undefined;
         this.host.transcriptComposerModeId = undefined;
         this.host.transcriptComposerApprovalPolicyId = undefined;
         this.host.transcriptComposerPrefsConvId = undefined;
