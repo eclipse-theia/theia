@@ -10,6 +10,11 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { QaapBuiltinThemeBrandingContribution } from './qaap-builtin-theme-branding-contribution';
 import { QaapCopilotDefaultsContribution } from './qaap-copilot-defaults-contribution';
 import { QaapCorePreferenceBrandingContribution } from './qaap-core-preference-branding-contribution';
+import { QaapMonacoEmbeddedLanguageContribution } from './qaap-monaco-embedded-language-contribution';
+import { QaapPluginCompatibilityPreferenceContribution } from './qaap-plugin-compatibility-preference-contribution';
+import { QaapTextmateRegistry } from './qaap-textmate-registry';
+import { PreferenceContribution } from '@theia/core/lib/common/preferences';
+import { TextmateRegistry } from '@theia/monaco/lib/browser/textmate/textmate-registry';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(QaapBuiltinThemeBrandingContribution).toSelf().inSingletonScope();
@@ -20,6 +25,15 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapCopilotDefaultsContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCopilotDefaultsContribution);
+
+    bind(QaapPluginCompatibilityPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(QaapPluginCompatibilityPreferenceContribution);
+
+    bind(QaapMonacoEmbeddedLanguageContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapMonacoEmbeddedLanguageContribution);
+
+    bind(QaapTextmateRegistry).toSelf().inSingletonScope();
+    rebind(TextmateRegistry).toService(QaapTextmateRegistry);
 
     if (isBound(AboutDialogProps)) {
         rebind(AboutDialogProps).toDynamicValue(() => ({

@@ -9,6 +9,7 @@ import '../../src/browser/style/qaap-login.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
+import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { CodeCompletionAgent, CodeCompletionAgentImpl } from '@theia/ai-code-completion/lib/browser/code-completion-agent';
@@ -47,7 +48,6 @@ import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-f
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
-import { EditorVariableContribution } from '@theia/editor/lib/browser/editor-variable-contribution';
 import { QaapEditorVariableContribution } from './qaap-editor-variable-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
@@ -121,5 +121,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
 
     bind(QaapEditorVariableContribution).toSelf().inSingletonScope();
-    rebind(EditorVariableContribution).toService(QaapEditorVariableContribution);
+    bind(VariableContribution).toService(QaapEditorVariableContribution);
 });

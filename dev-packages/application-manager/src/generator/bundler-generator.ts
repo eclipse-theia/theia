@@ -627,7 +627,8 @@ module.exports = {
 import { nodeModulesPolyfillPlugin } from 'esbuild-plugins-node-modules-polyfill';
 import { copy } from 'esbuild-plugin-copy';
 import { monacoNlsPlugin, problemMatcherPlugin } from '@theia/bundle-plugin';
-import yargs from 'yargs';
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
 import resolvePackagePath from 'resolve-package-path';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -638,7 +639,7 @@ export function join(...parts) {
     return path.join(...parts).replace(/\\\\/g, '/');
 }
 
-const { mode, watch } = yargs.option('mode', {
+const { mode, watch } = await yargs(hideBin(process.argv)).option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
     default: "production"

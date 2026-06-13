@@ -284,6 +284,26 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         this.messageService.warn(message);
     }
 
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        if (typeof window === 'undefined') {
+            return;
+        }
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+            if (this.isDisposed || !this.isAttached) {
+                return;
+            }
+            if (this.getToolbarProps() !== 'hide' && this.input?.isConnected) {
+                this.input.focus();
+                return;
+            }
+            if (!this.node.hasAttribute('tabindex')) {
+                this.node.setAttribute('tabindex', '-1');
+            }
+            this.node.focus();
+        }));
+    }
+
     protected override createRefresh(parent: HTMLElement): HTMLElement {
         const button = createQaapPreviewToolbarIconButton(
             nls.localize('theia/mini-browser/reload', 'Reload'),

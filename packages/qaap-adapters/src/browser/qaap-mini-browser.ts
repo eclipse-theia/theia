@@ -81,6 +81,10 @@ export class QaapMiniBrowser extends MiniBrowser {
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        const widget = (this.layout as PanelLayout).widgets[0];
+        if (widget) {
+            widget.activate();
+        }
         this.scheduleChromeRelayout();
     }
 

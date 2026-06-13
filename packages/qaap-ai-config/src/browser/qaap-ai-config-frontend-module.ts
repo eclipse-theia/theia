@@ -17,6 +17,8 @@ import { QaapIncrementalStreamParsingContribution } from './qaap-incremental-str
 
 import { CodexChatAgent } from '@theia/ai-codex/lib/browser/codex-chat-agent';
 import { QaapCodexChatAgent } from './qaap-codex-chat-agent';
+import { DefaultSkillService, SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { QaapSkillService } from './qaap-skill-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapCoderPromptContribution).toSelf().inSingletonScope();
@@ -36,4 +38,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapCodexChatAgent).toSelf().inSingletonScope();
     rebind(CodexChatAgent).toService(QaapCodexChatAgent);
+
+    bind(QaapSkillService).toSelf().inSingletonScope();
+    rebind(DefaultSkillService).toService(QaapSkillService);
+    rebind(SkillService).toService(QaapSkillService);
 });

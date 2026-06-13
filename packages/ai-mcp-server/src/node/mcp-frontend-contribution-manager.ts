@@ -116,6 +116,8 @@ export class MCPFrontendContributionManager {
             return;
         }
 
+        this.unregisterFrontendContributionsFromDelegate(delegateId);
+
         try {
             await this.registerFrontendToolsFromDelegate(delegate, delegateId);
             this.mcpServer.sendToolListChanged();
@@ -208,12 +210,14 @@ export class MCPFrontendContributionManager {
             const resources = await delegate.listResources(this.serverId);
 
             for (const resource of resources) {
+                const delegateResourceUri = `${resource.uri}#mcp-delegate-${delegateId}`;
                 const registeredResource = this.mcpServer.resource(
                     `${resource.name}_${delegateId}`,
-                    resource.uri,
+                    delegateResourceUri,
                     async uri => {
                         try {
-                            const result = await delegate.readResource(this.serverId!, uri.href);
+                            const originalUri = uri.href.replace(/#mcp-delegate-[^#]+$/, '');
+                            const result = await delegate.readResource(this.serverId!, originalUri);
                             return result as unknown as ReadResourceResult;
                         } catch (error) {
                             this.logger.error(`Error reading frontend resource ${resource.name}:`, error);

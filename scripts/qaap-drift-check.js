@@ -112,6 +112,10 @@ const ALLOWED = [
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-product-chrome\.ts$/,
     /^packages\/ai-chat-ui\/src\/browser\/chat-input-widget\.tsx$/,
+    // Editor variable registration moved to @theia/qaap-extensions.
+    /^packages\/editor\/src\/browser\/editor-frontend-module\.ts$/,
+    // Idempotent MCP frontend delegate registration (reconnect / setMCPServer after addFrontendDelegate).
+    /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,

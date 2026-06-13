@@ -67,6 +67,9 @@
       "path": "../terminal"
     },
     {
+      "path": "../variable-resolver"
+    },
+    {
       "path": "../vsx-registry"
     },
     {

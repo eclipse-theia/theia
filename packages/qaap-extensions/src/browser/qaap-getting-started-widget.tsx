@@ -118,10 +118,32 @@ export class QaapGettingStartedWidget extends ReactWidget {
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        const elArr = this.node.getElementsByTagName('a');
-        if (elArr && elArr.length > 0) {
-            (elArr[0] as HTMLElement).focus();
+        this.deferFocus(() => this.focusWelcomeSurface());
+    }
+
+    protected focusWelcomeSurface(): void {
+        const quickAction = this.node.querySelector<HTMLElement>('.gs-quick-action');
+        if (quickAction) {
+            quickAction.focus();
+            return;
         }
+        const link = this.node.querySelector<HTMLElement>('a');
+        if (link) {
+            link.focus();
+            return;
+        }
+        if (!this.node.hasAttribute('tabindex')) {
+            this.node.setAttribute('tabindex', '-1');
+        }
+        this.node.focus();
+    }
+
+    protected deferFocus(focus: () => void): void {
+        if (typeof window === 'undefined') {
+            focus();
+            return;
+        }
+        window.requestAnimationFrame(() => window.requestAnimationFrame(focus));
     }
 
     /**
