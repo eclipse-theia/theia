@@ -24,16 +24,35 @@ export function buildTranscriptPendingApprovalBar(
         readonly onReject: () => void;
     },
 ): HTMLElement {
+    const toolLabel = pending.toolName?.trim() || nls.localize('qaap/mobileProjects/transcriptApprovalToolFallback', 'tool');
     return buildTranscriptApprovalCard({
         surface: 'inline',
-        title: pending.toolName
-            ? nls.localize('qaap/mobileProjects/transcriptApprovalTool', 'Approve tool: {0}', pending.toolName)
-            : nls.localize('qaap/mobileProjects/transcriptApprovalPending', 'Approval required'),
-        description: pending.summary,
+        title: nls.localize(
+            'qaap/mobileProjects/transcriptApprovalWaitingTitle',
+            'Agent waiting — allow {0}?',
+            toolLabel,
+        ),
+        description: pending.summary?.trim()
+            ? `${pending.summary}\n${nls.localize(
+                'qaap/mobileProjects/transcriptApprovalComposerHint',
+                'Use Allow here so the agent can continue this step.',
+            )}`
+            : nls.localize(
+                'qaap/mobileProjects/transcriptApprovalComposerHint',
+                'Use Allow here so the agent can continue this step.',
+            ),
     }, {
         onApprove: () => { handlers.onApprove(); },
         onReject: () => { handlers.onReject(); },
     });
+}
+
+/** Bring the sticky composer approval bar into view — it sits above the floating input card. */
+export function scrollTranscriptPendingApprovalIntoView(composerHost: HTMLElement | undefined): void {
+    const host = composerHost?.querySelector(`.${TRANSCRIPT_PENDING_APPROVAL_HOST_CLASS}`);
+    if (host instanceof HTMLElement) {
+        host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 }
 
 export function clearTranscriptPendingApprovalBar(composerHost: HTMLElement | undefined): void {

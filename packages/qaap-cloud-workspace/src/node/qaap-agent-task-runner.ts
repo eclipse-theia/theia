@@ -1140,8 +1140,10 @@ export class QaapAgentTaskRunner {
         }
         const pending = this.pendingQaiqControlRequests.get(taskId);
         if (pending?.length) {
-            const matched = toolUseId ? pending.find(entry => entry.toolUseId === toolUseId) : undefined;
-            const entry = matched ?? pending[0];
+            const entry = this.findPendingControlRequestEntry(pending, toolUseId);
+            if (!entry) {
+                return false;
+            }
             try {
                 child.stdin.write(buildQaiqControlResponseLine(entry, action));
             } catch {
@@ -1164,6 +1166,21 @@ export class QaapAgentTaskRunner {
         } catch {
             return false;
         }
+    }
+
+    protected findPendingControlRequestEntry(
+        pending: QaapQaiqPendingControlRequest[],
+        idFromApproval?: string,
+    ): QaapQaiqPendingControlRequest | undefined {
+        if (idFromApproval) {
+            const matched = pending.find(entry =>
+                entry.toolUseId === idFromApproval || entry.requestId === idFromApproval,
+            );
+            if (matched) {
+                return matched;
+            }
+        }
+        return pending[0];
     }
 
     /**

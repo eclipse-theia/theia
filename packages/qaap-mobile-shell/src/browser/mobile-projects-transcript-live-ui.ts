@@ -14,9 +14,8 @@ import {
 } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import {
-    approveAgentRequest,
     fetchAgentApprovals,
-    rejectAgentRequest,
+    type QaapAgentApprovalRequestDTO,
 } from '../common/qaap-agent-approval-client';
 import { resolveMessagePreviewText } from '../common/qaap-agent-message-content';
 import { excerptTranscriptThought } from '../common/qaap-agent-transcript-segments';
@@ -33,7 +32,9 @@ import {
     clearTranscriptPendingApprovalBar,
     mountTranscriptPendingApprovalBar,
     removeTranscriptPendingApprovalHosts,
+    scrollTranscriptPendingApprovalIntoView,
 } from './qaap-transcript-inline-approval-ui';
+import { respondToTranscriptApproval } from './qaap-transcript-approval-respond';
 import {
     conversationAwaitingDevPreview,
     conversationMayAutoOpenTranscriptPreview,
@@ -696,6 +697,13 @@ export class MobileProjectsTranscriptLiveUi {
         return !!findTranscriptToolApproval(this.host.cachedAgentApprovals, conversationId, toolUseId);
     }
 
+    getPendingTranscriptToolApproval(
+        conversationId: string,
+        toolUseId: string,
+    ): QaapAgentApprovalRequestDTO | undefined {
+        return findTranscriptToolApproval(this.host.cachedAgentApprovals, conversationId, toolUseId);
+    }
+
     syncTranscriptPendingApproval(conv: QaapAgentConversationDTO): void {
         const chatHost = this.resolveActiveTranscriptChatHost();
         if (chatHost) {
@@ -712,36 +720,37 @@ export class MobileProjectsTranscriptLiveUi {
             this.reconcileTranscriptInlineToolApprovalCards(chatHost, conv);
         }
         const pending = resolveTranscriptInlineApproval(this.host.cachedAgentApprovals, conv.id);
-        const showPending = !!pending
-            && !(pending.kind === 'tool'
-                && pending.toolUseId
-                && this.hasInlineToolApprovalCard(chatHost, pending.toolUseId));
-        const pendingId = showPending ? pending!.id : undefined;
+        const pendingId = pending?.id;
         if (pendingId === this.lastMountedApprovalId) {
             return;
         }
         this.lastMountedApprovalId = pendingId;
-        const respond = (action: typeof approveAgentRequest): void => {
-            if (!pending) {
-                return;
-            }
-            void action(pending.id).then(result => {
-                if (!result.ok && result.error) {
-                    MobileSnackbar.show(result.error, { kind: 'warning', duration: 3200 });
-                }
-                this.stopTranscriptApprovalRefresh();
-                void this.refreshTranscriptApprovals();
-                this.ensureTranscriptConversationRefresh();
-            });
+        const onSettled = (): void => {
+            this.stopTranscriptApprovalRefresh();
+            void this.refreshTranscriptApprovals();
+            this.ensureTranscriptConversationRefresh();
         };
         mountTranscriptPendingApprovalBar(
             this.host.transcriptComposerHost,
-            showPending ? pending : undefined,
+            pending,
             {
-                onApprove: () => respond(approveAgentRequest),
-                onReject: () => respond(rejectAgentRequest),
+                onApprove: () => {
+                    if (!pending) {
+                        return;
+                    }
+                    void respondToTranscriptApproval(pending.id, 'approve', { callbacks: { onSettled } });
+                },
+                onReject: () => {
+                    if (!pending) {
+                        return;
+                    }
+                    void respondToTranscriptApproval(pending.id, 'reject', { callbacks: { onSettled } });
+                },
             },
         );
+        if (pending) {
+            scrollTranscriptPendingApprovalIntoView(this.host.transcriptComposerHost);
+        }
     }
 
     /**

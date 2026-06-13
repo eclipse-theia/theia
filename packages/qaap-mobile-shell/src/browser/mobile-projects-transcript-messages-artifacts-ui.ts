@@ -4,14 +4,14 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { approveAgentRequest, rejectAgentRequest } from '../common/qaap-agent-approval-client';
 import { type QaapAgentConversationDTO, type QaapAgentMessageSegmentDTO } from '../common/qaap-agent-conversation-client';
 import { conversationUsesInteractiveApprovals } from '../common/qaap-agent-interactive-approvals';
 import { formatReadToolDetailFromArgs, formatToolActivityLabel } from '../common/qaap-agent-conversation-list-metrics';
 import { excerptTranscriptThought, extractTranscriptDiffCard, hasTranscriptActivityStats, hasTranscriptActivityTimeline, isTranscriptThoughtExcerptTruncated, isTranscriptTodoTool, parseTranscriptTodoChecklist, resolveTranscriptActivityStats, resolveTranscriptThinkingContent, resolveTranscriptToolPillDescriptors, resolveTranscriptToolRowParts, shouldOpenTranscriptToolDetails, shouldRenderTranscriptToolSegmentInline, type QaapTranscriptActivityStats } from '../common/qaap-agent-transcript-segments';
 import { formatTranscriptStreamElapsed, formatTranscriptStreamTokens, resolveTranscriptTurnStartMs, resolveTranscriptTurnStreamChars } from '../common/qaap-transcript-stream-status';
-import { buildTranscriptToolApprovalId, isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
-import { buildTranscriptApprovalCard, setTranscriptApprovalCardBusy, TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
+import { isPendingTranscriptToolSegment } from '../common/qaap-transcript-approval-inline';
+import { buildTranscriptApprovalCard, TRANSCRIPT_APPROVAL_CARD_CLASS } from './qaap-transcript-approval-card-ui';
+import { respondToTranscriptApproval } from './qaap-transcript-approval-respond';
 import { buildTranscriptDiffCardFromExtracted, buildTranscriptToolUiPayloadElement } from './qaap-transcript-rich-content-ui';
 import { resolveTranscriptToolUiPayloadFromSegment } from '../common/qaap-transcript-tool-ui-payloads';
 import { TRANSCRIPT_ACTIVITY_ROW_ATTR, TRANSCRIPT_SEGMENT_INDEX_ATTR, TRANSCRIPT_TOOL_USE_ID_ATTR } from '../common/qaap-transcript-incremental-update';
@@ -285,6 +285,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         pill.classList.toggle('theia-mod-running', !descriptor.finished);
         pill.classList.toggle('theia-mod-done', descriptor.finished);
         pill.classList.toggle('theia-mod-failed', descriptor.resultFailed);
+        const pendingApproval = manualApproval
+            && isPendingTranscriptToolSegment(segment)
+            && this.host.transcriptLiveUi.hasPendingTranscriptToolApproval(conv!.id, segment.toolUseId);
+        pill.classList.toggle('theia-mod-awaiting-approval', pendingApproval);
         const rowParts = this.resolveToolRowParts(segment, descriptor.kind);
         const summary = pill.querySelector('summary');
         if (summary) {
@@ -310,9 +314,6 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
             body.className = 'theia-mobile-agent-tool-pill-body';
             pill.append(body);
         }
-        const pendingApproval = manualApproval
-            && isPendingTranscriptToolSegment(segment)
-            && this.host.transcriptLiveUi.hasPendingTranscriptToolApproval(conv!.id, segment.toolUseId);
         const pendingApprovalChanged = pendingApproval !== !!body.querySelector(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}`);
         if (!pendingApprovalChanged
             && this.toolUi.canPatchTranscriptToolResultStream(previous, segment)
@@ -552,6 +553,10 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         pill.classList.toggle('theia-mod-running', !(descriptor?.finished ?? segment.finished));
         pill.classList.toggle('theia-mod-done', descriptor?.finished ?? segment.finished);
         pill.classList.toggle('theia-mod-failed', descriptor?.resultFailed ?? false);
+        const pendingApproval = manualApproval
+            && isPendingTranscriptToolSegment(segment)
+            && this.host.transcriptLiveUi.hasPendingTranscriptToolApproval(conv!.id, segment.toolUseId);
+        pill.classList.toggle('theia-mod-awaiting-approval', pendingApproval);
         pill.open = shouldOpenTranscriptToolDetails({
             finished: descriptor?.finished ?? segment.finished,
             resultFailed: descriptor?.resultFailed ?? false,
@@ -580,9 +585,7 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         }
         const body = document.createElement('div');
         body.className = 'theia-mobile-agent-tool-pill-body';
-        if (manualApproval
-            && isPendingTranscriptToolSegment(segment)
-            && this.host.transcriptLiveUi.hasPendingTranscriptToolApproval(conv!.id, segment.toolUseId)) {
+        if (pendingApproval) {
             body.append(this.createTranscriptToolApprovalActions(conv!.id, segment));
             pill.open = true;
         }
@@ -607,32 +610,12 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
         conversationId: string,
         segment: Extract<QaapAgentMessageSegmentDTO, { type: 'tool' }>,
     ): HTMLElement {
-        const approvalId = buildTranscriptToolApprovalId(conversationId, segment.toolUseId);
-        const respond = (event: Event, action: typeof approveAgentRequest): void => {
-            event.stopPropagation();
-            const card = (event.currentTarget as HTMLElement | null)?.closest<HTMLElement>(`.${TRANSCRIPT_APPROVAL_CARD_CLASS}`);
-            if (card) {
-                setTranscriptApprovalCardBusy(card, true);
-            }
-            void action(approvalId).then(result => {
-                if (result.ok) {
-                    card?.remove();
-                } else {
-                    if (card) {
-                        setTranscriptApprovalCardBusy(card, false);
-                    }
-                    if (result.error) {
-                        this.host.messageService?.warn(result.error);
-                    }
-                }
-                void this.host.transcriptLiveUi.refreshTranscriptApprovals();
-                this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
-            }).catch(() => {
-                if (card) {
-                    setTranscriptApprovalCardBusy(card, false);
-                }
-            });
+        const pending = this.host.transcriptLiveUi.getPendingTranscriptToolApproval(conversationId, segment.toolUseId);
+        const onSettled = (): void => {
+            void this.host.transcriptLiveUi.refreshTranscriptApprovals();
+            this.host.transcriptLiveUi.ensureTranscriptConversationRefresh();
         };
+        const pendingSummary = pending?.summary?.trim();
         return buildTranscriptApprovalCard({
             surface: 'pill',
             title: nls.localize(
@@ -640,9 +623,28 @@ export class MobileProjectsTranscriptMessagesArtifactsUi {
                 'Allow {0}?',
                 segment.name,
             ),
+            description: pendingSummary
+                ? `${pendingSummary}\n${nls.localize(
+                    'qaap/mobileProjects/transcriptToolApprovalComposerHint',
+                    'Prefer the Allow button above the composer if this one does not respond.',
+                )}`
+                : nls.localize(
+                    'qaap/mobileProjects/transcriptToolApprovalComposerHint',
+                    'Prefer the Allow button above the composer if this one does not respond.',
+                ),
         }, {
-            onApprove: event => respond(event, approveAgentRequest),
-            onReject: event => respond(event, rejectAgentRequest),
+            onApprove: event => {
+                if (!pending) {
+                    return;
+                }
+                void respondToTranscriptApproval(pending.id, 'approve', { fromEvent: event, callbacks: { onSettled } });
+            },
+            onReject: event => {
+                if (!pending) {
+                    return;
+                }
+                void respondToTranscriptApproval(pending.id, 'reject', { fromEvent: event, callbacks: { onSettled } });
+            },
         });
     }
 

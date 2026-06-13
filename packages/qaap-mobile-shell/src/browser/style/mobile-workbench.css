@@ -6037,11 +6037,35 @@ body.theia-mobile-mod-landing #theia-app-shell:not(.theia-mod-mobile-one-column)
   box-sizing: border-box;
   padding: 0 4px 8px;
   pointer-events: auto;
+  position: relative;
+  z-index: 12;
 }
 
 .theia-mobile-sticky-composer-pending-approval-host .theia-mobile-agent-approval-card.theia-mod-inline {
   margin: 0;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--theia-widget-shadow, #000) 42%, transparent);
+  animation: qaap-transcript-approval-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes qaap-transcript-approval-pulse {
+  0%, 100% {
+    border-color: color-mix(in srgb, var(--q-accent, #E58E40) 34%, var(--theia-widget-border, rgba(128, 128, 128, 0.24)));
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--q-accent, #E58E40) 62%, var(--theia-widget-border, rgba(128, 128, 128, 0.24)));
+  }
+}
+
+.theia-mobile-agent-tool-pill.theia-mod-awaiting-approval > summary .theia-mobile-agent-tool-pill-verb::after {
+  content: ' · waiting';
+  font-weight: 500;
+  color: var(--q-accent, #E58E40);
+}
+
+.theia-mobile-agent-tool-pill-body .theia-mobile-agent-approval-card.theia-mod-pill {
+  margin-bottom: 8px;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .theia-mobile-agent-transcript-inline-preview {
@@ -16370,10 +16394,6 @@ body > .theia-mobile-transcript-files-menu {
 
 .theia-mobile-agent-tool-pill.theia-mod-failed .theia-mobile-agent-shell-state {
   background: var(--theia-errorForeground, #f14c4c);
-}
-
-.theia-mobile-agent-tool-pill-body .theia-mobile-agent-approval-card.theia-mod-pill {
-  margin-bottom: 8px;
 }
 
 /* Inline diff preview for edit tools (3–6 lines, GitHub-style). */
