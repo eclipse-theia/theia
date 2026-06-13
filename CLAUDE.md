@@ -160,8 +160,8 @@ Pick the next task off this list. Each is independent — extract one, verify, c
 - [ ] **core** (residuals after Tier 1–3 cleanups). Mostly already-allowlisted small seams **justified by qaap consumers** (e.g. `WorkbenchTopBarFactory` → `qaap-mobile-shell`, `ElectronMainApplication.resolveApplicationIconPath` → `qaap-product`). Real outstanding work:
     - `backend-application.{ts,-module.ts}` + `backend-application.spec.ts` re-adopted from upstream: restored graceful shutdown, `RootContainer`, async `onStop`, and upstream tests.
     - yargs `v15 → v17` upgrade across `core`, `dev-packages/{cli,application-manager,private-re-exports}` (would clean 4–5 files in one go). Attempted in 2026-05; aborted because `npm install` cascaded into a zod/MCP-SDK type-resolution conflict in `ai-mcp-server`. Needs a proper dependency-graph investigation (likely pin zod or align MCP SDK) before retrying.
-    - `application-shell.ts`: small top-bar-visibility tweak (16 lines). Subclass point is buried inside a heavily-used class; current allowlist entry is defensible.
-    - `select-component.{tsx,css}`: mobile bottom-navigation z-index + dropdown clip logic. Tied to a React component instantiated via JSX (not DI), so cannot be substituted via rebind. Accepted seam.
+    - [x] `application-shell.ts` top-bar visibility: extracted to `QaapApplicationShellWithToolbar` in `@theia/qaap-shell`; upstream file reverted.
+    - [x] `select-component.{tsx,css}` mobile UX: extracted to `qaap-select-component-mobile.tsx` (prototype patch) + `qaap-select-component-overlay.css` in product theme; upstream files reverted.
 
 ### Workflow per extraction
 

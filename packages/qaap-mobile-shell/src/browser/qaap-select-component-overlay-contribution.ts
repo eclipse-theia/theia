@@ -5,12 +5,16 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
+import {
+    applyQaapSelectComponentMobilePatches,
+    setQaapSelectComponentOverlayClipBottomProvider,
+} from './qaap-select-component-mobile';
 
 @injectable()
 export class QaapSelectComponentOverlayContribution implements FrontendApplicationContribution {
     onStart(_app: FrontendApplication): void {
-        SelectComponent.overlayClipBottomProvider = fallbackBottom => {
+        applyQaapSelectComponentMobilePatches();
+        setQaapSelectComponentOverlayClipBottomProvider(fallbackBottom => {
             const overlay = document.querySelector<HTMLElement>('.theia-mobile-bottom-chrome-host');
             if (!overlay) {
                 return fallbackBottom;
@@ -20,10 +24,10 @@ export class QaapSelectComponentOverlayContribution implements FrontendApplicati
                 return fallbackBottom;
             }
             return rect.top;
-        };
+        });
     }
 
     onStop(_app: FrontendApplication): void {
-        SelectComponent.overlayClipBottomProvider = undefined;
+        setQaapSelectComponentOverlayClipBottomProvider(undefined);
     }
 }

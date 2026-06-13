@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
+import { Panel } from '@lumino/widgets';
 import { animationFrame, Layout, MAXIMIZED_CLASS, TheiaSplitPanel } from '@theia/core/lib/browser';
 import { SidePanel } from '@theia/core/lib/browser/shell/side-panel-handler';
 import { ApplicationShellWithToolbarOverride } from '@theia/toolbar/lib/browser/application-shell-with-toolbar-override';
@@ -71,5 +72,19 @@ export class QaapApplicationShellWithToolbar extends ApplicationShellWithToolbar
 
     protected override refreshBottomPanelToggleButton(): void {
         this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
+    }
+
+    protected override setTopPanelVisibility(preference: string): void {
+        const hideMenuBar = preference === 'compact' || preference === 'hidden';
+        const menuBar = this.topPanel.widgets.find(w => w.id === 'theia:menubar');
+        menuBar?.setHidden(hideMenuBar);
+        const hasOtherVisibleWidget = this.topPanel.widgets.some(w => w !== menuBar && !w.isHidden);
+        this.topPanel.setHidden(hideMenuBar && !hasOtherVisibleWidget);
+    }
+
+    protected override createTopPanel(): Panel {
+        const topPanel = new Panel();
+        topPanel.id = 'theia-top-panel';
+        return topPanel;
     }
 }

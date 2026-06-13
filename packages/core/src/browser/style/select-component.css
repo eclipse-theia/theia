@@ -15,19 +15,13 @@
  ********************************************************************************/
 
 .theia-select-component-container {
-  /* Zero-size fixed anchor; dropdown uses `position: fixed` viewport coordinates. */
-  position: fixed;
+  /* position is required for z-index to take effect; top/left at 0 anchors
+     the container so the absolutely-positioned dropdown resolves its
+     viewport-relative coordinates correctly. */
+  position: absolute;
   top: 0;
   left: 0;
-  width: 0;
-  height: 0;
-  overflow: visible;
-  pointer-events: none;
-  z-index: var(--theia-select-component-dropdown-z-index, 6000);
-}
-
-.theia-select-component-container .theia-select-component-dropdown {
-  pointer-events: auto;
+  z-index: 6000;
 }
 
 .theia-select-component {

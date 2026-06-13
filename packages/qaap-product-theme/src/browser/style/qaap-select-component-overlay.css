@@ -1,0 +1,21 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-select-component-container {
+  /* Zero-size fixed anchor; dropdown uses `position: fixed` viewport coordinates. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--theia-select-component-dropdown-z-index, 6000);
+}
+
+.theia-select-component-container .theia-select-component-dropdown {
+  pointer-events: auto;
+}
