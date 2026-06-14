@@ -20,6 +20,7 @@ import { Endpoint } from '@theia/core/lib/browser';
 import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
+import { normalizeMiniBrowserOpenUrl } from './mini-browser-url-utils';
 
 /**
  * Contribution for the `LocationMapperService`.
@@ -52,11 +53,15 @@ export class LocationMapperService {
     protected readonly contributions: ContributionProvider<LocationMapper>;
 
     async map(location: string): Promise<string> {
-        const contributions = await this.prioritize(location);
-        if (contributions.length === 0) {
-            return this.defaultMapper()(location);
+        const normalized = normalizeMiniBrowserOpenUrl(location);
+        if (!normalized) {
+            throw new Error('Empty URL');
         }
-        return contributions[0].map(location);
+        const contributions = await this.prioritize(normalized);
+        if (contributions.length === 0) {
+            return this.defaultMapper()(normalized);
+        }
+        return contributions[0].map(normalized);
     }
 
     protected defaultMapper(): (location: string) => MaybePromise<string> {
@@ -113,7 +118,11 @@ export class HttpsLocationMapper implements LocationMapper {
 export class LocationWithoutSchemeMapper implements LocationMapper {
 
     canHandle(location: string): MaybePromise<number> {
-        return new URI(location).scheme === '' ? 1 : 0;
+        try {
+            return new URI(location).scheme === '' ? 1 : 0;
+        } catch {
+            return 0;
+        }
     }
 
     map(location: string): MaybePromise<string> {

@@ -53,6 +53,7 @@ const ALLOWED = [
     /^packages\/mini-browser\/src\/browser\/mini-browser-open-hook\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-opener-options\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.ts$/,
+    /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-open-handler\.ts$/,
     /^packages\/monaco\/src\/browser\/monaco-quick-input-layout\.ts$/,
     // Protected getBlinkAlertTitle hook (default uses applicationName like upstream).

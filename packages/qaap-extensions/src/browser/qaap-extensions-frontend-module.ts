@@ -11,7 +11,6 @@ import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { WindowBlinkService } from '@theia/ai-core/lib/browser/window-blink-service';
 import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
 import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
@@ -35,7 +34,6 @@ import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
 import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
-import { QaapWindowBlinkService } from './qaap-window-blink-service';
 import { QaapPreviewContribution } from './qaap-preview-contribution';
 import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-contribution';
 import { QaapWebviewResourceCache } from './qaap-webview-resource-cache';
@@ -61,9 +59,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapFileNavigatorContribution).toSelf().inSingletonScope();
     rebind(FileNavigatorContribution).toService(QaapFileNavigatorContribution);
-
-    bind(QaapWindowBlinkService).toSelf().inSingletonScope();
-    rebind(WindowBlinkService).toService(QaapWindowBlinkService);
 
     bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);

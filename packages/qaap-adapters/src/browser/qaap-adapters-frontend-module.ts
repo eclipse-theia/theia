@@ -29,14 +29,6 @@ import { QaapElementPickerCommandContribution } from './qaap-element-picker-comm
 import { QaapElementPickerService } from './qaap-element-picker-service';
 import { QaapPickElementTool } from './qaap-element-picker-tool-provider';
 import { QaapPreviewFramePickerFactory } from './qaap-preview-frame-picker';
-import {
-    LocationMapperService,
-    LocationWithoutSchemeMapper,
-} from '@theia/mini-browser/lib/browser/location-mapper-service';
-import {
-    QaapLocationMapperService,
-    QaapLocationWithoutSchemeMapper,
-} from './qaap-location-mapper-service';
 import { QaapPreviewSurfaceRegistry } from './qaap-preview-surface-registry';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
@@ -67,11 +59,6 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapMiniBrowserOpenHandler).toSelf().inSingletonScope();
     rebind(MiniBrowserOpenHandler).toService(QaapMiniBrowserOpenHandler);
-
-    bind(QaapLocationMapperService).toSelf().inSingletonScope();
-    rebind(LocationMapperService).toService(QaapLocationMapperService);
-    bind(QaapLocationWithoutSchemeMapper).toSelf().inSingletonScope();
-    rebind(LocationWithoutSchemeMapper).toService(QaapLocationWithoutSchemeMapper);
 
     bind(QaapPreviewFramePickerFactory).toSelf().inSingletonScope();
     bind(QaapPreviewSurfaceRegistry).toSelf().inSingletonScope();

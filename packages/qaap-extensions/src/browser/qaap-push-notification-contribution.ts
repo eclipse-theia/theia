@@ -5,10 +5,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WindowBlinkService } from '@theia/ai-core/lib/browser/window-blink-service';
 import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
-import { QaapWindowBlinkService } from './qaap-window-blink-service';
 
 export const QAAP_BOOTSTRAP_FAILED_EVENT = 'qaap-bootstrap-failed';
 export const QAAP_AGENT_COMPLETED_EVENT = 'qaap-agent-completed';
@@ -53,11 +53,7 @@ export class QaapPushNotificationContribution implements FrontendApplicationCont
     };
 
     protected notifyAgentCompleted(agentName?: string): void {
-        if (this.blink instanceof QaapWindowBlinkService) {
-            this.blink.notifyAgentCompleted(agentName);
-        } else {
-            void this.blink.blinkWindow(agentName);
-        }
+        void this.blink.blinkWindow(agentName);
         this.showSystemNotification(
             nls.localize('qaap/push/agentDone', 'Agent finished'),
             agentName
@@ -67,11 +63,7 @@ export class QaapPushNotificationContribution implements FrontendApplicationCont
     }
 
     protected notifyAgentNeedsConfirmation(agentName?: string): void {
-        if (this.blink instanceof QaapWindowBlinkService) {
-            this.blink.notifyAgentNeedsConfirmation(agentName);
-        } else {
-            void this.blink.blinkWindow(agentName);
-        }
+        void this.blink.blinkWindow(agentName);
         this.showSystemNotification(
             nls.localize('qaap/push/agentNeedsConfirmation', 'Agent needs your confirmation'),
             agentName
@@ -81,8 +73,9 @@ export class QaapPushNotificationContribution implements FrontendApplicationCont
     }
 
     protected notifyBuildFailed(error?: string): void {
-        if (this.blink instanceof QaapWindowBlinkService) {
-            this.blink.notifyBuildFailed(error);
+        if (typeof document !== 'undefined') {
+            const app = FrontendApplicationConfigProvider.get().applicationName;
+            document.title = '⚠ ' + nls.localize('qaap/blink/buildFailed', '{0} — build failed', app);
         }
         this.showSystemNotification(
             nls.localize('qaap/push/buildFailed', 'Build failed'),
