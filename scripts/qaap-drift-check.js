@@ -67,6 +67,7 @@ const ALLOWED = [
     /^packages\/workspace\/src\/browser\/workspace-trust-dialog-factory\.ts$/,
     /^packages\/workspace\/src\/browser\/workspace-trust-service\.ts$/,
     /^packages\/workspace\/src\/browser\/workspace-frontend-module\.ts$/,
+    /^packages\/workspace\/src\/browser\/workspace-frontend-contribution\.ts$/,
     /^\.nvmrc$/,
     // Examples / branding / deploy (not upstream Theia)
     /^examples\//,

@@ -18,7 +18,6 @@ import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-con
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
 import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
-import { WorkspaceFrontendContribution } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
 import { WebviewResourceCache } from '@theia/plugin-ext/lib/main/browser/webview/webview-resource-cache';
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
@@ -35,7 +34,6 @@ import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contributio
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
 import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
 import { QaapPreviewContribution } from './qaap-preview-contribution';
-import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-contribution';
 import { QaapWebviewResourceCache } from './qaap-webview-resource-cache';
 import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
@@ -86,9 +84,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapShellCommandPermissionService).toSelf().inSingletonScope();
     rebind(ShellCommandPermissionService).toService(QaapShellCommandPermissionService);
-
-    bind(QaapWorkspaceFrontendContribution).toSelf().inSingletonScope();
-    rebind(WorkspaceFrontendContribution).toService(QaapWorkspaceFrontendContribution);
 
     bind(QaapGettingStartedWidget).toSelf();
     rebind(GettingStartedWidget).toService(QaapGettingStartedWidget);

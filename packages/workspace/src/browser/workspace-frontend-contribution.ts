@@ -22,6 +22,7 @@ import {
     FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget,
     QuickInputService, QuickPickItem
 } from '@theia/core/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
@@ -482,10 +483,16 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         return 'empty';
     }
 
+    protected getWorkspaceFileTypeLabel(fileType: { name: string; extension: string }): string {
+        return fileType.extension === THEIA_EXT
+            ? FrontendApplicationConfigProvider.get().applicationName
+            : fileType.name;
+    }
+
     protected getWorkspaceDialogFileFilters(): FileDialogTreeFilters {
         const filters: FileDialogTreeFilters = {};
         for (const fileType of this.workspaceFileService.getWorkspaceFileTypes()) {
-            filters[`${nls.localizeByDefault('{0} workspace', fileType.name)} (*.${fileType.extension})`] = [fileType.extension];
+            filters[`${nls.localizeByDefault('{0} workspace', this.getWorkspaceFileTypeLabel(fileType))} (*.${fileType.extension})`] = [fileType.extension];
         }
         return filters;
     }
