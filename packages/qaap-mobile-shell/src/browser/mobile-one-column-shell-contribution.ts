@@ -381,7 +381,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.toDispose.push(Disposable.create(() => {
             window.removeEventListener('beforeunload', this.persistWorkHubSurfacePreference);
         }));
-        if (this.mobileMq?.matches || shouldPreferWorkHubAgentsLayout()) {
+        if (this.mobileMq?.matches || shouldPreferWorkHubAgentsLayout() || shouldBootstrapMobileAgentsChat()) {
             window.requestAnimationFrame(() => this.onMediaChange());
         }
     }
@@ -403,6 +403,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Paint Work Hub immediately; hydrate workspace-dependent state once MRU restore is ready. */
     protected async bootstrapWorkHubSurfaceAfterLayout(): Promise<void> {
+        await this.workspaceService.ready;
         this.onMediaChange();
         if (this.shouldActivateMobileLayout() && !peekPreferDesktopIde()) {
             if (!this.mobileActive) {
@@ -413,7 +414,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
             this.scheduleSnapAndUiRefresh();
         }
-        await this.workspaceService.ready;
         this.onMediaChange();
         if (this.mobileActive) {
             await this.collapseMobileSideSheets();
@@ -422,6 +422,14 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 if (!this.tryBootstrapMobileAgentsChat() && !this.projectsPanel?.isVisible()) {
                     void this.showMobileProjectsHome('tasks');
                 }
+            }
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        if (this.shouldActivateMobileLayout() && !peekPreferDesktopIde()) {
+            this.enterMobileLayout();
+            if (!this.tryBootstrapMobileAgentsChat() && !this.projectsPanel?.isVisible()) {
+                void this.showMobileProjectsHome('tasks');
             }
             this.scheduleSnapAndUiRefresh();
             return;
@@ -1051,13 +1059,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected tryBootstrapMobileAgentsChat(): boolean {
-        if (peekPreferDesktopIde() || !this.workspaceService.opened || !shouldBootstrapMobileAgentsChat()) {
+        if (peekPreferDesktopIde() || !shouldBootstrapMobileAgentsChat()) {
             return false;
         }
         if (!this.mobileActive) {
-            if (!this.mobileMq?.matches && !shouldPreferWorkHubAgentsLayout()) {
-                return false;
-            }
             this.enterMobileLayout();
         }
         const panel = this.projectsPanel;
@@ -1082,9 +1087,25 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         return true;
     }
 
+    /** Close restored IDE editor tabs so the Work Hub surface can take the main area after reload. */
+    protected async collapseIdeMainAreaForWorkHub(): Promise<void> {
+        const widgets = [...toArray(this.shell.mainPanel.widgets())];
+        for (const widget of widgets) {
+            await this.shell.closeWidget(widget.id, { save: false });
+        }
+    }
+
     /** After reload: return to the Agents execution shell instead of restoring IDE editor tabs. */
     protected async restoreAgentsSurfaceAfterReload(epoch: number = this.agentsBootstrapEpoch): Promise<void> {
         try {
+            if (!this.shouldContinueAgentsBootstrap(epoch)) {
+                return;
+            }
+            await this.workspaceService.ready;
+            if (!this.shouldContinueAgentsBootstrap(epoch)) {
+                return;
+            }
+            await this.collapseIdeMainAreaForWorkHub();
             if (!this.shouldContinueAgentsBootstrap(epoch)) {
                 return;
             }
@@ -1697,7 +1718,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected async showMobileProjectsHome(preferredHubView?: MobileProjectsHubView): Promise<void> {
         this.landingLeftThisSession = false;
         clearPreferAgentsSurface();
-        markMobileProjectsHomeVisible();
+        if (preferredHubView === 'home' || preferredHubView === undefined) {
+            markMobileProjectsHomeVisible();
+        } else {
+            clearMobileProjectsHomeVisible();
+            markPreferAgentsSurface();
+        }
         document.body.classList.add('theia-mobile-mod-landing');
         if (this.projectsPanel && !this.projectsPanel.isHomeMode()) {
             this.projectsPanel.hide();

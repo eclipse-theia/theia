@@ -9,7 +9,7 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { matchesMobileOneColumnLayout } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { SidePanel } from '@theia/core/lib/browser/shell/side-panel-handler';
-import { shouldPreferWorkHubAgentsLayout } from './mobile-projects-open';
+import { shouldBootstrapMobileAgentsChat, shouldPreferWorkHubAgentsLayout } from './mobile-projects-open';
 
 /** Minimum restored side panel width on desktop (mobile sessions often persist ~0). */
 const MIN_DESKTOP_SIDE_PANEL_SIZE = 280;
@@ -21,9 +21,14 @@ const MIN_DESKTOP_SIDE_PANEL_SIZE = 280;
 export class QaapShellLayoutRestoreContribution implements ShellLayoutTransformer {
 
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
-        if (matchesMobileOneColumnLayout() || shouldPreferWorkHubAgentsLayout()) {
+        if (matchesMobileOneColumnLayout() || shouldPreferWorkHubAgentsLayout() || shouldBootstrapMobileAgentsChat()) {
             this.collapseSidePanelLayout(layoutData.leftPanel);
             this.collapseSidePanelLayout(layoutData.rightPanel);
+            if (shouldBootstrapMobileAgentsChat()) {
+                layoutData.mainPanel = undefined;
+                layoutData.mainPanelPinned = undefined;
+                layoutData.activeWidgetId = undefined;
+            }
             return;
         }
         this.fixSidePanelLayout(layoutData.leftPanel);

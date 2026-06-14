@@ -122,10 +122,16 @@ export function shouldPreferWorkHubAgentsLayout(): boolean {
  * execution shell (inline agentic chat), not the IDE main area or the project-list landing.
  */
 export function shouldBootstrapMobileAgentsChat(): boolean {
-    if (peekPreferDesktopIde() || peekMobileProjectsHomeVisible()) {
+    if (peekPreferDesktopIde()) {
         return false;
     }
-    return hasWorkspaceRouteInUrl() || shouldPreferWorkHubAgentsLayout();
+    if (hasWorkspaceRouteInUrl()) {
+        return true;
+    }
+    if (peekMobileProjectsHomeVisible()) {
+        return false;
+    }
+    return shouldPreferWorkHubAgentsLayout();
 }
 
 function isFreshMobileProjectsPanelDismiss(raw: string | null): boolean {
