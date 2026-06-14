@@ -80,7 +80,6 @@ import { AIConfigurationSelectionService } from '@theia/ai-ide/lib/browser/ai-co
 import {
     clearMobileWorkHubBootGuard,
     installMobileWorkHubBootGuard,
-    markMobileProjectsLeftLanding,
     markPreferAgentsSurface,
     markPreferDesktopIde,
     peekPreferDesktopIde,
@@ -89,7 +88,6 @@ import {
     QAAP_MOBILE_LANDING_HUB_LIST_CHANGED_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
     setMobileActiveTranscriptChrome,
-    setMobileLandingHubListChrome,
     setMobileWorkHubComposerHeaderChrome,
     setMobileWorkHubHideBottomChrome,
 } from './mobile-projects-open';
@@ -135,6 +133,10 @@ import {
     MobileShellPullRequestPanelController,
     type MobileShellPullRequestPanelHost,
 } from './mobile-shell-pull-request-panel-controller';
+import {
+    MobileShellTranscriptChromeController,
+    type MobileShellTranscriptChromeHost,
+} from './mobile-shell-transcript-chrome-controller';
 import { MobileShellSessionState } from './mobile-shell-session-state';
 import {
     BottomBarSecondaryItem,
@@ -281,6 +283,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     private hubNavigationHost!: MobileShellHubNavigationHost;
     protected pullRequestPanelController!: MobileShellPullRequestPanelController;
     private pullRequestPanelHost!: MobileShellPullRequestPanelHost;
+    protected transcriptChrome!: MobileShellTranscriptChromeController;
+    private transcriptChromeHost!: MobileShellTranscriptChromeHost;
     protected readonly sessionState = new MobileShellSessionState();
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarController.getBottomBarNode(); }
     protected mobileActive = false;
@@ -347,7 +351,22 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             mobileMq: this.mobileMq,
         });
         this.initHubNavigationController();
+        this.initTranscriptChromeController();
         this.patchWorkHubBootstrapLandingHost();
+    }
+
+    protected initTranscriptChromeController(): void {
+        this.transcriptChromeHost = {
+            getProjectsPanel: () => this.projectsPanel,
+            openMobileWorkHubLanding: view => this.hubNavigation.openMobileWorkHubLanding(view),
+            syncMobileHubPrimaryBottomChrome: () => this.bottomBarController.syncMobileHubPrimaryBottomChrome(),
+            refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
+            refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
+        };
+        this.transcriptChrome = new MobileShellTranscriptChromeController({
+            host: this.transcriptChromeHost,
+            sessionState: this.sessionState,
+        });
     }
 
     protected initPullRequestPanelController(): void {
@@ -974,8 +993,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     this.refreshBottomBar();
                     this.refreshWorkbenchTopBar();
                 },
-                onEnterActiveTranscript: () => this.onEnterActiveTranscript(),
-                onExitActiveTranscript: () => { void this.onExitActiveTranscript(); },
+                onEnterActiveTranscript: () => this.transcriptChrome.onEnterActiveTranscript(),
+                onExitActiveTranscript: () => { void this.transcriptChrome.onExitActiveTranscript(); },
             },
             {
                 homeMode,
@@ -1168,39 +1187,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.projectsPanel?.toggleWorkHubSessionsSidebar();
     }
 
-    /**
-     * Mockup chat-active: transcript on body replaces the Work Hub landing (mod-landing hides it).
-     */
     protected onEnterActiveTranscript(): void {
-        if (document.body.classList.contains('theia-mobile-mod-active-transcript')) {
-            setMobileActiveTranscriptChrome(true);
-            return;
-        }
-        this.transcriptOpenedFromWorkHubLanding = document.body.classList.contains('theia-mobile-mod-landing');
-        if (this.transcriptOpenedFromWorkHubLanding) {
-            this.landingLeftThisSession = true;
-            markMobileProjectsLeftLanding();
-            document.body.classList.remove('theia-mobile-mod-landing');
-            setMobileLandingHubListChrome(false);
-            this.projectsPanel?.hide();
-        }
-        setMobileActiveTranscriptChrome(true);
-        markPreferAgentsSurface();
-        this.syncMobileHubPrimaryBottomChrome();
-        this.refreshBottomBar();
-        this.refreshWorkbenchTopBar();
+        this.transcriptChrome.onEnterActiveTranscript();
     }
 
     protected async onExitActiveTranscript(): Promise<void> {
-        setMobileActiveTranscriptChrome(false);
-        if (this.transcriptOpenedFromWorkHubLanding) {
-            this.transcriptOpenedFromWorkHubLanding = false;
-            this.landingLeftThisSession = false;
-            await this.openMobileWorkHubLanding('tasks');
-            return;
-        }
-        this.refreshBottomBar();
-        this.refreshWorkbenchTopBar();
+        return this.transcriptChrome.onExitActiveTranscript();
     }
 
     protected async openAgentTaskComposer(project: MobileProjectEntry): Promise<void> {
