@@ -13,7 +13,25 @@
       "path": "../core"
     },
     {
+      "path": "../ai-chat-ui"
+    },
+    {
+      "path": "../getting-started"
+    },
+    {
+      "path": "../keymaps"
+    },
+    {
       "path": "../monaco"
+    },
+    {
+      "path": "../plugin-ext"
+    },
+    {
+      "path": "../terminal"
+    },
+    {
+      "path": "../workspace"
     },
     {
       "path": "../qaap-adapters"

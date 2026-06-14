@@ -15,6 +15,10 @@ import { QaapPluginCompatibilityPreferenceContribution } from './qaap-plugin-com
 import { QaapTextmateRegistry } from './qaap-textmate-registry';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { TextmateRegistry } from '@theia/monaco/lib/browser/textmate/textmate-registry';
+import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
+import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
+import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
+import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(QaapBuiltinThemeBrandingContribution).toSelf().inSingletonScope();
@@ -44,4 +48,10 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
             title: FrontendApplicationConfigProvider.get().applicationName
         })).inSingletonScope();
     }
+
+    bind(QaapGettingStartedWidget).toSelf();
+    rebind(GettingStartedWidget).toService(QaapGettingStartedWidget);
+
+    bind(QaapPluginViewWelcomePolicy).toSelf().inSingletonScope();
+    bind(PluginViewWelcomePolicy).toService(QaapPluginViewWelcomePolicy);
 });
