@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MaybePromise } from '@theia/core/lib/common/types';
 
@@ -29,6 +30,9 @@ export interface WebviewResourceResponse {
 @injectable()
 export class WebviewResourceCache {
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     protected readonly cache = new Deferred<Cache | undefined>();
 
     constructor() {
@@ -36,10 +40,14 @@ export class WebviewResourceCache {
     }
 
     protected async resolveCache(): Promise<void> {
+        if (typeof caches === 'undefined') {
+            this.cache.resolve(undefined);
+            return;
+        }
         try {
             this.cache.resolve(await caches.open('webview:v1'));
         } catch (e) {
-            console.error('Failed to enable webview caching: ', e);
+            this.logger.debug('Webview resource cache unavailable', e);
             this.cache.resolve(undefined);
         }
     }

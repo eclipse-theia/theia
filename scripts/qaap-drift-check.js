@@ -124,6 +124,8 @@ const ALLOWED = [
     // Optional PluginViewWelcomePolicy DI seam for cloud IDE (no Open Folder welcome).
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-welcome-policy\.ts$/,
+    /^packages\/plugin-ext\/src\/main\/browser\/webview\/webview-resource-cache\.ts$/,
+    /^packages\/preview\/src\/browser\/preview-contribution\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
     // Protected AnthropicModel hooks for product history pruning + rolling cache.

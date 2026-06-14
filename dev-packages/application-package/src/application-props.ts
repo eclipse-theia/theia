@@ -124,6 +124,7 @@ export namespace FrontendApplicationConfig {
     export const DEFAULT: FrontendApplicationConfig = {
         applicationName: 'Eclipse Theia',
         applicationIcon: '',
+        markdownPreviewOpenIcon: '',
         defaultTheme: { light: 'light', dark: 'dark' },
         defaultIconTheme: 'theia-file-icons',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
@@ -189,6 +190,12 @@ export namespace FrontendApplicationConfig {
          * but the back end does not have a connection context for this front end anymore.
          */
         readonly reloadOnReconnect?: boolean;
+
+        /**
+         * Codicon id for the markdown "Open Preview" editor command (e.g. `play`, `open-preview`).
+         * Defaults to `open-preview`.
+         */
+        readonly markdownPreviewOpenIcon?: string;
     }
 }
 

@@ -18,6 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/shared/@lumino/widgets';
 import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler, codicon } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
@@ -210,7 +211,10 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(PreviewCommands.OPEN, {
+        registry.registerCommand({
+            ...PreviewCommands.OPEN,
+            iconClass: this.getOpenPreviewIconClass(),
+        }, {
             execute: widget => this.openForEditor(widget),
             isEnabled: widget => this.canHandleEditorUri(widget),
             isVisible: widget => this.canHandleEditorUri(widget)
@@ -239,6 +243,11 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
             command: PreviewCommands.OPEN_SOURCE.id,
             tooltip: nls.localize('vscode.markdown-language-features/package/markdown.showSource.title', 'Open Source')
         });
+    }
+
+    protected getOpenPreviewIconClass(): string {
+        const icon = FrontendApplicationConfigProvider.get().markdownPreviewOpenIcon?.trim();
+        return icon ? codicon(icon) : codicon('open-preview');
     }
 
     protected canHandleEditorUri(widget?: Widget): boolean {

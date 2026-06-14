@@ -17,8 +17,6 @@ import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigato
 import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
-import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
-import { WebviewResourceCache } from '@theia/plugin-ext/lib/main/browser/webview/webview-resource-cache';
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
 import { QaapAiPreferenceBrandingContribution, QaapAiPreferenceBrandingStartup } from './qaap-ai-preference-branding-contribution';
@@ -33,8 +31,6 @@ import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
 import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
-import { QaapPreviewContribution } from './qaap-preview-contribution';
-import { QaapWebviewResourceCache } from './qaap-webview-resource-cache';
 import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
@@ -87,11 +83,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapGettingStartedWidget).toSelf();
     rebind(GettingStartedWidget).toService(QaapGettingStartedWidget);
-
-    bind(QaapPreviewContribution).toSelf().inSingletonScope();
-    rebind(PreviewContribution).toService(QaapPreviewContribution);
-
-    rebind(WebviewResourceCache).to(QaapWebviewResourceCache).inSingletonScope();
 
     bind(QaapPluginViewWelcomePolicy).toSelf().inSingletonScope();
     bind(PluginViewWelcomePolicy).toService(QaapPluginViewWelcomePolicy);

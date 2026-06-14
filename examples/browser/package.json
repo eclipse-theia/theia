@@ -8,6 +8,7 @@
       "config": {
         "applicationName": "Qaap",
         "applicationIcon": "./media/qaap-logo.svg",
+        "markdownPreviewOpenIcon": "play",
         "pwa": {
           "shortName": "Qaap",
           "description": "Qaap — a mobile-friendly IDE for reading, reviewing and writing code on the go.",
