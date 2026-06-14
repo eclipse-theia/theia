@@ -18,6 +18,22 @@ export function isAgentsHubIdleConversationSummary(summary: QaapAgentConversatio
     return summary.id === QAAP_AGENTS_HUB_IDLE_CONVERSATION_ID;
 }
 
+/**
+ * True when the Agents tab has painted execution content — not merely the landing CSS class
+ * ({@code theia-mod-agents-hub-landing}), which is applied before the inline shell mounts.
+ */
+export function isAgentsHubExecutionSurfacePainted(
+    agentsHubShellActive: boolean,
+    scroll: ParentNode,
+): boolean {
+    if (agentsHubShellActive) {
+        return true;
+    }
+    return scroll.querySelector(
+        '.theia-mobile-agents-hub-inline-execution, .theia-mobile-tasks-hub-root.theia-mod-agents-loading, .theia-mobile-agent-transcript-empty',
+    ) !== null;
+}
+
 export function buildAgentsHubIdleConversationSummary(cwd: string): QaapAgentConversationSummaryDTO {
     return {
         id: QAAP_AGENTS_HUB_IDLE_CONVERSATION_ID,

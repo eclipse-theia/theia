@@ -4,8 +4,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import {
     buildAgentsHubIdleConversationSummary,
+    isAgentsHubExecutionSurfacePainted,
     isAgentsHubIdleConversationSummary,
     QAAP_AGENTS_HUB_IDLE_CONVERSATION_ID,
     QAAP_AGENTS_HUB_LANDING_ENABLED,
@@ -35,6 +37,21 @@ describe('qaap-agents-hub-landing', () => {
             expect(action.icon.trim()).to.not.equal('');
             expect(action.labelDefault.trim()).to.not.equal('');
             expect(action.promptDefault.trim()).to.not.equal('');
+        }
+    });
+
+    it('isAgentsHubExecutionSurfacePainted ignores landing CSS and requires scroll content', () => {
+        const disableJSDOM = enableJSDOM();
+        try {
+            const scroll = document.createElement('div');
+            expect(isAgentsHubExecutionSurfacePainted(false, scroll)).to.equal(false);
+            const loading = document.createElement('div');
+            loading.className = 'theia-mobile-tasks-hub-root theia-mod-agents-loading';
+            scroll.append(loading);
+            expect(isAgentsHubExecutionSurfacePainted(false, scroll)).to.equal(true);
+            expect(isAgentsHubExecutionSurfacePainted(true, document.createElement('div'))).to.equal(true);
+        } finally {
+            disableJSDOM();
         }
     });
 });

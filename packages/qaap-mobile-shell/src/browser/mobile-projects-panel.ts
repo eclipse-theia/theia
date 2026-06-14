@@ -35,6 +35,7 @@ import {
 } from '../common/qaap-work-hub-team';
 import { MobileProjectsHomeUi, type WorkHubHomeNavigateTarget, type WorkHubHomeQuickActionId } from './mobile-projects-home-ui';
 import { MobileProjectsService } from './mobile-projects-service';
+import { isAgentsHubExecutionSurfacePainted } from '../common/qaap-agents-hub-landing';
 import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
@@ -727,6 +728,21 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
     /** Agents hub inline execution shell (agentic chat) is mounted in this panel. */
     isAgentsHubShellActive(): boolean {
         return this.agentsHubShellActive;
+    }
+
+    /** True when the Agents tab scroll area contains the inline execution shell (or a painted placeholder). */
+    isAgentsHubExecutionSurfaceReady(): boolean {
+        return isAgentsHubExecutionSurfacePainted(this.agentsHubShellActive, this.scroll);
+    }
+
+    /** Re-mount the inline Agents shell when the panel is visible but the scroll area is still empty. */
+    ensureAgentsHubExecutionShellRendered(): void {
+        if (this.isAgentsHubExecutionSurfaceReady()) {
+            return;
+        }
+        if (this.visible && this.hubView === 'tasks' && this.shouldUseAgentsHubLanding()) {
+            this.renderAgentsHubExecutionShell();
+        }
     }
 
     getHubView(): MobileProjectsHubView {
