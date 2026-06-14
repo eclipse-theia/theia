@@ -16,6 +16,9 @@ import { QaapLanguageModelOptionContribution } from './qaap-language-model-optio
 import { QaapIncrementalStreamParsingContribution } from './qaap-incremental-stream-parsing-contribution';
 import { LaunchListProvider } from '@theia/ai-ide/lib/browser/workspace-launch-provider';
 import { QaapLaunchListProvider } from './qaap-launch-list-provider';
+import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
+import { QaapShellCommandPermissionService } from './qaap-shell-command-permission-service';
+import { QaapTerminalPreferenceContribution } from './qaap-terminal-preferences';
 
 import { CodexChatAgent } from '@theia/ai-codex/lib/browser/codex-chat-agent';
 import { QaapCodexChatAgent } from './qaap-codex-chat-agent';
@@ -47,4 +50,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapLaunchListProvider).toSelf().inSingletonScope();
     rebind(LaunchListProvider).toService(QaapLaunchListProvider);
+
+    bind(QaapTerminalPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(QaapTerminalPreferenceContribution);
+
+    bind(QaapShellCommandPermissionService).toSelf().inSingletonScope();
+    rebind(ShellCommandPermissionService).toService(QaapShellCommandPermissionService);
 });

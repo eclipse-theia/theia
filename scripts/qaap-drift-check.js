@@ -119,6 +119,7 @@ const ALLOWED = [
     /^packages\/variable-resolver\/src\/browser\/variable-resolver-service\.ts$/,
     // Protected MCP delegate reregistration + resource URI hooks for product layer.
     /^packages\/ai-mcp-server\/src\/node\/mcp-frontend-contribution-manager\.ts$/,
+    /^packages\/ai-terminal\/src\/browser\/shell-command-permission-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     // Optional PluginViewWelcomePolicy DI seam for cloud IDE (no Open Folder welcome).

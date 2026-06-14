@@ -8,7 +8,7 @@ import {
     CommandCheckResult,
     ShellCommandPermissionService,
 } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
-import { QAAP_CONFIRM_LONG_TERMINAL_PREF } from './qaap-ai-preference-branding-contribution';
+import { QAAP_CONFIRM_LONG_TERMINAL_PREF } from './qaap-terminal-preferences';
 
 const LONG_RUNNING_COMMAND_PATTERNS: RegExp[] = [
     /\b(npm|pnpm|yarn|bun)\s+(install|ci|run\s+(build|test|e2e|lint|dev)|exec)\b/i,
@@ -22,11 +22,11 @@ const LONG_RUNNING_COMMAND_PATTERNS: RegExp[] = [
 @injectable()
 export class QaapShellCommandPermissionService extends ShellCommandPermissionService {
 
-    override checkCommand(command: string): CommandCheckResult {
+    protected override requiresExtraShellConfirmation(command: string): CommandCheckResult | undefined {
         if (this.shouldConfirmLongTerminal(command)) {
             return { allowed: false, reason: 'not-allowed' };
         }
-        return super.checkCommand(command);
+        return undefined;
     }
 
     protected shouldConfirmLongTerminal(command: string): boolean {

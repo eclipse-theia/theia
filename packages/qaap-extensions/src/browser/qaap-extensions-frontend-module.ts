@@ -25,8 +25,6 @@ import { QaapHubChatSyncContribution } from './qaap-hub-chat-sync-contribution';
 import { QaapMobileAppTesterContribution } from './qaap-mobile-app-tester-contribution';
 import { QaapMissionUndoContribution } from './qaap-mission-undo-contribution';
 import { QaapPushNotificationContribution } from './qaap-push-notification-contribution';
-import { QaapShellCommandPermissionService } from './qaap-shell-command-permission-service';
-import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
@@ -77,9 +75,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapPushNotificationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapPushNotificationContribution);
-
-    bind(QaapShellCommandPermissionService).toSelf().inSingletonScope();
-    rebind(ShellCommandPermissionService).toService(QaapShellCommandPermissionService);
 
     bind(QaapGettingStartedWidget).toSelf();
     rebind(GettingStartedWidget).toService(QaapGettingStartedWidget);

@@ -10,19 +10,10 @@ import { PreferenceSchemaService } from '@theia/core/lib/common/preferences/pref
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
-export const QAAP_CONFIRM_LONG_TERMINAL_PREF = 'qaap.ai.confirmLongTerminal';
 export const QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF = 'qaap.mobile.appTesterAfterPreview';
 
 export const qaapAiPreferenceSchema: PreferenceSchema = {
     properties: {
-        [QAAP_CONFIRM_LONG_TERMINAL_PREF]: {
-            type: 'boolean',
-            default: true,
-            description: nls.localize(
-                'qaap/preferences/confirmLongTerminal',
-                'Ask for confirmation before starting long-running terminal commands (install, build, test suites).'
-            ),
-        },
         [QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF]: {
             type: 'boolean',
             default: true,

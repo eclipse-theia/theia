@@ -80,12 +80,18 @@ export class ShellCommandPermissionService {
 
     /**
      * Checks a command and returns detailed result with precedence:
+     * 0. Product hook {@link requiresExtraShellConfirmation} → custom denial
      * 1. Matches denylist → { allowed: false, reason: 'denied', matchedPattern }
      * 2. Matches dangerous patterns → { allowed: false, reason: 'dangerous' }
      * 3. Matches allowlist → { allowed: true }
      * 4. Otherwise → { allowed: false, reason: 'not-allowed' }
      */
     checkCommand(command: string): CommandCheckResult {
+        const extra = this.requiresExtraShellConfirmation(command);
+        if (extra) {
+            return extra;
+        }
+
         const denylistPatterns = this.getDenylistPatterns();
         const subCommands = this.shellCommandAnalyzer.parseCommand(command);
 
@@ -112,6 +118,11 @@ export class ShellCommandPermissionService {
         }
 
         return { allowed: false, reason: 'not-allowed' };
+    }
+
+    /** Override in product layers to gate commands before allow/deny list checks. */
+    protected requiresExtraShellConfirmation(_command: string): CommandCheckResult | undefined {
+        return undefined;
     }
 
     /**
