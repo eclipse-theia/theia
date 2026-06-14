@@ -60,4 +60,27 @@ describe('QAIQ explicit model selection end-to-end', () => {
         expect(env.OPENAI_API_KEY).to.equal('nvapi-test');
         expect(buildQaiqTemplateFlags(model)).to.equal('--provider openai --model meta/llama-3.3-70b-instruct');
     });
+
+    it('uses Hugging Face router credentials when vendor is huggingface', () => {
+        const model = {
+            provider: 'openai' as const,
+            vendor: 'huggingface',
+            modelId: 'meta-llama/Llama-3.2-3B-Instruct',
+        };
+        const env: NodeJS.ProcessEnv = {
+            NVIDIA_API_KEY: 'nvapi-stale',
+            OPENAI_BASE_URL: 'https://integrate.api.nvidia.com/v1',
+        };
+        applyQaapQaiqCredentialEnv(env, bindingFromQaiqModelSelection(model), key => {
+            if (key === 'ai-features.huggingFace.apiKey') {
+                return 'hf_test';
+            }
+            return undefined;
+        });
+        expect(env.HUGGINGFACE_API_KEY).to.equal('hf_test');
+        expect(env.HF_TOKEN).to.equal('hf_test');
+        expect(env.OPENAI_API_KEY).to.equal('hf_test');
+        expect(env.OPENAI_BASE_URL).to.equal('https://router.huggingface.co/v1');
+        expect(buildQaiqTemplateFlags(model)).to.equal('--provider openai --model meta-llama/Llama-3.2-3B-Instruct');
+    });
 });

@@ -796,6 +796,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
                 modeId: next.modeId,
                 autoApprove: next.autoApprove,
                 approvalPolicyId: next.approvalPolicyId,
+                agentModel: this.host.transcriptComposerAgentModel,
             });
         } catch (error) {
             this.host.transcriptFollowUpQueue.unshift(summary.id, next);
@@ -1216,6 +1217,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
                                     this.host.transcriptComposerApprovalPolicyId,
                                     summary.cwd,
                                 ),
+                                agentModel: this.host.transcriptComposerAgentModel,
                             });
                         } catch {
                             /* submitBackgroundAgentTask surfaces errors */
@@ -1250,6 +1252,7 @@ export class MobileProjectsTranscriptStickyComposerUi {
                                     this.host.transcriptComposerApprovalPolicyId,
                                     summary.cwd,
                                 ),
+                                agentModel: this.host.transcriptComposerAgentModel,
                             });
                         }
                     } catch (error) {

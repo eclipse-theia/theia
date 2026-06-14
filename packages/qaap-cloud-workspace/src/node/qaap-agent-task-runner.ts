@@ -68,6 +68,7 @@ import {
     applyQaapQaiqModelEnv,
     bindingFromQaiqModelSelection,
     formatQaiqProviderFlags,
+    normalizeQaiqModelBinding,
     resolveQaapQaiqModelBinding,
     type QaapQaiqModelBinding,
 } from '../common/qaap-qaiq-model-binding';
@@ -975,7 +976,7 @@ export class QaapAgentTaskRunner {
             : '';
         const joinQaiqFlags = (...parts: string[]): string => parts.map(part => part.trim()).filter(Boolean).join(' ');
         if (agentModel?.provider && agentModel.modelId?.trim()) {
-            const binding = bindingFromQaiqModelSelection(agentModel);
+            const binding = this.normalizeAgentBinding(bindingFromQaiqModelSelection(agentModel));
             const flags = formatModelFlagsForAgent(agentId, binding);
             if (agentId === QAIQ_AGENT_ID) {
                 return { qaiq_flags: joinQaiqFlags(qaiqInteractionFlags, flags), model_flags: '' };
@@ -1011,12 +1012,20 @@ export class QaapAgentTaskRunner {
     protected resolveAgentBindingForTask(task: QaapAgentTask): QaapQaiqModelBinding | undefined {
         const selected = resolveTaskAgentModel(task);
         if (selected?.provider && selected.modelId?.trim()) {
-            return bindingFromQaiqModelSelection(selected);
+            return this.normalizeAgentBinding(bindingFromQaiqModelSelection(selected));
         }
         if (this.isQaiqRunner(undefined, task.command)) {
-            return this.resolveQaapQaiqBinding();
+            const binding = this.resolveQaapQaiqBinding();
+            return binding ? this.normalizeAgentBinding(binding) : undefined;
         }
         return undefined;
+    }
+
+    protected normalizeAgentBinding(binding: QaapQaiqModelBinding): QaapQaiqModelBinding {
+        if (!this.preferenceService) {
+            return binding;
+        }
+        return normalizeQaiqModelBinding(binding, key => this.preferenceService!.get(key));
     }
 
     protected previewProviderEnv(): NodeJS.ProcessEnv {
@@ -1497,6 +1506,23 @@ export class QaapAgentTaskRunner {
      * (/root/.openclaude.json, .openclaude-profile.json) cannot override the provider
      * the user configured in QAAP Settings.
      */
+    /** Map OpenAI-compat credentials for explicit picker bindings (HF / OpenRouter / NVIDIA / official). */
+    protected applyOpenAiVendorCompatEnv(env: NodeJS.ProcessEnv, binding: QaapQaiqModelBinding): void {
+        switch (binding.vendor) {
+            case 'huggingface':
+                this.applyHuggingfaceOpenAiCompatEnv(env);
+                break;
+            case 'openrouter':
+                this.applyOpenRouterOpenAiCompatEnv(env);
+                break;
+            case 'nvidia':
+                this.applyNvidiaOpenAiCompatEnv(env);
+                break;
+            default:
+                break;
+        }
+    }
+
     protected applyQaiqProviderEnv(env: NodeJS.ProcessEnv, command: string, binding?: QaapQaiqModelBinding): void {
         if (!this.isQaiqRunner(undefined, command)) {
             return;
@@ -1509,13 +1535,19 @@ export class QaapAgentTaskRunner {
         if (usesThirdPartyProvider) {
             delete env.ANTHROPIC_API_KEY;
         }
-        if (binding?.vendor === 'openrouter' || (command.includes('--provider openai') && env.OPENROUTER_API_KEY?.trim())) {
+        if (binding?.vendor === 'openrouter' || (!binding && command.includes('--provider openai') && env.OPENROUTER_API_KEY?.trim())) {
             this.applyOpenRouterOpenAiCompatEnv(env);
             env.CLAUDE_CODE_USE_OPENAI = '1';
-        } else if (binding?.vendor === 'nvidia' || (command.includes('--provider openai') && env.NVIDIA_API_KEY?.trim() && !env.OPENROUTER_API_KEY?.trim())) {
+        } else if (binding?.vendor === 'nvidia' || (!binding && command.includes('--provider openai') && env.NVIDIA_API_KEY?.trim() && !env.OPENROUTER_API_KEY?.trim())) {
             this.applyNvidiaOpenAiCompatEnv(env);
             env.CLAUDE_CODE_USE_OPENAI = '1';
-        } else if (command.includes('--provider openai') && env.OPENAI_API_KEY?.trim()) {
+        } else if (binding?.vendor === 'huggingface') {
+            this.applyHuggingfaceOpenAiCompatEnv(env);
+            env.CLAUDE_CODE_USE_OPENAI = '1';
+        } else if (!binding && command.includes('--provider openai') && env.OPENAI_API_KEY?.trim()) {
+            env.CLAUDE_CODE_USE_OPENAI = '1';
+        } else if (binding?.provider === 'openai') {
+            this.applyOpenAiVendorCompatEnv(env, binding);
             env.CLAUDE_CODE_USE_OPENAI = '1';
         } else {
             // Gemini, Ollama, Anthropic, Mistral — profile files must not force OpenAI mode.
@@ -1560,6 +1592,19 @@ export class QaapAgentTaskRunner {
             env.OPENAI_BASE_URL = 'https://integrate.api.nvidia.com/v1';
         }
         env.NVIDIA_NIM = '1';
+    }
+
+    /** QAIQ's OpenAI provider reads OPENAI_*; map Hugging Face Inference Router prefs when needed. */
+    protected applyHuggingfaceOpenAiCompatEnv(env: NodeJS.ProcessEnv): void {
+        const hfKey = env.HUGGINGFACE_API_KEY?.trim() || env.HF_TOKEN?.trim();
+        if (!hfKey) {
+            return;
+        }
+        env.HUGGINGFACE_API_KEY = hfKey;
+        env.HF_TOKEN = hfKey;
+        env.OPENAI_API_KEY = hfKey;
+        env.OPENAI_BASE_URL = 'https://router.huggingface.co/v1';
+        delete env.NVIDIA_NIM;
     }
 
     /**

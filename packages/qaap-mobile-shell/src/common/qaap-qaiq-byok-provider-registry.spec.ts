@@ -4,6 +4,7 @@ import {
     findQaiqByokProvider,
     formatQaiqModelProviderLabel,
     parseTheiaLanguageModelId,
+    resolveVendorForModelId,
 } from './qaap-qaiq-byok-provider-registry';
 
 describe('qaap-qaiq-byok-provider-registry', () => {
@@ -27,5 +28,22 @@ describe('qaap-qaiq-byok-provider-registry', () => {
             return undefined;
         });
         expect(env.HUGGINGFACE_API_KEY).to.equal('hf_test');
+        expect(env.HF_TOKEN).to.equal('hf_test');
+        expect(env.OPENAI_API_KEY).to.equal('hf_test');
+        expect(env.OPENAI_BASE_URL).to.equal('https://router.huggingface.co/v1');
+    });
+
+    it('resolveVendorForModelId maps bare Hugging Face model ids from Settings lists', () => {
+        const readPref = (key: string): unknown => {
+            if (key === 'ai-features.huggingFace.apiKey') {
+                return 'hf_test';
+            }
+            if (key === 'ai-features.huggingFace.models') {
+                return ['Qwen/Qwen3-Coder-Next', 'meta-llama/Llama-3.2-3B-Instruct'];
+            }
+            return undefined;
+        };
+        expect(resolveVendorForModelId(readPref, 'Qwen/Qwen3-Coder-Next')).to.equal('huggingface');
+        expect(resolveVendorForModelId(readPref, 'huggingface/Qwen/Qwen3-Coder-Next')).to.equal('huggingface');
     });
 });

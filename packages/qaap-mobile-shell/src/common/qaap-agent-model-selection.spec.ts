@@ -10,6 +10,7 @@ import {
     agentUsesSettingsModelCatalog,
     isStoredAgentModelUsable,
     readStoredAgentModel,
+    resolveAgentModelForSubmit,
     writeStoredAgentModel,
 } from './qaap-agent-model-selection';
 import { QAIQ_AGENT_ID, SHELL_AGENT_ID, THEIA_CODER_AGENT_ID } from './qaap-agent-task-client';
@@ -64,5 +65,14 @@ describe('qaap-agent-model-selection', () => {
         writeStoredAgentModel(cwd, 'aider', aiderModel);
         expect(readStoredAgentModel(cwd, QAIQ_AGENT_ID)).to.deep.equal(qaiqModel);
         expect(readStoredAgentModel(cwd, 'aider')).to.deep.equal(aiderModel);
+    });
+
+    it('resolveAgentModelForSubmit prefers explicit runtime model over stored default', () => {
+        const cwd = '/repo/a';
+        const stored = { provider: 'openai' as const, vendor: 'openrouter', modelId: 'stored/model' };
+        const runtime = { provider: 'anthropic' as const, vendor: 'anthropic', modelId: 'claude-sonnet-4' };
+        writeStoredAgentModel(cwd, 'opencode', stored);
+        expect(resolveAgentModelForSubmit('opencode', cwd, runtime)).to.deep.equal(runtime);
+        expect(resolveAgentModelForSubmit('opencode', cwd)).to.deep.equal(stored);
     });
 });

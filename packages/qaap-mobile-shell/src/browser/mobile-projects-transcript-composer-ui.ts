@@ -20,6 +20,7 @@ import {
     agentSupportsModelPicker,
     THEIA_CODER_AGENT_ID,
     writeStoredAgent,
+    writeStoredAgentModel,
     type QaapAgentTaskAgentOption,
     type QaapCreateAgentTaskQaiqModel,
     type QaapQaiqModelOption,
@@ -284,6 +285,9 @@ export class MobileProjectsTranscriptComposerUi {
                     this.host.transcriptComposerAgentModel = model;
                     if (cwd) {
                         writeStoredAgent(cwd, agentId);
+                        if (model) {
+                            writeStoredAgentModel(cwd, agentId, model);
+                        }
                     }
                     const modes = resolveStickyComposerModes(agentId, this.host.chatAgentService);
                     this.host.transcriptComposerModeId = reconcileComposerModeId(undefined, modes, cwd);

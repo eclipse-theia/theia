@@ -29,7 +29,7 @@ export interface QaapQaiqByokProviderDescriptor {
     /** Env vars injected when this vendor is selected at runtime. */
     readonly credentialEnv?: readonly {
         readonly env: string;
-        readonly pref: string;
+        readonly pref?: string;
         readonly defaultValue?: string;
     }[];
 }
@@ -134,7 +134,12 @@ export const QAAP_QAIQ_BYOK_PROVIDERS: readonly QaapQaiqByokProviderDescriptor[]
         modelListPrefs: ['ai-features.huggingFace.models'],
         fallbackModels: HUGGINGFACE_FALLBACK_MODELS,
         label: 'Hugging Face',
-        credentialEnv: [{ env: 'HUGGINGFACE_API_KEY', pref: 'ai-features.huggingFace.apiKey' }],
+        credentialEnv: [
+            { env: 'HUGGINGFACE_API_KEY', pref: 'ai-features.huggingFace.apiKey' },
+            { env: 'HF_TOKEN', pref: 'ai-features.huggingFace.apiKey' },
+            { env: 'OPENAI_API_KEY', pref: 'ai-features.huggingFace.apiKey' },
+            { env: 'OPENAI_BASE_URL', defaultValue: 'https://router.huggingface.co/v1' },
+        ],
     },
 ];
 
@@ -287,6 +292,28 @@ export function listByokModelsFromDescriptor(
     }));
 }
 
+export function resolveVendorForModelId(
+    readPref: QaapPreferenceReader,
+    modelId: string,
+): string | undefined {
+    const trimmed = modelId.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+    const parsed = parseTheiaLanguageModelId(trimmed);
+    if (parsed && parsed.vendor !== 'unknown') {
+        return parsed.vendor;
+    }
+    const bareModelId = parsed?.modelId ?? trimmed;
+    for (const provider of QAAP_QAIQ_BYOK_PROVIDERS) {
+        const ids = listByokModelIds(readPref, provider);
+        if (ids.some(id => id === bareModelId || id === trimmed)) {
+            return provider.vendor;
+        }
+    }
+    return undefined;
+}
+
 export function parseTheiaLanguageModelId(raw: string | undefined): QaapQaiqModelOption | undefined {
     const trimmed = raw?.trim();
     if (!trimmed) {
@@ -331,7 +358,7 @@ export function applyByokCredentialEnv(
         return;
     }
     for (const mapping of descriptor.credentialEnv) {
-        const value = readString(readPref, mapping.pref) ?? mapping.defaultValue;
+        const value = (mapping.pref ? readString(readPref, mapping.pref) : undefined) ?? mapping.defaultValue;
         if (value) {
             env[mapping.env] = value;
         }

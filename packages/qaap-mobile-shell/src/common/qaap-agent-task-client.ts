@@ -23,6 +23,7 @@ export {
     agentUsesSettingsModelCatalog,
     isSameAgentModel,
     readStoredAgentModel,
+    resolveAgentModelForSubmit,
     resolveStoredAgentModelForSubmit,
     writeStoredAgentModel,
 } from './qaap-agent-model-selection';

@@ -162,9 +162,24 @@ export function isSameAgentModel(
         && stored.modelId === model.modelId;
 }
 
+/** Prefer an in-memory / conversation selection; fall back to project-scoped localStorage. */
+export function resolveAgentModelForSubmit(
+    agentId: string | undefined,
+    cwd: string | undefined,
+    explicitModel?: QaapAgentModelSelection | undefined,
+): QaapAgentModelSelection | undefined {
+    if (!agentId || !agentSupportsModelPicker(agentId)) {
+        return undefined;
+    }
+    if (explicitModel && isStoredAgentModelUsable(explicitModel)) {
+        return explicitModel;
+    }
+    return readStoredAgentModel(cwd, agentId);
+}
+
 export function resolveStoredAgentModelForSubmit(
     agentId: string | undefined,
     cwd: string | undefined,
 ): QaapAgentModelSelection | undefined {
-    return readStoredAgentModel(cwd, agentId);
+    return resolveAgentModelForSubmit(agentId, cwd);
 }

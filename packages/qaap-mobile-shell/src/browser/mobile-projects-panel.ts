@@ -1224,6 +1224,8 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+            worktree?: boolean;
+            agentModel?: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel;
         } = {},
     ): Promise<void> {
         await this.backgroundTaskUi.submitBackgroundAgentTask(project, draft, options);
@@ -1242,6 +1244,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
             capabilityOverrides?: Record<string, boolean>;
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+            agentModel?: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel;
         },
     ): Promise<QaapAgentConversationSummaryDTO> {
         return this.backgroundTaskUi.createProjectChatSession(project, cwd, draft, options);
@@ -1308,6 +1311,7 @@ export class MobileProjectsPanel implements WorkHubTranscriptBridge {
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: AIVariableResolutionRequest[];
             widget?: AIChatInputWidget;
+            agentModel?: import('../common/qaap-agent-task-client').QaapCreateAgentTaskQaiqModel;
         } = {},
     ): Promise<void> {
         return this.transcriptSubmitUi.submitTranscriptViaBackendConversation(project, summary, content, options);

@@ -9,6 +9,7 @@ import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatModel, ChatService } from '@theia/ai-chat';
 import {
     THEIA_CODER_AGENT_ID,
+    readStoredAgentModel,
     resolveExplicitAgentForSubmit,
 } from '../common/qaap-agent-task-client';
 import {
@@ -286,6 +287,7 @@ export class MobileProjectsStickyComposerRenderUi {
                     approvalPolicyId: showApprovalPolicy
                         ? reconcileAgentApprovalPolicyId(this.host.stickyComposerApprovalPolicyId, cwd)
                         : undefined,
+                    agentModel: readStoredAgentModel(cwd, selectedAgentId),
                 });
                 void done.finally(() => this.renderStickyComposer());
             },

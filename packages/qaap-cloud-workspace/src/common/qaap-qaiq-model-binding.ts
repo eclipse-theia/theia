@@ -7,6 +7,7 @@ import {
     applyByokCredentialEnv,
     parseTheiaLanguageModelId as parseRegistryLanguageModelId,
     QAAP_QAIQ_BYOK_PROVIDERS,
+    resolveVendorForModelId,
     type QaapPreferenceReader,
 } from '@theia/qaap-mobile-shell/lib/common/qaap-qaiq-byok-provider-registry';
 
@@ -101,13 +102,26 @@ export function bindingFromQaiqModelSelection(model: {
     readonly provider: QaapQaiqProviderId;
     readonly vendor: string;
     readonly modelId: string;
-}): QaapQaiqModelBinding {
-    return {
+}, readPref?: QaapPreferenceReader): QaapQaiqModelBinding {
+    const binding: QaapQaiqModelBinding = {
         provider: model.provider,
         vendor: (model.vendor?.trim() || 'unknown') as QaapModelVendor,
         modelId: model.modelId.trim(),
         contextWindow: DEFAULT_QAAP_MODEL_CONTEXT_WINDOW,
     };
+    return readPref ? normalizeQaiqModelBinding(binding, readPref) : binding;
+}
+
+/** Infer vendor from Settings model lists when the client only sent modelId. */
+export function normalizeQaiqModelBinding(
+    binding: QaapQaiqModelBinding,
+    readPref: QaapPreferenceReader,
+): QaapQaiqModelBinding {
+    if (binding.vendor && binding.vendor !== 'unknown') {
+        return binding;
+    }
+    const vendor = resolveVendorForModelId(readPref, binding.modelId);
+    return vendor ? { ...binding, vendor: vendor as QaapModelVendor } : binding;
 }
 
 export function formatQaiqProviderFlags(binding: QaapQaiqModelBinding): string {

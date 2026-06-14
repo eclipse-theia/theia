@@ -22,10 +22,11 @@ import {
     isTheiaCoderMention,
     QAAP_COMPOSER_DEFAULT_AGENT_ID,
     readStoredAgent,
+    resolveAgentModelForSubmit,
     resolveBackendAgentForTurn,
-    resolveStoredAgentModelForSubmit,
     writeStoredAgent,
     type QaapAgentTaskListSnapshot,
+    type QaapCreateAgentTaskQaiqModel,
 } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt } from '../common/qaap-sticky-composer-mode';
 import { reconcileAgentApprovalPolicyId } from '../common/qaap-sticky-composer-approval-policy';
@@ -94,6 +95,7 @@ export class MobileProjectsBackgroundTaskUi {
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
             /** Run the task in a fresh isolated git worktree instead of the project's working tree. */
             worktree?: boolean;
+            agentModel?: QaapCreateAgentTaskQaiqModel;
         } = {},
     ): Promise<void> {
         const cwd = await this.ensureInlineComposerCwd(project);
@@ -139,11 +141,12 @@ export class MobileProjectsBackgroundTaskUi {
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
             worktree?: boolean;
+            agentModel?: QaapCreateAgentTaskQaiqModel;
         },
     ): Promise<QaapAgentConversationSummaryDTO> {
         const agent = await this.selectBackendConversationAgent(cwd, draft, options.selectedAgentId ?? QAAP_COMPOSER_DEFAULT_AGENT_ID);
         const message = applyBackendInteractionModeToPrompt(draft, options.modeId);
-        const agentModel = resolveStoredAgentModelForSubmit(agent, cwd);
+        const agentModel = resolveAgentModelForSubmit(agent, cwd, options.agentModel);
         const approvalPolicyId = options.approvalPolicyId
             ?? reconcileAgentApprovalPolicyId(undefined, cwd);
         const contextPreamble = await this.host.backgroundContext?.resolve({

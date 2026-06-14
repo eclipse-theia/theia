@@ -14,8 +14,9 @@ import {
     type QaapAgentConversationSummaryDTO,
 } from '../common/qaap-agent-conversation-client';
 import {
+    resolveAgentModelForSubmit,
     resolveExplicitAgentForSubmit,
-    resolveStoredAgentModelForSubmit,
+    type QaapCreateAgentTaskQaiqModel,
 } from '../common/qaap-agent-task-client';
 import { applyBackendInteractionModeToPrompt } from '../common/qaap-sticky-composer-mode';
 import {
@@ -43,6 +44,7 @@ export interface MobileProjectsTranscriptSubmitHost {
     transcriptLastFingerprint: string | undefined;
     transcriptComposerApprovalPolicyId: QaapAgentApprovalPolicyId | undefined;
     transcriptComposerToolApprovalRules: QaapAgentToolApprovalRules | undefined;
+    transcriptComposerAgentModel: QaapCreateAgentTaskQaiqModel | undefined;
     conversations: MobileProjectsConversations | undefined;
     transcriptMessagesUi: MobileProjectsTranscriptMessagesUi;
     transcriptLiveUi: MobileProjectsTranscriptLiveUi;
@@ -59,6 +61,7 @@ export interface MobileProjectsTranscriptSubmitHost {
             autoApprove?: boolean;
             approvalPolicyId?: string;
             variables?: AIVariableResolutionRequest[];
+            agentModel?: QaapCreateAgentTaskQaiqModel;
         },
     ): Promise<QaapAgentConversationSummaryDTO>;
     resolveActiveTranscriptChatHost(): HTMLElement | undefined;
@@ -69,6 +72,17 @@ export interface MobileProjectsTranscriptSubmitHost {
 export class MobileProjectsTranscriptSubmitUi {
 
     constructor(protected readonly host: MobileProjectsTranscriptSubmitHost) { }
+
+    protected resolveTranscriptSubmitAgentModel(
+        agent: string | undefined,
+        summary: QaapAgentConversationSummaryDTO,
+    ): QaapCreateAgentTaskQaiqModel | undefined {
+        const composerActive = this.host.transcriptComposerSummary?.id === summary.id;
+        const explicitModel = composerActive
+            ? (this.host.transcriptComposerAgentModel ?? summary.agentModel ?? summary.qaiqModel)
+            : (summary.agentModel ?? summary.qaiqModel);
+        return resolveAgentModelForSubmit(agent, summary.cwd, explicitModel);
+    }
 
     protected shouldRenderTranscriptSubmit(summary: QaapAgentConversationSummaryDTO): boolean {
         if (this.host.transcriptOpenSummaryId === summary.id) {
@@ -132,9 +146,13 @@ export class MobileProjectsTranscriptSubmitUi {
             genericCapabilitySelections?: GenericCapabilitySelections;
             variables?: AIVariableResolutionRequest[];
             widget?: AIChatInputWidget;
+            agentModel?: QaapCreateAgentTaskQaiqModel;
         } = {},
     ): Promise<void> {
         if (this.host.transcriptHeaderUi.isPendingNewChatSummary(summary)) {
+            const pendingAgent = resolveExplicitAgentForSubmit(content, {
+                pinnedChatAgentId: options.selectedAgentId ?? options.widget?.pinnedAgent?.id ?? summary.agentId,
+            }) ?? options.selectedAgentId ?? summary.agentId;
             this.renderInstantSubmitOptimistic(summary, {
                 id: `pending-user-${Date.now()}`,
                 role: 'user',
@@ -147,6 +165,7 @@ export class MobileProjectsTranscriptSubmitUi {
                 autoApprove: options.autoApprove,
                 approvalPolicyId: options.approvalPolicyId,
                 variables: options.variables,
+                agentModel: options.agentModel ?? this.resolveTranscriptSubmitAgentModel(pendingAgent, summary),
             });
             this.host.transcriptOpenSummaryId = created.id;
             this.host.transcriptOpenSummary = created;
@@ -198,7 +217,7 @@ export class MobileProjectsTranscriptSubmitUi {
             this.renderTranscriptSubmitMessages(activeChatHost, optimistic, summary);
         }
         try {
-            const agentModel = resolveStoredAgentModelForSubmit(agent, summary.cwd);
+            const agentModel = options.agentModel ?? this.resolveTranscriptSubmitAgentModel(agent, summary);
             const updated = await postConversationMessage(summary.id, outbound, {
                 agent,
                 agentModel,

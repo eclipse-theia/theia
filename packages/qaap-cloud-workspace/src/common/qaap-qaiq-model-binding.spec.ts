@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
     bindingFromQaiqModelSelection,
     formatQaiqProviderFlags,
+    normalizeQaiqModelBinding,
     parseTheiaLanguageModelId,
     resolveQaapQaiqModelBinding,
 } from './qaap-qaiq-model-binding';
@@ -122,6 +123,24 @@ describe('bindingFromQaiqModelSelection', () => {
         expect(formatQaiqProviderFlags(binding)).to.equal(
             '--provider openai --model nvidia/nemotron-3-super-120b-a12b:free',
         );
+    });
+
+    it('infers huggingface vendor from Settings when only modelId was sent', () => {
+        const readPref = (key: string): unknown => {
+            if (key === 'ai-features.huggingFace.apiKey') {
+                return 'hf_test';
+            }
+            if (key === 'ai-features.huggingFace.models') {
+                return ['Qwen/Qwen3-Coder-Next'];
+            }
+            return undefined;
+        };
+        const binding = normalizeQaiqModelBinding(bindingFromQaiqModelSelection({
+            provider: 'openai',
+            vendor: 'unknown',
+            modelId: 'Qwen/Qwen3-Coder-Next',
+        }), readPref);
+        expect(binding.vendor).to.equal('huggingface');
     });
 });
 
