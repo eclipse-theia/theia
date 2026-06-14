@@ -82,6 +82,14 @@ import {
     shouldQueueTask,
 } from '../common/qaap-agent-task-repo-queue';
 import { QaapAgentProcessSupervisor } from './qaap-agent-process-supervisor';
+import { scheduleProcessTreeKillByPid } from './qaap-agent-process-kill';
+import { resolveKillGraceMs } from '../common/qaap-agent-process-limits';
+import {
+    isAgentProcessAlive,
+    removeRunningTaskSnapshot,
+    upsertRunningTaskSnapshot,
+    type QaapAgentRunningTaskSnapshotIndex,
+} from '../common/qaap-agent-task-running-snapshot';
 import {
     applyAntigravityModelSetting,
     isAntigravityCliCommand,
@@ -143,6 +151,10 @@ const STORE_DIR = path.join(os.homedir(), '.qaap', 'agent-tasks');
 const INDEX_PATH = path.join(STORE_DIR, 'index.json');
 /** Serialized create requests for tasks waiting in the per-repo queue. */
 const QUEUE_SPAWNS_PATH = path.join(STORE_DIR, 'queue-spawns.json');
+/** Live process metadata for tasks that may survive a backend restart. */
+const RUNNING_SNAPSHOTS_PATH = path.join(STORE_DIR, 'running-tasks.json');
+const DETACHED_LOG_POLL_MS = 2_000;
+const SNAPSHOT_PERSIST_DEBOUNCE_MS = 5_000;
 /** Cap returned log size so a runaway task cannot blow up the response. */
 const MAX_LOG_BYTES = 512 * 1024;
 /**
@@ -284,6 +296,13 @@ export class QaapAgentTaskRunner {
     protected readonly probedAgentBins = new Set<string>();
     /** Create payloads for {@link QaapAgentTaskState.queued} tasks — restored from disk on startup. */
     protected readonly pendingSpawnRequests = new Map<string, QaapCreateAgentTaskRequest>();
+    /** Pids re-attached after backend restart when the agent process is still alive. */
+    protected readonly externalPids = new Map<string, number>();
+    /** Byte offset already streamed for detached log tailers. */
+    protected readonly logTailOffsets = new Map<string, number>();
+    protected readonly detachedLogWatchers = new Map<string, NodeJS.Timeout>();
+    protected runningSnapshots: QaapAgentRunningTaskSnapshotIndex = {};
+    protected snapshotPersistTimer: NodeJS.Timeout | undefined;
 
     protected readonly onDidChangeTaskEmitter = new Emitter<QaapAgentTaskEvent>();
     /**
@@ -547,6 +566,7 @@ export class QaapAgentTaskRunner {
         }
         await this.restorePendingSpawnsFromDisk();
         this.drainAllQueues();
+        await this.reattachSurvivingProcesses();
     }
 
     protected maxConcurrentPerRepo(): number {
@@ -628,6 +648,180 @@ export class QaapAgentTaskRunner {
             autoApprove: task.autoApprove,
             ...(agentModel ? { agentModel, qaiqModel: agentModel } : {}),
         };
+    }
+
+    protected async loadRunningSnapshotsFromDisk(): Promise<QaapAgentRunningTaskSnapshotIndex> {
+        try {
+            const raw = await fsp.readFile(RUNNING_SNAPSHOTS_PATH, 'utf8');
+            return JSON.parse(raw) as QaapAgentRunningTaskSnapshotIndex;
+        } catch {
+            return {};
+        }
+    }
+
+    protected scheduleRunningSnapshotPersist(): void {
+        if (this.snapshotPersistTimer) {
+            return;
+        }
+        this.snapshotPersistTimer = setTimeout(() => {
+            this.snapshotPersistTimer = undefined;
+            void this.persistRunningSnapshots();
+        }, SNAPSHOT_PERSIST_DEBOUNCE_MS);
+    }
+
+    protected async persistRunningSnapshots(): Promise<void> {
+        try {
+            await fsp.mkdir(STORE_DIR, { recursive: true });
+            await fsp.writeFile(RUNNING_SNAPSHOTS_PATH, JSON.stringify(this.runningSnapshots, undefined, 2), 'utf8');
+        } catch {
+            /* persistence is best-effort */
+        }
+    }
+
+    protected registerRunningSnapshot(task: QaapAgentTask, pid: number | undefined, logBytes = 0): void {
+        if (!pid) {
+            return;
+        }
+        this.runningSnapshots = upsertRunningTaskSnapshot(this.runningSnapshots, {
+            taskId: task.id,
+            pid,
+            logBytes,
+            updatedAt: Date.now(),
+            cwd: task.cwd,
+        });
+        this.scheduleRunningSnapshotPersist();
+    }
+
+    protected async touchRunningSnapshotLog(taskId: string): Promise<void> {
+        const snapshot = this.runningSnapshots[taskId];
+        if (!snapshot) {
+            return;
+        }
+        try {
+            const stat = await fsp.stat(this.logPath(taskId));
+            if (stat.size === snapshot.logBytes) {
+                return;
+            }
+            this.runningSnapshots = upsertRunningTaskSnapshot(this.runningSnapshots, {
+                ...snapshot,
+                logBytes: stat.size,
+                updatedAt: Date.now(),
+            });
+            this.scheduleRunningSnapshotPersist();
+        } catch {
+            /* log not created yet */
+        }
+    }
+
+    protected unregisterRunningSnapshot(taskId: string): void {
+        this.runningSnapshots = removeRunningTaskSnapshot(this.runningSnapshots, taskId);
+        void this.persistRunningSnapshots();
+    }
+
+    protected async reattachSurvivingProcesses(): Promise<void> {
+        this.runningSnapshots = await this.loadRunningSnapshotsFromDisk();
+        for (const snapshot of Object.values(this.runningSnapshots)) {
+            const task = this.tasks.get(snapshot.taskId);
+            if (!task || task.state !== 'interrupted' || !isAgentProcessAlive(snapshot.pid)) {
+                continue;
+            }
+            const running: QaapAgentTask = { ...task, state: 'running' };
+            this.tasks.set(snapshot.taskId, running);
+            this.externalPids.set(snapshot.taskId, snapshot.pid);
+            this.logTailOffsets.set(snapshot.taskId, snapshot.logBytes);
+            void this.persist();
+            this.onDidChangeTaskEmitter.fire({ type: 'created', task: running });
+            this.startDetachedLogWatch(snapshot.taskId, snapshot.pid);
+        }
+    }
+
+    protected startDetachedLogWatch(taskId: string, pid: number): void {
+        this.stopDetachedLogWatch(taskId);
+        const stub = { pid } as ChildProcess;
+        const processWatch = this.processSupervisor.startWatch(taskId, stub, {
+            isStillRunning: () => this.tasks.get(taskId)?.state === 'running',
+            isIdlePaused: () => false,
+            onTimeout: (_reason, message) => {
+                if (!this.externalPids.has(taskId)) {
+                    return;
+                }
+                void this.failDetachedTask(taskId, pid, message);
+            },
+        });
+        const timer = setInterval(() => {
+            void this.pollDetachedLog(taskId, pid, processWatch);
+        }, DETACHED_LOG_POLL_MS);
+        this.detachedLogWatchers.set(taskId, timer);
+    }
+
+    protected stopDetachedLogWatch(taskId: string): void {
+        const timer = this.detachedLogWatchers.get(taskId);
+        if (timer) {
+            clearInterval(timer);
+            this.detachedLogWatchers.delete(taskId);
+        }
+        this.processSupervisor.release(taskId);
+    }
+
+    protected async pollDetachedLog(
+        taskId: string,
+        pid: number,
+        processWatch: { bumpIdleTimer: () => void; release: () => void },
+    ): Promise<void> {
+        const task = this.tasks.get(taskId);
+        if (!task || task.state !== 'running') {
+            this.stopDetachedLogWatch(taskId);
+            return;
+        }
+        if (!isAgentProcessAlive(pid)) {
+            this.externalPids.delete(taskId);
+            this.stopDetachedLogWatch(taskId);
+            this.unregisterRunningSnapshot(taskId);
+            this.finishTask(taskId, 'failed', undefined);
+            return;
+        }
+        try {
+            const logPath = this.logPath(taskId);
+            const stat = await fsp.stat(logPath);
+            const offset = this.logTailOffsets.get(taskId) ?? 0;
+            if (stat.size <= offset) {
+                return;
+            }
+            const length = Math.min(stat.size - offset, MAX_LOG_BYTES);
+            const handle = await fsp.open(logPath, 'r');
+            try {
+                const { buffer, bytesRead } = await handle.read({
+                    buffer: Buffer.alloc(length),
+                    position: offset,
+                });
+                if (bytesRead > 0) {
+                    this.logTailOffsets.set(taskId, offset + bytesRead);
+                    processWatch.bumpIdleTimer();
+                    this.fireOutput(taskId, buffer.subarray(0, bytesRead));
+                    void this.touchRunningSnapshotLog(taskId);
+                }
+            } finally {
+                await handle.close();
+            }
+        } catch {
+            /* log not readable yet */
+        }
+    }
+
+    protected async failDetachedTask(taskId: string, pid: number, message: string): Promise<void> {
+        if (this.tasks.get(taskId)?.state !== 'running') {
+            return;
+        }
+        try {
+            await fsp.appendFile(this.logPath(taskId), `\n[qaap] ${message}\n`, 'utf8');
+        } catch {
+            /* ignore */
+        }
+        scheduleProcessTreeKillByPid(pid, resolveKillGraceMs(process.env));
+        this.externalPids.delete(taskId);
+        this.stopDetachedLogWatch(taskId);
+        this.unregisterRunningSnapshot(taskId);
+        this.finishTask(taskId, 'failed', undefined);
     }
 
     list(): QaapAgentTask[] {
@@ -1206,9 +1400,15 @@ export class QaapAgentTaskRunner {
             void this.persistPendingSpawns();
             return this.finishTask(id, 'cancelled', undefined);
         }
-        const process = this.processes.get(id);
-        if (process) {
-            this.processSupervisor.terminate(id, process);
+        const child = this.processes.get(id);
+        const externalPid = this.externalPids.get(id);
+        if (child) {
+            this.processSupervisor.terminate(id, child);
+        } else if (externalPid) {
+            scheduleProcessTreeKillByPid(externalPid, resolveKillGraceMs(process.env));
+            this.externalPids.delete(id);
+            this.stopDetachedLogWatch(id);
+            this.unregisterRunningSnapshot(id);
         }
         if (task && task.state === 'running') {
             return this.finishTask(id, 'cancelled', undefined);
@@ -1442,6 +1642,7 @@ export class QaapAgentTaskRunner {
             return;
         }
         this.processes.set(task.id, child);
+        this.registerRunningSnapshot(task, child.pid);
         if (stdinInteractive) {
             this.stdinInteractiveTasks.add(task.id);
         }
@@ -1527,6 +1728,7 @@ export class QaapAgentTaskRunner {
             processWatch.bumpIdleTimer();
             logStream.write(chunk);
             this.fireOutput(task.id, chunk);
+            void this.touchRunningSnapshotLog(task.id);
             if (stdioPrompt !== undefined) {
                 scanStdioApprovalChunk(chunk);
             }
@@ -1535,12 +1737,14 @@ export class QaapAgentTaskRunner {
             processWatch.bumpIdleTimer();
             logStream.write(chunk);
             this.fireOutput(task.id, chunk);
+            void this.touchRunningSnapshotLog(task.id);
         });
         child.on('error', error => {
             logStream.write(`\n[qaap] process error: ${error.message}\n`);
         });
         child.on('close', code => {
             processWatch.release();
+            this.unregisterRunningSnapshot(task.id);
             finishAntigravitySettings();
             logStream.end();
             this.processes.delete(task.id);
