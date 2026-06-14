@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { normalizePreviewUrlForSameOrigin, parsePreviewProxyPath } from '@theia/qaap-adapters/lib/browser/qaap-preview-url-utils';
+import { resolveDevPreviewPublicOrigin } from '../common/qaap-dev-preview';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { probeQaapDevPreviewPort, waitForQaapDevPreviewPort } from './qaap-dev-preview-client';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
@@ -26,7 +27,7 @@ export function extractDevPreviewPortFromUrl(url: string | undefined): number | 
         return undefined;
     }
     try {
-        const parsed = new URL(url.trim(), typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+        const parsed = new URL(url.trim(), resolveDevPreviewPublicOrigin());
         const proxy = parsePreviewProxyPath(parsed.pathname);
         if (proxy) {
             return proxy.port;

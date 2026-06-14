@@ -4,7 +4,7 @@
 // *****************************************************************************
 
 import type { QaapAgentConversationDTO, QaapAgentMessageSegmentDTO } from './qaap-agent-conversation-client';
-import { buildQaapDevPreviewUrl, parseQaapDevPreviewPort } from './qaap-dev-preview';
+import { buildQaapDevPreviewUrl, parseQaapDevPreviewPort, resolveDevPreviewPublicOrigin } from './qaap-dev-preview';
 
 const DEV_SERVER_COMMAND_RE = /\b(?:pnpm|npm|yarn|bun)\s+(?:run\s+)?(?:dev|start|serve|preview)\b|\b(?:vite|next\s+dev|nuxt\s+dev|astro\s+dev|remix\s+dev)\b|\bnpx\s+vite\b|\bnpx\s+next\b/i;
 const DEV_URL_IN_TEXT_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?):(\d{2,5})(?:\/[^\s`*)\]]*)?/i;
@@ -48,8 +48,7 @@ export function extractDevPreviewUrlFromAgentText(text: string | undefined, orig
     if (port === undefined) {
         return undefined;
     }
-    const base = origin?.trim() || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
-    return buildQaapDevPreviewUrl(base, port);
+    return buildQaapDevPreviewUrl(resolveDevPreviewPublicOrigin(origin), port);
 }
 
 function segmentText(segment: QaapAgentMessageSegmentDTO): string {

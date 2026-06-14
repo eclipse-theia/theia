@@ -30,6 +30,18 @@ export function normalizePublicOrigin(origin: string): string {
     return origin.replace(/\/+$/, '');
 }
 
+/** Qaap IDE origin for preview URLs; falls back to localhost in Node tests without `window.location`. */
+export function resolveDevPreviewPublicOrigin(explicit?: string): string {
+    const trimmed = explicit?.trim();
+    if (trimmed) {
+        return normalizePublicOrigin(trimmed);
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+        return normalizePublicOrigin(window.location.origin);
+    }
+    return 'http://localhost';
+}
+
 export function isLocalQaapPreviewOrigin(publicOrigin: string): boolean {
     try {
         const { hostname } = new URL(normalizePublicOrigin(publicOrigin));
