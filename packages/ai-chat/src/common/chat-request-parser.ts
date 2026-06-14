@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatRequestParser.ts
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
@@ -36,14 +36,15 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './parsed-chat-request';
-import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
 const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
 const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i; // A ~{} prompt-format tool function
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
-const commandReg = /^\/([\w_\-]+)(?:\s+(.+?))?(?=\s*$)/; // A /-command with optional arguments (/commandname arg1 arg2)
+const commandReg = /^\/([\w_\-]+)/; // A /-command (/commandname) with optional arguments parsed separately
+const nextCommandReg = /\s+\/([\w_\-]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
@@ -62,7 +63,8 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
         @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry,
-        @inject(ILogger) private readonly logger: ILogger
+        @inject(ILogger) private readonly logger: ILogger,
+        @inject(PromptService) @optional() private readonly promptService?: PromptService
     ) { }
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
@@ -176,6 +178,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 }
 
                 parts.push(newPart);
+                i = newPart.range.endExclusive - 1;
             }
         }
 
@@ -280,11 +283,41 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             return;
         }
 
-        const [full, commandName, commandArgs] = nextCommandMatch;
-        const commandRange = offsetRange(offset, offset + full.length);
+        const [commandText, commandName] = nextCommandMatch;
+        let commandEnd = commandText.length;
+        let commandArgs: string | undefined;
+
+        const nextCommandOffset = this.findNextCommandOffset(message, commandEnd);
+        const argsEnd = nextCommandOffset ?? message.length;
+        const args = message.slice(commandEnd, argsEnd).trim();
+        if (args) {
+            commandArgs = args;
+            commandEnd = argsEnd;
+        }
+
+        const commandRange = offsetRange(offset, offset + commandEnd);
 
         const variableArg = commandArgs ? `${commandName}|${commandArgs}` : commandName;
         return new ParsedChatRequestVariablePart(commandRange, 'prompt', variableArg);
+    }
+
+    private findNextCommandOffset(message: string, startOffset: number): number | undefined {
+        nextCommandReg.lastIndex = startOffset;
+        let match = nextCommandReg.exec(message);
+        while (match) {
+            const commandName = match[1];
+            if (!this.promptService || this.isKnownCommand(commandName)) {
+                return match.index + match[0].indexOf(chatSubcommandLeader);
+            }
+            match = nextCommandReg.exec(message);
+        }
+        return undefined;
+    }
+
+    private isKnownCommand(commandName: string): boolean {
+        return this.promptService?.getCommands().some(command =>
+            (command.commandName ?? command.id) === commandName
+        ) ?? false;
     }
 
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
