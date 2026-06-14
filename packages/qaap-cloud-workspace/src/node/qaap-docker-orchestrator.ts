@@ -8,6 +8,11 @@ import { FileUri } from '@theia/core/lib/node';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as Dockerode from 'dockerode';
+import {
+    buildDockerWorkspaceContainerEnv,
+    buildDockerWorkspaceHostConfig,
+    resolveDockerWorkspacePolicy,
+} from '../common/qaap-docker-workspace-policy';
 
 const QAAP_CONTAINER_PREFIX = 'qaap-ws-';
 const DEFAULT_IMAGE = process.env.QAAP_DOCKER_IMAGE?.trim() || 'node:20-bookworm';
@@ -41,6 +46,7 @@ export class QaapDockerOrchestrator {
         const hostPath = this.hostPathFromUri(workspaceUri);
         const name = this.containerNameFor(repoKey);
         const docker = await this.getDocker();
+        const policy = resolveDockerWorkspacePolicy(process.env);
         let container: Dockerode.Container;
         try {
             container = docker.getContainer(name);
@@ -49,15 +55,17 @@ export class QaapDockerOrchestrator {
                 await container.start();
             }
         } catch {
+            const hostConfig = buildDockerWorkspaceHostConfig(policy);
             container = await docker.createContainer({
                 name,
                 Image: DEFAULT_IMAGE,
                 Tty: true,
                 WorkingDir: WORKSPACE_MOUNT,
                 Cmd: ['/bin/bash'],
+                Env: buildDockerWorkspaceContainerEnv(policy),
                 HostConfig: {
+                    ...hostConfig,
                     Binds: [`${hostPath}:${WORKSPACE_MOUNT}`],
-                    AutoRemove: false,
                 },
             });
             await container.start();

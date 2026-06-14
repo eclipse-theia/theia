@@ -12,6 +12,16 @@ export QAAP_DOCKER_IMAGE=node:20-bookworm   # optional
 # Docker socket: /var/run/docker.sock (or DOCKER_HOST)
 ```
 
+Optional hardening for each per-repo workspace container:
+
+```bash
+export QAAP_DOCKER_WORKSPACE_MEMORY_MB=1024   # or QAAP_AGENT_MAX_MEMORY_MB
+export QAAP_DOCKER_WORKSPACE_CPUS=1.5         # or QAAP_AGENT_MAX_CPU_PERCENT=150
+export QAAP_DOCKER_NETWORK_MODE=bridge        # bridge | none | host
+```
+
+Limits apply on first container create; remove `qaap-ws-*` containers to pick up changes.
+
 Workspace records include `containerRef` (Docker container id).
 
 ## Electron + dev-container

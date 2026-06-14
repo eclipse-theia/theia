@@ -47,6 +47,16 @@ describe('cwdMatchesProject', () => {
 });
 
 describe('sortTasks', () => {
+    it('puts running tasks before queued ones and queued before completed', () => {
+        const tasks = [
+            { id: 'a', title: 'A', command: '', cwd: '/', state: 'completed', createdAt: 3000 },
+            { id: 'b', title: 'B', command: '', cwd: '/', state: 'queued', createdAt: 2000 },
+            { id: 'c', title: 'C', command: '', cwd: '/', state: 'running', createdAt: 1000 },
+        ];
+        const sorted = sortTasks(tasks);
+        expect(sorted.map(task => task.id)).to.deep.equal(['c', 'b', 'a']);
+    });
+
     it('puts running tasks before completed ones', () => {
         const tasks = [
             { id: 'a', title: 'A', command: '', cwd: '/', state: 'completed', createdAt: 2000 },

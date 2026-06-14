@@ -9,6 +9,8 @@ export const QAAP_AGENT_TASK_API_PATH = '/qaap/api/agent-tasks';
 export type QaapAgentTaskState =
     /** The process is still running on the VPS. */
     | 'running'
+    /** Waiting for a free slot in the same repo cwd — not spawned yet. */
+    | 'queued'
     /** Finished with exit code 0. */
     | 'completed'
     /** Finished with a non-zero exit code or failed to start. */
@@ -183,5 +185,8 @@ export type QaapAgentTaskEvent =
 
 /** True once the task has stopped and will not change state again. */
 export function isQaapAgentTaskFinished(state: QaapAgentTaskState): boolean {
-    return state !== 'running';
+    return state === 'completed'
+        || state === 'failed'
+        || state === 'interrupted'
+        || state === 'cancelled';
 }

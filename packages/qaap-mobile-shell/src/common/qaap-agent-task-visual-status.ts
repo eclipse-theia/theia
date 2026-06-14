@@ -81,6 +81,13 @@ export function resolveQaapAgentTaskVisualStatus(
     if (state === 'failed' || state === 'interrupted' || summary?.status === 'failed') {
         return STATUS_BY_ID['failed'];
     }
+    if (state === 'queued') {
+        return {
+            ...STATUS_BY_ID['idle'],
+            labelKey: 'qaap/mobileProjects/taskStateQueued',
+            label: 'queued',
+        };
+    }
     if (state === 'running' || summary?.status === 'streaming') {
         return STATUS_BY_ID['running'];
     }

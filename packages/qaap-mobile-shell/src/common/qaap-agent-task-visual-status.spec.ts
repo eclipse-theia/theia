@@ -16,6 +16,11 @@ describe('resolveQaapAgentTaskVisualStatus', () => {
         expect(status.id).to.equal('failed');
     });
 
+    it('classifies queued backend tasks as queued', () => {
+        const status = resolveQaapAgentTaskVisualStatus({ state: 'queued' });
+        expect(status.label).to.equal('queued');
+    });
+
     it('classifies running backend or streaming conversation state as running', () => {
         expect(resolveQaapAgentTaskVisualStatus({ state: 'running' }).id).to.equal('running');
         expect(resolveQaapAgentTaskVisualStatus({ state: 'idle' }, { status: 'streaming', messageCount: 1 }).id).to.equal('running');

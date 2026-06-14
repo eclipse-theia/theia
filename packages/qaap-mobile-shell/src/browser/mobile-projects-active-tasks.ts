@@ -258,18 +258,29 @@ export class MobileProjectsActiveTasks {
 
     protected applyEvent(type: 'created' | 'completed' | 'cancelled', task: TaskEventPayload): void {
         const cwd = normalizeCwd(task.cwd);
+        const existing = lookupByCwd(this.tasksByCwd, cwd)?.find(entry => entry.id === task.id);
         this.upsertTaskList({ ...task, cwd });
         const current = lookupByCwd(this.activeByCwd, cwd);
         if (type === 'created') {
-            if (current?.taskId === task.id) {
+            if (task.state === 'queued') {
                 this.onDidChangeEmitter.fire();
                 return;
             }
-            this.activeByCwd.set(cwd, {
-                activeCount: (current?.activeCount ?? 0) + 1,
-                taskId: task.id,
-                title: task.title ?? current?.title,
-            });
+            if (task.state === 'running') {
+                if (existing?.state === 'queued') {
+                    this.activeByCwd.set(cwd, {
+                        activeCount: (current?.activeCount ?? 0) + 1,
+                        taskId: task.id,
+                        title: task.title ?? current?.title,
+                    });
+                } else if (current?.taskId !== task.id) {
+                    this.activeByCwd.set(cwd, {
+                        activeCount: (current?.activeCount ?? 0) + 1,
+                        taskId: task.id,
+                        title: task.title ?? current?.title,
+                    });
+                }
+            }
         } else {
             const nextCount = Math.max(0, (current?.activeCount ?? 1) - 1);
             const tasks = this.getTasksForCwd(cwd);
@@ -391,11 +402,20 @@ export function cwdMatchesProject(
 
 /** @internal Exported for testing. */
 export function sortTasks(tasks: MobileProjectTaskView[]): MobileProjectTaskView[] {
+    const rank = (state: string): number => {
+        if (state === 'running') {
+            return 2;
+        }
+        if (state === 'queued') {
+            return 1;
+        }
+        return 0;
+    };
     return [...tasks].sort((a, b) => {
-        const aRunning = a.state === 'running' ? 1 : 0;
-        const bRunning = b.state === 'running' ? 1 : 0;
-        if (aRunning !== bRunning) {
-            return bRunning - aRunning;
+        const aRank = rank(a.state);
+        const bRank = rank(b.state);
+        if (aRank !== bRank) {
+            return bRank - aRank;
         }
         return b.createdAt - a.createdAt;
     });

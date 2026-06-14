@@ -110,7 +110,45 @@ Tips:
 - Prefer **read-only prompts** for questions; avoid `npm test` unless you need it (failed tests
   trigger QAIQ’s “repeated tool failures” guard after three Bash errors).
 - For Theia monorepos: run `npm run compile` before `npm test`.
-- QAIQ in the container uses `--dangerously-skip-permissions` (single-tenant VPS).
+- QAIQ permission presets (`approve-for-me`, `request-approval`, `full-access`) are applied by the
+  backend — see [qaap-background-agents.md](./qaap-background-agents.md).
+
+## Background agent limits (VPS)
+
+Hosted `@qaiq` / background tasks honour these optional env vars (defaults shown):
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `QAAP_AGENT_MAX_CONCURRENT_PER_REPO` | `1` | Max simultaneous agent processes per repo cwd; extra tasks stay `queued`. |
+| `QAAP_AGENT_IDLE_TIMEOUT_MS` | `1200000` (20 min) | Kill when stdout/stderr is silent too long. |
+| `QAAP_AGENT_WALL_TIMEOUT_MS` | `1800000` (30 min) | Hard wall-clock cap since spawn (alias: `QAAP_AGENT_TASK_TIMEOUT_MS`). |
+| `QAAP_AGENT_KILL_GRACE_MS` | `5000` | Wait after SIGTERM before SIGKILL on the process tree. |
+| `QAAP_AGENT_MAX_MEMORY_MB` | _(unset)_ | Unix soft cap via `ulimit -v` around each agent shell command. |
+
+Example for a 4 GB VPS running one heavy agent at a time:
+
+```bash
+QAAP_AGENT_MAX_CONCURRENT_PER_REPO=1
+QAAP_AGENT_MAX_MEMORY_MB=1024
+QAAP_AGENT_WALL_TIMEOUT_MS=1800000
+```
+
+`QAAP_AGENT_MAX_CPU_PERCENT` is interpreted as percent-of-one-core for Docker workspace
+containers (`150` → `--cpus 1.5`). The Node process supervisor does not cgroup-limit CPU.
+
+### Docker workspace containers (`QAAP_CLOUD_MODE=docker`)
+
+Per-repo workspace containers created by `/qaap/api/cloud/workspaces/ensure` honour:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `QAAP_DOCKER_WORKSPACE_MEMORY_MB` | falls back to `QAAP_AGENT_MAX_MEMORY_MB` | `docker run --memory` |
+| `QAAP_DOCKER_WORKSPACE_CPUS` | falls back to `QAAP_AGENT_MAX_CPU_PERCENT / 100` | `docker run --cpus` |
+| `QAAP_DOCKER_NETWORK_MODE` | `bridge` | `none` isolates network; `host` shares host stack |
+| `QAAP_DOCKER_IS_SANDBOX` | `1` | Sets `IS_SANDBOX=1` inside the workspace container |
+
+Limits apply when the container is **first created**. Remove existing `qaap-ws-*`
+containers after changing these values.
 
 ## Ollama on the host
 

@@ -106,7 +106,10 @@ export interface QaapAgentTaskDetailDTO {
 
 /** True once a task has stopped and will not change state again. */
 export function isAgentTaskFinished(state: string): boolean {
-    return state !== 'running';
+    return state === 'completed'
+        || state === 'failed'
+        || state === 'interrupted'
+        || state === 'cancelled';
 }
 
 export type QaapCreateAgentTaskBody =

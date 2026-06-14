@@ -12,6 +12,7 @@ import { QaapAgentConversationEndpoint } from './qaap-agent-conversation-endpoin
 import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
 import { QaapAgentTaskEndpoint } from './qaap-agent-task-endpoint';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
+import { QaapAgentProcessSupervisor } from './qaap-agent-process-supervisor';
 import { QaapCloudOrchestrator } from './qaap-cloud-orchestrator';
 import { QaapCloudWorkspaceEndpoint } from './qaap-cloud-workspace-endpoint';
 import { QaapCloudWorkspaceStore } from './qaap-cloud-workspace-store';
@@ -43,6 +44,7 @@ export default new ContainerModule((bind, _unbind, _isBound, _rebind, _unbindAsy
     bind(QaapCloudWorkspaceEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapCloudWorkspaceEndpoint);
     bind(BackendApplicationContribution).toService(QaapPreviewShareProxyContribution);
+    bind(QaapAgentProcessSupervisor).toSelf().inSingletonScope();
     bind(QaapAgentTaskRunner).toSelf().inSingletonScope();
     bind(QaapAgentTaskEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapAgentTaskEndpoint);
