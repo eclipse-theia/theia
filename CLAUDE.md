@@ -143,9 +143,9 @@ Pick the next task off this list. Each is independent — extract one, verify, c
 
 **Tier 3 — Larger surfaces (4–7 files)**
 
-- [x] **workspace** (4 files: trust dialog/factory/service + frontend-module). The 4 upstream files stay allowlisted as documented seams; `QaapWorkspaceTrustDialog` + `QaapWorkspaceTrustDialogFactory` in `qaap-extensions` now consume the seam so the branded label uses `applicationName`.
+- [x] **workspace** (4 files: trust dialog/factory/service + frontend-module). The 4 upstream files stay allowlisted as documented seams; `getTrustDevelopmentHostLabel()` defaults to `applicationName` in the upstream dialog.
 - [x] **mini-browser** (7 files). Verified — all 7 are justified: the `MiniBrowserOpenHook` seam is consumed by `QaapMiniBrowserOpenHookBridge` in `qaap-adapters`; the new `mini-browser-url-utils.{ts,spec.ts}`, `mini-browser-opener-options.ts`, `mini-browser-open-hook.ts` are co-located with the upstream files that consume them (moving them creates a back-dep anti-pattern).
-- [x] **plugin-ext** (7 files). 5 re-adopted from upstream (fork-lag ESM plugin machinery + small null-check); `webview-resource-cache.ts` extracted to `QaapWebviewResourceCache` in `qaap-extensions`; `plugin-view-registry.ts` left allowlisted (intentional product behavior — qaap is a cloud IDE so the "Open Folder" welcome view is omitted).
+- [x] **plugin-ext** (7 files). 5 re-adopted from upstream (fork-lag ESM plugin machinery + small null-check); `webview-resource-cache.ts` defensive cache upstream; `QaapPluginViewWelcomePolicy` in `qaap-product`; `plugin-view-registry.ts` left allowlisted (intentional product behavior — qaap is a cloud IDE so the "Open Folder" welcome view is omitted).
 
 **Tier 4 — Multi-session projects**
 

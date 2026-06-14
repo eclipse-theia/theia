@@ -42,7 +42,7 @@ La **lógica de producto vive en `packages/qaap-*`**. Upstream solo conserva **s
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
 │  PRODUCT LAYER                                              │
-│  qaap-shell │ qaap-extensions │ qaap-mobile-shell           │
+│  qaap-shell │ qaap-ai-config │ qaap-cloud-workspace │ qaap-mobile-shell │
 │  qaap-product-theme │ qaap-element-inspector                │
 │  qaap-product (umbrella + preload + electron-main)          │
 └───────────────────────────┬─────────────────────────────────┘
@@ -58,8 +58,9 @@ La **lógica de producto vive en `packages/qaap-*`**. Upstream solo conserva **s
 @theia/qaap-product
 ├── @theia/qaap-shell          → rebind ApplicationShell, SidePanelHandler, DockPanelRenderer
 ├── @theia/qaap-adapters       → rebind MiniBrowserOpenHook, MonacoQuickInputLayout
-├── @theia/qaap-extensions     → AI, Outline, Debug, Navigator, Preview, workspace, Getting Started
-├── @theia/qaap-mobile-shell   → rebind WorkbenchTopBarFactory, mobile contributions
+├── @theia/qaap-ai-config      → agent defaults, shell policy, preference branding startup
+├── @theia/qaap-cloud-workspace → login OAuth, hub sync, agent tasks, deploy
+├── @theia/qaap-mobile-shell   → Work Hub, mobile layout, navigator, notifications
 ├── @theia/qaap-product-theme  → CSS only (theiaExtensions frontend)
 ├── @theia/qaap-element-inspector
 └── @theia/core
@@ -112,10 +113,10 @@ Archivos que **modificaban upstream** antes de S1–S7 (ya migrados a `qaap-*` o
 | `mini-browser/*` (11 archivos) | **Alto** | S2 | Lógica móvil duplicada con adapters | Revertir a upstream; mantener solo **seams** + `qaap-adapters` |
 | `monaco/*` (7 archivos) | **Alto** | S3 | Quick input / textmate producto | Revertir; solo `monaco-quick-input-layout` seam |
 | `ai-*-preferences.ts` (7) | **Medio** | S5 | Defaults API keys / modelos | `@theia/qaap-ai-config` preference contributions |
-| `ai-code-completion/.../code-completion-agent.ts` | **Medio** | S5 | Comportamiento completion | Subclass + rebind en qaap-extensions |
-| `ai-core/.../window-blink-service.ts` | **Medio** | S5 | UX notificación | Optional rebind adapter |
+| `ai-code-completion/.../code-completion-agent.ts` | **Medio** | S5 | Comportamiento completion | Re-adopted upstream |
+| `ai-core/.../window-blink-service.ts` | **Medio** | S5 | UX notificación | Seam + `qaap-mobile-shell` push contribution |
 | `toolbar/.../application-shell-with-toolbar-override.ts` | **Medio** | S1 | Shell toolbar | `qaap-shell` ya extiende; alinear override |
-| `workspace/...` (2) | **Medio** | S4 | Trust dialog / contributions | `qaap-extensions` contributions |
+| `workspace/...` (2) | **Medio** | S4 | Trust dialog / contributions | Upstream seam `getTrustDevelopmentHostLabel()` |
 | `getting-started`, `messages`, `filesystem`, `preview`, `scanoss` | **Medio** | S4 | CSS/UX puntual | Theme o extensions |
 | `.nvmrc` | **Bajo** | — | Versión Node | Mantener en repo, no en baseline tras decisión |
 
@@ -136,7 +137,7 @@ Archivos que **modificaban upstream** antes de S1–S7 (ya migrados a `qaap-*` o
 ### Patrones correctos ya aplicados
 
 - `rebind(WorkbenchTopBarFactory)` en `qaap-mobile-shell` (no `appendMenu` async).
-- `extends AIChatContribution` + `rebind` en `qaap-extensions`.
+- `extends AIChatContribution` + `rebind` en `qaap-mobile-shell`.
 - Subclasses `SidePanelHandler`, `SideTabBar` en `qaap-shell`.
 - Bridges `MiniBrowserOpenHook` / `MonacoQuickInputLayout` en `qaap-adapters`.
 
@@ -162,7 +163,7 @@ Archivos que **modificaban upstream** antes de S1–S7 (ya migrados a `qaap-*` o
 | **S2** mini-browser | ✅ | `QaapMiniBrowserContent` en adapters; seam `forceNavigate` |
 | **S3** monaco | ✅ | CSS en theme; wiring layout en allowlist |
 | **S4** Core UX | ✅ | theme CSS, `qaap-product` bindings, workspace, getting-started |
-| **S5** AI | ✅ | `qaap-extensions` (prefs, blink, completion); prefs upstream revertidas |
+| **S5** AI | ✅ | `qaap-mobile-shell` + `qaap-ai-config` + `qaap-product` branding startup |
 | **S6** Hardening | ✅ | CI `qaap-drift-check.yml`; build browser en CI/CD existente |
 | **S7** Baseline 0 | ✅ | `qaap-drift-baseline.txt` vacío |
 
@@ -182,8 +183,9 @@ packages/
   qaap-product/           # umbrella + preload + electron + i18n node
   qaap-adapters/          # bridges cross-cutting
   qaap-shell/
+  qaap-ai-config/
+  qaap-cloud-workspace/
   qaap-mobile-shell/
-  qaap-extensions/
   qaap-product-theme/
   qaap-element-inspector/
   qaap-api/               # (futuro) interfaces exportadas
@@ -278,9 +280,9 @@ Paquetes **presentes** hoy: los siete `qaap-*` sin `qaap-api` ni `qaap-ai-config
 | Shell / layout / tabs | **Hecho** | `qaap-shell`, `qaap-mobile-shell` |
 | mini-browser | **Hecho** | `QaapMiniBrowserContent`, lifecycle, open handler |
 | monaco / quick input | **Hecho** | `QaapMonacoQuickInputLayoutBridge` + theme CSS |
-| AI chat / outline / navigator / preview | **Hecho** | `qaap-extensions` |
-| Getting Started / workspace trust | **Hecho** | `QaapGettingStartedWidget`, trust dialog factory |
-| AI branding (prefs, blink, completion) | **Hecho** | `qaap-extensions` + preload text replacement |
+| AI chat / outline / navigator / preview | **Hecho** | `qaap-mobile-shell` |
+| Getting Started / workspace trust | **Hecho** | `qaap-product` welcome + upstream trust seam |
+| AI branding (prefs, blink, completion) | **Hecho** | `qaap-product` startup + `qaap-mobile-shell` notifications |
 | Electron icon | **Hecho** | `qaap-product` `QaapElectronMainApplication` |
 | Editor gestos | **Hecho** | `mobile-editor-gesture-contribution` |
 | Element inspector | **Hecho** | `qaap-element-inspector` |

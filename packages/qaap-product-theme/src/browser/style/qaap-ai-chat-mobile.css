@@ -6,7 +6,7 @@
 
 /*-----------------------------------------------------------------------------
 | Mobile: AI chat full viewport (body.theia-mod-mobile-ai-chat-fullwidth).
-| Class toggled by @theia/qaap-extensions QaapAiChatMobileContribution.
+| Class toggled by @theia/qaap-mobile-shell QaapAiChatMobileContribution.
 |-----------------------------------------------------------------------------*/
 @media (max-width: 767px), (pointer: coarse) {
   body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-left-content-panel,

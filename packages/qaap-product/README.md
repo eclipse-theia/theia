@@ -6,8 +6,9 @@ Single dependency for Qaap browser/Electron example apps. Pulls the product laye
 |---------|------|
 | `@theia/qaap-shell` | `ApplicationShell`, side panel, dock tab bars |
 | `@theia/qaap-adapters` | Mini-browser + Monaco quick-input hooks |
-| `@theia/qaap-extensions` | AI chat, outline, memory inspector, navigator (mobile) |
-| `@theia/qaap-mobile-shell` | Workbench top bar, one-column mobile layout |
+| `@theia/qaap-ai-config` | Agent defaults, shell confirmation policy, model branding |
+| `@theia/qaap-cloud-workspace` | Login OAuth, hub sync, agent tasks, deploy |
+| `@theia/qaap-mobile-shell` | Work Hub, mobile layout, navigator, notifications |
 | `@theia/qaap-product-theme` | Product CSS (narrow viewport, side panel, VSX, …) |
 | `@theia/qaap-element-inspector` | Element inspector (also required by `@theia/mini-browser`) |
 
@@ -37,9 +38,9 @@ Do **not** add `@theia/ai-copilot` by default — Qaap uses its own agentic AI. 
 ```
 upstream Theia core (minimal seams)
         ↓
-@theia/qaap-shell + qaap-adapters + qaap-extensions (DI rebinds)
+@theia/qaap-shell + qaap-adapters + qaap-ai-config (DI rebinds)
         ↓
-@theia/qaap-product-theme + qaap-mobile-shell (UI)
+@theia/qaap-cloud-workspace + qaap-mobile-shell + qaap-product-theme (UI)
         ↓
 example app depends only on @theia/qaap-product
 ```
