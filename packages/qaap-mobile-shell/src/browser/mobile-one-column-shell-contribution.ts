@@ -81,8 +81,6 @@ import { AIConfigurationSelectionService } from '@theia/ai-ide/lib/browser/ai-co
 import {
     clearMobileWorkHubBootGuard,
     installMobileWorkHubBootGuard,
-    clearPreferDesktopIde,
-    markMobileProjectsHomeVisible,
     markMobileProjectsLeftLanding,
     markPreferAgentsSurface,
     markPreferDesktopIde,
@@ -103,7 +101,6 @@ import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
 import {
-    dismissQaapAccountMenu,
     QAAP_MOBILE_OPEN_DESKTOP_IDE_COMMAND,
     QAAP_WORK_HUB_OVERVIEW_COMMAND,
 } from './qaap-workbench-account-menu';
@@ -131,6 +128,10 @@ import {
     MobileShellIdeFallbackController,
     type MobileShellIdeFallbackHost,
 } from './mobile-shell-ide-fallback';
+import {
+    MobileShellHubNavigationController,
+    type MobileShellHubNavigationHost,
+} from './mobile-shell-hub-navigation-controller';
 import { MobileShellSessionState } from './mobile-shell-session-state';
 import {
     BottomBarSecondaryItem,
@@ -273,6 +274,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     private workHubBootstrapHost!: MobileShellWorkHubBootstrapHost;
     protected ideFallback!: MobileShellIdeFallbackController;
     private ideFallbackHost!: MobileShellIdeFallbackHost;
+    protected hubNavigation!: MobileShellHubNavigationController;
+    private hubNavigationHost!: MobileShellHubNavigationHost;
     protected readonly sessionState = new MobileShellSessionState();
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarController.getBottomBarNode(); }
     protected mobileActive = false;
@@ -338,7 +341,33 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             sessionState: this.sessionState,
             mobileMq: this.mobileMq,
         });
+        this.initHubNavigationController();
         this.patchWorkHubBootstrapLandingHost();
+    }
+
+    protected initHubNavigationController(): void {
+        this.hubNavigationHost = {
+            isMobileActive: () => this.mobileActive,
+            enterMobileLayout: () => this.enterMobileLayout(),
+            getProjectsPanel: () => this.projectsPanel,
+            applyLandingChrome: () => this.landing.applyLandingChrome(),
+            warmLiveTransport: () => this.conversations.warmLiveTransport(),
+            startActiveTasks: () => this.activeTasks.start(),
+            syncMobileHubPrimaryBottomChrome: () => this.bottomBarController.syncMobileHubPrimaryBottomChrome(),
+            refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
+            refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
+            ensureDesktopWorkHubSessionsSidebarOpen: () => this.ensureDesktopWorkHubSessionsSidebarOpen(),
+            hidePullRequestPanel: () => this.hidePullRequestPanel(),
+            dismissSheetsAsync: () => this.sideSheetController.dismissSheetsAsync(),
+            collapseMobileSidePanels: () => this.sideSheetController.collapseMobileSidePanels(),
+            showMobileProjectsHome: view => this.workHubBootstrap.showMobileProjectsHome(view),
+        };
+        this.hubNavigation = new MobileShellHubNavigationController({
+            host: this.hubNavigationHost,
+            shell: this.shell,
+            projectsService: this.projectsService,
+            sessionState: this.sessionState,
+        });
     }
 
     protected patchWorkHubBootstrapLandingHost(): void {
@@ -454,7 +483,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             getLandingLeftThisSession: () => this.sessionState.landingLeftThisSession,
             getProjectsCount: () => this.projectsCount,
             getProjectsPanel: () => this.projectsPanel,
-            isMobileWorkHubLandingVisible: () => this.isMobileWorkHubLandingVisible(),
+            isMobileWorkHubLandingVisible: () => this.hubNavigation.isMobileWorkHubLandingVisible(),
             isPullRequestPanelShown: () => this.isPullRequestPanelShown(),
             isMobileAgentSheetVisible: () => this.isMobileAgentSheetVisible(),
             isMobileExploreSheetVisible: () => this.isMobileExploreSheetVisible(),
@@ -466,7 +495,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             hidePullRequestPanel: () => this.hidePullRequestPanel(),
             toggleProjectsPanel: () => this.toggleProjectsPanel(),
             togglePullRequestPanel: () => this.togglePullRequestPanel(),
-            openMobileWorkHubLanding: view => this.openMobileWorkHubLanding(view),
+            openMobileWorkHubLanding: view => this.hubNavigation.openMobileWorkHubLanding(view),
             collapseMobileSidePanels: () => this.sideSheetController.collapseMobileSidePanels(),
             dismissSheetsAsync: () => this.sideSheetController.dismissSheetsAsync(),
             settleMobileSidePanelsCollapsed: () => this.sideSheetController.settleMobileSidePanelsCollapsed(),
@@ -920,8 +949,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 onOpenPullRequest: pullRequest => {
                     void this.openPullRequestFromInbox(pullRequest);
                 },
-                onShowAgentsHub: () => this.openMobileWorkHubLanding('tasks'),
-                onShowRoutinesHub: () => this.openMobileWorkHubLanding('routines'),
+                onShowAgentsHub: () => { void this.hubNavigation.openMobileWorkHubLanding('tasks'); },
+                onShowRoutinesHub: () => { void this.hubNavigation.openMobileWorkHubLanding('routines'); },
                 onHubLandingViewChanged: () => {
                     this.syncMobileHubPrimaryBottomChrome();
                     this.refreshBottomBar();
@@ -1242,104 +1271,24 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     /**
      * Abre el Work Hub a pantalla completa y selecciona una pestaña del landing (Home, Agents, Routines).
      */
-    /** Quita overlays de transcript/agente en `body` que quedan por encima del Work Hub (z-index 12950). */
     protected dismissMobileAgentTranscriptOverlays(): void {
-        document.body.querySelectorAll('.theia-mobile-agent-transcript-root').forEach(node => {
-            node.remove();
-        });
+        this.hubNavigation.dismissMobileAgentTranscriptOverlays();
     }
 
     protected isMobileWorkHubLandingVisible(): boolean {
-        return document.body.classList.contains('theia-mobile-mod-landing')
-            && this.projectsPanel?.isVisible() === true
-            && this.projectsPanel.isHomeMode() === true;
+        return this.hubNavigation.isMobileWorkHubLandingVisible();
     }
 
-    /**
-     * Cambia la pestaña del Work Hub de forma síncrona (sin esperar a cerrar sheets).
-     * Devuelve true si el panel landing ya estaba visible y la vista se aplicó al instante.
-     */
     protected syncHubLandingNavigation(view: MobileProjectsHubView): boolean {
-        this.landingLeftThisSession = false;
-        markMobileProjectsHomeVisible();
-        if (view !== 'home') {
-            this.projectsService.setHubView(view);
-        }
-        document.body.classList.add('theia-mobile-mod-landing');
-        setMobileLandingHubListChrome(true);
-        const panel = this.projectsPanel;
-        if (!(panel?.isHomeMode() === true && panel.isVisible())) {
-            return false;
-        }
-        if (panel.isProjectDetailView()) {
-            panel.closeProjectDetail();
-        }
-        if (view === 'tasks') {
-            this.conversations.warmLiveTransport();
-            this.activeTasks.start();
-            panel.preferComposerSurface('task');
-        } else if (view === 'chat' || view === 'review') {
-            this.conversations.warmLiveTransport();
-        }
-        panel.navigateHubTab(view);
-        this.landing.applyLandingChrome();
-        this.syncMobileHubPrimaryBottomChrome();
-        this.refreshBottomBar();
-        this.refreshWorkbenchTopBar();
-        this.ensureDesktopWorkHubSessionsSidebarOpen();
-        return true;
+        return this.hubNavigation.syncHubLandingNavigation(view);
     }
 
-    /** Cierra overlays que no deben bloquear la navegación entre pestañas del hub. */
     protected async finalizeHubLandingNavigation(): Promise<void> {
-        this.hidePullRequestPanel();
-        try {
-            await this.dismissSheetsAsync();
-            if (this.shell.isExpanded('bottom')) {
-                await this.shell.collapsePanel('bottom');
-            }
-            await this.collapseMobileSidePanels();
-        } catch (e) {
-            console.error('[qaap-mobile-shell] finalizeHubLandingNavigation failed', e);
-        }
+        return this.hubNavigation.finalizeHubLandingNavigation();
     }
 
     protected async openMobileWorkHubLanding(view: MobileProjectsHubView): Promise<void> {
-        dismissQaapAccountMenu();
-        clearPreferDesktopIde();
-        installMobileWorkHubBootGuard();
-        if (!this.mobileActive) {
-            this.enterMobileLayout();
-        }
-        this.dismissMobileAgentTranscriptOverlays();
-        if (this.syncHubLandingNavigation(view)) {
-            void this.finalizeHubLandingNavigation();
-            return;
-        }
-        void this.finalizeHubLandingNavigation();
-        await this.showMobileProjectsHome(view);
-        const resolved = this.projectsPanel;
-        if (!resolved) {
-            return;
-        }
-        if (resolved.isProjectDetailView()) {
-            resolved.closeProjectDetail();
-        }
-        if (view === 'tasks') {
-            this.conversations.warmLiveTransport();
-            this.activeTasks.start();
-            resolved.preferComposerSurface('task');
-        } else if (view === 'chat' || view === 'review') {
-            this.conversations.warmLiveTransport();
-        }
-        resolved.navigateHubTab(view);
-        if (view !== 'home') {
-            markPreferAgentsSurface();
-        }
-        this.syncMobileHubPrimaryBottomChrome();
-        this.refreshBottomBar();
-        this.refreshWorkbenchTopBar();
-        this.ensureDesktopWorkHubSessionsSidebarOpen();
+        return this.hubNavigation.openMobileWorkHubLanding(view);
     }
 
     protected async togglePullRequestPanel(): Promise<void> {
