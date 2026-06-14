@@ -81,7 +81,6 @@ import { AIConfigurationSelectionService } from '@theia/ai-ide/lib/browser/ai-co
 import {
     clearMobileWorkHubBootGuard,
     installMobileWorkHubBootGuard,
-    clearPreferAgentsSurface,
     clearPreferDesktopIde,
     markMobileProjectsHomeVisible,
     markMobileProjectsLeftLanding,
@@ -128,6 +127,10 @@ import {
     MobileShellWorkHubBootstrapController,
     type MobileShellWorkHubBootstrapHost,
 } from './mobile-shell-work-hub-bootstrap';
+import {
+    MobileShellIdeFallbackController,
+    type MobileShellIdeFallbackHost,
+} from './mobile-shell-ide-fallback';
 import { MobileShellSessionState } from './mobile-shell-session-state';
 import {
     BottomBarSecondaryItem,
@@ -268,6 +271,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     private sideSheetHost!: MobileShellSideSheetHost;
     protected workHubBootstrap!: MobileShellWorkHubBootstrapController;
     private workHubBootstrapHost!: MobileShellWorkHubBootstrapHost;
+    protected ideFallback!: MobileShellIdeFallbackController;
+    private ideFallbackHost!: MobileShellIdeFallbackHost;
     protected readonly sessionState = new MobileShellSessionState();
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarController.getBottomBarNode(); }
     protected mobileActive = false;
@@ -311,6 +316,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.initBottomBarController();
         this.initSideSheetController();
         this.initOverlayController();
+        this.initIdeFallbackController();
         this.initWorkHubBootstrapController();
         this.landingHost = {
             getProjectsPanel: () => this.projectsPanel,
@@ -381,6 +387,32 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         });
     }
 
+    protected initIdeFallbackController(): void {
+        this.ideFallbackHost = {
+            isMobileActive: () => this.mobileActive,
+            shouldActivateMobileLayout: () => this.shouldActivateMobileLayout(),
+            enterMobileLayout: () => this.enterMobileLayout(),
+            leaveMobileLayout: () => this.leaveMobileLayout(),
+            onMediaChange: () => this.onMediaChange(),
+            cancelAgentsBootstrap: () => this.workHubBootstrap.cancelAgentsBootstrap(),
+            getProjectsPanel: () => this.projectsPanel,
+            setProjectsPanel: panel => { this.projectsPanel = panel; },
+            tryBootstrapMobileAgentsChat: () => this.workHubBootstrap.tryBootstrapMobileAgentsChat(),
+            restoreAgentsSurfaceAfterReload: () => this.workHubBootstrap.restoreAgentsSurfaceAfterReload(),
+            syncMobileHubPrimaryBottomChrome: () => this.bottomBarController.syncMobileHubPrimaryBottomChrome(),
+            refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
+            refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
+            forceCenterColumnFullWidth: () => this.forceCenterColumnFullWidth(),
+            scheduleSnapAndUiRefresh: () => this.scheduleSnapAndUiRefresh(),
+            ensureDesktopSidePanelSizes: () => this.ensureDesktopSidePanelSizes(),
+            requestFullShellRelayout: () => this.requestFullShellRelayout(),
+        };
+        this.ideFallback = new MobileShellIdeFallbackController({
+            host: this.ideFallbackHost,
+            sessionState: this.sessionState,
+        });
+    }
+
     protected initWorkHubBootstrapController(): void {
         this.workHubBootstrapHost = {
             isMobileActive: () => this.mobileActive,
@@ -395,7 +427,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             ensureDesktopSidePanelSizes: () => this.ensureDesktopSidePanelSizes(),
             createProjectsPanel: homeMode => this.createProjectsPanel(homeMode),
             appendProjectsPanelToShell: panel => { this.shell.node.appendChild(panel.node); },
-            disposeProjectsPanelForDesktopIde: () => this.disposeProjectsPanelForDesktopIde(),
+            disposeProjectsPanelForDesktopIde: () => this.ideFallback.disposeProjectsPanelForDesktopIde(),
             syncMobileHubPrimaryBottomChrome: () => this.bottomBarController.syncMobileHubPrimaryBottomChrome(),
             refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
             refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
@@ -814,16 +846,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected disposeProjectsPanelForDesktopIde(): void {
-        const panel = this.projectsPanel;
-        if (!panel) {
-            return;
-        }
-        panel.hide();
-        panel.dispose();
-        if (panel.node.parentElement) {
-            panel.node.parentElement.removeChild(panel.node);
-        }
-        this.projectsPanel = undefined;
+        this.ideFallback.disposeProjectsPanelForDesktopIde();
     }
 
     protected tryBootstrapMobileAgentsChat(): boolean {
@@ -1101,51 +1124,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected openDesktopIde(): void {
-        this.cancelAgentsBootstrap();
-        clearPreferAgentsSurface();
-        markPreferDesktopIde();
-        setMobileWorkHubComposerHeaderChrome(false);
-        setMobileWorkHubHideBottomChrome(false);
-        setMobileActiveTranscriptChrome(false);
-        document.body.classList.remove('theia-mobile-mod-landing');
-        clearMobileWorkHubBootGuard();
-        this.disposeProjectsPanelForDesktopIde();
-        if (this.shouldActivateMobileLayout()) {
-            if (!this.mobileActive) {
-                this.enterMobileLayout();
-            } else {
-                this.syncMobileHubPrimaryBottomChrome();
-                this.refreshBottomBar();
-                this.refreshWorkbenchTopBar();
-                this.forceCenterColumnFullWidth();
-                this.scheduleSnapAndUiRefresh();
-            }
-        } else {
-            this.leaveMobileLayout();
-        }
-        this.onMediaChange();
-        window.requestAnimationFrame(() => {
-            if (!this.shouldActivateMobileLayout()) {
-                void this.ensureDesktopSidePanelSizes();
-            }
-            this.requestFullShellRelayout();
-        });
+        this.ideFallback.openDesktopIde();
     }
 
     /** Top-bar «Back to Work Hub» from mobile desktop-IDE mode — restore the Agents execution shell. */
     protected returnToAgentsFromDesktopIde(): void {
-        this.cancelAgentsBootstrap();
-        clearPreferDesktopIde();
-        this.landingLeftThisSession = true;
-        document.body.classList.remove('theia-mobile-mod-landing');
-        if (!this.mobileActive && this.shouldActivateMobileLayout()) {
-            this.enterMobileLayout();
-        }
-        if (!this.tryBootstrapMobileAgentsChat()) {
-            void this.restoreAgentsSurfaceAfterReload();
-        }
-        this.refreshBottomBar();
-        this.refreshWorkbenchTopBar();
+        this.ideFallback.returnToAgentsFromDesktopIde();
     }
 
     protected toggleWorkHubSessionsSidebar(): void {
