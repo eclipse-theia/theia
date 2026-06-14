@@ -12,7 +12,7 @@ import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layo
 import { OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
+import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { isQaapNarrowMobileWorkbench, stripRightPanelWidgetsOnMobile } from './qaap-mobile-layout-utils';
 import { QaapAiChatBootstrapChip } from './qaap-ai-chat-bootstrap-chip';
 

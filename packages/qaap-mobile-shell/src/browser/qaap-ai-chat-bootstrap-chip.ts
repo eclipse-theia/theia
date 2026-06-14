@@ -4,8 +4,8 @@
 // *****************************************************************************
 
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { formatQaapBootstrapChipLabel } from '@theia/qaap-mobile-shell/lib/browser/qaap-bootstrap-display';
-import type { QaapBootstrapStateChange } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
+import { formatQaapBootstrapChipLabel } from './qaap-bootstrap-display';
+import type { QaapBootstrapStateChange } from './qaap-project-bootstrap-service';
 
 export const QAAP_AI_CHAT_BOOTSTRAP_CHIP_CLASS = 'qaap-ai-chat-bootstrap-chip';
 

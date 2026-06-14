@@ -43,19 +43,7 @@
       "path": "../getting-started"
     },
     {
-      "path": "../memory-inspector"
-    },
-    {
-      "path": "../navigator"
-    },
-    {
-      "path": "../outline-view"
-    },
-    {
       "path": "../plugin-ext"
-    },
-    {
-      "path": "../preview"
     },
     {
       "path": "../qaap-mobile-shell"
@@ -68,9 +56,6 @@
     },
     {
       "path": "../variable-resolver"
-    },
-    {
-      "path": "../vsx-registry"
     },
     {
       "path": "../workspace"

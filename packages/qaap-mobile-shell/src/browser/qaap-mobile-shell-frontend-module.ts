@@ -81,6 +81,17 @@ import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
+import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
+import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
+import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
+import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
+import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
+import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
+import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
+import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
+import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
+import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
+import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     rebind(ChatViewTreeWidget).toDynamicValue(ctx =>
         createQaapChatViewTreeWidget(ctx.container)
@@ -193,4 +204,23 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapDiffReviewContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(QaapDiffReviewContribution);
     bind(FrontendApplicationContribution).toService(QaapDiffReviewContribution);
+
+    bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
+    rebind(AIChatContribution).toService(QaapAiChatMobileContribution);
+    bind(ShellLayoutTransformer).toService(QaapAiChatMobileContribution);
+
+    bind(QaapOutlineMobileContribution).toSelf().inSingletonScope();
+    rebind(OutlineViewContribution).toService(QaapOutlineMobileContribution);
+    bind(ShellLayoutTransformer).toService(QaapOutlineMobileContribution);
+
+    bind(QaapMemoryInspectorMobileContribution).toSelf().inSingletonScope();
+    rebind(DebugFrontendContribution).toService(QaapMemoryInspectorMobileContribution);
+    bind(ShellLayoutTransformer).toService(QaapMemoryInspectorMobileContribution);
+
+    rebind(FileNavigatorWidget).toDynamicValue(ctx => createQaapFileNavigatorWidget(ctx.container));
+    bind(QaapFileNavigatorContribution).toSelf().inSingletonScope();
+    rebind(FileNavigatorContribution).toService(QaapFileNavigatorContribution);
+
+    bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
 });

@@ -10,15 +10,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
-import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
-import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
-import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
-import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
-import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
-import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
-import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
 import { QaapAiPreferenceBrandingContribution, QaapAiPreferenceBrandingStartup } from './qaap-ai-preference-branding-contribution';
 import { QaapHubActionsContribution } from './qaap-hub-actions-contribution';
 import { QaapHubChatSyncContribution } from './qaap-hub-chat-sync-contribution';
@@ -26,32 +19,10 @@ import { QaapMobileAppTesterContribution } from './qaap-mobile-app-tester-contri
 import { QaapMissionUndoContribution } from './qaap-mission-undo-contribution';
 import { QaapPushNotificationContribution } from './qaap-push-notification-contribution';
 import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
-import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
-import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
-import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
 import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
-import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
-import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
-    rebind(AIChatContribution).toService(QaapAiChatMobileContribution);
-    bind(ShellLayoutTransformer).toService(QaapAiChatMobileContribution);
-
-    bind(QaapOutlineMobileContribution).toSelf().inSingletonScope();
-    rebind(OutlineViewContribution).toService(QaapOutlineMobileContribution);
-    bind(ShellLayoutTransformer).toService(QaapOutlineMobileContribution);
-
-    bind(QaapMemoryInspectorMobileContribution).toSelf().inSingletonScope();
-    rebind(DebugFrontendContribution).toService(QaapMemoryInspectorMobileContribution);
-    bind(ShellLayoutTransformer).toService(QaapMemoryInspectorMobileContribution);
-
-    rebind(FileNavigatorWidget).toDynamicValue(ctx => createQaapFileNavigatorWidget(ctx.container));
-
-    bind(QaapFileNavigatorContribution).toSelf().inSingletonScope();
-    rebind(FileNavigatorContribution).toService(QaapFileNavigatorContribution);
-
     bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);
 
@@ -81,7 +52,4 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapPluginViewWelcomePolicy).toSelf().inSingletonScope();
     bind(PluginViewWelcomePolicy).toService(QaapPluginViewWelcomePolicy);
-
-    bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
 });

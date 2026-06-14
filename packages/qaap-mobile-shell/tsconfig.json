@@ -31,10 +31,19 @@
       "path": "../filesystem"
     },
     {
+      "path": "../memory-inspector"
+    },
+    {
       "path": "../mini-browser"
     },
     {
       "path": "../monaco"
+    },
+    {
+      "path": "../navigator"
+    },
+    {
+      "path": "../outline-view"
     },
     {
       "path": "../preferences"
@@ -62,6 +71,9 @@
     },
     {
       "path": "../terminal"
+    },
+    {
+      "path": "../vsx-registry"
     },
     {
       "path": "../workspace"
