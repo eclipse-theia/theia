@@ -12,7 +12,7 @@ import { AI_CHAT_TOGGLE_COMMAND_ID } from '@theia/ai-chat-ui/lib/browser/ai-chat
 import { AppTesterChatAgentId } from '@theia/ai-ide/lib/browser/app-tester-chat-agent';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF } from './qaap-ai-preference-branding-contribution';
+import { QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF } from './qaap-mobile-app-preferences';
 
 /**
  * Backend probe endpoint that reports whether Chrome (with --remote-debugging-port=9222) is

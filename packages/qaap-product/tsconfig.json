@@ -10,10 +10,10 @@
   ],
   "references": [
     {
-      "path": "../core"
+      "path": "../ai-chat-ui"
     },
     {
-      "path": "../ai-chat-ui"
+      "path": "../core"
     },
     {
       "path": "../getting-started"
@@ -28,12 +28,6 @@
       "path": "../plugin-ext"
     },
     {
-      "path": "../terminal"
-    },
-    {
-      "path": "../workspace"
-    },
-    {
       "path": "../qaap-adapters"
     },
     {
@@ -46,9 +40,6 @@
       "path": "../qaap-element-inspector"
     },
     {
-      "path": "../qaap-extensions"
-    },
-    {
       "path": "../qaap-mobile-shell"
     },
     {
@@ -56,6 +47,12 @@
     },
     {
       "path": "../qaap-shell"
+    },
+    {
+      "path": "../terminal"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }

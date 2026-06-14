@@ -81,6 +81,10 @@ import { QaapCommitMessageAi } from './qaap-commit-message-ai';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapWorkHubDiffService } from './qaap-work-hub-diff-service';
+import { QaapPushNotificationContribution } from './qaap-push-notification-contribution';
+import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
+import { QaapMobileAppTesterContribution } from './qaap-mobile-app-tester-contribution';
+import { QaapMobileAppPreferenceContribution } from './qaap-mobile-app-preferences';
 import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
@@ -223,4 +227,16 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
+
+    bind(QaapMobileAppPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(QaapMobileAppPreferenceContribution);
+
+    bind(QaapPushNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapPushNotificationContribution);
+
+    bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);
+
+    bind(QaapMobileAppTesterContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapMobileAppTesterContribution);
 });

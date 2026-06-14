@@ -7,7 +7,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
 
-/** Must match `@theia/qaap-extensions` push contribution event names. */
+/** Must match mobile-shell push contribution event names. */
 const QAAP_BOOTSTRAP_FAILED_EVENT = 'qaap-bootstrap-failed';
 const QAAP_AGENT_COMPLETED_EVENT = 'qaap-agent-completed';
 const QAAP_AGENT_CONFIRMATION_NEEDED_EVENT = 'qaap-agent-confirmation-needed';

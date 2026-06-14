@@ -19,6 +19,7 @@ import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting
 import { PluginViewWelcomePolicy } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-welcome-policy';
 import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapPluginViewWelcomePolicy } from './qaap-plugin-view-welcome-policy';
+import { QaapAiPreferenceBrandingStartup } from './qaap-ai-preference-branding-contribution';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(QaapBuiltinThemeBrandingContribution).toSelf().inSingletonScope();
@@ -35,6 +36,9 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapMonacoEmbeddedLanguageContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapMonacoEmbeddedLanguageContribution);
+
+    bind(QaapAiPreferenceBrandingStartup).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAiPreferenceBrandingStartup);
 
     bind(QaapTextmateRegistry).toSelf().inSingletonScope();
     rebind(TextmateRegistry).toService(QaapTextmateRegistry);

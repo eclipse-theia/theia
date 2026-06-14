@@ -6,6 +6,7 @@
     "@theia/ai-chat": "1.71.0",
     "@theia/ai-chat-ui": "1.71.0",
     "@theia/ai-core": "1.71.0",
+    "@theia/ai-ide": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/filesystem": "1.71.0",
     "@theia/qaap-adapters": "1.71.0",
@@ -21,6 +22,12 @@
     "access": "public"
   },
   "theiaExtensions": [
+    {
+      "frontendPreload": "lib/browser/qaap-login-preload-module"
+    },
+    {
+      "frontend": "lib/browser/qaap-login-frontend-module"
+    },
     {
       "frontend": "lib/browser/qaap-cloud-workspace-frontend-module"
     },

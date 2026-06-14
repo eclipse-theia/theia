@@ -19,6 +19,9 @@
       "path": "../ai-core"
     },
     {
+      "path": "../ai-ide"
+    },
+    {
       "path": "../core"
     },
     {

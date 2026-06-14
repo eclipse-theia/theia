@@ -7,7 +7,6 @@
     "@theia/qaap-adapters": "1.71.0",
     "@theia/qaap-cloud-workspace": "1.71.0",
     "@theia/qaap-ai-config": "1.71.0",
-    "@theia/qaap-extensions": "1.71.0",
     "@theia/ai-chat-ui": "1.71.0",
     "@theia/qaap-element-inspector": "1.71.0",
     "@theia/qaap-mobile-shell": "1.71.0",

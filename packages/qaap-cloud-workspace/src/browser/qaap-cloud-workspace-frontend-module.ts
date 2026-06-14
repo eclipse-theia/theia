@@ -21,6 +21,9 @@ import { QaapAgentRunnerWarmContribution } from './qaap-agent-runner-warm-contri
 import { QaapDeployCloudflareTool, QaapDeployVercelTool } from './qaap-deploy-tool-providers';
 import { QaapTerminalPersistenceContribution } from './qaap-terminal-persistence-contribution';
 import { QaapWebPushContribution } from './qaap-web-push-contribution';
+import { QaapHubActionsContribution } from './qaap-hub-actions-contribution';
+import { QaapHubChatSyncContribution } from './qaap-hub-chat-sync-contribution';
+import { QaapMissionUndoContribution } from './qaap-mission-undo-contribution';
 
 export default new ContainerModule(bind => {
     bind(QaapCloudBootstrapUiContribution).toSelf().inSingletonScope();
@@ -35,6 +38,16 @@ export default new ContainerModule(bind => {
 
     bind(QaapWebPushContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapWebPushContribution);
+
+    bind(QaapHubActionsContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapHubActionsContribution);
+    bind(FrontendApplicationContribution).toService(QaapHubActionsContribution);
+
+    bind(QaapHubChatSyncContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapHubChatSyncContribution);
+
+    bind(QaapMissionUndoContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapMissionUndoContribution);
 
     bind(QaapAgentTasksWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
