@@ -31,13 +31,9 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ChatService } from '@theia/ai-chat';
 import { AIVariableService, FrontendLanguageModelRegistry } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { QuickInputService } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
-import { pickMobileContextVariable } from './qaap-mobile-context-attach-menu';
-import { resolveStickyComposerAttachmentPreview } from './qaap-sticky-composer-attachment-preview';
 import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
-import { resolveStickyComposerContextChip } from './qaap-sticky-composer-context-ui';
 import {
     matchesMobileOneColumnLayout,
     MOBILE_ONE_COLUMN_LAYOUT_MEDIA_QUERY,
@@ -57,12 +53,10 @@ import { MobileWorkHubInboxStream } from './mobile-work-hub-inbox-stream';
 import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
-import { resolveAgentVerifyChecksForCwd } from './qaap-agent-verify-checks-resolver';
+import { MobileProjectsPanelFactory } from './mobile-projects-panel-factory';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
-import { openTranscriptWorkspaceFile, createTranscriptFilesViewServices } from './qaap-transcript-file-open';
-import { createTranscriptTerminalViewServices } from './qaap-transcript-terminal-view';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { LabelProvider } from '@theia/core/lib/browser';
@@ -285,6 +279,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     private pullRequestPanelHost!: MobileShellPullRequestPanelHost;
     protected transcriptChrome!: MobileShellTranscriptChromeController;
     private transcriptChromeHost!: MobileShellTranscriptChromeHost;
+    protected projectsPanelFactory!: MobileProjectsPanelFactory;
     protected readonly sessionState = new MobileShellSessionState();
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarController.getBottomBarNode(); }
     protected mobileActive = false;
@@ -352,7 +347,77 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         });
         this.initHubNavigationController();
         this.initTranscriptChromeController();
+        this.initProjectsPanelFactory();
         this.patchWorkHubBootstrapLandingHost();
+    }
+
+    protected initProjectsPanelFactory(): void {
+        this.projectsPanelFactory = new MobileProjectsPanelFactory({
+            deps: {
+                projectsService: this.projectsService,
+                commands: this.commands,
+                widgetManager: this.widgetManager,
+                mobileProjectChatViewWidgetFactory: this.mobileProjectChatViewWidgetFactory,
+                chatService: this.chatService,
+                chatAgentService: this.chatAgentService,
+                messageService: this.messageService,
+                variableService: this.variableService,
+                quickInputService: this.quickInputService,
+                fileUploadService: this.fileUploadService,
+                fileService: this.fileService,
+                workspaceService: this.workspaceService,
+                editorManager: this.editorManager,
+                monacoEditorProvider: this.monacoEditorProvider,
+                labelProvider: this.labelProvider,
+                markdownPreviewHandler: this.markdownPreviewHandler,
+                terminalService: this.terminalService,
+                previewSurfaceRegistry: this.previewSurfaceRegistry,
+                elementInspectorService: this.elementInspectorService,
+                clipboardService: this.clipboardService,
+                preferenceService: this.preferenceService,
+                languageModelRegistry: this.languageModelRegistry,
+                commitMessageAi: this.commitMessageAi,
+                projectBootstrap: this.projectBootstrap,
+                activeTasks: this.activeTasks,
+                conversations: this.conversations,
+                backgroundContext: this.backgroundContext,
+                inboxStream: this.inboxStream,
+                conversationFlags: this.conversationFlags,
+            },
+            delegate: {
+                onProjectOpen: project => { void this.onProjectsPanelOpen(project); },
+                onProjectOpenInIde: project => { void this.onProjectsPanelOpenInIde(project); },
+                onDismiss: () => {
+                    this.landing.onLandingDismissed();
+                    this.scheduleSnapAndUiRefresh();
+                    this.refreshBottomBar();
+                    this.refreshWorkbenchTopBar();
+                },
+                onWorkspaceOpened: () => this.onProjectsWorkspaceOpened(),
+                onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
+                onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
+                onResumePreview: project => {
+                    void this.commands.executeCommand('qaap.hub.resumePreview', project);
+                },
+                onOpenAgentOnTask: project => {
+                    void this.commands.executeCommand('qaap.mobile.openAgentOnTask', project);
+                },
+                onOpenPullRequest: pullRequest => {
+                    void this.openPullRequestFromInbox(pullRequest);
+                },
+                onShowAgentsHub: () => { void this.hubNavigation.openMobileWorkHubLanding('tasks'); },
+                onShowRoutinesHub: () => { void this.hubNavigation.openMobileWorkHubLanding('routines'); },
+                onHubLandingViewChanged: () => {
+                    this.syncMobileHubPrimaryBottomChrome();
+                    this.refreshBottomBar();
+                    this.refreshWorkbenchTopBar();
+                },
+                onEnterActiveTranscript: () => this.transcriptChrome.onEnterActiveTranscript(),
+                onExitActiveTranscript: () => { void this.transcriptChrome.onExitActiveTranscript(); },
+                openWorkHubPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),
+                openWorkHubAiConfigurationSheet: tabId => this.openWorkHubAiConfigurationSheet(tabId),
+            },
+        });
     }
 
     protected initTranscriptChromeController(): void {
@@ -958,124 +1023,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected createProjectsPanel(homeMode: boolean): MobileProjectsPanel {
-        // On mobile every session lands on the Projects view, regardless of whether a workspace is
-        // already opened. The landing is full-screen and hides the bottom navigation; once the user
-        // explicitly enters a project (Focus / open), `landingLeftThisSession` flips so the workspace
-        // remains visible until the top-bar return action asks for Projects again.
-        return new MobileProjectsPanel(
-            this.projectsService,
-            this.commands,
-            {
-                onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
-                onProjectOpenInIde: (project: MobileProjectEntry) => { void this.onProjectsPanelOpenInIde(project); },
-                onDismiss: () => {
-                    this.landing.onLandingDismissed();
-                    this.scheduleSnapAndUiRefresh();
-                    this.refreshBottomBar();
-                    this.refreshWorkbenchTopBar();
-                },
-                onWorkspaceOpened: () => this.onProjectsWorkspaceOpened(),
-                onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
-                onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
-                onResumePreview: (project) => {
-                    void this.commands.executeCommand('qaap.hub.resumePreview', project);
-                },
-                onOpenAgentOnTask: (project) => {
-                    void this.commands.executeCommand('qaap.mobile.openAgentOnTask', project);
-                },
-                onOpenPullRequest: pullRequest => {
-                    void this.openPullRequestFromInbox(pullRequest);
-                },
-                onShowAgentsHub: () => { void this.hubNavigation.openMobileWorkHubLanding('tasks'); },
-                onShowRoutinesHub: () => { void this.hubNavigation.openMobileWorkHubLanding('routines'); },
-                onHubLandingViewChanged: () => {
-                    this.syncMobileHubPrimaryBottomChrome();
-                    this.refreshBottomBar();
-                    this.refreshWorkbenchTopBar();
-                },
-                onEnterActiveTranscript: () => this.transcriptChrome.onEnterActiveTranscript(),
-                onExitActiveTranscript: () => { void this.transcriptChrome.onExitActiveTranscript(); },
-            },
-            {
-                homeMode,
-                activeTasks: this.activeTasks,
-                conversations: this.conversations,
-                backgroundContext: this.backgroundContext,
-                inboxStream: this.inboxStream,
-                conversationFlags: this.conversationFlags,
-                // Use WidgetManager with our own factory id (registered by the mobile-shell
-                // module) so each call returns a fresh `MobileProjectAIChatInputWidget` instance.
-                // That subclass overrides `getResourceUri` to mint a per-instance URI, which is
-                // what unblocks the empty agent-input card: the vanilla AIChatInputWidget calls
-                // `resources.add('ai-chat:/input.aichatviewlanguage', '')` in its postConstruct,
-                // and the workspace Agent AI view already owns that key — a second registration
-                // throws "Cannot add already existing in-memory resource" and the create promise
-                // never resolves.
-                createChatInputWidget: id => this.widgetManager.getOrCreateWidget<AIChatInputWidget>(
-                    'mobile-projects-chat-input',
-                    { source: 'mobile-projects', id },
-                ),
-                createChatViewWidget: id => Promise.resolve(
-                    this.mobileProjectChatViewWidgetFactory(id)
-                ),
-                chatService: this.chatService,
-                chatAgentService: this.chatAgentService,
-                messageService: this.messageService,
-                pickContextVariable: (anchor, handlers) => pickMobileContextVariable(
-                    anchor,
-                    this.variableService,
-                    this.quickInputService,
-                    {
-                        fileUploadService: this.fileUploadService,
-                        fileService: this.fileService,
-                        workspaceService: this.workspaceService,
-                    },
-                    handlers,
-                ),
-                formatContextChip: item => resolveStickyComposerContextChip(item, this.labelProvider),
-                resolveAttachmentPreview: item => resolveStickyComposerAttachmentPreview(
-                    item,
-                    this.fileService,
-                    this.workspaceService,
-                ),
-                getComposerVariables: () => this.variableService.getVariables(),
-                createDiffReviewWidget: () => this.widgetManager.getOrCreateWidget(QaapDiffReviewWidget.ID),
-                resolveVerifyChecks: cwd => resolveAgentVerifyChecksForCwd(cwd, this.fileService),
-                openTranscriptFile: filePath => openTranscriptWorkspaceFile(
-                    filePath,
-                    this.workspaceService,
-                    this.editorManager,
-                ),
-                createTranscriptFilesViewServices: () => createTranscriptFilesViewServices(
-                    this.workspaceService,
-                    this.fileService,
-                    this.editorManager,
-                    this.commands,
-                    this.monacoEditorProvider,
-                    this.labelProvider,
-                    this.markdownPreviewHandler,
-                ),
-                createTranscriptTerminalViewServices: () => createTranscriptTerminalViewServices(
-                    this.terminalService,
-                    this.workspaceService,
-                ),
-                previewSurfaceRegistry: this.previewSurfaceRegistry,
-                previewInspectorDeps: {
-                    service: this.elementInspectorService,
-                    commands: this.commands,
-                },
-                clipboard: this.clipboardService,
-                readPreference: key => this.preferenceService.get(key),
-                getRegisteredLanguageModels: this.languageModelRegistry
-                    ? () => this.languageModelRegistry!.getLanguageModels()
-                    : undefined,
-                quickInputService: this.quickInputService,
-                commitMessageAi: this.commitMessageAi,
-                openPreferencesSheet: query => this.openWorkHubPreferencesSheet(query),
-                openAiConfigurationSheet: tabId => this.openWorkHubAiConfigurationSheet(tabId),
-                projectBootstrap: this.projectBootstrap,
-            }
-        );
+        return this.projectsPanelFactory.create(homeMode);
     }
 
     protected ensureDesktopWorkHubSessionsSidebarOpen(): void {
