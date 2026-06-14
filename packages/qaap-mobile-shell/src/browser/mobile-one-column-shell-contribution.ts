@@ -69,7 +69,6 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { MarkdownPreviewHandler } from '@theia/preview/lib/browser/markdown/markdown-preview-handler';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry, type MobileProjectsHubView } from './mobile-projects-types';
-import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import type { QaapGithubPullRequestSummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import { QaapPreviewSurfaceRegistry } from '@theia/qaap-adapters/lib/browser/qaap-preview-surface-registry';
 import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
@@ -132,6 +131,10 @@ import {
     MobileShellHubNavigationController,
     type MobileShellHubNavigationHost,
 } from './mobile-shell-hub-navigation-controller';
+import {
+    MobileShellPullRequestPanelController,
+    type MobileShellPullRequestPanelHost,
+} from './mobile-shell-pull-request-panel-controller';
 import { MobileShellSessionState } from './mobile-shell-session-state';
 import {
     BottomBarSecondaryItem,
@@ -276,11 +279,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     private ideFallbackHost!: MobileShellIdeFallbackHost;
     protected hubNavigation!: MobileShellHubNavigationController;
     private hubNavigationHost!: MobileShellHubNavigationHost;
+    protected pullRequestPanelController!: MobileShellPullRequestPanelController;
+    private pullRequestPanelHost!: MobileShellPullRequestPanelHost;
     protected readonly sessionState = new MobileShellSessionState();
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarController.getBottomBarNode(); }
     protected mobileActive = false;
     protected projectsPanel: MobileProjectsPanel | undefined;
-    protected pullRequestPanel: MobilePullRequestPanel | undefined;
     protected agentTaskComposer: MobileAgentTaskComposer | undefined;
     protected workHubPreferencesSheet: MobileWorkHubPreferencesSheet | undefined;
     protected workHubAiConfigurationSheet: MobileWorkHubAiConfigurationSheet | undefined;
@@ -319,6 +323,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.initBottomBarController();
         this.initSideSheetController();
         this.initOverlayController();
+        this.initPullRequestPanelController();
         this.initIdeFallbackController();
         this.initWorkHubBootstrapController();
         this.landingHost = {
@@ -345,6 +350,19 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.patchWorkHubBootstrapLandingHost();
     }
 
+    protected initPullRequestPanelController(): void {
+        this.pullRequestPanelHost = {
+            scheduleSnapAndUiRefresh: () => this.scheduleSnapAndUiRefresh(),
+            refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
+            dismissSheetsAsync: () => this.sideSheetController.dismissSheetsAsync(),
+            hideProjectsPanel: () => this.hideProjectsPanel(),
+        };
+        this.pullRequestPanelController = new MobileShellPullRequestPanelController({
+            host: this.pullRequestPanelHost,
+            shell: this.shell,
+        });
+    }
+
     protected initHubNavigationController(): void {
         this.hubNavigationHost = {
             isMobileActive: () => this.mobileActive,
@@ -357,7 +375,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             refreshBottomBar: () => this.bottomBarController.refreshBottomBar(),
             refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
             ensureDesktopWorkHubSessionsSidebarOpen: () => this.ensureDesktopWorkHubSessionsSidebarOpen(),
-            hidePullRequestPanel: () => this.hidePullRequestPanel(),
+            hidePullRequestPanel: () => this.pullRequestPanelController.hidePullRequestPanel(),
             dismissSheetsAsync: () => this.sideSheetController.dismissSheetsAsync(),
             collapseMobileSidePanels: () => this.sideSheetController.collapseMobileSidePanels(),
             showMobileProjectsHome: view => this.workHubBootstrap.showMobileProjectsHome(view),
@@ -484,7 +502,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             getProjectsCount: () => this.projectsCount,
             getProjectsPanel: () => this.projectsPanel,
             isMobileWorkHubLandingVisible: () => this.hubNavigation.isMobileWorkHubLandingVisible(),
-            isPullRequestPanelShown: () => this.isPullRequestPanelShown(),
+            isPullRequestPanelShown: () => this.pullRequestPanelController.isPullRequestPanelShown(),
             isMobileAgentSheetVisible: () => this.isMobileAgentSheetVisible(),
             isMobileExploreSheetVisible: () => this.isMobileExploreSheetVisible(),
             getActivePreviewWidget: () => this.getActivePreviewWidget(),
@@ -492,9 +510,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             scheduleSnapAndUiRefresh: () => this.sideSheetController.scheduleSnapAndUiRefresh(),
             refreshWorkbenchTopBar: () => this.refreshWorkbenchTopBar(),
             hideProjectsPanel: () => this.hideProjectsPanel(),
-            hidePullRequestPanel: () => this.hidePullRequestPanel(),
+            hidePullRequestPanel: () => this.pullRequestPanelController.hidePullRequestPanel(),
             toggleProjectsPanel: () => this.toggleProjectsPanel(),
-            togglePullRequestPanel: () => this.togglePullRequestPanel(),
+            togglePullRequestPanel: () => this.pullRequestPanelController.togglePullRequestPanel(),
             openMobileWorkHubLanding: view => this.hubNavigation.openMobileWorkHubLanding(view),
             collapseMobileSidePanels: () => this.sideSheetController.collapseMobileSidePanels(),
             dismissSheetsAsync: () => this.sideSheetController.dismissSheetsAsync(),
@@ -504,7 +522,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             toggleMobileAgentSheet: () => this.toggleMobileAgentSheet(),
             toggleMobilePreview: () => this.toggleMobilePreview(),
             toggleMobileExploreSheet: () => this.toggleMobileExploreSheet(),
-            openPullRequestPanel: () => this.openPullRequestPanel(),
+            openPullRequestPanel: () => this.pullRequestPanelController.openPullRequestPanel(),
             executeAndDismiss: commandId => this.executeAndDismiss(commandId),
             relayoutMainPreviewWidgets: () => this.relayoutMainPreviewWidgets(),
             conversationsStart: () => this.conversations.start(),
@@ -840,7 +858,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
         }
         this.projectsPanel = undefined;
-        this.disposePullRequestPanel();
+        this.pullRequestPanelController.disposePullRequestPanel();
         this.shell.node.classList.remove(MOBILE_BOTTOM_OPEN_CLASS);
     }
 
@@ -1054,39 +1072,23 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Remove every PR overlay node under the app shell (fixes stacked sheets after re-open). */
     protected removeAllMobilePrPanelsFromShell(): void {
-        this.shell.node.querySelectorAll('.theia-mobile-pr').forEach(el => el.remove());
+        this.pullRequestPanelController.removeAllMobilePrPanelsFromShell();
     }
 
     protected isPullRequestPanelShown(): boolean {
-        return Boolean(this.shell.node.querySelector('.theia-mobile-pr.theia-mod-visible'));
+        return this.pullRequestPanelController.isPullRequestPanelShown();
     }
 
     protected disposePullRequestPanel(): void {
-        this.pullRequestPanel?.dispose();
-        this.pullRequestPanel = undefined;
-        this.removeAllMobilePrPanelsFromShell();
+        this.pullRequestPanelController.disposePullRequestPanel();
     }
 
     protected openPullRequestPanel(): void {
-        this.disposePullRequestPanel();
-        this.pullRequestPanel = new MobilePullRequestPanel({
-            onDismiss: () => {
-                this.scheduleSnapAndUiRefresh();
-                this.refreshBottomBar();
-            },
-        });
-        this.shell.node.appendChild(this.pullRequestPanel.node);
-        this.pullRequestPanel.show();
+        this.pullRequestPanelController.openPullRequestPanel();
     }
 
     protected async openPullRequestFromInbox(pullRequest: QaapGithubPullRequestSummary): Promise<void> {
-        await this.dismissSheetsAsync();
-        if (this.shell.isExpanded('bottom')) {
-            await this.shell.collapsePanel('bottom');
-        }
-        this.openPullRequestPanel();
-        this.pullRequestPanel?.showWithPullRequest(pullRequest);
-        this.refreshBottomBar();
+        return this.pullRequestPanelController.openPullRequestFromInbox(pullRequest);
     }
 
     protected async refreshProjectsCount(): Promise<void> {
@@ -1106,7 +1108,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected hidePullRequestPanel(): void {
-        this.disposePullRequestPanel();
+        this.pullRequestPanelController.hidePullRequestPanel();
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -1292,18 +1294,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async togglePullRequestPanel(): Promise<void> {
-        if (this.isPullRequestPanelShown()) {
-            this.disposePullRequestPanel();
-            this.scheduleSnapAndUiRefresh();
-            return;
-        }
-        this.hideProjectsPanel();
-        await this.dismissSheetsAsync();
-        if (this.shell.isExpanded('bottom')) {
-            await this.shell.collapsePanel('bottom');
-        }
-        this.openPullRequestPanel();
-        this.refreshBottomBar();
+        return this.pullRequestPanelController.togglePullRequestPanel();
     }
 
     protected async onProjectsPanelOpen(project: MobileProjectEntry): Promise<void> {
