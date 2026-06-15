@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { MessageService, nls } from '@theia/core';
+import { MessageService, nls, ILogger } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
-import { ILogger } from '@theia/core';
 
 @injectable()
 export class MCPFrontendServiceImpl implements MCPFrontendService {

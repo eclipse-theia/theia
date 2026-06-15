@@ -7,12 +7,14 @@
 ## 1.73.0 - tbd
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-mcp] added OAuth 2.1 authorization for remote MCP servers, including interactive sign-in/sign-out, automatic token refresh and storage, and a command to retrieve the OAuth redirect URL [#17638](https://github.com/eclipse-theia/theia/pull/17638)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-mcp] `MCPServerManager.removeServer` and `MCPServerManager.addOrUpdateServer` are now asynchronous (return `Promise<void>` instead of `void`); callers must await them to ensure lifecycle cleanup (e.g. OAuth cancellation, credential removal) and consistent manager state [#17638](https://github.com/eclipse-theia/theia/pull/17638)
 - [debug] Made DebugSession injectable [#17510](https://github.com/eclipse-theia/theia/pull/17510)
   - removed public constructors from DebugSession and PluginDebugSession in favor of dependency injection
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors

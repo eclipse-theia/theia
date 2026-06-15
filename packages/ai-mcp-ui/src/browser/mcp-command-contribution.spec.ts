@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Command, CommandHandler, CommandRegistry, MessageService } from '@theia/core';
+import { Command, CommandHandler, CommandRegistry, ILogger, MessageService } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp';
 import { GetMCPOAuthRedirectUrl, MCPCommandContribution, SignInMCPServer, SignOutMCPServer, StartMCPServer, StopMCPServer } from './mcp-command-contribution';
@@ -68,6 +68,10 @@ describe('MCPCommandContribution', () => {
             signOut: async serverName => options.onSignOut?.(serverName),
             signIn: async serverName => options.onSignIn?.(serverName) ?? false,
             stopServer: async serverName => { options.onStopServer?.(serverName); }
+        };
+        (contribution as unknown as { logger: Partial<ILogger> }).logger = {
+            error: async () => { },
+            warn: async () => { }
         };
         (contribution as unknown as { oauthFrontendDelegate: Partial<MCPOAuthFrontendDelegate> }).oauthFrontendDelegate = {
             getEffectiveRedirectUrl: async () => {
@@ -339,32 +343,20 @@ describe('MCPCommandContribution', () => {
 
         it('keeps the generic failure toast for unexpected error states', () => {
             const captures: { info?: string, error?: string } = {};
-            const originalConsoleError = console.error;
-            console.error = () => { };
-            try {
-                callReportStartOutcome({
-                    name: 'test-server', serverUrl: 'https://mcp.example.com/mcp',
-                    status: MCPServerStatus.Errored, error: 'transport refused'
-                }, captures);
-            } finally {
-                console.error = originalConsoleError;
-            }
+            callReportStartOutcome({
+                name: 'test-server', serverUrl: 'https://mcp.example.com/mcp',
+                status: MCPServerStatus.Errored, error: 'transport refused'
+            }, captures);
             expect(captures.info).to.be.undefined;
             expect(captures.error).to.contain('error occurred');
         });
 
         it('suppresses the generic failure toast when the server is still Starting/Connecting on return', () => {
             const captures: { info?: string, error?: string } = {};
-            const originalConsoleWarn = console.warn;
-            console.warn = () => { };
-            try {
-                callReportStartOutcome({
-                    name: 'test-server', serverUrl: 'https://mcp.example.com/mcp',
-                    status: MCPServerStatus.Connecting
-                }, captures);
-            } finally {
-                console.warn = originalConsoleWarn;
-            }
+            callReportStartOutcome({
+                name: 'test-server', serverUrl: 'https://mcp.example.com/mcp',
+                status: MCPServerStatus.Connecting
+            }, captures);
             expect(captures.info).to.be.undefined;
             expect(captures.error).to.be.undefined;
         });
