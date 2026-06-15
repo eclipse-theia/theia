@@ -23,6 +23,7 @@ import { AsyncSubscription, subscribe } from '@parcel/watcher';
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
 import { Disposable, DisposableCollection } from '../common';
+import { escapeRegExpCharacters } from '../common/strings';
 
 /** Maps logger names to log levels.  */
 export interface LogLevels {
@@ -243,10 +244,8 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
     protected getWildcardRegex(pattern: string): RegExp {
         let regex = this.wildcardRegexCache.get(pattern);
         if (!regex) {
-            const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-            const regexString = `^${escapedPattern.replace(/\*/g, '.*')}$`;
-
-            regex = new RegExp(regexString);
+            const escapedPattern = pattern.split('*').map(escapeRegExpCharacters).join('.*');
+            regex = new RegExp(`^${escapedPattern}$`);
             this.wildcardRegexCache.set(pattern, regex);
         }
         return regex;
