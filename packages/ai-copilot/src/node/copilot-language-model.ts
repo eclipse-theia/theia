@@ -33,7 +33,6 @@ import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCo
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
 import { ChatCompletionStreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-chat-completion-stream';
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 
 export interface CopilotLanguageModelParams {
     id: string;
@@ -55,10 +54,6 @@ export type CopilotLanguageModelFactory = (params: CopilotLanguageModelParams) =
  * Uses the OpenAI SDK to communicate with the Copilot API.
  */
 export class CopilotLanguageModel implements LanguageModel {
-
-    protected runnerOptions: RunnerOptions = {
-        maxChatCompletions: 100
-    };
 
     constructor(
         public readonly id: string,
@@ -109,7 +104,6 @@ export class CopilotLanguageModel implements LanguageModel {
                     messages: this.processMessages(request.messages),
                     settings,
                     tools,
-                    maxChatCompletions: this.runnerOptions.maxChatCompletions ?? 100,
                     maxRetries: this.maxRetries,
                     toolCallExecutor: this.toolCallExecutor,
                     cancellationToken

@@ -24,6 +24,7 @@
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 - [ai-openai] `OpenAiLanguageModelsManagerImpl` no longer injects `OpenAiModelUtils` or `OpenAiResponseApiUtils` (the `openAiModelUtils` and `responseApiUtils` protected fields were removed); provider models are now constructed via the injected `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai, ai-copilot] `OpenAiModel.createTools()` and `CopilotLanguageModel.createTools()` now return `ChatCompletionTool[]` instead of `RunnableToolFunctionWithoutParse[]`, because the OpenAI SDK `runTools` runner is no longer used [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-copilot] removed the `protected runnerOptions` field from `CopilotLanguageModel`; its only purpose was the `maxChatCompletions` turn cap, which is gone now that the OpenAI SDK `runTools` runner is unused, so the tool loop runs until the model stops requesting tools. Subclasses that read or overrode `runnerOptions` must adapt. `OpenAiModel.runnerOptions` is retained, but its `maxChatCompletions` now bounds only the Response API path, not the Chat Completions tool loop [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 
 ## 1.72.0 - 5/28/2026
 

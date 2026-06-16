@@ -178,7 +178,6 @@ export class OpenAiModel implements LanguageModel {
                     messages: this.processMessages(request.messages),
                     settings,
                     tools,
-                    maxChatCompletions: this.runnerOptions.maxChatCompletions ?? 100,
                     maxRetries: this.maxRetries,
                     toolCallExecutor: this.toolCallExecutor,
                     cancellationToken

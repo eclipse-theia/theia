@@ -51,8 +51,6 @@ export interface ChatCompletionToolLoopOptions {
     /** Additional request settings (may include `stream_options`, temperature, etc.). */
     readonly settings: Record<string, unknown>;
     readonly tools: ChatCompletionTool[];
-    /** Maximum number of chat completions (turns); each tool round counts as one. */
-    readonly maxChatCompletions: number;
     readonly maxRetries: number;
     readonly toolCallExecutor: ToolCallExecutor;
     readonly cancellationToken?: CancellationToken;
@@ -75,7 +73,6 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly messages: ChatCompletionMessageParam[];
-    protected iteration = 0;
     protected currentStream?: ChatCompletionChunkStream;
 
     constructor(protected readonly options: ChatCompletionToolLoopOptions) {
@@ -114,7 +111,7 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
 
     protected async startIteration(): Promise<void> {
         try {
-            while (this.iteration < this.options.maxChatCompletions && !this.cancellationRequested) {
+            while (!this.cancellationRequested) {
                 const { assistantText, toolCalls } = await this.processStream();
                 if (toolCalls.length === 0) {
                     // No tool calls: the conversation is complete.
@@ -122,9 +119,8 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
                     return;
                 }
                 await this.executeAndAppendToolCalls(assistantText, toolCalls);
-                this.iteration++;
             }
-            // Reached the maximum number of completions (or was cancelled).
+            // Cancelled before the model stopped requesting tools.
             this.dispose();
         } catch (error) {
             if (this.cancellationRequested) {

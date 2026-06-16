@@ -99,7 +99,6 @@ function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolL
         messages: overrides.messages ?? [{ role: 'user', content: 'hi' }],
         settings: overrides.settings ?? {},
         tools: overrides.tools ?? [{ type: 'function', function: { name: 'a' } } as any],
-        maxChatCompletions: overrides.maxChatCompletions ?? 100,
         maxRetries: overrides.maxRetries ?? 0,
         toolCallExecutor: overrides.toolCallExecutor ?? new ToolCallExecutorImpl(),
         cancellationToken: overrides.cancellationToken
@@ -244,31 +243,6 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
         const secondTurnMessages = openai.calls[1].messages;
         expect(secondTurnMessages[secondTurnMessages.length - 1].role).to.equal('tool');
         expect(parts.filter(isTextResponsePart).map(p => p.content)).to.deep.equal(['recovered']);
-    });
-
-    it('stops after maxChatCompletions turns even if the model keeps requesting tools', async () => {
-        const request: UserRequest = {
-            sessionId: 'session',
-            requestId: 'request',
-            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
-            tools: [toolRequest('a', async () => 'a-result')]
-        };
-        // Every turn returns another tool call, so only the maxChatCompletions guard ends the loop.
-        const openai: FakeOpenAi = {
-            calls: [],
-            chat: {
-                completions: {
-                    create: async (body: any) => {
-                        openai.calls.push(body);
-                        return new FakeStream([toolChunk(0, `call-${openai.calls.length}`, 'a', '{}')]);
-                    }
-                }
-            }
-        };
-
-        await drain(makeIterator(openai, { request, maxChatCompletions: 3 }));
-
-        expect(openai.calls).to.have.lengthOf(3);
     });
 
     it('does not start a request when already cancelled', async () => {
