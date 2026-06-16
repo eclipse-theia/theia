@@ -43,11 +43,36 @@ class TestableLocationListRenderer extends LocationListRenderer {
     testRenderSelectInput(): React.ReactNode {
         return this.renderSelectInput();
     }
+
+    testTrySetNewLocation(newLocation: URI): void {
+        this.trySetNewLocation(newLocation);
+    }
 }
 
 function createMockService(): LocationService {
     return {
         location: undefined,
+        drives: () => Promise.resolve([])
+    };
+}
+
+/**
+ * A `LocationService` that tracks how often its `location` setter is invoked,
+ * so tests can distinguish "navigation skipped" from "re-navigated to the same location".
+ */
+function createTrackingService(initial?: URI): LocationService & { locationSetCount: number } {
+    const state = { current: initial, count: 0 };
+    return {
+        get location(): URI | undefined {
+            return state.current;
+        },
+        set location(uri: URI | undefined) {
+            state.current = uri;
+            state.count++;
+        },
+        get locationSetCount(): number {
+            return state.count;
+        },
         drives: () => Promise.resolve([])
     };
 }
@@ -193,6 +218,63 @@ describe('LocationListRenderer', () => {
             const selectElement = r.testRenderSelectInput() as React.ReactElement;
 
             expect(selectElement.props.value).to.equal(newLocation.toString());
+            r.dispose();
+        });
+    });
+
+    describe('trySetNewLocation', () => {
+        it('should not navigate when the target equals the current location', () => {
+            const host = document.createElement('div');
+            const service = createTrackingService(URI.fromFilePath('/home'));
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            r.testTrySetNewLocation(URI.fromFilePath('/home'));
+
+            // The location setter must not be invoked, otherwise a duplicate entry is added to the history.
+            expect(service.locationSetCount).to.equal(0);
+            expect(service.location?.path.toString()).to.equal('/home');
+            r.dispose();
+        });
+
+        it('should navigate when the target differs from the current location', () => {
+            const host = document.createElement('div');
+            const service = createTrackingService(URI.fromFilePath('/home'));
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            r.testTrySetNewLocation(URI.fromFilePath('/work'));
+
+            expect(service.locationSetCount).to.equal(1);
+            expect(service.location?.path.toString()).to.equal('/work');
+            r.dispose();
+        });
+
+        it('should navigate when there is no current location yet', () => {
+            const host = document.createElement('div');
+            const service = createTrackingService(undefined);
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            r.testTrySetNewLocation(URI.fromFilePath('/home'));
+
+            expect(service.location?.path.toString()).to.equal('/home');
+            r.dispose();
+        });
+
+        it('should navigate to a previously visited location after it was left by other means', () => {
+            const host = document.createElement('div');
+            const service = createTrackingService(URI.fromFilePath('/home'));
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            // Navigate to '/home' via the location input (no-op, already there).
+            r.testTrySetNewLocation(URI.fromFilePath('/home'));
+
+            // Simulate leaving '/home' through another mechanism, e.g. the "Navigate Up" button,
+            // which sets the model location directly without going through `trySetNewLocation`.
+            service.location = URI.fromFilePath('/');
+
+            // Navigating back to '/home' via the location input must work and not be silently blocked.
+            r.testTrySetNewLocation(URI.fromFilePath('/home'));
+
+            expect(service.location?.path.toString()).to.equal('/home');
             r.dispose();
         });
     });

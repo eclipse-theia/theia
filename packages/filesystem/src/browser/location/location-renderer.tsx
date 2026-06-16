@@ -100,7 +100,6 @@ export class LocationListRenderer extends ReactRenderer {
             this.initResolveDirectoryCache();
         }
     }
-    protected lastUniqueTextInputLocation: URI | undefined;
     protected previousAutocompleteMatch: string;
     protected doAttemptAutocomplete = true;
 
@@ -303,12 +302,11 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     protected trySetNewLocation(newLocation: URI): void {
-        if (this.lastUniqueTextInputLocation === undefined) {
-            this.lastUniqueTextInputLocation = this.service.location;
-        }
-        // prevent consecutive repeated locations from being added to location history
-        if (this.lastUniqueTextInputLocation?.path.toString() !== newLocation.path.toString()) {
-            this.lastUniqueTextInputLocation = newLocation;
+        // Compare against the actual current location rather than a cached value. A cached value goes stale
+        // whenever the location is changed by other means (navigation buttons, opening a directory in the tree, etc.),
+        // which would then silently block navigating back to a previously visited location via the location input.
+        // Skipping navigation to the location we are already at still avoids adding a duplicate entry to the location history.
+        if (this.service.location?.path.toString() !== newLocation.path.toString()) {
             this.service.location = newLocation;
         }
     }
