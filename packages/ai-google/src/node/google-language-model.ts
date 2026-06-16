@@ -27,6 +27,7 @@ import {
     ReasoningSupport,
     ToolCallResult,
     ToolCallExecutor,
+    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -167,7 +168,7 @@ export class GoogleModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
         public maxInputTokens?: number,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {

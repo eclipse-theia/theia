@@ -61,9 +61,8 @@ interface ToolCall {
 @injectable()
 export class OpenAiResponseApiUtils {
 
-    // Injected when resolved via DI; the initializer keeps direct instantiation (e.g. in tests) working.
     @inject(ToolCallExecutor)
-    readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor();
+    toolCallExecutor: ToolCallExecutor;
 
     /**
      * Handles Response API requests with proper tool calling cycles.

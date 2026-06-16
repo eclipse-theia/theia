@@ -25,7 +25,8 @@ import {
     ImageContent,
     LanguageModelStatus,
     ReasoningSupport,
-    ToolCallExecutor
+    ToolCallExecutor,
+    ToolCallExecutorImpl
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -129,7 +130,7 @@ export class OpenAiModel implements LanguageModel {
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
         public maxInputTokens?: number,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */

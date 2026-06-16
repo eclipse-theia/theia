@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isToolCallResponsePart, isUsageResponsePart, LanguageModelStreamResponsePart, UserRequest } from '@theia/ai-core';
+import { isToolCallResponsePart, isUsageResponsePart, LanguageModelStreamResponsePart, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
@@ -36,6 +36,7 @@ function functionCallItem(id: string, name: string, args: string): unknown {
 describe('OpenAiResponseApiUtils', () => {
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
         const utils = new OpenAiResponseApiUtils();
+        utils.toolCallExecutor = new ToolCallExecutorImpl();
         const streams = [
             [
                 {
@@ -117,6 +118,7 @@ describe('OpenAiResponseApiUtils', () => {
 
     it('executes the tool calls of a single turn concurrently', async () => {
         const utils = new OpenAiResponseApiUtils();
+        utils.toolCallExecutor = new ToolCallExecutorImpl();
         const streams = [
             [
                 functionCallItem('call-a', 'a', '{}'),

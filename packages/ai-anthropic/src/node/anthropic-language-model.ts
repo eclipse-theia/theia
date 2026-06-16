@@ -29,6 +29,7 @@ import {
     ReasoningSupport,
     ToolCallResult,
     ToolCallExecutor,
+    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
@@ -258,7 +259,7 @@ export class AnthropicModel implements LanguageModel {
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
         public maxInputTokens?: number,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {

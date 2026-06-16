@@ -25,6 +25,7 @@ import {
     ReasoningSupport,
     ToolCall,
     ToolCallExecutor,
+    ToolCallExecutorImpl,
     ToolCallResult,
     ToolRequest,
     ToolRequestParametersProperties,
@@ -76,7 +77,7 @@ export class OllamaModel implements LanguageModel {
         protected host: () => string | undefined,
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

@@ -24,6 +24,7 @@ import {
     LanguageModelStatus,
     LanguageModelTextResponse,
     ToolCallExecutor,
+    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -69,7 +70,7 @@ export class CopilotLanguageModel implements LanguageModel {
         protected readonly accessTokenProvider: () => Promise<string | undefined>,
         protected readonly enterpriseUrlProvider: () => string | undefined,
         protected readonly userAgentProvider: () => string,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutor()
+        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {

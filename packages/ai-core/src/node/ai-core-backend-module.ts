@@ -41,7 +41,8 @@ import {
     TokenUsageService,
     TokenUsageServiceClient,
     TOKEN_USAGE_SERVICE_PATH,
-    ToolCallExecutor
+    ToolCallExecutor,
+    ToolCallExecutorImpl
 } from '../common';
 import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 import { TokenUsageServiceImpl } from './token-usage-service-impl';
@@ -54,7 +55,8 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
     bind(BackendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistryImpl);
 
-    bind(ToolCallExecutor).toSelf().inSingletonScope();
+    bind(ToolCallExecutorImpl).toSelf().inSingletonScope();
+    bind(ToolCallExecutor).toService(ToolCallExecutorImpl);
 
     bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
 

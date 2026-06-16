@@ -24,7 +24,7 @@ import {
     isToolNotAvailableError,
     isToolCallContent
 } from './language-model';
-import { ToolCallExecutor, ToolCallOutcome } from './tool-call-execution';
+import { ToolCallExecutor, ToolCallExecutorImpl, ToolCallOutcome } from './tool-call-execution';
 
 /** Builds a minimal {@link ToolRequest} whose handler delegates to `handler`. */
 function tool(name: string, handler: ToolRequest['handler']): ToolRequest {
@@ -35,7 +35,7 @@ describe('ToolCallExecutor', () => {
     let executor: ToolCallExecutor;
 
     beforeEach(() => {
-        executor = new ToolCallExecutor();
+        executor = new ToolCallExecutorImpl();
     });
 
     it('executes the tool calls of a turn concurrently (not sequentially)', async () => {

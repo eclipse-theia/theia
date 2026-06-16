@@ -27,7 +27,7 @@ import {
     ToolInvocation,
     ToolCallExecutionOptions,
     ToolCallOutcome,
-    ToolCallExecutor,
+    ToolCallExecutorImpl,
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
@@ -101,7 +101,7 @@ function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolL
         tools: overrides.tools ?? [{ type: 'function', function: { name: 'a' } } as any],
         maxChatCompletions: overrides.maxChatCompletions ?? 100,
         maxRetries: overrides.maxRetries ?? 0,
-        toolCallExecutor: overrides.toolCallExecutor ?? new ToolCallExecutor(),
+        toolCallExecutor: overrides.toolCallExecutor ?? new ToolCallExecutorImpl(),
         cancellationToken: overrides.cancellationToken
     });
 }
@@ -117,7 +117,7 @@ async function drain(iterator: AsyncIterableIterator<LanguageModelStreamResponse
 const flush = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
 
 /** Captures the batches of tool calls passed to the executor, to assert single-turn batching. */
-class RecordingExecutor extends ToolCallExecutor {
+class RecordingExecutor extends ToolCallExecutorImpl {
     readonly batches: ToolInvocation[][] = [];
     override executeToolCalls(
         toolCalls: readonly ToolInvocation[],

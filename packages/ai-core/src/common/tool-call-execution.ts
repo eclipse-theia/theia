@@ -88,9 +88,7 @@ export interface ToolCallExecutionOptions {
  *  - The overall tool execution promise never rejects but returns a result that may
  *    include errors from failed tool calls
  */
-@injectable()
-export class ToolCallExecutor {
-
+export interface ToolCallExecutor {
     /**
      * Executes all `toolCalls` concurrently and returns their outcomes in input order.
      *
@@ -98,6 +96,18 @@ export class ToolCallExecutor {
      * @param tools the tools available for this request (typically `request.tools`)
      * @param options optional per-call hook and cancellation token
      */
+    executeToolCalls(
+        toolCalls: readonly ToolInvocation[],
+        tools: readonly ToolRequest[] | undefined,
+        options?: ToolCallExecutionOptions
+    ): Promise<ToolCallOutcome[]>;
+}
+
+export const ToolCallExecutor = Symbol('ToolCallExecutor');
+
+@injectable()
+export class ToolCallExecutorImpl implements ToolCallExecutor {
+
     async executeToolCalls(
         toolCalls: readonly ToolInvocation[],
         tools: readonly ToolRequest[] | undefined,
@@ -106,10 +116,6 @@ export class ToolCallExecutor {
         return Promise.all(toolCalls.map(toolCall => this.executeToolCall(toolCall, tools, options)));
     }
 
-    /**
-     * Executes a single tool call, applying the uniform error handling described on the class.
-     * Subclasses may override this to customize per-call behavior.
-     */
     protected async executeToolCall(
         toolCall: ToolInvocation,
         tools: readonly ToolRequest[] | undefined,
