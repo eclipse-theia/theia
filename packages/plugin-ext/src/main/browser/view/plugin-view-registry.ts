@@ -643,7 +643,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 });
                 return _pendingResolution;
             },
-            show: webview.show
+            show: (preserveFocus: boolean) => {
+                this.openView(viewId, preserveFocus ? { reveal: true } : { activate: true });
+            }
         };
 
         const toDispose = this.onNewResolverRegistered(resolver => {

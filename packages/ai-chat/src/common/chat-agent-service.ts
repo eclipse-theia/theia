@@ -50,12 +50,15 @@ export const ChatAgentServiceFactory = Symbol('ChatAgentServiceFactory');
 export interface ChatAgentService {
     /**
      * Returns all available agents.
+     * @param includeHidden whether to include agents that are hidden from chat (showInChat set to false). Defaults to false, meaning hidden agents will not be returned.
      */
-    getAgents(): ChatAgent[];
+    getAgents(includeHidden?: boolean): ChatAgent[];
     /**
      * Returns the specified agent, if available
+     * @param id the agent id
+     * @param includeHidden whether to include agents that are hidden from chat (showInChat set to false). Defaults to false, meaning hidden agents will not be returned.
      */
-    getAgent(id: string): ChatAgent | undefined;
+    getAgent(id: string, includeHidden?: boolean): ChatAgent | undefined;
     /**
      * Returns all agents, including disabled ones.
      */
@@ -212,14 +215,16 @@ export class ChatAgentServiceImpl implements ChatAgentService {
         this.onDidChangeAgentsEmitter.fire();
     }
 
-    getAgent(id: string): ChatAgent | undefined {
+    getAgent(id: string, includeHidden: boolean = false): ChatAgent | undefined {
         if (!this._agentIsEnabled(id)) {
             return undefined;
         }
-        return this.getAgents().find(agent => agent.id === id);
+
+        return this.getAgents(includeHidden).find(agent => agent.id === id);
     }
-    getAgents(): ChatAgent[] {
-        return this.agents.filter(a => this._agentIsEnabled(a.id) && this._agentShowsInChat(a.id));
+
+    getAgents(includeHidden: boolean = false): ChatAgent[] {
+        return this.agents.filter(a => this._agentIsEnabled(a.id) && (includeHidden || this._agentShowsInChat(a.id)));
     }
     getAllAgents(): ChatAgent[] {
         return this.agents;

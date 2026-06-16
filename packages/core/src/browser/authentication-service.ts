@@ -20,13 +20,14 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/services/authentication/browser/authenticationService.ts
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct, named } from 'inversify';
 import { Emitter, Event } from '../common/event';
 import { StorageService } from '../browser/storage-service';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { ACCOUNTS_MENU, ACCOUNTS_SUBMENU, MenuModelRegistry } from '../common/menu';
 import { Command, CommandRegistry } from '../common/command';
 import { nls } from '../common/nls';
+import { ILogger } from '../common/logger';
 
 export interface AuthenticationSessionAccountInformation {
     readonly id: string;
@@ -202,6 +203,8 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(StorageService) protected readonly storageService: StorageService;
+    @inject(ILogger) @named('core:AuthenticationServiceImpl')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     init(): void {
@@ -308,7 +311,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             this.onDidUnregisterAuthenticationProviderEmitter.fire({ id, label: provider.label });
             this.updateAccountsMenuItem();
         } else {
-            console.error(`Failed to unregister an authentication provider. A provider with id '${id}' was not found.`);
+            this.logger.error(`Failed to unregister an authentication provider. A provider with id '${id}' was not found.`);
         }
         this.authenticationProviderDisposables.get(id)?.dispose();
         this.authenticationProviderDisposables.delete(id);
@@ -325,7 +328,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 await this.updateNewSessionRequests(provider);
             }
         } else {
-            console.error(`Failed to update an authentication session. An authentication provider with id '${id}' was not found.`);
+            this.logger.error(`Failed to update an authentication session. An authentication provider with id '${id}' was not found.`);
         }
     }
 

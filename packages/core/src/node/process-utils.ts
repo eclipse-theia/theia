@@ -15,13 +15,17 @@
 // *****************************************************************************
 
 import * as cp from 'child_process';
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
+import { ILogger } from '../common/logger';
 
 /**
  * `@theia/core` service with some process-related utilities.
  */
 @injectable()
 export class ProcessUtils {
+
+    @inject(ILogger) @named('core:ProcessUtils')
+    protected readonly logger: ILogger;
 
     terminateProcessTree(ppid: number): void {
         if (process.platform === 'win32') {
@@ -39,7 +43,7 @@ export class ProcessUtils {
         // taskkill may exit with a non-zero code when some child processes have already exited.
         // This is expected during shutdown — log but don't throw.
         if (result.status !== 0) {
-            console.warn(`taskkill.exe exited with ${result.status} for PID ${ppid}. Output:\n${JSON.stringify(result.output)}`);
+            this.logger.warn(`taskkill.exe exited with ${result.status} for PID ${ppid}. Output:\n${JSON.stringify(result.output)}`);
         }
     }
 
@@ -66,7 +70,7 @@ export class ProcessUtils {
             // ESRCH means the process is already gone, which is the goal here. Log
             // anything else but keep going so the rest of the tree is still killed.
             if ((error as NodeJS.ErrnoException | undefined)?.code !== 'ESRCH') {
-                console.error(`[${pid}] failed to kill`, error);
+                this.logger.error(`[${pid}] failed to kill`, error);
             }
         }
     }

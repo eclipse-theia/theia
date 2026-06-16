@@ -316,13 +316,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 } else {
                     this.exitStatus = { code, reason: TerminalExitReason.Process };
                 }
-                // Ensure any in-progress command block is closed even if the process exits
-                // before its OSC prompt_started bytes are flushed from the ring buffer.
-                if (this._commandHistoryState?.currentCommand) {
-                    this.finishCurrentCommand();
-                }
                 if (!attached) {
-                    this.dispose();
+                    this.deferredFinalizeCommandHistory();
                 }
             }
         }));
@@ -533,6 +528,28 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this._commandHistoryState.finishCommand(block);
         this.outputStartMarker = undefined;
         this.promptStartMarker = undefined;
+    }
+
+    protected connectionClosed = false;
+    protected waitingForConnectionCloseToDispose = false;
+
+    protected finalizeAndDispose(): void {
+        // enqueue a callback after all pending xterm writes drain
+        this.term.write('', () => {
+            if (this.isDisposed) { return; }
+            if (this._commandHistoryState?.currentCommand) {
+                this.finishCurrentCommand();
+            }
+            this.dispose();
+        });
+    }
+
+    protected deferredFinalizeCommandHistory(): void {
+        if (this.connectionClosed) {
+            this.finalizeAndDispose();
+        } else {
+            this.waitingForConnectionCloseToDispose = true;
+        }
     }
 
     private addCommandSeparator(): void {
@@ -916,6 +933,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
+        this.connectionClosed = false;
+        this.waitingForConnectionCloseToDispose = false;
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
         this.connectionProvider.listen(
             `${terminalsPath}/${this.terminalId}`,
@@ -935,7 +954,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 disposable.push(this.term.onData(sendData));
                 disposable.push(this.term.onBinary(sendData));
 
-                connection.onClose(() => disposable.dispose());
+                connection.onClose(() => {
+                    disposable.dispose();
+                    this.connectionClosed = true;
+                    if (this.waitingForConnectionCloseToDispose) {
+                        this.finalizeAndDispose();
+                    }
+                });
 
                 if (waitForConnection) {
                     waitForConnection.resolve(connection);

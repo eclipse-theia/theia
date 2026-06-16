@@ -39,7 +39,7 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
     @inject(SampleAppInfo)
     protected appInfo: SampleAppInfo;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:SampleMockOpenVsxServer')
     protected readonly logger: ILogger;
 
     protected mockClient: OVSXMockClient;

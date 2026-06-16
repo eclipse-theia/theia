@@ -30,7 +30,7 @@ import {
 } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -143,6 +143,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ILogger) @named('ai-chat-ui:ChatViewTreeWidget')
+    protected readonly logger: ILogger;
 
     protected chatResponseFocusKey: ContextKey<boolean>;
 
@@ -782,7 +785,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             },
             [-1, undefined])[1];
         if (!renderer) {
-            console.error('No renderer found for content', content);
+            this.logger.error('No renderer found for content', content);
             return <div>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/noRenderer', 'Error: No renderer found')}</div>;
         }
         return renderer.render(content, node);

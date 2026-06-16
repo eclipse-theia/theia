@@ -18,15 +18,20 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel, InteractiveContent, ToolCallChatResponseContent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common/tool-constants';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 import { AgentDelegationTool } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { withToolCallConfirmation } from './tool-confirmation';
+import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from './tool-confirmation';
+import {
+    APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
+    DENY_LATEST_TOOL_CONFIRMATION_COMMAND
+} from '../tool-confirmation-keybinding-contribution';
 import { extractJsonStringField } from './toolcall-utils';
-import { CompositeTreeNode, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
+import { CompositeTreeNode, ContextMenuRenderer, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ContributionProvider, DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 
@@ -53,6 +58,15 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
     @inject(OpenerService)
     protected openerService: OpenerService;
+
+    @inject(PendingToolConfirmationTracker)
+    protected pendingToolConfirmationTracker: PendingToolConfirmationTracker;
+
+    @inject(KeybindingRegistry)
+    protected keybindingRegistry: KeybindingRegistry;
+
+    @inject(MarkdownRenderer)
+    protected markdownRenderer: MarkdownRenderer;
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
@@ -111,9 +125,26 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
                 chatId,
                 requestCanceled: parentNode.response.isCanceled,
                 contextMenuRenderer: this.contextMenuRenderer,
-                openerService: this.openerService
+                openerService: this.openerService,
+                pendingTracker: this.pendingToolConfirmationTracker,
+                keybindingHints: this.getKeybindingHints(),
+                markdownRenderer: this.markdownRenderer
             }}
         />;
+    }
+
+    protected getKeybindingHints(): ToolConfirmationKeybindingHints {
+        const allow = this.formatKeybinding(APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        const deny = this.formatKeybinding(DENY_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        return { allow, deny };
+    }
+
+    protected formatKeybinding(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (!bindings.length) {
+            return undefined;
+        }
+        return this.keybindingRegistry.acceleratorFor(bindings[0], '+').join('+');
     }
 }
 

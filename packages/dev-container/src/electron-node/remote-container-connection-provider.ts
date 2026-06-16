@@ -25,7 +25,7 @@ import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
 import { RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { RpcServer, ILogger, MessageService, generateUuid, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
 import { DevContainerFileService } from './dev-container-file-service';
 import { DockerContainerService } from './docker-container-service';
@@ -59,7 +59,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(DevContainerCliContribution)
     protected readonly cliContribution: DevContainerCliContribution;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('dev-container:DevContainerConnectionProvider')
     protected readonly logger: ILogger;
 
     @inject(MessageService)
