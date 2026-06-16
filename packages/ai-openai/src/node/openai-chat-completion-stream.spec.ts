@@ -24,9 +24,9 @@ import {
     isToolCallResponsePart,
     isUsageResponsePart,
     LanguageModelStreamResponsePart,
-    PreparedToolCall,
+    ToolInvocation,
     ToolCallExecutionOptions,
-    ToolCallExecutionResult,
+    ToolCallOutcome,
     ToolCallExecutor,
     ToolRequest,
     UserRequest
@@ -118,12 +118,12 @@ const flush = (): Promise<void> => new Promise(resolve => setImmediate(resolve))
 
 /** Captures the batches of tool calls passed to the executor, to assert single-turn batching. */
 class RecordingExecutor extends ToolCallExecutor {
-    readonly batches: PreparedToolCall[][] = [];
+    readonly batches: ToolInvocation[][] = [];
     override executeToolCalls(
-        toolCalls: readonly PreparedToolCall[],
+        toolCalls: readonly ToolInvocation[],
         tools: readonly ToolRequest[] | undefined,
         options?: ToolCallExecutionOptions
-    ): Promise<ToolCallExecutionResult[]> {
+    ): Promise<ToolCallOutcome[]> {
         this.batches.push([...toolCalls]);
         return super.executeToolCalls(toolCalls, tools, options);
     }

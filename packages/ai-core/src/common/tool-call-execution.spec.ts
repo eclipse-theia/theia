@@ -24,7 +24,7 @@ import {
     isToolNotAvailableError,
     isToolCallContent
 } from './language-model';
-import { ToolCallExecutor, ToolCallExecutionResult } from './tool-call-execution';
+import { ToolCallExecutor, ToolCallOutcome } from './tool-call-execution';
 
 /** Builds a minimal {@link ToolRequest} whose handler delegates to `handler`. */
 function tool(name: string, handler: ToolRequest['handler']): ToolRequest {
@@ -120,7 +120,7 @@ describe('ToolCallExecutor', () => {
         await executor.executeToolCalls(
             [{ id: '1', name: 'a', arguments: '{}' }, { id: '2', name: 'b', arguments: '{}' }],
             [tool('a', async () => 'a'), tool('b', async () => 'b')],
-            { onResult: (r: ToolCallExecutionResult) => seen.push(r.id) }
+            { onResult: (r: ToolCallOutcome) => seen.push(r.id) }
         );
 
         expect(seen.slice().sort()).to.deep.equal(['1', '2']);

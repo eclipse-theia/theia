@@ -27,7 +27,7 @@ import {
  * A single tool call collected from one model response/turn, in a provider-neutral shape.
  * Each language model normalizes its own representation into this shape before execution.
  */
-export interface PreparedToolCall {
+export interface ToolInvocation {
     /** The tool call ID assigned by the model; forwarded into the {@link ToolInvocationContext}. */
     readonly id: string;
     /** The name used to match against {@link ToolRequest.name}. */
@@ -40,7 +40,7 @@ export interface PreparedToolCall {
  * The normalized outcome of executing one tool call. Returned in the same order as the
  * input array, regardless of the order in which the calls actually completed.
  */
-export interface ToolCallExecutionResult {
+export interface ToolCallOutcome {
     readonly id: string;
     readonly name: string;
     readonly arguments: string;
@@ -51,7 +51,7 @@ export interface ToolCallExecutionResult {
     readonly result: ToolCallResult;
     /** The original error if the handler threw; `undefined` for success and for tool-not-found. */
     readonly error?: Error;
-    /** `true` when no {@link ToolRequest} matched {@link PreparedToolCall.name}. */
+    /** `true` when no {@link ToolRequest} matched {@link ToolInvocation.name}. */
     readonly notFound: boolean;
 }
 
@@ -65,7 +65,7 @@ export interface ToolCallExecutionOptions {
      * order. Side effects that must be ordered should instead be performed by the caller over
      * the returned (input-ordered) array of execution results.
      */
-    readonly onResult?: (result: ToolCallExecutionResult) => void;
+    readonly onResult?: (result: ToolCallOutcome) => void;
     /** Optional cancellation token forwarded into each {@link ToolInvocationContext}. */
     readonly cancellationToken?: CancellationToken;
 }
@@ -99,10 +99,10 @@ export class ToolCallExecutor {
      * @param options optional per-call hook and cancellation token
      */
     async executeToolCalls(
-        toolCalls: readonly PreparedToolCall[],
+        toolCalls: readonly ToolInvocation[],
         tools: readonly ToolRequest[] | undefined,
         options: ToolCallExecutionOptions = {}
-    ): Promise<ToolCallExecutionResult[]> {
+    ): Promise<ToolCallOutcome[]> {
         return Promise.all(toolCalls.map(toolCall => this.executeToolCall(toolCall, tools, options)));
     }
 
@@ -111,13 +111,13 @@ export class ToolCallExecutor {
      * Subclasses may override this to customize per-call behavior.
      */
     protected async executeToolCall(
-        toolCall: PreparedToolCall,
+        toolCall: ToolInvocation,
         tools: readonly ToolRequest[] | undefined,
         options: ToolCallExecutionOptions
-    ): Promise<ToolCallExecutionResult> {
+    ): Promise<ToolCallOutcome> {
         const { id, name, arguments: args } = toolCall;
         const tool = tools?.find(candidate => candidate.name === name);
-        let outcome: ToolCallExecutionResult;
+        let outcome: ToolCallOutcome;
         if (!tool) {
             outcome = {
                 id, name, arguments: args, notFound: true,
