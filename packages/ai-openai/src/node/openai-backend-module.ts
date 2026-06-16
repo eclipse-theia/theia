@@ -28,8 +28,6 @@ import { OpenAiPreferencesSchema } from '../common/openai-preferences';
 const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OpenAiLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OpenAiLanguageModelsManager).toService(OpenAiLanguageModelsManagerImpl);
-    // Connection-scoped because it injects the connection-scoped ToolCallExecutor.
-    bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
     bind(OpenAiLanguageModelFactory).toFactory<OpenAiModel, [OpenAiModelParams]>(
         ({ container }) => params => new OpenAiModel(
             params.id,
@@ -60,5 +58,6 @@ const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
     bind(OpenAiModelUtils).toSelf().inSingletonScope();
+    bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(openAiConnectionModule);
 });

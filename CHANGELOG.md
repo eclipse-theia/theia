@@ -22,7 +22,6 @@
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors
   - renamed DebugSessionFactory.get to DebugSessionFactory.createSession and removed the manager parameter
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-- [ai-openai] `OpenAiResponseApiUtils` is now bound in the connection-scoped backend container instead of the root container, so it can no longer be injected into root-scoped services [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai] `OpenAiLanguageModelsManagerImpl` no longer injects `OpenAiModelUtils` or `OpenAiResponseApiUtils` (the `openAiModelUtils` and `responseApiUtils` protected fields were removed); provider models are now constructed via the injected `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai, ai-copilot] `OpenAiModel.createTools()` and `CopilotLanguageModel.createTools()` now return `ChatCompletionTool[]` instead of `RunnableToolFunctionWithoutParse[]`, because the OpenAI SDK `runTools` runner is no longer used [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 

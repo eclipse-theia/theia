@@ -55,9 +55,6 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
     bind(BackendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistryImpl);
 
-    bind(ToolCallExecutorImpl).toSelf().inSingletonScope();
-    bind(ToolCallExecutor).toService(ToolCallExecutorImpl);
-
     bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
 
     bind(ConnectionHandler)
@@ -117,5 +114,7 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
     bindAICorePreferences(bind);
+    bind(ToolCallExecutorImpl).toSelf().inSingletonScope();
+    bind(ToolCallExecutor).toService(ToolCallExecutorImpl);
     bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });
