@@ -212,7 +212,6 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
     }
 
     protected async executeAndAppendToolCalls(assistantText: string, toolCalls: CollectedToolCall[]): Promise<void> {
-        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
         const results = await this.options.toolCallExecutor.executeToolCalls(
             toolCalls.map(toolCall => ({ id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments || '{}' })),
             this.options.request.tools,

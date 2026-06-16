@@ -34,7 +34,6 @@ import { ChatCompletionStreamingAsyncIterator } from '@theia/ai-openai/lib/node/
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 
-/** Parameters for constructing a {@link CopilotLanguageModel}. */
 export interface CopilotLanguageModelParams {
     id: string;
     model: string;
@@ -101,7 +100,6 @@ export class CopilotLanguageModel implements LanguageModel {
         const tools = this.createTools(request);
 
         if (tools) {
-            // Drive the tool loop ourselves so that the tool calls of a single turn run concurrently.
             return {
                 stream: new ChatCompletionStreamingAsyncIterator({
                     openai,

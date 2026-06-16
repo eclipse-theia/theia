@@ -136,7 +136,6 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
     }
 }
 
-/** Parameters for constructing a {@link GoogleModel}. */
 export interface GoogleModelParams {
     id: string;
     model: string;
@@ -344,7 +343,6 @@ export class GoogleModel implements LanguageModel {
                     // Process tool calls if any exist
                     const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
-                        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
                         const toolResult = await that.toolCallExecutor.executeToolCalls(
                             toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args })),
                             request.tools,

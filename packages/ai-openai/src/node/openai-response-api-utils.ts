@@ -616,9 +616,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     }
 
     protected async executeToolCalls(): Promise<void> {
-        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
-        // The per-call `onResult` hook below preserves the original side effects (streaming the
-        // finished tool-call event and recording the result/error consumed by prepareNextIteration).
         const pending = [...this.currentToolCalls].filter(([, toolCall]) => !toolCall.executed);
 
         await this.utils.toolCallExecutor.executeToolCalls(

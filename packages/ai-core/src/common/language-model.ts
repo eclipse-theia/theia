@@ -142,19 +142,6 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
     name: string;
     parameters: ToolRequestParameters
     description?: string;
-    /**
-     * Invokes the tool.
-     *
-     * Concurrency contract: tool calls emitted within a single model response/turn are executed
-     * concurrently (see `ToolCallExecutor`). A handler may therefore run while sibling tool calls
-     * from the same turn are also in progress; it must not assume serial execution or any ordering
-     * relative to its siblings, and shared mutable state must be guarded accordingly. When a call
-     * genuinely depends on another's output or side-effects, the model serializes them across
-     * turns rather than emitting them together.
-     *
-     * @param arg_string the raw JSON argument string produced by the model
-     * @param ctx invocation context carrying the tool call ID and cancellation token
-     */
     handler: (arg_string: string, ctx?: TContext) => Promise<ToolCallResult>;
     providerName?: string;
 

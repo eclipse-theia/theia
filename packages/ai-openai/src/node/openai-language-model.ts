@@ -67,7 +67,6 @@ export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
 export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
 
-/** Parameters for constructing an {@link OpenAiModel}. */
 export interface OpenAiModelParams {
     id: string;
     model: string;
@@ -170,7 +169,6 @@ export class OpenAiModel implements LanguageModel {
         const tools = this.createTools(request);
 
         if (tools) {
-            // Drive the tool loop ourselves so that the tool calls of a single turn run concurrently.
             return {
                 stream: new ChatCompletionStreamingAsyncIterator({
                     openai,

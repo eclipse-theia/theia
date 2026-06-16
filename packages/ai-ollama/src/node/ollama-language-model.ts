@@ -41,7 +41,6 @@ import { ollamaThinkParamFor } from './ollama-reasoning';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
-/** Parameters for constructing an {@link OllamaModel}. */
 export interface OllamaModelParams {
     id: string;
     model: string;
@@ -379,7 +378,6 @@ export class OllamaModel implements LanguageModel {
 
     private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
-        // Adapt Ollama's ToolWithHandler to the ToolRequest shape expected by the executor.
         const toolRequests: ToolRequest[] = tools.map(tool => ({
             id: tool.function.name ?? '',
             name: tool.function.name ?? '',
@@ -387,7 +385,6 @@ export class OllamaModel implements LanguageModel {
             handler: async argString => (await tool.handler(argString)) as ToolCallResult
         }));
 
-        // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
         const results = await this.toolCallExecutor.executeToolCalls(
             toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
             toolRequests

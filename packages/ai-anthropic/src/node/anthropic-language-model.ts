@@ -217,7 +217,6 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
     return result;
 }
 
-/** Parameters for constructing an {@link AnthropicModel}. */
 export interface AnthropicModelParams {
     id: string;
     model: string;
@@ -400,7 +399,6 @@ export class AnthropicModel implements LanguageModel {
                     }
                 }
                 if (toolCalls.length > 0) {
-                    // Tool calls of a single turn are executed concurrently; see ToolCallExecutor.
                     const toolResult = await that.toolCallExecutor.executeToolCalls(
                         toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args })),
                         request.tools,
