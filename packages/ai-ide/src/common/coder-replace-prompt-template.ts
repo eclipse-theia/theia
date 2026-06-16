@@ -34,6 +34,8 @@ import {
     CLEAR_FILE_CHANGES_ID,
     GET_PROPOSED_CHANGES_ID
 } from './file-changeset-function-ids';
+import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids';
+import { ArchitectAgentId, ExploreAgentId } from './agent-ids';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
@@ -315,8 +317,10 @@ Do not introduce OWASP Top 10 vulnerabilities (command injection, XSS, hardcoded
 
 Delegate to a sub-agent with ~{${AGENT_DELEGATION_FUNCTION_ID}}. Two sub-agents are available:
 
-- **Architect** (\`agentId: "Architect"\`) — explores AND produces a structured implementation plan. Use when "what should I change?" is itself an open question.
-- **Explore** (\`agentId: "explore"\`) — gathers and consolidates facts only. Use when the design is clear but you need to map call sites, data flow, or patterns across files.
+- **Architect** (\`agentId: "${ArchitectAgentId}"\`) — explores AND produces a structured implementation plan.
+Use when "what should I change?" is itself an open question.
+- **Explore** (\`agentId: "${ExploreAgentId}"\`) — gathers and consolidates facts only.
+Use when the design is clear but you need to map call sites, data flow, or patterns across files.
 
 **They have no access to your conversation history** — include the user's goal, your specific question, and any relevant files in every delegation prompt.
 
