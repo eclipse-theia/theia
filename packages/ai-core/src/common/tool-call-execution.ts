@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     ToolRequest,
     ToolCallResult,
@@ -108,6 +108,9 @@ export const ToolCallExecutor = Symbol('ToolCallExecutor');
 @injectable()
 export class ToolCallExecutorImpl implements ToolCallExecutor {
 
+    @inject(ILogger) @named('ai-core:ToolCallExecutorImpl')
+    protected readonly logger: ILogger;
+
     async executeToolCalls(
         toolCalls: readonly ToolInvocation[],
         tools: readonly ToolRequest[] | undefined,
@@ -135,14 +138,14 @@ export class ToolCallExecutorImpl implements ToolCallExecutor {
                 outcome = { id, name, arguments: args, result, notFound: false };
             } catch (e) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                console.error(`Error executing tool ${name}:`, e);
+                this.logger.error(`Error executing tool ${name}:`, e);
                 outcome = { id, name, arguments: args, notFound: false, error, result: createToolCallError(error.message || 'Tool execution failed') };
             }
         }
         try {
             options.onResult?.(outcome);
         } catch (error) {
-            console.error('Uncaught error in tool-call onResult call-back.', error);
+            this.logger.error('Uncaught error in tool-call onResult call-back.', error);
         }
         return outcome;
     }

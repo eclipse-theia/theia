@@ -16,9 +16,19 @@
 
 import { expect } from 'chai';
 import { isToolCallResponsePart, isUsageResponsePart, LanguageModelStreamResponsePart, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
+import { ILogger } from '@theia/core';
+import { Container } from '@theia/core/shared/inversify';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { OpenAiModelUtils } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+
+function toolCallExecutor(): ToolCallExecutorImpl {
+    const container = new Container();
+    container.bind(ILogger).to(MockLogger);
+    container.bind(ToolCallExecutorImpl).toSelf();
+    return container.get(ToolCallExecutorImpl);
+}
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
@@ -36,7 +46,7 @@ function functionCallItem(id: string, name: string, args: string): unknown {
 describe('OpenAiResponseApiUtils', () => {
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
         const utils = new OpenAiResponseApiUtils();
-        utils.toolCallExecutor = new ToolCallExecutorImpl();
+        utils.toolCallExecutor = toolCallExecutor();
         const streams = [
             [
                 {
@@ -118,7 +128,7 @@ describe('OpenAiResponseApiUtils', () => {
 
     it('executes the tool calls of a single turn concurrently', async () => {
         const utils = new OpenAiResponseApiUtils();
-        utils.toolCallExecutor = new ToolCallExecutorImpl();
+        utils.toolCallExecutor = toolCallExecutor();
         const streams = [
             [
                 functionCallItem('call-a', 'a', '{}'),

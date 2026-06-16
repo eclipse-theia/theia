@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ToolCallExecutor } from '@theia/ai-core';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl';
@@ -27,19 +26,14 @@ import { GooglePreferencesSchema } from '../common/google-preferences';
 const geminiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(GoogleLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(GoogleLanguageModelsManager).toService(GoogleLanguageModelsManagerImpl);
+    bind(GoogleModel).toSelf().inTransientScope();
     bind(GoogleLanguageModelFactory).toFactory<GoogleModel, [GoogleModelParams]>(
-        ({ container }) => params => new GoogleModel(
-            params.id,
-            params.model,
-            params.status,
-            params.enableStreaming,
-            params.apiKey,
-            params.retrySettings,
-            params.reasoningSupport,
-            params.reasoningApi,
-            params.maxInputTokens,
-            container.get(ToolCallExecutor)
-        )
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(GoogleModelParams).toConstantValue(params);
+            return child.get(GoogleModel);
+        }
     );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(GoogleLanguageModelsManager))

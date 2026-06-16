@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
-import { ToolCallExecutor } from '@theia/ai-core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
     CopilotLanguageModelsManager,
@@ -37,19 +36,14 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(CopilotLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(CopilotLanguageModelsManager).toService(CopilotLanguageModelsManagerImpl);
 
+    bind(CopilotLanguageModel).toSelf().inTransientScope();
     bind(CopilotLanguageModelFactory).toFactory<CopilotLanguageModel, [CopilotLanguageModelParams]>(
-        ({ container }) => params => new CopilotLanguageModel(
-            params.id,
-            params.model,
-            params.status,
-            params.enableStreaming,
-            params.supportsStructuredOutput,
-            params.maxRetries,
-            params.accessTokenProvider,
-            params.enterpriseUrlProvider,
-            params.userAgentProvider,
-            container.get(ToolCallExecutor)
-        )
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(CopilotLanguageModelParams).toConstantValue(params);
+            return child.get(CopilotLanguageModel);
+        }
     );
 
     bind(ConnectionHandler).toDynamicValue(ctx =>

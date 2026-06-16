@@ -15,9 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
-import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { LanguageModelRequest, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
+import { OpenAiModel, OpenAiModelParams } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -29,6 +34,7 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+@injectable()
 class TestableOpenAiModel extends OpenAiModel {
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
@@ -39,13 +45,31 @@ class TestableOpenAiModel extends OpenAiModel {
 }
 
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
-    return new TestableOpenAiModel(
-        'test-id', modelId, { status: 'ready' }, true,
-        () => 'test-key', () => undefined,
-        false, undefined, undefined,
-        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, false, undefined, reasoningSupport
-    );
+    const parent = new Container();
+    parent.bind(OpenAiModelUtils).toSelf();
+    parent.bind(OpenAiResponseApiUtils).toSelf();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    // These tests never issue a streaming request, so the iterator factory is never invoked.
+    const iteratorFactory: ChatCompletionStreamingAsyncIteratorFactory = () => { throw new Error('iterator not used in these tests'); };
+    parent.bind(ChatCompletionStreamingAsyncIteratorFactory).toConstantValue(iteratorFactory);
+    parent.bind(TestableOpenAiModel).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OpenAiModelParams).toConstantValue({
+        id: 'test-id',
+        model: modelId,
+        status: { status: 'ready' },
+        enableStreaming: true,
+        apiKey: () => 'test-key',
+        apiVersion: () => undefined,
+        supportsStructuredOutput: false,
+        url: undefined,
+        deployment: undefined,
+        reasoningSupport
+    });
+    return child.get(TestableOpenAiModel);
 }
 
 describe('OpenAiModel reasoning translation', () => {

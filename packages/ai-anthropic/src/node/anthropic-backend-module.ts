@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ToolCallExecutor } from '@theia/ai-core';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common/anthropic-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
@@ -27,24 +26,14 @@ import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(AnthropicLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(AnthropicLanguageModelsManager).toService(AnthropicLanguageModelsManagerImpl);
+    bind(AnthropicModel).toSelf().inTransientScope();
     bind(AnthropicLanguageModelFactory).toFactory<AnthropicModel, [AnthropicModelParams]>(
-        ({ container }) => params => new AnthropicModel(
-            params.id,
-            params.model,
-            params.status,
-            params.enableStreaming,
-            params.useCaching,
-            params.apiKey,
-            params.url,
-            params.maxTokens,
-            params.maxRetries,
-            params.proxy,
-            params.reasoningSupport,
-            params.reasoningApi,
-            params.supportsXHighEffort,
-            params.maxInputTokens,
-            container.get(ToolCallExecutor)
-        )
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(AnthropicModelParams).toConstantValue(params);
+            return child.get(AnthropicModel);
+        }
     );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(AnthropicLanguageModelsManager))

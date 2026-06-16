@@ -14,13 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ToolCallExecutor } from '@theia/ai-core';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { OpenAiLanguageModelFactory, OpenAiModel, OpenAiModelParams, OpenAiModelUtils } from './openai-language-model';
+import { OpenAiLanguageModelFactory, OpenAiModel, OpenAiModelParams } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
+import {
+    ChatCompletionStreamingAsyncIterator,
+    ChatCompletionStreamingAsyncIteratorFactory,
+    ChatCompletionToolLoopOptions
+} from './openai-chat-completion-stream';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OpenAiPreferencesSchema } from '../common/openai-preferences';
 
@@ -28,27 +33,14 @@ import { OpenAiPreferencesSchema } from '../common/openai-preferences';
 const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OpenAiLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OpenAiLanguageModelsManager).toService(OpenAiLanguageModelsManagerImpl);
+    bind(OpenAiModel).toSelf().inTransientScope();
     bind(OpenAiLanguageModelFactory).toFactory<OpenAiModel, [OpenAiModelParams]>(
-        ({ container }) => params => new OpenAiModel(
-            params.id,
-            params.model,
-            params.status,
-            params.enableStreaming,
-            params.apiKey,
-            params.apiVersion,
-            params.supportsStructuredOutput,
-            params.url,
-            params.deployment,
-            container.get(OpenAiModelUtils),
-            container.get(OpenAiResponseApiUtils),
-            params.developerMessageSettings,
-            params.maxRetries,
-            params.useResponseApi,
-            params.proxy,
-            params.reasoningSupport,
-            params.maxInputTokens,
-            container.get(ToolCallExecutor)
-        )
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(OpenAiModelParams).toConstantValue(params);
+            return child.get(OpenAiModel);
+        }
     );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(OPENAI_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OpenAiLanguageModelsManager))
@@ -59,5 +51,14 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
     bind(OpenAiModelUtils).toSelf().inSingletonScope();
     bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
+    bind(ChatCompletionStreamingAsyncIterator).toSelf().inTransientScope();
+    bind(ChatCompletionStreamingAsyncIteratorFactory).toFactory<ChatCompletionStreamingAsyncIterator, [ChatCompletionToolLoopOptions]>(
+        ({ container }) => options => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(ChatCompletionToolLoopOptions).toConstantValue(options);
+            return child.get(ChatCompletionStreamingAsyncIterator);
+        }
+    );
     bind(ConnectionContainerModule).toConstantValue(openAiConnectionModule);
 });

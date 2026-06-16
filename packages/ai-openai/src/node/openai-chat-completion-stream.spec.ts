@@ -16,7 +16,9 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { CancellationTokenSource } from '@theia/core';
+import { CancellationTokenSource, ILogger } from '@theia/core';
+import { Container, injectable, interfaces } from '@theia/core/shared/inversify';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
     createToolCallError,
@@ -86,13 +88,21 @@ function toolRequest(name: string, handler: ToolRequest['handler']): ToolRequest
     return { id: name, name, parameters: { type: 'object', properties: {} }, handler };
 }
 
+/** Resolves an executor (or executor subclass) through DI so its named logger is injected. */
+function withLogger<T>(constructor: interfaces.Newable<T>): T {
+    const container = new Container();
+    container.bind(ILogger).to(MockLogger);
+    container.bind<T>(constructor).toSelf();
+    return container.get<T>(constructor);
+}
+
 function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolLoopOptions> = {}): ChatCompletionStreamingAsyncIterator {
     const defaultRequest: UserRequest = {
         sessionId: 'session',
         requestId: 'request',
         messages: [{ actor: 'user', type: 'text', text: 'hi' }]
     };
-    return new ChatCompletionStreamingAsyncIterator({
+    const options: ChatCompletionToolLoopOptions = {
         openai: openai as any,
         model: 'gpt-test',
         request: overrides.request ?? defaultRequest,
@@ -100,9 +110,14 @@ function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolL
         settings: overrides.settings ?? {},
         tools: overrides.tools ?? [{ type: 'function', function: { name: 'a' } } as any],
         maxRetries: overrides.maxRetries ?? 0,
-        toolCallExecutor: overrides.toolCallExecutor ?? new ToolCallExecutorImpl(),
+        toolCallExecutor: overrides.toolCallExecutor ?? withLogger(ToolCallExecutorImpl),
         cancellationToken: overrides.cancellationToken
-    });
+    };
+    const container = new Container();
+    container.bind(ILogger).to(MockLogger);
+    container.bind(ChatCompletionToolLoopOptions).toConstantValue(options);
+    container.bind(ChatCompletionStreamingAsyncIterator).toSelf();
+    return container.get(ChatCompletionStreamingAsyncIterator);
 }
 
 async function drain(iterator: AsyncIterableIterator<LanguageModelStreamResponsePart>): Promise<LanguageModelStreamResponsePart[]> {
@@ -116,6 +131,7 @@ async function drain(iterator: AsyncIterableIterator<LanguageModelStreamResponse
 const flush = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
 
 /** Captures the batches of tool calls passed to the executor, to assert single-turn batching. */
+@injectable()
 class RecordingExecutor extends ToolCallExecutorImpl {
     readonly batches: ToolInvocation[][] = [];
     override executeToolCalls(
@@ -157,7 +173,7 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
                 toolRequest('b', async () => { bStarted.resolve(); return 'b-result'; })
             ]
         };
-        const executor = new RecordingExecutor();
+        const executor = withLogger(RecordingExecutor);
         const openai = fakeOpenAi([
             new FakeStream([toolChunk(0, 'call-a', 'a', '{}'), toolChunk(1, 'call-b', 'b', '{}')]),
             new FakeStream([textChunk('done')])

@@ -24,14 +24,14 @@ import {
     LanguageModelStatus,
     LanguageModelTextResponse,
     ToolCallExecutor,
-    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
-import { ChatCompletionStreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-chat-completion-stream';
+import { ChatCompletionStreamingAsyncIteratorFactory } from '@theia/ai-openai/lib/node/openai-chat-completion-stream';
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 
 export interface CopilotLanguageModelParams {
@@ -46,6 +46,8 @@ export interface CopilotLanguageModelParams {
     userAgentProvider: () => string;
 }
 
+export const CopilotLanguageModelParams = Symbol('CopilotLanguageModelParams');
+
 export const CopilotLanguageModelFactory = Symbol('CopilotLanguageModelFactory');
 export type CopilotLanguageModelFactory = (params: CopilotLanguageModelParams) => CopilotLanguageModel;
 
@@ -53,20 +55,41 @@ export type CopilotLanguageModelFactory = (params: CopilotLanguageModelParams) =
  * Language model implementation for GitHub Copilot.
  * Uses the OpenAI SDK to communicate with the Copilot API.
  */
+@injectable()
 export class CopilotLanguageModel implements LanguageModel {
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public supportsStructuredOutput: boolean,
-        public maxRetries: number,
-        protected readonly accessTokenProvider: () => Promise<string | undefined>,
-        protected readonly enterpriseUrlProvider: () => string | undefined,
-        protected readonly userAgentProvider: () => string,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
-    ) { }
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    supportsStructuredOutput: boolean;
+    maxRetries: number;
+    protected accessTokenProvider: () => Promise<string | undefined>;
+    protected enterpriseUrlProvider: () => string | undefined;
+    protected userAgentProvider: () => string;
+
+    @inject(CopilotLanguageModelParams)
+    protected readonly params: CopilotLanguageModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ChatCompletionStreamingAsyncIteratorFactory)
+    protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.supportsStructuredOutput = params.supportsStructuredOutput;
+        this.maxRetries = params.maxRetries;
+        this.accessTokenProvider = params.accessTokenProvider;
+        this.enterpriseUrlProvider = params.enterpriseUrlProvider;
+        this.userAgentProvider = params.userAgentProvider;
+    }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
         return request.settings ?? {};
@@ -97,7 +120,7 @@ export class CopilotLanguageModel implements LanguageModel {
 
         if (tools) {
             return {
-                stream: new ChatCompletionStreamingAsyncIterator({
+                stream: this.chatCompletionStreamFactory({
                     openai,
                     model: this.model,
                     request,

@@ -39,7 +39,8 @@ import type {
     ResponseStreamEvent
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
-import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
+import { DeveloperMessageSettings } from './openai-language-model';
+import type { OpenAiModelUtils } from './openai-model-utils';
 import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
 
 interface ToolCall {

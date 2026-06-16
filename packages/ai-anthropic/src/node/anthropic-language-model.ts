@@ -29,10 +29,10 @@ import {
     ReasoningSupport,
     ToolCallResult,
     ToolCallExecutor,
-    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
@@ -235,6 +235,8 @@ export interface AnthropicModelParams {
     maxInputTokens?: number;
 }
 
+export const AnthropicModelParams = Symbol('AnthropicModelParams');
+
 export const AnthropicLanguageModelFactory = Symbol('AnthropicLanguageModelFactory');
 export type AnthropicLanguageModelFactory = (params: AnthropicModelParams) => AnthropicModel;
 
@@ -242,25 +244,48 @@ export type AnthropicLanguageModelFactory = (params: AnthropicModelParams) => An
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
  */
+@injectable()
 export class AnthropicModel implements LanguageModel {
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public useCaching: boolean,
-        public apiKey: () => string | undefined,
-        public url: string | undefined,
-        public maxTokens: number = DEFAULT_MAX_TOKENS,
-        public maxRetries: number = 3,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
-    ) { }
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens: number;
+    maxRetries: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    supportsXHighEffort?: boolean;
+    maxInputTokens?: number;
+
+    @inject(AnthropicModelParams)
+    protected readonly params: AnthropicModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.useCaching = params.useCaching;
+        this.apiKey = params.apiKey;
+        this.url = params.url;
+        this.maxTokens = params.maxTokens ?? DEFAULT_MAX_TOKENS;
+        this.maxRetries = params.maxRetries ?? 3;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.supportsXHighEffort = params.supportsXHighEffort;
+        this.maxInputTokens = params.maxInputTokens;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {

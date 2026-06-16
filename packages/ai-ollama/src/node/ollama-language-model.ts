@@ -25,7 +25,6 @@ import {
     ReasoningSupport,
     ToolCall,
     ToolCallExecutor,
-    ToolCallExecutorImpl,
     ToolCallResult,
     ToolRequest,
     ToolRequestParametersProperties,
@@ -36,6 +35,7 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
@@ -51,9 +51,12 @@ export interface OllamaModelParams {
     reasoningSupport?: ReasoningSupport;
 }
 
+export const OllamaModelParams = Symbol('OllamaModelParams');
+
 export const OllamaLanguageModelFactory = Symbol('OllamaLanguageModelFactory');
 export type OllamaLanguageModelFactory = (params: OllamaModelParams) => OllamaModel;
 
+@injectable()
 export class OllamaModel implements LanguageModel {
 
     protected readonly DEFAULT_REQUEST_SETTINGS: Partial<Omit<ChatRequest, 'stream' | 'model'>> = {
@@ -65,20 +68,29 @@ export class OllamaModel implements LanguageModel {
     readonly providerId = 'ollama';
     readonly vendor: string = 'Ollama';
 
-    /**
-     * @param id the unique id for this language model. It will be used to identify the model in the UI.
-     * @param model the unique model name as used in the Ollama environment.
-     * @param hostProvider a function to provide the host URL for the Ollama server.
-     */
-    constructor(
-        public readonly id: string,
-        protected readonly model: string,
-        public status: LanguageModelStatus,
-        protected host: () => string | undefined,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
-    ) { }
+    id: string;
+    protected model: string;
+    status: LanguageModelStatus;
+    protected host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+
+    @inject(OllamaModelParams)
+    protected readonly params: OllamaModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.host = params.host;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+    }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);

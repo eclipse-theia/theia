@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationToken, CancellationTokenSource } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, ILogger } from '@theia/core';
+import { Container } from '@theia/core/shared/inversify';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
     ToolRequest,
@@ -35,7 +37,10 @@ describe('ToolCallExecutor', () => {
     let executor: ToolCallExecutor;
 
     beforeEach(() => {
-        executor = new ToolCallExecutorImpl();
+        const container = new Container();
+        container.bind(ILogger).to(MockLogger);
+        container.bind(ToolCallExecutorImpl).toSelf();
+        executor = container.get(ToolCallExecutorImpl);
     });
 
     it('executes the tool calls of a turn concurrently (not sequentially)', async () => {

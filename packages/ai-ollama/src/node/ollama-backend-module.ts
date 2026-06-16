@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ToolCallExecutor } from '@theia/ai-core';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common/ollama-language-models-manager';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OllamaLanguageModelsManagerImpl } from './ollama-language-models-manager-impl';
@@ -27,16 +26,14 @@ import { OllamaPreferencesSchema } from '../common/ollama-preferences';
 const ollamaConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OllamaLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OllamaLanguageModelsManager).toService(OllamaLanguageModelsManagerImpl);
+    bind(OllamaModel).toSelf().inTransientScope();
     bind(OllamaLanguageModelFactory).toFactory<OllamaModel, [OllamaModelParams]>(
-        ({ container }) => params => new OllamaModel(
-            params.id,
-            params.model,
-            params.status,
-            params.host,
-            params.proxy,
-            params.reasoningSupport,
-            container.get(ToolCallExecutor)
-        )
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(OllamaModelParams).toConstantValue(params);
+            return child.get(OllamaModel);
+        }
     );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OllamaLanguageModelsManager))

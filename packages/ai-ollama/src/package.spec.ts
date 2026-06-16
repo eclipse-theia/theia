@@ -14,9 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolCall, ToolRequest } from '@theia/ai-core';
+import { ToolCall, ToolCallExecutor, ToolCallExecutorImpl, ToolRequest } from '@theia/ai-core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { OllamaModel } from './node/ollama-language-model';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { OllamaModel, OllamaModelParams } from './node/ollama-language-model';
 import { Tool } from 'ollama';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -25,7 +28,7 @@ describe('ai-ollama package', () => {
 
     it('Transform to Ollama tools', () => {
         const req: ToolRequest = createToolRequest();
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const ollamaTool = model.toOllamaTool(req);
 
         expect(ollamaTool.function.name).equals('example-tool');
@@ -36,7 +39,7 @@ describe('ai-ollama package', () => {
     });
 
     it('executes tool calls of a turn concurrently and preserves input order', async () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         // `a` only completes once `b` has started: a sequential implementation would deadlock here.
         const bStarted = new Deferred<void>();
         const chatRequest = {
@@ -62,7 +65,7 @@ describe('ai-ollama package', () => {
     });
 
     it('reports a missing tool with the legacy error string', async () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const chatRequest = { messages: [], tools: [] } as any;
         const result = await model.runProcessToolCalls([{ id: '1', function: { name: 'missing', arguments: '{}' } }], chatRequest);
@@ -70,11 +73,25 @@ describe('ai-ollama package', () => {
     });
 });
 
-class OllamaModelUnderTest extends OllamaModel {
-    constructor() {
-        super('id', 'model', { status: 'ready' }, () => '');
-    }
+function createModel(): OllamaModelUnderTest {
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(OllamaModelUnderTest).toSelf().inTransientScope();
 
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OllamaModelParams).toConstantValue({
+        id: 'id',
+        model: 'model',
+        status: { status: 'ready' },
+        host: () => ''
+    });
+    return child.get(OllamaModelUnderTest);
+}
+
+@injectable()
+class OllamaModelUnderTest extends OllamaModel {
     override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {
         return super.toOllamaTool(tool);
     }

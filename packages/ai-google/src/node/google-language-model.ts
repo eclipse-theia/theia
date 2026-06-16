@@ -27,10 +27,10 @@ import {
     ReasoningSupport,
     ToolCallResult,
     ToolCallExecutor,
-    ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
@@ -149,6 +149,8 @@ export interface GoogleModelParams {
     maxInputTokens?: number;
 }
 
+export const GoogleModelParams = Symbol('GoogleModelParams');
+
 export const GoogleLanguageModelFactory = Symbol('GoogleLanguageModelFactory');
 export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleModel;
 
@@ -156,20 +158,38 @@ export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleMo
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
  */
+@injectable()
 export class GoogleModel implements LanguageModel {
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public apiKey: () => string | undefined,
-        public retrySettings: () => GoogleLanguageModelRetrySettings,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public maxInputTokens?: number,
-        protected readonly toolCallExecutor: ToolCallExecutor = new ToolCallExecutorImpl()
-    ) { }
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+
+    @inject(GoogleModelParams)
+    protected readonly params: GoogleModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.apiKey = params.apiKey;
+        this.retrySettings = params.retrySettings;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.maxInputTokens = params.maxInputTokens;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {

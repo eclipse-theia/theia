@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
-import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
+import { CancellationError, CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
 import {
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
@@ -25,8 +26,6 @@ import {
     ChatCompletionMessageParam,
     ChatCompletionTool
 } from 'openai/resources';
-
-type IterResult = IteratorResult<LanguageModelStreamResponsePart>;
 
 /** A chat completion stream as returned by `chat.completions.create({ stream: true })`. */
 type ChatCompletionChunkStream = AsyncIterable<ChatCompletionChunk> & { controller: AbortController };
@@ -40,6 +39,8 @@ interface CollectedToolCall {
     /** Whether the `finished: false` "open" part has already been emitted for this call. */
     opened: boolean;
 }
+
+export const ChatCompletionToolLoopOptions = Symbol('ChatCompletionToolLoopOptions');
 
 export interface ChatCompletionToolLoopOptions {
     readonly openai: OpenAI;
@@ -65,44 +66,25 @@ export interface ChatCompletionToolLoopOptions {
  * (`chat.completions.create({ stream: true })`) ourselves, multiple tool calls emitted in a single
  * model turn (e.g. parallel agent delegations) run in parallel.
  */
-export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterator<LanguageModelStreamResponsePart>, Disposable {
-    protected readonly requestQueue = new Array<Deferred<IterResult>>();
-    protected readonly messageCache = new Array<LanguageModelStreamResponsePart>();
-    protected done = false;
-    protected terminalError: Error | undefined = undefined;
-    protected readonly toDispose = new DisposableCollection();
+@injectable()
+export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingResponseIterator {
 
-    protected readonly messages: ChatCompletionMessageParam[];
+    protected messages: ChatCompletionMessageParam[];
     protected currentStream?: ChatCompletionChunkStream;
 
-    constructor(protected readonly options: ChatCompletionToolLoopOptions) {
-        this.messages = [...options.messages];
-        if (options.cancellationToken) {
-            this.toDispose.push(options.cancellationToken.onCancellationRequested(() => this.currentStream?.controller.abort()));
+    @inject(ChatCompletionToolLoopOptions)
+    protected readonly options: ChatCompletionToolLoopOptions;
+
+    @inject(ILogger) @named('ai-openai:ChatCompletionStreamingAsyncIterator')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        this.messages = [...this.options.messages];
+        if (this.options.cancellationToken) {
+            this.toDispose.push(this.options.cancellationToken.onCancellationRequested(() => this.currentStream?.controller.abort()));
         }
         this.startIteration();
-    }
-
-    [Symbol.asyncIterator](): AsyncIterableIterator<LanguageModelStreamResponsePart> {
-        return this;
-    }
-
-    next(): Promise<IterResult> {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-        // Deliver all the messages we got, even if we've since terminated.
-        if (this.messageCache.length) {
-            return Promise.resolve({ done: false, value: this.messageCache.shift()! });
-        } else if (this.terminalError) {
-            return Promise.reject(this.terminalError);
-        } else if (this.done) {
-            return Promise.resolve({ done: true, value: undefined });
-        } else {
-            const toQueue = new Deferred<IterResult>();
-            this.requestQueue.push(toQueue);
-            return toQueue.promise;
-        }
     }
 
     protected get cancellationRequested(): boolean {
@@ -126,7 +108,7 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
             if (this.cancellationRequested) {
                 this.terminalError = new CancellationError();
             } else {
-                console.error('Error in OpenAI chat completion stream:', error);
+                this.logger.error('Error in OpenAI chat completion stream:', error);
                 this.terminalError = error instanceof Error ? error : new Error(String(error));
             }
             this.dispose();
@@ -247,28 +229,12 @@ export class ChatCompletionStreamingAsyncIterator implements AsyncIterableIterat
         return typeof result === 'string' ? result : JSON.stringify(result);
     }
 
-    protected handleIncoming(message: LanguageModelStreamResponsePart): void {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-        if (this.requestQueue.length) {
-            this.requestQueue.shift()!.resolve({ done: false, value: message });
-        } else {
-            this.messageCache.push(message);
-        }
-    }
-
-    dispose(): void {
-        this.done = true;
-        this.toDispose.dispose();
-        // No more messages will arrive; resolve or reject any outstanding requests.
-        if (this.terminalError) {
-            this.requestQueue.forEach(request => request.reject(this.terminalError));
-        } else {
-            this.requestQueue.forEach(request => request.resolve({ done: true, value: undefined }));
-        }
-        // Leave the message cache intact: if it is populated the request queue was empty, and we
-        // still want to deliver those messages when asked.
-        this.requestQueue.length = 0;
-    }
 }
+
+export const ChatCompletionStreamingAsyncIteratorFactory = Symbol('ChatCompletionStreamingAsyncIteratorFactory');
+/**
+ * Creates the iterator that drives a tool-calling chat-completion turn. Rebind in the DI container
+ * to substitute a customized {@link ChatCompletionStreamingAsyncIterator} implementation.
+ */
+export type ChatCompletionStreamingAsyncIteratorFactory =
+    (options: ChatCompletionToolLoopOptions) => ChatCompletionStreamingAsyncIterator;

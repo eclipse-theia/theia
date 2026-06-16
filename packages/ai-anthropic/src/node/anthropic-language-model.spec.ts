@@ -15,8 +15,13 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
-import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
+import {
+    isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
+} from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
 
@@ -26,82 +31,89 @@ const REASONING_SUPPORT: ReasoningSupport = {
 };
 
 /** Test helper that exposes the otherwise protected getSettings() method. */
+@injectable()
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
     }
 }
 
+function buildModel<T extends AnthropicModel>(modelType: new (...args: never[]) => T, params: AnthropicModelParams): T {
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(modelType).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(AnthropicModelParams).toConstantValue(params);
+    return child.get(modelType);
+}
+
 function createReasoningModel(
     modelId: string, reasoningApi: ReasoningApi, supportsXHighEffort: boolean = false
 ): TestableAnthropicModel {
-    return new TestableAnthropicModel(
-        'test-id', modelId, { status: 'ready' }, true, false,
-        () => 'test-key', undefined, DEFAULT_MAX_TOKENS,
-        3, undefined, REASONING_SUPPORT, reasoningApi, supportsXHighEffort
-    );
+    return buildModel(TestableAnthropicModel, {
+        id: 'test-id', model: modelId, status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+        apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS,
+        maxRetries: 3, reasoningSupport: REASONING_SUPPORT, reasoningApi, supportsXHighEffort
+    });
 }
 
 function createNonReasoningModel(modelId: string): TestableAnthropicModel {
-    return new TestableAnthropicModel(
-        'test-id', modelId, { status: 'ready' }, true, false,
-        () => 'test-key', undefined, DEFAULT_MAX_TOKENS
-    );
+    return buildModel(TestableAnthropicModel, {
+        id: 'test-id', model: modelId, status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+        apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS
+    });
 }
 
 describe('AnthropicModel', () => {
 
-    describe('constructor', () => {
+    describe('parameters', () => {
         it('should set default maxRetries to 3 when not provided', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS
+            });
 
             expect(model.maxRetries).to.equal(3);
         });
 
         it('should set custom maxRetries when provided', () => {
             const customMaxRetries = 5;
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS,
-                customMaxRetries
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: customMaxRetries
+            });
 
             expect(model.maxRetries).to.equal(customMaxRetries);
         });
 
-        it('should preserve all other constructor parameters', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS,
-                5
-            );
+        it('should preserve all other parameters', () => {
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: 5
+            });
 
             expect(model.id).to.equal('test-id');
             expect(model.model).to.equal('claude-3-opus-20240229');
@@ -111,19 +123,17 @@ describe('AnthropicModel', () => {
         });
 
         it('should set custom url when provided', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                'custom-url',
-                DEFAULT_MAX_TOKENS,
-                5
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: 'custom-url',
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: 5
+            });
 
             expect(model.url).to.equal('custom-url');
         });
@@ -329,15 +339,17 @@ describe('AnthropicModel', () => {
 
         function createModel(anthropicEventsByCall: object[][]): AnthropicModel {
             let callIndex = 0;
-            return new class extends AnthropicModel {
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     const events = anthropicEventsByCall[Math.min(callIndex++, anthropicEventsByCall.length - 1)];
                     return buildMockAnthropic(events);
                 }
-            }(
-                'test-id', 'claude-opus-4-5', { status: 'ready' },
-                true, false, () => 'test-key', undefined
-            );
+            }
+            return buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
         }
 
         async function collectStreamParts(model: AnthropicModel, text: string): Promise<LanguageModelStreamResponsePart[]> {
@@ -480,14 +492,16 @@ describe('AnthropicModel', () => {
                 { type: 'message_stop' },
             ];
 
-            const model = new class extends AnthropicModel {
+            @injectable()
+            class AbortingAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return buildAbortingAnthropic(events, 4);
                 }
-            }(
-                'test-id', 'claude-opus-4-5', { status: 'ready' },
-                true, false, () => 'test-key', undefined
-            );
+            }
+            const model = buildModel(AbortingAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
 
             const request: UserRequest = {
                 messages: [{ actor: 'user', type: 'text', text: 'hi' }],
