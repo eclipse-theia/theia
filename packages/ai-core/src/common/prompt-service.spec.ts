@@ -393,7 +393,7 @@ describe('PromptService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         container.bind<ToolInvocationRegistry>(ToolInvocationRegistry).toConstantValue(toolInvocationRegistry as any);
 
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, sinon.createStubInstance(Logger));
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
         container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
         container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
 

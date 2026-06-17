@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { ChatAgentService } from '@theia/ai-chat';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AIVariableService } from '@theia/ai-core/lib/common';
+import { AIVariableService, DEFERRED_FUNCTION_MARKER } from '@theia/ai-core/lib/common';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { PromptService, BasePromptFragment } from '@theia/ai-core/lib/common/prompt-service';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common/tool-invocation-registry';
@@ -37,6 +37,13 @@ const VARIABLE_ARGUMENT_PICKER_COMMAND = 'trigger-variable-argument-picker';
 
 interface CompletionSource<T> {
     triggerCharacter: string;
+    /**
+     * Optional marker that may appear between the trigger character and the word,
+     * e.g. the deferred function marker in `~?toolId`. When set, completions are
+     * also offered after `<triggerCharacter><deferMarker>` and the marker acts as
+     * an additional trigger character.
+     */
+    deferMarker?: string;
     getItems: () => T[];
     kind: monaco.languages.CompletionItemKind;
     getId: (item: T) => string;
@@ -104,6 +111,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
         this.registerStandardCompletionProvider({
             triggerCharacter: PromptText.FUNCTION_CHAR,
+            deferMarker: DEFERRED_FUNCTION_MARKER,
             getItems: () => this.toolInvocationRegistry.getAllFunctions(),
             kind: monaco.languages.CompletionItemKind.Function,
             getId: tool => `${tool.id} `,
@@ -224,30 +232,35 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     protected registerStandardCompletionProvider<T>(source: CompletionSource<T>): void {
         monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [source.triggerCharacter],
+            triggerCharacters: source.deferMarker ? [source.triggerCharacter, source.deferMarker] : [source.triggerCharacter],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> =>
                 this.provideCompletions(model, position, source),
         });
     }
 
-    getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacter: string): monaco.Range | undefined {
+    getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacter: string, deferMarker?: string): monaco.Range | undefined {
         const wordInfo = model.getWordUntilPosition(position);
         const lineContent = model.getLineContent(position.lineNumber);
         // one to the left, and -1 for 0-based index
         const characterBeforeCurrentWord = lineContent[wordInfo.startColumn - 1 - 1];
 
-        if (characterBeforeCurrentWord !== triggerCharacter) {
+        // 1-based column of the trigger character. The trigger may be directly before the
+        // current word (e.g. `~tool`) or separated by the optional defer marker (e.g. `~?tool`).
+        let triggerColumn: number | undefined;
+        if (characterBeforeCurrentWord === triggerCharacter) {
+            triggerColumn = wordInfo.startColumn - 1;
+        } else if (deferMarker && characterBeforeCurrentWord === deferMarker && lineContent[wordInfo.startColumn - 1 - 2] === triggerCharacter) {
+            triggerColumn = wordInfo.startColumn - 2;
+        }
+
+        if (triggerColumn === undefined) {
             return undefined;
         }
 
         // we are not at the beginning of the line
-        if (wordInfo.startColumn > 2) {
-            const charBeforeTrigger = model.getValueInRange({
-                startLineNumber: position.lineNumber,
-                startColumn: wordInfo.startColumn - 2,
-                endLineNumber: position.lineNumber,
-                endColumn: wordInfo.startColumn - 1
-            });
+        if (triggerColumn > 1) {
+            // -1 for the character before the trigger, -1 for 0-based index
+            const charBeforeTrigger = lineContent[triggerColumn - 1 - 1];
             // If the character before the trigger is not whitespace, don't provide completions
             if (!/\s/.test(charBeforeTrigger)) {
                 return undefined;
@@ -267,7 +280,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         position: monaco.Position,
         source: CompletionSource<T>
     ): ProviderResult<monaco.languages.CompletionList> {
-        const completionRange = this.getCompletionRange(model, position, source.triggerCharacter);
+        const completionRange = this.getCompletionRange(model, position, source.triggerCharacter, source.deferMarker);
         if (completionRange === undefined) {
             return { suggestions: [] };
         }

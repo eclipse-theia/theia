@@ -29,8 +29,6 @@ import {
 } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator';
-    deferLoading?: boolean;
-            (!('deferLoading' in obj) || typeof obj.deferLoading === 'boolean') &&
 
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {
