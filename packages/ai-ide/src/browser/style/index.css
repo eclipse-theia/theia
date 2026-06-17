@@ -1194,19 +1194,28 @@
   flex-shrink: 0;
 }
 
-.theia-chat-session-item-unread-dot {
+.theia-chat-session-item-unread-dot,
+.theia-chat-session-item-attention-dot {
   position: absolute;
   top: -1px;
   left: -2px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--theia-activityBarBadge-background);
   border: 1px solid var(--theia-editor-background);
   pointer-events: none;
 }
 
-.theia-chat-session-item-unread .theia-chat-session-item-title {
+.theia-chat-session-item-unread-dot {
+  background-color: var(--theia-activityBarBadge-background);
+}
+
+.theia-chat-session-item-attention-dot {
+  background-color: var(--theia-editorWarning-foreground);
+}
+
+.theia-chat-session-item-unread .theia-chat-session-item-title,
+.theia-chat-session-item-attention .theia-chat-session-item-title {
   font-weight: 600;
 }
 
@@ -1220,6 +1229,10 @@
 
 .theia-chat-session-item-working .theia-chat-session-item-agent-icon {
   color: var(--theia-focusBorder);
+}
+
+.theia-chat-session-item-attention .theia-chat-session-item-agent-icon {
+  color: var(--theia-editorWarning-foreground);
 }
 
 .theia-chat-session-item-error .theia-chat-session-item-agent-icon,
@@ -1310,6 +1323,7 @@
 
 .theia-chat-session-badge-unread-tooltip,
 .theia-chat-session-badge-running-tooltip,
+.theia-chat-session-badge-attention-tooltip,
 .theia-chat-session-badge-error-tooltip,
 .theia-chat-session-badge-restored-tooltip {
   font-size: var(--theia-ui-font-size0);
@@ -1328,6 +1342,11 @@
 .theia-chat-session-badge-running-tooltip {
   color: var(--theia-activityBarBadge-foreground);
   background-color: var(--theia-progressBar-background);
+}
+
+.theia-chat-session-badge-attention-tooltip {
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-editorWarning-foreground);
 }
 
 .theia-chat-session-badge-error-tooltip {

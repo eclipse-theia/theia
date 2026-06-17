@@ -100,6 +100,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
 
     const timeAgo = useTimeAgo(session.saveDate, formatTimeAgo);
     const [isWorking, setIsWorking] = React.useState(false);
+    const [isWaitingForInput, setIsWaitingForInput] = React.useState(false);
     const [hasError, setHasError] = React.useState(session.hasError === true);
     const hasUnread = useUnreadMessages(session.sessionId, unreadState);
 
@@ -120,6 +121,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
             const recompute = () => {
                 const requests = s.model.getRequests();
                 setIsWorking(requests.some(ChatRequestModel.isInProgress));
+                setIsWaitingForInput(requests.some(r => r.response.isWaitingForInput));
                 const lastReq = requests.at(-1);
                 setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
             };
@@ -157,13 +159,13 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         // once the session is actually opened.
         const loadedSession = chatService.getSession(session.sessionId);
         const tooltip = loadedSession
-            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError)
+            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput)
             : buildRestoredSessionTooltip(session, chatAgentService);
         // The tooltip may hold a markdown render result; dispose it once the hover is torn down
         // (or right away if we no longer intend to show it).
         if (!hoverActiveRef.current) { tooltip.dispose(); return; }
         hoverService.requestHover({ content: tooltip.element, target, position: 'left', onHide: () => tooltip.dispose() });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput]);
 
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []);
 
@@ -186,15 +188,25 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         }
     }, [onClick]);
 
+    // A session waiting for input is still "in progress" (ChatRequestModel.isInProgress is true),
+    // so the waiting state takes precedence over the generic working spinner: it signals that the
+    // user, not the agent, needs to act.
+    const showWorking = isWorking && !isWaitingForInput;
     const showUnread = hasUnread && !isWorking && !hasError;
+    const waitingForInputLabel = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
     const itemClasses = [
         'theia-chat-session-item',
-        isWorking && 'theia-chat-session-item-working',
+        isWaitingForInput && 'theia-chat-session-item-attention',
+        showWorking && 'theia-chat-session-item-working',
         hasError && !isWorking && 'theia-chat-session-item-error',
         showUnread && 'theia-chat-session-item-unread'
     ].filter(Boolean).join(' ');
 
-    const iconClass = isWorking ? `${codicon('loading')} theia-animation-spin` : agentIcon;
+    const iconClass = isWaitingForInput
+        ? codicon('bell')
+        : showWorking
+            ? `${codicon('loading')} theia-animation-spin`
+            : agentIcon;
 
     return (
         <div ref={itemRef}
@@ -216,6 +228,10 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
                 {showUnread && (
                     <span className="theia-chat-session-item-unread-dot"
                         aria-label={nls.localize('theia/ai/ide/tooltip/unread', 'Unread')} />
+                )}
+                {isWaitingForInput && (
+                    <span className="theia-chat-session-item-attention-dot"
+                        aria-label={waitingForInputLabel} />
                 )}
             </div>
             <div className="theia-chat-session-item-content">

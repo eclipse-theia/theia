@@ -133,7 +133,8 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
             title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
             markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
-                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.'),
+                'The default notification method used when an AI agent needs your attention, i.e. it completed a task or requests your input. '
+                + 'Individual agents can override this setting.'),
             type: 'string',
             enum: [...NOTIFICATION_TYPES],
             enumItemLabels: NOTIFICATION_TYPES.map(type => NOTIFICATION_TYPE_LABELS[type]),
