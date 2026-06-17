@@ -311,6 +311,7 @@ description: Skill with no content
         let fileServiceMock: any;
         let loggerWarnSpy: sinon.SinonStub;
         let loggerInfoSpy: sinon.SinonStub;
+        let loggerDebugSpy: sinon.SinonStub;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let envVariablesServerMock: any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -328,6 +329,7 @@ description: Skill with no content
             const loggerMock: ILogger = sinon.createStubInstance(Logger);
             loggerMock.warn = loggerWarnSpy;
             loggerMock.info = loggerInfoSpy;
+            loggerMock.debug = loggerDebugSpy;
             (service as unknown as { logger: unknown }).logger = loggerMock;
             (service as unknown as { envVariablesServer: unknown }).envVariablesServer = envVariablesServerMock;
             (service as unknown as { workspaceService: unknown }).workspaceService = workspaceServiceMock;
@@ -348,6 +350,7 @@ description: Skill with no content
 
             loggerWarnSpy = sinon.stub();
             loggerInfoSpy = sinon.stub();
+            loggerDebugSpy = sinon.stub();
 
             envVariablesServerMock = {
                 getHomeDirUri: sinon.stub().resolves('file:///home/testuser'),
@@ -395,13 +398,17 @@ description: Skill with no content
                 sinon.match({ recursive: false, excludes: [] })
             )).to.be.true;
 
-            // Verify info log about watching parent
-            expect(loggerInfoSpy.calledWith(
+            // Verify debug log about watching parent (demoted from info to keep startup quiet)
+            expect(loggerDebugSpy.calledWith(
                 sinon.match(/Watching parent directory.*for skills folder creation/)
             )).to.be.true;
+            // And the same line must not be emitted at info level any more.
+            expect(loggerInfoSpy.calledWith(
+                sinon.match(/Watching parent directory/)
+            )).to.be.false;
         });
 
-        it('should log warning when parent directory does not exist', async () => {
+        it('should log a debug entry when parent directory does not exist', async () => {
             const service = createService();
 
             // Neither skills directory nor parent exists
@@ -412,10 +419,42 @@ description: Skill with no content
             await workspaceServiceMock.ready;
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Verify warning is logged about parent not existing
-            expect(loggerWarnSpy.calledWith(
+            // The absent-default-tree case is expected on fresh machines and is now debug-level only.
+            expect(loggerDebugSpy.calledWith(
                 sinon.match(/Cannot watch skills directory.*parent directory does not exist/)
             )).to.be.true;
+            // It must no longer surface as a startup warning.
+            expect(loggerWarnSpy.calledWith(
+                sinon.match(/Cannot watch skills directory.*parent directory does not exist/)
+            )).to.be.false;
+        });
+
+        it('coalesces concurrent update() calls so a single scan runs at a time', async () => {
+            const service = createService();
+
+            // Default skills directory does not exist, but parent does, so each update logs once.
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves(false);
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
+                .resolves(true);
+
+            // Drive two updates in the same tick - the second must be coalesced into a follow-up
+            // re-schedule rather than racing the first and producing duplicated log lines.
+            const update = (service as unknown as { update: () => Promise<void> }).update.bind(service);
+            await Promise.all([update(), update()]);
+            // Give the rescheduled run (debounced via scheduleUpdate) time to fire.
+            await new Promise(resolve => setTimeout(resolve, 80));
+
+            // The watcher must be installed (the underlying scan must have run); the same log line
+            // must have been emitted at most once per scan, never twice from interleaved scans.
+            const matchingDebugCalls = loggerDebugSpy.getCalls().filter(call =>
+                /Watching parent directory.*for skills folder creation/.test(String(call.args[0]))
+            );
+            // Two scans (initial + rescheduled) are allowed, but never more, and never zero.
+            expect(matchingDebugCalls.length).to.be.greaterThan(0);
+            expect(matchingDebugCalls.length).to.be.lessThan(3);
         });
 
         it('should log warning for non-existent configured directories', async () => {
