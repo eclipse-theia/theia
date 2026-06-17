@@ -26,9 +26,9 @@ export interface SkillInstallService {
     update(entry: ResolvedSkillEntry): Promise<void>;
     /** Restores a drifted skill from the registry content. */
     fixSkill(entry: ResolvedSkillEntry): Promise<void>;
-    /** Adopts an existing local skill folder by stamping the registry sidecar. */
+    /** Adopts an existing local skill folder by writing the registry metadata file. */
     link(entry: ResolvedSkillEntry): Promise<void>;
-    /** Drops the registry sidecar from a skill folder while keeping its files. */
+    /** Removes the registry metadata file from a skill folder while keeping its other files. */
     unlink(name: string): Promise<void>;
     /** Removes an installed (registry-managed) skill folder. */
     uninstall(name: string): Promise<void>;
@@ -78,7 +78,7 @@ export class SkillInstallServiceImpl implements SkillInstallService {
         if (info.skillId !== undefined) {
             const matched = entries.find(entry => entry.skillId === info.skillId);
             if (!matched) {
-                // Sidecar points at a skillId the registry no longer lists.
+                // The registry metadata file points at a skillId the registry no longer lists.
                 return { kind: 'installed-link-stale' };
             }
             // Update takes precedence: a changed registry content hash always means an
@@ -92,7 +92,7 @@ export class SkillInstallServiceImpl implements SkillInstallService {
             }
             return { kind: 'installed-from-registry', updateAvailable: false };
         }
-        // No sidecar: a hand-placed folder. Offer Link only when the registry knows the name.
+        // No registry metadata file: a hand-placed folder. Offer Link only when the registry knows the name.
         const byName = entries.find(entry => entry.name === info.name);
         return byName ? { kind: 'installed-manually' } : { kind: 'installed-user-added' };
     }

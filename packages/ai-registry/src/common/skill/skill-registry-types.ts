@@ -72,7 +72,7 @@ export interface ResolvedSkillEntry {
     sourceUrl: string;
     /** Path within the repository pointing at the skill root. Omitted means the repository root. */
     sourcePath?: string;
-    /** Content hash published by the registry - compared against the installed sidecar to detect updates. */
+    /** Content hash published by the registry - compared against the installed registry metadata file to detect updates. */
     contentHash: string;
 }
 
@@ -80,8 +80,8 @@ export interface ResolvedSkillEntry {
  * Information about a skill folder found under `~/.agents/skills`.
  *
  * `skillId` and `contentHash` are present only when the folder carries our
- * `.registry.json` sidecar (i.e. it is registry-managed). `drifted` is true when the
- * on-disk content hash no longer matches the sidecar's recorded hash.
+ * `.registry.json` registry metadata file (i.e. it is registry-managed). `drifted` is
+ * true when the on-disk content hash no longer matches the recorded hash.
  */
 export interface InstalledSkillInfo {
     name: string;
@@ -97,8 +97,8 @@ export interface InstalledSkillInfo {
  *
  * - `not-installed` is only produced by `classifyRegistryEntry`.
  * - `installed-user-added` is only produced by `classifyInstalledSkill`.
- * - `installed-link-stale` surfaces a sidecar pointing at a skillId the registry no
- *   longer lists.
+ * - `installed-link-stale` surfaces a registry metadata file pointing at a skillId the
+ *   registry no longer lists.
  * - `installed-from-registry`, `installed-manually`, and `fix-skill` are common.
  */
 export type SkillClassificationResult =

@@ -24,7 +24,6 @@
 }
 
 .theia-vsx-extension-icon.theia-skill-extension-icon .codicon {
-    font-size: calc(var(--theia-vsx-extension-icon-size) * 0.65);
     color: var(--theia-descriptionForeground);
 }
 

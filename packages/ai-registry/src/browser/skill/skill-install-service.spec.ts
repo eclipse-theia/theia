@@ -35,17 +35,17 @@ describe('SkillInstallService.classifyInstalledSkill', () => {
         service = new SkillInstallServiceImpl();
     });
 
-    it('returns installed-user-added when the folder has no sidecar and the registry does not know its name', () => {
+    it('returns installed-user-added when the folder has no registry metadata file and the registry does not know its name', () => {
         const info: InstalledSkillInfo = { name: 'unrelated', drifted: false };
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-user-added' });
     });
 
-    it('returns installed-manually when the folder has no sidecar but the registry knows its name', () => {
+    it('returns installed-manually when the folder has no registry metadata file but the registry knows its name', () => {
         const info: InstalledSkillInfo = { name: 'Example Skill', drifted: false };
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-manually' });
     });
 
-    it('returns installed-link-stale when the sidecar points at a skillId the registry no longer lists', () => {
+    it('returns installed-link-stale when the registry metadata file points at a skillId the registry no longer lists', () => {
         const info: InstalledSkillInfo = { name: 'Example Skill', skillId: 'io.github.example/gone', contentHash: 'hash-v1', drifted: false };
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-link-stale' });
     });
@@ -60,12 +60,12 @@ describe('SkillInstallService.classifyInstalledSkill', () => {
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: true });
     });
 
-    it('returns installed-from-registry with no update when the sidecar hash matches the registry hash', () => {
+    it('returns installed-from-registry with no update when the recorded hash matches the registry hash', () => {
         const info: InstalledSkillInfo = { name: 'Example Skill', skillId: entry.skillId, contentHash: 'hash-v1', drifted: false };
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: false });
     });
 
-    it('returns installed-from-registry with an update available when the registry hash differs from the sidecar hash', () => {
+    it('returns installed-from-registry with an update available when the registry hash differs from the recorded hash', () => {
         const info: InstalledSkillInfo = { name: 'Example Skill', skillId: entry.skillId, contentHash: 'hash-v0', drifted: false };
         expect(service.classifyInstalledSkill(info, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: true });
     });

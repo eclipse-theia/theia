@@ -231,6 +231,8 @@ function renderActions(
             );
         }
         case 'installed-user-added':
+            // Unreachable: SkillExtensionsContribution.resolveInstalled filters these out
+            // before they reach the view. Kept as a switch-exhaustiveness guard.
             return undefined;
     }
 }

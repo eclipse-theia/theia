@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Emitter, Event, MessageService, nls } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
@@ -51,6 +51,9 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
 
     @inject(SkillInstallClientImpl)
     protected readonly installClient: SkillInstallClientImpl;
+
+    @inject(ILogger) @named('ai-registry:SkillExtensionsContribution')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -162,7 +165,7 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
         try {
             return await this.fetchService.getSkillEntries();
         } catch (error) {
-            console.warn('AI registry fetch failed; skill entries unavailable.', error);
+            this.logger.warn('AI registry fetch failed; skill entries unavailable.', error);
             return [];
         }
     }

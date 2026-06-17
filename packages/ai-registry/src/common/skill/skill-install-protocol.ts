@@ -41,17 +41,17 @@ export const SkillInstallBackendService = Symbol('SkillInstallBackendService');
  * FileService sandbox, so all fetch + filesystem writes happen here.
  */
 export interface SkillInstallBackendService {
-    /** Downloads a skill into `~/.agents/skills/<name>` and writes the registry sidecar. Refuses to overwrite an existing folder. */
+    /** Downloads a skill into `~/.agents/skills/<name>` and writes the registry metadata file. Refuses to overwrite an existing folder. */
     install(entry: ResolvedSkillEntry): Promise<void>;
     /** Clean-replaces an installed skill with the latest registry content (delete folder + re-download). */
     update(entry: ResolvedSkillEntry): Promise<void>;
     /** Clean-replaces a drifted skill with the registry content (delete folder + re-download). */
     fixSkill(entry: ResolvedSkillEntry): Promise<void>;
-    /** Removes a skill folder - only when it carries our registry sidecar. */
+    /** Removes a skill folder - only when it carries our registry metadata file. */
     uninstall(name: string): Promise<void>;
-    /** Adopts an existing local skill folder by stamping the registry sidecar without overwriting any files. */
+    /** Adopts an existing local skill folder by writing the registry metadata file without overwriting any other files. */
     link(entry: ResolvedSkillEntry): Promise<void>;
-    /** Drops the registry sidecar from a skill folder while keeping its files. */
+    /** Removes the registry metadata file from a skill folder while keeping its other files. */
     unlink(name: string): Promise<void>;
     /** Lists every skill folder under `~/.agents/skills`, including drift information for registry-managed ones. */
     listInstalledSkills(): Promise<InstalledSkillInfo[]>;

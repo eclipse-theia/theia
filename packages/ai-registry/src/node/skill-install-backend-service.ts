@@ -18,23 +18,25 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { AsyncSubscription, subscribe } from '@theia/core/shared/@parcel/watcher';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { Disposable, PreferenceService } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, ILogger, PreferenceService } from '@theia/core';
 import { Headers, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { SkillInstallBackendService, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { InstalledSkillInfo, ResolvedSkillEntry } from '../common/skill/skill-registry-types';
 import { computeSkillContentHash, SkillFileContent } from '../common/skill/skill-content-hash';
 import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences';
 
-/** File name of the per-skill provenance sidecar. Dot-prefixed so it is excluded from the content hash. */
-const SIDECAR_FILE = '.registry.json';
+/** File name of the per-skill registry metadata. Dot-prefixed so it is excluded from the content hash. */
+const REGISTRY_METADATA_FILE = '.registry.json';
+/** Prefix of the sibling staging folders used by {@link writeSkill} during atomic installs. */
+const STAGING_PREFIX = '.installing-';
 /** Skill manifest that must exist at the root of every skill. */
 const SKILL_MANIFEST = 'SKILL.md';
 const USER_AGENT = 'Theia-AI-Registry';
 /** Quiet period (ms) collapsing a burst of filesystem events into a single change notification. */
 const WATCH_DEBOUNCE_MS = 300;
 
-interface SkillSidecar {
+interface SkillRegistryMetadata {
     skillId: string;
     /**
      * Registry content hash recorded at install/link time. It is the baseline for both
@@ -43,7 +45,7 @@ interface SkillSidecar {
      * the registry's hash byte-for-byte.
      */
     contentHash: string;
-    installedAt: string;
+    installedAt?: string;
 }
 
 interface GitHubContentItem {
@@ -70,6 +72,9 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
     @inject(RequestService)
     protected readonly requestService: RequestService;
 
+    @inject(ILogger) @named('ai-registry:SkillInstallBackendServiceImpl')
+    protected readonly logger: ILogger;
+
     protected readonly clients = new Set<SkillInstallClient>();
     protected subscription: AsyncSubscription | undefined;
     protected watching = false;
@@ -77,6 +82,16 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
 
     /** Caches each skill folder's content hash keyed on a cheap stat signature, so drift detection avoids re-reading unchanged files. */
     protected readonly hashCache = new Map<string, { signature: string; contentHash: string }>();
+
+    /**
+     * Runs once after construction to sweep any stale staging folders left behind by a
+     * backend crash mid-install (see {@link writeSkill}). Best-effort: failures are logged
+     * and swallowed so an unreachable skills root never blocks the service from starting.
+     */
+    @postConstruct()
+    protected init(): void {
+        this.sweepStagingFolders().catch(error => this.logger.warn('Could not sweep stale skill staging folders at startup.', error));
+    }
 
     /** Registers a frontend client and starts watching `~/.agents/skills` for external changes. */
     setClient(client: SkillInstallClient | undefined): void {
@@ -107,7 +122,9 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         }
         const files = await this.download(entry);
         this.validateSkill(entry, files);
-        await this.writeSkill(entry, files);
+        // Pass replaceExisting=false: install must not clobber a folder that appeared
+        // between the existence check above and the rename below (e.g. a concurrent install).
+        await this.writeSkill(entry, files, false);
     }
 
     async update(entry: ResolvedSkillEntry): Promise<void> {
@@ -123,21 +140,21 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         if (!await this.exists(target)) {
             throw new Error(`No local skill folder named "${entry.name}" to link.`);
         }
-        await this.writeSidecar(target, entry.skillId, entry.contentHash);
+        await this.writeRegistryMetadata(target, entry.skillId, entry.contentHash);
     }
 
     async unlink(name: string): Promise<void> {
-        const sidecar = path.join(this.skillDir(name), SIDECAR_FILE);
-        if (await this.exists(sidecar)) {
-            await fs.rm(sidecar, { force: true });
+        const metadataPath = path.join(this.skillDir(name), REGISTRY_METADATA_FILE);
+        if (await this.exists(metadataPath)) {
+            await fs.rm(metadataPath, { force: true });
         }
     }
 
     async uninstall(name: string): Promise<void> {
         const target = this.skillDir(name);
-        // Only delete folders we manage - a folder without our sidecar may be a
-        // hand-placed skill the user does not want us to remove.
-        if (!await this.exists(path.join(target, SIDECAR_FILE))) {
+        // Only delete folders we manage - a folder without our registry metadata may be
+        // a hand-placed skill the user does not want us to remove.
+        if (!await this.exists(path.join(target, REGISTRY_METADATA_FILE))) {
             return;
         }
         await fs.rm(target, { recursive: true, force: true });
@@ -158,16 +175,16 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
             }
             const dir = path.join(root, dirent.name);
             presentDirs.add(dir);
-            const sidecar = await this.readSidecar(dir);
-            if (sidecar) {
+            const metadata = await this.readRegistryMetadata(dir);
+            if (metadata) {
                 const onDisk = await this.computeDriftHash(dir);
                 result.push({
                     name: dirent.name,
-                    skillId: sidecar.skillId,
-                    contentHash: sidecar.contentHash,
+                    skillId: metadata.skillId,
+                    contentHash: metadata.contentHash,
                     // Drift = on-disk content differs from the registry hash we recorded;
                     // update detection (registry hash changed) is decided by the classifier.
-                    drifted: onDisk !== sidecar.contentHash
+                    drifted: onDisk !== metadata.contentHash
                 });
             } else {
                 result.push({ name: dirent.name, drifted: false });
@@ -187,25 +204,35 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
     protected async cleanReplace(entry: ResolvedSkillEntry): Promise<void> {
         const target = this.skillDir(entry.name);
         // Only clean-replace folders we manage; refuse to clobber a hand-placed folder that
-        // exists but carries no sidecar (it must be adopted via Link first).
-        if (await this.exists(target) && !await this.exists(path.join(target, SIDECAR_FILE))) {
+        // exists but carries no registry metadata (it must be adopted via Link first).
+        if (await this.exists(target) && !await this.exists(path.join(target, REGISTRY_METADATA_FILE))) {
             throw new Error(`The skill folder "${entry.name}" is not managed by the registry. Link it first, then Update.`);
         }
         const files = await this.download(entry);
         this.validateSkill(entry, files);
-        await this.writeSkill(entry, files);
+        // Pass replaceExisting=true: the user explicitly asked us to overwrite the folder.
+        await this.writeSkill(entry, files, true);
     }
 
     /**
-     * Writes a freshly-downloaded skill plus its sidecar into a sibling temp folder and
-     * then atomically swaps it into place, so an interrupted download never leaves a
-     * partially-written skill folder behind.
+     * Writes a freshly-downloaded skill plus its registry metadata into a sibling staging
+     * folder and then atomically swaps it into place, so an interrupted download never
+     * leaves a partially-written skill folder behind.
+     *
+     * `replaceExisting` controls whether an existing target folder is removed first:
+     * - `false` (install): the target must not exist; the staging rename surfaces the race
+     *   if a concurrent install or external mkdir wins between the caller's existence check
+     *   and the rename, instead of silently clobbering that folder.
+     * - `true` (update/fix): the user explicitly asked us to replace the folder.
+     *
+     * The staging folder is always cleaned up in `finally`, so a thrown error or an
+     * already-existing target never leaves an orphan `.installing-*` folder behind.
      */
-    protected async writeSkill(entry: ResolvedSkillEntry, files: SkillFileContent[]): Promise<void> {
+    protected async writeSkill(entry: ResolvedSkillEntry, files: SkillFileContent[], replaceExisting: boolean): Promise<void> {
         const root = this.skillsRoot();
         await fs.mkdir(root, { recursive: true });
         const target = this.skillDir(entry.name);
-        const staging = path.join(root, `.installing-${entry.name}-${Date.now()}`);
+        const staging = path.join(root, `${STAGING_PREFIX}${entry.name}-${Date.now()}`);
         try {
             for (const file of files) {
                 const segments = file.relativePath.split('/');
@@ -216,12 +243,16 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
                 await fs.mkdir(path.dirname(dest), { recursive: true });
                 await fs.writeFile(dest, Buffer.from(file.content));
             }
-            await this.writeSidecarFile(path.join(staging, SIDECAR_FILE), entry.skillId, entry.contentHash);
-            await fs.rm(target, { recursive: true, force: true });
+            await this.writeRegistryMetadataFile(path.join(staging, REGISTRY_METADATA_FILE), entry.skillId, entry.contentHash);
+            if (replaceExisting) {
+                await fs.rm(target, { recursive: true, force: true });
+            }
             await fs.rename(staging, target);
-        } catch (error) {
+        } finally {
+            // After a successful rename the staging path no longer exists; force makes the
+            // call a no-op in that case. Otherwise (thrown error, or rename failure because
+            // the target was raced into existence) this removes the partial staging folder.
             await fs.rm(staging, { recursive: true, force: true });
-            throw error;
         }
     }
 
@@ -389,27 +420,27 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         return entries;
     }
 
-    protected async readSidecar(dir: string): Promise<SkillSidecar | undefined> {
-        const sidecarPath = path.join(dir, SIDECAR_FILE);
+    protected async readRegistryMetadata(dir: string): Promise<SkillRegistryMetadata | undefined> {
+        const metadataPath = path.join(dir, REGISTRY_METADATA_FILE);
         try {
-            const raw = await fs.readFile(sidecarPath, 'utf8');
-            const parsed = JSON.parse(raw) as Partial<SkillSidecar>;
+            const raw = await fs.readFile(metadataPath, 'utf8');
+            const parsed = JSON.parse(raw) as Partial<SkillRegistryMetadata>;
             if (typeof parsed.skillId === 'string' && typeof parsed.contentHash === 'string') {
-                return { skillId: parsed.skillId, contentHash: parsed.contentHash, installedAt: parsed.installedAt ?? '' };
+                return { skillId: parsed.skillId, contentHash: parsed.contentHash, installedAt: parsed.installedAt };
             }
         } catch {
-            // Missing or malformed sidecar - treat as not registry-managed.
+            // Missing or malformed metadata - treat as not registry-managed.
         }
         return undefined;
     }
 
-    protected async writeSidecar(dir: string, skillId: string, contentHash: string): Promise<void> {
-        await this.writeSidecarFile(path.join(dir, SIDECAR_FILE), skillId, contentHash);
+    protected async writeRegistryMetadata(dir: string, skillId: string, contentHash: string): Promise<void> {
+        await this.writeRegistryMetadataFile(path.join(dir, REGISTRY_METADATA_FILE), skillId, contentHash);
     }
 
-    protected async writeSidecarFile(sidecarPath: string, skillId: string, contentHash: string): Promise<void> {
-        const sidecar: SkillSidecar = { skillId, contentHash, installedAt: new Date().toISOString() };
-        await fs.writeFile(sidecarPath, JSON.stringify(sidecar, undefined, 2));
+    protected async writeRegistryMetadataFile(metadataPath: string, skillId: string, contentHash: string): Promise<void> {
+        const metadata: SkillRegistryMetadata = { skillId, contentHash, installedAt: new Date().toISOString() };
+        await fs.writeFile(metadataPath, JSON.stringify(metadata, undefined, 2));
     }
 
     /**
@@ -427,7 +458,7 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         fs.mkdir(root, { recursive: true })
             .then(() => subscribe(root, (error, events) => {
                 if (error) {
-                    console.warn('Stopped watching the skills directory after a watcher error.', error);
+                    this.logger.warn('Stopped watching the skills directory after a watcher error.', error);
                     this.stopWatching();
                     this.notifyWatcherStopped();
                     return;
@@ -448,7 +479,7 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
             })
             .catch(error => {
                 this.watching = false;
-                console.warn('Could not watch the skills directory for changes.', error);
+                this.logger.warn('Could not watch the skills directory for changes.', error);
             });
     }
 
@@ -508,5 +539,23 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         } catch {
             return false;
         }
+    }
+
+    /**
+     * Removes any `.installing-*` staging folders left under the skills root by a backend
+     * crash mid-install. Same-process installs always clean their own staging in the
+     * `finally` of {@link writeSkill}; this sweep handles the cross-process-crash case so
+     * those folders do not accumulate forever.
+     */
+    protected async sweepStagingFolders(): Promise<void> {
+        const root = this.skillsRoot();
+        if (!await this.exists(root)) {
+            return;
+        }
+        const dirents = await fs.readdir(root, { withFileTypes: true });
+        await Promise.all(dirents
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith(STAGING_PREFIX))
+            .map(dirent => fs.rm(path.join(root, dirent.name), { recursive: true, force: true })
+                .catch(error => this.logger.warn(`Could not remove stale skill staging folder "${dirent.name}".`, error))));
     }
 }

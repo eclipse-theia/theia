@@ -39,13 +39,13 @@ describe('computeSkillContentHash', () => {
         expect(a).to.equal(b);
     });
 
-    it('excludes dot-prefixed files at the root (e.g. the .registry.json sidecar)', () => {
-        const withoutSidecar = computeSkillContentHash([file('SKILL.md', '# Example')]);
-        const withSidecar = computeSkillContentHash([
+    it('excludes dot-prefixed files at the root (e.g. the .registry.json registry metadata file)', () => {
+        const withoutMetadata = computeSkillContentHash([file('SKILL.md', '# Example')]);
+        const withMetadata = computeSkillContentHash([
             file('SKILL.md', '# Example'),
             file('.registry.json', '{"skillId":"x"}')
         ]);
-        expect(withSidecar).to.equal(withoutSidecar);
+        expect(withMetadata).to.equal(withoutMetadata);
     });
 
     it('excludes files inside dot-prefixed directories at any level', () => {

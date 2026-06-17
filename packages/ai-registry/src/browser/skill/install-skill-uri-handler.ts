@@ -67,7 +67,18 @@ export class InstallSkillUriHandler implements OpenHandler {
             ));
             return undefined;
         }
-        const entry = await this.resolveEntry(skillId);
+        let entries: ResolvedSkillEntry[];
+        try {
+            entries = await this.fetchService.getSkillEntries();
+        } catch {
+            this.messageService.error(nls.localize(
+                'theia/ai-registry/skill/installUri/fetchFailed',
+                'Could not load the AI registry to install skill "{0}".',
+                skillId
+            ));
+            return undefined;
+        }
+        const entry = entries.find(candidate => candidate.skillId === skillId);
         if (!entry) {
             this.messageService.error(nls.localize(
                 'theia/ai-registry/skill/installUri/unknownId',
@@ -90,22 +101,6 @@ export class InstallSkillUriHandler implements OpenHandler {
             this.messageService.error(error instanceof Error ? error.message : String(error));
         }
         return undefined;
-    }
-
-    /** Loads the registry (awaiting the first fetch) and looks the id up. */
-    protected async resolveEntry(skillId: string): Promise<ResolvedSkillEntry | undefined> {
-        let entries: ResolvedSkillEntry[];
-        try {
-            entries = await this.fetchService.getSkillEntries();
-        } catch (error) {
-            this.messageService.error(nls.localize(
-                'theia/ai-registry/skill/installUri/fetchFailed',
-                'Could not load the AI registry to install skill "{0}".',
-                skillId
-            ));
-            return undefined;
-        }
-        return entries.find(entry => entry.skillId === skillId);
     }
 
     protected async confirmInstall(entry: ResolvedSkillEntry): Promise<boolean> {

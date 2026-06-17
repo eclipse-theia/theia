@@ -42,7 +42,7 @@ function hasDotSegment(posixPath: string): boolean {
  * Reproduces the registry's skill content hash byte-for-byte (registry `src/skill-source.ts`):
  *
  * - Recursively considers all files, skipping any entry whose name starts with `.` at any
- *   directory level (this excludes the `.registry.json` sidecar automatically).
+ *   directory level (this excludes the `.registry.json` registry metadata file automatically).
  * - Normalises relative paths to POSIX separators and sorts them lexicographically.
  * - For each file in order: `sha256.update(relativePath)` then `sha256.update(rawBytes)`.
  * - Returns the first {@link HASH_PREFIX_LENGTH} hex characters of the digest.

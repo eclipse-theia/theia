@@ -18,13 +18,13 @@ import { expect } from 'chai';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import { PreferenceService } from '@theia/core';
+import { ILogger, PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
 import { computeSkillContentHash } from '../common/skill/skill-content-hash';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
 
-const SIDECAR_FILE = '.registry.json';
+const REGISTRY_METADATA_FILE = '.registry.json';
 
 const SKILL_MD = '---\nname: example-skill\n---\n# Example';
 const HELPER_MD = 'helper content';
@@ -65,11 +65,18 @@ class FakeRequestService implements RequestService {
 }
 
 const fakePreferenceService = { get: () => undefined } as unknown as PreferenceService;
+const silentLogger = {
+    warn: () => Promise.resolve(),
+    error: () => Promise.resolve(),
+    info: () => Promise.resolve(),
+    debug: () => Promise.resolve(),
+    trace: () => Promise.resolve()
+} as unknown as ILogger;
 
 class TestSkillInstallBackendService extends SkillInstallBackendServiceImpl {
     constructor(private readonly root: string, request: RequestService) {
         super();
-        Object.assign(this, { requestService: request, preferenceService: fakePreferenceService });
+        Object.assign(this, { requestService: request, preferenceService: fakePreferenceService, logger: silentLogger });
     }
     protected override skillsRoot(): string {
         return this.root;
@@ -81,6 +88,10 @@ class TestSkillInstallBackendService extends SkillInstallBackendServiceImpl {
     /** Simulates an irrecoverable watcher error path so client notification can be asserted. */
     triggerWatcherStopped(): void {
         this.notifyWatcherStopped();
+    }
+    /** Exposes the startup staging-folder sweep so it can be asserted without going through @postConstruct. */
+    sweepStaging(): Promise<void> {
+        return this.sweepStagingFolders();
     }
 }
 
@@ -127,16 +138,16 @@ describe('SkillInstallBackendService', () => {
         return svc;
     }
 
-    it('installs a skill into <root>/<name>, writing the downloaded files and a sidecar', async () => {
+    it('installs a skill into <root>/<name>, writing the downloaded files and a registry metadata file', async () => {
         await service(githubResponses(SKILL_MD)).install(entry);
 
         const dir = path.join(root, 'example-skill');
         expect(await fs.readFile(path.join(dir, 'SKILL.md'), 'utf8')).to.equal(SKILL_MD);
         expect(await fs.readFile(path.join(dir, 'helper.md'), 'utf8')).to.equal('helper content');
-        const sidecar = JSON.parse(await fs.readFile(path.join(dir, SIDECAR_FILE), 'utf8'));
-        expect(sidecar.skillId).to.equal(entry.skillId);
+        const metadata = JSON.parse(await fs.readFile(path.join(dir, REGISTRY_METADATA_FILE), 'utf8'));
+        expect(metadata.skillId).to.equal(entry.skillId);
         // The registry hash is stored verbatim - the single baseline for update and drift.
-        expect(sidecar.contentHash).to.equal(entry.contentHash);
+        expect(metadata.contentHash).to.equal(entry.contentHash);
     });
 
     it('reports no drift after a faithful install and drift once local files diverge', async () => {
@@ -210,6 +221,56 @@ describe('SkillInstallBackendService', () => {
         expect(caught?.message).to.match(/name mismatch/i);
         // The folder must not be left behind on a failed install.
         expect(await exists(path.join(root, 'example-skill'))).to.equal(false);
+        // The finally block in writeSkill must also clean up the sibling staging folder.
+        const leftovers = (await fs.readdir(root)).filter(name => name.startsWith('.installing-'));
+        expect(leftovers).to.deep.equal([]);
+    });
+
+    it('refuses to clobber an existing folder of the same name when install() races with another install', async () => {
+        // Simulate the race the existence check cannot catch: the target folder is created
+        // after install() passes its exists(target) === false check but before the rename.
+        // The rename onto a non-empty directory must fail rather than silently overwrite.
+        const svc = service(githubResponses(SKILL_MD));
+        const target = path.join(root, 'example-skill');
+        // Wedge a non-empty folder into place after the existence check would have run.
+        const originalExists = (svc as unknown as { exists: (target: string) => Promise<boolean> }).exists.bind(svc);
+        let firstCall = true;
+        (svc as unknown as { exists: (target: string) => Promise<boolean> }).exists = async (path_: string) => {
+            if (firstCall && path_ === target) {
+                firstCall = false;
+                return false;
+            }
+            return originalExists(path_);
+        };
+        await fs.mkdir(target, { recursive: true });
+        await fs.writeFile(path.join(target, 'pre-existing.txt'), 'do not clobber');
+
+        let caught: Error | undefined;
+        try {
+            await svc.install(entry);
+        } catch (error) {
+            caught = error as Error;
+        }
+        expect(caught).to.not.equal(undefined);
+        // The pre-existing folder content must be preserved untouched.
+        expect(await fs.readFile(path.join(target, 'pre-existing.txt'), 'utf8')).to.equal('do not clobber');
+        // The staging folder must also be cleaned up by the finally block.
+        const leftovers = (await fs.readdir(root)).filter(name => name.startsWith('.installing-'));
+        expect(leftovers).to.deep.equal([]);
+    });
+
+    it('sweepStagingFolders removes any leftover .installing-* folders from previous backend crashes', async () => {
+        await fs.mkdir(path.join(root, '.installing-example-skill-123'), { recursive: true });
+        await fs.writeFile(path.join(root, '.installing-example-skill-123', 'partial.txt'), 'leftover');
+        await fs.mkdir(path.join(root, '.installing-another-456'), { recursive: true });
+        // A non-staging dot-folder must be preserved.
+        await fs.mkdir(path.join(root, '.other'), { recursive: true });
+
+        await service(githubResponses(SKILL_MD)).sweepStaging();
+
+        expect(await exists(path.join(root, '.installing-example-skill-123'))).to.equal(false);
+        expect(await exists(path.join(root, '.installing-another-456'))).to.equal(false);
+        expect(await exists(path.join(root, '.other'))).to.equal(true);
     });
 
     it('aborts when SKILL.md is missing from the downloaded content', async () => {
@@ -229,7 +290,7 @@ describe('SkillInstallBackendService', () => {
         expect(caught?.message).to.match(/no SKILL\.md/i);
     });
 
-    it('links an existing local folder by stamping a sidecar without overwriting files', async () => {
+    it('links an existing local folder by writing the registry metadata file without overwriting other files', async () => {
         const dir = path.join(root, 'example-skill');
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(path.join(dir, 'SKILL.md'), '---\nname: example-skill\n---\nlocal');
@@ -237,8 +298,8 @@ describe('SkillInstallBackendService', () => {
         await service(githubResponses(SKILL_MD)).link(entry);
 
         expect(await fs.readFile(path.join(dir, 'SKILL.md'), 'utf8')).to.equal('---\nname: example-skill\n---\nlocal');
-        const sidecar = JSON.parse(await fs.readFile(path.join(dir, SIDECAR_FILE), 'utf8'));
-        expect(sidecar.skillId).to.equal(entry.skillId);
+        const metadata = JSON.parse(await fs.readFile(path.join(dir, REGISTRY_METADATA_FILE), 'utf8'));
+        expect(metadata.skillId).to.equal(entry.skillId);
     });
 
     it('fixSkill clean-replaces drifted files and clears the drift', async () => {
@@ -257,7 +318,7 @@ describe('SkillInstallBackendService', () => {
         expect(installed[0].drifted).to.equal(false);
     });
 
-    it('uninstall removes a folder that carries our sidecar', async () => {
+    it('uninstall removes a folder that carries our registry metadata file', async () => {
         const svc = service(githubResponses(SKILL_MD));
         await svc.install(entry);
 
@@ -266,7 +327,7 @@ describe('SkillInstallBackendService', () => {
         expect(await exists(path.join(root, 'example-skill'))).to.equal(false);
     });
 
-    it('uninstall leaves a folder without our sidecar untouched', async () => {
+    it('uninstall leaves a folder without our registry metadata file untouched', async () => {
         const dir = path.join(root, 'manual-skill');
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(path.join(dir, 'SKILL.md'), 'manual');
@@ -276,14 +337,14 @@ describe('SkillInstallBackendService', () => {
         expect(await exists(dir)).to.equal(true);
     });
 
-    it('unlink removes the sidecar while keeping the files', async () => {
+    it('unlink removes the registry metadata file while keeping the other files', async () => {
         const svc = service(githubResponses(SKILL_MD));
         await svc.install(entry);
         const dir = path.join(root, 'example-skill');
 
         await svc.unlink('example-skill');
 
-        expect(await exists(path.join(dir, SIDECAR_FILE))).to.equal(false);
+        expect(await exists(path.join(dir, REGISTRY_METADATA_FILE))).to.equal(false);
         expect(await exists(path.join(dir, 'SKILL.md'))).to.equal(true);
     });
 
