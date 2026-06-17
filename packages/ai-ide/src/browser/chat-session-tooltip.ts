@@ -89,7 +89,7 @@ function addDefinitionEntry(definitionList: HTMLDListElement, term: string, deta
 export function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
     agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean, isRunning: boolean, hasError: boolean
+    isUnread: boolean, isRunning: boolean, hasError: boolean, isWaitingForInput: boolean
 ): SessionTooltip {
     const toDispose = new DisposableCollection();
     const requests = session.model.getRequests();
@@ -98,7 +98,13 @@ export function buildSessionTooltip(
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
-    if (isRunning) {
+    // A session waiting for input is also "running", so check it first to give it precedence.
+    if (isWaitingForInput) {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
+        container.appendChild(badge);
+    } else if (isRunning) {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-running-tooltip';
         badge.textContent = nls.localizeByDefault('Running');

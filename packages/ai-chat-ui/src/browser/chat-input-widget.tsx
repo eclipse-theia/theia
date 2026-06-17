@@ -23,12 +23,12 @@ import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request
 import {
     GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability,
     FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSettings, ReasoningSupport,
-    PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry
+    PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, AGENT_NOTIFICATION_KIND_COMPLETED
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
+import { AgentNotificationService, FrontendVariableService, AIActivationService, AgentNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
@@ -74,6 +74,7 @@ import {
     getUsageColorClass
 } from './chat-token-usage-indicator-util';
 import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
+import { isChatSessionFocused } from './chat-session-focus';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -121,8 +122,8 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
 
-    @inject(AgentCompletionNotificationService)
-    protected readonly agentNotificationService: AgentCompletionNotificationService;
+    @inject(AgentNotificationService)
+    protected readonly agentNotificationService: AgentNotificationService;
 
     @inject(ChangeSetDecoratorService)
     protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
@@ -1218,12 +1219,12 @@ export class AIChatInputWidget extends ReactWidget {
                 const session = this.chatService.getSession(sessionId);
                 const sessionTitle = session?.title;
 
-                const options: CompletionNotificationOptions = {
+                const options: AgentNotificationOptions = {
                     shouldSuppress: () => this.isChatSessionFocused(sessionId),
                     onActivate: () => this.focusChatSession(sessionId),
                     sessionTitle,
                 };
-                await this.agentNotificationService.showCompletionNotification(agentId, options);
+                await this.agentNotificationService.showNotification(agentId, AGENT_NOTIFICATION_KIND_COMPLETED, options);
             }
         } catch (error) {
             this.logger.error('Failed to handle agent completion notification:', error);
@@ -1235,12 +1236,7 @@ export class AIChatInputWidget extends ReactWidget {
      * Returns true only if the chat widget is focused AND viewing the same session.
      */
     protected isChatSessionFocused(sessionId: string): boolean {
-        const activeWidget = this.applicationShell.activeWidget;
-        if (!activeWidget || activeWidget.id !== 'chat-view-widget') {
-            return false;
-        }
-        const activeSession = this.chatService.getActiveSession();
-        return activeSession?.id === sessionId;
+        return isChatSessionFocused(this.applicationShell, this.chatService, sessionId);
     }
 
     /**
