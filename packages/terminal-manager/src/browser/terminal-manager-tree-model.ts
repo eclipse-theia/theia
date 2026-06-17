@@ -78,8 +78,8 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
      * add, remove, or replace entries before the model is used.
      */
     protected configureSpecialPages(): void {
-        this.registerSpecialPage('task', { pageId: 'page-tasks' as TerminalManagerTreeTypes.PageId, label: 'Tasks', icon: 'tasklist' });
-        this.registerSpecialPage('debug', { pageId: 'page-debug' as TerminalManagerTreeTypes.PageId, label: 'Debug', icon: 'debug-alt' });
+        this.registerSpecialPage('task', { pageId: 'page-tasks' as TerminalManagerTreeTypes.PageId, label: nls.localizeByDefault('Tasks'), icon: 'tasklist' });
+        this.registerSpecialPage('debug', { pageId: 'page-debug' as TerminalManagerTreeTypes.PageId, label: nls.localizeByDefault('Debug'), icon: 'debug-alt' });
     }
 
     registerSpecialPage(kind: string, config: SpecialPageConfig): void {
@@ -139,9 +139,12 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         const pageNode = this.getNode(pageId);
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
             const isActive = this.activePageNode === pageNode;
+            const fallback = isActive
+                ? this.findSelection(pageNode.previousSibling) ?? this.findSelection(pageNode.nextSibling)
+                : undefined;
             this.onDidDeletePageEmitter.fire(pageNode.id);
             CompositeTreeNode.removeChild(this.root, pageNode, this.tree);
-            this.refreshWithSelection(this.root, undefined, isActive ? pageNode : undefined);
+            this.refreshWithSelection(this.root, fallback);
         }
     }
 
@@ -197,8 +200,11 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
                 this.deleteTerminalPage(parentPageNode.id);
             } else {
                 const isActive = this.activeGroupNode === groupNode;
+                const fallback = isActive
+                    ? this.findSelection(groupNode.previousSibling) ?? this.findSelection(groupNode.nextSibling)
+                    : undefined;
                 this.doDeleteTerminalGroup(groupNode, parentPageNode);
-                this.refreshWithSelection(parentPageNode, undefined, isActive ? groupNode : undefined);
+                this.refreshWithSelection(parentPageNode, fallback);
             }
         }
     }
@@ -243,8 +249,11 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
                 this.deleteTerminalGroup(parentGroupNode.id);
             } else {
                 const isActive = this.activeTerminalNode === terminalNode;
+                const fallback = isActive
+                    ? this.findSelection(terminalNode.previousSibling) ?? this.findSelection(terminalNode.nextSibling)
+                    : undefined;
                 this.doDeleteTerminalNode(terminalNode, parentGroupNode);
-                this.refreshWithSelection(parentGroupNode, undefined, isActive ? terminalNode : undefined);
+                this.refreshWithSelection(parentGroupNode, fallback);
             }
         }
     }
@@ -353,17 +362,10 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         }
     }
 
-    protected async refreshWithSelection(refreshTarget?: CompositeTreeNode, selectionTarget?: SelectableTreeNode, selectionReferent?: TreeNode): Promise<void> {
+    protected async refreshWithSelection(refreshTarget?: CompositeTreeNode, selectionTarget?: SelectableTreeNode): Promise<void> {
         await this.refresh(refreshTarget);
         if (selectionTarget) {
             return this.selectNode(selectionTarget);
-        }
-        if (selectionReferent) {
-            const { previousSibling, nextSibling } = selectionReferent;
-            const toSelect = this.findSelection(previousSibling) ?? this.findSelection(nextSibling);
-            if (toSelect) {
-                this.selectNode(toSelect);
-            }
         }
     }
 
@@ -398,7 +400,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     protected createSpecialPageNode(pageId: TerminalManagerTreeTypes.PageId, label: string): TerminalManagerTreeTypes.PageNode {
         return {
             id: pageId,
-            label: nls.localizeByDefault(label),
+            label,
             parent: undefined,
             selected: false,
             children: [],

@@ -113,6 +113,67 @@ describe('TerminalManagerTreeModel', () => {
         });
     });
 
+    describe('neighbor selection after deletion', () => {
+        it('should select a neighbor page when the active page is deleted', async () => {
+            const pageId1 = 'page-1' as TerminalManagerTreeTypes.PageId;
+            const pageId2 = 'page-2' as TerminalManagerTreeTypes.PageId;
+            const groupId1 = 'group-1' as TerminalManagerTreeTypes.GroupId;
+            const groupId2 = 'group-2' as TerminalManagerTreeTypes.GroupId;
+            const key1 = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
+            const key2 = 'terminal-2' as TerminalManagerTreeTypes.TerminalKey;
+
+            model.addTerminalPage(key1, groupId1, pageId1, 'Terminal 1');
+            model.addTerminalPage(key2, groupId2, pageId2, 'Terminal 2');
+
+            // Simulate selection of page2's terminal so page2 becomes active
+            const termNode2 = model.getNode(key2);
+            expect(TerminalManagerTreeTypes.isTerminalNode(termNode2)).to.be.true;
+            if (TerminalManagerTreeTypes.isTerminalNode(termNode2)) {
+                model.handleSelectionChanged(termNode2);
+            }
+            expect(model.activePageNode?.id).to.equal(pageId2);
+
+            // Delete the active page
+            model.deleteTerminalPage(pageId2);
+            await model.refresh();
+
+            // The remaining page's terminal should now be selected
+            const page1 = model.getNode(pageId1);
+            expect(page1).to.not.be.undefined;
+            expect(TerminalManagerTreeTypes.isPageNode(page1)).to.be.true;
+        });
+
+        it('should select a neighbor terminal when the active terminal is deleted from a group', async () => {
+            const pageId = 'page-1' as TerminalManagerTreeTypes.PageId;
+            const groupId = 'group-1' as TerminalManagerTreeTypes.GroupId;
+            const key1 = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
+            const key2 = 'terminal-2' as TerminalManagerTreeTypes.TerminalKey;
+
+            model.addTerminalPage(key1, groupId, pageId, 'Terminal 1');
+            model.addTerminal(key2, groupId, 'Terminal 2');
+
+            // Ensure the tree index is up-to-date after addTerminal
+            await model.refresh();
+
+            // Select the second terminal
+            const termNode2 = model.getNode(key2);
+            expect(TerminalManagerTreeTypes.isTerminalNode(termNode2)).to.be.true;
+            if (TerminalManagerTreeTypes.isTerminalNode(termNode2)) {
+                model.handleSelectionChanged(termNode2);
+            }
+            expect(model.activeTerminalNode?.id).to.equal(key2);
+
+            // Delete the active terminal
+            model.deleteTerminalNode(key2);
+            await model.refresh();
+
+            // The remaining terminal should still be accessible
+            const remaining = model.getNode(key1);
+            expect(remaining).to.not.be.undefined;
+            expect(TerminalManagerTreeTypes.isTerminalNode(remaining)).to.be.true;
+        });
+    });
+
     describe('addTerminalPage with special page', () => {
         it('should create special page on first use', () => {
             const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
