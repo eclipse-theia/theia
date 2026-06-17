@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { nls, PreferenceSchema } from '@theia/core';
+import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
@@ -28,7 +28,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/openai/apiKey/mdDescription',
                 'Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text \
-on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.'),
+on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {
@@ -36,11 +36,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                'gpt-5.5',
+                'gpt-5.5-pro',
                 'gpt-5.4',
                 'gpt-5.4-pro',
                 'gpt-5.4-mini',
-                'gpt-4.1',
-                'gpt-4o'
+                'gpt-5.4-nano'
             ],
             items: {
                 type: 'string'
@@ -84,6 +85,9 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
             - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).\
+            \n\
+            - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
+            `supportedLevels` (e.g. `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel`.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
@@ -141,6 +145,24 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
                         title: nls.localize('theia/ai/openai/customEndpoints/useResponseApi/title',
                             'Use the newer OpenAI Response API instead of the Chat Completion API. `false` by default for custom providers.'
                             + 'Note: Will automatically fall back to Chat Completions API when tools are used.'),
+                    },
+                    reasoningSupport: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/openai/customEndpoints/reasoningSupport/title',
+                            'Declares the model\'s reasoning capabilities. When set the chat shows a reasoning selector for this model.'),
+                        properties: {
+                            supportedLevels: {
+                                type: 'array',
+                                items: {
+                                    type: 'string',
+                                    enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
+                                }
+                            },
+                            defaultLevel: {
+                                type: 'string',
+                                enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
+                            }
+                        }
                     }
                 }
             }

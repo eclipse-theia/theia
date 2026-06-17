@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from '../../common/event';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
 import { timeout } from '../../common/promise-util';
 import { isObject, Mutable } from '../../common';
 import { AccessibilityInformation } from '../../common/accessibility';
+import { ILogger } from '../../common/logger';
 
 export const Tree = Symbol('Tree');
 
@@ -250,6 +251,9 @@ export namespace CompositeTreeNode {
 @injectable()
 export class TreeImpl implements Tree {
 
+    @inject(ILogger) @named('core:TreeImpl')
+    protected readonly logger: ILogger;
+
     protected _root: TreeNode | undefined;
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly onNodeRefreshedEmitter = new Emitter<CompositeTreeNode & WaitUntilEvent>();
@@ -344,7 +348,7 @@ export class TreeImpl implements Tree {
     protected async setChildren(parent: CompositeTreeNode, children: TreeNode[]): Promise<CompositeTreeNode | undefined> {
         const root = this.getRootNode(parent);
         if (this.nodes[root.id] && this.nodes[root.id] !== root) {
-            console.error(`Child node '${parent.id}' does not belong to this '${root.id}' tree.`);
+            this.logger.error(`Child node '${parent.id}' does not belong to this '${root.id}' tree.`);
             return undefined;
         }
         this.removeNode(parent);

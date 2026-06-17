@@ -121,6 +121,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
     ];
     override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];
     protected override systemPromptId: string | undefined = systemPrompt.id;
+    override iconClass: string = 'codicon codicon-comment-discussion';
 
     @postConstruct()
     addContentMatchers(): void {

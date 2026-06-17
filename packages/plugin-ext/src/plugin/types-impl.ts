@@ -737,7 +737,7 @@ export class ThemeIcon {
 
     static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
-    private constructor(public id: string, public color?: ThemeColor) {
+    constructor(public id: string, public color?: ThemeColor) {
     }
 
 }
@@ -816,7 +816,7 @@ export class RelativePattern {
     }
     set baseUri(baseUri: URI) {
         this._baseUri = baseUri;
-        this.base = baseUri.fsPath;
+        this._base = baseUri.fsPath;
     }
 
     constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {

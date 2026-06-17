@@ -22,7 +22,7 @@ export class FrontendStopwatch extends Stopwatch {
 
     constructor() {
         super({
-            owner: 'frontend',
+            owner: 'frontend page',
             now: () => performance.now(),
         });
     }

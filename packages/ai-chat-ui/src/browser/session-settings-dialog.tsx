@@ -18,6 +18,7 @@ import { ChatSessionSettings, CommonChatSessionSettings } from '@theia/ai-chat';
 import { InMemoryResources, URI, nls } from '@theia/core';
 import { AbstractDialog, Message } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -25,59 +26,6 @@ import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-pr
 export interface SessionSettingsDialogProps {
     initialSettings: ChatSessionSettings | undefined;
 }
-
-interface ThinkingModeSectionProps {
-    enabled: boolean;
-    budgetTokens: number;
-    onEnabledChange: (enabled: boolean) => void;
-    onBudgetChange: (budget: number) => void;
-}
-
-const ThinkingModeSection: React.FC<ThinkingModeSectionProps> = ({
-    enabled,
-    budgetTokens,
-    onEnabledChange,
-    onBudgetChange
-}) => (
-    <div className="session-settings-thinking-mode">
-        <div className="session-settings-section-header">
-            {nls.localize('theia/ai/session-settings-dialog/thinkingMode', 'Thinking Mode')}
-        </div>
-        <div className="session-settings-section-note">
-            {nls.localize('theia/ai/session-settings-dialog/thinkingModeNote', 'Some models may ignore this setting.')}
-        </div>
-        <div className="session-settings-checkbox-container">
-            <input
-                type="checkbox"
-                id="thinking-enabled"
-                checked={enabled}
-                onChange={e => onEnabledChange(e.target.checked)}
-            />
-            <label htmlFor="thinking-enabled">
-                {nls.localize('theia/ai/session-settings-dialog/enableThinking', 'Enable extended thinking')}
-            </label>
-        </div>
-        <div className="session-settings-budget-container">
-            <label
-                htmlFor="thinking-budget"
-                className={!enabled ? 'disabled' : ''}
-            >
-                {nls.localize('theia/ai/session-settings-dialog/budgetTokens', 'Budget tokens:')}
-            </label>
-            <input
-                type="number"
-                id="thinking-budget"
-                min={1000}
-                max={100000}
-                step={1000}
-                value={budgetTokens}
-                placeholder="10000"
-                disabled={!enabled}
-                onChange={e => onBudgetChange(parseInt(e.target.value, 10))}
-            />
-        </div>
-    </div>
-);
 
 interface ConfirmationTimeoutSectionProps {
     enabled: boolean;
@@ -155,35 +103,21 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => (
 );
 
 interface DialogContentProps {
-    thinkingEnabled: boolean;
-    thinkingBudget: number;
     confirmationTimeoutEnabled: boolean;
     confirmationTimeoutSeconds: number;
     errorMessage: string;
-    onThinkingEnabledChange: (enabled: boolean) => void;
-    onThinkingBudgetChange: (budget: number) => void;
     onConfirmationTimeoutEnabledChange: (enabled: boolean) => void;
     onConfirmationTimeoutSecondsChange: (seconds: number) => void;
 }
 
 const DialogContent: React.FC<DialogContentProps> = ({
-    thinkingEnabled,
-    thinkingBudget,
     confirmationTimeoutEnabled,
     confirmationTimeoutSeconds,
     errorMessage,
-    onThinkingEnabledChange,
-    onThinkingBudgetChange,
     onConfirmationTimeoutEnabledChange,
     onConfirmationTimeoutSecondsChange
 }) => (
     <div className="session-settings-container">
-        <ThinkingModeSection
-            enabled={thinkingEnabled}
-            budgetTokens={thinkingBudget}
-            onEnabledChange={onThinkingEnabledChange}
-            onBudgetChange={onThinkingBudgetChange}
-        />
         <ConfirmationTimeoutSection
             enabled={confirmationTimeoutEnabled}
             timeoutSeconds={confirmationTimeoutSeconds}
@@ -203,11 +137,10 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     protected initialAdvancedSettingsString: string;
     protected errorMessage: string = '';
 
-    protected thinkingEnabled: boolean;
-    protected thinkingBudget: number;
-
     protected confirmationTimeoutEnabled: boolean;
     protected confirmationTimeoutSeconds: number;
+
+    protected preservedReasoning: CommonChatSessionSettings['reasoning'];
 
     protected contentRoot: Root;
     protected editorContainerNode: HTMLDivElement;
@@ -225,9 +158,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         const initialSettings = options.initialSettings;
         this.settings = initialSettings ? { ...initialSettings } : {};
 
-        // Extract thinking mode settings from commonSettings
-        this.thinkingEnabled = this.settings.commonSettings?.thinkingMode?.enabled ?? false;
-        this.thinkingBudget = this.settings.commonSettings?.thinkingMode?.budgetTokens ?? 10000;
+        // Reasoning is edited in the chat input; preserve it across this dialog.
+        this.preservedReasoning = this.settings.commonSettings?.reasoning;
 
         // Extract confirmation timeout settings from commonSettings
         const savedTimeout = this.settings.commonSettings?.confirmationTimeout;
@@ -253,7 +185,14 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.render();
+        // flushSync ensures React commits the render synchronously so that
+        // attachEditorContainer can query the DOM immediately afterwards.
+        // Without this, React 18 may defer the commit when invoked outside a
+        // browser event handler (e.g. from an Electron IPC callback from an
+        // Electron-rendered native menu), causing attachEditorContainer to
+        // find no .session-settings-advanced element and the Monaco editor
+        // to initialize inside a detached, zero-size node.
+        flushSync(() => this.render());
         this.attachEditorContainer();
         this.createJsonEditor();
     }
@@ -273,13 +212,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     protected render(): void {
         this.contentRoot.render(
             <DialogContent
-                thinkingEnabled={this.thinkingEnabled}
-                thinkingBudget={this.thinkingBudget}
                 confirmationTimeoutEnabled={this.confirmationTimeoutEnabled}
                 confirmationTimeoutSeconds={this.confirmationTimeoutSeconds}
                 errorMessage={this.errorMessage}
-                onThinkingEnabledChange={this.handleThinkingEnabledChange}
-                onThinkingBudgetChange={this.handleThinkingBudgetChange}
                 onConfirmationTimeoutEnabledChange={this.handleConfirmationTimeoutEnabledChange}
                 onConfirmationTimeoutSecondsChange={this.handleConfirmationTimeoutSecondsChange}
             />
@@ -379,20 +314,6 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         }
     }
 
-    protected handleThinkingEnabledChange = (enabled: boolean): void => {
-        this.thinkingEnabled = enabled;
-        this.updateSettingsFromCommonSettings();
-        this.render();
-        this.attachEditorContainer();
-    };
-
-    protected handleThinkingBudgetChange = (budget: number): void => {
-        this.thinkingBudget = budget;
-        this.updateSettingsFromCommonSettings();
-        this.render();
-        this.attachEditorContainer();
-    };
-
     protected handleConfirmationTimeoutEnabledChange = (enabled: boolean): void => {
         this.confirmationTimeoutEnabled = enabled;
         this.updateSettingsFromCommonSettings();
@@ -409,11 +330,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected updateSettingsFromCommonSettings(): void {
         const commonSettings: CommonChatSessionSettings = {};
-        if (this.thinkingEnabled) {
-            commonSettings.thinkingMode = {
-                enabled: true,
-                budgetTokens: isNaN(this.thinkingBudget) ? undefined : this.thinkingBudget
-            };
+        if (this.preservedReasoning) {
+            commonSettings.reasoning = this.preservedReasoning;
         }
         if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
             commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;

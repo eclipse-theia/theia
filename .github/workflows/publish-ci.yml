@@ -90,7 +90,7 @@ jobs:
           npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
-      
+
       - name: Publish to NPM (Next)
         if: ${{ env.RELEASE_TYPE == 'next' }}
         shell: bash

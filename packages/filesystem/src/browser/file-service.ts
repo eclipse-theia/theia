@@ -68,7 +68,7 @@ import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export interface FileOperationParticipant {
@@ -304,6 +304,9 @@ export class FileService {
 
     @inject(FileSystemWatcherErrorHandler)
     protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
+
+    @inject(ILogger) @named('filesystem:FileService')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -581,7 +584,7 @@ export class FileService {
 
                         return await this.toFileStat(provider, childResource, childStat, entries.length, resolveMetadata, recurse);
                     } catch (error) {
-                        console.trace(error);
+                        this.logger.error(error);
 
                         return null; // can happen e.g. due to permission errors
                     }
@@ -590,7 +593,7 @@ export class FileService {
                 // make sure to get rid of null values that signal a failure to resolve a particular entry
                 fileStat.children = resolvedEntries.filter(e => !!e) as FileStat[];
             } catch (error) {
-                console.trace(error);
+                this.logger.error(error);
 
                 fileStat.children = []; // gracefully handle errors, we may not have permissions to read
             }
@@ -615,7 +618,7 @@ export class FileService {
             try {
                 return { stat: await this.doResolveFile(entry.resource, entry.options), success: true };
             } catch (error) {
-                console.trace(error);
+                this.logger.error(error);
 
                 return { stat: undefined, success: false };
             }
@@ -1454,7 +1457,7 @@ export class FileService {
             } else {
                 watchDisposable = disposable;
             }
-        }, error => console.error(error));
+        }, error => this.logger.error(error));
 
         return Disposable.create(() => watchDisposable.dispose());
     }
@@ -2030,7 +2033,7 @@ export class FileService {
                             timeout(participantsTimeout, cancellationTokenSource.token).then(() => cancellationTokenSource.dispose(), () => { /* no-op if cancelled */ })
                         ]);
                     } catch (err) {
-                        console.warn(err);
+                        this.logger.warn(err);
                     }
                 }
             },

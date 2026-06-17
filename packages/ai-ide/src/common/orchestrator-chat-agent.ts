@@ -33,7 +33,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     name = OrchestratorChatAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'agent-selection',
-        identifier: 'default/universal',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'agent-selection';
 
@@ -41,7 +41,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     override description = nls.localize('theia/ai/chat/orchestrator/description',
         'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
-    override iconClass: string = 'codicon codicon-symbol-boolean';
+    override iconClass: string = 'codicon codicon-milestone';
     override agentSpecificVariables = [{
         name: 'availableChatAgents',
         description: nls.localize('theia/ai/chat/orchestrator/vars/availableChatAgents/description',
@@ -122,7 +122,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 messages,
                 tools,
                 settings,
-                thinkingMode: commonSettings?.thinkingMode,
+                reasoning: commonSettings?.reasoning,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,

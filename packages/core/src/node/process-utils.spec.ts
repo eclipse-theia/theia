@@ -15,8 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { Container } from 'inversify';
 import { ProcessUtils } from './process-utils';
+import { ILogger } from '../common';
+import { MockLogger } from '../common/test/mock-logger';
 
 /** PPID, PID */
 const mockPsOutput = `\
@@ -36,6 +39,8 @@ describe('ProcessUtils', () => {
     beforeEach(() => {
         const container = new Container();
         container.bind(ProcessUtils).toSelf().inSingletonScope();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
+
         coreProcessManager = container.get(ProcessUtils);
     });
 
@@ -44,5 +49,51 @@ describe('ProcessUtils', () => {
         coreProcessManager['spawnSync'] = () => ({ stdout: mockPsOutput }) as any;
         const pids = coreProcessManager['unixGetChildrenRecursive'](2);
         expect(Array.from(pids)).members([40, 5, 6, 7]);
+    });
+
+    describe('#unixTerminateProcessTree', () => {
+        let originalKill: typeof process.kill;
+        let errorStub: sinon.SinonStub;
+
+        function throwingKill(code: string): typeof process.kill {
+            return (() => {
+                const error = new Error(`kill ${code}`) as NodeJS.ErrnoException;
+                error.code = code;
+                throw error;
+            }) as typeof process.kill;
+        }
+
+        beforeEach(() => {
+            originalKill = process.kill;
+            const mockLogger = (coreProcessManager as unknown as { logger: ILogger }).logger;
+            errorStub = sinon.stub(mockLogger, 'error');
+            // One child plus the parent; report the parent as its own group leader so the `kill(-ppid)` branch runs too.
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set([424242]);
+            coreProcessManager['unixGetPGID'] = (pid: number) => pid;
+        });
+
+        afterEach(() => {
+            process.kill = originalKill;
+            sinon.restore();
+        });
+
+        it('does not throw or log when processes in the tree are already gone (ESRCH)', () => {
+            process.kill = throwingKill('ESRCH');
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(errorStub.called).to.be.false;
+        });
+
+        it('logs unexpected kill errors (e.g. EPERM) without throwing', () => {
+            process.kill = throwingKill('EPERM');
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(errorStub.called).to.be.true;
+        });
+
+        it('does not throw when a kill rejects with a value that has no code (e.g. undefined)', () => {
+            const thrown: unknown = undefined;
+            process.kill = (() => { throw thrown; }) as typeof process.kill;
+            expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
+            expect(errorStub.called).to.be.true;
+        });
     });
 });

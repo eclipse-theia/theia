@@ -25,9 +25,9 @@ import {
 } from '@theia/ai-chat';
 import { TokenUsageService } from '@theia/ai-core';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
-import { generateUuid, nls } from '@theia/core';
+import { generateUuid, nls, ILogger } from '@theia/core';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import type {
     ItemStartedEvent,
     ItemUpdatedEvent,
@@ -97,6 +97,9 @@ export class CodexChatAgent implements ChatAgent {
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
+    @inject(ILogger) @named('ai-codex:CodexChatAgent')
+    protected readonly logger: ILogger;
+
     async invoke(request: MutableChatRequestModel): Promise<void> {
         try {
             const agentAddress = `${PromptText.AGENT_CHAR}${CODEX_CHAT_AGENT_ID}`;
@@ -118,7 +121,7 @@ export class CodexChatAgent implements ChatAgent {
 
             request.response.complete();
         } catch (error) {
-            console.error('Codex error:', error);
+            this.logger.error('Codex error:', error);
             request.response.response.addContent(
                 new ErrorChatResponseContentImpl(error)
             );
@@ -344,7 +347,7 @@ export class CodexChatAgent implements ChatAgent {
                     itemOriginals.set(path, '');
                 }
             } catch (error) {
-                console.error('CodexChatAgent: Failed to capture original content for', path, error);
+                this.logger.error('CodexChatAgent: Failed to capture original content for', path, error);
                 itemOriginals.set(path, '');
             }
         }
@@ -374,7 +377,7 @@ export class CodexChatAgent implements ChatAgent {
 
         // const rootUri = await this.getWorkspaceRootUri();
         // if (!rootUri) {
-        //     console.warn('CodexChatAgent: Unable to resolve workspace root for file change event.');
+        //     this.logger.warn('CodexChatAgent: Unable to resolve workspace root for file change event.');
         //     return false;
         // }
 
@@ -495,13 +498,13 @@ export class CodexChatAgent implements ChatAgent {
     // protected async readFileContentSafe(fileUri: URI): Promise<string | undefined> {
     //     try {
     //         if (!await this.fileService.exists(fileUri)) {
-    //             console.warn('CodexChatAgent: Skipping file change entry because file is missing', fileUri.toString());
+    //             this.logger.warn('CodexChatAgent: Skipping file change entry because file is missing', fileUri.toString());
     //             return undefined;
     //         }
     //         const fileContent = await this.fileService.read(fileUri);
     //         return fileContent.value.toString();
     //     } catch (error) {
-    //         console.error('CodexChatAgent: Failed to read updated file content for', fileUri.toString(), error);
+    //         this.logger.error('CodexChatAgent: Failed to read updated file content for', fileUri.toString(), error);
     //         return undefined;
     //     }
     // }
@@ -523,16 +526,18 @@ export class CodexChatAgent implements ChatAgent {
             const normalizedCandidate = candidate.withPath(candidate.path.normalize());
             const normalizedRoot = rootUri.withPath(rootUri.path.normalize());
             if (!normalizedRoot.isEqualOrParent(normalizedCandidate)) {
-                console.warn(`CodexChatAgent: Skipping file change outside workspace: ${relativePath}`);
+                this.logger.warn(`CodexChatAgent: Skipping file change outside workspace: ${relativePath}`);
                 return undefined;
             }
             return normalizedCandidate;
         } catch (error) {
-            console.error('CodexChatAgent: Failed to resolve file URI for', relativePath, error);
+            this.logger.error('CodexChatAgent: Failed to resolve file URI for', relativePath, error);
             return undefined;
         }
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the root URI should be resolved based on the context of the current chat request (e.g., the file being discussed).
     protected async getWorkspaceRootUri(): Promise<URI | undefined> {
         const roots = await this.workspaceService.roots;
         if (roots && roots.length > 0) {
@@ -647,8 +652,13 @@ export class CodexChatAgent implements ChatAgent {
                 cachedInputTokens: usage.cached_input_tokens,
                 requestId: request.id
             });
+            request.response.setTokenUsage({
+                inputTokens: usage.input_tokens,
+                outputTokens: usage.output_tokens,
+                cacheCreationInputTokens: usage.cached_input_tokens,
+            });
         } catch (error) {
-            console.error('Failed to report token usage:', error);
+            this.logger.error('Failed to report token usage:', error);
         }
     }
 }

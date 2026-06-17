@@ -718,8 +718,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: title => title?.owner && this.shell.toggleMaximized(title?.owner),
         }));
         commandRegistry.registerCommand(CommonCommands.SHOW_MENU_BAR, {
-            isEnabled: () => !isOSX,
-            isVisible: () => !isOSX,
+            isEnabled: () => !this.isElectron() || !isOSX,
+            isVisible: () => !this.isElectron() || !isOSX,
             execute: () => {
                 const menuBarVisibility = 'window.menuBarVisibility';
                 const visibility = this.preferences[menuBarVisibility];

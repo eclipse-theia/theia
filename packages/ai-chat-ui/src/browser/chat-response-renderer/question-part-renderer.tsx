@@ -15,16 +15,19 @@
 // *****************************************************************************
 import { ChatResponseContent, MultiSelectQuestionResponseHandler, QuestionResponseContent, QuestionResponseHandler } from '@theia/ai-chat';
 import { nls } from '@theia/core';
-import { codicon } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { codicon, OpenerService } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
+import { useMarkdownRendering } from './markdown-part-renderer';
 
 @injectable()
 export class QuestionPartRenderer
     implements ChatResponsePartRenderer<QuestionResponseContent> {
+
+    @inject(OpenerService) protected readonly openerService: OpenerService;
 
     canHandle(response: ChatResponseContent): number {
         if (QuestionResponseContent.is(response)) {
@@ -35,9 +38,16 @@ export class QuestionPartRenderer
 
     render(question: QuestionResponseContent, node: ResponseNode): ReactNode {
         if (question.multiSelect) {
-            return <MultiSelectQuestion question={question} node={node} />;
+            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} />;
         }
-        return <SingleSelectQuestion question={question} node={node} />;
+        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
+    }
+
+    renderConfirmation(question: QuestionResponseContent, node: ResponseNode): ReactNode {
+        if (question.multiSelect) {
+            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} />;
+        }
+        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
     }
 
 }
@@ -77,15 +87,18 @@ function DismissButton({ question, disabled }: { question: QuestionResponseConte
     );
 }
 
-function SingleSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
+function SingleSelectQuestion({ question, node, openerService }: {
+    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService
+}): React.JSX.Element {
     const isDisabled = question.isReadOnly || isResolved(question) || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
+    const questionRef = useMarkdownRendering(question.question, openerService);
 
     return (
         <div className="theia-QuestionPartRenderer-root">
             {question.onSkip && <DismissButton question={question} disabled={isDisabled} />}
             {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
-            <div className="theia-QuestionPartRenderer-question">{question.question}</div>
+            <div className="theia-QuestionPartRenderer-question" ref={questionRef} />
             <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
                 {
                     question.options.map((option, index) => (
@@ -112,7 +125,10 @@ function SingleSelectQuestion({ question, node }: { question: QuestionResponseCo
     );
 }
 
-function MultiSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
+function MultiSelectQuestion({ question, node, openerService }: {
+    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService
+}): React.JSX.Element {
+    const questionRef = useMarkdownRendering(question.question, openerService);
     const restoredIndices = React.useMemo(() => {
         if (question.selectedOptions && question.selectedOptions.length > 0) {
             const indices = new Set<number>();
@@ -165,7 +181,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
         <div className="theia-QuestionPartRenderer-root">
             <DismissButton question={question} disabled={isDisabled} />
             {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
-            <div className="theia-QuestionPartRenderer-question">{question.question}</div>
+            <div className="theia-QuestionPartRenderer-question" ref={questionRef} />
             <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
                 {question.options.map((option, index) => (
                     <button

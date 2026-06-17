@@ -1,0 +1,221 @@
+// *****************************************************************************
+// Copyright (C) 2023 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
+import resolvePackagePath = require('resolve-package-path');
+
+import type { Compiler } from 'webpack';
+
+const REQUIRE_RIPGREP = '@vscode/ripgrep';
+const REQUIRE_BINDINGS = 'bindings';
+const REQUIRE_PARCEL_WATCHER = './build/Release/watcher.node';
+
+export interface NativeWebpackPluginOptions {
+    out: string;
+    trash: boolean;
+    ripgrep: boolean;
+    pty: boolean;
+    replacements?: Record<string, string>;
+    nativeBindings?: Record<string, string>;
+}
+
+export class NativeWebpackPlugin {
+
+    private bindings = new Map<string, string>();
+    private options: NativeWebpackPluginOptions;
+
+    constructor(options: NativeWebpackPluginOptions) {
+        this.options = options;
+        for (const [name, value] of Object.entries(options.nativeBindings ?? {})) {
+            this.nativeBinding(name, value);
+        }
+    }
+
+    nativeBinding(dependency: string, nodePath: string): void {
+        this.bindings.set(dependency, nodePath);
+    }
+
+    apply(compiler: Compiler): void {
+        let replacements: Record<string, (issuer: string) => Promise<string>> = {};
+        let nodePtyIssuer: string | undefined;
+        let trashHelperIssuer: string | undefined;
+        let ripgrepIssuer: string | undefined;
+        compiler.hooks.initialize.tap(NativeWebpackPlugin.name, async () => {
+            const directory = path.resolve(compiler.outputPath, 'native-webpack-plugin');
+            await fs.promises.mkdir(directory, { recursive: true });
+            const bindingsFile = (issuer: string) => buildFile(directory, 'bindings.js', bindingsReplacement(issuer, Array.from(this.bindings.entries())));
+            const ripgrepFile = () => buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
+            replacements = {
+                ...(this.options.replacements ?? {}),
+                [REQUIRE_RIPGREP]: ripgrepFile,
+                [REQUIRE_BINDINGS]: bindingsFile,
+                [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
+            };
+        });
+        compiler.hooks.normalModuleFactory.tap(
+            NativeWebpackPlugin.name,
+            nmf => {
+                nmf.hooks.beforeResolve.tapPromise(NativeWebpackPlugin.name, async result => {
+                    if (result.request === REQUIRE_RIPGREP) {
+                        ripgrepIssuer = result.contextInfo.issuer;
+                    } else if (result.request === 'node-pty') {
+                        nodePtyIssuer = result.contextInfo.issuer;
+                    } else if (result.request === 'trash') {
+                        trashHelperIssuer = result.contextInfo.issuer;
+                    }
+                    for (const [file, replacement] of Object.entries(replacements)) {
+                        if (result.request === file) {
+                            result.request = await replacement(result.contextInfo.issuer);
+                        }
+                    }
+                });
+            }
+        );
+        compiler.hooks.afterEmit.tapPromise(NativeWebpackPlugin.name, async () => {
+            if (this.options.trash && trashHelperIssuer) {
+                await this.copyTrashHelper(trashHelperIssuer, compiler);
+            }
+            if (this.options.ripgrep && ripgrepIssuer) {
+                await this.copyRipgrep(ripgrepIssuer, compiler);
+            }
+            if (this.options.pty && nodePtyIssuer) {
+                await this.copyNodePtyNativeDeps(nodePtyIssuer, compiler);
+            }
+        });
+    }
+
+    protected async copyRipgrep(issuer: string, compiler: Compiler): Promise<void> {
+        const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
+        const platformPkg = `@vscode/ripgrep-${process.platform}-${process.arch}`;
+        const sourceFile = path.join(resolveModulePath(platformPkg, issuer), 'bin', fileName);
+        const targetFile = path.join(compiler.outputPath, this.options.out, fileName);
+        await this.copyExecutable(sourceFile, targetFile);
+    }
+
+    protected async copyNodePtyNativeDeps(issuer: string, compiler: Compiler): Promise<void> {
+        const dist = `${process.platform}-${process.arch}`;
+        const src = `node-pty/prebuilds/${dist}`;
+        const targetDirectory = path.resolve(compiler.outputPath, '..', 'prebuilds', dist);
+
+        const copyFile = async (source: string): Promise<void> => {
+            const file = require.resolve(`${src}/${source}`, { paths: [issuer] });
+            const targetFile = path.join(targetDirectory, source);
+            await this.copyExecutable(file, targetFile);
+        };
+
+        if (process.platform === 'win32') {
+            await copyFile('conpty.node');
+            await copyFile('conpty_console_list.node');
+            await copyFile('conpty/conpty.dll');
+            await copyFile('conpty/OpenConsole.exe');
+        } else if (process.platform === 'darwin') {
+            await copyFile('spawn-helper');
+        }
+        // On non-windows platforms
+        if (process.platform !== 'win32') {
+            await copyFile('pty.node');
+        }
+    }
+
+    protected async copyTrashHelper(issuer: string, compiler: Compiler): Promise<void> {
+        let sourceFile: string | undefined;
+        let targetFile: string | undefined;
+        if (process.platform === 'win32') {
+            sourceFile = require.resolve('trash/lib/windows-trash.exe', { paths: [issuer] });
+            targetFile = path.join(compiler.outputPath, 'windows-trash.exe');
+        } else if (process.platform === 'darwin') {
+            sourceFile = require.resolve('trash/lib/macos-trash', { paths: [issuer] });
+            targetFile = path.join(compiler.outputPath, 'macos-trash');
+        }
+        if (sourceFile && targetFile) {
+            await this.copyExecutable(sourceFile, targetFile);
+        }
+    }
+
+    protected async copyExecutable(source: string, target: string): Promise<void> {
+        const targetDirectory = path.dirname(target);
+        await fs.promises.mkdir(targetDirectory, { recursive: true });
+        await fs.promises.copyFile(source, target);
+        await fs.promises.chmod(target, 0o777);
+    }
+}
+
+function resolveModulePath(module: string, issuer: string): string {
+    const modulePath = resolvePackagePath(module, issuer);
+    if (!modulePath) {
+        throw new Error('Could not resolve path of module: ' + module);
+    }
+    return path.resolve(modulePath, '..');
+}
+
+function findNativeWatcherFile(issuer: string): string {
+    let name = `@parcel/watcher-${process.platform}-${process.arch}`;
+    if (process.platform === 'linux') {
+        const { MUSL, family } = require('detect-libc');
+        if (family === MUSL) {
+            name += '-musl';
+        } else {
+            name += '-glibc';
+        }
+    }
+    return require.resolve(name, {
+        paths: [issuer]
+    });
+}
+
+async function buildFile(root: string, name: string, content: string): Promise<string> {
+    const tmpFile = path.join(root, name);
+    let write = true;
+    try {
+        const existing = await fs.promises.readFile(tmpFile, 'utf8');
+        if (existing === content) {
+            // prevent writing the same content again
+            // this would trigger the watch mode repeatedly
+            write = false;
+        }
+    } catch {
+        // ignore
+    }
+    if (write) {
+        await fs.promises.writeFile(tmpFile, content);
+    }
+    return tmpFile;
+}
+
+const ripgrepReplacement = (nativePath: string = '.'): string => `
+export const rgPath = require('path').join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
+`;
+
+const bindingsReplacement = (issuer: string, entries: [string, string][]): string => {
+    const cases: string[] = [];
+
+    for (const [module, node] of entries) {
+        const modulePath = require.resolve(node, {
+            paths: [issuer]
+        });
+        cases.push(`${' '.repeat(8)}case '${module}': return require('${modulePath.replace(/\\/g, '/')}');`);
+    }
+
+    return `
+module.exports = function (jsModule) {
+    switch (jsModule) {
+${cases.join(os.EOL)}
+    }
+    throw new Error(\`unhandled module: "\${jsModule}"\`);
+}`.trim();
+};

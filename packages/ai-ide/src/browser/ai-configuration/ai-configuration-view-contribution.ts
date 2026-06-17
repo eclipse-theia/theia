@@ -21,11 +21,17 @@ import { FrontendApplication } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { AIToolsConfigurationWidget } from './tools-configuration-widget';
 
 export const AI_CONFIGURATION_TOGGLE_COMMAND_ID = 'aiConfiguration:toggle';
 export const OPEN_AI_CONFIG_VIEW = Command.toLocalizedCommand({
     id: 'aiConfiguration:open',
     label: 'Open AI Configuration view',
+});
+
+export const OPEN_AI_CONFIG_VIEW_TOOLS = Command.toLocalizedCommand({
+    id: 'aiConfiguration:openTools',
+    label: 'Open AI Tools Configuration',
 });
 
 @injectable()
@@ -54,11 +60,19 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
         super.registerCommands(commands);
         commands.registerCommand(OPEN_AI_CONFIG_VIEW, {
             execute: async (tabId?: string) => {
-                await this.openView({ activate: true });
+                // Only open/reveal the view if it isn't already visible; switching tabs on an
+                // already-visible view doesn't need a (re-)activation of the whole view.
+                const widget = this.tryGetWidget();
+                if (!widget?.isVisible) {
+                    await this.openView({ activate: true });
+                }
                 if (typeof tabId === 'string') {
                     this.aiConfigurationSelectionService.selectConfigurationTab(tabId);
                 }
             },
+        });
+        commands.registerCommand(OPEN_AI_CONFIG_VIEW_TOOLS, {
+            execute: () => commands.executeCommand(OPEN_AI_CONFIG_VIEW.id, AIToolsConfigurationWidget.ID),
         });
     }
 
@@ -66,7 +80,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
         registry.registerItem({
             id: 'chat-view.' + OPEN_AI_CONFIG_VIEW.id,
             command: OPEN_AI_CONFIG_VIEW.id,
-            tooltip: nls.localize('theia/ai-ide/open-agent-settings-tooltip', 'Open Agent settings...'),
+            tooltip: nls.localize('theia/ai-ide/open-ai-configuration-tooltip', 'Open AI Configuration'),
             group: 'ai-settings',
             priority: 2,
             isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget

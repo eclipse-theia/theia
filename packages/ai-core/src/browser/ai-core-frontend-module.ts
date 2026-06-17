@@ -21,6 +21,7 @@ import {
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
@@ -74,6 +75,7 @@ import { DefaultSkillService, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from './prompt-variable-contribution';
+import { ProductNameVariableContribution } from './product-name-variable-contribution';
 import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
 import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
 import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
@@ -153,6 +155,7 @@ export default new ContainerModule(bind => {
     bind(SkillsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(SkillsVariableContribution);
     bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ProductNameVariableContribution).inSingletonScope();
 
     bind(GenericCapabilitiesVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(GenericCapabilitiesVariableContribution);
@@ -176,7 +179,7 @@ export default new ContainerModule(bind => {
         const activationService = context.container.get<AIActivationService>(AIActivationService);
         return {
             execute: (...args: unknown[]) => handler.execute(...args),
-            isEnabled: (...args: unknown[]) => activationService.isActive && (handler.isEnabled?.(...args) ?? true),
+            isEnabled: (...args: unknown[]) => activationService.canRun && (handler.isEnabled?.(...args) ?? true),
             isVisible: (...args: unknown[]) => activationService.isActive && (handler.isVisible?.(...args) ?? true),
             isToggled: handler.isToggled
         };
@@ -192,6 +195,8 @@ export default new ContainerModule(bind => {
 
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
+    bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);

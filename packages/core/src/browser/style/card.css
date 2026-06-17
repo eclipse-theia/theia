@@ -101,11 +101,13 @@
     transition: opacity 0.15s;
 }
 
-.theia-Card:hover .theia-Card-footer-time {
+.theia-Card:hover .theia-Card-footer-time,
+.theia-Card:focus-within .theia-Card-footer-time {
     opacity: 0;
 }
 
-.theia-Card:hover .theia-Card-footer-actions {
+.theia-Card:hover .theia-Card-footer-actions,
+.theia-Card:focus-within .theia-Card-footer-actions {
     opacity: 1;
     pointer-events: auto;
 }

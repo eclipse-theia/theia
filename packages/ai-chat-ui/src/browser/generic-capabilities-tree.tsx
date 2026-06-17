@@ -16,6 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { HoverService } from '@theia/core/lib/browser';
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service';
@@ -42,7 +43,9 @@ const ROOT_DESCRIPTIONS: Record<string, () => string> = {
     skills: () => nls.localize('theia/ai/chat-ui/skillsDescription', 'Reusable skill instructions that can be added to the conversation'),
     variables: () => nls.localize('theia/ai/chat-ui/variablesDescription', 'Dynamic variables that provide context information'),
     mcpFunctions: () => nls.localize('theia/ai/chat-ui/mcpFunctionsDescription', 'Model Context Protocol (MCP) functions from connected servers'),
-    functions: () => nls.localize('theia/ai/chat-ui/functionsDescription', 'Built-in functions provided by Theia extensions'),
+    functions: () => nls.localize('theia/ai/chat-ui/functionsDescription',
+        'Built-in functions provided by {0} extensions',
+        FrontendApplicationConfigProvider.get().applicationName),
     promptFragments: () => nls.localize('theia/ai/chat-ui/promptFragmentsDescription', 'Custom prompt fragments to include in the conversation'),
     agentDelegation: () => nls.localize('theia/ai/chat-ui/agentDelegationDescription', 'Other AI agents that can be delegated to')
 };
@@ -204,7 +207,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             buildFlatRootNode('skills', nls.localizeByDefault('Skills'), 'skills', availableCapabilities.skills),
             buildGroupedRootNode('mcp', nls.localizeByDefault('MCP'), 'mcpFunctions', availableCapabilities.mcpFunctions),
             buildFlatRootNode('agents', nls.localizeByDefault('Agents'), 'agentDelegation', availableCapabilities.agentDelegation),
-            buildGroupedRootNode('functions', nls.localize('theia/ai/chat-ui/functions', 'Functions'), 'functions', availableCapabilities.functions),
+            buildFlatRootNode('functions', nls.localize('theia/ai/chat-ui/functions', 'Functions'), 'functions', availableCapabilities.functions),
             buildFlatRootNode('prompts', nls.localizeByDefault('Prompts'), 'promptFragments', availableCapabilities.promptFragments),
             buildFlatRootNode('variables', nls.localizeByDefault('Variables'), 'variables', availableCapabilities.variables),
         ].filter((node): node is TreeNodeData => node !== undefined);
@@ -268,14 +271,14 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             collectIds(filteredTree);
             setExpandedNodes(allIds);
 
-            if (focusedNodeId && !allIds.has(focusedNodeId)) {
-                setFocusedNodeId(undefined);
-            }
+            setFocusedNodeId(current => current && !allIds.has(current) ? undefined : current);
         } else if (prev.trim()) {
             // Only collapse when search was cleared, not on every re-render
             setExpandedNodes(new Set());
         }
-    }, [searchQuery, filteredTree, focusedNodeId]);
+    // Only react to search query and filtered tree changes, not focusedNodeId.
+    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
+    }, [searchQuery, filteredTree]);
 
     // Get all visible node IDs for keyboard navigation
     const getVisibleNodeIds = React.useCallback((): string[] => {
@@ -420,7 +423,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             case 'skills': return getItems(availableCapabilities.skills);
             case 'variables': return getItems(availableCapabilities.variables);
             case 'mcpFunctions': return getGroupItems(availableCapabilities.mcpFunctions, groupName);
-            case 'functions': return getGroupItems(availableCapabilities.functions, groupName);
+            case 'functions': return getItems(availableCapabilities.functions);
             case 'promptFragments': return getItems(availableCapabilities.promptFragments);
             case 'agentDelegation': return getItems(availableCapabilities.agentDelegation);
             default: return [];

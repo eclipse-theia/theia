@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
@@ -51,41 +52,39 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: 'currentAbsoluteFilePath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentAbsoluteFilePath', 'The absolute path of the \
-                currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).')
+                currently opened file.')
             }
         ]],
         ['selectedText', [
             {
                 description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText', 'The plain text that is currently selected in the \
-                opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path \
-                (relative to the current workspace).')
+                opened file. This excludes the information where the content is coming from.')
             }
         ]],
         ['currentText', [
             {
                 name: 'currentFileContent',
                 description: nls.localize('theia/ai/core/variable-contribution/currentFileContent', 'The plain content of the \
-                currently opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path \
-                (relative to the current workspace).')
+                currently opened file. This excludes the information where the content is coming from.')
             }
         ]],
         ['relativeFile', [
             {
                 name: 'currentRelativeFilePath',
-                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath', 'The relative path of the \
-                currently opened file.')
+                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath', 'The workspace-relative path of the \
+                currently opened file (e.g., my-project/src/index.ts).')
             },
             {
                 name: '_f',
-                description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath', 'Short reference to the relative path of the \
+                description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath', 'Short reference to the workspace-relative path of the \
                 currently opened file (\'currentRelativeFilePath\').')
             }
         ]],
         ['relativeFileDirname', [
             {
                 name: 'currentRelativeDirPath',
-                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath', 'The relative path of the directory \
-                containing the currently opened file.')
+                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath', 'The workspace-relative path of the directory \
+                containing the currently opened file (e.g., my-project/src).')
             }
         ]],
         ['lineNumber', [{}]],
@@ -108,7 +107,9 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                     const newName = (mapping.name && mapping.name.trim() !== '') ? mapping.name : variable.name;
                     const newDescription = (mapping.description && mapping.description.trim() !== '') ? mapping.description
                         : (variable.description && variable.description.trim() !== '' ? variable.description
-                            : nls.localize('theia/ai/core/variable-contribution/builtInVariable', 'Theia Built-in Variable'));
+                            : nls.localize('theia/ai/core/variable-contribution/builtInVariable',
+                            '{0} Built-in Variable',
+                            FrontendApplicationConfigProvider.get().applicationName));
 
                     // For multiple mappings of the same variable, add a suffix to the ID to make it unique
                     const idSuffix = mappings.length > 1 ? `-${index}` : '';

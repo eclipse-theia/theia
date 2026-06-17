@@ -310,7 +310,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 <input
                     type="text"
                     className="theia-input"
-                    placeholder={nls.localizeByDefault('Filter (e.g. text, !exclude)')}
+                    placeholder={nls.localize('theia/debug/consoleFilterPlaceholder', 'Filter (e.g. text, !exclude)')}
                     aria-label={nls.localize('theia/debug/consoleFilterAriaLabel', 'Filter debug console output')}
                     ref={ref => { this.filterInputRef = ref ?? undefined; }}
                     onChange={this.handleFilterInputChange}

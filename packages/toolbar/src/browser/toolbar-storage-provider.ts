@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as jsoncParser from 'jsonc-parser';
-import { Command, deepClone, Disposable, DisposableCollection, Emitter, MessageService, nls } from '@theia/core';
-import { injectable, postConstruct, inject, interfaces } from '@theia/core/shared/inversify';
+import { Command, deepClone, Disposable, DisposableCollection, Emitter, MessageService, nls, ILogger } from '@theia/core';
+import { injectable, postConstruct, inject, interfaces, named } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
@@ -53,6 +53,8 @@ export class ToolbarStorageProvider implements Disposable {
     @inject(LateInjector) protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
     @inject(UserToolbarURI) protected readonly USER_TOOLBAR_URI: URI;
     @inject(ToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedToolbarTree;
+    @inject(ILogger) @named('toolbar:ToolbarStorageProvider')
+    protected readonly logger: ILogger;
 
     get ready(): Promise<void> {
         return this._ready.promise;
@@ -111,7 +113,7 @@ export class ToolbarStorageProvider implements Disposable {
             }
             this.toolbarItemsUpdatedEmitter.fire();
         } catch (e) {
-            console.error(`Failed to load toolbar config from '${this.USER_TOOLBAR_URI}'.`, e);
+            this.logger.error(`Failed to load toolbar config from '${this.USER_TOOLBAR_URI}'.`, e);
         }
     }
 
@@ -296,7 +298,7 @@ export class ToolbarStorageProvider implements Disposable {
             } catch (e) {
                 const message = nls.localize('theia/toolbar/failedUpdate', "Failed to update the value of '{0}' in '{1}'.", path.join('.'), this.USER_TOOLBAR_URI.path.toString());
                 this.messageService.error(nls.localize('theia/toolbar/jsonError', TOOLBAR_BAD_JSON_ERROR_MESSAGE));
-                console.error(`${message}`, e);
+                this.logger.error(`${message}`, e);
                 return false;
             }
         }

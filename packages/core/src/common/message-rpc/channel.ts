@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
@@ -71,6 +72,7 @@ export type MessageProvider = () => ReadBuffer;
  *  Reusable abstract {@link Channel} implementation that sets up
  *  the basic channel event listeners and offers a generic close method.
  */
+@injectable()
 export abstract class AbstractChannel implements Channel {
 
     onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
@@ -152,7 +154,7 @@ export enum MessageTypes {
  * messages and always in one go.
  */
 export class ChannelMultiplexer implements Disposable {
-    protected pendingOpen: Map<string, (channel: ForwardingChannel) => void> = new Map();
+    private pendingOpen: Map<string, { resolve: (channel: ForwardingChannel) => void, reject: (err: Error) => void }> = new Map();
     protected openChannels: Map<string, ForwardingChannel> = new Map();
 
     protected readonly onOpenChannelEmitter = new Emitter<{ id: string, channel: Channel }>();
@@ -180,9 +182,11 @@ export class ChannelMultiplexer implements Disposable {
     onUnderlyingChannelClose(event?: ChannelCloseEvent): void {
         if (!this.toDispose.disposed) {
             this.toDispose.push(Disposable.create(() => {
+                const reason = event?.reason ?? 'Multiplexer main channel has been closed from the remote side!';
+                this.pendingOpen.forEach(pending => pending.reject(new Error(reason)));
                 this.pendingOpen.clear();
                 this.openChannels.forEach(channel => {
-                    channel.onCloseEmitter.fire(event ?? { reason: 'Multiplexer main channel has been closed from the remote side!' });
+                    channel.onCloseEmitter.fire(event ?? { reason });
                 });
 
                 this.openChannels.clear();
@@ -212,13 +216,13 @@ export class ChannelMultiplexer implements Disposable {
     }
 
     protected handleAckOpen(id: string): void {
-        // edge case: both side try to open a channel at the same time.
-        const resolve = this.pendingOpen.get(id);
-        if (resolve) {
+        // edge case: both sides try to open a channel at the same time.
+        const pending = this.pendingOpen.get(id);
+        if (pending) {
             const channel = this.createChannel(id);
             this.pendingOpen.delete(id);
             this.openChannels.set(id, channel);
-            resolve(channel);
+            pending.resolve(channel);
             this.onOpenChannelEmitter.fire({ id, channel });
         } else {
             console.error(`not expecting ack-open on for ${id}`);
@@ -229,10 +233,10 @@ export class ChannelMultiplexer implements Disposable {
         if (!this.openChannels.has(id)) {
             const channel = this.createChannel(id);
             this.openChannels.set(id, channel);
-            const resolve = this.pendingOpen.get(id);
-            if (resolve) {
-                // edge case: both side try to open a channel at the same time.
-                resolve(channel);
+            const pending = this.pendingOpen.get(id);
+            if (pending) {
+                // edge case: both sides try to open a channel at the same time.
+                pending.resolve(channel);
             }
             this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
             this.onOpenChannelEmitter.fire({ id, channel });
@@ -283,7 +287,7 @@ export class ChannelMultiplexer implements Disposable {
             throw new Error(`Another channel with the id '${id}' is already open.`);
         }
         const result = new Promise<Channel>((resolve, reject) => {
-            this.pendingOpen.set(id, resolve);
+            this.pendingOpen.set(id, { resolve, reject });
         });
         this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.Open).writeString(id).commit();
         return result;

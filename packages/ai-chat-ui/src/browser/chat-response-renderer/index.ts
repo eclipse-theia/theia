@@ -26,3 +26,4 @@ export * from './thinking-part-renderer';
 export * from './progress-part-renderer';
 export * from './tool-confirmation';
 export * from './delegation-tool-renderer';
+export * from './tool-call-rendering';

@@ -184,6 +184,12 @@
     color: var(--theia-foreground);
 }
 
+.shell-execution-tool.command-description {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size1);
+    margin-bottom: var(--theia-ui-padding);
+}
+
 .shell-execution-tool.command-display {
     padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
     background-color: var(--theia-textCodeBlock-background);

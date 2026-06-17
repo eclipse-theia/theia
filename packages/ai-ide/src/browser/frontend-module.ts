@@ -76,7 +76,6 @@ import { ContextFilesVariableContribution } from '../common/context-files-variab
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
-import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
@@ -99,12 +98,16 @@ import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution';
 
 import { ProjectInfoAgent } from './project-info-agent';
 import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { TodoWriteTool } from './todo-tool';
 import { TodoToolRenderer } from './todo-tool-renderer';
+import { UserInteractionTool } from './user-interaction-tool';
+import { UserInteractionToolRenderer } from './user-interaction-tool-renderer';
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
@@ -117,11 +120,11 @@ import { AppTesterCapabilityContribution } from './apptester-capability-contribu
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
-
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
-
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
+import { PRReviewAgent } from './review/pr-review-agent';
+import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -133,6 +136,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
     // rebinds the default implementation of '@theia/ai-core'
     rebind(AIActivationService).toService(AIIdeActivationServiceImpl);
+
+    bind(AIWorkspaceRestrictionContribution).toSelf().inSingletonScope();
+    bind(WorkspaceRestrictionContribution).toService(AIWorkspaceRestrictionContribution);
 
     bind(ArchitectAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ArchitectAgent);
@@ -181,6 +187,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CodeReviewerAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CodeReviewerAgent);
     bind(ChatAgent).toService(CodeReviewerAgent);
+
+    bind(PRReviewAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(PRReviewAgent);
+    bind(ChatAgent).toService(PRReviewAgent);
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
@@ -278,17 +288,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
+
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
 
-    bind(AIMCPConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIMCPConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
-        }))
-        .inSingletonScope();
     // Register the token usage configuration widget
     bind(AITokenUsageConfigurationWidget).toSelf();
     bind(WidgetFactory)
@@ -329,7 +333,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(ListTaskContextsFunction, bind);
     bindToolProvider(RewriteTaskContextFunction, bind);
     bindToolProvider(TodoWriteTool, bind);
+    bindToolProvider(UserInteractionTool, bind);
     bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(UserInteractionToolRenderer).inSingletonScope();
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
@@ -343,4 +349,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
+    bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
 });

@@ -39,7 +39,6 @@ import { Disposable, URI } from './types-impl';
 import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes, UriComponents } from '../common/uri-components';
-import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -120,7 +119,22 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
-        const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));
+        const oldFoldersByUri = new Map<string, theia.WorkspaceFolder>();
+        if (this.folders) {
+            for (const folder of this.folders) {
+                oldFoldersByUri.set(folder.uri.toString(), folder);
+            }
+        }
+        const newFolders = newRoots.map((root, index) => {
+            const existing = oldFoldersByUri.get(root);
+            if (existing) {
+                // Preserve object identity even if the index changed,
+                // since extensions may use folder objects as Map keys.
+                Object.assign(existing, { index });
+                return existing;
+            }
+            return this.toWorkspaceFolder(root, index);
+        });
         const delta = this.deltaFolders(this.folders, newFolders);
 
         this.folders = newFolders;
@@ -347,7 +361,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             const folderPath = folder.uri.toString();
 
             if (resourcePath === folderPath) {
-                return toWorkspaceFolder(folder);
+                return folder;
             }
 
             if (resourcePath.startsWith(folderPath)

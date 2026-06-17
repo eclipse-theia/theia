@@ -1,0 +1,313 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* ── Widget container ────────────────────────────────────────────────────── */
+.scm-history-graph-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: var(--theia-ui-font-size1);
+}
+
+/* ── Scrollable list area ────────────────────────────────────────────────── */
+.scm-history-graph-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ── Individual commit row ───────────────────────────────────────────────── */
+.scm-history-graph-row {
+    display: flex;
+    align-items: flex-start;
+    height: 22px;
+    cursor: pointer;
+    padding-right: var(--theia-ui-padding);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.scm-history-graph-row:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+}
+
+.scm-history-graph-row.selected {
+    background-color: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+/* ── SVG lane column ─────────────────────────────────────────────────────── */
+.scm-history-graph-svg {
+    flex-shrink: 0;
+    overflow: visible;
+    display: block;
+}
+
+/* ── Commit info column ──────────────────────────────────────────────────── */
+.scm-history-graph-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 4px;
+    padding-left: 4px;
+    overflow: hidden;
+    height: 22px;
+}
+
+/* ── Subject line (primary content) ─────────────────────────────────────── */
+.scm-history-subject {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: normal;
+}
+
+/* ── Author name (dimmed, next to subject) ───────────────────────────────── */
+.scm-history-author {
+    flex-shrink: 1;
+    min-width: 0;
+    font-size: var(--theia-ui-font-size0);
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 4px;
+}
+
+/* ── Badges container (pushed to the right) ─────────────────────────────── */
+.scm-history-badges {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    padding-left: 4px;
+}
+
+.scm-history-badges-right {
+    margin-left: auto;
+}
+
+/* ── Ref badges (branch / tag labels) ───────────────────────────────────── */
+.scm-history-ref-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: var(--theia-ui-font-size0);
+    line-height: 1;
+    min-height: 15px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 140px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.scm-history-ref-badge .scm-history-ref-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.scm-history-ref-badge .scm-history-ref-icon {
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* Tooltip badges always show text, override max-width */
+.scm-history-ref-badge.tooltip-badge {
+    max-width: none;
+}
+
+/* Fallback colors when no inline lane color is set */
+.scm-history-ref-badge.head {
+    background-color: var(--theia-scmGraph-historyItemRefColor, var(--theia-badge-background));
+    color: var(--theia-badge-foreground);
+}
+
+.scm-history-ref-badge.remote {
+    background-color: var(--theia-scmGraph-historyItemRemoteRefColor, var(--theia-statusBar-background));
+    color: var(--theia-statusBar-foreground);
+}
+
+.scm-history-ref-badge.tag {
+    background-color: var(--theia-scmGraph-historyItemBaseRefColor, var(--theia-inputValidation-warningBackground));
+    color: var(--theia-inputValidation-warningForeground);
+}
+
+.scm-history-ref-badge.base {
+    background-color: var(--theia-list-inactiveSelectionBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
+/* Icon-only cloud badge (remote tracking indicator) */
+.scm-history-ref-badge-cloud {
+    padding: 0 4px;
+    max-width: none;
+}
+
+/* ── Changed files rows (expanded below a commit) ───────────────────────── */
+.scm-history-change-row {
+    display: flex;
+    align-items: center;
+    height: 22px;
+    box-sizing: border-box;
+    padding-right: var(--theia-ui-padding);
+    cursor: pointer;
+}
+
+.scm-history-change-row:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+}
+
+.scm-history-change-row.selected {
+    background-color: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+.scm-history-change-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 4px;
+    padding-left: 4px;
+    overflow: hidden;
+}
+
+.scm-history-change-file-icon {
+    flex-shrink: 0;
+}
+
+.scm-history-change-name-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.scm-history-change-name {
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.scm-history-change-dir {
+    flex: 1;
+    font-size: var(--theia-ui-font-size0);
+    opacity: 0.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 4px;
+}
+
+.scm-history-change-status {
+    flex-shrink: 0;
+    font-size: var(--theia-ui-font-size0);
+    font-weight: bold;
+    width: 14px;
+    text-align: center;
+    margin-left: auto;
+}
+
+.scm-history-change-status.added {
+    color: var(--theia-gitDecoration-addedResourceForeground, #388a34);
+}
+
+.scm-history-change-status.deleted {
+    color: var(--theia-gitDecoration-deletedResourceForeground, #a1260d);
+}
+
+.scm-history-change-status.modified {
+    color: var(--theia-gitDecoration-modifiedResourceForeground, #0078d4);
+}
+
+.scm-history-change-status.renamed {
+    color: var(--theia-gitDecoration-renamedResourceForeground, #b180d7);
+}
+
+.scm-history-changes-loading,
+.scm-history-changes-empty {
+    display: flex;
+    align-items: center;
+    height: 22px;
+    padding-left: 24px;
+    font-size: var(--theia-ui-font-size0);
+    opacity: 0.6;
+}
+
+/* ── Load-more button ────────────────────────────────────────────────────── */
+.scm-history-load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    cursor: pointer;
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-textLink-foreground);
+    flex-shrink: 0;
+}
+
+.scm-history-load-more:hover {
+    text-decoration: underline;
+}
+
+/* ── Loading spinner placeholder ────────────────────────────────────────── */
+.scm-history-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    font-size: var(--theia-ui-font-size1);
+    opacity: 0.6;
+}
+
+/* ── Tooltip header icon alignment ──────────────────────────────────────── */
+.scm-history-tooltip-header .icon-inline {
+    vertical-align: middle;
+}
+
+/* ── Tooltip stat colors (used inside .theia-hover) ─────────────────────── */
+.scm-history-stat-added {
+    color: var(--theia-gitDecoration-addedResourceForeground, #388a34);
+}
+
+.scm-history-stat-deleted {
+    color: var(--theia-gitDecoration-deletedResourceForeground, #a1260d);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.scm-history-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    opacity: 0.6;
+    font-size: var(--theia-ui-font-size1);
+    padding: var(--theia-ui-padding);
+    text-align: center;
+}

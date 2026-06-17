@@ -44,6 +44,16 @@ export namespace MarkdownString {
     export function is(candidate: unknown): candidate is MarkdownString {
         return isObject<MarkdownString>(candidate) && isString(candidate.value);
     }
+
+    /**
+     * @returns whether `commandId` is allowed to execute given the markdown string's
+     * {@link MarkdownString.isTrusted} setting. Fully trusted strings allow any command;
+     * partially trusted strings restrict execution to their `enabledCommands` list.
+     */
+    export function isCommandAllowed(isTrusted: MarkdownString['isTrusted'], commandId: string): boolean {
+        return isTrusted === true
+            || (typeof isTrusted === 'object' && isTrusted.enabledCommands.includes(commandId));
+    }
 }
 
 // Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/common/htmlContent.ts
@@ -90,12 +100,34 @@ export class MarkdownStringImpl implements MarkdownString {
     }
 
     appendCodeblock(langId: string, code: string): MarkdownStringImpl {
-        this.value += '\n```';
+        // Use a fence longer than any run of backticks in the code so that triple-backtick
+        // sequences inside `code` cannot prematurely close the surrounding fenced block.
+        const fence = '`'.repeat(Math.max(3, MarkdownStringImpl.longestBacktickRun(code) + 1));
+        this.value += '\n';
+        this.value += fence;
         this.value += langId;
         this.value += '\n';
         this.value += code;
-        this.value += '\n```\n';
+        this.value += '\n';
+        this.value += fence;
+        this.value += '\n';
         return this;
+    }
+
+    private static longestBacktickRun(value: string): number {
+        let longest = 0;
+        let current = 0;
+        for (let i = 0; i < value.length; i++) {
+            if (value.charCodeAt(i) === 96 /* ` */) {
+                current++;
+                if (current > longest) {
+                    longest = current;
+                }
+            } else {
+                current = 0;
+            }
+        }
+        return longest;
     }
 
     appendLink(target: UriComponents | string, label: string, title?: string): MarkdownStringImpl {

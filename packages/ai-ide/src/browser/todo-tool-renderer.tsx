@@ -20,11 +20,16 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, KeybindingRegistry, OpenerService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
-import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from './todo-tool';
-import { withToolCallConfirmation } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool';
+import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import {
+    APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
+    DENY_LATEST_TOOL_CONFIRMATION_COMMAND
+} from '@theia/ai-chat-ui/lib/browser/tool-confirmation-keybinding-contribution';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 
 interface TodoListComponentProps {
@@ -89,8 +94,17 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(OpenerService)
+    protected openerService: OpenerService;
+
     @inject(ToolInvocationRegistry)
     protected toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(PendingToolConfirmationTracker)
+    protected pendingToolConfirmationTracker: PendingToolConfirmationTracker;
+
+    @inject(KeybindingRegistry)
+    protected keybindingRegistry: KeybindingRegistry;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === TODO_WRITE_FUNCTION_ID) {
@@ -117,13 +131,18 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
         return (
             <TodoListWithConfirmation
                 todos={todos}
-                response={response}
-                confirmationMode={confirmationMode}
-                toolConfirmationManager={this.toolConfirmationManager}
-                toolRequest={toolRequest}
-                chatId={chatId}
-                requestCanceled={parentNode.response.isCanceled}
-                contextMenuRenderer={this.contextMenuRenderer}
+                toolConfirmation={{
+                    response,
+                    confirmationMode,
+                    toolConfirmationManager: this.toolConfirmationManager,
+                    toolRequest,
+                    chatId,
+                    requestCanceled: parentNode.response.isCanceled,
+                    contextMenuRenderer: this.contextMenuRenderer,
+                    openerService: this.openerService,
+                    pendingTracker: this.pendingToolConfirmationTracker,
+                    keybindingHints: this.getKeybindingHints()
+                }}
             />
         );
     }
@@ -149,5 +168,19 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
         } catch {
             return undefined;
         }
+    }
+
+    protected getKeybindingHints(): ToolConfirmationKeybindingHints {
+        const allow = this.formatKeybinding(APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        const deny = this.formatKeybinding(DENY_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        return { allow, deny };
+    }
+
+    protected formatKeybinding(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (!bindings.length) {
+            return undefined;
+        }
+        return this.keybindingRegistry.acceleratorFor(bindings[0], '+').join('+');
     }
 }

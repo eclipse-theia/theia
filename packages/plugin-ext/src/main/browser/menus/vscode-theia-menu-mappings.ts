@@ -27,8 +27,11 @@ import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-c
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { PLUGIN_SCM_CHANGE_TITLE_MENU } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
 import {
-    SCM_SOURCE_CONTROL_CONTEXT_MENU, SCM_SOURCE_CONTROL_MENU, SCM_SOURCE_CONTROL_TITLE_MENU, SCM_TITLE_MENU
+    SCM_REPOSITORY_MENU, SCM_SOURCE_CONTROL_MENU, SCM_SOURCE_CONTROL_TITLE_MENU, SCM_TITLE_MENU
 } from '@theia/scm/lib/browser/scm-repositories-widget';
+import {
+    SCM_HISTORY_TITLE_MENU, SCM_HISTORY_ITEM_CONTEXT_MENU, SCM_HISTORY_ITEM_REF_CONTEXT_MENU
+} from '@theia/scm/lib/browser/scm-history-graph-widget';
 import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
 import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget';
@@ -62,9 +65,12 @@ export const implementedVSCodeContributionPoints = [
     'scm/resourceFolder/context',
     'scm/resourceGroup/context',
     'scm/resourceState/context',
+    'scm/repository',
     'scm/sourceControl',
-    'scm/sourceControl/context',
     'scm/sourceControl/title',
+    'scm/history/title',
+    'scm/historyItem/context',
+    'scm/historyItemRef/context',
     'scm/title',
     'timeline/item/context',
     'testing/item/context',
@@ -100,9 +106,12 @@ export const codeToTheiaMappings = new Map<string, MenuPath[]>([
     ['scm/resourceFolder/context', [ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU]],
     ['scm/resourceGroup/context', [ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU]],
     ['scm/resourceState/context', [ScmTreeWidget.RESOURCE_CONTEXT_MENU]],
+    ['scm/repository', [SCM_REPOSITORY_MENU]],
     ['scm/sourceControl', [SCM_SOURCE_CONTROL_MENU]],
-    ['scm/sourceControl/context', [SCM_SOURCE_CONTROL_CONTEXT_MENU]],
     ['scm/sourceControl/title', [SCM_SOURCE_CONTROL_TITLE_MENU]],
+    ['scm/history/title', [SCM_HISTORY_TITLE_MENU]],
+    ['scm/historyItem/context', [SCM_HISTORY_ITEM_CONTEXT_MENU]],
+    ['scm/historyItemRef/context', [SCM_HISTORY_ITEM_REF_CONTEXT_MENU]],
     ['scm/title', [SCM_TITLE_MENU]],
     ['testing/item/context', [TEST_VIEW_CONTEXT_MENU]],
     ['testing/message/context', [TEST_RUNS_CONTEXT_MENU]],

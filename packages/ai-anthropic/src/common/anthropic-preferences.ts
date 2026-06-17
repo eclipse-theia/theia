@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { nls, PreferenceSchema } from '@theia/core';
+import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
@@ -27,14 +27,19 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/anthropic/apiKey/description',
                 'Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text\
-            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
+            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {
             type: 'array',
             description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-opus-4-6', 'claude-opus-4-5'],
+            default: [
+                'claude-opus-4-7',
+                'claude-sonnet-4-6',
+                'claude-haiku-4-5',
+                'claude-opus-4-6',
+            ],
             items: {
                 type: 'string'
             }
@@ -55,7 +60,9 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             \n\
             - specify `useCaching: false` to indicate that prompt caching shall not be used.\
             \n\
-            - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.'),
+            - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.\
+            \n\
+            Reasoning capabilities and the maximum output token limit are derived from the endpoint\'s `/v1/models` response.'),
             default: [],
             items: {
                 type: 'object',

@@ -22,6 +22,7 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CommandService, nls } from '@theia/core';
 import { CopilotAuthService, DeviceCodeResponse } from '../common/copilot-auth-service';
+import { CopilotAuthDialogMessages } from './copilot-auth-dialog-messages';
 
 const OPEN_AI_CONFIG_VIEW_COMMAND = 'aiConfiguration:open';
 
@@ -46,6 +47,9 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
+
+    @inject(CopilotAuthDialogMessages)
+    protected readonly messages: CopilotAuthDialogMessages;
 
     protected state: AuthDialogState = 'loading';
     protected deviceCodeResponse?: DeviceCodeResponse;
@@ -209,8 +213,7 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
         return (
             <div className="theia-copilot-auth-waiting">
                 <p className="theia-copilot-auth-instructions">
-                    {nls.localize('theia/ai/copilot/auth/instructions',
-                        'To authorize Theia to use GitHub Copilot, visit the URL below and enter the code:')}
+                    {this.messages.instructions}
                 </p>
 
                 <div className="theia-copilot-auth-code-section">
@@ -247,9 +250,7 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
 
                 <div className="theia-copilot-auth-privacy">
                     <p className="theia-copilot-auth-privacy-text">
-                        {nls.localize('theia/ai/copilot/auth/privacy',
-                            'Theia is an open-source project. We only request access to your GitHub username ' +
-                            'to connect to GitHub Copilot services — no other data is accessed or stored.')}
+                        {this.messages.privacyNotice}
                     </p>
                     <p className="theia-copilot-auth-tos-text">
                         {nls.localize('theia/ai/copilot/auth/tos',

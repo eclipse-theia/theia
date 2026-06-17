@@ -43,7 +43,7 @@ export { GenericCapabilityItem, GenericCapabilityGroup, GenericCapabilitiesContr
 export interface AvailableGenericCapabilities {
     skills: GenericCapabilityItem[];
     mcpFunctions: GenericCapabilityGroup[];
-    functions: GenericCapabilityGroup[];
+    functions: GenericCapabilityItem[];
     promptFragments: GenericCapabilityItem[];
     agentDelegation: GenericCapabilityItem[];
     variables: GenericCapabilityItem[];
@@ -66,8 +66,8 @@ export interface GenericCapabilitiesService {
     /** Get all available MCP functions grouped by server */
     getAvailableMCPFunctions(): Promise<GenericCapabilityGroup[]>;
 
-    /** Get all available functions (non-MCP) grouped by provider */
-    getAvailableFunctions(): GenericCapabilityGroup[];
+    /** Get all available functions (non-MCP) */
+    getAvailableFunctions(): GenericCapabilityItem[];
 
     /** Get all available prompt fragments */
     getAvailablePromptFragments(): GenericCapabilityItem[];
@@ -167,39 +167,18 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
         return results;
     }
 
-    getAvailableFunctions(): GenericCapabilityGroup[] {
+    getAvailableFunctions(): GenericCapabilityItem[] {
         if (!this.toolInvocationRegistry) {
             return [];
         }
 
-        const allFunctions = this.toolInvocationRegistry.getAllFunctions();
-        const groupMap = new Map<string, GenericCapabilityItem[]>();
-
-        for (const fn of allFunctions) {
-            // Skip MCP functions - they are handled separately
-            if (fn.providerName?.startsWith('mcp_')) {
-                continue;
-            }
-
-            const groupName = fn.providerName || 'Other';
-            if (!groupMap.has(groupName)) {
-                groupMap.set(groupName, []);
-            }
-
-            groupMap.get(groupName)!.push({
+        return this.toolInvocationRegistry.getAllFunctions()
+            .filter(fn => !fn.providerName?.startsWith('mcp_'))
+            .map(fn => ({
                 id: fn.id,
                 name: fn.name || fn.id,
-                group: groupName,
                 description: fn.description
-            });
-        }
-
-        const groups: GenericCapabilityGroup[] = [];
-        for (const [name, items] of groupMap) {
-            groups.push({ name, items });
-        }
-
-        return groups;
+            }));
     }
 
     getAvailablePromptFragments(): GenericCapabilityItem[] {

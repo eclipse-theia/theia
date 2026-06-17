@@ -21,7 +21,7 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Playwright Tests (ubuntu-22.04,  Node.js 24.x)
+    name: Playwright Tests (ubuntu-22.04,  Node.js 22.x)
 
     runs-on: ubuntu-22.04
     timeout-minutes: 60
@@ -30,10 +30,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Use Node.js "24.x"
+      - name: Use Node.js "22.x"
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: "24.x"
+          node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.13
@@ -56,6 +56,18 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          # Playwright's default install path on Linux. Keyed on the lockfile so the cache
+          # is reused as long as the @playwright/test version (and therefore the required
+          # Chromium build) does not change. After the first successful extraction the
+          # `playwright install` step becomes a no-op.
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Build Playwright
         shell: bash

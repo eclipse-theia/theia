@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { VercelAiModel } from './vercel-ai-language-model';
 import { VercelAiLanguageModelsManager, VercelAiModelDescription } from '../common';
@@ -29,9 +29,6 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     @inject(ILogger) @named('vercel-ai')
     protected readonly logger: ILogger;
@@ -82,8 +79,7 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
                         this.logger,
                         this.languageModelFactory,
                         () => this.getProviderConfig(provider),
-                        modelDescription.maxRetries,
-                        this.tokenUsageService
+                        modelDescription.maxRetries
                     )
                 ]);
             }

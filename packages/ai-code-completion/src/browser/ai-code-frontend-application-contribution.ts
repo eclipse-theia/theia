@@ -17,9 +17,9 @@
 import * as monaco from '@theia/monaco-editor-core';
 
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { Disposable, PreferenceService } from '@theia/core';
+import { Disposable, PreferenceService, ILogger } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import {
     PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE,
@@ -41,6 +41,9 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+
+    @inject(ILogger) @named('ai-code-completion:AIFrontendApplicationContribution')
+    protected readonly logger: ILogger;
 
     private completionCache = new CodeCompletionCache();
     private debouncer = new InlineCompletionDebouncer();
@@ -78,7 +81,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
             }
         });
 
-        this.activationService.onDidChangeActiveStatus(change => {
+        this.activationService.onDidChangeCanRun(() => {
             this.toDispose.get('inlineCompletions')?.dispose();
             this.toDispose.set('inlineCompletions', handler());
         });
@@ -93,7 +96,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     }
 
     protected handleInlineCompletions(): Disposable {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.canRun) {
             return Disposable.NULL;
         }
         const automatic = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
@@ -133,7 +136,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
                             return completion;
                         } catch (error) {
-                            console.error('Error providing inline completions:', error);
+                            this.logger.error('Error providing inline completions:', error);
                             return { items: [] };
                         }
                     };

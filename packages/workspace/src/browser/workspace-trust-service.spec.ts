@@ -55,6 +55,10 @@ class TestableWorkspaceTrustService extends WorkspaceTrustService {
     public testShouldReloadForTrustChange(newTrust: boolean): boolean {
         return this.shouldReloadForTrustChange(newTrust);
     }
+
+    public setLastKnownTrustEnabled(value: boolean | undefined): void {
+        this.lastKnownTrustEnabled = value;
+    }
 }
 
 describe('WorkspaceTrustService', () => {
@@ -316,8 +320,9 @@ describe('WorkspaceTrustService', () => {
             areAllWorkspaceUrisTrustedStub = sinon.stub(service as unknown as { areAllWorkspaceUrisTrusted: () => Promise<boolean> }, 'areAllWorkspaceUrisTrusted');
             setWorkspaceTrustStub = sinon.stub(service, 'setWorkspaceTrust').resolves();
             isEmptyWorkspaceStub = sinon.stub(service as unknown as { isEmptyWorkspace: () => Promise<boolean> }, 'isEmptyWorkspace');
-            // Mock workspaceTrustPref - default emptyWindow to false so trusted folders logic runs
-            workspaceTrustPrefStub = { [WORKSPACE_TRUST_EMPTY_WINDOW]: false };
+            // Mock workspaceTrustPref - default emptyWindow to false so trusted folders logic runs;
+            // trust is enabled by default so the trustedFolders branch is exercised
+            workspaceTrustPrefStub = { [WORKSPACE_TRUST_EMPTY_WINDOW]: false, [WORKSPACE_TRUST_ENABLED]: true };
             (service as unknown as { workspaceTrustPref: { [key: string]: unknown } }).workspaceTrustPref = workspaceTrustPrefStub;
             // Default to non-empty workspace
             isEmptyWorkspaceStub.resolves(false);
@@ -459,6 +464,9 @@ describe('WorkspaceTrustService', () => {
                 // Stub isWorkspaceTrustResolved to return true (simulates resolved state)
                 sinon.stub(service, 'isWorkspaceTrustResolved').returns(true);
                 service.setCurrentTrust(true);
+                // Simulate a real user change: effective value just flipped from true to false.
+                service.setLastKnownTrustEnabled(true);
+                workspaceTrustPrefStub[WORKSPACE_TRUST_ENABLED] = false;
             });
 
             it('should reload without setSafeToShutDown when user confirms restart', async () => {
@@ -491,6 +499,45 @@ describe('WorkspaceTrustService', () => {
 
                 expect(windowServiceStub.reload.called).to.be.false;
                 expect(windowServiceStub.setSafeToShutDown.called).to.be.false;
+            });
+
+            it('should not show restart dialog when effective value is unchanged (initial-load event)', async () => {
+                // Simulate the User provider's initial-load event: value already matches what was
+                // observed at trust resolution time.
+                service.setLastKnownTrustEnabled(false);
+                workspaceTrustPrefStub[WORKSPACE_TRUST_ENABLED] = false;
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_ENABLED,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(confirmRestartStub.called).to.be.false;
+                expect(windowServiceStub.reload.called).to.be.false;
+            });
+        });
+
+        describe('trustedFolders change while trust is disabled', () => {
+            it('should not flip currentTrust when `enabled` is false', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_ENABLED] = false;
+                service.setCurrentTrust(true);
+                areAllWorkspaceUrisTrustedStub.resolves(false);
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.called).to.be.false;
+                expect(areAllWorkspaceUrisTrustedStub.called).to.be.false;
             });
         });
 

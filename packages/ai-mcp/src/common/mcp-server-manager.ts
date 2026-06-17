@@ -16,16 +16,37 @@
 
 import type { CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { Event } from '@theia/core/lib/common/event';
+import { MCPOAuthConfig } from './mcp-oauth';
 
 export const MCPFrontendService = Symbol('MCPFrontendService');
 export interface MCPFrontendService {
     startServer(serverName: string): Promise<void>;
+    /**
+     * Starts a server initiated by a direct user action. Permits the OAuth flow to launch the user's
+     * default browser when authorization is required.
+     *
+     * @returns `true` when the start was attempted; `false` when a pre-flight check failed (the pre-flight
+     *          has already surfaced its own diagnostic).
+     */
+    startServerInteractive(serverName: string): Promise<boolean>;
+    /**
+     * Runs the OAuth sign-in flow for a remote OAuth server without leaving the server running.
+     * The obtained tokens stay in the credential store, so subsequent starts connect silently.
+     *
+     * @returns `true` when the sign-in completed; `false` when a pre-flight check failed (the pre-flight
+     *          has already surfaced its own diagnostic) or the authorization handshake did not complete.
+     */
+    signIn(serverName: string): Promise<boolean>;
     hasServer(serverName: string): Promise<boolean>;
     isServerStarted(serverName: string): Promise<boolean>;
     registerToolsForAllStartedServers(): Promise<void>;
     stopServer(serverName: string): Promise<void>;
+    signOut(serverName: string): Promise<void>;
+    hasStoredOAuthCredentials(serverName: string): Promise<boolean>;
     addOrUpdateServer(description: MCPServerDescription): Promise<void>;
     getStartedServers(): Promise<string[]>;
+    /** See {@link MCPServerManager.getActiveServers}; this delegates to it. */
+    getActiveServers(): Promise<string[]>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ListToolsResult | undefined>;
@@ -46,16 +67,35 @@ export interface MCPServer {
     description: MCPServerDescription;
 }
 
+export const MCPServerManager = Symbol('MCPServerManager');
 export interface MCPServerManager {
     callTool(serverName: string, toolName: string, arg_string: string): Promise<CallToolResult>;
-    removeServer(name: string): void;
-    addOrUpdateServer(description: MCPServerDescription): void;
+    /**
+     * Removes a server and waits for lifecycle cleanup such as OAuth authorization cancellation and credential removal.
+     */
+    removeServer(name: string): Promise<void>;
+    /**
+     * Adds or updates a server and waits until manager state is safe for dependent follow-up operations such as autostart.
+     */
+    addOrUpdateServer(description: MCPServerDescription): Promise<void>;
     getTools(serverName: string): Promise<ListToolsResult>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
-    startServer(serverName: string): Promise<void>;
+    /**
+     * @param options.interactive `true` when the start was initiated by a direct user action;
+     *        `false` (default) for autostart and other non-interactive paths. Non-interactive starts
+     *        do not launch a browser for OAuth authorization.
+     */
+    startServer(serverName: string, options?: { interactive?: boolean }): Promise<void>;
     stopServer(serverName: string): Promise<void>;
+    signOut(serverName: string): Promise<void>;
+    hasStoredOAuthCredentials(serverName: string): Promise<boolean>;
     getRunningServers(): Promise<string[]>;
+    /**
+     * Returns names of all servers whose status is not terminal-stopped. Includes transient pre-running
+     * states and `Errored`. Use for operations that must interrupt servers regardless of lifecycle progress.
+     */
+    getActiveServers(): Promise<string[]>;
     setClient(client: MCPFrontendNotificationService): void;
     disconnectClient(client: MCPFrontendNotificationService): void;
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
@@ -75,6 +115,7 @@ export enum MCPServerStatus {
     Connecting = 'Connecting',
     Running = 'Running',
     Connected = 'Connected',
+    AuthenticationRequired = 'Authentication Required',
     Errored = 'Errored'
 }
 
@@ -106,63 +147,104 @@ export interface BaseMCPServerDescription {
 
     /**
      * Optional resolve function that gets called during server definition resolution.
-     * This function can be used to dynamically modify server configurations,
-     * resolve environment variables, validate configurations, or perform any
-     * necessary preprocessing before the server starts.
-     *
-     * @param description The current server description
-     * @returns A promise that resolves to the processed server description
      */
-    resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
+    resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription | undefined>;
+
+    /**
+     * If set, provenance metadata for a server installed from an AI registry.
+     * Written by `@theia/ai-registry` on install / link / fix / update; not user-editable.
+     */
+    registryMetadata?: MCPRegistryMetadata;
+}
+
+/**
+ * Provenance metadata for an MCP server linked to an AI registry approval. Grouped
+ * under a single `registryMetadata` block in {@link BaseMCPServerDescription} and in
+ * the `ai-features.mcp.mcpServers` preference so registry-link data stays visually
+ * separated from the server configuration the user edits.
+ */
+export interface MCPRegistryMetadata {
+    /** Identifies the AI registry entry this server was installed from. */
+    serverId: string;
+
+    /**
+     * Registry-published version recorded at install / link / fix / update time.
+     * Kept purely for display in the UI; the registry may publish a different version
+     * later, but we don't want to lose the version the user actually installed.
+     * Update detection uses {@link configHash} instead.
+     */
+    version?: string;
+
+    /**
+     * Content hash of the registry approval that produced this entry. Used to detect
+     * when the registry has published a new approval for this server. Do not use
+     * {@link version} for update checks - it is display-only.
+     */
+    configHash?: string;
+}
+
+/**
+ * Subset of an MCP server's persisted configuration that an install flow may carry:
+ * either set by a registry entry or hand-crafted in an install URL. Lives in `common`
+ * so `@theia/ai-registry` (which resolves registry entries in `common`) can reference
+ * the same canonical shape the browser-side install path writes.
+ */
+export interface MCPInstallEntryConfig {
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
+    serverUrl?: string;
+    serverAuthToken?: string;
+    serverAuthTokenHeader?: string;
+    headers?: Record<string, string>;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {
     /**
-     * The command to execute the MCP server.
+     * The command to start the MCP server.
      */
     command: string;
-
     /**
-     * An array of arguments to pass to the command.
+     * Arguments for the MCP server command.
      */
     args?: string[];
-
     /**
-     * Optional environment variables to set when starting the server.
+     * Environment variables for the MCP server process.
      */
     env?: { [key: string]: string };
 }
 
 export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
     /**
-     * The URL of the remote MCP server.
+     * URL of the remote MCP server endpoint.
      */
     serverUrl: string;
-
     /**
-     * The authentication token for the server, if required.
+     * Optional static bearer token for remote MCP servers that do not use OAuth.
      */
     serverAuthToken?: string;
-
     /**
-     * The header name to use for the server authentication token.
+     * Optional header name for the static server authentication token.
      */
     serverAuthTokenHeader?: string;
-
     /**
-     * Optional additional headers to include in requests to the server.
+     * Optional additional request headers for the remote MCP server.
      */
     headers?: Record<string, string>;
+    /**
+     * Optional OAuth configuration for remote MCP servers.
+     */
+    oauth?: MCPOAuthConfig;
 }
 
 export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;
 
 export function isLocalMCPServerDescription(description: MCPServerDescription): description is LocalMCPServerDescription {
-    return (description as LocalMCPServerDescription).command !== undefined;
-}
-export function isRemoteMCPServerDescription(description: MCPServerDescription): description is RemoteMCPServerDescription {
-    return (description as RemoteMCPServerDescription).serverUrl !== undefined;
+    return 'command' in description;
 }
 
-export const MCPServerManager = Symbol('MCPServerManager');
+export function isRemoteMCPServerDescription(description: MCPServerDescription): description is RemoteMCPServerDescription {
+    return 'serverUrl' in description;
+}
+
 export const MCPServerManagerPath = '/services/mcpservermanager';

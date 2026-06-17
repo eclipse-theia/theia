@@ -16,6 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningSupport } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
@@ -104,7 +105,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming &&
-                model.useResponseApi === newModel.useResponseApi));
+                model.useResponseApi === newModel.useResponseApi &&
+                reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -119,6 +121,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
+    /** Per-model capabilities are resolved by the backend from the model id; see `openai-model-defaults.ts`. */
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
@@ -128,9 +131,6 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             model: modelId,
             apiKey: true,
             apiVersion: true,
-            developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
-            enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
-            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
             maxRetries: maxRetries,
             useResponseApi: useResponseApi
         };
@@ -144,7 +144,6 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
             }
-
             return [
                 ...acc,
                 {
@@ -154,17 +153,31 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     deployment: typeof pref.deployment === 'string' && pref.deployment ? pref.deployment : undefined,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
-                    developerMessageSettings: pref.developerMessageSettings ?? 'developer',
-                    supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
-                    enableStreaming: pref.enableStreaming ?? true,
+                    developerMessageSettings: pref.developerMessageSettings,
+                    supportsStructuredOutput: pref.supportsStructuredOutput,
+                    enableStreaming: pref.enableStreaming,
                     maxRetries: pref.maxRetries ?? maxRetries,
-                    useResponseApi: pref.useResponseApi ?? false
+                    useResponseApi: pref.useResponseApi ?? false,
+                    reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined
                 }
             ];
         }, []);
     }
 }
 
-const openAIModelsWithDisabledStreaming: string[] = [];
-const openAIModelsNotSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
-const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];
+function isReasoningSupport(value: unknown): value is ReasoningSupport {
+    return !!value && typeof value === 'object' && Array.isArray((value as ReasoningSupport).supportedLevels);
+}
+
+/** Structural equality — preference reads yield fresh objects, so identity comparison would always report a change. */
+function reasoningSupportEquals(a: ReasoningSupport | undefined, b: ReasoningSupport | undefined): boolean {
+    if (a === b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    return a.defaultLevel === b.defaultLevel
+        && a.supportedLevels.length === b.supportedLevels.length
+        && a.supportedLevels.every((level, index) => level === b.supportedLevels[index]);
+}

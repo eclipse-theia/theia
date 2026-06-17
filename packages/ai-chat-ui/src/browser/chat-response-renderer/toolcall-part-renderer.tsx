@@ -19,14 +19,19 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, HoverService, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
+import { createConfirmationHandlers, ToolConfirmation, ToolConfirmationKeybindingHints, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
-import { useMarkdownRendering } from './markdown-part-renderer';
-import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { MarkdownRender } from './markdown-part-renderer';
+import { isToolCallContent, ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
+import {
+    APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
+    DENY_LATEST_TOOL_CONFIRMATION_COMMAND
+} from '../tool-confirmation-keybinding-contribution';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 @injectable()
@@ -47,11 +52,41 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(PendingToolConfirmationTracker)
+    protected pendingToolConfirmationTracker: PendingToolConfirmationTracker;
+
+    @inject(KeybindingRegistry)
+    protected keybindingRegistry: KeybindingRegistry;
+
+    @inject(MarkdownRenderer)
+    protected markdownRenderer: MarkdownRenderer;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
             return 10;
         }
         return -1;
+    }
+
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
+        const { handleAllow, handleDeny } = createConfirmationHandlers(
+            response.name, response, this.toolConfirmationManager, chatId, toolRequest
+        );
+
+        return <ToolConfirmation
+            response={response}
+            toolRequest={toolRequest}
+            onAllow={handleAllow}
+            onDeny={handleDeny}
+            contextMenuRenderer={this.contextMenuRenderer}
+            openerService={this.openerService}
+            pendingTracker={this.pendingToolConfirmationTracker}
+            keybindingHints={this.getKeybindingHints()}
+            chatId={chatId}
+            markdownRenderer={this.markdownRenderer}
+        />;
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
@@ -68,7 +103,25 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             showArgsTooltip={this.showArgsTooltip.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
             requestCanceled={parentNode.response.isCanceled}
-            contextMenuRenderer={this.contextMenuRenderer} />;
+            contextMenuRenderer={this.contextMenuRenderer}
+            openerService={this.openerService}
+            pendingTracker={this.pendingToolConfirmationTracker}
+            keybindingHints={this.getKeybindingHints()}
+            markdownRenderer={this.markdownRenderer} />;
+    }
+
+    protected getKeybindingHints(): ToolConfirmationKeybindingHints {
+        const allow = this.formatKeybinding(APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        const deny = this.formatKeybinding(DENY_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        return { allow, deny };
+    }
+
+    protected formatKeybinding(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (!bindings.length) {
+            return undefined;
+        }
+        return this.keybindingRegistry.acceleratorFor(bindings[0], '+').join('+');
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -80,7 +133,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (typeof result !== 'object' || result === null) {
             return <pre>{String(result)}</pre>;
         }
-        if ('content' in result) {
+        if (isToolCallContent(result)) {
             return <div className='theia-toolCall-response-content'>
                 {result.content.map((content, idx) => {
                     switch (content.type) {
@@ -94,8 +147,10 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                                 <MarkdownRender text={content.text} openerService={this.openerService} />
                             </div>;
                         }
+                        case 'error': {
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-error-result'><pre>{content.data}</pre></div>;
+                        }
                         case 'audio':
-                        case 'error':
                         default: {
                             return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-default-result'><pre>{JSON.stringify(response, undefined, 2)}</pre></div>;
                         }
@@ -169,6 +224,10 @@ interface ToolCallContentProps {
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
+    pendingTracker?: PendingToolConfirmationTracker;
+    keybindingHints?: ToolConfirmationKeybindingHints;
+    markdownRenderer?: MarkdownRenderer;
 }
 
 /**
@@ -184,7 +243,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     getArgumentsLabel,
     requestCanceled,
     showArgsTooltip,
-    contextMenuRenderer
+    contextMenuRenderer,
+    openerService,
+    pendingTracker,
+    keybindingHints,
+    markdownRenderer
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
@@ -210,23 +273,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
         }
     };
 
-    const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
-        }
-        response.confirm();
-    }, [response, toolConfirmationManager, chatId, toolRequest]);
-
-    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once', reason?: string) => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
-        }
-        response.deny(reason);
-    }, [response, toolConfirmationManager, chatId]);
+    const { handleAllow, handleDeny } = React.useMemo(
+        () => createConfirmationHandlers(response.name, response, toolConfirmationManager, chatId, toolRequest),
+        [response, toolConfirmationManager, chatId, toolRequest]
+    );
 
     const reasonText = formatReason(rejectionReason);
 
@@ -287,14 +337,14 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         onAllow={handleAllow}
                         onDeny={handleDeny}
                         contextMenuRenderer={contextMenuRenderer}
+                        openerService={openerService}
+                        pendingTracker={pendingTracker}
+                        keybindingHints={keybindingHints}
+                        chatId={chatId}
+                        markdownRenderer={markdownRenderer}
                     />
                 </span>
             )}
         </div>
     );
-};
-
-const MarkdownRender = ({ text, openerService }: { text: string; openerService: OpenerService }) => {
-    const ref = useMarkdownRendering(text, openerService);
-    return <div ref={ref}></div>;
 };

@@ -14,8 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/mcp-server-dialog.css';
+import '../../src/browser/style/mcp-configuration-widget.css';
+
+import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, OpenHandler, RemoteConnectionProvider, ServiceConnectionProvider, WidgetFactory } from '@theia/core/lib/browser';
 import {
     MCPFrontendService,
     MCPServerManager,
@@ -27,9 +31,18 @@ import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
 import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
 import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
+import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth';
+import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { GenericCapabilitiesContribution } from '@theia/ai-core';
 import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
+import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPServerEditDialogParameters } from './mcp-server-editor';
+import { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } from './mcp-server-edit-dialog';
+import { MCPServerInstallDialog, MCPServerInstallDialogFactory, MCPServerInstallDialogOptions } from './mcp-server-install-dialog';
+import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution';
+import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
+import { InstallMcpUriHandler } from './install-mcp-uri-handler';
 
 export default new ContainerModule(bind => {
     bind(McpFrontendApplicationContribution).toSelf().inSingletonScope();
@@ -38,9 +51,41 @@ export default new ContainerModule(bind => {
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
 
+    bind(MCPServerEditDialogFactory).toFactory(ctx =>
+        (parameters: MCPServerEditDialogParameters) => new MCPServerEditDialog(
+            parameters.props,
+            parameters.initialData ?? { ...DEFAULT_MCP_SERVER_FORM_DATA },
+            parameters.existingServerNames,
+            parameters.isEditing,
+            () => ctx.container.get<MCPOAuthFrontendDelegate>(MCPOAuthFrontendDelegate).getEffectiveRedirectUrl()
+        ));
+    bind(MCPServerInstallDialogFactory).toFactory(() =>
+        (options: MCPServerInstallDialogOptions) => new MCPServerInstallDialog(options));
+    bind(MCPServerEditorImpl).toSelf().inSingletonScope();
+    bind(MCPServerEditor).toService(MCPServerEditorImpl);
+
+    bind(AIMCPConfigurationWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: AIMCPConfigurationWidget.ID,
+        createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+    })).inSingletonScope();
+    bind(MCPConfigurationCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(MCPConfigurationCommandContribution);
+
+    bind(MCPInstallUriConfiguration).toSelf().inSingletonScope();
+    bind(InstallMcpUriHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(InstallMcpUriHandler);
+
     bind(MCPGenericCapabilitiesContribution).toSelf().inSingletonScope();
     bind(GenericCapabilitiesContribution).toService(MCPGenericCapabilitiesContribution);
     bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();
+    bind(MCPOAuthFrontendDelegateClient).to(MCPOAuthFrontendDelegateClientImpl).inSingletonScope();
+
+    bind(MCPOAuthFrontendDelegate).toDynamicValue(ctx => {
+        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        const client = ctx.container.get<MCPOAuthFrontendDelegateClient>(MCPOAuthFrontendDelegateClient);
+        return connection.createProxy<MCPOAuthFrontendDelegate>(mcpOAuthFrontendDelegatePath, client);
+    }).inSingletonScope();
 
     bind(MCPServerManagerServer).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
@@ -66,7 +111,7 @@ export default new ContainerModule(bind => {
         // We proxy the MCPServerManager to override addOrUpdateServer and getServerDescription
         // to handle the resolve functions via the MCPServerManagerServerClient.
         return new Proxy(backendServerManager, {
-            get(target: MCPServerManager, prop: PropertyKey, receiver: unknown): unknown {
+            get(target: MCPServerManager, prop: PropertyKey): unknown {
                 // override addOrUpdateServer to store the original description in the MCPServerManagerServerClient
                 // to be used in resolveServerDescription if a resolve function is provided
                 if (prop === 'addOrUpdateServer') {
@@ -91,7 +136,7 @@ export default new ContainerModule(bind => {
                         return description;
                     };
                 }
-                return Reflect.get(target, prop, receiver);
+                return Reflect.get(target, prop, target);
             }
         });
     }).inSingletonScope();

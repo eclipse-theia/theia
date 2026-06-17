@@ -40,7 +40,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
     name = AppTesterChatAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'default/code',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
     override description = nls.localize('theia/ai/chat/app-tester/description', 'This agent tests your application user interface to verify user-specified test scenarios through browser automation. '

@@ -65,6 +65,10 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
         }));
     }
 
+    updateID(): void {
+        this.id = CustomEditorWidget.FACTORY_ID + `:${this.resource.toString()}:${this.identifier.id}`;
+    }
+
     undo(): void {
         this._modelRef.object?.undo();
     }

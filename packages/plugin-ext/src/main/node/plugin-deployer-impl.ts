@@ -42,7 +42,7 @@ export class PluginDeployerImpl implements PluginDeployer {
     protected readonly onDidDeployEmitter = new Emitter<void>();
     readonly onDidDeploy = this.onDidDeployEmitter.event;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:PluginDeployerImpl')
     protected readonly logger: ILogger;
 
     @inject(PluginDeployerHandler)
@@ -215,7 +215,7 @@ export class PluginDeployerImpl implements PluginDeployer {
                         }
                     }
                 } catch (e) {
-                    console.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    this.logger.error(`Failed to resolve plugins from '${entry.id}'`, e);
                     errors.push(e instanceof Error ? e : new Error(String(e)));
                 }
             }));

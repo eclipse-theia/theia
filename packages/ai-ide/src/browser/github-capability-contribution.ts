@@ -34,7 +34,7 @@ export class GitHubCapabilityContribution implements FrontendApplicationContribu
     }
 
     protected buildTemplate(): string {
-        const name = nls.localize('theia/ai/ide/githubCapability/name', 'GitHub');
+        const name = nls.localizeByDefault('GitHub');
         const description = nls.localize('theia/ai/ide/githubCapability/description',
             'Allows the agent to interact with GitHub. For this, the agent can delegate to the GitHub agent, \
             which can read and write issues, pull requests, comments, and repository contents.');

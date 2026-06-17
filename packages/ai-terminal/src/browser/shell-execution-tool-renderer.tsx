@@ -17,10 +17,11 @@
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { CountdownTimer, InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { CopyButton, MetaRow, OutputBox, formatDuration } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-call-rendering';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { isToolCallContent, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
@@ -67,6 +68,54 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             return 20;
         }
         return -1;
+    }
+
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = this.toolInvocationRegistry.getFunction(SHELL_EXECUTION_FUNCTION_ID);
+        const input = parseShellExecutionInput(response.arguments);
+
+        const handleAllow = (patterns?: string[]) => {
+            if (patterns && patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addAllowlistPatterns(...patterns);
+                } catch (err) {
+                    console.warn('Failed to add allowlist patterns:', err);
+                }
+            }
+            response.confirm();
+        };
+        const handleDeny = (options?: { patterns?: string[]; reason?: string }) => {
+            if (options?.patterns && options.patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+                } catch (err) {
+                    console.warn('Failed to add denylist patterns:', err);
+                }
+            }
+            response.deny(options?.reason);
+        };
+        const handleAllowAllForever = () => {
+            this.toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+            response.confirm();
+        };
+        const handleAllowAllSession = () => {
+            this.toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+            response.confirm();
+        };
+
+        return (
+            <ConfirmationUI
+                input={input}
+                shellCommandPermissionService={this.shellCommandPermissionService}
+                onAllow={handleAllow}
+                onAllowAllForever={handleAllowAllForever}
+                onAllowAllSession={handleAllowAllSession}
+                onDeny={handleDeny}
+                contextMenuRenderer={this.contextMenuRenderer}
+                response={response}
+            />
+        );
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
@@ -216,6 +265,19 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
         } catch (err) {
             console.debug('Failed to parse shell execution result:', err);
         }
+        if (!result && !canceledResult) {
+            if (typeof response.result === 'string') {
+                result = { success: false, exitCode: undefined, output: response.result, duration: 0 };
+            } else if (isToolCallContent(response.result)) {
+                const errorMessage = response.result.content
+                    .filter(item => item.type === 'error')
+                    .map(item => item.data)
+                    .join('\n');
+                if (errorMessage) {
+                    result = { success: false, exitCode: undefined, output: errorMessage, duration: 0 };
+                }
+            }
+        }
     }
 
     if (!input.command && !toolFinished) {
@@ -234,7 +296,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
             <div className="shell-execution-tool container">
                 <div className="shell-execution-tool header running">
                     <span className={codicon('terminal')} />
-                    <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                    <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                     <span className="shell-execution-tool meta-badges">
                         <span className={`${codicon('loading')} shell-execution-tool status-icon theia-animation-spin`} />
                     </span>
@@ -338,6 +400,12 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                     {nls.localize('theia/ai-terminal/confirmExecution', 'Confirm Shell Command')}
                 </span>
             </div>
+
+            {input.description && (
+                <div className="shell-execution-tool command-description">
+                    {input.description}
+                </div>
+            )}
 
             <div className="shell-execution-tool command-display confirmation">
                 <code>{input.command}</code>
@@ -700,7 +768,7 @@ const RunningUI: React.FC<RunningUIProps> = ({
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool header running">
             <span className={codicon('terminal')} />
-            <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+            <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
             <span className="shell-execution-tool meta-badges">
                 <button
                     className="shell-execution-tool cancel-button"
@@ -723,7 +791,7 @@ const CancelingUI: React.FC<CancelingUIProps> = ({ input }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool header canceling">
             <span className={codicon('terminal')} />
-            <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+            <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
             <span className="shell-execution-tool meta-badges">
                 <span className="shell-execution-tool status-label canceling">
                     <span className={`${codicon('loading')} theia-animation-spin`} />
@@ -765,7 +833,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     <span className="shell-execution-tool status-label error">
                         {getStatusLabel()}
@@ -774,6 +842,11 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
@@ -817,7 +890,7 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     {canceledResult?.duration !== undefined && (
                         <span className="shell-execution-tool duration">{formatDuration(canceledResult.duration)}</span>
@@ -829,6 +902,11 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
@@ -869,7 +947,7 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     {result?.duration !== undefined && (
                         <span className="shell-execution-tool duration">{formatDuration(result.duration)}</span>
@@ -882,6 +960,11 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {(result?.cwd || input.cwd) && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
@@ -919,63 +1002,6 @@ const CommandDisplay: React.FC<CommandDisplayProps> = ({ command, clipboardServi
     </div>
 );
 
-interface MetaRowProps {
-    icon: string;
-    label: string;
-    children: React.ReactNode;
-}
-
-const MetaRow: React.FC<MetaRowProps> = ({ icon, label, children }) => (
-    <div className="shell-execution-tool meta-row" title={label}>
-        <span className={codicon(icon)} />
-        <span>{children}</span>
-    </div>
-);
-
-interface OutputBoxProps {
-    title: string;
-    output?: string;
-    clipboardService: ClipboardService;
-}
-
-const OutputBox: React.FC<OutputBoxProps> = ({ title, output, clipboardService }) => (
-    <div className="shell-execution-tool output-box">
-        <div className="shell-execution-tool output-header">
-            <span className={codicon('output')} />
-            {title}
-            {output && <CopyButton text={output} clipboardService={clipboardService} />}
-        </div>
-        {output ? (
-            <pre className="shell-execution-tool output">{output}</pre>
-        ) : (
-            <div className="shell-execution-tool no-output">
-                {nls.localize('theia/ai-terminal/noOutput', 'No output')}
-            </div>
-        )}
-    </div>
-);
-
-interface CopyButtonProps {
-    text: string;
-    clipboardService: ClipboardService;
-}
-
-const CopyButton: React.FC<CopyButtonProps> = ({ text, clipboardService }) => {
-    const handleCopy = React.useCallback(() => {
-        clipboardService.writeText(text);
-    }, [text, clipboardService]);
-
-    return (
-        <button
-            className="shell-execution-tool copy-button"
-            onClick={handleCopy}
-            title={nls.localizeByDefault('Copy')}
-        >
-            <span className={codicon('copy')} />
-        </button>
-    );
-};
-
 function formatSuggestionLabel(suggestion: PatternSuggestion, action: 'allow' | 'deny'): string {
     const quoted = suggestion.patterns.map(p => `"${truncatePattern(p)}"`);
     if (quoted.length === 2) {
@@ -1006,14 +1032,3 @@ function truncatePattern(pattern: string, maxLength: number = 50): string {
     return pattern.substring(0, maxLength - 3) + '...';
 }
 
-function formatDuration(ms: number): string {
-    if (ms < 1000) {
-        return `${ms}ms`;
-    }
-    if (ms < 60000) {
-        return `${(ms / 1000).toFixed(1)}s`;
-    }
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
-}

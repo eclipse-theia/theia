@@ -14,15 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+@import './scm-history-graph.css';
+
 .theia-scm-commit {
   overflow: hidden;
   font-size: var(--theia-ui-font-size1);
   max-height: calc(100% - var(--theia-border-width));
   position: relative;
-  padding: var(--theia-ui-padding)
-           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
-           var(--theia-ui-padding)
-           calc(var(--theia-ui-padding) * 3);
+  padding: var(--theia-ui-padding) max(var(--theia-ui-padding), var(--theia-scrollbar-width)) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-scm {
@@ -141,9 +140,9 @@
 .theia-scm-validation-message-info {
   background-color: var(--theia-inputValidation-infoBackground) !important;
   color: var(--theia-inputValidation-infoForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-infoBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-success {
@@ -155,17 +154,17 @@
 .theia-scm-validation-message-warning {
   background-color: var(--theia-inputValidation-warningBackground) !important;
   color: var(--theia-inputValidation-warningForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-warningBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-error {
   background-color: var(--theia-inputValidation-errorBackground) !important;
   color: var(--theia-inputValidation-errorForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-errorBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
 }
 
 .theia-scm-action-button-container {

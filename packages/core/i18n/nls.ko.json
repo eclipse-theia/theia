@@ -83,7 +83,7 @@
           "maxRetries": {
             "title": "요청 실패 시 최대 재시도 횟수. 기본값은 3입니다."
           },
-          "mdDescription": "Anthropic API와 호환되는 커스텀 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 지정할 수 있습니다:            \n            - UI에서 커스텀 모델을 식별하기 위한 고유한 `id`. 지정되지 않은 경우 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 접근하기 위한 `apiKey`를 제공하십시오. `true`를 사용하여 글로벌 Anthropic API 키 사용을 표시하십시오.            \n            - `enableStreaming: false`를 지정하여 스트리밍을 사용하지 않도록 표시하십시오.            \n            - 프롬프트 캐싱을 사용하지 않으려면 `useCaching: false`를 지정하십시오.            \n            - 요청 실패 시 최대 재시도 횟수를 지정하려면 `maxRetries: <number>`를 사용하십시오. 기본값은 3입니다.",
+          "mdDescription": "Anthropic API와 호환되는 사용자 정의 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정합니다. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하십시오. 전역 Anthropic API 키를 사용하려면 `true`를 사용하십시오.            \n            - 스트리밍을 사용하지 않으려면 `enableStreaming: false`를 지정하십시오.            \n            - 프롬프트 캐싱을 사용하지 않으려면 `useCaching: false`를 지정합니다.            \n            - 요청이 실패할 때 재시도할 최대 횟수를 지정하려면 `maxRetries: <number>`를 사용합니다. 기본값은 3입니다.            \n            추론 기능 및 최대 출력 토큰 제한은 엔드포인트의 `/v1/models` 응답에서 파생됩니다.",
           "modelId": {
             "title": "모델 ID"
           },
@@ -138,6 +138,9 @@
         "defaultAgent": {
           "description": "선택 사항: 사용자 쿼리에서 @<에이전트명>으로 명시적으로 언급된 에이전트가 없는 경우 호출될 채팅 에이전트의 <에이전트명>.         기본 에이전트가 구성되지 않은 경우 Theia의 기본값이 적용됩니다."
         },
+        "defaultToolConfirmation": {
+          "description": "\"ai-features.chat.toolConfirmation\" 아래에 도구별 항목이 없는 도구에 대해 사용되는 기본 확인 동작입니다. 자동 승인 전에 명시적으로 확인을 요구하는 도구는 이 설정과 관계없이 항상 기본적으로 \"확인\"으로 설정됩니다."
+        },
         "fromClipboard": "$(clippy) 클립보드에서 가져오기",
         "fromClipboardDescription": "클립보드에서 이미지 붙여넣기",
         "imageContextVariable": {
@@ -190,15 +193,15 @@
           "description": "작업 컨텍스트 설명을 저장하고 불러올 작업 공간 상대 경로입니다. 빈 값으로 설정하면 생성된 작업 컨텍스트가 디스크가 아닌 메모리에 저장됩니다."
         },
         "toolConfirmation": {
+          "alwaysAllow": {
+            "description": "확인 메시지 없이 도구를 자동으로 실행"
+          },
           "confirm": {
             "description": "도구 실행 전에 확인을 요청합니다"
           },
-          "description": "다양한 도구에 대한 확인 동작을 구성합니다. 키는 도구 ID이며, 값은 확인 모드입니다. 모든 도구에 대한 전역 기본값을 설정하려면 키로 \"*\"를 사용하십시오.",
+          "description": "개별 도구의 확인 동작을 구성합니다. 키는 도구 ID이며, 값은 확인 모드입니다. 모든 도구의 기본값을 변경하려면 \"ai-features.chat.defaultToolConfirmation\"을 사용하십시오.",
           "disabled": {
             "description": "도구 실행 비활성화"
-          },
-          "yolo": {
-            "description": "확인 없이 자동으로 도구 실행"
           }
         },
         "toolConfirmationTimeout": {
@@ -241,10 +244,10 @@
           "toggleCapabilities": "기능 구성 토글"
         },
         "chatInputAriaLabel": "여기에 메시지를 입력하세요",
+        "chatRequestFailedWithDetail": "채팅 요청 실패: {0}",
         "chatResponses": "채팅 응답",
         "clearAllSelections": "검색 문자열 및 기능 선택 항목 지우기",
         "code-part-renderer": {
-          "copied": "복사됨",
           "generatedCode": "생성된 코드"
         },
         "collapseAll": "모두 접기",
@@ -252,10 +255,10 @@
         "command-part-renderer": {
           "commandNotExecutable": "해당 명령어의 ID는 \"{0}\"이지만, 채팅 창에서는 실행할 수 없습니다."
         },
-        "confirmDeleteChatMsg": "이 채팅을 삭제하시겠습니까?",
         "copyCodeBlock": "코드 블록 복사",
         "couldNotSendRequestToSession": "세션 {1}에 \"{0}\" 요청을 보낼 수 없었습니다.",
         "delegation-response-renderer": {
+          "interactionNeeded": "사용자 상호작용 필요",
           "prompt": {
             "label": "위임 프롬프트:"
           },
@@ -286,7 +289,7 @@
         "focusInput": "초점 채팅 입력",
         "focusResponse": "포커스 채팅 응답",
         "functions": "기능",
-        "functionsDescription": "Theia 확장 프로그램이 제공하는 내장 함수",
+        "functionsDescription": "{0} 확장 프로그램에서 제공하는 내장 기능",
         "genericCapabilities": "일반 기능",
         "mcpFunctionsDescription": "연결된 서버의 모델 컨텍스트 프로토콜(MCP) 기능",
         "noChatAgentsAvailable": "사용 가능한 채팅 에이전트가 없습니다.",
@@ -297,8 +300,10 @@
         "performThisTask": "이 작업을 수행하십시오.",
         "persistedSession": "지속 세션 (복원하려면 클릭)",
         "promptFragmentsDescription": "대화에 포함할 사용자 지정 프롬프트 조각",
+        "reasoning": {
+          "minimal": "최소"
+        },
         "removeChat": "채팅 제거",
-        "renameChat": "채팅 이름 변경",
         "requestNotFoundForRetry": "요청을 찾을 수 없습니다. 재시도하십시오.",
         "responseFrom": "{0}의 응답",
         "saveCurrentSelectionsToSettings": "기능 설정 저장",
@@ -320,6 +325,18 @@
           "cantDisplay": "응답을 표시할 수 없습니다. ChatResponsePartRenderers를 확인해 주세요!"
         },
         "toggleCapabilitiesConfig": "기능 구성 토글",
+        "tokenUsageIndicatorEnabled": "채팅 창에 실험적인 토큰 사용량 표시기가 표시될지 여부를 제어합니다. 이 기능은 실험 단계이며, 모델 및 제공업체에 따라 토큰 수치가 부정확할 수 있습니다.",
+        "tokenUsageLabel": "토큰 사용법",
+        "tokenUsageOverflow": "토큰 사용량이 경고 기준을 훨씬 초과했습니다. 토큰을 압축하거나 새 세션을 시작하는 것을 고려해 보십시오.",
+        "tokenUsageTooltipCacheCreate": "캐시 생성: {0}",
+        "tokenUsageTooltipCacheRead": "캐시 읽기: {0}",
+        "tokenUsageTooltipTotal": "총계: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "토큰 사용 경고 기준치에 도달했습니다.",
+        "tokenUsageWarningEnabled": "채팅 세션의 토큰 사용량이 설정된 임계값을 초과할 때 알림이 표시될지 여부를 제어합니다. 이를 위해서는 언어 모델 제공자가 토큰 사용량을 보고해야 합니다.",
+        "tokenUsageWarningMessage": "채팅 세션 토큰 사용량이 컨텍스트 창의 {0}%에 도달했습니다. 제한에 도달하지 않도록 이 세션을 요약하거나 새 세션을 시작해 보세요.",
+        "tokenUsageWarningNewSessionAction": "새 채팅 시작",
+        "tokenUsageWarningSummarizeAction": "현재 세션 요약",
+        "tokenUsageWarningThresholdPercentage": "토큰 사용 경고가 트리거되는 모델 컨텍스트 창의 비율입니다. 이 값은 토큰 사용 표시기의 경고/오류 색상 대역도 결정합니다. 현재는 200k 컨텍스트 창을 기준으로 계산되나, 향후 모델별 실제 컨텍스트 크기가 확인되는 대로 해당 값을 사용할 예정입니다.",
         "toolcall-part-renderer": {
           "denied": "실행이 거부되었습니다",
           "finished": "실행",
@@ -375,8 +392,8 @@
         "differentAgentRequestWarning": "이전 채팅 요청은 다른 에이전트가 처리했습니다. Claude Code는 해당 메시지를 확인할 수 없습니다.",
         "directory": "디렉터리",
         "domain": "도메인",
+        "edit": "{0} 편집",
         "editAutomatically": "자동으로 편집",
-        "editNumber": "{0} 편집",
         "editing": "편집",
         "editsCount": "{0} 수정",
         "emptyTodoList": "사용 가능한 항목 없음",
@@ -496,12 +513,11 @@
         "oneItem": "1개 항목",
         "searched": "검색됨",
         "searching": "검색",
-        "todoList": "Todo List",
-        "webSearch": "웹 검색"
+        "todoList": "Todo List"
       },
       "completion": {
         "agent": {
-          "description": "이 에이전트는 Theia IDE의 코드 편집기에서 인라인 코드 완성 기능을 제공합니다.",
+          "description": "이 에이전트는 {0}의 코드 편집기에서 인라인 코드 완성 기능을 제공합니다.",
           "vars": {
             "file": {
               "description": "편집 중인 파일의 URI"
@@ -565,7 +581,7 @@
           "expired": "인증이 만료되었거나 거부되었습니다. 다시 시도해 주세요.",
           "hint": "코드를 입력하고 인증한 후, 아래의 \"인증 완료\"를 클릭하세요.",
           "initiating": "인증 시작 중...",
-          "instructions": "Theia가 GitHub Copilot을 사용하도록 허용하려면 아래 URL을 방문하여 코드를 입력하세요:",
+          "instructions": "{0}가 GitHub Copilot을 사용할 수 있도록 승인하려면 아래 URL을 방문하여 코드를 입력하세요:",
           "openGitHub": "GitHub 열기",
           "privacy": "Theia는 오픈소스 프로젝트입니다. GitHub Copilot 서비스 연결을 위해 GitHub 사용자 이름에 대한 접근 권한만 요청하며, 다른 데이터는 접근하거나 저장하지 않습니다.",
           "success": "GitHub Copilot에 성공적으로 로그인했습니다!",
@@ -599,6 +615,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "작업",
           "addCustomAgent": "사용자 지정 에이전트 추가",
           "availableCapabilities": "사용 가능한 기능",
           "completionNotificationDescriptionPrefix": "이 에이전트가 작업을 완료할 때 알림을 받을 방식을 선택하십시오. \"기본값\"은 ",
@@ -624,11 +641,11 @@
           "description": "시스템에서 사용 가능한 에이전트 목록을 반환합니다."
         },
         "aiConfiguration": {
-          "label": "AI 구성 [베타]"
+          "label": "AI 구성"
         },
         "blinkTitle": {
-          "agentCompleted": "Theia - 에이전트 완료됨",
-          "namedAgentCompleted": "Theia - 에이전트 \"{0}\" 완료됨"
+          "agentCompleted": "{0} - 에이전트 완료",
+          "namedAgentCompleted": "{0} - 에이전트 \"{1}\" 완료"
         },
         "capabilityVariable": {
           "argDescription": "프롬프트 조각 ID, 선택적으로 \"기본값 켜기\" 또는 \"기본값 끄기\"가 뒤따름 (기본값은 끔)",
@@ -658,6 +675,9 @@
           },
           "code-completion": {
             "description": "코드 자동 완성 시나리오에 가장 적합합니다."
+          },
+          "fast": {
+            "description": "심층적인 추론이 필요하지 않은 탐색이나 기본 도구 호출과 같은 단순한 작업을 위한 더 빠르고 저렴한 모델."
           },
           "summarize": {
             "description": "내용 요약 및 압축을 위해 우선순위가 지정된 모델들."
@@ -721,7 +741,7 @@
           "description": "현재 열려 있는 모든 파일의 간략 참조(상대 경로, 쉼표로 구분)"
         },
         "openEditorsVariable": {
-          "description": "작업 공간 루트에 상대적인 현재 열려 있는 모든 파일의 쉼표로 구분된 목록."
+          "description": "현재 열려 있는 모든 파일의 쉼표로 구분된 목록으로, 작업 공간 상대 경로(예: my-project/src/index.ts)로 표시됩니다."
         },
         "preference": {
           "languageModelAliases": {
@@ -729,6 +749,9 @@
             "selectedModel": "이 별칭에 대해 사용자가 선택한 모델.",
             "title": "언어 모델 별칭"
           }
+        },
+        "productNameVariable": {
+          "description": "사용자가 작업 중인 제품/애플리케이션의 이름"
         },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "활성 사용자 정의",
@@ -781,6 +804,10 @@
         "prompts": {
           "category": "AI 프롬프트 템플릿"
         },
+        "reasoning": {
+          "mdDescription": "추론 기능을 지원하는 모델에 적용되는 채팅 입력의 추론 선택기 기본값입니다.\n\n이는 UI 수준 설정입니다. 선택된 수준은 요청 시점에 공급자의 네이티브 API 매개변수로 변환되며(예: Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`), 동일한 필드에 대해 `#ai-features.modelSettings.requestSettings#`를 통해 제공된 원시 값보다 우선합니다.\n\n각 항목은 다음으로 구성됩니다:\n- `scope`: 설정이 적용되는 시점을 정의합니다(`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: `off`, `minimal`, `low`, `medium`, `high`, `auto` 중 하나입니다.\n\n실행 시 우선순위(높은 순서): 선택기를 통한 세션 재정의 → 이 기본값 → 모델의 선언된 기본값. 선택기에 표시된 값이 전송됩니다. `#ai-features.modelSettings.requestSettings#`를 통해 제공자의 추론 필드를 수동으로 재정의하려면, 여기서 `reasoning.level`을 `off`로 설정하여 레벨 기반 변환을 비활성화하십시오.\n\n항목은 범위(scope)의 우선순위에 따라 매칭됩니다(에이전트: 100, 모델: 10, 제공자: 1점).\n\n예시:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "기본값 설정"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "LLM으로 다시 전송되는 메시지를 처리하는 방법에 대한 클라이언트 설정.",
@@ -821,30 +848,6 @@
           "edited": "수정됨",
           "unavailableVariant": "사용 불가"
         },
-        "thinkingMode": {
-          "mdDescription": "확장된 사고 기능을 지원하는 모델에 대한 사고 모드 설정을 지정할 수 있습니다.\n            각 설정은 다음으로 구성됩니다:\n            - `scope`: 설정이 적용되는 시점을 정의합니다:\n              - `modelId` (선택 사항): 일치시킬 모델 ID\n              - `providerId` (선택 사항): 일치시킬 제공자 ID\n              - `agentId` (선택 사항): 일치시킬 에이전트 ID\n            - `thinkingMode`: 사고 모드 구성:\n              - `enabled` (부울): 사고 모드 활성화 여부\n              - `budgetTokens` (숫자, 선택 사항): 사고에 할당 가능한 최대 토큰 수 (모델이 지원하는 경우)\n            설정 일치는 우선순위(에이전트: 100점, 모델: 10점, 제공자: 1점)에 따라 결정됩니다.",
-          "scope": {
-            "agentId": {
-              "description": "설정을 적용할 (선택 사항인) 에이전트 ID."
-            },
-            "modelId": {
-              "description": "(선택 사항) 모델 ID"
-            },
-            "providerId": {
-              "description": "설정을 적용할 (선택적) 공급자 ID."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "사고에 사용할 최대 토큰 수. 모델이 사고 예산을 지원하는 경우에만 적용됩니다."
-            },
-            "description": "사고 모드 구성.",
-            "enabled": {
-              "description": "생각 모드가 활성화되었는지 여부."
-            }
-          },
-          "title": "생각 모드 설정"
-        },
         "todayVariable": {
           "description": "오늘을 위한 무언가를 합니다",
           "format": {
@@ -854,13 +857,13 @@
         "unableToDisplayVariableValue": "변수 값을 표시할 수 없습니다.",
         "unableToResolveVariable": "변수를 해결할 수 없습니다.",
         "variable-contribution": {
-          "builtInVariable": "Theia 내장 변수",
-          "currentAbsoluteFilePath": "현재 열려 있는 파일의 절대 경로입니다. 대부분의 에이전트는 상대 파일 경로(현재 작업 공간을 기준으로 한)를 기대한다는 점에 유의하십시오.",
-          "currentFileContent": "현재 열려 있는 파일의 순수 콘텐츠. 여기에는 콘텐츠의 출처 정보는 포함되지 않습니다. 대부분의 에이전트는 상대 파일 경로(현재 작업 공간을 기준으로 함)를 사용할 때 더 잘 작동한다는 점을 유의하십시오.",
-          "currentRelativeDirPath": "현재 열려 있는 파일을 포함하는 디렉토리의 상대 경로.",
-          "currentRelativeFilePath": "현재 열려 있는 파일의 상대 경로.",
-          "currentSelectedText": "열린 파일에서 현재 선택된 일반 텍스트. 여기에는 콘텐츠의 출처 정보는 포함되지 않습니다. 대부분의 에이전트는 상대 파일 경로(현재 작업 공간을 기준으로 함)를 사용할 때 더 잘 작동한다는 점에 유의하십시오.",
-          "dotRelativePath": "현재 열려 있는 파일의 상대 경로에 대한 간단한 참조('currentRelativeFilePath')."
+          "builtInVariable": "{0} 내장 변수",
+          "currentAbsoluteFilePath": "현재 열려 있는 파일의 절대 경로.",
+          "currentFileContent": "현재 열려 있는 파일의 순수 콘텐츠입니다. 여기에는 콘텐츠의 출처에 대한 정보는 포함되지 않습니다.",
+          "currentRelativeDirPath": "현재 열려 있는 파일이 포함된 디렉터리의 작업 공간 상대 경로(예: my-project/src).",
+          "currentRelativeFilePath": "현재 열려 있는 파일의 작업 공간 상대 경로(예: my-project/src/index.ts).",
+          "currentSelectedText": "열린 파일에서 현재 선택된 일반 텍스트입니다. 여기에는 콘텐츠의 출처에 대한 정보는 포함되지 않습니다.",
+          "dotRelativePath": "현재 열려 있는 파일('currentRelativeFilePath')의 작업 공간 상대 경로에 대한 간략한 참조."
         }
       },
       "editor": {
@@ -904,9 +907,8 @@
         "open-history-tooltip": "AI 기록 열기...",
         "request-card": {
           "promptVariant": "프롬프트 변형",
-          "request": "요청",
-          "timestamp": "타임스탬프",
-          "title": "요청"
+          "response": "응답",
+          "timestamp": "타임스탬프"
         },
         "sortChronologically": {
           "tooltip": "시간순으로 정렬"
@@ -927,7 +929,7 @@
           "tooltip": "줄바꿈 해석"
         },
         "view": {
-          "label": "AI 에이전트 기록 [베타]",
+          "label": "AI 에이전트 기록",
           "noAgent": "사용 가능한 에이전트가 없습니다.",
           "noAgentSelected": "에이전트가 선택되지 않았습니다.",
           "noHistoryForAgent": "선택한 에이전트 '{0}'에 대한 기록이 없습니다."
@@ -963,14 +965,15 @@
           "selections": "선택 항목"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "사용자가 에이전트 모드 경고를 확인했는지 여부. 에이전트 모드는 추가 확인 없이 파일을 자동으로 수정할 수 있게 해줍니다. 다음 에이전트 모드 요청 시 확인 메시지를 다시 표시하려면 `false`로 설정하십시오."
+          "enabled": {
+            "mdDescription": "Coder 에이전트에 대해 에이전트 모드를 활성화합니다. 에이전트 모드를 사용하면 별도의 확인 절차 없이 파일을 자동으로 수정할 수 있습니다.                 이 설정이 `true`로 설정될 때까지 에이전트 모드를 사용할 때 첫 사용 확인 대화 상자가 표시됩니다."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "확인",
+          "continueAgentMode": "에이전트 모드로 계속하기",
+          "continueEditMode": "편집 모드로 계속",
+          "info": "에이전트 모드로 계속 진행하면 확인 내용이 저장됩니다. 나중에 `ai-features.agentMode.enabled` 설정을 통해 이 설정을 다시 취소할 수 있습니다.\n\n편집 모드로 계속 진행하면 기본 모드가 편집 모드로 변경됩니다.\n\n모드 선택기나 AI 구성에서 언제든지 모드를 변경할 수 있습니다.",
           "msg": "이 에이전트는 **에이전트 모드**를 사용합니다. 자율적인 작업 흐름을 활성화하기 위해, 별도의 확인 절차 없이 작업 공간 파일에 직접 기록할 수 있습니다.\n\n변경 사항을 검토하고 되돌릴 수 있도록 버전 관리 시스템(예: Git)을 사용하는 것이 좋습니다.\n\n아래 채팅 입력 영역의 모드 선택기를 사용하여 **편집 모드**로 전환하거나, 읽기 전용 계획 수립을 위해 **Architect** 에이전트를 사용할 수 있습니다.\n\n이 확인 메시지는 해당 작업 공간에 저장되며 다시 표시되지 않습니다. 이 설정을 초기화하거나 전역적으로 구성하려면 설정에서 `ai-features.agentMode.confirmed`를 찾아주세요.",
-          "question": "에이전트 모드로 진행하시겠습니까?",
           "waiting": "확인 중..."
         },
         "app-tester": {
@@ -995,7 +998,6 @@
         },
         "architectAgent": {
           "mode": {
-            "plan": "계획 모드",
             "planNext": "계획 모드 (다음)",
             "simple": "단순 모드"
           },
@@ -1007,6 +1009,9 @@
         "bypassHint": "Claude Code와 같은 일부 에이전트는 Theia 언어 모델이 필요하지 않습니다.",
         "chatDisabledMessage": {
           "title": "AI 기능이 비활성화되었습니다"
+        },
+        "chatRestrictedMessage": {
+          "title": "AI 기능 사용 제한"
         },
         "codeReviewerAgent": {
           "description": "코드 변경 사항을 분석하여 체계적인 평가 결과를 제공하는 코드 검토 보조 도구입니다.         완료 기준, 빌드/린트/테스트 결과, 그리고 코드 품질을 확인합니다."
@@ -1030,7 +1035,7 @@
             "label": "AI 명령어",
             "message": "{0} 인자와 함께 콜백 실행. 첫 번째 인자는 동적으로 등록된 명령에 대해 등록된 명령 ID입니다. 다른 인자들은 핸들러의 실제 인자입니다."
           },
-          "description": "이 에이전트는 사용자가 현재 작업 중인 도구인 Theia IDE 내에서 실행할 수 있는 모든 명령어를 인식합니다. 사용자 요청에 따라 적절한 명령어를 찾아 사용자가 실행할 수 있도록 합니다.",
+          "description": "이 에이전트는 사용자가 실행할 수 있는 모든 명령을 파악하고 있습니다. 사용자의 요청에 따라 적절한 명령을 찾아 사용자가 이를 실행할 수 있도록 합니다.",
           "response": {
             "customHandler": "이것을 실행해 보세요:",
             "noCommand": "죄송합니다. 해당 명령어를 찾을 수 없습니다.",
@@ -1038,7 +1043,7 @@
           },
           "vars": {
             "commandIds": {
-              "description": "Theia에서 사용 가능한 명령어 목록."
+              "description": "사용 가능한 명령어 목록."
             }
           }
         },
@@ -1054,7 +1059,7 @@
         },
         "deleteChat": "채팅 삭제",
         "enableAI": {
-          "mdDescription": "이 설정을 통해 최신 AI 기능(베타 버전)에 접근할 수 있습니다.            \n            해당 기능들은 베타 단계에 있으므로 변경될 수 있으며 지속적으로 개선될 예정임을 유의하십시오. 특히, 이 기능들은 사용자가 접근 권한을 부여한 언어 모델(LLM)에 지속적인 요청을 발생시킬 수 있다는 점을 인지해야 합니다. 이로 인해 비용이 발생할 수 있으므로 주의 깊게 모니터링해야 합니다. 이 옵션을 활성화함으로써 귀하는 이러한 위험을 인지한 것으로 간주됩니다.            \n            **주의! 본 섹션의 아래 설정은 메인 기능 설정이 활성화된 후에만 적용됩니다.            기능 활성화 후 아래에서 최소 한 개의 LLM 공급자를 구성해야 합니다. [관련 문서](https://theia-ide.org/docs/user_ai/)도 참조하십시오.**"
+          "mdDescription": "이 설정을 통해 최신 AI 기능에 접근할 수 있습니다.            \n            특히, 이 기능들은 사용자가 접근 권한을 부여한 언어 모델(LLM)에 지속적인 요청을 발생시킬 수 있다는 점을 인지해야 합니다. 이로 인해 비용이 발생할 수 있으므로 주의 깊게 모니터링해야 합니다. 이 옵션을 활성화함으로써 귀하는 이러한 위험을 인지한 것으로 간주됩니다.            \n            **주의! 본 섹션의 아래 설정은 메인 기능 설정이 활성화된 후에만 적용됩니다.            기능 활성화 후 아래에서 최소 한 개의 LLM 공급자를 구성해야 합니다. [관련 문서](https://theia-ide.org/docs/user_ai/)도 참조하십시오.**"
         },
         "exploreAgent": {
           "description": "코드베이스에서 정보를 추출하고 요약해 주는 코드베이스 탐색 도우미입니다.         존재하는 요소에 대한 정보를 보고하고, 코드 발췌문을 제공하며, 관찰된 패턴을 설명합니다."
@@ -1079,11 +1084,10 @@
           }
         },
         "githubCapability": {
-          "description": "에이전트가 GitHub와 상호작용할 수 있도록 합니다. 이를 위해 에이전트는 GitHub 에이전트에 위임할 수 있으며, 해당 에이전트는 이슈, 풀 리퀘스트, 댓글 및 저장소 내용을 읽고 쓸 수 있습니다.",
-          "name": "GitHub"
+          "description": "에이전트가 GitHub와 상호작용할 수 있도록 합니다. 이를 위해 에이전트는 GitHub 에이전트에 위임할 수 있으며, 해당 에이전트는 이슈, 풀 리퀘스트, 댓글 및 저장소 내용을 읽고 쓸 수 있습니다."
         },
         "githubRepoName": {
-          "description": "현재 GitHub 저장소 이름(예: \"eclipse-theia/theia\")"
+          "description": "작업 공간 루트(예: \"eclipse-theia/theia\")와 연결된 GitHub 저장소"
         },
         "howToGetStarted": "시작하는 방법",
         "model-selection-description": "[AI 구성 보기]({0})에서 각 AI 에이전트가 사용할 대규모 언어 모델(LLM)을 선택하세요.",
@@ -1104,9 +1108,37 @@
             "delegatingToAgent": "`@{0}`로 위임"
           }
         },
+        "prReview": {
+          "capability": {
+            "codebaseExploration": {
+              "description": "아키텍처, 사용법, 규칙 및 테스트 탐색 기능을 Explore 에이전트에 위임합니다. 비활성화 상태일 경우, PR 검토자는 자체 도구를 사용하여 탐색합니다.",
+              "name": "위임된 탐색"
+            },
+            "githubInfo": {
+              "description": "GitHub 에이전트에 위임하여 풀 리퀘스트 메타데이터, 차이점, 댓글, 검사 및 연결된 이슈를 가져옵니다.",
+              "name": "GH PR 정보"
+            },
+            "localCheckout": {
+              "description": "풀 리퀘스트를 로컬에 체크아웃하고 기존 작업 트리의 변경 사항을 보호합니다.",
+              "name": "체크아웃"
+            },
+            "localValidation": {
+              "description": "풀 리퀘스트에 대해 로컬 설치, 빌드, 린트, 테스트 또는 이와 유사한 검증 작업을 실행합니다.",
+              "name": "빌드"
+            },
+            "pendingGitHubReview": {
+              "description": "사용자의 명시적인 확인 후, GitHub 에이전트에 위임하여 준비된 인라인 코멘트와 함께 보류 중인 풀 리퀘스트 검토를 생성하거나 업데이트합니다.",
+              "name": "GH 검토 대기 중"
+            }
+          }
+        },
+        "prReviewAgent": {
+          "description": "전체 코드 리뷰 워크플로를 조율하는 AI 기반 PR 검토 에이전트: PR 정보를 가져오고, 코드베이스를 탐색하며, 구조화된 분석을 수행하고, diff 뷰어를 통해 사용자에게 발견 사항을 대화형으로 안내하며, 선택적으로 GitHub에 검토 대기 중인 이슈를 생성합니다."
+        },
         "prompt-template-description": "[AI 구성 보기]({0})에서 AI 에이전트의 프롬프트 변형을 선택하고 프롬프트 템플릿을 사용자 정의하세요.",
         "recentChats": "최근 채팅",
-        "renameChat": "채팅 이름 변경",
+        "restrictedModeDetails": "AI 채팅, 인라인 제안, 코드 작업 및 프롬프트 템플릿이 비활성화되었습니다.",
+        "restrictedModeLabel": "AI 기능(제한 모드에서는 비활성화됨)",
         "shellAllowlist": {
           "placeholder": "예: \"git log\" (정확한 명령어) 또는 \"git log *\" (인수 포함)"
         },
@@ -1160,6 +1192,7 @@
           }
         },
         "tooltip": {
+          "errorMessage": "오류 메시지",
           "lastActivity": "마지막 활동",
           "lastMessage": "마지막 메시지",
           "messages": "메시지",
@@ -1322,9 +1355,12 @@
           "id": {
             "title": "UI에서 사용자 정의 모델을 식별하는 데 사용되는 고유 식별자"
           },
-          "mdDescription": "OpenAI API와 호환되는 사용자 지정 모델을 통합합니다(예: `vllm`을 통해). 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 지정할 수 있습니다:            \n            - UI에서 사용자 지정 모델을 식별하기 위한 고유한 `id`. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 접근하기 위한 `apiKey`를 제공하십시오. 글로벌 OpenAI API 키 사용을 표시하려면 `true`를 사용하십시오.            \n            - Azure에서 지정된 URL에서 제공되는 API에 접근하기 위한 `apiVersion`을 제공하십시오. 글로벌 OpenAI API 버전을 사용하려면 `true`를 지정하십시오.            \n            - Azure 배포를 위한 `deployment` 이름을 제공하십시오.            \n            - 개발자 메시지 포함 방식을 제어하려면 `developerMessageSettings`를 `user`, `system`, `developer`, `mergeWithFollowingUserMessage` 또는 `skip` 중 하나로 설정하십시오. (`user`, `system`, `developer`는 역할로 사용되며, `mergeWithFollowingUserMessage`는 다음 사용자 메시지에 시스템 메시지를 접두사로 추가하거나 다음 메시지가 사용자 메시지가 아닐 경우 시스템 메시지를 사용자 메시지로 변환합니다. `skip`은 시스템 메시지를 제거합니다). 기본값은 `developer`입니다.            \n            - `supportsStructuredOutput: false`를 지정하여 구조화된 출력을 사용하지 않도록 합니다.            \n            - `enableStreaming: false`를 지정하여 스트리밍을 사용하지 않도록 합니다.            \n            - `useResponseApi: true`를 지정하여 기존 Chat Completion API 대신 최신 OpenAI Response API를 사용합니다(호환되는 엔드포인트 필요).            \n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)를 참조하세요.",
+          "mdDescription": "`vllm` 등을 통해 OpenAI API와 호환되는 사용자 정의 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정합니다. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하십시오. 전역 OpenAI API 키 사용을 나타내려면 `true`를 사용하십시오.            \n            - Azure에서 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiVersion`을 제공하십시오. 글로벌 OpenAI API 버전을 사용하려면 `true`를 지정하십시오.            \n            - Azure 배포에 대한 `deployment` 이름을 제공하십시오.            \n            - `developerMessageSettings`를 `user`, `system`, `developer`, `mergeWithFollowingUserMessage` 또는 `skip` 중 하나로 설정하여 개발자 메시지가 포함되는 방식을 제어하십시오 (여기서 `user`, `system`, `developer`는 역할로 사용되며, `mergeWithFollowingUserMessage`는 다음 사용자 메시지 앞에 시스템 메시지를 추가하거나, 다음 메시지가 사용자 메시지가 아닐 경우 시스템 메시지를 사용자 메시지로 변환합니다. `skip`은 시스템 메시지를 단순히 제거합니다).            기본값은 `developer`입니다.            \n            - `supportsStructuredOutput: false`를 지정하여 구조화된 출력을 사용하지 않도록 설정합니다.            \n            - `enableStreaming: false`를 지정하여 스트리밍을 사용하지 않도록 설정합니다.            \n            - `useResponseApi: true`를 지정하여 Chat Completion API 대신 최신 OpenAI Response API를 사용합니다(호환되는 엔드포인트 필요).            \n            - `reasoningSupport`를 지정하여 채팅 추론 선택기를 활성화할 수 있습니다. `supportedLevels`(예: `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)와 선택 사항인 `defaultLevel`을 포함한 객체를 제공하십시오.            \n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)를 참조하십시오.",
           "modelId": {
             "title": "모델 ID"
+          },
+          "reasoningSupport": {
+            "title": "모델의 추론 기능을 선언합니다. 이 설정이 활성화되면 채팅 창에 해당 모델에 대한 추론 선택기가 표시됩니다."
           },
           "supportsStructuredOutput": {
             "title": "모델이 구조화된 출력을 지원하는지 여부를 나타냅니다. 기본값은 `true`입니다."
@@ -1390,13 +1426,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "고급 설정 (JSON)",
-        "budgetTokens": "예산 토큰:",
         "confirmationTimeout": "확인 시간 초과",
         "confirmationTimeoutNote": "지정된 시간이 지나면 도구 확인 메시지를 자동으로 거부합니다. 이 세션에 대해서는 전체 환경 설정을 무시합니다.",
         "enableConfirmationTimeout": "활성화 확인 시간 제한",
-        "enableThinking": "확장 사고 활성화",
-        "thinkingMode": "생각 모드",
-        "thinkingModeNote": "일부 모델은 이 설정을 무시할 수 있습니다.",
         "timeoutSeconds": "타임아웃(초):",
         "title": "세션 설정 지정",
         "tooltip": "세션 설정 지정"
@@ -1423,6 +1455,16 @@
         "askTerminalCommand": "터미널 명령어에 대해 문의하기...",
         "hitEnterConfirm": "확인하려면 엔터 키를 누르세요",
         "howCanIHelp": "어떻게 도와드릴까요?",
+        "terminalCommandBlockAIVariable": {
+          "description": "실행된 터미널 명령어와 그에 해당하는 출력을 저장합니다.",
+          "index": {
+            "description": "터미널 기록 내 명령어 블록의 인덱스입니다. 지정되지 않은 경우 기본적으로 마지막 명령어가 사용됩니다."
+          },
+          "quickPick": {
+            "placeholder": "명령어를 입력하여 필터링하세요",
+            "title": "터미널 기록에서 명령어와 해당 출력을 선택합니다"
+          }
+        },
         "tryAgain": "다시 시도해 보세요...",
         "useArrowsAlternatives": " 또는 ⇅를 사용하여 대안을 표시할 수 있습니다..."
       },
@@ -1472,6 +1514,7 @@
             "title": "모델 ID"
           },
           "model": {
+            "provider": "제공자",
             "title": "모델명"
           }
         },
@@ -1480,11 +1523,15 @@
         }
       },
       "workspace": {
+        "allowedExternalPaths": {
+          "description": "AI 도구가 읽을 수 있는 작업 공간 외부의 절대 경로 또는 파일 URI(디렉터리 또는 파일) 목록입니다. 사용자 홈 디렉터리를 참조하기 위해 `~`를 지원합니다. 기본적으로 비어 있으며, 사용자가 직접 활성화해야만 사용됩니다. getFileContent, findFilesByPattern, getWorkspaceFileList 및 getWorkspaceDirectoryStructure에서 지원됩니다. 작업 공간이 신뢰되지 않을 경우 작업 공간 범위의 값은 무시됩니다. 허용 목록에 포함된 디렉터리 내의 심볼릭 링크는 추적되며, 허용 목록 외부의 파일을 가리킬 수 있습니다. 따라서 내용물을 신뢰할 수 있는 디렉터리만 추가하십시오.",
+          "title": "허용된 외부 경로"
+        },
         "coderAgent": {
           "description": "Theia IDE에 통합된 AI 어시스턴트로, 소프트웨어 개발자를 지원하도록 설계되었습니다. 이 에이전트는 사용자의 작업 공간에 접근할 수 있으며, 사용 가능한 모든 파일 및 폴더 목록을 가져오고 해당 내용을 검색할 수 있습니다. 또한 사용자에게 파일 수정 사항을 제안할 수 있습니다. 따라서 코딩 작업이나 파일 변경이 필요한 기타 작업을 지원할 수 있습니다."
         },
         "considerGitignore": {
-          "description": "활성화된 경우, 글로벌 .gitignore 파일(예상 위치는 작업 공간 루트)에 지정된 파일/폴더를 제외합니다.",
+          "description": "이 기능이 활성화되면 각 작업 공간 루트 디렉터리에 있는 .gitignore 규칙에 일치하는 파일/폴더가 제외됩니다.",
           "title": ".gitignore를 고려하십시오"
         },
         "createSkillAgent": {
@@ -1519,6 +1566,7 @@
       "initiate-session-task-context": "작업 컨텍스트: 세션 시작",
       "navigate-back": "뒤로 가기",
       "navigate-forward": "앞으로 이동",
+      "noOutput": "출력 없음",
       "open-current-session-summary": "현재 세션 요약 열기",
       "open-settings-tooltip": "AI 설정 열기...",
       "renameChat": "채팅 이름 변경",
@@ -1536,7 +1584,9 @@
       "agentCompletionMessage": "에이전트 \"{0}\"가 작업을 완료했습니다.",
       "agentCompletionMessageWithSession": "에이전트 \"{0}\"가 \"{1}\"에서 작업을 완료했습니다.",
       "agentCompletionTitle": "에이전트 \"{0}\" 작업 완료됨",
+      "aiDisabledInRestrictedMode": "신뢰할 수 없는 작업 공간에서는 AI 기능을 사용할 수 없습니다.",
       "preferences": {
+        "linuxEnvHint": "Linux에서 데스크톱 바로 가기를 통해 애플리케이션을 실행하는 경우, 변수가 `~/.bashrc`뿐만 아니라 `~/.profile`에도 정의되어 있는지 확인하십시오. 자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#setting-api-keys)를 참조하십시오.",
         "title": "AI 기능"
       },
       "showChat": "채팅 표시"
@@ -1561,7 +1611,7 @@
         "argumentHint": "<티켓 번호>",
         "description": "GitHub 티켓을 분석하고 해결책을 구현하십시오."
       },
-      "open-agent-settings-tooltip": "에이전트 설정 열기...",
+      "open-ai-configuration-tooltip": "OpenAI 구성",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "대화에서 주제를 추출하고 프로젝트 정보를 업데이트하십시오."
@@ -1572,7 +1622,19 @@
       },
       "todoTool": {
         "noTasks": "작업 없음"
-      }
+      },
+      "userInteractionCanceled": "취소됨",
+      "userInteractionCommentPlaceholder": "이 단계에 대한 설명을 추가하세요...",
+      "userInteractionEmpty": "비어 있음",
+      "userInteractionFinishStep": "완료",
+      "userInteractionGoToStep": "{0} 단계로 이동: {1}",
+      "userInteractionMalformed": "사용자 상호작용을 표시할 수 없습니다",
+      "userInteractionMalformedFallback": "인수를 구문 분석할 수 없습니다.",
+      "userInteractionPreparing": "사용자 상호작용 준비 중...",
+      "userInteractionPreparingSteps": "준비: {0} ({1} 단계)",
+      "userInteractionPreparingTitle": "준비 중: {0}",
+      "userInteractionStepLabel": "{1}의 3단계{0}",
+      "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP 서버 (자동 시작 차단됨)"
@@ -1600,7 +1662,6 @@
       "executionCanceled": "취소됨",
       "executionDenied": "거부됨",
       "executionDeniedWithReason": "거부됨 (이유 포함)",
-      "noOutput": "출력 없음",
       "partialOutput": "부분 출력",
       "shellCommandAllowlist": {
         "description": "셸 명령어 패턴 목록. 와일드카드로 * 사용: \"git log\" (정확한 일치), \"git log *\" (선택적 인자 포함), \"* --version\" (--version으로 끝나는 모든 명령어). 와일드카드 앞에는 공백이 반드시 있어야 합니다. 위험한 패턴($, 백틱)을 포함하는 명령어는 절대 자동 허용되지 않습니다."
@@ -1695,9 +1756,6 @@
         "enhanced": "탭에 대한 향상된 미리보기를 추가 정보와 함께 표시합니다.",
         "visual": "탭의 시각적 미리보기를 표시합니다."
       },
-      "file": {
-        "browse": "찾아보기"
-      },
       "highlightModifiedTabs": "수정된(더티) 편집기 탭에 상단 테두리를 그릴지 여부를 제어합니다.",
       "keybinding": {
         "duplicateModifierError": "{0} 키 바인딩을 해석할 수 없음 중복 수정자",
@@ -1718,7 +1776,6 @@
         "clipboardWarn": "클립보드 접근이 거부되었습니다. 브라우저의 권한 설정을 확인하세요.",
         "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{1}' 페이지의 '{0}' 환경설정으로 활성화할 수 있습니다. 이후 Theia를 재로드하세요. 참고: 이 설정은 파이어폭스가 시스템 클립보드에 대한 전체 접근 권한을 얻도록 허용합니다."
       },
-      "offline": "오프라인",
       "pasteWarn": "브라우저의 붙여넣기 명령 또는 단축키를 사용하십시오.",
       "quitMessage": "저장되지 않은 변경 사항은 저장되지 않습니다.",
       "resetWorkbenchLayout": "워크벤치 레이아웃 재설정",
@@ -1764,6 +1821,7 @@
       "confirmRunToShiftedPosition_msg": "대상 위치가 Ln {0}, Col {1}로 이동됩니다. 실행하시겠습니까?",
       "confirmRunToShiftedPosition_title": "현재 스레드를 정확히 지정된 위치로 실행할 수 없습니다",
       "consoleFilterAriaLabel": "디버그 콘솔 출력 필터링",
+      "consoleFilterPlaceholder": "필터 (예: text, !exclude)",
       "consoleFilterTooltip": "텍스트로 콘솔 출력을 필터링합니다. 여러 용어는 쉼표로 구분합니다. 용어 앞에 `!`를 붙이면 제외됩니다.\n\n예시:\n\n- `text` - \"text\"가 포함된 줄 표시\n- `text, other` - \"text\" 또는 \"other\"가 포함된 줄 표시\n- `!text` - \"text\"가 포함된 줄 숨김\n- `text, !other` - \"text\"는 표시하고 \"other\"는 숨김",
       "consoleSessionSelectorTooltip": "디버그 세션 간 전환. 각 디버그 세션은 자체 콘솔 출력을 가집니다.",
       "consoleSeverityTooltip": "중요도 수준별로 콘솔 출력을 필터링합니다. 선택한 중요도 수준의 메시지만 표시됩니다.",
@@ -1801,6 +1859,12 @@
       "toggleTracing": "디버그 어댑터와의 추적 통신 활성화/비활성화",
       "unknownSession": "알 수 없는 세션",
       "unverifiedBreakpoint": "미확인 {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "{0}에 있는 Devcontainer 파일을 작업 공간에서 찾을 수 없습니다",
+      "failedToRebuild": "컨테이너 재구축에 실패했습니다: {0}",
+      "noDevcontainerFileSpecified": "작업 공간에 devcontainer 파일이 지정되지 않았습니다",
+      "removingOldContainer": "오래된 컨테이너 제거 중..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "이 기능이 활성화되면, 자동 저장 시점에 오류가 보고되지 않은 파일에 대해서만 편집기의 자동 저장이 제한됩니다. 이 설정은 '{0}'가 활성화된 경우에만 적용됩니다.",
@@ -1893,7 +1957,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE의 AI 지원 기능이 제공됩니다(베타 버전)!",
+        "header": "{0}에서 AI 지원 기능을 이용하실 수 있습니다!",
         "openAIChatView": "지금 AI 채팅 뷰를 열어 시작하는 방법을 알아보세요!"
       },
       "apiComparator": "{0} API 호환성",
@@ -2086,6 +2150,9 @@
     "preferences": {
       "ai-features": "AI 기능",
       "hostedPlugin": "호스팅 플러그인",
+      "input": {
+        "browse": "찾아보기"
+      },
       "toolbar": "도구 모음"
     },
     "preview": {
@@ -2100,9 +2167,30 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "실행 중인 컨테이너에 연결",
+        "attachError": "컨테이너에 연결하지 못했습니다: {0}",
+        "attachWarning": "컨테이너에 연결하면 그 안의 코드가 실행됩니다. 출처를 신뢰할 수 있는 컨테이너에만 연결하십시오.",
+        "attachWarningTitle": "컨테이너에 연결",
+        "attaching": "컨테이너에 연결",
+        "cliAttachError": "컨테이너에 연결하지 못했습니다: {0}",
+        "cliContainerNotFound": "컨테이너 \"{0}\"을 찾을 수 없거나 실행 중이 아닙니다.",
         "connect": "컨테이너에서 다시 열기",
+        "enterCustomPath": "사용자 지정 경로를 입력하세요...",
+        "enterWorkspacePath": "컨테이너 내부의 작업 공간 경로를 입력하십시오",
+        "foundConfigMsg": "{0}에서 devcontainer.json 파일이 발견되었습니다. 이 파일의 포스트 어태치 설정(확장 프로그램, 포트 포워딩 등)을 적용하시겠습니까?",
+        "foundConfigTitle": "개발 컨테이너 구성 발견됨",
         "noDevcontainerFiles": "작업 공간에서 devcontainer.json 파일을 찾을 수 없습니다. .devcontainer 디렉터리에 devcontainer.json 파일이 있는지 확인하십시오.",
-        "selectDevcontainer": "devcontainer.json 파일을 선택하세요."
+        "noRunningContainers": "실행 중인 컨테이너가 없습니다.",
+        "rebuild": "컨테이너 재구축",
+        "rebuilding": "개발용 컨테이너 재구축",
+        "reopenInContainer": "컨테이너에서 다시 열기",
+        "selectContainer": "연결할 실행 중인 컨테이너를 선택하세요",
+        "selectDevcontainer": "devcontainer.json 파일을 선택하세요.",
+        "selectWorkspacePath": "컨테이너 내의 작업 공간 경로를 선택하십시오",
+        "suggestion": "이 작업 공간에는 개발용 컨테이너 구성이 적용되어 있습니다. 컨테이너에서 다시 열겠습니까?"
+      },
+      "port-forwarding": {
+        "focusPorts": "포트: 포트 보기 집중"
       },
       "ssh": {
         "connect": "현재 창을 호스트에 연결...",
@@ -2125,6 +2213,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1시간 전",
+      "1MinuteAgo": "1분 전",
       "amend": "수정하다",
       "amendHeadCommit": "HEAD 커밋",
       "amendLastCommit": "마지막 커밋 수정",
@@ -2133,9 +2223,12 @@
         "close": "닫기 변경 미리보기 보기"
       },
       "history": "역사",
+      "justNow": "방금",
       "mergeEditor": {
         "resetConfirmationTitle": "이 편집기에서 병합 결과를 정말 재설정하시겠습니까?"
       },
+      "noChanges": "변경된 파일이 없습니다.",
+      "noHistory": "소스 제어 기록이 없습니다.",
       "noHistoryForError": "{0}에 대한 기록이 없습니다.",
       "prepositionIn": "그리고",
       "unamend": "수정 불가",
@@ -2224,7 +2317,6 @@
       "deleteGroup": "그룹 삭제",
       "deletePage": "페이지 삭제",
       "deleteTerminal": "터미널 삭제",
-      "group": "그룹",
       "label": "터미널",
       "maximizeBottomPanel": "하단 패널 최대화",
       "minimizeBottomPanel": "하단 패널 최소화",
@@ -2238,6 +2330,7 @@
     },
     "test": {
       "cancelAllTestRuns": "모든 테스트 실행 취소",
+      "showTestOutput": "테스트 결과 표시",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} {1} 실행",
       "testRuns": "테스트 실행"
@@ -2252,6 +2345,7 @@
       "iconSet": "아이콘 세트",
       "insertGroupLeft": "그룹 구분선 삽입 (왼쪽)",
       "insertGroupRight": "그룹 구분자 삽입(오른쪽)",
+      "jsonError": "toolbar.json 파일을 읽는 과정에서 오류가 발생했습니다. 도구 모음을 마우스 오른쪽 버튼으로 클릭하고 \"도구 모음 사용자 지정\"을 선택하여 파일이 손상되었는지 확인해 주십시오. 또한 \"도구 모음 기본값 복원\"을 선택하여 기본값으로 재설정할 수도 있습니다.",
       "leftColumn": "왼쪽 열",
       "openJSON": "도구 모음 사용자 지정 (JSON 열기)",
       "removeCommand": "도구 모음에서 명령 제거",
@@ -2297,7 +2391,6 @@
     },
     "workspace": {
       "bothAreDirectories": "두 리소스 모두 디렉터리입니다.",
-      "clickToManageTrust": "신뢰 설정을 관리하려면 클릭하세요.",
       "compareWithEachOther": "서로 비교하기",
       "confirmDeletePermanently.description": "휴지통을 사용하여 \"{0}\"를 삭제하는 데 실패했습니다. 대신 영구적으로 삭제하시겠습니까?",
       "confirmDeletePermanently.solution": "환경 설정에서 휴지통 사용을 비활성화할 수 있습니다.",
@@ -2322,7 +2415,7 @@
       "removeFolder": "다음 폴더를 작업 공간에서 제거하시겠습니까?",
       "removeFolders": "다음 폴더들을 작업 공간에서 제거하시겠습니까?",
       "restrictedModeDescription": "이 작업 공간이 신뢰되지 않기 때문에 일부 기능이 비활성화되었습니다.",
-      "restrictedModeNote": "*참고: 워크스페이스 신뢰 기능은 현재 Theia에서 개발 중이며, 아직 모든 기능이 워크스페이스 신뢰와 통합되지는 않았습니다*",
+      "restrictedModeFeatures": "잠재적으로 유해한 코드로부터 보호하기 위해 작업 실행, 디버깅, 확장 기능 및 AI와 같은 기능이 비활성화되었습니다.",
       "schema": {
         "folders": {
           "description": "작업 공간의 루트 폴더"
@@ -2330,9 +2423,11 @@
         "title": "작업 공간 파일"
       },
       "trashTitle": "{0}를 휴지통으로 이동",
-      "trustDialogMessage": "작성자를 신뢰하는 경우, 이 폴더의 코드가 실행될 수 있습니다.\n\n신뢰하지 않는 경우 일부 기능이 비활성화됩니다.\n\n워크스페이스 신뢰 기능은 현재 Theia에서 개발 중이며, 아직 모든 기능이 워크스페이스 신뢰와 통합되지는 않았습니다.\n상세 내용은 상태 표시줄의 '제한 모드' 표시기를 확인하세요.",
+      "trustDialogMessage": "작성자를 신뢰하는 경우, 이 폴더에 있는 코드(작업, 디버그 구성, 확장 프로그램 및 AI 기능 포함)가 실행될 수 있습니다.",
+      "trustDialogRestricted": "작성자를 신뢰하지 않는 경우, 작업 공간이 제한 모드로 열리며, 이 모드에서는 잠재적으로 유해한 코드로부터 보호하기 위해 이러한 기능이 비활성화됩니다.",
       "trustEmptyWindow": "기본적으로 빈 작업 공간이 신뢰되는지 여부를 제어합니다.",
       "trustEnabled": "작업 공간 신뢰 설정이 활성화되었는지 여부를 제어합니다. 비활성화된 경우 모든 작업 공간이 신뢰됩니다.",
+      "trustLearnMore": "Theia의 Workspace Trust에 대해 자세히 알아보기",
       "trustTrustedFolders": "확인 없이 신뢰되는 폴더 URI 목록.",
       "untitled-cleanup": "제목이 지정되지 않은 작업 공간 파일이 다수 존재하는 것으로 보입니다. {0} 를 확인하고 사용하지 않는 파일을 제거해 주세요.",
       "variables": {

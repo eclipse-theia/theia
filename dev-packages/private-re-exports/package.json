@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/re-exports",
-  "version": "1.70.0",
+  "version": "1.72.0",
   "description": "Theia re-export helper functions and scripts.",
   "main": "lib/index.js",
   "engines": {
@@ -26,14 +26,15 @@
   },
   "dependencies": {
     "mustache": "^4.2.0",
-    "semver": "^7.5.4",
-    "tslib": "^2.6.2",
-    "yargs": "^15.3.1"
+    "semver": "^7.7.4",
+    "tslib": "^2.8.1",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
-    "@types/mocha": "^10.0.0",
-    "@types/mustache": "^4.1.2",
+    "@types/mocha": "^10.0.10",
+    "@types/mustache": "^4.2.6",
+    "@types/yargs": "^17",
     "typescript": "~5.9.3"
   }
 }

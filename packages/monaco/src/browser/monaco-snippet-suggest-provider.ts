@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as jsoncparser from 'jsonc-parser';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -27,6 +27,7 @@ import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 import { isObject } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
@@ -35,6 +36,9 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
 
     @inject(FileService)
     protected readonly fileService: FileService;
+
+    @inject(ILogger) @named('monaco:MonacoSnippetSuggestProvider')
+    protected readonly logger: ILogger;
 
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
@@ -150,7 +154,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             toDispose.push(this.fromJSON(snippets, options));
         } catch (e) {
             if (!(e instanceof FileOperationError)) {
-                console.error(e);
+                this.logger.error(e);
             }
         }
     }

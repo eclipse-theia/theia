@@ -110,6 +110,12 @@ export class WorkspaceTrustService {
     protected currentTrust: boolean | undefined;
     protected pendingTrustDialog: Deferred<boolean> | undefined;
     protected pendingTrustRequest: Deferred<boolean | undefined> | undefined;
+    /**
+     * Effective value of `security.workspace.trust.enabled` at the time trust was last resolved.
+     * Used to distinguish a real user change from the initial-load preference change event
+     * that the User provider emits asynchronously after start-up.
+     */
+    protected lastKnownTrustEnabled: boolean | undefined;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
@@ -160,6 +166,7 @@ export class WorkspaceTrustService {
 
     protected async resolveWorkspaceTrust(givenTrust?: boolean): Promise<void> {
         if (!this.isWorkspaceTrustResolved()) {
+            this.lastKnownTrustEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
             const trust = givenTrust ?? await this.calculateWorkspaceTrust();
             if (trust !== undefined) {
                 await this.storeWorkspaceTrust(trust);
@@ -399,6 +406,12 @@ export class WorkspaceTrustService {
     protected async handlePreferenceChange(change: PreferenceChange): Promise<void> {
         // Handle trustedFolders changes regardless of scope
         if (change.preferenceName === WORKSPACE_TRUST_TRUSTED_FOLDERS) {
+            // When trust is disabled, trust is unconditionally granted: trustedFolders
+            // changes must not flip `currentTrust` (which would trigger a restart dialog
+            // via `setWorkspaceTrust` → `shouldReloadForTrustChange`).
+            if (!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED]) {
+                return;
+            }
             // For empty windows with emptyWindow setting enabled, trust should remain true
             if (await this.isEmptyWorkspace() && this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW]) {
                 return;
@@ -416,8 +429,16 @@ export class WorkspaceTrustService {
             }
 
             if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
-                if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-                    this.windowService.reload();
+                const currentEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
+                // The preference framework emits a User-scope change event when the user
+                // settings file is first loaded (oldValue undefined → current value). Only
+                // prompt for restart when the effective value has actually changed since
+                // trust was last resolved.
+                if (currentEnabled !== this.lastKnownTrustEnabled) {
+                    this.lastKnownTrustEnabled = currentEnabled;
+                    if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
+                        this.windowService.reload();
+                    }
                 }
                 this.resolveWorkspaceTrust();
             }
@@ -479,15 +500,23 @@ export class WorkspaceTrustService {
     }
 
     protected createRestrictedModeTooltip(): MarkdownString {
-        const md = new MarkdownStringImpl('', { supportThemeIcons: true });
+        const manageTrustLink = `[${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.label}](command:${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id})`;
+        const docsLink = `[${nls.localize('theia/workspace/trustLearnMore', "Learn more about Theia's Workspace Trust")}](https://theia-ide.org/docs/workspace_trust/)`;
+
+        const md = new MarkdownStringImpl('', {
+            supportThemeIcons: true,
+            isTrusted: { enabledCommands: [WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id] }
+        });
 
         md.appendMarkdown(`**${nls.localizeByDefault('Restricted Mode')}**\n\n`);
 
         md.appendMarkdown(nls.localize('theia/workspace/restrictedModeDescription',
             'Some features are disabled because this workspace is not trusted.'));
         md.appendMarkdown('\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeNote',
-            '*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*'));
+        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeFeatures',
+            'Features like task execution, debugging, extensions, and AI are disabled to protect against potentially harmful code.'));
+        md.appendMarkdown('\n\n');
+        md.appendMarkdown(manageTrustLink);
 
         const restrictions = this.collectRestrictions();
         if (restrictions.length > 0) {
@@ -504,7 +533,7 @@ export class WorkspaceTrustService {
         }
 
         md.appendMarkdown('\n\n---\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/clickToManageTrust', 'Click to manage trust settings.'));
+        md.appendMarkdown(docsLink);
 
         return md;
     }

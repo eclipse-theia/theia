@@ -19,11 +19,12 @@
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
+import { BundlerGenerator } from './bundler-generator';
 
 export class FrontendGenerator extends AbstractGenerator {
 
     async generate(options?: GeneratorOptions): Promise<void> {
-        await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(this.pck.targetFrontendModules));
+        await this.write(this.pck.frontend('index.html'), await this.compileIndexHtml(this.pck.targetFrontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules, this.pck.targetFrontendPreloadModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
@@ -46,11 +47,11 @@ export class FrontendGenerator extends AbstractGenerator {
         return template;
     }
 
-    protected compileIndexHtml(frontendModules: Map<string, string>): string {
+    protected async compileIndexHtml(frontendModules: Map<string, string>): Promise<string> {
         return `<!DOCTYPE html>
 <html lang="en">
 
-<head>${this.compileIndexHead(frontendModules)}
+<head>${await this.compileIndexHead(frontendModules)}
 </head>
 
 <body>
@@ -61,11 +62,13 @@ export class FrontendGenerator extends AbstractGenerator {
 </html>`;
     }
 
-    protected compileIndexHead(frontendModules: Map<string, string>): string {
+    protected async compileIndexHead(frontendModules: Map<string, string>): Promise<string> {
+        const preferEsbuild = await new BundlerGenerator(this.pck, this.options).preferESBuild();
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
@@ -73,6 +76,8 @@ export class FrontendGenerator extends AbstractGenerator {
         return `\
 // @ts-check
 require('reflect-metadata');
+${this.emitStartupLogger('Frontend', 'frontend page start')}
+${this.emitStartupLog('loading modules...')}
 const { Container } = require('@theia/core/shared/inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
@@ -114,23 +119,28 @@ module.exports = (async () => {
     ${this.ifBrowserOnly(`const { messagingFrontendOnlyModule } = require('@theia/core/lib/browser-only/messaging/messaging-frontend-only-module');
     container.load(messagingFrontendOnlyModule);`)}
 
+    ${this.emitStartupLog('container created')}
+
     await preload(container);
+    ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `
     const { MonacoInit } = require('@theia/monaco/lib/browser/monaco-init');
     `)};
 
     const { FrontendApplication } = require('@theia/core/lib/browser');
-    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');    
+    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
     container.load(frontendApplicationModule);
     ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
     container.load(frontendOnlyApplicationModule);`)}
-    
+
     container.load(loggerFrontendModule);
     ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = require('@theia/core/lib/browser-only/logger-frontend-only-module');
     container.load(loggerFrontendOnlyModule);`)}
+
+    ${this.emitStartupLog('core modules loaded')}
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
@@ -138,6 +148,7 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         ${this.ifMonaco(() => `
         MonacoInit.init(container);
         `)};
+        ${this.emitStartupLog('modules loaded')}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
@@ -148,7 +159,10 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 
     function start() {
         (window['theia'] = window['theia'] || {}).container = container;
-        return container.get(FrontendApplication).start();
+        ${this.emitStartupLog('resolving application')}
+        const application = container.get(FrontendApplication);
+        ${this.emitStartupLog('application resolved')}
+        return application.start();
     }
 })();
 `;

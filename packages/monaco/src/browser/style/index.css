@@ -295,3 +295,46 @@
 .monaco-diff-editor .gutter .gutterItem .background {
   display: none;
 }
+
+/* Code Action Widget (Source Action, Quick Fix, Refactor) */
+.action-widget {
+  font-family: var(--theia-ui-font-family);
+}
+
+.action-widget .monaco-list .monaco-list-row.action.focused:not(.option-disabled) .codicon {
+  color: inherit !important;
+}
+
+.action-widget .monaco-list-row.action {
+  min-width: max-content;
+}
+
+/* Editor hover widget and overlay messages.
+   Alias --vscode- to --theia- for git blame hover addition/deletion colors
+   since the git extension uses --vscode- prefixed variables in inline styles. */
+.monaco-editor .monaco-hover {
+  font-family: var(--theia-ui-font-family);
+  --vscode-scmGraph-historyItemHoverAdditionsForeground: var(--theia-scmGraph-historyItemHoverAdditionsForeground);
+  --vscode-scmGraph-historyItemHoverDeletionsForeground: var(--theia-scmGraph-historyItemHoverDeletionsForeground);
+}
+
+.monaco-editor .monaco-hover p {
+  margin: 0.5em 0;
+}
+
+.monaco-editor .monaco-hover code {
+  font-family: var(--monaco-monospace-font, var(--theia-code-font-family));
+}
+
+.monaco-editor .monaco-hover pre,
+.monaco-editor .monaco-hover .monaco-tokenized-source {
+  font-family: var(--monaco-monospace-font, var(--theia-code-font-family));
+}
+
+.monaco-editor .monaco-hover hr {
+  margin-bottom: 0px;
+}
+
+.monaco-editor .monaco-editor-overlaymessage .message {
+  font-family: var(--theia-ui-font-family);
+}

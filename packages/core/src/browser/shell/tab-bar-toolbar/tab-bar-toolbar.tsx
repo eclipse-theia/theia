@@ -16,6 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
+import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
 import { ContextKeyService } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
@@ -150,7 +151,10 @@ export class TabBarToolbar extends ReactWidget {
 
     protected renderMore(): React.ReactNode {
         return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
-            <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu}
+            <div id='__more__' className={codicon('ellipsis', true)}
+                {...buttonKeyboardProps(nls.localizeByDefault('More Actions...'))}
+                onClick={this.showMoreContextMenu}
+                onKeyDown={this.handleMoreKeyDown}
                 title={nls.localizeByDefault('More Actions...')} />
         </div>;
     }
@@ -160,6 +164,15 @@ export class TabBarToolbar extends ReactWidget {
         event.preventDefault();
         const anchor = toAnchor(event);
         this.renderMoreContextMenu(anchor);
+    };
+
+    protected handleMoreKeyDown = (event: React.KeyboardEvent) => {
+        if (isActivationKey(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+            const { left, bottom } = (event.currentTarget as HTMLElement).getBoundingClientRect();
+            this.renderMoreContextMenu({ x: left, y: bottom });
+        }
     };
 
     renderMoreContextMenu(anchor: Anchor): ContextMenuAccess {

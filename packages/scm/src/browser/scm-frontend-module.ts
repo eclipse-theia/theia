@@ -45,6 +45,8 @@ import { LabelProviderContribution } from '@theia/core/lib/browser/label-provide
 import { bindScmPreferences } from '../common/scm-preferences';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
 import { ScmRepositoriesWidget } from './scm-repositories-widget';
+import { ScmHistoryGraphWidget } from './scm-history-graph-widget';
+import { ScmHistoryGraphModel } from './scm-history-graph-model';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -88,6 +90,13 @@ export default new ContainerModule(bind => {
         createWidget: () => container.get(ScmRepositoriesWidget)
     })).inSingletonScope();
 
+    bind(ScmHistoryGraphModel).toSelf().inSingletonScope();
+    bind(ScmHistoryGraphWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmHistoryGraphWidget.ID,
+        createWidget: () => container.get(ScmHistoryGraphWidget)
+    })).inSingletonScope();
+
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: SCM_VIEW_CONTAINER_ID,
         createWidget: async () => {
@@ -109,6 +118,12 @@ export default new ContainerModule(bind => {
                 order: 1,
                 canHide: false,
                 initiallyCollapsed: false
+            });
+            const graphWidget = await widgetManager.getOrCreateWidget(ScmHistoryGraphWidget.ID);
+            viewContainer.addWidget(graphWidget, {
+                order: 2,
+                canHide: true,
+                initiallyCollapsed: true
             });
             return viewContainer;
         }

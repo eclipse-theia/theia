@@ -36,6 +36,7 @@ import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/brow
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { SyncDescriptor } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/descriptors';
 import { IInstantiationService, createDecorator } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { MonacoEditorServiceFactory, MonacoEditorServiceFactoryType } from './monaco-editor-service';
 import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
@@ -63,6 +64,7 @@ import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout
 import { Event } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 import * as dom from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
 import { mainWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/window';
+import { Disposable } from '@theia/core';
 
 export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
@@ -199,6 +201,20 @@ export namespace MonacoInit {
             [ILayoutService.toString()]: new SyncDescriptor(MonacoLayoutServiceConstructor, [])
         };
 
+        // Detect whether StandaloneServices was already initialized before we get a chance to
+        // apply our overrides.  `withServices` calls the callback synchronously when `initialized`
+        // is already `true`, so the flag will be set before we proceed.  If it remains `false`,
+        // our `initialize(overrides)` call below will be the first and our descriptors will be
+        // applied normally.
+        // @monaco-uplift: verify that `withServices` still calls the callback synchronously when
+        // already initialized — if this changes, the premature-initialization detection will break.
+        let isInitialized = false;
+        StandaloneServices.withServices(() => {
+            isInitialized = true;
+            return Disposable.NULL;
+        });
+        const servicesInitializedBeforeOverrides = isInitialized;
+
         // Try the standard initialization path first.
         StandaloneServices.initialize(overrides);
 
@@ -206,46 +222,75 @@ export namespace MonacoInit {
         // triggered as a side-effect during module loading), the call above is a no-op and our overrides are
         // silently dropped.  Detect this situation, warn about it, and inject our service descriptors directly
         // into the internal service collection so that they are used when the services are next resolved.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const instantiationService = StandaloneServices.get(IInstantiationService) as any;
-        const serviceCollection: ServiceCollection | undefined = instantiationService?._services;
-        if (serviceCollection) {
-            const patchedServices: string[] = [];
-            const alreadyInstantiatedServices: string[] = [];
-            for (const serviceId of Object.keys(overrides)) {
-                const serviceIdentifier = createDecorator(serviceId);
-                const existing = serviceCollection.get(serviceIdentifier);
-                if (existing instanceof SyncDescriptor && existing !== overrides[serviceId]) {
-                    // The override was not applied by initialize() – patch it in manually.
-                    serviceCollection.set(serviceIdentifier, overrides[serviceId]);
-                    patchedServices.push(serviceId);
-                } else if (existing !== undefined && !(existing instanceof SyncDescriptor) && existing !== overrides[serviceId]) {
-                    // The service was already instantiated – we cannot override it anymore.
-                    alreadyInstantiatedServices.push(serviceId);
-                }
-            }
-            if (patchedServices.length > 0) {
-                console.warn(
-                    'StandaloneServices was already initialized before MonacoInit.init() was called. '
-                    + 'This typically happens when a StandaloneServices.get() call is triggered as a side-effect during module loading. '
-                    + 'The following Theia service overrides had to be patched in after the fact: '
-                    + patchedServices.join(', ')
-                    + '. Investigate the module loading order to prevent premature initialization.'
-                );
-            }
-            if (alreadyInstantiatedServices.length > 0) {
-                console.error(
-                    'StandaloneServices was already initialized and the following services were already instantiated '
-                    + 'before MonacoInit.init() could apply Theia overrides: '
-                    + alreadyInstantiatedServices.join(', ')
-                    + '. These services are using the default Monaco implementations instead of Theia\'s. '
-                    + 'This may cause unexpected behavior. Investigate which code triggers premature service resolution.'
-                );
-            }
+        //
+        // We only need this fallback when initialize() was a no-op.  On the normal startup path,
+        // initialize() succeeds and any services that get instantiated during that call (e.g. as
+        // dependencies of editor features) are created from *our* Theia descriptors — not the
+        // Monaco defaults — so they are perfectly fine and must not be flagged.
+        if (servicesInitializedBeforeOverrides) {
+            patchServices(overrides);
         }
 
         // Make sure the global base hover delegate is initialized as otherwise the quick input will throw an error and not update correctly
         // in case no Monaco editor was constructed before and items with keybindings are shown. See #15042.
         setBaseLayerHoverDelegate(StandaloneServices.get(IHoverService));
+    }
+}
+
+// @monaco-uplift: verify that the concrete InstantiationService class still exposes a
+// private `_services: ServiceCollection` property.  See monaco-init.spec.ts for a CI
+// guard that will flag a mismatch after a Monaco version bump.
+function patchServices(overrides: Record<string, SyncDescriptor<unknown>>): void {
+    const instantiationService = StandaloneServices.get(IInstantiationService);
+    if (!(instantiationService instanceof InstantiationService)) {
+        console.error(
+            'StandaloneServices returned an IInstantiationService that is not an instance of InstantiationService. '
+            + 'Theia service overrides cannot be patched in after premature initialization. '
+            + 'Investigate whether Monaco\'s internal InstantiationService class has been refactored.'
+        );
+        return;
+    }
+    const serviceCollection = instantiationService['_services'];
+    if (!(serviceCollection instanceof ServiceCollection)) {
+        console.error(
+            'InstantiationService._services is not a ServiceCollection (got '
+            + (serviceCollection === undefined ? 'undefined' : typeof serviceCollection)
+            + '). Theia service overrides cannot be patched in after premature initialization. '
+            + 'Investigate whether Monaco\'s InstantiationService internals have changed.'
+        );
+        return;
+    }
+    const patchedServices: string[] = [];
+    const alreadyInstantiatedServices: string[] = [];
+    for (const serviceId of Object.keys(overrides)) {
+        const serviceIdentifier = createDecorator(serviceId);
+        const existing = serviceCollection.get(serviceIdentifier);
+        if (existing instanceof SyncDescriptor && existing !== overrides[serviceId]) {
+            // The override was not applied by initialize() – patch it in manually.
+            serviceCollection.set(serviceIdentifier, overrides[serviceId]);
+            patchedServices.push(serviceId);
+        } else if (existing !== undefined && !(existing instanceof SyncDescriptor)) {
+            // The service was already instantiated from the default Monaco
+            // implementation – we cannot override it anymore.
+            alreadyInstantiatedServices.push(serviceId);
+        }
+    }
+    if (patchedServices.length > 0) {
+        console.warn(
+            'StandaloneServices was already initialized before MonacoInit.init() was called. '
+            + 'This typically happens when a StandaloneServices.get() call is triggered as a side-effect during module loading. '
+            + 'The following Theia service overrides had to be patched in after the fact: '
+            + patchedServices.join(', ')
+            + '. Investigate the module loading order to prevent premature initialization.'
+        );
+    }
+    if (alreadyInstantiatedServices.length > 0) {
+        console.error(
+            'StandaloneServices was already initialized and the following services were already instantiated '
+            + 'before MonacoInit.init() could apply Theia overrides: '
+            + alreadyInstantiatedServices.join(', ')
+            + '. These services are using the default Monaco implementations instead of Theia\'s. '
+            + 'This may cause unexpected behavior. Investigate which code triggers premature service resolution.'
+        );
     }
 }

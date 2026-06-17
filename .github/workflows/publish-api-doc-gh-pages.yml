@@ -2,14 +2,14 @@ name: Publish API Documentation on GitHub Pages
 
 permissions:
   id-token: write
-  contents: write
+  pages: write
 
 on:
   workflow_dispatch:
 
 jobs:
-  publish:
-    name: Publish to NPM and GitHub pages
+  build:
+    name: Build API Documentation
     runs-on: ubuntu-22.04
 
     # The current approach is silly. We should be smarter and use `actions/upload-artifact` and `actions/download-artifact` instead of rebuilding
@@ -47,9 +47,16 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=8192
 
-      - name: Publish GH Pages
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 #v5.0.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gh-pages
-          force_orphan: true # will only keep latest commit on branch gh-pages
+          path: ./gh-pages
+
+  deploy:
+    name: Deploy API documentation to GitHub Pages
+    needs: build
+    runs-on: ubuntu-22.04
+    environment: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 #v5.0.0

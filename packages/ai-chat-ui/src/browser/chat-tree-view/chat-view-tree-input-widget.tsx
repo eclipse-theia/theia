@@ -19,7 +19,7 @@ import { AIChatInputWidget, type AIChatInputConfiguration } from '../chat-input-
 import type { EditableRequestNode } from './chat-view-tree-widget';
 import { URI } from '@theia/core';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution';
-import type { ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
+import type { ChatModel, ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
 import type { AIVariableResolutionRequest } from '@theia/ai-core';
 import { Key } from '@theia/core/lib/browser';
 
@@ -119,5 +119,13 @@ export class AIChatTreeInputWidget extends AIChatInputWidget {
 
     protected override deleteContextElement(index: number): void {
         this.request.editContextManager.deleteVariables(index);
+    }
+
+    /**
+     * No-op in edit mode: the token usage warning is owned by the main chat input
+     * widget so we avoid double-notifying when an edit widget is open alongside it.
+     */
+    protected override evaluateTokenUsageWarning(_chatModel: ChatModel): void {
+        // Intentionally empty.
     }
 }

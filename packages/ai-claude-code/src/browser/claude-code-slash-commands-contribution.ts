@@ -209,6 +209,8 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
         }
     }
 
+    // TODO: multi-root workspace support - currently only discovers slash commands from the first workspace root.
+    // Should be updated to scan .claude/commands/ in all workspace roots, potentially merging or namespacing commands by root.
     protected getWorkspaceRoot(): URI | undefined {
         const roots = this.workspaceService.tryGetRoots();
         return roots.length > 0 ? roots[0].resource : undefined;

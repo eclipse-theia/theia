@@ -72,6 +72,11 @@ export class BreakpointManager {
     // ── Events ──
 
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
+    /**
+     * Fires when any breakpoint type changes (source, function, instruction, data, or exception).
+     * The URI identifies the affected resource or the synthetic URI for non-source breakpoint types
+     * (e.g. {@link BreakpointManager.FUNCTION_URI}).
+     */
     get onDidChangeMarkers(): Event<URI> {
         return this.onDidChangeMarkersEmitter.event;
     }

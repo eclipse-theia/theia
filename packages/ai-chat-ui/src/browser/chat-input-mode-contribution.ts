@@ -41,7 +41,7 @@ export class ChatInputModeContribution implements CommandContribution, Keybindin
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: CHAT_INPUT_CYCLE_MODE_COMMAND.id,
-            keybinding: 'shift+tab',
+            keybinding: 'ctrl+m',
             when: 'chatInputFocus && chatInputHasModes && !suggestWidgetVisible'
         });
     }

@@ -52,7 +52,7 @@ export class ChatSessionNamingAgent implements Agent {
     prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-naming',
-        identifier: 'default/summarize',
+        identifier: 'default/fast',
     }];
     agentSpecificVariables = [
         {

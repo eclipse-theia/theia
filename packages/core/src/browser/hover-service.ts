@@ -18,7 +18,9 @@ import { inject, injectable } from 'inversify';
 import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common';
 import { MarkdownString } from '../common/markdown-rendering/markdown-string';
 import { animationFrame } from './browser';
-import { MarkdownRenderer, MarkdownRendererFactory } from './markdown-rendering/markdown-renderer';
+import { wireMarkdownLinkHandler } from './markdown-rendering/markdown-link-handler';
+import { CoreMarkdownRenderer, MarkdownRenderer } from './markdown-rendering/markdown-renderer';
+import { OpenerService } from './opener-service';
 
 import '../../src/browser/style/hover-service.css';
 
@@ -92,13 +94,12 @@ export class HoverService {
     protected static hostClassName = 'theia-hover';
     protected static styleSheetId = 'theia-hover-style';
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
 
-    protected _markdownRenderer: MarkdownRenderer | undefined;
-    protected get markdownRenderer(): MarkdownRenderer {
-        this._markdownRenderer ||= this.markdownRendererFactory();
-        return this._markdownRenderer;
-    }
+    // Inject CoreMarkdownRenderer rather than the MarkdownRenderer symbol,
+    // which is rebound by Monaco to a renderer that strips code block content.
+    @inject(CoreMarkdownRenderer) protected readonly markdownRenderer: MarkdownRenderer;
+
+    @inject(OpenerService) protected readonly openerService: OpenerService;
 
     protected _hoverHost: HTMLElement | undefined;
     protected get hoverHost(): HTMLElement {
@@ -150,6 +151,7 @@ export class HoverService {
             this.disposeOnHide.push(renderedContent);
             host.appendChild(renderedContent.element);
             firstChild = renderedContent.element;
+            this.disposeOnHide.push(wireMarkdownLinkHandler(renderedContent.element, content, this.openerService));
         }
         // browsers might insert linebreaks when the hover appears at the edge of the window
         // resetting the position prevents that

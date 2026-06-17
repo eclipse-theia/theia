@@ -56,6 +56,8 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     isExtractable: boolean = true;
     secondaryWindow: Window | undefined;
 
+    navigationHistorySupport: boolean = true;
+
     setSelection(): void {
         if (this.editor.isFocused() && this.selectionService.selection !== this.editor) {
             this.selectionService.selection = this.editor;

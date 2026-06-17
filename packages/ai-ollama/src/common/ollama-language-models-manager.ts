@@ -14,8 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ReasoningSupport } from '@theia/ai-core';
+
 export const OLLAMA_LANGUAGE_MODELS_MANAGER_PATH = '/services/ollama/language-model-manager';
 export const OllamaLanguageModelsManager = Symbol('OllamaLanguageModelsManager');
+
+/**
+ * Coarse Ollama reasoning support advertised at registration time. Whether a given Ollama model
+ * actually supports thinking is discovered per-request via `ollama.show`; for models without it
+ * the selector value is silently ignored.
+ */
+export const OLLAMA_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
 
 export interface OllamaModelDescription {
     /**
@@ -26,6 +38,11 @@ export interface OllamaModelDescription {
      * The name or ID of the model in the Ollama environment.
      */
     model: string;
+    /**
+     * When set, the chat exposes a reasoning selector for this model. Defaults to {@link OLLAMA_REASONING_SUPPORT};
+     * Ollama checks at request time whether the model supports thinking, so this is safe to leave on for any model.
+     */
+    reasoningSupport?: ReasoningSupport;
 }
 
 export interface OllamaLanguageModelsManager {

@@ -26,11 +26,13 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
             title: nls.localize('theia/ai/mcp/servers/title', 'MCP Server Configuration'),
             markdownDescription: nls.localize('theia/ai/mcp/servers/mdDescription', 'Configure MCP servers either local with command, \
 arguments and optionally environment variables, \
-or remote with server URL, authentication token and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). \
+or remote with server URL, authentication token, OAuth configuration and optionally an authentication header name. \
+Additionally it is possible to configure autostart (true by default). \
 Each server is identified by a unique key, such as "brave-search" or "filesystem". \
 To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server. \
 To stop a server, use the "MCP: Stop MCP Server" command. \
-Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\
+Please note that autostart will only take effect after a restart, you need to start a server manually for the first time. \
+Servers installed from an AI registry carry an additional `registryMetadata` block that is managed automatically and is not meant to be edited manually.\
 \n\
 Example configuration:\n\
 ```\
@@ -56,8 +58,15 @@ Example configuration:\n\
   "jira": {\n\
     "serverUrl": "YOUR_JIRA_MCP_SERVER_URL",\n\
     "serverAuthToken": "YOUR_JIRA_MCP_SERVER_TOKEN"\n\
+  },\n\
+  "oauth-protected-server": {\n\
+    "serverUrl": "YOUR_OAUTH_PROTECTED_MCP_SERVER_URL",\n\
+    "oauth": {\n\
+      "clientId": "OPTIONAL_CLIENT_ID",\n\
+      "scopes": ["OPTIONAL_SCOPE"]\n\
+    }\n\
   }\n\
-}\n```'),
+  }\n```'),
             additionalProperties: {
                 type: 'object',
                 properties: {
@@ -96,7 +105,8 @@ Example configuration:\n\
                         type: 'string',
                         title: nls.localize('theia/ai/mcp/servers/serverAuthToken/title', 'Authentication Token'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/serverAuthToken/mdDescription',
-                            'The authentication token for the server, if required. This is used to authenticate with the remote server.'),
+                            'The authentication token for the server, if required. This is stored in preferences as plain text; ' +
+                            'avoid workspace settings if the token is sensitive.'),
                     },
                     serverAuthTokenHeader: {
                         type: 'string',
@@ -108,7 +118,85 @@ Example configuration:\n\
                         type: 'object',
                         title: nls.localize('theia/ai/mcp/servers/headers/title', 'Headers'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
-                            'Optional additional headers included with each request to the server.'),
+                            'Optional additional headers included with each request to the server. Header values are stored in preferences as plain text; ' +
+                            'avoid workspace settings if they contain sensitive values.'),
+                        additionalProperties: {
+                            type: 'string'
+                        }
+                    },
+                    oauth: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/mcp/servers/oauth/title', 'OAuth'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/mdDescription',
+                            'Optional OAuth 2.1 configuration for remote MCP servers that require authorization. ' +
+                            'The presence of this object enables OAuth for the server; remove it to disable OAuth. ' +
+                            'Theia uses public clients with PKCE by default; ' +
+                            'configure a client secret only for servers that require a pre-registered confidential client. ' +
+                            'Changes take effect after restarting the MCP server.'),
+                        properties: {
+                            clientId: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/clientId/title', 'Client ID'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/clientId/mdDescription',
+                                    'Optional static OAuth client ID. If omitted, Theia attempts dynamic client registration.'),
+                            },
+                            clientSecret: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/clientSecret/title', 'Client Secret'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/clientSecret/mdDescription',
+                                    'Optional OAuth client secret for authorization servers that only accept pre-registered confidential clients ' +
+                                    '(no dynamic client registration). Only used together with the client ID. This is stored in preferences as plain text; ' +
+                                    'avoid workspace settings if the secret is sensitive.'),
+                            },
+                            scopes: {
+                                type: 'array',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/scopes/title', 'Scopes'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/scopes/mdDescription',
+                                    'Optional OAuth scopes to request if the server does not advertise scopes.'),
+                                items: {
+                                    type: 'string'
+                                }
+                            },
+                            authorizationServer: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/authorizationServer/title', 'Authorization Server'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/authorizationServer/mdDescription',
+                                    'Optional authorization server URL override. If omitted, Theia discovers it from the MCP server.'),
+                            },
+                            resource: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/oauth/resource/title', 'Resource'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/oauth/resource/mdDescription',
+                                    'Optional RFC 8707 resource indicator override for this MCP server.'),
+                            }
+                        }
+                    },
+                    registryMetadata: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/mcp/servers/registryMetadata/title', 'Registry Metadata'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/mdDescription',
+                            'Provenance metadata for a server installed from an AI registry. Written by `@theia/ai-registry`; not user-editable.'),
+                        properties: {
+                            serverId: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/title', 'Registry Server Id'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/mdDescription',
+                                    'Identifies the AI registry entry this server was installed from.'),
+                            },
+                            version: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/version/title', 'Registry Version'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/version/mdDescription',
+                                    'The registry-published version recorded at the time of install.'),
+                            },
+                            configHash: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/title', 'Registry Config Hash'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/mdDescription',
+                                    'Content hash of the registry approval used to install this server.'),
+                            }
+                        },
+                        required: ['serverId']
                     }
                 },
                 required: []

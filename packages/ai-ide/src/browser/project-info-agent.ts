@@ -26,7 +26,7 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
     id = 'ProjectInfo';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'default/code',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
@@ -36,5 +36,5 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [projectInfoSystemVariants, projectInfoTemplateVariants];
     protected override systemPromptId: string | undefined = projectInfoSystemVariants.id;
-
+    override iconClass: string = 'codicon codicon-repo';
 }

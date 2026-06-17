@@ -32,10 +32,15 @@ import { ScmContextKeyService } from './scm-context-key-service';
 export const SCM_TITLE_MENU: MenuPath = ['plugin_scm/title'];
 /** Menu path matching the VS Code 'scm/sourceControl' contribution point (inline toolbar actions on repo entries). */
 export const SCM_SOURCE_CONTROL_MENU: MenuPath = ['plugin_scm/sourceControl'];
-/** Menu path matching the VS Code 'scm/sourceControl/context' contribution point (context menu on repo entries). */
+/**
+ * @deprecated The 'scm/sourceControl/context' contribution point does not exist in VS Code.
+ * Use {@link SCM_SOURCE_CONTROL_MENU} instead.
+ */
 export const SCM_SOURCE_CONTROL_CONTEXT_MENU: MenuPath = ['plugin_scm/sourceControl/context'];
 /** Menu path matching the VS Code 'scm/sourceControl/title' contribution point (REPOSITORIES section header toolbar). */
 export const SCM_SOURCE_CONTROL_TITLE_MENU: MenuPath = ['plugin_scm/sourceControl/title'];
+/** Menu path matching the VS Code 'scm/repository' contribution point (per-repo \`...\` button). */
+export const SCM_REPOSITORY_MENU: MenuPath = ['plugin_scm/repository'];
 
 interface RepoGroup {
     root: ScmRepository;
@@ -297,11 +302,12 @@ export class ScmRepositoriesWidget extends ReactWidget {
         // Select the repo and set the context key so command when-clauses resolve correctly.
         this.scmService.selectedRepository = repo;
         this.scmContextKeys.scmProvider.set(repo.provider.id);
+        this.scmContextKeys.scmProviderContext.set(repo.provider.providerContextValue);
         const anchor = e.nativeEvent;
         // Defer one tick so the selectedRepository change propagates through context keys.
         setTimeout(() => {
             this.contextMenuRenderer.render({
-                menuPath: SCM_TITLE_MENU,
+                menuPath: SCM_REPOSITORY_MENU,
                 anchor,
                 args: [repo],
                 context: this.node
@@ -312,10 +318,11 @@ export class ScmRepositoriesWidget extends ReactWidget {
     protected showSourceControlContextMenu(e: React.MouseEvent, repo: ScmRepository): void {
         this.scmService.selectedRepository = repo;
         this.scmContextKeys.scmProvider.set(repo.provider.id);
+        this.scmContextKeys.scmProviderContext.set(repo.provider.providerContextValue);
         const anchor = e.nativeEvent;
         setTimeout(() => {
             this.contextMenuRenderer.render({
-                menuPath: SCM_SOURCE_CONTROL_CONTEXT_MENU,
+                menuPath: SCM_SOURCE_CONTROL_MENU,
                 anchor,
                 args: [repo],
                 context: this.node

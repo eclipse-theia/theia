@@ -37,4 +37,5 @@ export class CodeReviewerAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [{ id: CODE_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: codeReviewerSystemPrompt, variants: [] }];
     protected override systemPromptId: string = CODE_REVIEWER_SYSTEM_PROMPT_ID;
+    override iconClass: string = 'codicon codicon-code-review';
 }

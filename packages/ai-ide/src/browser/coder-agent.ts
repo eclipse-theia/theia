@@ -30,6 +30,7 @@ import {
 } from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
@@ -48,11 +49,13 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
         identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
+    override iconClass: string = 'codicon codicon-code';
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
-        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-        and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
-        tasks involving file changes.');
+        'An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files' +
+        ' and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other' +
+        ' tasks involving file changes.',
+        FrontendApplicationConfigProvider.get().applicationName);
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {
@@ -76,16 +79,40 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
 
+    private useSettingsDefaultMode = false;
+
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         if (this.isAgentModeRequest(request) && !this.agentModeConfirmation.isAcknowledged()) {
             const confirmed = await this.agentModeConfirmation.requestConfirmation(request);
             if (!confirmed) {
-                request.response.complete();
+                await this.switchToEditMode();
+                // Continue the same request using Edit Mode's prompt by ignoring
+                // the request's original agent mode modeId for variant resolution.
+                this.useSettingsDefaultMode = true;
+                try {
+                    await super.invoke(request);
+                    this.suggest(request);
+                } finally {
+                    this.useSettingsDefaultMode = false;
+                }
                 return;
             }
         }
         await super.invoke(request);
         this.suggest(request);
+    }
+
+    protected override getEffectiveVariantIdWithMode(modeId?: string): string | undefined {
+        if (this.useSettingsDefaultMode) {
+            return super.getEffectiveVariantIdWithMode(undefined);
+        }
+        return super.getEffectiveVariantIdWithMode(modeId);
+    }
+
+    protected async switchToEditMode(): Promise<void> {
+        if (this.systemPromptId) {
+            await this.promptService.updateSelectedVariantId(this.id, this.systemPromptId, CODER_EDIT_TEMPLATE_ID);
+        }
     }
 
     protected isAgentModeRequest(request: MutableChatRequestModel): boolean {

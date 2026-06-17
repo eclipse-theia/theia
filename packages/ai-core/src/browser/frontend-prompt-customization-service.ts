@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
+import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
@@ -26,6 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
  * Default template entry for creating custom agents
@@ -88,8 +90,11 @@ interface PromptFragmentCustomization extends CommandPromptFragmentMetadata {
     /** The template content */
     template: string;
 
-    /** Source URI where this template is stored */
+    /** Source URI where this template is stored (first/primary source when merged) */
     sourceUri: string;
+
+    /** All source URIs when multiple equal-priority sources were merged */
+    sourceUris: string[];
 
     /** Source type of the customization */
     origin: CustomizationSource;
@@ -131,6 +136,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(ConfigurableInMemoryResources)
+    protected readonly inMemoryResources: ConfigurableInMemoryResources;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(ILogger) @named('ai-core:DefaultPromptFragmentCustomizationService')
+    protected readonly logger: ILogger;
 
     /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
@@ -236,6 +250,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             id,
             template,
             sourceUri,
+            sourceUris: [sourceUri],
             priority,
             customizationId,
             origin,
@@ -258,6 +273,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         const existingEntry = activeCustomizationsCopy.get(id);
 
         if (existingEntry) {
+            // If the existing entry was merged from multiple sources and we're
+            // operating on the live maps (incremental watcher update), a single
+            // file change can't reconstruct the merge correctly. Schedule a
+            // full rebuild instead. During update() the maps are fresh locals,
+            // so this check won't fire.
+            if (existingEntry.sourceUris.length > 1 && activeCustomizationsCopy === this.activeCustomizations) {
+                this.update();
+                return;
+            }
+
             // If this is an update to the same file (same source URI)
             if (sourceUri && existingEntry.sourceUri === sourceUri) {
                 // Update the content while keeping the same priority and source
@@ -270,9 +295,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 activeCustomizationsCopy.set(id, customization);
                 return;
             } else if (priority === existingEntry.priority) {
-                // There is a conflict with the same priority, we ignore the new customization
-                const conflictSourceUri = existingEntry.sourceUri ? ` (Existing source: ${existingEntry.sourceUri}, New source: ${sourceUri})` : '';
-                console.warn(`Fragment conflict detected for ID '${id}' with equal priority.${conflictSourceUri}`);
+                // Same priority from different sources: concatenate with provenance labels.
+                // Build a new object so we don't mutate the entry shared with allCustomizationsCopy.
+                const existingLabel = this.provenanceLabel(existingEntry.sourceUri);
+                const newLabel = this.provenanceLabel(sourceUri);
+                const mergedTemplate = `### ${existingLabel}\n\n${existingEntry.template}\n\n### ${newLabel}\n\n${template}`;
+                const mergedEntry: PromptFragmentCustomization = {
+                    ...existingEntry,
+                    template: mergedTemplate,
+                    sourceUris: [...existingEntry.sourceUris, sourceUri],
+                };
+                activeCustomizationsCopy.set(id, mergedEntry);
             }
             return;
         }
@@ -292,6 +325,24 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         // This ensures uniqueness across different customization sources
         const sourceHash = this.hashString(sourceUri);
         return `${id}_${sourceHash}`;
+    }
+
+    /**
+     * Extracts a human-readable provenance label from a source URI.
+     * Returns the name of the workspace root that contains the file,
+     * falling back to the file's own base name if it is not inside any root.
+     */
+    protected provenanceLabel(uri: string): string {
+        try {
+            const parsed = new URI(uri);
+            const rootUri = this.workspaceService.getWorkspaceRootUri(parsed);
+            if (rootUri) {
+                return rootUri.path.base;
+            }
+            return parsed.path.dir.base || parsed.path.base || uri;
+        } catch {
+            return uri;
+        }
     }
 
     /**
@@ -852,11 +903,38 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      */
     protected async editTemplate(id: string, defaultContent?: string): Promise<void> {
         const editorUri = await this.getTemplateURI(id);
-        if (!(await this.fileService.exists(editorUri))) {
-            await this.fileService.createFile(editorUri, BinaryBuffer.fromString(defaultContent ?? ''));
+        if (await this.fileService.exists(editorUri)) {
+            const openHandler = await this.openerService.getOpener(editorUri);
+            openHandler.open(editorUri);
+        } else {
+            await this.openInMemoryTemplate(editorUri, defaultContent ?? '');
         }
-        const openHandler = await this.openerService.getOpener(editorUri);
-        openHandler.open(editorUri);
+    }
+
+    /**
+     * Opens an in-memory resource with the given content, without creating a file on disk.
+     * The file is only created when the user saves in the editor.
+     */
+    protected async openInMemoryTemplate(templateUri: URI, defaultContent: string): Promise<void> {
+        try {
+            this.inMemoryResources.resolve(templateUri);
+        } catch {
+            const resource = this.inMemoryResources.add(templateUri, {
+                contents: defaultContent,
+                initiallyDirty: false,
+                onSave: async (contents: string) => {
+                    const dirUri = templateUri.parent;
+                    if (!(await this.fileService.exists(dirUri))) {
+                        await this.fileService.createFolder(dirUri);
+                    }
+                    await this.fileService.createFile(templateUri, BinaryBuffer.fromString(contents), { overwrite: true });
+                    resource.dispose();
+                }
+            });
+        }
+
+        const openHandler = await this.openerService.getOpener(templateUri);
+        openHandler.open(templateUri);
     }
 
     async removePromptFragmentCustomization(id: string, customizationId: string): Promise<void> {
@@ -978,18 +1056,10 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const openHandler = await this.openerService.getOpener(uri);
             openHandler.open(uri);
         } else {
-            // Create a new built-in customization
-            // Get the template URI in the main templates directory (priority 1)
+            // Open the built-in content without creating a file on disk.
+            // The file will only be created when the user saves.
             const templateUri = await this.getTemplateURI(id);
-
-            // If template doesn't exist, create it with default content
-            if (!(await this.fileService.exists(templateUri))) {
-                await this.fileService.createFile(templateUri, BinaryBuffer.fromString(defaultContent));
-            }
-
-            // Open the template in the editor
-            const openHandler = await this.openerService.getOpener(templateUri);
-            openHandler.open(templateUri);
+            await this.openInMemoryTemplate(templateUri, defaultContent);
         }
     }
 
@@ -1077,7 +1147,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const doc = load(fileContent.value);
 
             if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
-                console.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
+                this.logger.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
                 return;
             }
 
@@ -1090,7 +1160,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 }
             }
         } catch (e) {
-            console.debug(`Error loading customAgents.yml from ${directoryURI.toString()}: ${e.message}`, e);
+            this.logger.debug(`Error loading customAgents.yml from ${directoryURI.toString()}: ${e.message}`, e);
         }
     }
 

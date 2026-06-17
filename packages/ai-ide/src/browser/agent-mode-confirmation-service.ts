@@ -20,9 +20,9 @@ import {
     QuestionResponseContentImpl
 } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { nls, PreferenceService } from '@theia/core';
+import { nls, PreferenceScope, PreferenceService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PREFERENCE_NAME_AGENT_MODE_CONFIRMED } from '../common/ai-ide-preferences';
+import { PREFERENCE_NAME_AGENT_MODE_ENABLED } from '../common/ai-ide-preferences';
 
 export const AgentModeConfirmationService = Symbol('AgentModeConfirmationService');
 export interface AgentModeConfirmationService {
@@ -36,32 +36,35 @@ export class AgentModeConfirmationServiceImpl implements AgentModeConfirmationSe
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     isAcknowledged(): boolean {
-        return !!this.preferenceService.get<boolean>(PREFERENCE_NAME_AGENT_MODE_CONFIRMED, false);
+        return !!this.preferenceService.get<boolean>(PREFERENCE_NAME_AGENT_MODE_ENABLED, false);
     }
 
     async requestConfirmation(request: MutableChatRequestModel): Promise<boolean> {
         const deferred = new Deferred<boolean>();
 
-        const confirmLabel = nls.localize('theia/ai/ide/agentModeConfirmation/confirm', 'Confirm');
-        const cancelLabel = nls.localizeByDefault('Cancel');
+        const agentModeLabel = nls.localize('theia/ai/ide/agentModeConfirmation/continueAgentMode', 'Continue with Agent Mode');
+        const editModeLabel = nls.localize('theia/ai/ide/agentModeConfirmation/continueEditMode', 'Continue with Edit Mode');
 
         request.response.response.addContent(new MarkdownChatResponseContentImpl(
             nls.localize('theia/ai/ide/agentModeConfirmation/msg',
-                'This agent uses an **agentic mode**. To enable autonomous flow, it is capable of directly writing to your workspace files without further confirmation.\n\n'
-                + 'It is recommended to use version control (e.g. Git) so you can review and revert changes.\n\n'
-                + 'You can switch to **Edit Mode** using the mode selector in the chat input area below, '
-                + 'or use the **Architect** agent for read-only planning.\n\n'
-                + 'This confirmation is saved for this workspace and won\'t be shown again. '
-                + 'To reset or configure it globally, look for `ai-features.agentMode.confirmed` in the Settings.')
+                'You are about to use **Agent Mode**. In this mode, the agent can **read, create, and modify files** '
+                + 'in your workspace autonomously, without asking for confirmation on each change.\n\n'
+                + 'We recommend using **version control** (e.g. Git) so you can easily review and revert any changes.\n\n'
+                + 'If you prefer more control, you can continue with **Edit Mode** instead, '
+                + 'where changes are presented as suggestions for you to apply.\n\n'
+                + 'How would you like to proceed?')
         ));
 
         request.response.response.addContent(new QuestionResponseContentImpl(
-            nls.localize('theia/ai/ide/agentModeConfirmation/question', 'Do you want to proceed with Agent Mode?'),
-            [{ text: confirmLabel }, { text: cancelLabel }],
+            nls.localize('theia/ai/ide/agentModeConfirmation/info',
+                'Continuing with Agent Mode saves your confirmation. You can revoke this later again via the `ai-features.agentMode.enabled` setting.\n\n'
+                + 'Continuing with Edit Mode changes your default mode to Edit Mode.\n\n'
+                + 'You can change modes anytime via the mode selector or in the AI Configuration.'),
+            [{ text: agentModeLabel }, { text: editModeLabel }],
             request,
             async selectedOption => {
-                if (selectedOption.text === confirmLabel) {
-                    await this.preferenceService.set(PREFERENCE_NAME_AGENT_MODE_CONFIRMED, true);
+                if (selectedOption.text === agentModeLabel) {
+                    await this.preferenceService.set(PREFERENCE_NAME_AGENT_MODE_ENABLED, true, PreferenceScope.User);
                     request.response.stopWaitingForInput();
                     deferred.resolve(true);
                 } else {
@@ -79,9 +82,7 @@ export class AgentModeConfirmationServiceImpl implements AgentModeConfirmationSe
 
         return deferred.promise.then(result => {
             request.response.updateProgressMessage({ ...progressMessage, show: 'untilFirstContent', status: 'completed' });
-            if (result) {
-                request.response.response.clearContent();
-            }
+            request.response.response.clearContent();
             return result;
         });
     }

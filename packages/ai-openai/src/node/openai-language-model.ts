@@ -21,22 +21,23 @@ import {
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelTextResponse,
-    TokenUsageService,
     UserRequest,
     ImageContent,
-    LanguageModelStatus
+    LanguageModelStatus,
+    ReasoningSupport
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
+import { openAiReasoningFor } from './openai-reasoning';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
@@ -104,73 +105,17 @@ export class OpenAiModel implements LanguageModel {
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
         public useResponseApi: boolean = false,
-        protected readonly tokenUsageService?: TokenUsageService,
-        public proxy?: string
+        public proxy?: string,
+        public reasoningSupport?: ReasoningSupport,
+        public maxInputTokens?: number
     ) { }
 
-    /**
-     * Checks if the model is an o-series model that supports reasoning.
-     * Models like o1, o1-mini, o1-preview, o3, o3-mini, o4-mini support the reasoning_effort parameter.
-     * These models use: reasoning_effort: 'low' | 'medium' | 'high'
-     */
-    protected supportsReasoning(): boolean {
-        return /^o[134](-|$)/i.test(this.model);
-    }
-
-    /**
-     * Checks if the model is a GPT-5 series model (gpt-5, gpt-5.1, gpt-5.2).
-     * These models use a different reasoning parameter format: reasoning: { effort: 'none' | 'low' | 'medium' | 'high' }
-     */
-    protected supportsGPT5Reasoning(): boolean {
-        return /^gpt-5(\.?[012])?(-|$)/i.test(this.model);
-    }
-
-    /**
-     * Gets the settings for a request, optionally including reasoning parameters.
-     * @param request The language model request
-     * @param forResponseApi Whether the settings are for the Response API (true) or Chat Completions API (false).
-     *                       GPT-5 reasoning parameters are only supported with the Response API.
-     */
+    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        const baseSettings = request.settings ?? {};
-
-        if (request.thinkingMode?.enabled && forResponseApi && this.supportsGPT5Reasoning()) {
-            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
-            let effort: 'none' | 'low' | 'medium' | 'high';
-            if (budgetTokens <= 0) {
-                effort = 'none';
-            } else if (budgetTokens <= 2000) {
-                effort = 'low';
-            } else if (budgetTokens <= 20000) {
-                effort = 'medium';
-            } else {
-                effort = 'high';
-            }
-
-            return {
-                ...baseSettings,
-                reasoning: { effort }
-            };
-        }
-
-        if (request.thinkingMode?.enabled && this.supportsReasoning()) {
-            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
-            let reasoningEffort: 'low' | 'medium' | 'high';
-            if (budgetTokens <= 2000) {
-                reasoningEffort = 'low';
-            } else if (budgetTokens <= 20000) {
-                reasoningEffort = 'medium';
-            } else {
-                reasoningEffort = 'high';
-            }
-
-            return {
-                ...baseSettings,
-                reasoning_effort: reasoningEffort
-            };
-        }
-
-        return baseSettings;
+        return {
+            ...request.settings,
+            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -222,7 +167,7 @@ export class OpenAiModel implements LanguageModel {
             });
         }
 
-        return { stream: new StreamingAsyncIterator(runner, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -235,20 +180,12 @@ export class OpenAiModel implements LanguageModel {
 
         const message = response.choices[0].message;
 
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && response.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: response.usage.prompt_tokens,
-                    outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
-            text: message.content ?? ''
+            text: message.content ?? '',
+            usage: response.usage ? {
+                input_tokens: response.usage.prompt_tokens,
+                output_tokens: response.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -270,21 +207,13 @@ export class OpenAiModel implements LanguageModel {
             console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
         }
 
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && result.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.prompt_tokens,
-                    outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
             content: message.content ?? '',
-            parsed: message.parsed
+            parsed: message.parsed,
+            usage: result.usage ? {
+                input_tokens: result.usage.prompt_tokens,
+                output_tokens: result.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -334,7 +263,6 @@ export class OpenAiModel implements LanguageModel {
                 this.runnerOptions,
                 this.id,
                 isStreamingRequest,
-                this.tokenUsageService,
                 cancellationToken
             );
         } catch (error) {
@@ -441,7 +369,38 @@ export class OpenAiModelUtils {
         model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        const converted = processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: ChatCompletionMessageParam[]): ChatCompletionMessageParam[] {
+        const result: ChatCompletionMessageParam[] = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: ChatCompletionAssistantMessageParam = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent !== undefined && nextContent !== undefined) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent !== undefined) {
+                    merged.content = nextContent;
+                } else if (previousContent !== undefined) {
+                    merged.content = previousContent;
+                }
+
+                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
+                if (toolCalls.length > 0) {
+                    merged.tool_calls = toolCalls;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 
 }

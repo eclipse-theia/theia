@@ -200,6 +200,15 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 [[IContextKeyService, this.props.notebookContextManager.scopedStore]],
                 { contributions: EditorExtensionsRegistry.getEditorContributions().filter(c => c.id !== 'editor.contrib.findController') });
             this.toDispose.push(this.editor);
+            // Monaco's EditContext API uses a plain <div> for text input instead of a <textarea>.
+            // PerfectScrollbar's keyboard handler checks isEditable(activeElement) which only recognizes
+            // input/textarea/select/button/[contenteditable] elements. Setting contenteditable on the
+            // EditContext div makes PerfectScrollbar skip keyboard handling when the editor has focus,
+            // preventing Space/PageUp/PageDown/Home/End/arrows from scrolling the notebook container.
+            const editContextElement = editorNode.querySelector('.native-edit-context');
+            if (editContextElement) {
+                editContextElement.setAttribute('contenteditable', 'false');
+            }
             this.editor.setLanguage(cell.language);
             this.toDispose.push(this.editor.getControl().onDidContentSizeChange(() => {
                 editorNode.style.height = this.editor!.getControl().getContentHeight() + 7 + 'px';

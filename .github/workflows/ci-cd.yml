@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, ubuntu-22.04, macos-14]
+        os: [windows-2022, ubuntu-22.04, macos-15]
         node: [22.x, 24.x]
 
     runs-on: ${{ matrix.os }}

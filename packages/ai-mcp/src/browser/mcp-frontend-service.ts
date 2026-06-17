@@ -13,8 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { MCPFrontendService, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { MessageService, nls, ILogger } from '@theia/core';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
 
@@ -30,9 +32,59 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
+    @inject(ILogger) @named('ai-mcp:MCPFrontendServiceImpl')
+    protected readonly logger: ILogger;
+
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    /**
+     * Non-interactive start. The backend OAuth provider rejects `redirectToAuthorization`, so this
+     * path cannot launch a browser tab. Use {@link startServerInteractive} for direct user actions.
+     */
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
         await this.registerTools(serverName);
+    }
+
+    async startServerInteractive(serverName: string): Promise<boolean> {
+        const description = await this.mcpServerManager.getServerDescription(serverName);
+        const usesOAuth = description && isRemoteMCPServerDescription(description) && !!description.oauth;
+        if (usesOAuth && !await this.workspaceTrustService.getWorkspaceTrust()) {
+            this.messageService.error(nls.localize('theia/ai/mcp/error/oauthRequiresTrustedWorkspace',
+                'Starting OAuth-enabled MCP servers requires a trusted workspace.'));
+            return false;
+        }
+        // Pass `interactive: true` so the OAuth provider permits `redirectToAuthorization` to launch
+        // the browser. The non-interactive default rejects authorization, keeping autostart silent.
+        await this.mcpServerManager.startServer(serverName, { interactive: true });
+        await this.registerTools(serverName);
+        return true;
+    }
+
+    async signIn(serverName: string): Promise<boolean> {
+        const description = await this.mcpServerManager.getServerDescription(serverName);
+        if (!description || !isRemoteMCPServerDescription(description) || !description.oauth) {
+            return false;
+        }
+        if (!await this.workspaceTrustService.getWorkspaceTrust()) {
+            this.messageService.error(nls.localize('theia/ai/mcp/error/oauthRequiresTrustedWorkspace',
+                'Starting OAuth-enabled MCP servers requires a trusted workspace.'));
+            return false;
+        }
+        // Stop first so a stale in-flight authorization wait is cancelled and a fresh flow starts.
+        await this.mcpServerManager.stopServer(serverName);
+        await this.mcpServerManager.startServer(serverName, { interactive: true });
+        const afterStart = await this.mcpServerManager.getServerDescription(serverName);
+        const connected = afterStart?.status === MCPServerStatus.Connected || afterStart?.status === MCPServerStatus.Running;
+        if (connected) {
+            // Sign-in only: leave the server stopped. The tokens remain in the credential store.
+            await this.mcpServerManager.stopServer(serverName);
+        }
+        return connected;
     }
 
     async hasServer(serverName: string): Promise<boolean> {
@@ -54,6 +106,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
 
     async registerTools(serverName: string): Promise<void> {
         const returnedTools = await this.getTools(serverName);
+        this.unregisterTools(serverName);
         if (returnedTools) {
             const toolRequests: ToolRequest[] = returnedTools.tools.map(tool => this.convertToToolRequest(tool, serverName));
             toolRequests.forEach(toolRequest =>
@@ -68,6 +121,11 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return `mcp_${serverName}_tools`;
     }
 
+    protected unregisterTools(serverName: string): void {
+        this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
+        this.promptService.removePromptFragment(this.getPromptTemplateId(serverName));
+    }
+
     protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[]): void {
         const templateId = this.getPromptTemplateId(serverName);
         const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
@@ -80,13 +138,25 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     async stopServer(serverName: string): Promise<void> {
-        this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
-        this.promptService.removePromptFragment(this.getPromptTemplateId(serverName));
+        this.unregisterTools(serverName);
         await this.mcpServerManager.stopServer(serverName);
+    }
+
+    async signOut(serverName: string): Promise<void> {
+        this.unregisterTools(serverName);
+        await this.mcpServerManager.signOut(serverName);
+    }
+
+    hasStoredOAuthCredentials(serverName: string): Promise<boolean> {
+        return this.mcpServerManager.hasStoredOAuthCredentials(serverName);
     }
 
     getStartedServers(): Promise<string[]> {
         return this.mcpServerManager.getRunningServers();
+    }
+
+    getActiveServers(): Promise<string[]> {
+        return this.mcpServerManager.getActiveServers();
     }
 
     getServerNames(): Promise<string[]> {
@@ -101,7 +171,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         try {
             return await this.mcpServerManager.getTools(serverName);
         } catch (error) {
-            console.error('Error while trying to get tools: ' + error);
+            this.logger.error('Error while trying to get tools: ' + error);
             return undefined;
         }
     }
@@ -148,7 +218,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                     });
                     return { content };
                 } catch (error) {
-                    console.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
+                    this.logger.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
                     throw error;
                 }
             },

@@ -17,14 +17,17 @@
 const fsx = require('fs-extra');
 const { resolve } = require('path');
 const { spawn, ChildProcess } = require('child_process');
-const { delay, githubReporting, isLCP, lcp, measure } = require('./common-performance');
+const {
+    analyzeTrace, backendSettled, ContributionCollector, delay, frontendSettled, githubReporting,
+    isLCP, lcp, measureMulti, parseStopwatchLog, waitForFileStable
+} = require('./common-performance');
 const traceConfigTemplate = require('./electron-trace-config.json');
 const { exit } = require('process');
 
 const basePath = resolve(__dirname, '../..');
 const profilesPath = resolve(__dirname, './profiles/');
 const electronExample = resolve(basePath, 'examples/electron');
-const theia = resolve(electronExample, 'node_modules/.bin/theia');
+const theia = resolve(basePath, 'node_modules/.bin/theia');
 
 let name = 'Electron Frontend Startup';
 let folder = 'electron';
@@ -134,22 +137,81 @@ async function measurePerformance() {
 
     let electron;
 
-    /** @type import('./common-performance').TestFunction */
+    // Collects per-contribution timings from Stopwatch log lines observed on the Electron
+    // child process streams across all runs. Both backend and frontend contributions are
+    // observable here: Theia's frontend logger forwards console output to the backend over
+    // RPC, so the backend process's stdout/stderr contains logs from both sides.
+    const contributions = new ContributionCollector();
+
     const testScenario = async (runNr) => {
         const traceFile = traceConfigGenerator(runNr);
         electron = await launchElectron(traceConfigPath);
 
-        electron.stderr.on('data', data => analyzeStderr(data.toString()));
+        // Capture Stopwatch log lines from the child process streams. Theia routes log
+        // output through both stdout and stderr depending on log level, and the frontend
+        // logger forwards its output to the backend over RPC, so both backend and frontend
+        // Stopwatch lines appear here.
+        let backendSettledSeconds;
+        let frontendSettledSeconds;
+        const lineBuffers = { stderr: '', stdout: '' };
+        const consumeStream = (streamName, chunk) => {
+            lineBuffers[streamName] += chunk;
+            let newlineIndex;
+            while ((newlineIndex = lineBuffers[streamName].indexOf('\n')) >= 0) {
+                const line = lineBuffers[streamName].slice(0, newlineIndex);
+                lineBuffers[streamName] = lineBuffers[streamName].slice(newlineIndex + 1);
+                const parsed = parseStopwatchLog(line);
+                if (!parsed) {
+                    continue;
+                }
+                if (parsed.activity === backendSettled) {
+                    backendSettledSeconds = parsed.secondsSinceStart;
+                } else if (parsed.activity === frontendSettled) {
+                    frontendSettledSeconds = parsed.secondsSinceStart;
+                } else if (parsed.activity.startsWith('Backend ') || parsed.activity.startsWith('Frontend ')) {
+                    contributions.record(parsed.activity, parsed.ms / 1000);
+                }
+            }
+        };
+        electron.stderr.on('data', data => {
+            const chunk = data.toString();
+            analyzeStderr(chunk);
+            consumeStream('stderr', chunk);
+        });
+        electron.stdout.on('data', data => consumeStream('stdout', data.toString()));
 
-        // Wait long enough to be sure that tracing has finished. Kill the process group
-        // because the 'theia' child process was detached
-        await delay(traceConfigTemplate.startup_duration * 1_000 * 3 / 2)
-            .then(() => electron.exitCode !== null || process.kill(-electron.pid, 'SIGINT'));
+        // Wait for Chrome's capture window to finish, then poll for the trace file to be
+        // fully flushed to disk before tearing down the detached `theia` process tree.
+        // On slower systems (notably Linux), Chrome can take several seconds longer than
+        // the configured capture duration to write out the (large) trace JSON, so we apply
+        // a 30-second backstop instead of a fixed extra delay.
+        await delay(traceConfigTemplate.startup_duration * 1_000);
+        const traceFileReady = await waitForFileStable(traceFile, 30_000);
+        if (!traceFileReady) {
+            console.warn(`Trace file ${traceFile} did not stabilize within 30 seconds; analysis may fail.`);
+        }
+        if (electron.exitCode === null) {
+            process.kill(-electron.pid, 'SIGINT');
+        }
         electron = undefined;
-        return traceFile;
+        return { traceFile, backendSettledSeconds, frontendSettledSeconds };
     };
 
-    measure(name, lcp, runs, testScenario, hasNonzeroTimestamp, isLCP);
+    await measureMulti(name, runs, testScenario, [
+        {
+            scenario: lcp,
+            analyze: ctx => analyzeTrace(ctx.traceFile, hasNonzeroTimestamp, isLCP)
+        },
+        {
+            scenario: backendSettled,
+            analyze: ctx => ctx.backendSettledSeconds
+        },
+        {
+            scenario: frontendSettled,
+            analyze: ctx => ctx.frontendSettledSeconds
+        }
+    ]);
+    contributions.logSummary(name);
 }
 
 /**
@@ -158,12 +220,17 @@ async function measurePerformance() {
  * to signal it to terminate when the test run is complete will not terminate the entire
  * process tree but only the root `theia` process, leaving the electron app instance
  * running until eventually this script itself exits.
- * 
+ *
  * @param {string} traceConfigPath the path to the tracing configuration file with which to initiate tracing
  * @returns {Promise<ChildProcess>} the Electron child process, if successfully launched
  */
 async function launchElectron(traceConfigPath) {
-    const args = ['start', workspace, '--plugins=local-dir:../../plugins', `--trace-config-file=${traceConfigPath}`];
+    const args = ['start', workspace, '--plugins=local-dir:../../plugins',
+        '--log-level=debug',
+        `--trace-config-file=${traceConfigPath}`,
+        // Force JSON output: since Chromium switched its default trace format to Perfetto protobuf,
+        // even a `result_file` ending in `.json` writes protobuf unless this switch is set.
+        '--trace-startup-format=json'];
     if (process.platform === 'linux') {
         args.push('--headless');
     }
@@ -180,9 +247,9 @@ function hasNonzeroTimestamp(traceEvent) {
  * If running in debug mode, this will always at least print out the `chunk` to the console.
  * In addition, the text is analyzed to look for known conditions that will invalidate the
  * test procedure and cause the script to bail. These include:
- * 
+ *
  * - the native browser modules not being built correctly for Electron
- * 
+ *
  * @param {string} chunk a chunk of standard error text from the child process
  */
 function analyzeStderr(chunk) {

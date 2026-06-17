@@ -2844,7 +2844,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(id: string, color?: ThemeColor);
+        constructor(id: string, color?: ThemeColor);
     }
 
     /**
@@ -8182,10 +8182,8 @@ export module '@theia/plugin' {
          * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
          * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
          *
-         * *Note* that only files within the current {@link workspace.workspaceFolders workspace folders} can be watched.
-         *
          * @param globPattern A {@link GlobPattern glob pattern} that is applied to the absolute paths of created, changed,
-         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain {@link WorkspaceFolder workspace folder}.
+         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain folder.
          * @param ignoreCreateEvents Ignore when files have been created.
          * @param ignoreChangeEvents Ignore when files have been changed.
          * @param ignoreDeleteEvents Ignore when files have been deleted.
@@ -12713,6 +12711,70 @@ export module '@theia/plugin' {
         readonly description?: string;
     }
 
+    export interface SourceControlHistoryItemRef {
+        readonly id: string;
+        readonly name: string;
+        readonly description?: string;
+        readonly revision?: string;
+        readonly icon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly category?: string;
+    }
+
+    export interface SourceControlHistoryItemRefsChangeEvent {
+        readonly added: readonly SourceControlHistoryItemRef[];
+        readonly removed: readonly SourceControlHistoryItemRef[];
+        readonly modified: readonly SourceControlHistoryItemRef[];
+    }
+
+    export interface SourceControlHistoryOptions {
+        readonly skip?: number;
+        readonly limit?: number | { id?: string };
+        readonly historyItemRefs?: readonly string[];
+        readonly filterText?: string;
+    }
+
+    export interface SourceControlHistoryItemStatistics {
+        readonly files: number;
+        readonly insertions: number;
+        readonly deletions: number;
+    }
+
+    export interface SourceControlHistoryItem {
+        readonly id: string;
+        readonly parentIds?: readonly string[];
+        readonly subject: string;
+        readonly message?: string | MarkdownString;
+        readonly author?: string;
+        readonly authorEmail?: string;
+        readonly authorIcon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly displayId?: string;
+        readonly timestamp?: number;
+        readonly statistics?: SourceControlHistoryItemStatistics;
+        readonly references?: readonly SourceControlHistoryItemRef[];
+        readonly tooltip?: string | MarkdownString;
+    }
+
+    export interface SourceControlHistoryItemChange {
+        readonly uri: Uri;
+        readonly originalUri?: Uri;
+        readonly modifiedUri?: Uri;
+        readonly renameUri?: Uri;
+    }
+
+    export interface SourceControlHistoryProvider {
+        readonly currentHistoryItemRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemRemoteRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemBaseRef?: SourceControlHistoryItemRef;
+        readonly onDidChangeCurrentHistoryItemRefs: Event<void>;
+        readonly onDidChangeHistoryItemRefs: Event<SourceControlHistoryItemRefsChangeEvent>;
+
+        provideHistoryItemRefs(historyItemRefs: string[] | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemRef[]>;
+        provideHistoryItems(options: SourceControlHistoryOptions, token: CancellationToken): ProviderResult<SourceControlHistoryItem[]>;
+        provideHistoryItemChanges(historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemChange[]>;
+        resolveHistoryItem(historyItemId: string, token: CancellationToken): ProviderResult<SourceControlHistoryItem>;
+        resolveHistoryItemRefsCommonAncestor(historyItemRefs: string[], token: CancellationToken): ProviderResult<string>;
+    }
+
     /**
      * An source control is able to provide {@link SourceControlResourceState resource states}
      * to the editor and interact with the editor in several source control related ways.
@@ -12785,6 +12847,11 @@ export module '@theia/plugin' {
          * Optional action button displayed under the source control's input box.
          */
         actionButton?: ScmActionButton;
+
+        /**
+         * Optional history provider.
+         */
+        historyProvider?: SourceControlHistoryProvider;
 
         /**
          * Dispose this source control.

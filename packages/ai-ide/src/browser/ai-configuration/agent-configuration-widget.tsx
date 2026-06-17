@@ -310,7 +310,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                             <tr>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/templateName', 'Template')}</th>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/variant', 'Variant')}</th>
-                                <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
+                                <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -841,7 +841,7 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
                 <tr>
                     <th>{nls.localizeByDefault('Type')}</th>
                     <th>{nls.localize('theia/ai/ide/agentConfiguration/selections', 'Selections')}</th>
-                    <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
+                    <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
                 </tr>
             </thead>
             <tbody>

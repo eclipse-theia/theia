@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
 import { ScmInput, ScmInputOptions } from './scm-input';
 import { ScmProvider } from './scm-provider';
 
@@ -52,6 +53,21 @@ export class ScmRepository implements Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    /**
+     * Build a URI that addresses the given file at a specific revision in this repository.
+     *
+     * The result reuses the workspace path of {@link fileUri} but switches the scheme to the
+     * provider id and encodes `{ path, ref }` in the query, which is the contract resource
+     * resolvers (e.g. the Git extension) expect to retrieve content at a revision.
+     *
+     * @param fileUri The workspace URI of the file (typically a `file:` URI).
+     * @param ref The revision (commit, branch, tag). An empty string addresses the index.
+     */
+    toUriAtRef(fileUri: URI, ref: string): URI {
+        const query = JSON.stringify({ path: fileUri.path.fsPath(), ref });
+        return fileUri.withScheme(this.provider.id).withQuery(query);
     }
 
 }

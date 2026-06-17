@@ -39,12 +39,12 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
-
         return {
             ...toolRequest,
             handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
                 const toolCallId = ctx?.toolCallId;
+                const sessionId = request.session.rootSessionId ?? request.session.id;
+                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, sessionId, toolRequest);
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
@@ -84,6 +84,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                                 : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
                             toolCallContent.confirmationTimeout = timeoutSeconds;
                             toolCallContent.requestUserConfirmation();
+                            request.response.fireInteractionNeeded(toolCallContent);
                             confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                         }
 

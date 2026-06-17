@@ -178,9 +178,18 @@ export class RpcProtocol {
         const disposableWrapper = new DisposableWrapper();
         this.pendingRequestCancellationEventListeners.set(id, disposableWrapper);
 
-        const output = this.channel.getWriteBuffer();
-        this.encoder.request(output, id, method, args);
-        output.commit();
+        try {
+            const output = this.channel.getWriteBuffer();
+            this.encoder.request(output, id, method, args);
+            output.commit();
+        } catch (err) {
+            // The message could not be sent (e.g. write buffer overflow).
+            // Clean up the pending request and reject the promise.
+            this.pendingRequests.delete(id);
+            this.disposeCancellationEventListener(id);
+            reply.reject(err);
+            return reply.promise;
+        }
 
         if (cancellationToken?.isCancellationRequested) {
             this.sendCancel(id);
