@@ -25,6 +25,12 @@
   margin-bottom: calc(var(--theia-ui-padding) * 1.5);
 }
 
+.mcp-dialog-form .mcp-form-section-title {
+  margin: calc(var(--theia-ui-padding) * 2) 0 var(--theia-ui-padding);
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
 .mcp-dialog-form .mcp-form-field label {
   display: block;
   margin-bottom: calc(var(--theia-ui-padding) / 2);
@@ -36,6 +42,12 @@
 .mcp-dialog-form .mcp-form-field .theia-select {
   width: 100%;
   box-sizing: border-box;
+}
+
+.mcp-dialog-form .mcp-form-description {
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
 }
 
 .mcp-dialog-form .mcp-form-field textarea.theia-input {
