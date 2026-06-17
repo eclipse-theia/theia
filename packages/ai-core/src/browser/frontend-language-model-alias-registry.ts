@@ -29,7 +29,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-opus-4-7',
+                'anthropic/claude-opus-4-8',
                 'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
@@ -38,7 +38,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/universal',
             defaultModelIds: [
-                'anthropic/claude-opus-4-7',
+                'anthropic/claude-opus-4-8',
                 'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
@@ -56,7 +56,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'anthropic/claude-opus-4-7',
+                'anthropic/claude-opus-4-8',
                 'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
