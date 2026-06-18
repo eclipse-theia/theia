@@ -1633,10 +1633,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     /**
      * Auto-migrate every legacy `customAgents.yml` reachable from the configured scopes to the new
-     * `agents/<id>/agent.md` layout. The original YAML is renamed to `customAgents.yml.bak` only
-     * after every entry has been written successfully; on partial failure it is also renamed to
-     * `customAgents.yml.bak` (without overwriting an existing backup) so the user can inspect what
-     * failed and the loader can still serve agents from it on the next run.
+     * `agents/<id>/agent.md` layout. The original content is never deleted:
+     * - on full success the YAML is renamed to `customAgents.yml.bak`, replacing any previous backup;
+     * - on partial failure the YAML is renamed to `customAgents.yml.bak` only if no backup exists yet;
+     *   if one already exists the YAML is left in place, so the loader keeps serving it and the next
+     *   startup retries the migration.
      *
      * Idempotent: rerunning never overwrites an already-migrated agent file.
      */
@@ -1769,6 +1770,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             try {
                 if (!(await this.fileService.exists(backupURI))) {
                     await this.fileService.move(yamlURI, backupURI);
+                    yamlBackedUp = true;
                 }
             } catch (e) {
                 this.logger.warn(`Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
@@ -1813,7 +1815,7 @@ export interface MigrationReport {
     alreadyPresent: number;
     /** Number of agents whose new file failed to write. */
     failed: number;
-    /** Whether the original YAML was renamed to `customAgents.yml.bak` after a fully-successful migration. */
+    /** Whether the original YAML was renamed to `customAgents.yml.bak` during this run. */
     yamlBackedUp: boolean;
     /** Number of scope-root prompt customization files (`<name>_prompt.prompttemplate`) folded into agent.md and deleted. */
     promptOverridesMigrated: number;

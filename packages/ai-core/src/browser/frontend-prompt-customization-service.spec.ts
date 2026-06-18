@@ -597,8 +597,8 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
 
         expect(report.migrated).to.equal(1); // 'foo' succeeds
         expect(report.failed).to.equal(1); // 'bar' fails
-        expect(report.yamlBackedUp).to.be.false; // only set after a fully-successful migration
-        // The yaml is preserved as .bak (never silently deleted) so the user can recover.
+        // The yaml was renamed to .bak (preserved, never silently deleted), so this is reported truthfully.
+        expect(report.yamlBackedUp).to.be.true;
         expect(await fileService.exists(yamlURI)).to.be.false;
         expect(await fileService.exists(backupURI)).to.be.true;
     });
