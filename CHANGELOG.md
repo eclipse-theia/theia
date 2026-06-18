@@ -7,11 +7,13 @@
 ## 1.73.0 - tbd
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-chat-ui] replaced the back/forward navigation stack with a single Home button in the chat view header (hidden on the overview); added `Ctrl/Cmd+Shift+L` to trigger it
 - [ai-mcp] added OAuth 2.1 authorization for remote MCP servers, including interactive sign-in/sign-out, automatic token refresh and storage, and a command to retrieve the OAuth redirect URL [#17638](https://github.com/eclipse-theia/theia/pull/17638)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
+- [ai-chat-ui] removed `AIChatNavigationService` along with the `ai-chat-ui.navigate-back` and `ai-chat-ui.navigate-forward` commands; the chat view header now shows a single Home button: the command id was renamed from `ai-chat-ui.new-chat` to `ai-chat-ui.home` (exported constant `AI_CHAT_NEW_CHAT_WINDOW_COMMAND` renamed to `AI_CHAT_HOME`), its label changed from "New Chat" to "Home" and icon from `add` to `home`; the `ai-chat-ui.show-chats` command was relabeled from "Show Chats..." to "Browse all chats..."
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-mcp] `MCPServerManager.removeServer` and `MCPServerManager.addOrUpdateServer` are now asynchronous (return `Promise<void>` instead of `void`); callers must await them to ensure lifecycle cleanup (e.g. OAuth cancellation, credential removal) and consistent manager state [#17638](https://github.com/eclipse-theia/theia/pull/17638)
