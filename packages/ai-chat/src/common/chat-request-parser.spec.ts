@@ -340,7 +340,7 @@ describe('ChatRequestParserImpl', () => {
 
             return {
                 requestCompleted: Promise.resolve({ cancel: () => undefined }),
-                responseCompleted: Promise.resolve({ response: { asString: () => 'ok' } }),
+                responseCompleted: Promise.resolve({ response: { content: [{ kind: 'text', content: 'ok', asString: () => 'ok' }] } }),
             };
         });
 

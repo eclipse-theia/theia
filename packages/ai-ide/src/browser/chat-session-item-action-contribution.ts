@@ -20,24 +20,24 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 
-export interface ChatSessionCardAction {
+export interface ChatSessionItemAction {
     /** Command to execute; handler receives `ChatSessionMetadata` as first arg. */
     commandId: string;
     /** Icon CSS class (e.g. from `codicon()`). */
     iconClass: string;
     /** Accessible label / tooltip. */
     tooltip?: string;
-    /** Sort order — lower = further left. Default 0. */
+    /** Sort order: lower = further left. Default 0. */
     priority?: number;
 }
 
 /**
- * Contribute actions to the session card action bar shown on hover in the welcome screen.
- * Bind to `ChatSessionCardActionContribution` to add entries.
+ * Contribute actions to the session item action bar shown on hover/focus in the chat
+ * session overview. Bind to `ChatSessionItemActionContribution` to add entries.
  *
  * ### Example
  * ```ts
- * bind(ChatSessionCardActionContribution).toDynamicValue(() => ({
+ * bind(ChatSessionItemActionContribution).toDynamicValue(() => ({
  *     getActions: (_session: ChatSessionMetadata) => [{
  *         commandId: 'my.command',
  *         iconClass: codicon('star'),
@@ -46,14 +46,14 @@ export interface ChatSessionCardAction {
  * }));
  * ```
  */
-export const ChatSessionCardActionContribution = Symbol('ChatSessionCardActionContribution');
-export interface ChatSessionCardActionContribution {
-    getActions(session: ChatSessionMetadata): ChatSessionCardAction[];
+export const ChatSessionItemActionContribution = Symbol('ChatSessionItemActionContribution');
+export interface ChatSessionItemActionContribution {
+    getActions(session: ChatSessionMetadata): ChatSessionItemAction[];
 }
 
 @injectable()
-export class DefaultChatSessionCardActionContribution implements ChatSessionCardActionContribution {
-    getActions(_session: ChatSessionMetadata): ChatSessionCardAction[] {
+export class DefaultChatSessionItemActionContribution implements ChatSessionItemActionContribution {
+    getActions(_session: ChatSessionMetadata): ChatSessionItemAction[] {
         return [
             {
                 commandId: ChatCommands.AI_CHAT_RENAME_SESSION.id,

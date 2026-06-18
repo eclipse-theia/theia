@@ -45,7 +45,6 @@ import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
 import { backendGlobal } from '../node/backend-global';
-import { ILogger } from '../common/logger';
 
 export { ElectronMainApplicationGlobals };
 
@@ -175,9 +174,6 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
-    @inject(ILogger) @named('core:ElectronMainApplication')
-    protected readonly logger: ILogger;
-
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 
@@ -235,7 +231,7 @@ export class ElectronMainApplication {
                     .positional('file', { type: 'string' }),
                 async args => {
                     if (args.electronUserData) {
-                        this.logger.info(`using electron user data area : '${args.electronUserData}'`);
+                        console.info(`using electron user data area : '${args.electronUserData}'`);
                         await fs.mkdir(args.electronUserData, { recursive: true });
                         app.setPath('userData', args.electronUserData);
                     }
@@ -302,7 +298,7 @@ export class ElectronMainApplication {
         if (browserWindow) {
             this.saveWindowState(browserWindow);
         } else {
-            this.logger.warn(`no BrowserWindow with id: ${webContents.id}`);
+            console.warn(`no BrowserWindow with id: ${webContents.id}`);
         }
     }
 
@@ -369,7 +365,7 @@ export class ElectronMainApplication {
 
     protected async configureAndShowSplashScreen(mainWindow: BrowserWindow): Promise<BrowserWindow> {
         const splashScreenOptions = this.getSplashScreenOptions()!;
-        this.logger.debug('SplashScreen options', splashScreenOptions);
+        console.debug('SplashScreen options', splashScreenOptions);
 
         const splashScreenBounds = await this.determineSplashScreenBounds(mainWindow.getBounds());
         const splashScreenWindow = new BrowserWindow({
@@ -562,7 +558,7 @@ export class ElectronMainApplication {
             try {
                 workspacePath = await fs.realpath(path.resolve(options.cwd, options.file));
             } catch {
-                this.logger.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
+                console.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
             }
         }
         if (workspacePath !== undefined) {
@@ -640,13 +636,13 @@ export class ElectronMainApplication {
         // On Wayland, screen.getCursorScreenPoint() causes a native crash (SIGSEGV)
         // before any window is opened. Detect Wayland and use primary display instead.
         if (this.isWaylandSession()) {
-            this.logger.debug('Running under Wayland, using primary display for new window.');
+            console.debug('Running under Wayland, using primary display for new window.');
             return screen.getPrimaryDisplay();
         }
         try {
             return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
         } catch (error) {
-            this.logger.warn('Failed to get cursor screen point, falling back to primary display.', error);
+            console.warn('Failed to get cursor screen point, falling back to primary display.', error);
             return screen.getPrimaryDisplay();
         }
     }
@@ -717,7 +713,7 @@ export class ElectronMainApplication {
             };
             this.electronStore.set('windowstate', options);
         } catch (e) {
-            this.logger.error('Error while saving window state:', e);
+            console.error('Error while saving window state:', e);
         }
     }
 

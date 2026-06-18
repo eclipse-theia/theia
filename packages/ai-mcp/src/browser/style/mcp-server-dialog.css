@@ -64,6 +64,33 @@
   color: var(--theia-descriptionForeground);
 }
 
+.mcp-dialog-form .mcp-oauth-redirect-url-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.mcp-dialog-form .mcp-oauth-redirect-url-row .mcp-form-static-value {
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.mcp-dialog-form .mcp-icon-button {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  padding: calc(var(--theia-ui-padding) / 4);
+  cursor: pointer;
+  color: var(--theia-icon-foreground);
+  opacity: 0.8;
+  transition: opacity 0.1s;
+}
+
+.mcp-dialog-form .mcp-icon-button:hover {
+  opacity: 1;
+}
+
 /* Trust banner rendered at the top of the install dialog when an MCPServerInstallTrust
    is supplied. Three variants reflect the three registry states. */
 .mcp-install-trust-banner {
