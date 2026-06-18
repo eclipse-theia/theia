@@ -644,7 +644,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
 
         return <React.Fragment>
-            <div className='header' ref={ref => this.header = (ref || undefined)}>
+            <div className='header' ref={ref => { this.header = (ref || undefined); }}>
                 {iconUrl ?
                     <img className='icon-container' src={iconUrl} /> :
                     <div className='icon-container placeholder' />}
@@ -684,9 +684,9 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             {
                 sanitizedReadme &&
                 <div className='scroll-container'
-                    ref={ref => this._scrollContainer = (ref || undefined)}>
+                    ref={ref => { this._scrollContainer = (ref || undefined); }}>
                     <div className='body'
-                        ref={ref => this.body = (ref || undefined)}
+                        ref={ref => { this.body = (ref || undefined); }}
                         onClick={this.openLink}
                         // eslint-disable-next-line react/no-danger
                         dangerouslySetInnerHTML={{ __html: sanitizedReadme }}

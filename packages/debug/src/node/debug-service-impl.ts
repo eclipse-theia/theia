@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugService, DebuggerDescription, DynamicDebugConfigurationProvider } from '../common/debug-service';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
 import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
-import { Event } from '@theia/core';
+import { Event, ILogger } from '@theia/core';
 
 /**
  * DebugService implementation.
@@ -34,6 +34,9 @@ export class DebugServiceImpl implements DebugService {
 
     @inject(DebugAdapterContributionRegistry)
     protected readonly registry: DebugAdapterContributionRegistry;
+
+    @inject(ILogger) @named('debug:DebugServiceImpl')
+    protected readonly logger: ILogger;
 
     get onDidChangeDebugConfigurationProviders(): Event<void> {
         return Event.None;
@@ -113,7 +116,7 @@ export class DebugServiceImpl implements DebugService {
                     try {
                         await this.doStop(session);
                     } catch (e) {
-                        console.error('terminateDebugSession failed:', e);
+                        this.logger.error('terminateDebugSession failed:', e);
                     }
                 })());
             }

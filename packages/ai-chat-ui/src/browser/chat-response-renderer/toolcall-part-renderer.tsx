@@ -19,14 +19,19 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, HoverService, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
+import { createConfirmationHandlers, ToolConfirmation, ToolConfirmationKeybindingHints, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { MarkdownRender } from './markdown-part-renderer';
-import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { isToolCallContent, ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
+import {
+    APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
+    DENY_LATEST_TOOL_CONFIRMATION_COMMAND
+} from '../tool-confirmation-keybinding-contribution';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 @injectable()
@@ -46,6 +51,15 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(PendingToolConfirmationTracker)
+    protected pendingToolConfirmationTracker: PendingToolConfirmationTracker;
+
+    @inject(KeybindingRegistry)
+    protected keybindingRegistry: KeybindingRegistry;
+
+    @inject(MarkdownRenderer)
+    protected markdownRenderer: MarkdownRenderer;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
@@ -68,6 +82,10 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             onDeny={handleDeny}
             contextMenuRenderer={this.contextMenuRenderer}
             openerService={this.openerService}
+            pendingTracker={this.pendingToolConfirmationTracker}
+            keybindingHints={this.getKeybindingHints()}
+            chatId={chatId}
+            markdownRenderer={this.markdownRenderer}
         />;
     }
 
@@ -86,7 +104,24 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             responseRenderer={this.renderResult.bind(this)}
             requestCanceled={parentNode.response.isCanceled}
             contextMenuRenderer={this.contextMenuRenderer}
-            openerService={this.openerService} />;
+            openerService={this.openerService}
+            pendingTracker={this.pendingToolConfirmationTracker}
+            keybindingHints={this.getKeybindingHints()}
+            markdownRenderer={this.markdownRenderer} />;
+    }
+
+    protected getKeybindingHints(): ToolConfirmationKeybindingHints {
+        const allow = this.formatKeybinding(APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        const deny = this.formatKeybinding(DENY_LATEST_TOOL_CONFIRMATION_COMMAND.id);
+        return { allow, deny };
+    }
+
+    protected formatKeybinding(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (!bindings.length) {
+            return undefined;
+        }
+        return this.keybindingRegistry.acceleratorFor(bindings[0], '+').join('+');
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -98,7 +133,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (typeof result !== 'object' || result === null) {
             return <pre>{String(result)}</pre>;
         }
-        if ('content' in result) {
+        if (isToolCallContent(result)) {
             return <div className='theia-toolCall-response-content'>
                 {result.content.map((content, idx) => {
                     switch (content.type) {
@@ -190,6 +225,9 @@ interface ToolCallContentProps {
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
     openerService: OpenerService;
+    pendingTracker?: PendingToolConfirmationTracker;
+    keybindingHints?: ToolConfirmationKeybindingHints;
+    markdownRenderer?: MarkdownRenderer;
 }
 
 /**
@@ -206,7 +244,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     requestCanceled,
     showArgsTooltip,
     contextMenuRenderer,
-    openerService
+    openerService,
+    pendingTracker,
+    keybindingHints,
+    markdownRenderer
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
@@ -297,6 +338,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         onDeny={handleDeny}
                         contextMenuRenderer={contextMenuRenderer}
                         openerService={openerService}
+                        pendingTracker={pendingTracker}
+                        keybindingHints={keybindingHints}
+                        chatId={chatId}
+                        markdownRenderer={markdownRenderer}
                     />
                 </span>
             )}

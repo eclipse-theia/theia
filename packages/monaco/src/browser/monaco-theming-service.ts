@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
 import URI from '@theia/core/lib/common/uri';
@@ -25,6 +25,7 @@ import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme, ThemeServiceWithDB } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as monaco from '@theia/monaco-editor-core';
+import { ILogger } from '@theia/core';
 
 export interface MonacoTheme {
     id?: string;
@@ -61,6 +62,8 @@ export class MonacoThemingService {
     @inject(FileService) protected readonly fileService: FileService;
     @inject(MonacoThemeRegistry) protected readonly monacoThemeRegistry: MonacoThemeRegistry;
     @inject(ThemeServiceWithDB) protected readonly themeService: ThemeServiceWithDB;
+    @inject(ILogger) @named('monaco:MonacoThemingService')
+    protected readonly logger: ILogger;
 
     /** Register themes whose configuration needs to be loaded */
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
@@ -83,7 +86,7 @@ export class MonacoThemingService {
             const { id, description, uiTheme } = theme;
             toDispose.push(this.registerParsedTheme({ id, label, description, uiTheme: uiTheme, json, includes }));
         } catch (e) {
-            console.error('Failed to load theme from ' + theme.uri, e);
+            this.logger.error('Failed to load theme from ' + theme.uri, e);
         }
     }
 
@@ -180,7 +183,7 @@ export class MonacoThemingService {
                 this.doRegisterParsedTheme(state);
             }
         } catch (e) {
-            console.error('Failed to restore monaco themes', e);
+            this.logger.error('Failed to restore monaco themes', e);
         }
     }
 

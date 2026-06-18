@@ -58,6 +58,6 @@ export class ResolveMcpFrontendContribution
                 return serverDescription;
             }
         };
-        this.mcpFrontendService.addOrUpdateServer(githubServer);
+        await this.mcpFrontendService.addOrUpdateServer(githubServer);
     }
 }

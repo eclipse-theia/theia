@@ -18,8 +18,8 @@ import * as types from 'open-collaboration-protocol';
 import * as Y from 'yjs';
 import * as awarenessProtocol from 'y-protocols/awareness';
 
-import { Disposable, DisposableCollection, Emitter, Event, MessageService, URI, nls } from '@theia/core';
-import { Container, inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, Event, MessageService, URI, nls, ILogger } from '@theia/core';
+import { Container, inject, injectable, interfaces, postConstruct, named } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -98,6 +98,9 @@ export class CollaborationInstance implements Disposable {
 
     @inject(CollaborationUtils)
     protected readonly utils: CollaborationUtils;
+
+    @inject(ILogger) @named('collaboration:CollaborationInstance')
+    protected readonly logger: ILogger;
 
     protected identity = new Deferred<types.Peer>();
     protected peers = new Map<string, DisposablePeer>();
@@ -752,7 +755,7 @@ export class CollaborationInstance implements Disposable {
                     });
                     this.pushChangesToModel(model, operations);
                 } catch (err) {
-                    console.error(err);
+                    this.logger.error(err);
                 }
                 resyncDebounce();
                 updating = false;
@@ -788,7 +791,7 @@ export class CollaborationInstance implements Disposable {
             model.textEditorModel.pushEditOperations(cursorState, changes, () => cursorState);
             model.textEditorModel.pushStackElement();
         } catch (err) {
-            console.error(err);
+            this.logger.error(err);
         }
     }
 

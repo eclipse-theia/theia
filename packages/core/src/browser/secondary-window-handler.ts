@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import debounce = require('lodash.debounce');
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
@@ -23,6 +23,7 @@ import { Emitter } from '../common/event';
 import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
+import { ILogger } from '../common/logger';
 import { nls } from '../common/nls';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
@@ -104,6 +105,9 @@ export class SecondaryWindowHandler {
     @inject(TheiaDockPanel.Factory)
     protected dockPanelFactory: TheiaDockPanel.Factory;
 
+    @inject(ILogger) @named('core:SecondaryWindowHandler')
+    protected readonly logger: ILogger;
+
     protected readonly onWillAddWidgetEmitter = new Emitter<[Widget, Window]>();
     /** Subscribe to get notified when a widget is added to this handler, i.e. the widget was moved to an secondary window . */
     readonly onWillAddWidget = this.onWillAddWidgetEmitter.event;
@@ -157,11 +161,11 @@ export class SecondaryWindowHandler {
      */
     moveWidgetToSecondaryWindow(widget: ExtractableWidget): void {
         if (!this.applicationShell) {
-            console.error('Widget cannot be extracted because the WidgetExtractionHandler has not been initialized.');
+            this.logger.error('Widget cannot be extracted because the WidgetExtractionHandler has not been initialized.');
             return;
         }
         if (!widget.isExtractable) {
-            console.error('Widget is not extractable.', widget.id);
+            this.logger.error('Widget is not extractable.', widget.id);
             return;
         }
 
@@ -185,7 +189,7 @@ export class SecondaryWindowHandler {
 
             const element = newWindow.document.getElementById('widget-host');
             if (!element) {
-                console.error('Could not find dom element to attach to in secondary window');
+                this.logger.error('Could not find dom element to attach to in secondary window');
                 return;
             }
 
@@ -240,18 +244,18 @@ export class SecondaryWindowHandler {
     addWidgetToSecondaryWindow(widget: Widget, secondaryWindow: Window, options?: TheiaDockPanel.AddOptions): void {
         const rootWidget = isSecondaryWindow(secondaryWindow) ? secondaryWindow.rootWidget : undefined;
         if (!rootWidget) {
-            console.error('Given secondary window no known root.');
+            this.logger.error('Given secondary window no known root.');
             return;
         }
 
         // we allow to add any widget to an existing secondary window unless it is marked as not extractable or is already extracted
         if (ExtractableWidget.is(widget)) {
             if (!widget.isExtractable) {
-                console.error('Widget is not extractable.', widget.id);
+                this.logger.error('Widget is not extractable.', widget.id);
                 return;
             }
             if (widget.secondaryWindow !== undefined) {
-                console.error('Widget is extracted already.', widget.id);
+                this.logger.error('Widget is extracted already.', widget.id);
                 return;
             }
             widget.secondaryWindow = secondaryWindow;

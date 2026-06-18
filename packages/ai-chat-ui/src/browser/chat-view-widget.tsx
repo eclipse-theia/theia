@@ -28,7 +28,6 @@ import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-se
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { AIChatNavigationService } from './ai-chat-navigation-service';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -66,9 +65,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
     protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
-
-    @inject(AIChatNavigationService)
-    protected readonly navigationService: AIChatNavigationService;
 
     protected chatSession: ChatSession;
 
@@ -248,10 +244,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 : { ...query, capabilityOverrides, genericCapabilitySelections };
         if (chatRequest.text.length === 0) { return; }
 
-        if (this.chatSession.model.isEmpty()) {
-            this.navigationService.notifyInitialQuery(this.chatSession.id);
-        }
-
         // Include all variables (context + pending image attachments) in the request
         const allVariables = this.inputWidget.getAllVariablesForRequest();
         const requestWithVariables: ChatRequest = allVariables.length > 0
@@ -340,6 +332,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     getSettings(): ChatSessionSettings | undefined {
         return this.chatSession.model.settings;
+    }
+
+    get sessionId(): string {
+        return this.chatSession.id;
     }
 }
 

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import {
     CancellationToken,
-    ProgressClient, ProgressMessage, ProgressUpdate
+    ProgressClient, ProgressMessage, ProgressUpdate, ILogger
 } from '@theia/core';
 
 /**
@@ -26,11 +26,15 @@ import {
  */
 @injectable()
 export class HeadlessProgressClient implements ProgressClient {
+
+    @inject(ILogger) @named('plugin-ext-headless:HeadlessProgressClient')
+    protected readonly logger: ILogger;
+
     async showProgress(_progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         if (cancellationToken.isCancellationRequested) {
             return ProgressMessage.Cancel;
         }
-        console.debug(message.text);
+        this.logger.debug(message.text);
     }
 
     async reportProgress(_progressId: string, update: ProgressUpdate, message: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
@@ -39,6 +43,6 @@ export class HeadlessProgressClient implements ProgressClient {
         }
         const progress = update.work && update.work.total ? `[${100 * Math.min(update.work.done, update.work.total) / update.work.total}%]` : '';
         const text = `${progress} ${update.message ?? 'completed ...'}`;
-        console.debug(text);
+        this.logger.debug(text);
     }
 }

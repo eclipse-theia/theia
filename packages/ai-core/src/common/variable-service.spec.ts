@@ -138,9 +138,9 @@ describe('DefaultAIVariableService', () => {
 
         // Create the service under test
         variableService = new DefaultAIVariableService(
-            contributionProvider,
-            logger
+            contributionProvider
         );
+        (variableService as unknown as Record<string, unknown>)['logger'] = logger;
 
         // Register the variables and resolvers
         variableService.registerResolver(varA, resolverA);

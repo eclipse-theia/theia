@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, optional, postConstruct } from 'inversify';
+import { injectable, inject, optional, postConstruct, named } from 'inversify';
 import { ArrayExt, find, toArray, each } from '@lumino/algorithm';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
@@ -46,6 +46,7 @@ import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { WindowService } from '../window/window-service';
 import { TheiaSplitPanel } from './theia-split-panel';
+import { ILogger } from '../../common/logger';
 
 /** The class name added to ApplicationShell instances. */
 export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -241,6 +242,9 @@ export class ApplicationShell extends Widget {
 
     @inject(UntitledResourceResolver)
     protected readonly untitledResourceResolver: UntitledResourceResolver;
+
+    @inject(ILogger) @named('core:ApplicationShell')
+    protected readonly logger: ILogger;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -595,7 +599,7 @@ export class ApplicationShell extends Widget {
                 const opener = await this.openerService.getOpener(fileUri);
                 opener.open(fileUri);
             } catch (e) {
-                console.info(`no opener found for '${fileUri}'`);
+                this.logger.info(`no opener found for '${fileUri}'`);
             }
         };
 
@@ -975,7 +979,7 @@ export class ApplicationShell extends Widget {
      */
     async addWidget(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Promise<void> {
         if (!widget.id) {
-            console.error('Widgets added to the application shell must have a unique id property.');
+            this.logger.error('Widgets added to the application shell must have a unique id property.');
             return;
         }
         const { area, addOptions } = this.getInsertionOptions(options);
@@ -1430,7 +1434,7 @@ export class ApplicationShell extends Widget {
             if (delta < this.activationTimeout) {
                 request = setTimeout(step, 0);
             } else {
-                console.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
+                this.logger.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
             }
         };
         let request = setTimeout(step, 0);

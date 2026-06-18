@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection, Emitter, Resource, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, Resource, URI, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellKind, NotebookData, TransientOptions } from '../../common';
 import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
@@ -59,6 +59,9 @@ export class NotebookService implements Disposable {
 
     @inject(NotebookMonacoTextModelService)
     protected textModelService: NotebookMonacoTextModelService;
+
+    @inject(ILogger) @named('notebook:NotebookService')
+    protected readonly logger: ILogger;
 
     protected willUseNotebookSerializerEmitter = new Emitter<string>();
     readonly onWillUseNotebookSerializer = this.willUseNotebookSerializerEmitter.event;
@@ -202,7 +205,7 @@ export class NotebookService implements Disposable {
             });
             return true;
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
             return false;
         }
     }

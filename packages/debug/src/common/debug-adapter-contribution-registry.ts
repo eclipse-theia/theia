@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { DebugConfiguration } from './debug-configuration';
 import { DebuggerDescription, DebugError } from './debug-service';
 
@@ -27,6 +27,9 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
  */
 @injectable()
 export class DebugAdapterContributionRegistry {
+
+    @inject(ILogger) @named('debug:DebugAdapterContributionRegistry')
+    protected readonly logger: ILogger;
 
     @inject(ContributionProvider) @named(DebugAdapterContribution)
     protected readonly contributions: ContributionProvider<DebugAdapterContribution>;
@@ -83,7 +86,7 @@ export class DebugAdapterContributionRegistry {
                     const result = await contribution.provideDebugConfigurations(workspaceFolderUri);
                     configurations.push(...result);
                 } catch (e) {
-                    console.error('provideDebugConfigurations failed:', e);
+                    this.logger.error('provideDebugConfigurations failed:', e);
                 }
             }
         }
@@ -108,7 +111,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error('resolveDebugConfiguration failed:', e);
+                    this.logger.error('resolveDebugConfiguration failed:', e);
                 }
             }
         }
@@ -133,7 +136,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error('resolveDebugConfigurationWithSubstitutedVariables failed:', e);
+                    this.logger.error('resolveDebugConfigurationWithSubstitutedVariables failed:', e);
                 }
             }
         }
@@ -152,7 +155,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getSchemaAttributes());
                 } catch (e) {
-                    console.error('getSchemaAttributes failed:', e);
+                    this.logger.error('getSchemaAttributes failed:', e);
                 }
             }
         }
@@ -165,7 +168,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getConfigurationSnippets());
                 } catch (e) {
-                    console.error('getConfigurationSnippets failed:', e);
+                    this.logger.error('getConfigurationSnippets failed:', e);
                 }
             }
         }

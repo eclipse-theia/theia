@@ -31,14 +31,14 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -73,7 +73,7 @@ import {
     getLatestTokenUsage,
     getUsageColorClass
 } from './chat-token-usage-indicator-util';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from './chat-view-commands';
+import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -147,6 +147,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextFileValidationService) @optional()
     protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(ILogger) @named('ai-chat-ui:AIChatInputWidget')
+    protected readonly logger: ILogger;
 
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
@@ -1007,8 +1010,8 @@ export class AIChatInputWidget extends ReactWidget {
                 console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
-            this.commandService.executeCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id).catch(error => {
-                console.error(`Failed to execute '${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}' from token usage warning`, error);
+            this.commandService.executeCommand(AI_CHAT_HOME.id).catch(error => {
+                console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
             this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
@@ -1066,7 +1069,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.update();
             }
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine receiving agent:', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -1223,7 +1226,7 @@ export class AIChatInputWidget extends ReactWidget {
                 await this.agentNotificationService.showCompletionNotification(agentId, options);
             }
         } catch (error) {
-            console.error('Failed to handle agent completion notification:', error);
+            this.logger.error('Failed to handle agent completion notification:', error);
         }
     }
 
@@ -2665,7 +2668,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
             </div>
             <div className={`theia-ChatInput-ChangeSet-List ${isCollapsed ? 'collapsed' : 'expanded'}`}>
                 <ul>
-                    {elements.map(element => ChangeSetElement(element))}
+                    {elements.map(element => <ChangeSetElement key={element.uri} {...element} />)}
                 </ul>
             </div>
         </div>
@@ -2693,7 +2696,7 @@ function toUiElement(element: ChangeSetElement,
 }
 
 const ChangeSetElement: React.FC<ChangeSetUIElement> = element => (
-    <li key={element.uri} title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
+    <li title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`}>
         </div>
         <div className='theia-ChatInput-ChangeSet-labelParts'>

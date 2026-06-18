@@ -18,7 +18,7 @@ import * as cp from 'child_process';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
 import { rgPath } from '@vscode/ripgrep';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
@@ -30,7 +30,8 @@ import * as path from 'path';
 export class FileSearchServiceImpl implements FileSearchService {
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('file-search:FileSearchServiceImpl')
+        protected readonly logger: ILogger,
         /** @deprecated since 1.7.0 */
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
     ) { }
@@ -118,7 +119,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                     }
                 }, token);
             } catch (e) {
-                console.error('Failed to search:', root, e);
+                this.logger.error('Failed to search:', root, e);
             }
         }));
 

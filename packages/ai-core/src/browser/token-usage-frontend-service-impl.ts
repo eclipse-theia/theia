@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
+import { Emitter, ILogger } from '@theia/core';
 import { ModelTokenUsageData, TokenUsageFrontendService } from './token-usage-frontend-service';
 import { TokenUsage, TokenUsageService } from '../common/token-usage-service';
 import { TokenUsageServiceClient } from '../common/protocol';
@@ -40,6 +40,9 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
     @inject(TokenUsageService)
     protected readonly tokenUsageService: TokenUsageService;
 
+    @inject(ILogger) @named('ai-core:TokenUsageFrontendServiceImpl')
+    protected readonly logger: ILogger;
+
     private readonly _onTokenUsageUpdated = new Emitter<ModelTokenUsageData[]>();
     readonly onTokenUsageUpdated = this._onTokenUsageUpdated.event;
 
@@ -63,7 +66,7 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
             this.cachedUsageData = this.aggregateTokenUsages(usages);
             return this.cachedUsageData;
         } catch (error) {
-            console.error('Failed to get token usage data:', error);
+            this.logger.error('Failed to get token usage data:', error);
             return [];
         }
     }

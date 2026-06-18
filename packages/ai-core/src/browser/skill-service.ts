@@ -23,7 +23,14 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
-import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile } from '../common/skill';
+import {
+    Skill,
+    SkillDescription,
+    SKILL_FILE_NAME,
+    validateSkillDescription,
+    parseSkillFile,
+    combineSkillDirectories
+} from '../common/skill';
 
 /** Debounce delay for coalescing rapid file system events */
 const UPDATE_DEBOUNCE_MS = 50;
@@ -71,6 +78,11 @@ export class DefaultSkillService implements SkillService {
     protected lastSkillDirectoriesValue: string | undefined;
 
     protected updateDebounceTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    /** True while {@link update} is running, so concurrent callers do not duplicate the scan and its log output. */
+    protected updateInProgress = false;
+    /** Set when {@link update} is called while another run is in progress; triggers a follow-up scan when the current one finishes. */
+    protected updateRescheduled = false;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
@@ -167,6 +179,28 @@ export class DefaultSkillService implements SkillService {
             clearTimeout(this.updateDebounceTimeout);
             this.updateDebounceTimeout = undefined;
         }
+        // Serialise concurrent update() calls: a workspace-ready trigger and a file-change-driven
+        // scheduleUpdate() can fire within the same async tick, in which case both runs would
+        // scan and log everything, producing the duplicated log lines that motivated this guard.
+        // The second caller records a pending request and lets the first finish; the follow-up
+        // is then re-scheduled through the debouncer so any further events coalesce into it.
+        if (this.updateInProgress) {
+            this.updateRescheduled = true;
+            return;
+        }
+        this.updateInProgress = true;
+        try {
+            await this.doUpdate();
+        } finally {
+            this.updateInProgress = false;
+            if (this.updateRescheduled) {
+                this.updateRescheduled = false;
+                this.scheduleUpdate();
+            }
+        }
+    }
+
+    protected async doUpdate(): Promise<void> {
         this.toDispose.dispose();
         const newDisposables = new DisposableCollection();
         const newSkills = new Map<string, Skill>();
@@ -178,37 +212,24 @@ export class DefaultSkillService implements SkillService {
 
         const configuredDirectories = (this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [])
             .map(dir => Path.untildify(dir, homePath));
-        const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
+        const defaultSkillsDirs = await this.getDefaultSkillsDirectoryPaths();
 
         const newWatchedDirectories = new Set<string>();
         const newParentWatchers = new Map<string, string>();
 
-        for (const workspaceSkillsDir of workspaceSkillsDirs) {
-            await this.processSkillDirectoryWithParentWatching(
-                workspaceSkillsDir,
-                newSkills,
-                newDisposables,
-                newWatchedDirectories,
-                newParentWatchers
-            );
-        }
-
-        for (const configuredDir of configuredDirectories) {
-            const configuredDirUri = URI.fromFilePath(configuredDir).toString();
-            if (!newWatchedDirectories.has(configuredDirUri)) {
-                await this.processConfiguredSkillDirectory(configuredDir, newSkills, newDisposables, newWatchedDirectories);
+        const allDirectories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs);
+        for (const { path: directoryPath, tier } of allDirectories) {
+            if (tier === 'configured') {
+                await this.processConfiguredSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories);
+            } else {
+                await this.processSkillDirectoryWithParentWatching(
+                    directoryPath,
+                    newSkills,
+                    newDisposables,
+                    newWatchedDirectories,
+                    newParentWatchers
+                );
             }
-        }
-
-        const defaultSkillsDirUri = URI.fromFilePath(defaultSkillsDir).toString();
-        if (!newWatchedDirectories.has(defaultSkillsDirUri)) {
-            await this.processSkillDirectoryWithParentWatching(
-                defaultSkillsDir,
-                newSkills,
-                newDisposables,
-                newWatchedDirectories,
-                newParentWatchers
-            );
         }
 
         if (newSkills.size > 0 && newSkills.size !== this.skills.size) {
@@ -224,14 +245,21 @@ export class DefaultSkillService implements SkillService {
     }
 
     protected getWorkspaceSkillsDirectoryPaths(): string[] {
-        return this.workspaceService.tryGetRoots()
-            .map(root => root.resource.resolve('.prompts/skills').path.fsPath());
+        return this.workspaceService.tryGetRoots().flatMap(root => [
+            root.resource.resolve('.prompts/skills').path.fsPath(),
+            root.resource.resolve('.agents/skills').path.fsPath()
+        ]);
     }
 
-    protected async getDefaultSkillsDirectoryPath(): Promise<string> {
+    protected async getDefaultSkillsDirectoryPaths(): Promise<string[]> {
         const configDirUri = await this.envVariablesServer.getConfigDirUri();
         const configDir = new URI(configDirUri);
-        return configDir.resolve('skills').path.fsPath();
+        const homeDirUri = await this.envVariablesServer.getHomeDirUri();
+        const homeDir = new URI(homeDirUri);
+        return [
+            configDir.resolve('skills').path.fsPath(),
+            homeDir.resolve('.agents/skills').path.fsPath()
+        ];
     }
 
     protected async processSkillDirectoryWithParentWatching(
@@ -257,9 +285,9 @@ export class DefaultSkillService implements SkillService {
                     const parentUriString = parentURI.toString();
                     disposables.push(this.fileService.watch(parentURI, { recursive: false, excludes: [] }));
                     parentWatchers.set(parentUriString, directoryPath);
-                    this.logger.info(`Watching parent directory '${parentPath}' for skills folder creation`);
+                    this.logger.debug(`Watching parent directory '${parentPath}' for skills folder creation`);
                 } else {
-                    this.logger.warn(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
+                    this.logger.debug(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
                 }
             }
         } catch (error) {

@@ -34,7 +34,8 @@ describe('PromptService', () => {
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
         const logger = sinon.createStubInstance(Logger);
 
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = logger;
         const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
         variableService.registerResolver(nameVariable, {
             canResolve: () => 100,
@@ -332,7 +333,8 @@ describe('PromptService', () => {
         container.bind<ToolInvocationRegistry>(ToolInvocationRegistry).toConstantValue(toolInvocationRegistry as any);
 
         // Set up a variable service that returns a fragment with a function reference
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, sinon.createStubInstance(Logger));
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = sinon.createStubInstance(Logger);
         const fragmentVariable = { id: 'test', name: 'fragment', description: 'Test fragment with function' };
         variableService.registerResolver(fragmentVariable, {
             canResolve: () => 100,

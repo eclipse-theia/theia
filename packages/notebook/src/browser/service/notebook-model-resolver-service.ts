@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Resource, ResourceProvider, UNTITLED_SCHEME, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { Emitter, Resource, ResourceProvider, UNTITLED_SCHEME, URI, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookData } from '../../common';
@@ -43,6 +43,9 @@ export class NotebookModelResolverService {
 
     @inject(NotebookTypeRegistry)
     protected notebookTypeRegistry: NotebookTypeRegistry;
+
+    @inject(ILogger) @named('notebook:NotebookModelResolverService')
+    protected readonly logger: ILogger;
 
     protected onDidChangeDirtyEmitter = new Emitter<NotebookModel>();
     readonly onDidChangeDirty = this.onDidChangeDirtyEmitter.event;
@@ -77,7 +80,7 @@ export class NotebookModelResolverService {
             return notebookModel;
         } catch (e) {
             const message = `Error resolving notebook model for: \n ${resource.path.fsPath()} \n with view type ${viewType}. \n ${e}`;
-            console.error(message);
+            this.logger.error(message);
             throw new Error(message);
         }
     }

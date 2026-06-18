@@ -111,6 +111,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly viewClauseContexts = new Map<string, Set<string> | undefined>();
     private readonly viewContainerClauseContexts = new Map<string, Set<string> | undefined>();
 
+    private readonly viewMenuLabelToContainerIds = new Map<string, Set<string>>();
+    private readonly viewMenuDisposables = new Map<string, Disposable>();
+
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
 
@@ -374,13 +377,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }, {
                 execute: () => this.toggleViewContainer(id)
             }));
-            toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
-                commandId: toggleCommandId,
-                label: options.label,
-                when
-            }));
+            toDispose.push(this.registerViewMenuAction(id, options.label));
             toDispose.push(this.quickView?.registerItem({
                 label: options.label,
+                description: this.getLocationDescription(location),
                 when,
                 open: async () => {
                     const widget = await this.openViewContainer(id);
@@ -406,6 +406,88 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             onViewAdded: () => activate()
         });
         return toDispose;
+    }
+
+    protected getLocationDescription(location: string | undefined): string | undefined {
+        switch (location) {
+            case 'left': return nls.localizeByDefault('Side Bar');
+            case 'right': return nls.localizeByDefault('Secondary Side Bar');
+            case 'bottom': return nls.localizeByDefault('Panel');
+            default: return undefined;
+        }
+    }
+
+    protected getContainerLocation(viewContainerId: string): string | undefined {
+        if (PluginViewRegistry.BUILTIN_VIEW_CONTAINERS.has(viewContainerId)) {
+            return 'left';
+        }
+        return this.viewContainers.get(viewContainerId)?.location;
+    }
+
+    protected getViewQuickPickDescription(viewContainerId: string): string | undefined {
+        const locationDescription = this.getLocationDescription(this.getContainerLocation(viewContainerId));
+        const containerLabel = this.viewContainers.get(viewContainerId)?.options.label;
+        if (locationDescription && containerLabel) {
+            return `${locationDescription} / ${containerLabel}`;
+        }
+        return locationDescription;
+    }
+
+    protected registerViewMenuAction(containerId: string, label: string): Disposable {
+        let ids = this.viewMenuLabelToContainerIds.get(label);
+        if (!ids) {
+            ids = new Set();
+            this.viewMenuLabelToContainerIds.set(label, ids);
+        }
+        ids.add(containerId);
+        this.refreshViewMenuLabel(label);
+        return Disposable.create(() => {
+            const set = this.viewMenuLabelToContainerIds.get(label);
+            if (set) {
+                set.delete(containerId);
+                if (set.size === 0) {
+                    this.viewMenuLabelToContainerIds.delete(label);
+                }
+            }
+            const disposable = this.viewMenuDisposables.get(containerId);
+            if (disposable) {
+                disposable.dispose();
+                this.viewMenuDisposables.delete(containerId);
+            }
+            this.refreshViewMenuLabel(label);
+        });
+    }
+
+    protected refreshViewMenuLabel(label: string): void {
+        const ids = this.viewMenuLabelToContainerIds.get(label);
+        if (!ids) {
+            return;
+        }
+        const useSuffix = ids.size > 1;
+        for (const id of ids) {
+            const existing = this.viewMenuDisposables.get(id);
+            if (existing) {
+                existing.dispose();
+                this.viewMenuDisposables.delete(id);
+            }
+            const containerInfo = this.viewContainers.get(id);
+            if (!containerInfo) {
+                continue;
+            }
+            let menuLabel = label;
+            if (useSuffix) {
+                const description = this.getLocationDescription(containerInfo.location);
+                if (description) {
+                    menuLabel = `${label} (${description})`;
+                }
+            }
+            const disposable = this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
+                commandId: `plugin.view-container.${id}.toggle`,
+                label: menuLabel,
+                when: containerInfo.when
+            });
+            this.viewMenuDisposables.set(id, disposable);
+        }
     }
 
     protected isViewContainerVisible(containerId: string): boolean {
@@ -471,6 +553,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         toDispose.push(this.quickView?.registerItem({
             label: view.name,
+            description: this.getViewQuickPickDescription(viewContainerId),
             when: view.when,
             open: () => this.openView(view.id, { activate: true })
         }));
@@ -560,7 +643,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 });
                 return _pendingResolution;
             },
-            show: webview.show
+            show: (preserveFocus: boolean) => {
+                this.openView(viewId, preserveFocus ? { reveal: true } : { activate: true });
+            }
         };
 
         const toDispose = this.onNewResolverRegistered(resolver => {

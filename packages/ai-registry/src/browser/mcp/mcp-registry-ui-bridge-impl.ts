@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core';
-import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-bridge';
 import { MCPInstallEntry } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
-import { VSXExtensionsViewContainer } from '@theia/vsx-registry/lib/browser/vsx-extensions-view-container';
+import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-extensions-contribution';
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
@@ -31,11 +30,8 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
     @inject(RegistryFetchService)
     protected readonly fetchService: RegistryFetchService;
 
-    @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
-
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    @inject(VSXExtensionsContribution)
+    protected readonly viewContribution: VSXExtensionsContribution;
 
     @inject(VSXExtensionsSearchModel)
     protected readonly searchModel: VSXExtensionsSearchModel;
@@ -88,11 +84,7 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
         if (serverId && this.hasServer(serverId)) {
             this.searchModel.query = serverId;
         }
-        // Reveal-and-activate rather than toggle: a second click on "Browse AI registry"
-        // must keep the view visible, not collapse it again.
-        const widget = await this.widgetManager.getOrCreateWidget(VSXExtensionsViewContainer.ID);
-        await this.shell.revealWidget(widget.id);
-        await this.shell.activateWidget(widget.id);
+        await this.viewContribution.openView({ activate: true });
     }
 
     protected async refreshCache(): Promise<void> {

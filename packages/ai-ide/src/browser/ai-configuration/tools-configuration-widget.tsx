@@ -197,29 +197,118 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     protected override renderHeader(): React.ReactNode {
         return (
-            <div className="ai-tools-configuration-header">
-                <div style={{ fontWeight: 500 }}>
-                    {nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}
+            <>
+                <div className="ai-tools-configuration-header">
+                    <div style={{ fontWeight: 500 }}>
+                        {nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}
+                    </div>
+                    <select
+                        className="theia-select"
+                        value={this.defaultState}
+                        onChange={this.handleDefaultStateChange}
+                    >
+                        {TOOL_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    <button
+                        className='theia-button secondary ai-tools-reset-button'
+                        style={{ marginLeft: 'auto' }}
+                        title={nls.localize('theia/ai/ide/toolsConfiguration/resetAllTooltip', 'Reset all tools to default')}
+                        onClick={() => this.resetAllToolsToDefault()}
+                    >
+                        {nls.localize('theia/ai/ide/toolsConfiguration/resetAll', 'Reset All')}
+                    </button>
                 </div>
-                <select
-                    className="theia-select"
-                    value={this.defaultState}
-                    onChange={this.handleDefaultStateChange}
-                >
-                    {TOOL_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
+                {this.renderRecommendedDefaultsBanner()}
+            </>
+        );
+    }
+
+    protected renderRecommendedDefaultsBanner(): React.ReactNode {
+        if (this.defaultState !== ToolConfirmationMode.CONFIRM) {
+            return undefined;
+        }
+        return (
+            <div className="ai-tools-recommended-defaults-banner">
+                <span className="ai-tools-recommended-defaults-text">
+                    {nls.localize(
+                        'theia/ai/ide/toolsConfiguration/recommendedDefaults/message',
+                        'Tool calls currently require approval. Auto-allow all built-in tools at once.' +
+                        ' Tools that require extra confirmation (e.g. shell execution), MCP tools,' +
+                        ' and any tools added later will still ask before running.'
+                    )}
+                </span>
                 <button
-                    className='theia-button secondary ai-tools-reset-button'
-                    style={{ marginLeft: 'auto' }}
-                    title={nls.localize('theia/ai/ide/toolsConfiguration/resetAllTooltip', 'Reset all tools to default')}
-                    onClick={() => this.resetAllToolsToDefault()}
+                    className='theia-button main'
+                    onClick={() => this.allowCurrentTools()}
                 >
-                    {nls.localize('theia/ai/ide/toolsConfiguration/resetAll', 'Reset All')}
+                    {nls.localize('theia/ai/ide/toolsConfiguration/recommendedDefaults/apply', 'Allow Default Tools')}
                 </button>
             </div>
         );
+    }
+
+    protected async allowCurrentTools(): Promise<void> {
+        const dialog = new ConfirmDialog({
+            title: nls.localize('theia/ai/ide/toolsConfiguration/recommendedDefaults/dialogTitle', 'Allow Default Tools?'),
+            msg: this.buildAllowCurrentToolsMessage(),
+            ok: nls.localize('theia/ai/ide/toolsConfiguration/recommendedDefaults/dialogConfirm', 'I understand, allow'),
+            cancel: nls.localizeByDefault('Cancel')
+        });
+        const confirmed = await dialog.open();
+        if (!confirmed) {
+            return;
+        }
+        // Leave the global default at CONFIRM so any tool added later still requires confirmation.
+        // Skip tools that require extra consent (confirmAlwaysAllow), MCP tools (third-party code
+        // that should require informed per-tool consent), and tools the user has explicitly disabled.
+        const updates: Array<{ toolId: string; mode: ToolConfirmationMode; toolRequest: ToolRequest }> = [];
+        for (const tool of this.toolInvocationRegistry.getAllFunctions()) {
+            if (tool.confirmAlwaysAllow) {
+                continue;
+            }
+            if (tool.name.startsWith('mcp_')) {
+                continue;
+            }
+            if (this.toolConfirmationModes[tool.name] === ToolConfirmationMode.DISABLED) {
+                continue;
+            }
+            updates.push({ toolId: tool.name, mode: ToolConfirmationMode.ALWAYS_ALLOW, toolRequest: tool });
+        }
+        await this.confirmationManager.setConfirmationModes(updates);
+    }
+
+    protected buildAllowCurrentToolsMessage(): HTMLElement {
+        const container = document.createElement('div');
+        const lines = [
+            nls.localize(
+                'theia/ai/ide/toolsConfiguration/recommendedDefaults/msg/line1',
+                'This sets all currently registered built-in tools to "Always Allow".'
+            ),
+            nls.localize(
+                'theia/ai/ide/toolsConfiguration/recommendedDefaults/msg/line2',
+                'Tools that require extra confirmation (such as shell execution) will still ask before running.'
+            ),
+            nls.localize(
+                'theia/ai/ide/toolsConfiguration/recommendedDefaults/msg/line3',
+                'MCP tools are third-party and are not included. You can allow them individually in this view.'
+            ),
+            nls.localize(
+                'theia/ai/ide/toolsConfiguration/recommendedDefaults/msg/line4',
+                'Tools added later will still default to "Confirm" so you can review them.'
+            ),
+            nls.localize(
+                'theia/ai/ide/toolsConfiguration/recommendedDefaults/msg/line5',
+                'You can change this later in this view.'
+            )
+        ];
+        for (const line of lines) {
+            const p = document.createElement('p');
+            p.textContent = line;
+            container.appendChild(p);
+        }
+        return container;
     }
 
     protected getEffectiveState(toolName: string): ToolConfirmationMode {
@@ -303,7 +392,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected handleAddPatternToList(
-        inputRef: React.RefObject<HTMLInputElement>,
+        inputRef: React.RefObject<HTMLInputElement | null>,
         addFn: (pattern: string) => void,
         getFn: () => string[],
         setPatterns: (patterns: string[]) => void,
