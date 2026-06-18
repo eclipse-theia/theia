@@ -10,6 +10,7 @@
 - [ai-chat-ui] replaced the back/forward navigation stack with a single Home button in the chat view header (hidden on the overview); added `Ctrl/Cmd+Shift+L` to trigger it
 - [ai-ide] redesigned the chat session overview as a list with Active/Restored sections, agent icon per row, contextual toolbar (Home, Browse all chats..., lock/summarize hidden on the overview), and keybindings `Ctrl+Shift+L` (Home) and `Ctrl+Alt+L` (Browse all chats...)
 - [ai-mcp] added OAuth 2.1 authorization for remote MCP servers, including interactive sign-in/sign-out, automatic token refresh and storage, and a command to retrieve the OAuth redirect URL [#17638](https://github.com/eclipse-theia/theia/pull/17638)
+- [task] fixed `onDidStartTaskProcess` never firing for process tasks because `TaskServer.runTask` omitted the `task` argument to `fireTaskCreatedEvent` [#17663](https://github.com/eclipse-theia/theia/pull/17663)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 - [core] added support for React 19 and declared React peer dependencies as `^18.3.1 || ^19.0.0`. [#17567](https://github.com/eclipse-theia/theia/pull/17567)
 
