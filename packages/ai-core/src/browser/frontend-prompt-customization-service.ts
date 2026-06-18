@@ -713,7 +713,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                         parsed.metadata
                     );
                 } catch (e) {
-                    console.debug(`Failed to load custom-agent customization ${file.resource.toString()}: ${e?.message ?? e}`);
+                    this.logger.debug(`Failed to load custom-agent customization ${file.resource.toString()}: ${e?.message ?? e}`);
                 }
             }
         }
@@ -1392,11 +1392,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
         const { metadata, body } = parseFrontmatter<CustomAgentFrontmatter>(content, { isValid: CustomAgentFrontmatter.is });
         if (!metadata) {
-            console.debug(`Invalid or missing frontmatter in ${fileURI.toString()}`);
+            this.logger.debug(`Invalid or missing frontmatter in ${fileURI.toString()}`);
             return undefined;
         }
         if (metadata.id !== undefined && metadata.id !== id) {
-            console.debug(`Frontmatter id '${metadata.id}' in ${fileURI.toString()} does not match folder name '${id}'. Skipping.`);
+            this.logger.debug(`Frontmatter id '${metadata.id}' in ${fileURI.toString()} does not match folder name '${id}'. Skipping.`);
             return undefined;
         }
         const promptVariants = await this.readCustomAgentPromptVariants(agentFolderURI);
@@ -1443,9 +1443,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
             try {
                 await this.fileService.delete(child.resource, { recursive: true });
-                console.info(`[ai-core] Removed empty agent folder ${child.resource.toString()} left behind by a previous run.`);
+                this.logger.info(`Removed empty agent folder ${child.resource.toString()} left behind by a previous run.`);
             } catch (e) {
-                console.warn(`[ai-core] Failed to remove empty agent folder ${child.resource.toString()}: ${e?.message ?? e}`);
+                this.logger.warn(`Failed to remove empty agent folder ${child.resource.toString()}: ${e?.message ?? e}`);
             }
         }
     }
@@ -1514,7 +1514,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 const parsed = this.parseTemplateWithMetadata(variantContent);
                 variants.push({ id: variantId, template: parsed.template });
             } catch (e) {
-                console.debug(`Failed to read prompt variant ${child.resource.toString()}: ${e?.message ?? e}`);
+                this.logger.debug(`Failed to read prompt variant ${child.resource.toString()}: ${e?.message ?? e}`);
             }
         }
         // Stable order to keep equality checks deterministic between loads.
@@ -1567,8 +1567,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             return;
         }
         this.warnedLegacyYamlUris.add(key);
-        console.warn(
-            `[ai-core] Loading custom agents from legacy '${key}'. ` +
+        this.logger.warn(
+            `Loading custom agents from legacy '${key}'. ` +
             `Files in this format are auto-migrated to the '${CUSTOM_AGENTS_DIRECTORY}/' folder on startup. ` +
             'If migration did not run, invoke the command \'AI: Re-run custom-agent migration\'.'
         );
@@ -1670,18 +1670,18 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         if (!(await this.fileService.exists(yamlURI))) {
             return undefined;
         }
-        console.info(`[ai-core] Migrating custom agents from ${yamlURI.toString()}`);
+        this.logger.info(`Migrating custom agents from ${yamlURI.toString()}`);
         let entries: CustomAgentDescription[];
         try {
             const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
             const doc = load(fileContent.value);
             if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
-                console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
+                this.logger.warn(`Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
                 return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
             }
             entries = doc;
         } catch (e) {
-            console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: ${e.message}`);
+            this.logger.warn(`Skipping migration of ${yamlURI.toString()}: ${e.message}`);
             return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
         }
 
@@ -1711,7 +1711,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     );
                     migrated++;
                 } catch (e) {
-                    console.warn(`[ai-core] Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
+                    this.logger.warn(`Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
                     failed++;
                     continue;
                 }
@@ -1732,7 +1732,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     await this.fileService.move(file.uri, destURI);
                     promptOverridesMigrated++;
                 } catch (e) {
-                    console.warn(`[ai-core] Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
+                    this.logger.warn(`Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
                 }
             }
         }
@@ -1744,7 +1744,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 await this.fileService.move(yamlURI, backupURI, { overwrite: true });
                 yamlBackedUp = true;
             } catch (e) {
-                console.warn(`[ai-core] Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
+                this.logger.warn(`Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
             }
         } else {
             try {
@@ -1752,12 +1752,12 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     await this.fileService.move(yamlURI, backupURI);
                 }
             } catch (e) {
-                console.warn(`[ai-core] Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
+                this.logger.warn(`Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
             }
         }
 
-        console.info(
-            `[ai-core] Migration done for ${yamlURI.toString()}: ` +
+        this.logger.info(
+            `Migration done for ${yamlURI.toString()}: ` +
             `migrated=${migrated}, alreadyPresent=${alreadyPresent}, failed=${failed}, ` +
             `yamlBackedUp=${yamlBackedUp}, promptOverridesMigrated=${promptOverridesMigrated}`
         );
