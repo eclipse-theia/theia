@@ -121,9 +121,12 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
         if (options.recursive) {
             return false;
         }
-        const isAncestorOfWorkspace = this.workspaceService.tryGetRoots().some(
-            root => uri.isEqualOrParent(root.resource) && !uri.isEqual(root.resource)
-        );
+        const roots = this.workspaceService.tryGetRoots();
+        // A folder that is itself a workspace root must always be watched, even if it also happens to
+        // be a (strict) ancestor of another root in a multi-root workspace where one root is nested
+        // inside another. Only watches rooted strictly above every root are dropped.
+        const isWorkspaceRoot = roots.some(root => uri.isEqual(root.resource));
+        const isAncestorOfWorkspace = !isWorkspaceRoot && roots.some(root => uri.isEqualOrParent(root.resource));
         if (isAncestorOfWorkspace) {
             const key = uri.toString();
             if (!this.skippedWatchRoots.has(key)) {

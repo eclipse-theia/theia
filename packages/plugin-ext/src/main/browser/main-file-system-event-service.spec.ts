@@ -133,6 +133,18 @@ describe('MainFileSystemEventService ancestor-of-workspace watch handling', () =
         assert.strictEqual(watchCalls.length, 1);
     });
 
+    it('still registers a non-recursive watch on an outer root that is itself the parent of another root', () => {
+        const watchCalls: UriComponents[] = [];
+        // Multi-root workspace where `/projects` is a root AND the parent of the `/projects/my-app` root.
+        // The outer root is explicitly opened by the user, so its watch must not be dropped as an
+        // "ancestor of the workspace".
+        const service = createService(['file:///projects', 'file:///projects/my-app'], watchCalls);
+
+        service.$watch(1, componentsFor('/projects'), { recursive: false, excludes: [] });
+
+        assert.strictEqual(watchCalls.length, 1, 'a folder that is itself a workspace root must be watched, even if it is an ancestor of another root');
+    });
+
     it('still registers a non-recursive watch inside the workspace', () => {
         const watchCalls: UriComponents[] = [];
         const service = createService(['file:///projects/my-app'], watchCalls);
