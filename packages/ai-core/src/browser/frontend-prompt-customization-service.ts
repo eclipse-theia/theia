@@ -267,15 +267,10 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, templatesURI, 1, CustomizationSource.CUSTOMIZED); // Priority 1 for customized fragments
 
         // Process additional template directories (medium priority). Skip any directory that
-        // is identical to the main templates directory — a user can set both prefs to the same
+        // resolves to the main templates directory — a user can set both prefs to the same
         // path; re-processing the same dir overwrites the priority-1 entries with priority-2,
         // which then hides them from `editBuiltIn`'s priority-1-only lookup.
-        const templatesPath = templatesURI.path.toString();
-        for (const dirPath of this.additionalTemplateDirs) {
-            if (dirPath === templatesPath) {
-                continue;
-            }
-            const dirURI = URI.fromFilePath(dirPath);
+        for (const dirURI of this.getDedupedAdditionalScopes(templatesURI)) {
             await this.processTemplateDirectory(
                 activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, dirURI, 2, CustomizationSource.FOLDER); // Priority 2 for folder fragments
         }
@@ -998,6 +993,24 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * The additional (workspace) template directories as URIs, excluding any that resolves to the
+     * same location as `excluding` (typically the global templates directory). A user can point
+     * both the `promptTemplates` preference and a workspace template directory at the same path;
+     * processing that scope twice would hide priority-1 customizations behind priority-2 copies
+     * (see {@link update}) or list the same scope twice in the agent-location picker.
+     */
+    protected getDedupedAdditionalScopes(excluding: URI): URI[] {
+        const result: URI[] = [];
+        for (const dirPath of this.additionalTemplateDirs) {
+            const dirURI = URI.fromFilePath(dirPath);
+            if (!dirURI.isEqual(excluding)) {
+                result.push(dirURI);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Gets the URI for a specific template file
      * @param fragmentId The fragment ID
      * @returns URI for the template file
@@ -1593,12 +1606,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         await collect(templatesDir);
         // Workspace / additional template directories — skip any that resolve to the global
         // templates directory to avoid showing the same scope twice in the picker.
-        const templatesPath = templatesDir.path.toString();
-        for (const dirPath of this.additionalTemplateDirs) {
-            if (dirPath === templatesPath) {
-                continue;
-            }
-            await collect(URI.fromFilePath(dirPath));
+        for (const dirURI of this.getDedupedAdditionalScopes(templatesDir)) {
+            await collect(dirURI);
         }
         return locations;
     }
@@ -1644,14 +1653,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     protected async doMigrateCustomAgentsYaml(): Promise<MigrationReport[]> {
-        const scopes: URI[] = [await this.getTemplatesDirectoryURI()];
-        const templatesPath = scopes[0].path.toString();
-        for (const dirPath of this.additionalTemplateDirs) {
-            if (dirPath === templatesPath) {
-                continue;
-            }
-            scopes.push(URI.fromFilePath(dirPath));
-        }
+        const templatesURI = await this.getTemplatesDirectoryURI();
+        const scopes: URI[] = [templatesURI, ...this.getDedupedAdditionalScopes(templatesURI)];
         const reports: MigrationReport[] = [];
         for (const scope of scopes) {
             const report = await this.migrateSingleScope(scope);
@@ -1697,6 +1700,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         // Snapshot scope-root template files once so we can match per agent without re-listing.
         const scopeRootTemplateFiles = await this.listScopeRootPromptTemplates(scopeDir);
 
+        // Prompt-fragment files are matched by agent *name* (the fragment id is `<name>_prompt`)
+        // while folders are keyed by the unique *id*. When two entries share a name, only the first
+        // can own the name-based files, so track seen names and skip the move for the duplicates.
+        const seenNames = new Set<string>();
+
         for (const entry of entries) {
             const agentFolderURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id);
             const targetURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
@@ -1716,6 +1724,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     continue;
                 }
             }
+
+            if (seenNames.has(entry.name)) {
+                this.logger.warn(
+                    `Multiple custom agents in ${yamlURI.toString()} share the name '${entry.name}'; ` +
+                    'prompt fragment files were migrated to the first matching agent only.'
+                );
+                continue;
+            }
+            seenNames.add(entry.name);
 
             // Move any scope-root .prompttemplate files that look like they belong to this agent
             // (filename stem starts with `<name>_prompt`, followed by EOF or a separator).
