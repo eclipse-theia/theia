@@ -19,7 +19,7 @@ import { CommandService, nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CopilotAuthService, CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
-import { COPILOT_ENABLED_PREF, COPILOT_MODEL_OVERRIDES_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
+import { COPILOT_ENABLED_PREF, COPILOT_MODEL_OVERRIDES_PREF, COPILOT_ENTERPRISE_URL_PREF, COPILOT_USE_SDK_PREF } from '../common/copilot-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { CopilotCommands } from './copilot-command-contribution';
 
@@ -51,6 +51,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
         this.preferenceService.ready.then(async () => {
             const enterpriseUrl = this.preferenceService.get<string>(COPILOT_ENTERPRISE_URL_PREF);
             this.manager.setEnterpriseUrl(enterpriseUrl || undefined);
+            this.manager.setUseSdk(this.preferenceService.get<boolean>(COPILOT_USE_SDK_PREF, false));
 
             if (this.isCopilotEnabled()) {
                 const authState = await this.authService.getAuthState();
@@ -86,6 +87,11 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
                     } else {
                         this.manager.refreshModelsStatus();
                     }
+                } else if (event.preferenceName === COPILOT_USE_SDK_PREF && this.isCopilotEnabled()) {
+                    // Switching transport changes the model implementation, so rebuild the model set.
+                    this.manager.setUseSdk(this.preferenceService.get<boolean>(COPILOT_USE_SDK_PREF, false));
+                    this.removeAllCopilotModels();
+                    this.initializeModels();
                 }
             });
 

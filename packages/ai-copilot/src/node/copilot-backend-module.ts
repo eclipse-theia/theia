@@ -26,11 +26,14 @@ import {
 } from '../common';
 import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
     bind(CopilotAuthService).toService(CopilotAuthServiceImpl);
+
+    bind(CopilotSdkClientProvider).toSelf().inSingletonScope();
 
     bind(CopilotLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(CopilotLanguageModelsManager).toService(CopilotLanguageModelsManagerImpl);

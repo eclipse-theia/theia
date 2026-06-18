@@ -51,6 +51,41 @@ For GitHub Enterprise users, configure the enterprise URL via the `ai-features.c
 }
 ```
 
+### Experimental: Copilot SDK transport (`ai-features.copilot.useSdk`)
+
+By default the extension talks directly to the GitHub Copilot REST API. As an
+**opt-in experiment**, it can instead delegate to the official Copilot CLI via
+the [`@github/copilot-sdk`](https://github.com/github/copilot-sdk) package by
+enabling the `ai-features.copilot.useSdk` preference:
+
+```json
+{
+    "ai-features.copilot.useSdk": true
+}
+```
+
+Because the SDK is a *recognized* GitHub integration, this mode reports the full
+current model lineup (instead of only the baseline set such as GPT-4o that the
+raw REST integration is entitled to). Toggling the preference rebuilds the
+Copilot model set, so no restart is required.
+
+This mode is a prototype and has known limitations:
+
+- **Backend / Node only.** The SDK spawns the bundled `@github/copilot` CLI as a
+  subprocess over stdio, so it runs in the Theia backend.
+- **Single-turn, tools disabled.** The CLI owns its own agent loop, which is
+  incompatible with Theia's model-as-a-function contract where Theia drives the
+  tool loop. To keep behaviour predictable the session is created with no tools
+  and all permission requests are rejected, so requests are effectively
+  single-turn chat completions.
+- **Lossy history.** Multi-message histories (including tool-use/tool-result
+  turns) are flattened into a single prompt string; thinking messages are
+  dropped.
+- **No structured output.** Structured/JSON output is not supported in this mode.
+- **One CLI process per connection.** Each frontend connection currently spawns
+  its own CLI process; this is acceptable for prototyping but would need a
+  shared, per-user client for multi-user backends.
+
 ### Commands
 
 - **Copilot: Sign In** - Initiates the OAuth device flow authentication
