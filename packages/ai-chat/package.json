@@ -11,7 +11,7 @@
     "@theia/monaco": "1.72.0",
     "@theia/monaco-editor-core": "1.108.201",
     "@theia/workspace": "1.72.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.2.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
