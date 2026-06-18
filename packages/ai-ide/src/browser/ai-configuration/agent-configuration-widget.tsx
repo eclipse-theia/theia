@@ -541,16 +541,21 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             return;
         }
 
-        await this.promptFragmentCustomizationService.createCustomAgentFile(chosen.scopeDir, {
-            id,
-            name: id,
-            description: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultDescription',
-                'Custom agent. Edit this description in agent.md.'),
-            prompt: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultPrompt',
-                'You are a helpful agent. Adjust this prompt to fit your needs.'),
-            defaultLLM: 'default/universal',
-            showInChat: true
-        });
+        try {
+            await this.promptFragmentCustomizationService.createCustomAgentFile(chosen.scopeDir, {
+                id,
+                name: id,
+                description: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultDescription',
+                    'Custom agent. Edit this description in agent.md.'),
+                prompt: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultPrompt',
+                    'You are a helpful agent. Adjust this prompt to fit your needs.'),
+                defaultLLM: 'default/universal',
+                showInChat: true
+            });
+        } catch (error) {
+            this.messageService.error(nls.localize('theia/ai/ide/agentConfiguration/newAgent/createFailed',
+                'Could not create the custom agent "{0}": {1}', id, error instanceof Error ? error.message : String(error)));
+        }
     }
 
     private toggleAgentEnabled = async () => {
