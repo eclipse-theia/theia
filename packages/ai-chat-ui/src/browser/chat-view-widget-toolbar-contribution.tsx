@@ -54,6 +54,9 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
         this.chatContribution.widget.then(widget => {
             widget.onStateChanged(() => this.onChatWidgetStateChangedEmitter.fire());
         });
+        // The lock/unlock toolbar items hide on the overview (empty active session), so we need
+        // to refresh them whenever that state flips.
+        this.chatContribution.onActiveSessionEmptyChanged(() => this.onChatWidgetStateChangedEmitter.fire());
 
         this.commandRegistry.registerCommand(ChatCommands.EDIT_SESSION_SETTINGS, {
             execute: () => this.openJsonDataDialog(),

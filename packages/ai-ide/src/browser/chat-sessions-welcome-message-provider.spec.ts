@@ -20,10 +20,10 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Emitter } from '@theia/core';
-import { ChatService, ChatSession } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
-import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
+import { ChatSessionsWelcomeMessageProvider, SectionedSessions, computeVisibleSessionSlots } from './chat-sessions-welcome-message-provider';
 disableJSDOM();
 
 /**
@@ -70,117 +70,258 @@ function createFakeSession(id: string): {
     };
 }
 
-describe('ChatSessionsWelcomeMessageProvider unread state', () => {
-    let activeSessionId: string | undefined;
-    let activeWidget: unknown;
-    let widgetForActiveElement: Widget | undefined;
-    let chatService: ChatService;
-    let shell: ApplicationShell;
-    let chatViewWidget: ChatViewWidget;
-    let otherWidget: object;
+describe('ChatSessionsWelcomeMessageProvider', () => {
 
-    before(() => {
-        disableJSDOM = enableJSDOM();
+    describe('unread state', () => {
+        let activeSessionId: string | undefined;
+        let activeWidget: unknown;
+        let widgetForActiveElement: Widget | undefined;
+        let chatService: ChatService;
+        let shell: ApplicationShell;
+        let chatViewWidget: ChatViewWidget;
+        let otherWidget: object;
+
+        before(() => {
+            disableJSDOM = enableJSDOM();
+        });
+        after(() => {
+            disableJSDOM();
+        });
+
+        beforeEach(() => {
+            activeSessionId = undefined;
+            chatViewWidget = Object.create(ChatViewWidget.prototype) as ChatViewWidget;
+            otherWidget = {};
+            activeWidget = undefined;
+            widgetForActiveElement = undefined;
+            // ChatViewWidget.findActive consults document.activeElement. Provide an HTMLElement
+            // so the lookup path through shell.findWidgetForElement is exercised.
+            const focusTarget = document.createElement('div');
+            document.body.appendChild(focusTarget);
+            focusTarget.tabIndex = -1;
+            focusTarget.focus();
+            chatService = {
+                getActiveSession: () => activeSessionId ? { id: activeSessionId } as ChatSession : undefined,
+            } as unknown as ChatService;
+            shell = {
+                get activeWidget(): unknown {
+                    return activeWidget;
+                },
+                findWidgetForElement: () => widgetForActiveElement
+            } as unknown as ApplicationShell;
+        });
+
+        it('marks the session unread when a new request arrives and the chat view is not focused', () => {
+            const provider = new TestableProvider(chatService, shell);
+            const { session, fire, pushRequest } = createFakeSession('s1');
+            activeSessionId = 's1';
+            activeWidget = otherWidget;
+
+            provider.watch(session);
+            pushRequest(true);
+            fire();
+
+            expect(provider.isUnread('s1')).to.equal(true);
+        });
+
+        it('does not mark unread when the session is active AND the chat view is focused', () => {
+            const provider = new TestableProvider(chatService, shell);
+            const { session, fire, pushRequest } = createFakeSession('s1');
+            activeSessionId = 's1';
+            activeWidget = chatViewWidget;
+
+            provider.watch(session);
+            pushRequest(true);
+            fire();
+
+            expect(provider.isUnread('s1')).to.equal(false);
+        });
+
+        it('does not mark unread when focus is inside a child widget of the chat view', () => {
+            const provider = new TestableProvider(chatService, shell);
+            const { session, fire, pushRequest } = createFakeSession('s1');
+            activeSessionId = 's1';
+            // Simulate focus inside a descendant (e.g. AIChatInputWidget): the shell's
+            // activeWidget is the inner widget, but its parent chain leads to ChatViewWidget.
+            const childWidget = { parent: chatViewWidget } as unknown as Widget;
+            activeWidget = childWidget;
+            widgetForActiveElement = childWidget;
+
+            provider.watch(session);
+            pushRequest(true);
+            fire();
+
+            expect(provider.isUnread('s1')).to.equal(false);
+        });
+
+        it('marks unread when the session is not the active one, even if the chat view is focused', () => {
+            const provider = new TestableProvider(chatService, shell);
+            const { session, fire, pushRequest } = createFakeSession('s1');
+            activeSessionId = 'other';
+            activeWidget = chatViewWidget;
+
+            provider.watch(session);
+            pushRequest(true);
+            fire();
+
+            expect(provider.isUnread('s1')).to.equal(true);
+        });
+
+        it('fires onUnreadChanged once when a session transitions to unread', () => {
+            const provider = new TestableProvider(chatService, shell);
+            const { session, fire, pushRequest } = createFakeSession('s1');
+            activeSessionId = undefined;
+            activeWidget = otherWidget;
+
+            let fired = 0;
+            provider.onUnreadChanged(() => { fired++; });
+
+            provider.watch(session);
+            pushRequest(true);
+            fire();
+            pushRequest(true);
+            fire();
+
+            expect(provider.isUnread('s1')).to.equal(true);
+            expect(fired).to.equal(1);
+        });
     });
-    after(() => {
-        disableJSDOM();
+
+    describe('computeVisibleSessionSlots', () => {
+
+        it('hides the inline list when the cap is 0', () => {
+            expect(computeVisibleSessionSlots(10, 10, 0)).to.deep.equal({ activeCount: 0, restoredCount: 0 });
+        });
+
+        it('clamps a negative cap to 0', () => {
+            expect(computeVisibleSessionSlots(10, 10, -5)).to.deep.equal({ activeCount: 0, restoredCount: 0 });
+        });
+
+        it('caps active when there are no restored sessions', () => {
+            expect(computeVisibleSessionSlots(30, 0, 20)).to.deep.equal({ activeCount: 20, restoredCount: 0 });
+        });
+
+        it('shows all active when below the cap and there are no restored sessions', () => {
+            expect(computeVisibleSessionSlots(5, 0, 20)).to.deep.equal({ activeCount: 5, restoredCount: 0 });
+        });
+
+        it('caps restored when there are no active sessions', () => {
+            expect(computeVisibleSessionSlots(0, 30, 20)).to.deep.equal({ activeCount: 0, restoredCount: 20 });
+        });
+
+        it('reserves up to 5 restored slots when both sections overflow the cap', () => {
+            // 5 slots reserved for restored, the remaining 15 go to active.
+            expect(computeVisibleSessionSlots(20, 10, 20)).to.deep.equal({ activeCount: 15, restoredCount: 5 });
+        });
+
+        it('only reserves as many restored slots as there are restored sessions', () => {
+            // Just 3 restored exist, so active gets the other 17.
+            expect(computeVisibleSessionSlots(20, 3, 20)).to.deep.equal({ activeCount: 17, restoredCount: 3 });
+        });
+
+        it('gives leftover slots to restored when active does not fill its share', () => {
+            // Total (12) fits under the cap, so everything is shown.
+            expect(computeVisibleSessionSlots(2, 10, 20)).to.deep.equal({ activeCount: 2, restoredCount: 10 });
+        });
+
+        it('shows everything when the cap exceeds the total', () => {
+            expect(computeVisibleSessionSlots(2, 2, 20)).to.deep.equal({ activeCount: 2, restoredCount: 2 });
+        });
+
+        it('keeps a restored slot even when the cap is 1 and both sections are non-empty', () => {
+            expect(computeVisibleSessionSlots(10, 10, 1)).to.deep.equal({ activeCount: 0, restoredCount: 1 });
+        });
+
+        it('splits a cap of 2 evenly between both sections', () => {
+            expect(computeVisibleSessionSlots(10, 10, 2)).to.deep.equal({ activeCount: 1, restoredCount: 1 });
+        });
     });
 
-    beforeEach(() => {
-        activeSessionId = undefined;
-        chatViewWidget = Object.create(ChatViewWidget.prototype) as ChatViewWidget;
-        otherWidget = {};
-        activeWidget = undefined;
-        widgetForActiveElement = undefined;
-        // ChatViewWidget.findActive consults document.activeElement. Provide an HTMLElement
-        // so the lookup path through shell.findWidgetForElement is exercised.
-        const focusTarget = document.createElement('div');
-        document.body.appendChild(focusTarget);
-        focusTarget.tabIndex = -1;
-        focusTarget.focus();
-        chatService = {
-            getActiveSession: () => activeSessionId ? { id: activeSessionId } as ChatSession : undefined,
-        } as unknown as ChatService;
-        shell = {
-            get activeWidget(): unknown {
-                return activeWidget;
-            },
-            findWidgetForElement: () => widgetForActiveElement
-        } as unknown as ApplicationShell;
-    });
+    describe('getSections', () => {
 
-    it('marks the session unread when a new request arrives and the chat view is not focused', () => {
-        const provider = new TestableProvider(chatService, shell);
-        const { session, fire, pushRequest } = createFakeSession('s1');
-        activeSessionId = 's1';
-        activeWidget = otherWidget;
+        class SectionsTestProvider extends ChatSessionsWelcomeMessageProvider {
+            constructor(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]) {
+                super();
+                (this as unknown as { chatService: ChatService }).chatService = { getSessions: () => sessions } as unknown as ChatService;
+                this._persistedSessions = persistedSessions;
+            }
+            sections(): SectionedSessions {
+                return this.getSections();
+            }
+        }
 
-        provider.watch(session);
-        pushRequest(true);
-        fire();
+        function makeSession(id: string, title: string | undefined, opts?: {
+            lastInteraction?: Date;
+            pinnedAgentId?: string;
+            location?: ChatAgentLocation;
+            lastRequest?: { isComplete: boolean; isError: boolean };
+        }): ChatSession {
+            const requests = opts?.lastRequest ? [{ response: opts.lastRequest }] : [];
+            return {
+                id,
+                title,
+                isActive: false,
+                lastInteraction: opts?.lastInteraction,
+                pinnedAgent: opts?.pinnedAgentId ? { id: opts.pinnedAgentId } : undefined,
+                model: {
+                    location: opts?.location ?? ChatAgentLocation.Panel,
+                    getRequests: () => requests
+                }
+            } as unknown as ChatSession;
+        }
 
-        expect(provider.isUnread('s1')).to.equal(true);
-    });
+        function persisted(sessionId: string, saveDate: number): ChatSessionMetadata {
+            return { sessionId, title: sessionId, saveDate, location: ChatAgentLocation.Panel };
+        }
 
-    it('does not mark unread when the session is active AND the chat view is focused', () => {
-        const provider = new TestableProvider(chatService, shell);
-        const { session, fire, pushRequest } = createFakeSession('s1');
-        activeSessionId = 's1';
-        activeWidget = chatViewWidget;
+        function getSections(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]): SectionedSessions {
+            return new SectionsTestProvider(sessions, persistedSessions).sections();
+        }
 
-        provider.watch(session);
-        pushRequest(true);
-        fire();
+        it('excludes active sessions without a title', () => {
+            const sections = getSections([
+                makeSession('a', 'Titled'),
+                makeSession('b', undefined)
+            ], []);
+            expect(sections.active.map(s => s.sessionId)).to.deep.equal(['a']);
+        });
 
-        expect(provider.isUnread('s1')).to.equal(false);
-    });
+        it('sorts active sessions by last interaction, newest first', () => {
+            const sections = getSections([
+                makeSession('old', 'Old', { lastInteraction: new Date(1000) }),
+                makeSession('new', 'New', { lastInteraction: new Date(3000) }),
+                makeSession('mid', 'Mid', { lastInteraction: new Date(2000) })
+            ], []);
+            expect(sections.active.map(s => s.sessionId)).to.deep.equal(['new', 'mid', 'old']);
+        });
 
-    it('does not mark unread when focus is inside a child widget of the chat view', () => {
-        const provider = new TestableProvider(chatService, shell);
-        const { session, fire, pushRequest } = createFakeSession('s1');
-        activeSessionId = 's1';
-        // Simulate focus inside a descendant (e.g. AIChatInputWidget): the shell's
-        // activeWidget is the inner widget, but its parent chain leads to ChatViewWidget.
-        const childWidget = { parent: chatViewWidget } as unknown as Widget;
-        activeWidget = childWidget;
-        widgetForActiveElement = childWidget;
+        it('drops persisted entries that are already loaded as active sessions', () => {
+            const sections = getSections(
+                [makeSession('a', 'A', { lastInteraction: new Date(1000) })],
+                [persisted('a', 1000), persisted('b', 2000)]
+            );
+            expect(sections.active.map(s => s.sessionId)).to.deep.equal(['a']);
+            expect(sections.restored.map(s => s.sessionId)).to.deep.equal(['b']);
+        });
 
-        provider.watch(session);
-        pushRequest(true);
-        fire();
+        it('flags an active session whose last request completed with an error', () => {
+            const sections = getSections([
+                makeSession('ok', 'Ok', { lastRequest: { isComplete: true, isError: false } }),
+                makeSession('err', 'Err', { lastRequest: { isComplete: true, isError: true } }),
+                makeSession('running', 'Running', { lastRequest: { isComplete: false, isError: false } })
+            ], []);
+            const byId = new Map(sections.active.map(s => [s.sessionId, s.hasError]));
+            expect(byId.get('ok')).to.equal(false);
+            expect(byId.get('err')).to.equal(true);
+            expect(byId.get('running')).to.equal(false);
+        });
 
-        expect(provider.isUnread('s1')).to.equal(false);
-    });
-
-    it('marks unread when the session is not the active one, even if the chat view is focused', () => {
-        const provider = new TestableProvider(chatService, shell);
-        const { session, fire, pushRequest } = createFakeSession('s1');
-        activeSessionId = 'other';
-        activeWidget = chatViewWidget;
-
-        provider.watch(session);
-        pushRequest(true);
-        fire();
-
-        expect(provider.isUnread('s1')).to.equal(true);
-    });
-
-    it('fires onUnreadChanged once when a session transitions to unread', () => {
-        const provider = new TestableProvider(chatService, shell);
-        const { session, fire, pushRequest } = createFakeSession('s1');
-        activeSessionId = undefined;
-        activeWidget = otherWidget;
-
-        let fired = 0;
-        provider.onUnreadChanged(() => { fired++; });
-
-        provider.watch(session);
-        pushRequest(true);
-        fire();
-        pushRequest(true);
-        fire();
-
-        expect(provider.isUnread('s1')).to.equal(true);
-        expect(fired).to.equal(1);
+        it('carries over the pinned agent id and location', () => {
+            const sections = getSections([
+                makeSession('a', 'A', { pinnedAgentId: 'Coder', location: ChatAgentLocation.Panel })
+            ], []);
+            expect(sections.active[0].pinnedAgentId).to.equal('Coder');
+            expect(sections.active[0].location).to.equal(ChatAgentLocation.Panel);
+        });
     });
 });

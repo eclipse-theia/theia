@@ -17,391 +17,107 @@
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
-    ChatAgentService, ChatRequestModel, ChatResponseContent, ChatService, ChatSession, ChatSessionMetadata,
-    ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
+    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata
 } from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { ChatSessionItem } from './chat-session-item';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
-import { ApplicationShell, Card, CardActionButton, codicon, HoverService, buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
+import { ApplicationShell, buttonKeyboardProps, HoverService, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 
-const TOOLTIP_SNIPPET_MAX_LENGTH = 1000;
+/** When both Active and Restored sections are non-empty, keep at least this many Restored slots. */
+const RESTORED_MIN_RESERVATION = 5;
 
-/** Minimal view of the unread state that React components can subscribe to. */
-interface UnreadStateProvider {
-    isUnread(sessionId: string): boolean;
-    readonly onUnreadChanged: Event<string>;
+export interface SectionedSessions {
+    active: ChatSessionMetadata[];
+    restored: ChatSessionMetadata[];
 }
 
-interface SessionCardsGridProps {
-    sessions: ChatSessionMetadata[];
-    maxRows: number;
-    renderCard: (session: ChatSessionMetadata) => React.ReactNode;
-}
-
-function SessionCardsGrid({ sessions, maxRows, renderCard }: SessionCardsGridProps): React.ReactElement {
-    // eslint-disable-next-line no-null/no-null
-    const gridRef = React.useRef<HTMLDivElement | null>(null);
-    const [columns, setColumns] = React.useState(1);
-
-    const detectColumns = React.useCallback(() => {
-        const el = gridRef.current;
-        if (!el) {
-            return;
-        }
-
-        const gridStyle = getComputedStyle(el);
-        const gap = parseFloat(gridStyle.columnGap || gridStyle.gap || '0') || 0;
-
-        const containerWidth = el.getBoundingClientRect().width;
-
-        // If we have at least one child, use its actual laid-out width.
-        const first = el.firstElementChild as HTMLElement | null;
-        if (!first) {
-            setColumns(1);
-            return;
-        }
-
-        const itemWidth = first.getBoundingClientRect().width || 1;
-        const cols = Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
-
-        setColumns(prev => (prev !== cols ? cols : prev));
-    }, []);
-
-    // Detect columns synchronously before first paint to avoid flash
-    React.useLayoutEffect(() => {
-        detectColumns();
-    }, [detectColumns]);
-
-    // Track subsequent resizes
-    React.useEffect(() => {
-        const el = gridRef.current;
-        if (!el) {
-            return;
-        }
-        const observer = new ResizeObserver(detectColumns);
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [detectColumns]);
-
-    const maxVisible = maxRows * columns;
-    const visibleSessions = sessions.slice(0, maxVisible);
-
-    return (
-        <div ref={gridRef} className="theia-WelcomeMessage-SessionCards">
-            {visibleSessions.map(renderCard)}
-        </div>
-    );
-}
-
-/** Subscribes the component to the unread flag for one session. */
-function useUnreadMessages(sessionId: string, provider: UnreadStateProvider): boolean {
-    const [hasUnread, setHasUnread] = React.useState(() => provider.isUnread(sessionId));
-
-    React.useEffect(() => {
-        setHasUnread(provider.isUnread(sessionId));
-        const disposable = provider.onUnreadChanged(changedId => {
-            if (changedId === sessionId) {
-                setHasUnread(provider.isUnread(sessionId));
-            }
-        });
-        return () => disposable.dispose();
-    }, [sessionId, provider]);
-
-    return hasUnread;
-}
-
-/** Re-renders the caller whenever the formatted time-ago string would change. */
-function useTimeAgo(date: number): string {
-    const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
-
-    React.useEffect(() => {
-        let timeoutId: ReturnType<typeof setTimeout>;
-
-        const schedule = () => {
-            const ageMs = Date.now() - date;
-            // Update frequently when very recent, then progressively slower.
-            const delayMs = ageMs < 60_000 ? 10_000
-                : ageMs < 3_600_000 ? 60_000
-                    : 3_600_000;
-            timeoutId = setTimeout(() => { forceUpdate(); schedule(); }, delayMs);
-        };
-
-        schedule();
-        return () => clearTimeout(timeoutId);
-    }, [date]);
-
-    return formatTimeAgo(date);
-}
-
-/** Read an error message from a completed-with-error response, if any. */
-function getResponseErrorMessage(response: ChatRequestModel['response']): string | undefined {
-    if (response.errorObject?.message) {
-        return response.errorObject.message;
-    }
-    const errorPart = response.response.content.find(ErrorChatResponseContent.is);
-    return errorPart?.asDisplayString?.();
+export interface VisibleSessionSlots {
+    activeCount: number;
+    restoredCount: number;
 }
 
 /**
- * Build a DOM fragment that renders a {@link FormattedProviderError} for the tooltip.
- * Details are intentionally omitted — the hover popup is not interactive, so a
- * <details> expander wouldn't work. The full payload is available in the chat output.
+ * Allocates the capped number of visible items between the Active and Restored sections of the
+ * overview. When both sections are non-empty, up to {@link RESTORED_MIN_RESERVATION} slots are
+ * reserved for Restored so active sessions cannot crowd it out entirely. A cap of 0 hides the
+ * inline list (every session stays reachable via the "Browse all chats..." link).
  */
-function renderFormattedProviderError(error: FormattedProviderError): HTMLElement {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'theia-chat-session-tooltip-error';
-    const prefix = document.createElement('span');
-    prefix.className = 'theia-chat-session-tooltip-error-prefix';
-    prefix.textContent = error.status
-        ? `${nls.localizeByDefault('Error')} ${error.status}:`
-        : `${nls.localizeByDefault('Error')}:`;
-    wrapper.appendChild(prefix);
-    const headline = error.message.length > TOOLTIP_SNIPPET_MAX_LENGTH
-        ? error.message.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
-        : error.message;
-    wrapper.appendChild(document.createTextNode(' ' + headline));
-    return wrapper;
+export function computeVisibleSessionSlots(activeTotal: number, restoredTotal: number, maxSessions: number): VisibleSessionSlots {
+    const cap = Math.max(0, maxSessions);
+    if (cap === 0) {
+        return { activeCount: 0, restoredCount: 0 };
+    }
+    if (restoredTotal === 0) {
+        return { activeCount: Math.min(activeTotal, cap), restoredCount: 0 };
+    }
+    if (activeTotal === 0) {
+        return { activeCount: 0, restoredCount: Math.min(restoredTotal, cap) };
+    }
+    const reserved = Math.min(restoredTotal, Math.min(RESTORED_MIN_RESERVATION, Math.max(1, cap - 1)));
+    const activeCount = Math.min(activeTotal, cap - reserved);
+    const restoredCount = Math.min(restoredTotal, cap - activeCount);
+    return { activeCount, restoredCount };
 }
 
-/** Collect display text from response content, excluding thinking parts. */
-function responseToTooltipString(content: ChatResponseContent[]): string {
-    return content
-        .filter(c => !ThinkingChatResponseContent.is(c))
-        .map(c => {
-            if (ChatResponseContent.hasAsString(c)) {
-                return c.asString();
-            }
-            return undefined;
-        })
-        .filter((text): text is string => text !== undefined && text !== '')
-        .join('\n\n');
+interface SessionsListProps {
+    sections: SectionedSessions;
+    /** Total cap on items shown on the home view; overflow surfaces via the Browse all link. */
+    maxSessions: number;
+    renderItem: (session: ChatSessionMetadata, isRestored: boolean) => React.ReactNode;
+    onBrowseAll: () => void;
 }
 
-interface ChatSessionCardProps {
-    session: ChatSessionMetadata;
-    chatService: ChatService;
-    chatAgentService: ChatAgentService;
-    hoverService: HoverService;
-    markdownRenderer: MarkdownRenderer;
-    unreadState: UnreadStateProvider;
-    onClick: () => void;
-    actionButtons?: CardActionButton[];
-}
-
-function ChatSessionCard(
-    { session, chatService, chatAgentService, hoverService, markdownRenderer, unreadState, onClick, actionButtons }: ChatSessionCardProps
-): React.ReactElement {
-    // eslint-disable-next-line no-null/no-null
-    const wrapperRef = React.useRef<HTMLDivElement | null>(null);
-    const hoverActiveRef = React.useRef(false);
-
-    const timeAgo = useTimeAgo(session.saveDate);
-    const [isWorking, setIsWorking] = React.useState(false);
-    const [hasError, setHasError] = React.useState(session.hasError === true);
-    const hasUnread = useUnreadMessages(session.sessionId, unreadState);
-
-    // Sync error state from metadata when it changes after initial render
-    React.useEffect(() => {
-        setHasError(session.hasError === true);
-    }, [session.hasError]);
-
-    // Resolve the agent for icon and display name
-    const agent = session.pinnedAgentId ? chatAgentService.getAgent(session.pinnedAgentId) : undefined;
-    const agentIcon = agent?.iconClass ?? codicon('comment-discussion');
-    const subtitle = agent ? `@${agent.name} \u00b7 ${timeAgo}` : timeAgo;
-
-    React.useEffect(() => {
-        const trash = new DisposableCollection();
-
-        const attach = (s: ChatSession) => {
-            const recompute = () => {
-                const requests = s.model.getRequests();
-                setIsWorking(requests.some(ChatRequestModel.isInProgress));
-                const lastReq = requests.at(-1);
-                setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
-            };
-            recompute();
-            s.model.onDidChange(recompute, undefined, trash);
-        };
-
-        const existing = chatService.getSession(session.sessionId);
-        if (existing) {
-            attach(existing);
-        } else {
-            chatService.onSessionEvent(event => {
-                if (event.type === 'created' && event.sessionId === session.sessionId) {
-                    const s = chatService.getSession(session.sessionId);
-                    if (s) {
-                        attach(s);
-                    }
-                }
-            }, undefined, trash);
-        }
-
-        return () => trash.dispose();
-    }, [session.sessionId, chatService]);
-
-    const handleMouseEnter = React.useCallback(async (e: React.MouseEvent) => {
-        if ((e.target as Element).closest('.theia-Card-action-btn')) {
-            return;
-        }
-        hoverActiveRef.current = true;
-        const target = wrapperRef.current;
-        if (!target) { return; }
-
-        let chatSession: ChatSession | undefined = chatService.getSession(session.sessionId);
-        if (!chatSession) {
-            chatSession = await chatService.getOrRestoreSession(session.sessionId);
-        }
-        if (!hoverActiveRef.current || !chatSession) { return; }
-
-        const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError);
-        hoverService.requestHover({ content, target, position: 'left' });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError]);
-    React.useEffect(() => () => { hoverActiveRef.current = false; }, []); // Block mouseEnter proceeding on unmount
-
-    const handleMouseLeave = React.useCallback(() => {
-        hoverActiveRef.current = false;
-        // Cancel any pending hover that has not yet been displayed
-        // (if it was already shown the hover service handles mouse-out internally)
-        hoverService.cancelHover();
-    }, [hoverService]);
-
-    const handleMouseOver = React.useCallback((e: React.MouseEvent) => {
-        if ((e.target as Element).closest('.theia-Card-action-btn')) {
-            hoverActiveRef.current = false;
-            hoverService.cancelHover();
-        }
-    }, [hoverService]);
-
-    const wrapperClass = [
-        'theia-chat-session-card-wrapper',
-        isWorking && 'theia-chat-session-card-working',
-        hasError && !isWorking && 'theia-chat-session-card-error'
-    ].filter(Boolean).join(' ');
+function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: SessionsListProps): React.ReactElement {
+    const total = sections.active.length + sections.restored.length;
+    const { activeCount, restoredCount } = computeVisibleSessionSlots(sections.active.length, sections.restored.length, maxSessions);
+    const activeVisible = sections.active.slice(0, activeCount);
+    const restoredVisible = sections.restored.slice(0, restoredCount);
+    const hiddenCount = total - activeVisible.length - restoredVisible.length;
 
     return (
-        <div ref={wrapperRef}
-            className={wrapperClass}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onMouseOver={handleMouseOver}>
-            <Card
-                icon={isWorking ? `${codicon('loading')} theia-animation-spin` : agentIcon}
-                title={session.title || nls.localizeByDefault('Untitled Chat')}
-                subtitle={subtitle}
-                actionButtons={actionButtons}
-                onClick={onClick}
-            />
-            {hasUnread && !isWorking && !hasError && <div className="theia-chat-session-badge-unread" />}
+        <div className="theia-WelcomeMessage-SessionsList">
+            {activeVisible.length > 0 && (
+                <div className="theia-WelcomeMessage-SessionsGroup">
+                    <div className="theia-WelcomeMessage-SessionsHeader">
+                        {nls.localizeByDefault('Active')}
+                    </div>
+                    {activeVisible.map(s => renderItem(s, false))}
+                </div>
+            )}
+            {restoredVisible.length > 0 && (
+                <div className="theia-WelcomeMessage-SessionsGroup">
+                    <div className="theia-WelcomeMessage-SessionsHeader">
+                        {nls.localize('theia/ai/ide/sectionRestored', 'Restored')}
+                    </div>
+                    {restoredVisible.map(s => renderItem(s, true))}
+                </div>
+            )}
+            {hiddenCount > 0 && (
+                <div className="theia-WelcomeMessage-SessionsFooter">
+                    <a className="theia-WelcomeMessage-FooterLink"
+                        {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
+                        onClick={onBrowseAll}
+                        onKeyDown={e => {
+                            if (isActivationKey(e)) {
+                                e.preventDefault();
+                                onBrowseAll();
+                            }
+                        }}>
+                        {nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...')}
+                    </a>
+                </div>
+            )}
         </div>
     );
-}
-
-function buildSessionTooltip(
-    session: ChatSession, metadata: ChatSessionMetadata,
-    agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean, isRunning: boolean, hasError: boolean
-): HTMLElement {
-    const requests = session.model.getRequests();
-    const lastRequest = requests.at(-1);
-
-    const container = document.createElement('div');
-    container.className = 'theia-chat-session-tooltip';
-
-    if (isRunning) {
-        const badge = document.createElement('div');
-        badge.className = 'theia-chat-session-badge-running-tooltip';
-        badge.textContent = nls.localizeByDefault('Running');
-        container.appendChild(badge);
-    } else if (hasError) {
-        const badge = document.createElement('div');
-        badge.className = 'theia-chat-session-badge-error-tooltip';
-        badge.textContent = nls.localizeByDefault('Error');
-        container.appendChild(badge);
-    } else if (isUnread) {
-        const badge = document.createElement('div');
-        badge.className = 'theia-chat-session-badge-unread-tooltip';
-        badge.textContent = nls.localize('theia/ai/ide/tooltip/unread', 'Unread');
-        container.appendChild(badge);
-    }
-
-    if (lastRequest) {
-        const lastResponse = lastRequest.response;
-        const errorText = hasError ? getResponseErrorMessage(lastResponse) : undefined;
-
-        if (errorText) {
-            const label = document.createElement('div');
-            label.className = 'theia-chat-session-tooltip-label';
-            label.textContent = nls.localize('theia/ai/ide/tooltip/errorMessage', 'Error message');
-            container.appendChild(label);
-            container.appendChild(renderFormattedProviderError(formatProviderError(errorText)));
-
-            const hr = document.createElement('hr');
-            container.appendChild(hr);
-        } else {
-            const messageText = lastResponse.isComplete
-                ? (responseToTooltipString(lastResponse.response.content) || undefined)
-                : (lastRequest.request.text || undefined);
-
-            if (messageText) {
-                const snippet = messageText.length > TOOLTIP_SNIPPET_MAX_LENGTH
-                    ? messageText.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
-                    : messageText;
-                const label = document.createElement('div');
-                label.className = 'theia-chat-session-tooltip-label';
-                label.textContent = nls.localize('theia/ai/ide/tooltip/lastMessage', 'Last message');
-                container.appendChild(label);
-
-                const snippetEl = document.createElement('div');
-                snippetEl.className = 'theia-chat-session-tooltip-snippet';
-                snippetEl.appendChild(markdownRenderer.render({ value: snippet }).element);
-                container.appendChild(snippetEl);
-
-                const hr = document.createElement('hr');
-                container.appendChild(hr);
-            }
-        }
-    }
-
-    const dl = document.createElement('dl');
-
-    if (lastRequest) {
-        const agentId = lastRequest.response.agentId ?? requests.findLast(r => r.response.agentId)?.response.agentId;
-        if (agentId) {
-            const agentName = agentService.getAgent(agentId)?.name ?? agentId;
-            addDlEntry(dl, nls.localizeByDefault('Agent'), '@' + agentName);
-        }
-    }
-
-    const count = requests.length;
-    const exchangeLabel = count === 1
-        ? nls.localize('theia/ai/ide/tooltip/oneExchange', '1 exchange')
-        : nls.localize('theia/ai/ide/tooltip/multipleExchanges', '{0} exchanges', count);
-    addDlEntry(dl, nls.localize('theia/ai/ide/tooltip/messages', 'Messages'), exchangeLabel);
-
-    const date = session.lastInteraction ?? new Date(metadata.saveDate);
-    addDlEntry(dl, nls.localize('theia/ai/ide/tooltip/lastActivity', 'Last activity'), date.toLocaleString());
-
-    container.appendChild(dl);
-    return container;
-}
-
-function addDlEntry(dl: HTMLDListElement, term: string, detail: string): void {
-    const dt = document.createElement('dt');
-    dt.textContent = term;
-    dl.appendChild(dt);
-    const dd = document.createElement('dd');
-    dd.textContent = detail;
-    dl.appendChild(dd);
 }
 
 @injectable()
@@ -427,8 +143,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(MarkdownRendererFactory)
     protected readonly markdownRendererFactory: MarkdownRendererFactory;
 
-    @inject(ContributionProvider) @named(ChatSessionCardActionContribution)
-    protected readonly chatSessionCardActionContributions: ContributionProvider<ChatSessionCardActionContribution>;
+    @inject(ContributionProvider) @named(ChatSessionItemActionContribution)
+    protected readonly chatSessionItemActionContributions: ContributionProvider<ChatSessionItemActionContribution>;
 
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
@@ -450,7 +166,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this._markdownRenderer;
     }
 
-    protected _sessions: ChatSessionMetadata[] = [];
+    /** Persisted sessions index sorted newest first. May include duplicates of active sessions. */
+    protected _persistedSessions: ChatSessionMetadata[] = [];
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
     readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
@@ -472,6 +189,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
             } else if (event.type === 'deleted') {
                 this.unwatchSession(event.sessionId);
             }
+            // `loadSessions` fires `onStateChangedEmitter` once the (re)load settles, so we don't
+            // fire it again here: a single session event should trigger a single re-render.
             this.loadSessions();
         });
 
@@ -483,10 +202,10 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
                 this.loadSessions();
-            } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
-                this.onStateChangedEmitter.fire();
             } else if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
                 this.updateInputEnabled();
+            } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
+                this.onStateChangedEmitter.fire();
             }
         });
     }
@@ -504,29 +223,27 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected async loadSessions(): Promise<void> {
         if (!this.isPersistenceEnabled()) {
-            this._sessions = [];
+            this._persistedSessions = [];
             this.onStateChangedEmitter.fire();
             return;
         }
 
-        // Check if there are any persisted sessions without initializing storage
         const hasSessions = await this.chatService.hasPersistedSessions();
         if (!hasSessions) {
-            this._sessions = [];
+            this._persistedSessions = [];
             this.onStateChangedEmitter.fire();
             return;
         }
-
-        this.onStateChangedEmitter.fire();
 
         try {
             const index = await this.chatService.getPersistedSessions();
-            this._sessions = Object.values(index)
+            this._persistedSessions = Object.values(index)
                 .toSorted((a, b) => b.saveDate - a.saveDate);
         } catch (error) {
             console.error('Failed to load persisted sessions:', error);
-            this._sessions = [];
+            this._persistedSessions = [];
         } finally {
+            // Fire once after the load settles; the data was stale until now anyway.
             this.onStateChangedEmitter.fire();
         }
     }
@@ -534,10 +251,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     protected isPersistenceEnabled(): boolean {
         const limit = this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
         return limit !== 0;
-    }
-
-    protected getMaxRows(): number {
-        return this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 3);
     }
 
     isUnread(sessionId: string): boolean {
@@ -606,85 +319,95 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return reqs.filter(r => r.response.isComplete).length;
     }
 
+    /**
+     * Splits sessions into active vs. restored. Active sessions are sourced from
+     * `chatService.getSessions()` (in-memory). Restored sessions are the persisted index entries
+     * that aren't already loaded as an active session.
+     */
+    protected getSections(): SectionedSessions {
+        const activeRaw = this.chatService.getSessions().filter(s => !!s.title);
+        const activeIds = new Set(activeRaw.map(s => s.id));
+        const active: ChatSessionMetadata[] = activeRaw
+            .toSorted((a, b) => (b.lastInteraction?.getTime() ?? 0) - (a.lastInteraction?.getTime() ?? 0))
+            .map(session => {
+                const lastReq = session.model.getRequests().at(-1);
+                const hasError = lastReq?.response.isComplete === true && lastReq?.response.isError === true;
+                return {
+                    sessionId: session.id,
+                    title: session.title!,
+                    saveDate: session.lastInteraction?.getTime() ?? Date.now(),
+                    location: session.model.location,
+                    pinnedAgentId: session.pinnedAgent?.id,
+                    hasError
+                };
+            });
+        const restored = this._persistedSessions.filter(metadata => !activeIds.has(metadata.sessionId));
+        return { active, restored };
+    }
+
     renderWelcomeMessage(): React.ReactNode {
         if (!this._inputEnabled) {
             return undefined;
         }
-        const maxRows = this.getMaxRows();
-        if (!this.isPersistenceEnabled() || maxRows === 0 || this._sessions.length === 0) {
+        const sections = this.getSections();
+        const sessionCount = sections.active.length + sections.restored.length;
+        if (!this.isPersistenceEnabled() || sessionCount === 0) {
+            // Empty state: let other providers (IDE welcome) show their onboarding content.
             return undefined;
         }
-        return this.renderSessionsSection();
+        return this.renderSessionsSection(sections);
     }
 
-    protected renderSessionsSection(): React.ReactNode {
-        const maxRows = this.getMaxRows();
-
+    protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
+        const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
                 <div className="theia-WelcomeMessage-SessionsSection">
-                    <h2>
-                        {nls.localize('theia/ai/ide/recentChats', 'Recent Chats')}
-                    </h2>
-                    <SessionCardsGrid
-                        sessions={this._sessions}
-                        maxRows={maxRows}
-                        renderCard={this.renderSessionCard}
+                    <SessionsList
+                        sections={sections}
+                        maxSessions={maxSessions}
+                        renderItem={this.renderSessionItem}
+                        onBrowseAll={this.handleBrowseAllChats}
                     />
-                    <div className="theia-WelcomeMessage-BrowseAllLink">
-                        <a {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
-                            onClick={this.handleBrowseAllChats}
-                            onKeyDown={this.handleBrowseAllChatsKeyDown}>
-                            {nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...')}
-                        </a>
-                    </div>
                 </div>
             </div>
         );
     }
 
-    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => {
-        const actionButtons: CardActionButton[] = this.chatSessionCardActionContributions
+    protected renderSessionItem = (session: ChatSessionMetadata, isRestored: boolean): React.ReactNode => {
+        const actions = this.chatSessionItemActionContributions
             .getContributions()
             .flatMap(c => c.getActions(session))
             .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
-            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
-            .map(action => ({
-                iconClass: action.iconClass,
-                title: action.tooltip ?? '',
-                onClick: (e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    this.commandRegistry.executeCommand(action.commandId, session);
-                }
-            }));
+            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
         return (
-            <ChatSessionCard
+            <ChatSessionItem
                 key={session.sessionId}
                 session={session}
+                isRestored={isRestored}
                 chatService={this.chatService}
                 chatAgentService={this.chatAgentService}
                 hoverService={this.hoverService}
                 markdownRenderer={this.markdownRenderer}
                 unreadState={this}
-                onClick={() => this.handleSessionCardClick(session.sessionId)}
-                actionButtons={actionButtons}
+                onClick={() => this.handleSessionItemClick(session.sessionId)}
+                actions={actions}
+                onAction={this.handleSessionItemAction}
+                formatTimeAgo={date => formatTimeAgo(date)}
             />
         );
     };
 
-    protected handleSessionCardClick = async (sessionId: string): Promise<void> => {
+    protected handleSessionItemAction = (action: ChatSessionItemAction, session: ChatSessionMetadata): void => {
+        this.commandRegistry.executeCommand(action.commandId, session);
+    };
+
+    protected handleSessionItemClick = async (sessionId: string): Promise<void> => {
         await this.chatService.getOrRestoreSession(sessionId);
         this.chatService.setActiveSession(sessionId, { focus: true });
     };
 
     protected handleBrowseAllChats = (): void => {
         this.commandRegistry.executeCommand(AI_CHAT_SHOW_CHATS_COMMAND.id);
-    };
-
-    protected handleBrowseAllChatsKeyDown = (e: React.KeyboardEvent): void => {
-        if (isActivationKey(e)) {
-            e.preventDefault();
-            this.handleBrowseAllChats();
-        }
     };
 }

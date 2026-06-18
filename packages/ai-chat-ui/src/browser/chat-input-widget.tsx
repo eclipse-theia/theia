@@ -73,7 +73,7 @@ import {
     getLatestTokenUsage,
     getUsageColorClass
 } from './chat-token-usage-indicator-util';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from './chat-view-commands';
+import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -1010,8 +1010,8 @@ export class AIChatInputWidget extends ReactWidget {
                 console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
-            this.commandService.executeCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id).catch(error => {
-                console.error(`Failed to execute '${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}' from token usage warning`, error);
+            this.commandService.executeCommand(AI_CHAT_HOME.id).catch(error => {
+                console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
             this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
@@ -2668,7 +2668,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
             </div>
             <div className={`theia-ChatInput-ChangeSet-List ${isCollapsed ? 'collapsed' : 'expanded'}`}>
                 <ul>
-                    {elements.map(element => ChangeSetElement(element))}
+                    {elements.map(element => <ChangeSetElement key={element.uri} {...element} />)}
                 </ul>
             </div>
         </div>
@@ -2696,7 +2696,7 @@ function toUiElement(element: ChangeSetElement,
 }
 
 const ChangeSetElement: React.FC<ChangeSetUIElement> = element => (
-    <li key={element.uri} title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
+    <li title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`}>
         </div>
         <div className='theia-ChatInput-ChangeSet-labelParts'>
