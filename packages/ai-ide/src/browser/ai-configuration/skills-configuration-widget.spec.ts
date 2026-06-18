@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM, enableReactActEnvironment } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
+let disableReactActEnvironment = enableReactActEnvironment();
 
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { MessageLoop } from '@theia/core/shared/@lumino/messaging';
 
 import { Emitter, URI } from '@theia/core';
 
@@ -34,32 +35,43 @@ import { Agent, AgentService } from '@theia/ai-core';
 
 import { AISkillsConfigurationWidget } from './skills-configuration-widget';
 
+disableReactActEnvironment();
 disableJSDOM();
 
 describe('AISkillsConfigurationWidget', () => {
     let host: HTMLElement;
+    let widgets: AISkillsConfigurationWidget[];
 
     before(() => {
         disableJSDOM = enableJSDOM();
+        disableReactActEnvironment = enableReactActEnvironment();
     });
 
     after(() => {
+        disableReactActEnvironment();
         disableJSDOM();
     });
 
     beforeEach(() => {
         host = document.createElement('div');
         document.body.appendChild(host);
+        widgets = [];
     });
 
     afterEach(() => {
-        ReactDOM.unmountComponentAtNode(host);
+        React.act(() => {
+            for (const widget of widgets) {
+                widget.dispose();
+            }
+        });
         host.remove();
     });
 
     function renderWidget(widget: AISkillsConfigurationWidget): void {
-        const element = (widget as unknown as { render: () => React.ReactNode }).render();
-        ReactDOM.render(element as React.ReactElement, host);
+        React.act(() => {
+            widget.update();
+            MessageLoop.flush();
+        });
     }
 
     function createMockSkillService(skills: Skill[] = []): Partial<SkillService> {
@@ -98,6 +110,8 @@ describe('AISkillsConfigurationWidget', () => {
         (widget as unknown as { agentService: AgentService }).agentService = createMockAgentService(agents) as AgentService;
         (widget as unknown as { openerService: OpenerService }).openerService = (openerService ?? {}) as OpenerService;
         (widget as unknown as { init: () => void }).init();
+        host.appendChild(widget.node);
+        widgets.push(widget);
         return widget;
     }
 

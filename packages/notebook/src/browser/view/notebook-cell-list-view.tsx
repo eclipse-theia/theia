@@ -61,7 +61,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     protected toDispose = new DisposableCollection();
 
     protected static dragGhost: HTMLElement | undefined;
-    protected cellListRef: React.RefObject<HTMLUListElement> = React.createRef();
+    protected cellListRef = React.createRef<HTMLUListElement>();
 
     constructor(props: CellListProps) {
         super(props);

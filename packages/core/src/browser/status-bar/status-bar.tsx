@@ -99,7 +99,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected internalSetColor(color?: string): void {
         this.color = color;
     }
-    protected render(): JSX.Element {
+    protected render(): React.JSX.Element {
         const leftEntries = Array.from(this.viewModel.getLeft(), entry => this.renderElement(entry));
         const rightEntries = Array.from(this.viewModel.getRight(), entry => this.renderElement(entry));
 
@@ -192,9 +192,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         return attrs;
     }
 
-    protected renderElement(entry: StatusBarViewEntry): JSX.Element {
+    protected renderElement(entry: StatusBarViewEntry): React.JSX.Element {
         const childStrings = this.entryService.parse(entry.entry.text);
-        const children: JSX.Element[] = [];
+        const children: React.JSX.Element[] = [];
 
         childStrings.forEach((val, key) => {
             if (LabelIcon.is(val)) {

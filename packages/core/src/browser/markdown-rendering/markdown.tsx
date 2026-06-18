@@ -157,10 +157,10 @@ export function useMarkdown(
     markdownRenderer: MarkdownRenderer,
     markdownOptions?: MarkdownProps['markdownOptions'],
     onRender?: (element: HTMLElement | undefined) => void
-): React.RefObject<HTMLDivElement> {
+): React.Ref<HTMLDivElement> {
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>();
+    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>(undefined);
 
     const renderedElement = React.useMemo(() => {
         renderResultRef.current?.dispose();
