@@ -17,7 +17,9 @@
 import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
+import {
+    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation
+} from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -1591,14 +1593,14 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * Returns all locations of existing customAgents.yml files and `agents/` directories,
      * plus the canonical locations where new agents would be created (one per scope).
      */
-    async getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]> {
-        const locations: { uri: URI, exists: boolean }[] = [];
+    async getCustomAgentsLocations(): Promise<CustomAgentsLocation[]> {
+        const locations: CustomAgentsLocation[] = [];
 
         const collect = async (parentDir: URI): Promise<void> => {
             const agentsDirURI = parentDir.resolve(CUSTOM_AGENTS_DIRECTORY);
-            locations.push({ uri: agentsDirURI, exists: await this.fileService.exists(agentsDirURI) });
+            locations.push({ uri: agentsDirURI, exists: await this.fileService.exists(agentsDirURI), kind: 'agents-dir' });
             const yamlURI = parentDir.resolve('customAgents.yml');
-            locations.push({ uri: yamlURI, exists: await this.fileService.exists(yamlURI) });
+            locations.push({ uri: yamlURI, exists: await this.fileService.exists(yamlURI), kind: 'legacy-yaml' });
         };
 
         // Global templates directory

@@ -227,6 +227,17 @@ export namespace CustomAgentDescription {
 }
 
 /**
+ * A discoverable custom-agent location within a single prompt-templates scope. `kind` distinguishes
+ * the per-agent `agents/` directory from the legacy `customAgents.yml` file; consumers should
+ * branch on it rather than inspecting the URI's basename.
+ */
+export interface CustomAgentsLocation {
+    uri: URI;
+    exists: boolean;
+    kind: 'agents-dir' | 'legacy-yaml';
+}
+
+/**
  * Service responsible for customizing prompt fragments
  */
 export const PromptFragmentCustomizationService = Symbol('PromptFragmentCustomizationService');
@@ -346,10 +357,12 @@ export interface PromptFragmentCustomizationService {
     getCustomAgents(): Promise<CustomAgentDescription[]>;
 
     /**
-     * Gets the locations of custom agent configuration files
-     * @returns Array of URIs and existence status
+     * Gets the locations of custom agent configuration files. Each scope contributes both an
+     * `agents/` directory entry and a legacy `customAgents.yml` entry, discriminated by
+     * {@link CustomAgentsLocation.kind}.
+     * @returns Array of locations with their kind and existence status
      */
-    getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
+    getCustomAgentsLocations(): Promise<CustomAgentsLocation[]>;
 
     /**
      * Creates a per-agent file at `<parentDirectory>/agents/<agent.id>/agent.md` from the given

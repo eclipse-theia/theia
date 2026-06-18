@@ -42,7 +42,7 @@ import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
-import { nls } from '@theia/core';
+import { MessageService, nls } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { AgentNotificationSettings } from './components/agent-notification-settings';
@@ -89,6 +89,9 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected languageModels: LanguageModel[] | undefined;
     protected languageModelAliases: LanguageModelAlias[] = [];
@@ -489,9 +492,11 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         // the YAML entries exist only for backward-compat / discovery.
         const allLocations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
         const scopeOptions = allLocations
-            .filter(l => l.uri.path.base === 'agents')
+            .filter(l => l.kind === 'agents-dir')
             .map(l => ({ scopeDir: l.uri.parent, agentsDir: l.uri }));
         if (scopeOptions.length === 0) {
+            this.messageService.warn(nls.localize('theia/ai/ide/agentConfiguration/newAgent/noLocation',
+                'Cannot create a custom agent: no prompt-templates location is configured. Set a global or workspace prompt-templates folder and try again.'));
             return;
         }
 
