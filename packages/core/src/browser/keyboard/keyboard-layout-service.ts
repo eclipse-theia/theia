@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import type { IWindowsKeyMapping } from 'native-keymap';
+import type { IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
@@ -160,16 +160,20 @@ export class KeyboardLayoutService {
                     if (isWindows) {
                         this.addWindowsKeyMapping(key2KeyCode, mappedKey, (keyMapping as IWindowsKeyMapping).vkey, keyMapping.value);
                     } else {
-                        if (keyMapping.value) {
+                        // Dead keys (e.g. the combining-accent layer of Option+E on macOS US) report a display
+                        // glyph that collides with real keys, so they must not be registered as if they produced that
+                        // literal character. The dead-key flags only exist on macOS layouts; elsewhere they are undefined.
+                        const macMapping = keyMapping as IMacKeyMapping;
+                        if (keyMapping.value && !macMapping.valueIsDeadKey) {
                             this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
                         }
-                        if (keyMapping.withShift) {
+                        if (keyMapping.withShift && !macMapping.withShiftIsDeadKey) {
                             this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
                         }
-                        if (keyMapping.withAltGr) {
+                        if (keyMapping.withAltGr && !macMapping.withAltGrIsDeadKey) {
                             this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
                         }
-                        if (keyMapping.withShiftAltGr) {
+                        if (keyMapping.withShiftAltGr && !macMapping.withShiftAltGrIsDeadKey) {
                             this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
                         }
                     }
