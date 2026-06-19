@@ -16,12 +16,17 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon } from '@theia/core/lib/browser';
+import {
+    FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon,
+    TreeNode, TreeSelection
+} from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager, ProblemStat } from './problem-manager';
 import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
+import { ProblemTreeModel } from './problem-tree-model';
+import { MarkerNode } from '../marker-tree';
 import { MenuPath, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -49,6 +54,9 @@ export namespace ProblemsCommands {
     };
     export const COPY_MESSAGE: Command = {
         id: 'problems.copy.message',
+    };
+    export const SELECT_ALL: Command = {
+        id: 'problems.select.all'
     };
     export const CLEAR_ALL = Command.toLocalizedCommand({
         id: 'problems.clear.all',
@@ -136,22 +144,40 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             isVisible: widget => this.withWidget(widget, () => true),
             execute: widget => this.withWidget(widget, () => this.collapseAllProblems())
         });
-        commands.registerCommand(ProblemsCommands.COPY,
-            new ProblemSelection.CommandHandler(this.selectionService, {
-                multi: false,
-                isEnabled: () => true,
-                isVisible: () => true,
-                execute: selection => this.copy(selection)
+
+        commands.registerCommand(ProblemsCommands.COPY, {
+            isVisible: () => this.withWidget(undefined, widget => {
+                const markerNodes = widget.model.selectedNodes.filter(MarkerNode.is);
+                return markerNodes.length > 0;
+            }),
+            execute: () => this.withWidget(undefined, widget => {
+                const selections = widget.model.selectedNodes
+                    .filter(MarkerNode.is)
+                    .map(node => ({ marker: node.marker }));
+                if (selections.length > 0) {
+                    this.copy(selections);
+                }
             })
-        );
-        commands.registerCommand(ProblemsCommands.COPY_MESSAGE,
-            new ProblemSelection.CommandHandler(this.selectionService, {
-                multi: false,
-                isEnabled: () => true,
-                isVisible: () => true,
-                execute: selection => this.copyMessage(selection)
+        });
+        commands.registerCommand(ProblemsCommands.COPY_MESSAGE, {
+            isVisible: () => this.withWidget(undefined, widget => {
+                const markerNodes = widget.model.selectedNodes.filter(MarkerNode.is);
+                return markerNodes.length > 0;
+            }),
+            execute: () => this.withWidget(undefined, widget => {
+                const selections = widget.model.selectedNodes
+                    .filter(MarkerNode.is)
+                    .map(node => ({ marker: node.marker }));
+                if (selections.length > 0) {
+                    this.copyMessage(selections);
+                }
             })
-        );
+        });
+        commands.registerCommand(ProblemsCommands.SELECT_ALL, {
+            isEnabled: () => true,
+            isVisible: () => true,
+            execute: () => this.selectAllProblems()
+        });
         commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
@@ -175,6 +201,11 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
             label: nls.localizeByDefault('Collapse All'),
             order: '2'
+        });
+        menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
+            commandId: ProblemsCommands.SELECT_ALL.id,
+            label: nls.localizeByDefault('Select All'),
+            order: '3'
         });
     }
 
@@ -203,6 +234,29 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
+    // New method added to support Select All functionality
+    protected async selectAllProblems(): Promise<void> {
+        const widget = await this.widget;
+        const { model } = widget;
+        const root = model.root as CompositeTreeNode;
+        if (root) {
+            model.clearSelection();
+            this.selectAllNodes(root, model);
+        }
+    }
+
+    // New helper method to recursively select all nodes
+    protected selectAllNodes(node: TreeNode, model: ProblemTreeModel): void {
+        if (SelectableTreeNode.is(node)) {
+            model.addSelection({ node, type: TreeSelection.SelectionType.TOGGLE });
+        }
+        if (CompositeTreeNode.is(node) && node.children) {
+            for (const child of node.children) {
+                this.selectAllNodes(child, model);
+            }
+        }
+    }
+
     protected addToClipboard(content: string): void {
         const handleCopy = (e: ClipboardEvent) => {
             document.removeEventListener('copy', handleCopy);
@@ -215,27 +269,33 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         document.execCommand('copy');
     }
 
-    protected copy(selection: ProblemSelection): void {
-        const marker = selection.marker as ProblemMarker;
-        const serializedProblem = JSON.stringify({
-            resource: marker.uri,
-            owner: marker.owner,
-            code: marker.data.code,
-            severity: marker.data.severity,
-            message: marker.data.message,
-            source: marker.data.source,
-            startLineNumber: marker.data.range.start.line,
-            startColumn: marker.data.range.start.character,
-            endLineNumber: marker.data.range.end.line,
-            endColumn: marker.data.range.end.character
-        }, undefined, '\t');
-
-        this.addToClipboard(serializedProblem);
+    protected copy(selections: ProblemSelection | ProblemSelection[]): void {
+        const selectionsArray = Array.isArray(selections) ? selections : [selections];
+        const serializedProblems = selectionsArray.map(selection => {
+            const marker = selection.marker as ProblemMarker;
+            return {
+                resource: marker.uri,
+                owner: marker.owner,
+                code: marker.data.code,
+                severity: marker.data.severity,
+                message: marker.data.message,
+                source: marker.data.source,
+                startLineNumber: marker.data.range.start.line,
+                startColumn: marker.data.range.start.character,
+                endLineNumber: marker.data.range.end.line,
+                endColumn: marker.data.range.end.character
+            };
+        });
+        this.addToClipboard(JSON.stringify(serializedProblems, undefined, '\t'));
     }
 
-    protected copyMessage(selection: ProblemSelection): void {
-        const marker = selection.marker as ProblemMarker;
-        this.addToClipboard(marker.data.message);
+    protected copyMessage(selections: ProblemSelection | ProblemSelection[]): void {
+        const selectionsArray = Array.isArray(selections) ? selections : [selections];
+        const messages = selectionsArray.map(selection => {
+            const marker = selection.marker as ProblemMarker;
+            return marker.data.message;
+        });
+        this.addToClipboard(messages.join('\n'));
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (problems: ProblemWidget) => T): T | false {
