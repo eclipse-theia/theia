@@ -934,6 +934,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     }
     protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
+        if (this.chordTimeout !== undefined) {
+            window.clearTimeout(this.chordTimeout);
+            this.chordTimeout = undefined;
+        }
         this.keystrokeDisposable.dispose();
     }
 
