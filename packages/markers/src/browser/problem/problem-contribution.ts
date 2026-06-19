@@ -146,13 +146,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
 
         commands.registerCommand(ProblemsCommands.COPY, {
-            isVisible: () => this.withWidget(undefined, widget => {
-                const markerNodes = widget.model.selectedNodes.filter(MarkerNode.is);
-                return markerNodes.length > 0;
-            }),
+            isEnabled: () => this.withWidget(undefined, () => true),
+            isVisible: () => this.withWidget(undefined, widget => this.getSelectedMarkerNodes(widget).length > 0),
             execute: () => this.withWidget(undefined, widget => {
-                const selections = widget.model.selectedNodes
-                    .filter(MarkerNode.is)
+                const selections = this.getSelectedMarkerNodes(widget)
                     .map(node => ({ marker: node.marker }));
                 if (selections.length > 0) {
                     this.copy(selections);
@@ -160,13 +157,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             })
         });
         commands.registerCommand(ProblemsCommands.COPY_MESSAGE, {
-            isVisible: () => this.withWidget(undefined, widget => {
-                const markerNodes = widget.model.selectedNodes.filter(MarkerNode.is);
-                return markerNodes.length > 0;
-            }),
+            isEnabled: () => this.withWidget(undefined, () => true),
+            isVisible: () => this.withWidget(undefined, widget => this.getSelectedMarkerNodes(widget).length > 0),
             execute: () => this.withWidget(undefined, widget => {
-                const selections = widget.model.selectedNodes
-                    .filter(MarkerNode.is)
+                const selections = this.getSelectedMarkerNodes(widget)
                     .map(node => ({ marker: node.marker }));
                 if (selections.length > 0) {
                     this.copyMessage(selections);
@@ -234,7 +228,6 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    // New method added to support Select All functionality
     protected async selectAllProblems(): Promise<void> {
         const widget = await this.widget;
         const { model } = widget;
@@ -245,7 +238,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    // New helper method to recursively select all nodes
+    // Helper method to recursively select all nodes
     protected selectAllNodes(node: TreeNode, model: ProblemTreeModel): void {
         if (SelectableTreeNode.is(node)) {
             model.addSelection({ node, type: TreeSelection.SelectionType.TOGGLE });
@@ -255,6 +248,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 this.selectAllNodes(child, model);
             }
         }
+    }
+
+    protected getSelectedMarkerNodes(widget: ProblemWidget): MarkerNode[] {
+        return widget.model.selectedNodes.filter(MarkerNode.is);
     }
 
     protected addToClipboard(content: string): void {
