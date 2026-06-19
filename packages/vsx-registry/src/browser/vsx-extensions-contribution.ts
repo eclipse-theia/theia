@@ -115,8 +115,10 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         );
 
         commands.registerCommand(VSXExtensionsCommands.INSTALL_ANOTHER_VERSION, {
-            // Check downloadUrl to ensure we have an idea of where to look for other versions.
-            isEnabled: (extension: VSXExtension) => !extension.builtin && !!extension.downloadUrl,
+            // Versions are queried from the registry on execution, so only built-in extensions are excluded here.
+            // `downloadUrl` must not be required: it is registry-only data that is not populated for already
+            // installed extensions after a restart (see #17607).
+            isEnabled: (extension: VSXExtension) => !extension.builtin,
             execute: async (extension: VSXExtension) => this.installAnotherVersion(extension),
         });
 
