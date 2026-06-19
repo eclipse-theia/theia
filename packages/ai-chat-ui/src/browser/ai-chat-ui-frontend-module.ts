@@ -16,6 +16,7 @@
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
+import '../../src/browser/style/mermaid-rendering.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -34,6 +35,7 @@ import {
     HorizontalLayoutPartRenderer,
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
+    MermaidPartRenderer,
     ToolCallPartRenderer,
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
@@ -170,7 +172,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
-    bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
+    bind(CodePartRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(CodePartRenderer);
+    bind(MermaidPartRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(MermaidPartRenderer);
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();

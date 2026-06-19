@@ -1986,6 +1986,12 @@
   word-break: normal;
 }
 
+/* Give embedded Mermaid diagrams some breathing room from the surrounding message text. The shared
+   component only carries a bottom margin (which is enough in the chat), so add a matching top margin here. */
+.user-interaction-tool.message .theia-MermaidViewer-root {
+  margin-top: var(--theia-ui-padding);
+}
+
 .user-interaction-tool.options {
   display: flex;
   flex-wrap: wrap;

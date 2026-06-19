@@ -1,0 +1,145 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-MermaidViewer-root {
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  margin: 0 0 var(--theia-ui-padding) 0;
+  background-color: var(--theia-editor-background);
+  box-shadow: 0 1px 3px var(--theia-widget-shadow);
+  overflow: hidden;
+}
+
+.theia-MermaidViewer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
+  border-bottom: var(--theia-border-width) solid var(--theia-editorWidget-border);
+  /* The whole title bar toggles collapse (the action buttons stop propagation). */
+  cursor: pointer;
+}
+
+.theia-MermaidViewer-title {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  padding-left: 4px;
+}
+
+.theia-MermaidViewer-actions {
+  display: flex;
+}
+
+.theia-MermaidViewer-actions .button {
+  margin-left: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.theia-MermaidViewer-actions .button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-MermaidViewer-viewport {
+  overflow: hidden;
+  position: relative;
+  /* Height follows the diagram so the full diagram is visible initially (capped for very large ones, which can
+     then be panned/zoomed). The user can drag the bottom edge to resize within the min/max bounds. */
+  max-height: 800px;
+  min-height: 120px;
+  resize: vertical;
+  background-color: transparent;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.theia-MermaidViewer-viewport:active {
+  cursor: grabbing;
+}
+
+/* Collapsed: the same viewport (and the diagram inside it) shrinks to a small thumbnail that fits the whole
+   diagram and a click expands it. Only styling changes, so the diagram is not re-rendered. mermaid SVGs carry a
+   viewBox and default preserveAspectRatio, so the diagram scales to fit (letterboxed) without distortion. */
+.theia-MermaidViewer-viewport.collapsed {
+  /* `!important` overrides an inline height the user may have set by dragging the resize handle while expanded;
+     that inline height stays in place and is restored when the viewport is expanded again. */
+  height: 120px !important;
+  min-height: 0;
+  max-height: 120px !important;
+  resize: none;
+  padding: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.theia-MermaidViewer-viewport.collapsed:active {
+  cursor: pointer;
+}
+
+.theia-MermaidViewer-canvas {
+  transform-origin: top left;
+  display: inline-block;
+  min-width: 100%;
+}
+
+.theia-MermaidViewer-viewport.collapsed .theia-MermaidViewer-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+.theia-MermaidViewer-diagram svg {
+  display: block;
+  max-width: none;
+  height: auto;
+  /* Override the background some mermaid themes bake into the SVG so the card background shows through. */
+  background-color: transparent !important;
+}
+
+.theia-MermaidViewer-viewport.collapsed .theia-MermaidViewer-diagram,
+.theia-MermaidViewer-viewport.collapsed .theia-MermaidViewer-diagram svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+}
+
+/* The source view is a Monaco editor; drop its own outline so it blends into the card instead of showing a
+   second, slightly different border. */
+.theia-MermaidViewer-source .monaco-editor,
+.theia-MermaidViewer-source .monaco-editor .overflow-guard {
+  outline: none;
+}
+
+.theia-MermaidViewer-status {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.theia-MermaidViewer-error {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding);
+  color: var(--theia-editorError-foreground);
+}

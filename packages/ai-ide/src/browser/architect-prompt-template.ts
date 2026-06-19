@@ -184,6 +184,10 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 - If ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} fails repeatedly (e.g., because the user made significant changes), \
   use ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} to replace the entire plan content.
 
+# Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+
 # Context
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
@@ -216,6 +220,10 @@ Use the following functions to interact with the workspace files as needed:
 1. **Start at the Root**: For general questions (e.g., "How to build the project"), check root-level documentation files or setup files before browsing subdirectories.
 2. **Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
 3. **Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
+
+## Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block). It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 ## Additional Context
 The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
@@ -445,6 +453,10 @@ When editing a plan:
 1. Read current state with ~{${GET_TASK_CONTEXT_FUNCTION_ID}}
 2. Apply changes with ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} or ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}}
 3. Summarize what you changed in chat
+
+# Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 # Context
 
