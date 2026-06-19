@@ -24,7 +24,8 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Disposable } from '@theia/core/lib/common';
-import { PluginViewRegistry, ViewContainerInfo } from './plugin-view-registry';
+import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
+import type { ViewWelcome } from '../../../common';
 
 disableJSDOM();
 
@@ -100,6 +101,73 @@ describe('PluginViewRegistry - view menu labels', () => {
 
         expect(menus.actions.get(toggleCommandId('a'))?.label).to.equal('Claude Code');
         expect(menus.actions.has(toggleCommandId('b'))).to.equal(false);
+    });
+
+});
+
+describe('PluginViewRegistry - welcome-only views', () => {
+
+    interface FakeTreeViewWidget {
+        model: { root?: unknown };
+        welcomeArg?: ViewWelcome[];
+        handleViewWelcomeContentChange(welcomes: ViewWelcome[]): void;
+    }
+
+    let registry: PluginViewRegistry;
+    let createdWidget: FakeTreeViewWidget;
+    let getOrCreateCalls: Array<{ factoryId: string; options: unknown }>;
+
+    const welcome = (view: string): ViewWelcome => ({ view, content: `[Hi](command:${view}.hi)`, order: 0 });
+
+    const internals = (): {
+        views: Map<string, [string, { type?: unknown }]>;
+        viewDataProviders: Map<string, unknown>;
+        viewsWelcome: Map<string, ViewWelcome[]>;
+        createViewDataWidget(viewId: string): Promise<unknown>;
+    } => registry as unknown as {
+        views: Map<string, [string, { type?: unknown }]>;
+        viewDataProviders: Map<string, unknown>;
+        viewsWelcome: Map<string, ViewWelcome[]>;
+        createViewDataWidget(viewId: string): Promise<unknown>;
+    };
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        getOrCreateCalls = [];
+        createdWidget = {
+            model: {},
+            handleViewWelcomeContentChange(welcomes: ViewWelcome[]): void {
+                this.welcomeArg = welcomes;
+            }
+        };
+        (registry as unknown as { widgetManager: unknown }).widgetManager = {
+            getOrCreateWidget: async (factoryId: string, options: unknown) => {
+                getOrCreateCalls.push({ factoryId, options });
+                return createdWidget;
+            }
+        };
+        internals().views.set('actions', ['container', {}]);
+    });
+
+    it('creates a welcome widget for a view with welcomes but no data provider', async () => {
+        const welcomes = [welcome('actions')];
+        internals().viewsWelcome.set('actions', welcomes);
+
+        const widget = await internals().createViewDataWidget('actions');
+
+        expect(widget).to.equal(createdWidget);
+        expect(getOrCreateCalls).to.have.lengthOf(1);
+        expect(getOrCreateCalls[0].factoryId).to.equal(PLUGIN_VIEW_DATA_FACTORY_ID);
+        expect(getOrCreateCalls[0].options).to.deep.equal({ id: 'actions' });
+        expect(createdWidget.welcomeArg).to.equal(welcomes);
+        expect(createdWidget.model.root).to.not.equal(undefined);
+    });
+
+    it('returns undefined for a view with neither a provider nor welcomes', async () => {
+        const widget = await internals().createViewDataWidget('actions');
+
+        expect(widget).to.equal(undefined);
+        expect(getOrCreateCalls).to.have.lengthOf(0);
     });
 
 });
