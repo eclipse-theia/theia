@@ -129,6 +129,31 @@ export interface ResolvedPromptFragment {
 }
 
 /**
+ * One alternative prompt template available for a custom agent. Variants are loaded from
+ * `<scope>/agents/<id>/*.prompttemplate` files (one variant per file; id = filename stem).
+ */
+export interface CustomAgentPromptVariant {
+    id: string;
+    template: string;
+}
+
+export namespace CustomAgentPromptVariant {
+    export function equals(a: CustomAgentPromptVariant, b: CustomAgentPromptVariant): boolean {
+        return a.id === b.id && a.template === b.template;
+    }
+
+    export function arrayEquals(a?: readonly CustomAgentPromptVariant[], b?: readonly CustomAgentPromptVariant[]): boolean {
+        const aArr = a ?? [];
+        const bArr = b ?? [];
+        if (aArr.length !== bArr.length) { return false; }
+        for (let i = 0; i < aArr.length; i++) {
+            if (!equals(aArr[i], bArr[i])) { return false; }
+        }
+        return true;
+    }
+}
+
+/**
  * Describes a custom agent with its properties
  */
 export interface CustomAgentDescription {
@@ -141,7 +166,7 @@ export interface CustomAgentDescription {
     /** Description of the agent's purpose and capabilities */
     description: string;
 
-    /** The prompt text for this agent */
+    /** The prompt text for this agent (the default variant body) */
     prompt: string;
 
     /** The default large language model to use with this agent */
@@ -149,6 +174,12 @@ export interface CustomAgentDescription {
 
     /** Whether this agent should appear in the chat UI (defaults to true if not specified) */
     showInChat?: boolean;
+
+    /**
+     * Optional additional prompt variants for this agent. Loaded from sibling
+     * `.prompttemplate` files in the same `<scope>/agents/<id>/` folder.
+     */
+    promptVariants?: CustomAgentPromptVariant[];
 }
 
 export namespace CustomAgentDescription {
@@ -182,11 +213,28 @@ export namespace CustomAgentDescription {
     }
 
     /**
-     * Compares two CustomAgentDescription objects for equality
+     * Compares two CustomAgentDescription objects for equality (including prompt variants).
      */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM && a.showInChat === b.showInChat;
+        return a.id === b.id
+            && a.name === b.name
+            && a.description === b.description
+            && a.prompt === b.prompt
+            && a.defaultLLM === b.defaultLLM
+            && a.showInChat === b.showInChat
+            && CustomAgentPromptVariant.arrayEquals(a.promptVariants, b.promptVariants);
     }
+}
+
+/**
+ * A discoverable custom-agent location within a single prompt-templates scope. `kind` distinguishes
+ * the per-agent `agents/` directory from the legacy `customAgents.yml` file; consumers should
+ * branch on it rather than inspecting the URI's basename.
+ */
+export interface CustomAgentsLocation {
+    uri: URI;
+    exists: boolean;
+    kind: 'agents-dir' | 'legacy-yaml';
 }
 
 /**
@@ -309,12 +357,45 @@ export interface PromptFragmentCustomizationService {
     getCustomAgents(): Promise<CustomAgentDescription[]>;
 
     /**
-     * Gets the locations of custom agent configuration files
-     * @returns Array of URIs and existence status
+     * Gets the locations of custom agent configuration files. Each scope contributes both an
+     * `agents/` directory entry and a legacy `customAgents.yml` entry, discriminated by
+     * {@link CustomAgentsLocation.kind}.
+     * @returns Array of locations with their kind and existence status
      */
-    getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
+    getCustomAgentsLocations(): Promise<CustomAgentsLocation[]>;
 
     /**
+     * Creates a per-agent file at `<parentDirectory>/agents/<agent.id>/agent.md` from the given
+     * description, then opens it. Replaces a previously existing `agent.md` for the same id.
+     *
+     * @param parentDirectory The prompt-templates scope (e.g. workspace `.prompts/` or the global templates dir)
+     * @param agent The agent description to serialize
+     * @returns The URI of the created file
+     */
+    createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI>;
+
+    /**
+     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout.
+     * The user's original content is never deleted: on success (or on partial failure when no backup
+     * exists yet) the YAML is renamed to `customAgents.yml.bak`; if a `.bak` already exists it is not
+     * overwritten and the YAML is left in place.
+     * Idempotent — rerunning never overwrites an already-migrated agent file.
+     */
+    migrateCustomAgentsYaml(): Promise<Array<{
+        scope: URI;
+        yamlURI: URI;
+        migrated: number;
+        alreadyPresent: number;
+        failed: number;
+        yamlBackedUp: boolean;
+        promptOverridesMigrated: number;
+    }>>;
+
+    /**
+     * @deprecated Use {@link createCustomAgentFile} to author agents in the new
+     * `<scope>/agents/<id>/agent.md` layout. Kept so legacy callers continue to work
+     * until they are migrated.
+     *
      * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
      *
      * @param uri The URI of the customAgents.yml file to open or create
