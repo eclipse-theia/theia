@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -26,7 +26,7 @@ import { createHierarchyTreeWidget } from './tree/typehierarchy-tree-container';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, TypeHierarchyService);
+    bindRootContributionProvider(bind, TypeHierarchyService);
     bind(TypeHierarchyServiceProvider).to(TypeHierarchyServiceProvider).inSingletonScope();
 
     bind(TypeHierarchyRegistry).toSelf().inSingletonScope();

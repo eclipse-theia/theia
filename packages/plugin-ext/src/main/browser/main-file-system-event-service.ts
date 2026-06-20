@@ -21,21 +21,26 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { MAIN_RPC_CONTEXT, FileSystemEvents } from '../../common/plugin-api-rpc';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { MAIN_RPC_CONTEXT, FileSystemEvents, MainFileSystemEventServiceShape } from '../../common/plugin-api-rpc';
+import { UriComponents } from '../../common/uri-components';
+import { URI } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileChangeType } from '@theia/filesystem/lib/common/files';
+import { FileChangeType, WatchOptions } from '@theia/filesystem/lib/common/files';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common/filesystem-preferences';
 
-export class MainFileSystemEventService {
+export class MainFileSystemEventService implements MainFileSystemEventServiceShape {
 
     private readonly toDispose = new DisposableCollection();
+    private readonly watches = new Map<number, Disposable>();
 
     constructor(
         rpc: RPCProtocol,
-        container: interfaces.Container
+        container: interfaces.Container,
+        private readonly fileService = container.get(FileService),
+        private readonly preferences = container.get<FileSystemPreferences>(FileSystemPreferences)
     ) {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
-        const fileService = container.get(FileService);
 
         this.toDispose.push(fileService.onDidFilesChange(event => {
             // file system events - (changes the editor and others make)
@@ -72,5 +77,40 @@ export class MainFileSystemEventService {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    $watch(session: number, resource: UriComponents, options: WatchOptions): void {
+        if (this.watches.has(session)) {
+            throw new Error(`There is already a watch request for the key ${session}`);
+        }
+        const uri = URI.fromComponents(resource);
+        // Plugin-created watchers (`vscode.workspace.createFileSystemWatcher`) arrive here with an
+        // empty `excludes` list. Language servers frequently request recursive watches rooted at
+        // absolute paths outside the workspace (e.g. JDT-LS's per-project globs), so apply the
+        // user's `files.watcherExclude` here to keep the number of OS file watches bounded.
+        const watch = this.fileService.watch(uri, { ...options, excludes: this.getExcludes(uri, options.excludes) });
+        this.toDispose.push(watch);
+        this.watches.set(session, watch);
+    }
+
+    protected getExcludes(uri: URI, requested: string[] = []): string[] {
+        const configured = this.preferences.get('files.watcherExclude', undefined, uri.toString());
+        const excludes = new Set(requested);
+        if (configured) {
+            for (const pattern of Object.keys(configured)) {
+                if (configured[pattern]) {
+                    excludes.add(pattern);
+                }
+            }
+        }
+        return Array.from(excludes);
+    }
+
+    $unwatch(session: number): void {
+        const watch = this.watches.get(session);
+        if (watch) {
+            watch.dispose();
+            this.watches.delete(session);
+        }
     }
 }

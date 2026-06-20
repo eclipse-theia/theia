@@ -13,10 +13,10 @@
       "path": "../application-package"
     },
     {
-      "path": "../ffmpeg"
+      "path": "../bundle-plugin"
     },
     {
-      "path": "../native-webpack-plugin"
+      "path": "../ffmpeg"
     }
   ]
 }

@@ -53,7 +53,7 @@ export class AIVariableConfigurationWidget extends AIListDetailConfigurationWidg
     }
 
     protected async loadItems(): Promise<void> {
-        this.items = this.variableService.getVariables();
+        this.items = this.variableService.getVariables().sort((a, b) => a.name.localeCompare(b.name));
         if (this.items.length > 0 && !this.selectedItem) {
             this.selectedItem = this.items[0];
         }
@@ -103,7 +103,7 @@ export class AIVariableConfigurationWidget extends AIListDetailConfigurationWidg
         return (
             <>
                 <div className="settings-section-subcategory-title">
-                    {nls.localize('theia/ai/ide/variableConfiguration/variableArgs', 'Arguments')}
+                    {nls.localizeByDefault('Arguments')}
                 </div>
                 <div style={{
                     display: 'grid',

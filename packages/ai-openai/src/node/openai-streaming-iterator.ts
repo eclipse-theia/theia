@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, ToolCallResult, ToolCallTextResult } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, ToolCallResult, ToolCallTextResult } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
@@ -31,10 +31,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
 
     constructor(
         protected readonly stream: ChatCompletionStream,
-        protected readonly requestId: string,
         cancellationToken?: CancellationToken,
-        protected readonly tokenUsageService?: TokenUsageService,
-        protected readonly model?: string,
     ) {
         this.registerStreamListener('error', error => {
             console.error('Error in OpenAI chat completion stream:', error);
@@ -61,18 +58,12 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             this.dispose();
         }, true);
         this.registerStreamListener('chunk', (chunk, snapshot) => {
-            // Handle token usage reporting
-            if (chunk.usage && this.tokenUsageService && this.model) {
+            // Yield token usage as a UsageResponsePart
+            if (chunk.usage) {
                 const inputTokens = chunk.usage.prompt_tokens || 0;
                 const outputTokens = chunk.usage.completion_tokens || 0;
                 if (inputTokens > 0 || outputTokens > 0) {
-                    const tokenUsageParams: TokenUsageParams = {
-                        inputTokens,
-                        outputTokens,
-                        requestId
-                    };
-                    this.tokenUsageService.recordTokenUsage(this.model, tokenUsageParams)
-                        .catch(error => console.error('Error recording token usage:', error));
+                    this.handleIncoming({ input_tokens: inputTokens, output_tokens: outputTokens });
                 }
             }
             // Patch missing fields that OpenAI SDK requires but some providers (e.g., Copilot) don't send

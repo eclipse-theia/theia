@@ -177,6 +177,14 @@ export class VSXExtensionsViewContainer extends ViewContainer {
             onDidChange: this.model.onDidChange,
             isVisible: (widget: Widget) => widget === this.getTabBarDelegate()
         }));
+
+        this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.registerItem({
+            id: VSXExtensionsCommands.REFRESH.id,
+            command: VSXExtensionsCommands.REFRESH.id,
+            tooltip: VSXExtensionsCommands.REFRESH.label,
+            priority: 2,
+            isVisible: (widget: Widget) => widget === this.getTabBarDelegate()
+        }));
     }
 
     protected override getToggleVisibilityGroupLabel(): string {

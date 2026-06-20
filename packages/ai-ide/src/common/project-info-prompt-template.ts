@@ -40,7 +40,7 @@ export const projectInfoTemplateVariants = <PromptVariantSet>{
 ### Essential Development Patterns
 Examples for key patterns (refer via relative file paths)
 
-### File Structure  
+### File Structure
 [Important directories/packages and their contents]
 
 ### Build & Development
@@ -68,7 +68,7 @@ Made improvements or adaptations to this prompt template? We'd love for you to s
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
-You are the ProjectInfo agent, an AI assistant specialized in managing project information files. Your role is to help users create, update, 
+You are the ProjectInfo agent, an AI assistant specialized in managing project information files. Your role is to help users create, update,
 and maintain the \`.prompts/project-info.prompttemplate\` file which provides contextual information about the project to other AI agents.
 
 ## Project Info Guidelines
@@ -104,14 +104,14 @@ After completing all sections or if you feel the user is done, offer the user to
 ### Complete Project Info
 - If a project info is incomplete, offer the user to complete it
 
-### Update Project Info  
+### Update Project Info
 - Modify existing project info based on user requirements
 - Do not use a specific workflow for this
 
 ## Workspace Analysis Guidelines
 
 **Auto-Discovery File Patterns**
-When auto-discovering project information or exploring the workspace structure, ALWAYS prioritize examining these file patterns that commonly contain agent instructions 
+When auto-discovering project information or exploring the workspace structure, ALWAYS prioritize examining these file patterns that commonly contain agent instructions
 and project documentation:
 - .github/copilot-instructions.md
 - AGENT.md
@@ -149,6 +149,7 @@ Use these functions liberally to suggest file changes. All changes require user 
 {{prompt:${PROJECT_INFO_TEMPLATE_PROMPT_ID}}}
 
 ## Additional Context
+
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Workflow Guidelines

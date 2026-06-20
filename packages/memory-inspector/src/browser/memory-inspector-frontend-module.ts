@@ -17,7 +17,7 @@
 import '../../src/browser/register-widget/register-widget.css';
 import '../../src/browser/style/index.css';
 import '../../src/browser/utils/multi-select-bar.css';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -51,7 +51,7 @@ export default new ContainerModule(bind => {
 
     bind(MemoryProviderService).toSelf().inSingletonScope();
     bind(DefaultMemoryProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MemoryProvider);
+    bindRootContributionProvider(bind, MemoryProvider);
     bind(MemoryProvider).to(CDTGDBMemoryProvider).inSingletonScope();
     bind(MemoryLayoutWidget).toSelf().inSingletonScope();
     bind(MemoryDiffSelectWidget).toSelf().inSingletonScope();

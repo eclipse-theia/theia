@@ -23,20 +23,16 @@ import {
     LanguageModelResponse,
     LanguageModelStatus,
     LanguageModelTextResponse,
-    TokenUsageService,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import OpenAI from 'openai';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
-import { COPILOT_PROVIDER_ID } from '../common';
+import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
-
-const COPILOT_API_BASE_URL = 'https://api.githubcopilot.com';
-const USER_AGENT = 'Theia-Copilot/1.0.0';
 
 /**
  * Language model implementation for GitHub Copilot.
@@ -57,7 +53,7 @@ export class CopilotLanguageModel implements LanguageModel {
         public maxRetries: number,
         protected readonly accessTokenProvider: () => Promise<string | undefined>,
         protected readonly enterpriseUrlProvider: () => string | undefined,
-        protected readonly tokenUsageService?: TokenUsageService
+        protected readonly userAgentProvider: () => string,
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -110,7 +106,7 @@ export class CopilotLanguageModel implements LanguageModel {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return { stream: new StreamingAsyncIterator(runner as any, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner as any, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -123,19 +119,12 @@ export class CopilotLanguageModel implements LanguageModel {
 
         const message = response.choices[0].message;
 
-        if (this.tokenUsageService && response.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: response.usage.prompt_tokens,
-                    outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
-            text: message.content ?? ''
+            text: message.content ?? '',
+            usage: response.usage ? {
+                input_tokens: response.usage.prompt_tokens,
+                output_tokens: response.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -153,20 +142,13 @@ export class CopilotLanguageModel implements LanguageModel {
             console.error('Error in Copilot chat completion:', JSON.stringify(message));
         }
 
-        if (this.tokenUsageService && result.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.prompt_tokens,
-                    outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
             content: message.content ?? '',
-            parsed: message.parsed
+            parsed: message.parsed,
+            usage: result.usage ? {
+                input_tokens: result.usage.prompt_tokens,
+                output_tokens: result.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -188,16 +170,13 @@ export class CopilotLanguageModel implements LanguageModel {
             throw new Error('Not authenticated with GitHub Copilot. Please sign in first.');
         }
 
-        const enterpriseUrl = this.enterpriseUrlProvider();
-        const baseURL = enterpriseUrl
-            ? `https://copilot-api.${enterpriseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}`
-            : COPILOT_API_BASE_URL;
+        const baseURL = getCopilotApiBaseUrl(this.enterpriseUrlProvider());
 
         return new OpenAI({
             apiKey: accessToken,
             baseURL,
             defaultHeaders: {
-                'User-Agent': USER_AGENT,
+                'User-Agent': this.userAgentProvider(),
                 'Openai-Intent': 'conversation-edits',
                 'X-Initiator': 'user'
             }
@@ -205,7 +184,38 @@ export class CopilotLanguageModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
-        return messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        const converted = messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: ChatCompletionMessageParam[]): ChatCompletionMessageParam[] {
+        const result: ChatCompletionMessageParam[] = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: ChatCompletionAssistantMessageParam = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent !== undefined && nextContent !== undefined) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent !== undefined) {
+                    merged.content = nextContent;
+                } else if (previousContent !== undefined) {
+                    merged.content = previousContent;
+                }
+
+                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
+                if (toolCalls.length > 0) {
+                    merged.tool_calls = toolCalls;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 
     protected toOpenAIMessage(message: LanguageModelMessage): ChatCompletionMessageParam {

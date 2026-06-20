@@ -31,7 +31,7 @@ export class SamplePreferenceContribution implements CommandContribution {
     protected readonly preferencesService: SampleBackendPreferencesService;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({ id: 'samplePreferences.get', label: 'Get Backend Preference' },
+        commands.registerCommand({ id: 'samplePreferences.get', label: 'Get Backend Preference', category: 'API Samples' },
             {
                 execute: async () => {
                     const key = await this.quickInputService.input({
@@ -51,7 +51,7 @@ export class SamplePreferenceContribution implements CommandContribution {
             }
         );
 
-        commands.registerCommand({ id: 'samplePreferences.inspect', label: 'Inspect Backend Preference' },
+        commands.registerCommand({ id: 'samplePreferences.inspect', label: 'Inspect Backend Preference', category: 'API Samples' },
             {
                 execute: async () => {
                     const key = await this.quickInputService.input({
@@ -71,20 +71,20 @@ export class SamplePreferenceContribution implements CommandContribution {
             }
         );
 
-        commands.registerCommand({ id: 'samplePreferences.set', label: 'Set Backend Preference' },
+        commands.registerCommand({ id: 'samplePreferences.set', label: 'Set Backend Preference', category: 'API Samples' },
             {
                 execute: async () => {
                     const key = await this.quickInputService.input({
-                        title: 'Inspect Backend Preference',
+                        title: 'Set Backend Preference',
                         prompt: 'Enter preference key'
                     });
                     if (key) {
                         const override = await this.quickInputService.input({
-                            title: 'Inspect Backend Preference',
+                            title: 'Set Backend Preference',
                             prompt: 'Enter override identifier'
                         });
                         const valueString = await this.quickInputService.input({
-                            title: 'Inspect Backend Preference',
+                            title: 'Set Backend Preference',
                             prompt: 'Enter JSON value'
                         });
                         if (valueString) {

@@ -22,11 +22,11 @@ import { DebugSession } from '../debug-session';
 import URI from '@theia/core/lib/common/uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { DebugSessionManager } from '../debug-session-manager';
 import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
-import { Disposable } from '@theia/core';
+import { Disposable, ILogger } from '@theia/core';
 
 export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');
 
@@ -38,6 +38,9 @@ export class DebugConsoleSession extends ConsoleSession {
     static uri = new URI().withScheme('debugconsole');
 
     @inject(DebugSessionManager) protected readonly sessionManager: DebugSessionManager;
+
+    @inject(ILogger) @named('debug:DebugConsoleSession')
+    protected readonly logger: ILogger;
 
     protected items: ConsoleItem[] = [];
 
@@ -248,7 +251,7 @@ export class DebugConsoleSession extends ConsoleSession {
         const body = event.body;
         const { category, variablesReference } = body;
         if (category === 'telemetry') {
-            console.debug(`telemetry/${event.body.output}`, event.body.data);
+            this.logger.debug(`telemetry/${event.body.output}`, event.body.data);
             return;
         }
         const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;

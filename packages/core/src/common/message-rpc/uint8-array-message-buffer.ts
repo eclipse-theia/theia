@@ -113,7 +113,7 @@ export class Uint8ArrayWriteBuffer implements WriteBuffer, Disposable {
         return this;
     }
 
-    private onCommitEmitter = new Emitter<Uint8Array>();
+    private onCommitEmitter = new Emitter<Uint8Array>({ errorHandling: 'propagate' });
     get onCommit(): Event<Uint8Array> {
         return this.onCommitEmitter.event;
     }

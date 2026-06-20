@@ -163,7 +163,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         this.toDispose.get(task.id)!.push(task);
 
         const taskInfo = await task.getRuntimeInfo();
-        this.fireTaskCreatedEvent(taskInfo);
+        this.fireTaskCreatedEvent(taskInfo, task);
         return taskInfo;
     }
 

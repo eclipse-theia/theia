@@ -16,7 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
+import { OLLAMA_REASONING_SUPPORT, OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences';
 import { PreferenceService } from '@theia/core';
 
@@ -37,6 +37,9 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
             const host = this.preferenceService.get<string>(HOST_PREF);
             this.manager.setHost(host || undefined);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId)));
             this.prevModels = [...models];
@@ -44,11 +47,20 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === HOST_PREF) {
                     this.manager.setHost(this.preferenceService.get<string>(HOST_PREF));
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.updateAllModels();
                 }
             });
         });
+    }
+
+    protected updateAllModels(): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId)));
     }
 
     protected handleModelChanges(newModels: string[]): void {
@@ -68,7 +80,11 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
 
         return {
             id: id,
-            model: modelId
+            model: modelId,
+            // Whether the underlying model supports thinking is checked per-request via `ollama.show`;
+            // for non-thinking models the reasoning level is silently ignored, so it's safe to always
+            // advertise reasoning support and let the runtime decide.
+            reasoningSupport: OLLAMA_REASONING_SUPPORT
         };
     }
 }

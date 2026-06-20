@@ -32,6 +32,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarAction }
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService, MenuModelRegistry } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
+import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
@@ -142,6 +143,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
     @inject(ScmDecorationsService) protected readonly scmDecorationsService: ScmDecorationsService;
     @inject(DirtyDiffNavigator) protected readonly dirtyDiffNavigator: DirtyDiffNavigator;
+    @inject(ScmContextKeyService) protected readonly scmContextKeys: ScmContextKeyService;
 
     protected scmFocus: ContextKey<boolean>;
 
@@ -170,8 +172,9 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     onStart(): void {
         this.updateStatusBar();
-        this.scmService.onDidAddRepository(() => this.updateStatusBar());
-        this.scmService.onDidRemoveRepository(() => this.updateStatusBar());
+        this.updateScmProviderCount();
+        this.scmService.onDidAddRepository(() => { this.updateStatusBar(); this.updateScmProviderCount(); });
+        this.scmService.onDidRemoveRepository(() => { this.updateStatusBar(); this.updateScmProviderCount(); });
         this.scmService.onDidChangeSelectedRepository(() => this.updateStatusBar());
         this.scmService.onDidChangeStatusBarCommands(() => this.updateStatusBar());
         this.labelProvider.onDidChange(() => this.updateStatusBar());
@@ -184,6 +187,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     protected updateContextKeys(): void {
         this.scmFocus.set(this.shell.currentWidget instanceof ScmWidget);
+    }
+
+    protected updateScmProviderCount(): void {
+        this.scmContextKeys.scmProviderCount.set(this.scmService.repositories.length);
     }
 
     override registerCommands(commandRegistry: CommandRegistry): void {
@@ -404,6 +411,147 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
      */
     registerColors(colors: ColorRegistry): void {
         colors.register(
+            // SCM Graph lane colors (matching VS Code's scm.graph.* color IDs)
+            {
+                id: 'scmGraph.historyItemHoverDefaultLabelForeground',
+                defaults: {
+                    dark: '#0078d4',
+                    light: '#0078d4',
+                    hcDark: '#0078d4',
+                    hcLight: '#0078d4'
+                },
+                description: 'Default foreground color for history item labels in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverAdditionsForeground',
+                defaults: {
+                    dark: '#81b88b',
+                    light: '#388a34',
+                    hcDark: '#81b88b',
+                    hcLight: '#388a34'
+                },
+                description: 'Foreground color for additions in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverDeletionsForeground',
+                defaults: {
+                    dark: '#c74e39',
+                    light: '#a1260d',
+                    hcDark: '#c74e39',
+                    hcLight: '#a1260d'
+                },
+                description: 'Foreground color for deletions in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverLabelForeground',
+                defaults: {
+                    dark: '#e2e2e2',
+                    light: '#3b3b3b',
+                    hcDark: '#ffffff',
+                    hcLight: '#000000'
+                },
+                description: 'Foreground color for labels in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemRefForeground',
+                defaults: {
+                    dark: '#ffffff',
+                    light: '#ffffff',
+                    hcDark: '#ffffff',
+                    hcLight: '#ffffff'
+                },
+                description: 'Foreground color for ref badge labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemRefColor',
+                defaults: {
+                    dark: '#0078d4',
+                    light: '#0078d4',
+                    hcDark: '#0078d4',
+                    hcLight: '#0078d4'
+                },
+                description: 'Color for ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemRemoteRefColor',
+                defaults: {
+                    dark: '#b267e6',
+                    light: '#8b009b',
+                    hcDark: '#b267e6',
+                    hcLight: '#8b009b'
+                },
+                description: 'Color for remote ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemTagRefColor',
+                defaults: {
+                    dark: '#d7ba7d',
+                    light: '#8d6914',
+                    hcDark: '#d7ba7d',
+                    hcLight: '#8d6914'
+                },
+                description: 'Color for tag ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemBaseRefColor',
+                defaults: {
+                    dark: '#a1260d',
+                    light: '#a1260d',
+                    hcDark: '#a1260d',
+                    hcLight: '#a1260d'
+                },
+                description: 'Color for base ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground1',
+                defaults: {
+                    dark: '#ffb000',
+                    light: '#ffb000',
+                    hcDark: '#ffb000',
+                    hcLight: '#ffb000'
+                },
+                description: 'Foreground color 1 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground2',
+                defaults: {
+                    dark: '#dc267f',
+                    light: '#dc267f',
+                    hcDark: '#dc267f',
+                    hcLight: '#dc267f'
+                },
+                description: 'Foreground color 2 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground3',
+                defaults: {
+                    dark: '#994f00',
+                    light: '#994f00',
+                    hcDark: '#994f00',
+                    hcLight: '#994f00'
+                },
+                description: 'Foreground color 3 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground4',
+                defaults: {
+                    dark: '#40b0a6',
+                    light: '#40b0a6',
+                    hcDark: '#40b0a6',
+                    hcLight: '#40b0a6'
+                },
+                description: 'Foreground color 4 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground5',
+                defaults: {
+                    dark: '#b66dff',
+                    light: '#b66dff',
+                    hcDark: '#b66dff',
+                    hcLight: '#b66dff'
+                },
+                description: 'Foreground color 5 for additional lanes in the SCM history graph.'
+            },
             {
                 id: ScmColors.editorGutterModifiedBackground, defaults: {
                     dark: '#1B81A8',
@@ -475,6 +623,22 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                     hcDark: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6),
                     hcLight: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6)
                 }, description: 'Overview ruler marker color for deleted content.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverAdditionsForeground', defaults: {
+                    dark: '#81B88B',
+                    light: '#587C0C',
+                    hcDark: '#A1E3AD',
+                    hcLight: '#374E06'
+                }, description: 'History item hover additions foreground color.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverDeletionsForeground', defaults: {
+                    dark: '#C74E39',
+                    light: '#AD0707',
+                    hcDark: '#C74E39',
+                    hcLight: '#AD0707'
+                }, description: 'History item hover deletions foreground color.'
             }
         );
     }

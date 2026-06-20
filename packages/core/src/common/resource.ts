@@ -311,12 +311,18 @@ export class InMemoryResources implements ResourceResolver {
 }
 
 export const MEMORY_TEXT = 'mem-txt';
+export const MEMORY_TEXT_READONLY = 'mem-txt-readonly';
 
 /**
  * Resource implementation for 'mem-txt' URI scheme where content is saved in URI query.
  */
 export class InMemoryTextResource implements Resource {
+
     constructor(readonly uri: URI) { }
+
+    get readOnly(): boolean {
+        return this.uri.scheme === MEMORY_TEXT_READONLY;
+    }
 
     async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
         return this.uri.query;
@@ -330,8 +336,8 @@ export class InMemoryTextResource implements Resource {
 @injectable()
 export class InMemoryTextResourceResolver implements ResourceResolver {
     resolve(uri: URI): MaybePromise<Resource> {
-        if (uri.scheme !== MEMORY_TEXT) {
-            throw new Error(`Expected a URI with ${MEMORY_TEXT} scheme. Was: ${uri}.`);
+        if (uri.scheme !== MEMORY_TEXT && uri.scheme !== MEMORY_TEXT_READONLY) {
+            throw new Error(`Expected a URI with ${MEMORY_TEXT} or ${MEMORY_TEXT_READONLY} scheme. Was: ${uri}.`);
         }
         return new InMemoryTextResource(uri);
     }

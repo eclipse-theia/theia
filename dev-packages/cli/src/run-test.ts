@@ -22,7 +22,7 @@ import newTestPage, { TestFileOptions } from './test-page';
 
 export interface TestOptions {
     start: () => Promise<net.AddressInfo>
-    launch?: puppeteer.PuppeteerLaunchOptions
+    launch?: puppeteer.LaunchOptions
     files?: Partial<TestFileOptions>
     coverage?: boolean
 }

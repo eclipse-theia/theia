@@ -54,8 +54,10 @@ class ResolvedDirectoryCache {
     protected async createResolutionPromise(directoryToResolve: string): Promise<void> {
         return this.fileService.resolve(new URI(directoryToResolve)).then(({ children }) => {
             if (children) {
+                // Store children as native filesystem paths so they can be matched
+                // and displayed directly without needing URI-to-native conversion later.
                 const childDirectories = children.filter(child => child.isDirectory)
-                    .map(directory => `${directory.resource.path}/`);
+                    .map(directory => new Path(`${directory.resource.path}/`).fsPath());
                 this.cachedDirectories.set(directoryToResolve, childDirectories);
                 this.directoryResolvedEmitter.fire({ parent: directoryToResolve, children: childDirectories });
             }
@@ -133,7 +135,7 @@ export class LocationListRenderer extends ReactRenderer {
         this.toDisposeOnNewCache.push(this.directoryCache.onDirectoryDidResolve(({ parent, children }) => {
             if (this.locationTextInput) {
                 const expandedPath = Path.untildify(this.locationTextInput.value, this.homeDir);
-                const inputParent = (new URI(expandedPath)).path.dir.toString();
+                const inputParent = this.toFileURI(expandedPath).path.dir.toString();
                 if (inputParent === parent) {
                     this.tryRenderFirstMatch(this.locationTextInput, children);
                 }
@@ -207,6 +209,7 @@ export class LocationListRenderer extends ReactRenderer {
         const options = this.collectLocations().map(value => this.renderLocation(value));
         return (
             <select className={`theia-select ${LocationListRenderer.Styles.LOCATION_LIST_CLASS}`}
+                value={this.service.location?.toString() ?? ''}
                 onChange={this.handleLocationChanged}>
                 {...options}
             </select>
@@ -314,9 +317,9 @@ export class LocationListRenderer extends ReactRenderer {
         if (this.doAttemptAutocomplete) {
             const inputElement = e.currentTarget;
             const { value } = inputElement;
-            if ((value.startsWith('/') || value.startsWith('~/')) && value.slice(-1) !== '/') {
+            if (this.looksLikeFilePath(value) && !value.endsWith('/') && !value.endsWith('\\')) {
                 const expandedPath = Path.untildify(value, this.homeDir);
-                const valueAsURI = new URI(expandedPath);
+                const valueAsURI = this.toFileURI(expandedPath);
                 const autocompleteDirectories = this.directoryCache.tryResolveChildDirectories(valueAsURI);
                 if (autocompleteDirectories) {
                     this.tryRenderFirstMatch(inputElement, autocompleteDirectories);
@@ -334,9 +337,17 @@ export class LocationListRenderer extends ReactRenderer {
                 const contractedPath = value.startsWith('~') ? Path.tildify(firstMatch, this.homeDir) : firstMatch;
                 this.locationTextInput.value = contractedPath;
                 this.locationTextInput.selectionStart = selectionStart;
-                this.locationTextInput.selectionEnd = firstMatch.length;
+                this.locationTextInput.selectionEnd = contractedPath.length;
             }
         }
+    }
+
+    protected looksLikeFilePath(value: string): boolean {
+        return value.startsWith('/') || value.startsWith('~/') || /^[a-zA-Z]:[/\\]/.test(value);
+    }
+
+    protected toFileURI(filePath: string): URI {
+        return URI.fromFilePath(filePath);
     }
 
     protected handleControlKeys(e: React.KeyboardEvent<HTMLInputElement>): void {
@@ -347,7 +358,7 @@ export class LocationListRenderer extends ReactRenderer {
                 // expand '~' if present and remove extra whitespace and any trailing slashes or periods.
                 const sanitizedInput = locationTextInput.value.trim().replace(/[\/\\.]*$/, '');
                 const untildifiedInput = Path.untildify(sanitizedInput, this.homeDir);
-                const uri = new URI(untildifiedInput);
+                const uri = this.toFileURI(untildifiedInput);
                 this.trySetNewLocation(uri);
                 this.toggleToSelectInput();
             }

@@ -111,7 +111,7 @@ describe('Task server / back-end', function (): void {
             setup.connectionProvider.listen(`${terminalsPath}/${terminalId}`, (path, channel) => {
                 channel.onMessage(e => stringBuffer.push(e().readString()));
                 channel.onError(reject);
-                channel.onClose(() => reject(new Error('Channel has been closed')));
+                // onClose is not used to reject: the server now closes the channel after process exit (expected behavior).
             }, false);
             stringBuffer.onData(currentMessage => {
                 // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
@@ -359,6 +359,52 @@ describe('Task server / back-end', function (): void {
         expect(exitStatus).eq(0);
     });
 
+    it('onDidStartTaskProcess is fired when a terminal-process task is created', async function (): Promise<void> {
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
+        let startEvent: TaskInfo | undefined;
+        const toDispose = taskWatcher.onDidStartTaskProcess(event => { startEvent = event; });
+        const taskInfo = await taskServer.run(createProcessTaskConfig('shell', command, undefined), wsRoot);
+        toDispose.dispose();
+
+        if (startEvent === undefined) {
+            throw new Error('onDidStartTaskProcess was not fired');
+        }
+        expect(startEvent.taskId).equals(taskInfo.taskId);
+        expect(startEvent.processId).to.be.a('number');
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
+    });
+
+    it('onDidStartTaskProcess is fired when a raw-process task is created', async function (): Promise<void> {
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
+        const executable = FileUri.fsPath(wsRootUri.resolve(command));
+        let startEvent: TaskInfo | undefined;
+        const toDispose = taskWatcher.onDidStartTaskProcess(event => { startEvent = event; });
+        const taskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []), wsRoot);
+        toDispose.dispose();
+
+        if (startEvent === undefined) {
+            throw new Error('onDidStartTaskProcess was not fired');
+        }
+        expect(startEvent.taskId).equals(taskInfo.taskId);
+        expect(startEvent.processId).to.be.a('number');
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
+    });
+
+    it('onDidStartTaskProcess is not fired for a non-process (custom) task', async function (): Promise<void> {
+        let processStarted = false;
+        let taskCreated = false;
+        const disposeStart = taskWatcher.onDidStartTaskProcess(() => { processStarted = true; });
+        const disposeCreated = taskWatcher.onTaskCreated(() => { taskCreated = true; });
+        const taskInfo = await taskServer.run(createCustomTaskConfig(), wsRoot);
+        disposeStart.dispose();
+        disposeCreated.dispose();
+
+        // The events are fired synchronously while `run` is awaited, so by now they have either fired or not.
+        expect(taskCreated, 'onTaskCreated was expected to fire for a custom task').to.equal(true);
+        expect(processStarted, 'onDidStartTaskProcess should not fire for a non-process task').to.equal(false);
+        await taskServer.kill(taskInfo.taskId);
+    });
+
 });
 
 function createTaskConfig(taskType: string, command: string, args: string[]): TaskConfiguration {
@@ -394,6 +440,15 @@ function createProcessTaskConfig2(processType: ProcessType, command: string, arg
         command,
         args,
         options: { cwd: wsRoot },
+    };
+}
+
+function createCustomTaskConfig(): TaskConfiguration {
+    return {
+        label: 'test custom task',
+        type: 'customExecution',
+        _source: '/source/folder',
+        _scope: '/source/folder'
     };
 }
 

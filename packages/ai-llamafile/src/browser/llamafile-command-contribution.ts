@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
-import { CommandContribution, CommandRegistry, MessageService, nls, PreferenceService } from '@theia/core';
+import { CommandContribution, CommandRegistry, MessageService, nls, PreferenceService, ILogger } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { LlamafileManager } from '../common/llamafile-manager';
 import { PREFERENCE_LLAMAFILE } from '../common/llamafile-preferences';
 import { LlamafileEntry } from './llamafile-frontend-application-contribution';
@@ -48,6 +48,9 @@ export class LlamafileCommandContribution implements CommandContribution {
     @inject(LlamafileManager)
     protected llamafileManager: LlamafileManager;
 
+    @inject(ILogger) @named('ai-llamafile:LlamafileCommandContribution')
+    protected readonly logger: ILogger;
+
     registerCommands(commandRegistry: CommandRegistry): void {
         commandRegistry.registerCommand(StartLlamafileCommand, this.commandHandlerFactory({
             execute: async () => {
@@ -64,7 +67,7 @@ export class LlamafileCommandContribution implements CommandContribution {
                     }
                     this.llamafileManager.startServer(result.label);
                 } catch (error) {
-                    console.error('Something went wrong during the llamafile start.', error);
+                    this.logger.error('Something went wrong during the llamafile start.', error);
                     this.messageService.error(
                         nls.localize(
                             'theia/ai/llamafile/error/startFailed',
@@ -89,7 +92,7 @@ export class LlamafileCommandContribution implements CommandContribution {
                     }
                     this.llamafileManager.stopServer(result.label);
                 } catch (error) {
-                    console.error('Something went wrong during the llamafile stop.', error);
+                    this.logger.error('Something went wrong during the llamafile stop.', error);
                     this.messageService.error(
                         nls.localize(
                             'theia/ai/llamafile/error/stopFailed',

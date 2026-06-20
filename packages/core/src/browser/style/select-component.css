@@ -15,9 +15,12 @@
  ********************************************************************************/
 
 .theia-select-component-container {
-  /* required to set z-index */
-  position: fixed;
-  /* dialog overlay has a z-index of 5000 */
+  /* position is required for z-index to take effect; top/left at 0 anchors
+     the container so the absolutely-positioned dropdown resolves its
+     viewport-relative coordinates correctly. */
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 6000;
 }
 

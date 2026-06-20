@@ -26,6 +26,7 @@ Currently not all of the configuration file properties are implemented. The foll
 - forwardPorts
 - mounts
 - containerEnv
+- remoteEnv
 - remoteUser
 - shutdownAction
 - postCreateCommand

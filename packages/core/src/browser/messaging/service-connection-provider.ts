@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable, interfaces, postConstruct } from 'inversify';
-import { Channel, RpcProxy, RpcProxyFactory } from '../../common';
-import { ChannelMultiplexer } from '../../common/message-rpc/channel';
+import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel';
 import { Deferred } from '../../common/promise-util';
 import { ConnectionSource } from './connection-source';
+import { RpcProxy, RpcProxyFactory } from '../../common/messaging/proxy-factory';
 
 /**
  * Service id for the local connection provider

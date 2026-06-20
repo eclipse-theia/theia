@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { nls, PreferenceSchema } from '@theia/core';
+import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const CLAUDE_CODE_EXECUTABLE_PATH_PREF = 'ai-features.claudeCode.executablePath';
 export const CLAUDE_CODE_API_KEY_PREF = 'ai-features.claudeCode.apiKey';
@@ -34,7 +34,7 @@ export const ClaudeCodePreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/claude-code/apiKey/description',
                 'Enter an API Key for Claude Code. **Please note:** By using this preference the API key will be stored in clear text ' +
-                'on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
+                'on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
     }

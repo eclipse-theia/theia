@@ -56,15 +56,17 @@ export class ClaudeCodeCommandContribution implements CommandContribution {
         commands.registerCommand(OPEN_CLAUDE_CODE_CONFIG, {
             execute: async () => await this.openFileInWorkspace('.claude/settings.json', JSON.stringify({}, undefined, 2)),
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
         commands.registerCommand(OPEN_CLAUDE_CODE_MEMORY, {
             execute: async () => await this.openFileInWorkspace('.claude/CLAUDE.md', ''),
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the user should be prompted to select which workspace root to create/open the file in.
     protected async openFileInWorkspace(file: string, initialContent: string): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length < 1) {

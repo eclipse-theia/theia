@@ -77,8 +77,7 @@ export class EditorContextVariableContribution implements AIVariableContribution
         const lineNumber = position ? position.lineNumber : 0;
         const column = position ? position.column : 0;
 
-        // Get workspace-relative path
-        const workspaceRelativePath = uri ? await this.workspaceService.getWorkspaceRelativePath(uri) : '';
+        const workspaceRelativePath = uri ? this.workspaceService.getRootPrefixedPath(uri) : '';
 
         // Create base context information
         const baseContext = {

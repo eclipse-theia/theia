@@ -16,12 +16,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, Event, isObject, MaybePromise } from '../../common';
 import { PreferenceService } from './preference-service';
 import { PreferenceScope } from './preference-scope';
-import { IJSONSchema } from '../../common/json-schema';
-import { isThenable } from '../../common/promise-util';
-import { OverridePreferenceName } from '../../common/preferences/preference-language-override-service';
+import { IJSONSchema } from '../json-schema';
+import { isThenable } from '../promise-util';
+import { OverridePreferenceName } from './preference-language-override-service';
+import { isObject, MaybePromise } from '../types';
+import { Event } from '../event';
+import { Disposable } from '../disposable';
 
 /**
  * It is worth explaining the type for `PreferenceChangeEvent`:
@@ -237,7 +239,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         return properties;
     };
 
-    const set: (target: any, prop: string, value: any, receiver: any) => boolean = (_, property: string | symbol | number, value: any) => {
+    const set: (target: any, prop: string | symbol, value: any, receiver: any) => boolean = (_, property: string | symbol | number, value: any) => {
         if (typeof property !== 'string') {
             throw new Error(`unexpected property: ${String(property)}`);
         }
@@ -268,7 +270,13 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         return false;
     };
 
-    const get: (target: any, prop: string) => any = (_, property: string | symbol | number) => {
+    const get: (target: any, prop: string | symbol) => any = (_, property: string | symbol | number) => {
+        // React 19 dev mode calls Object.prototype.toString when handling prop diffs, which
+        // probes Symbol.toStringTag. Throwing should be avoided in this case, it crashes the React DOM.
+        if (property === Symbol.toStringTag) {
+            return undefined;
+        }
+
         if (typeof property !== 'string') {
             throw new Error(`unexpected property: ${String(property)}`);
         }
@@ -345,8 +353,8 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
     return new Proxy({}, {
         get,
         ownKeys,
-        getOwnPropertyDescriptor: (_, property: string) => {
-            if (ownKeys().indexOf(property) !== -1) {
+        getOwnPropertyDescriptor: (_, property: string | symbol) => {
+            if (typeof property === 'string' && ownKeys().indexOf(property) !== -1) {
                 return {
                     enumerable: true,
                     configurable: true

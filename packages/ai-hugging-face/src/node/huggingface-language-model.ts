@@ -26,6 +26,7 @@ import {
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { InferenceClient } from '@huggingface/inference';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export const HuggingFaceModelIdentifier = Symbol('HuggingFaceModelIdentifier');
 
@@ -42,13 +43,42 @@ function toRole(actor: MessageActor): 'user' | 'assistant' | 'system' {
     }
 }
 
-function toChatMessages(messages: LanguageModelMessage[]): Array<{ role: 'user' | 'assistant' | 'system'; content: string }> {
-    return messages
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type HuggingFaceChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
+
+function toChatMessages(messages: LanguageModelMessage[]): HuggingFaceChatMessage[] {
+    const chatMessages = messages
         .filter(LanguageModelMessage.isTextMessage)
         .map(message => ({
             role: toRole(message.actor),
             content: message.text
         }));
+    return mergeConsecutiveAssistantMessages(chatMessages);
+}
+
+function mergeConsecutiveAssistantMessages(messages: HuggingFaceChatMessage[]): HuggingFaceChatMessage[] {
+    const result: HuggingFaceChatMessage[] = [];
+    for (const message of messages) {
+        const previous = result[result.length - 1];
+        if (previous?.role === 'assistant' && message.role === 'assistant') {
+            const merged: HuggingFaceChatMessage = { ...previous, role: 'assistant' };
+
+            const previousContent = previous.content;
+            const nextContent = message.content;
+            if (previousContent && nextContent) {
+                merged.content = `${previousContent}\n${nextContent}`;
+            } else if (nextContent) {
+                merged.content = nextContent;
+            } else if (previousContent) {
+                merged.content = previousContent;
+            }
+
+            result[result.length - 1] = merged;
+        } else {
+            result.push(message);
+        }
+    }
+    return result;
 }
 
 export class HuggingFaceModel implements LanguageModel {
@@ -68,7 +98,8 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly version?: string,
         public readonly family?: string,
         public readonly maxInputTokens?: number,
-        public readonly maxOutputTokens?: number
+        public readonly maxOutputTokens?: number,
+        public proxy?: string
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -143,6 +174,6 @@ export class HuggingFaceModel implements LanguageModel {
         if (!token) {
             throw new Error('Please provide a Hugging Face API token.');
         }
-        return new InferenceClient(token);
+        return new InferenceClient(token, { fetch: createProxyFetch(this.proxy) });
     }
 }

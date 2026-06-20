@@ -29,3 +29,15 @@ export const PROMPT_FUNCTION_REGEX = /\~\{\s*(.*?)\s*\}/g;
 export function matchFunctionsRegEx(template: string): RegExpMatchArray[] {
     return [...template.matchAll(PROMPT_FUNCTION_REGEX)];
 }
+
+/** Regex matching YAML front matter delimited by `---` */
+export const FRONT_MATTER_REGEX = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+
+/**
+ * Strips YAML front matter from a template string, returning only the body.
+ * If no front matter is present the original string is returned unchanged.
+ */
+export function stripFrontMatter(template: string): string {
+    const match = template.match(FRONT_MATTER_REGEX);
+    return match ? match[2] : template;
+}

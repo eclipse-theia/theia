@@ -17,16 +17,20 @@
 import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
-import { injectable, postConstruct } from 'inversify';
+import { injectable, postConstruct, inject, named } from 'inversify';
 import { isObject, isString, MaybePromise } from '../../common';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
+import { ILogger } from '../../common/logger';
 
 /**
  * On Electron, we want to make sure that only Electron's browser-windows access the backend services.
  */
 @injectable()
 export class ElectronTokenValidator implements WsRequestValidatorContribution {
+
+    @inject(ILogger) @named('core:ElectronTokenValidator')
+    protected readonly logger: ILogger;
 
     protected electronSecurityToken?: ElectronSecurityToken;
 
@@ -70,7 +74,7 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
                 const expected = Buffer.from(this.electronSecurityToken!.value, 'utf8');
                 return received.byteLength === expected.byteLength && crypto.timingSafeEqual(received, expected);
             } catch (error) {
-                console.error(error);
+                this.logger.error(error);
             }
         }
         return false;

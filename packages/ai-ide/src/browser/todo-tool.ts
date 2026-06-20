@@ -18,8 +18,6 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core/lib/common';
 import { TODO_WRITE_FUNCTION_ID, isValidTodoItem } from '../common/todo-tool';
 
-export { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool';
-
 @injectable()
 export class TodoWriteTool implements ToolProvider {
     static ID = TODO_WRITE_FUNCTION_ID;
@@ -29,20 +27,43 @@ export class TodoWriteTool implements ToolProvider {
             id: TodoWriteTool.ID,
             name: TodoWriteTool.ID,
             providerName: 'ai-ide',
-            description: 'Write a todo list to track task progress. Use this to plan multi-step tasks ' +
-                'and show progress to the user. Each todo has content (imperative: "Run tests"), ' +
-                'activeForm (continuous: "Running tests"), and status (pending/in_progress/completed). ' +
-                'Call this to update the entire list - it replaces the previous list.',
+            description: 'Create or replace a structured task list for the current session. ' +
+                'This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user. ' +
+                'It also helps the user understand the progress and overall status of their requests.\n\n' +
+                'When to use:\n' +
+                '- Tasks requiring 3+ steps or careful planning\n' +
+                '- User provides multiple tasks or explicitly requests a todo list\n' +
+                '- After receiving new instructions — immediately capture requirements as todos\n' +
+                'Skip for single, trivial tasks, conversational or informational requests that need no tracking.\n' +
+                'When in doubt, use this tool.\n\n' +
+                'Task states:\n' +
+                '- pending: Task not yet started\n' +
+                '- in_progress: Currently working on (limit to ONE task at a time)\n' +
+                '- completed: Task finished successfully\n\n' +
+                'Task management:\n' +
+                '- Mark a task in_progress BEFORE starting work on it (one at a time)\n' +
+                '- Complete the current task before starting new ones\n' +
+                '- Mark tasks completed immediately after finishing — do not batch completions\n' +
+                '- Only mark completed when fully accomplished (no failing tests, no partial implementation, no unresolved errors)\n' +
+                '- If blocked, add a new task describing what needs to be resolved\n' +
+                '- Add follow-up tasks discovered during implementation\n' +
+                '- Remove tasks that are no longer relevant\n\n' +
+                'Task breakdown:\n' +
+                '- Create specific, actionable items\n' +
+                '- Break complex tasks into smaller, manageable steps\n' +
+                '- Use clear, descriptive task names\n\n' +
+                'Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.',
             parameters: {
                 type: 'object',
                 properties: {
                     todos: {
                         type: 'array',
+                        description: 'The updated todo list.',
                         items: {
                             type: 'object',
                             properties: {
-                                content: { type: 'string', description: 'Imperative form: "Run tests"' },
-                                activeForm: { type: 'string', description: 'Continuous form: "Running tests"' },
+                                content: { type: 'string', description: 'Clear, actionable task description (e.g., "Extract TokenValidator from AuthService").' },
+                                activeForm: { type: 'string', description: 'Continuous form shown during execution (e.g., "Extracting TokenValidator from AuthService").' },
                                 status: { type: 'string', enum: ['pending', 'in_progress', 'completed'] }
                             },
                             required: ['content', 'activeForm', 'status']
@@ -59,14 +80,14 @@ export class TodoWriteTool implements ToolProvider {
                     }
                     const validTodos = todos.filter(isValidTodoItem);
                     const invalidCount = todos.length - validTodos.length;
+                    const response: Record<string, unknown> = {
+                        success: true,
+                        count: validTodos.length,
+                    };
                     if (invalidCount > 0) {
-                        return JSON.stringify({
-                            success: true,
-                            count: validTodos.length,
-                            warning: `${invalidCount} invalid todo item(s) were filtered out`
-                        });
+                        response.warning = `${invalidCount} invalid todo item(s) were filtered out`;
                     }
-                    return JSON.stringify({ success: true, count: validTodos.length });
+                    return JSON.stringify(response);
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
                     return JSON.stringify({ error: `Failed to parse todos: ${message}` });

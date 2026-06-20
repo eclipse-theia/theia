@@ -72,6 +72,9 @@
       "path": "../../packages/ai-openai"
     },
     {
+      "path": "../../packages/ai-registry"
+    },
+    {
       "path": "../../packages/ai-scanoss"
     },
     {

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
-import { environment } from '@theia/core';
+import { environment, ILogger } from '@theia/core';
 
 /**
  * Configuration options for OS notifications
@@ -55,6 +55,9 @@ export interface OSNotificationResult {
 @injectable()
 export class OSNotificationService {
 
+    @inject(ILogger) @named('ai-core:OSNotificationService')
+    protected readonly logger: ILogger;
+
     private isElectron: boolean;
 
     constructor() {
@@ -68,7 +71,11 @@ export class OSNotificationService {
      * @param options Optional notification configuration
      * @returns Promise resolving to the notification result
      */
-    async showNotification(title: string, options: OSNotificationOptions = {}): Promise<OSNotificationResult> {
+    async showNotification(
+        title: string,
+        options: OSNotificationOptions = {},
+        onClickCallback?: () => void,
+    ): Promise<OSNotificationResult> {
         try {
             if (!this.isNotificationSupported()) {
                 return {
@@ -85,14 +92,14 @@ export class OSNotificationService {
                 };
             }
 
-            const notification = await this.createNotification(title, options);
+            const notification = await this.createNotification(title, options, onClickCallback);
             return {
                 success: true,
                 notification
             };
 
         } catch (error) {
-            console.error('Failed to show OS notification:', error);
+            this.logger.error('Failed to show OS notification:', error);
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -130,7 +137,7 @@ export class OSNotificationService {
             const permission = await Notification.requestPermission();
             return permission;
         } catch (error) {
-            console.error('Failed to request notification permission:', error);
+            this.logger.error('Failed to request notification permission:', error);
             return 'denied';
         }
     }
@@ -149,29 +156,34 @@ export class OSNotificationService {
      * This is a convenience method with pre-configured options for agent notifications
      *
      * @param agentName The name of the agent that completed
-     * @param taskDescription Optional description of the completed task
+     * @param sessionTitle Optional title of the chat session for identification
+     * @param onClickCallback Optional callback to invoke when the notification is clicked
      * @returns Promise resolving to the notification result
      */
-    async showAgentCompletionNotification(agentName: string, taskDescription?: string): Promise<OSNotificationResult> {
+    async showAgentCompletionNotification(
+        agentName: string,
+        sessionTitle?: string,
+        onClickCallback?: () => void,
+    ): Promise<OSNotificationResult> {
         const title = nls.localize('theia/ai-core/agentCompletionTitle', 'Agent "{0}" Task Completed', agentName);
-        const body = taskDescription
-            ? nls.localize('theia/ai-core/agentCompletionWithTask',
-                'Agent "{0}" has completed the task: {1}', agentName, taskDescription)
+        const body = sessionTitle
+            ? nls.localize('theia/ai-core/agentCompletionMessageWithSession',
+                'Agent "{0}" has completed its task in "{1}".', agentName, sessionTitle)
             : nls.localize('theia/ai-core/agentCompletionMessage',
                 'Agent "{0}" has completed its task.', agentName);
 
         return this.showNotification(title, {
             body,
             icon: this.getAgentCompletionIcon(),
-            tag: `agent-completion-${agentName}`,
+            tag: `agent-completion-${agentName}-${sessionTitle ?? 'default'}`,
             requireInteraction: false,
             data: {
                 type: 'agent-completion',
                 agentName,
-                taskDescription,
+                sessionTitle,
                 timestamp: Date.now()
             }
-        });
+        }, onClickCallback);
     }
 
     /**
@@ -198,9 +210,14 @@ export class OSNotificationService {
      *
      * @param title The notification title
      * @param options The notification options
+     * @param onClickCallback Optional callback to invoke when the notification is clicked
      * @returns Promise resolving to the created notification
      */
-    private async createNotification(title: string, options: OSNotificationOptions): Promise<Notification> {
+    private async createNotification(
+        title: string,
+        options: OSNotificationOptions,
+        onClickCallback?: () => void,
+    ): Promise<Notification> {
         return new Promise<Notification>((resolve, reject): void => {
             try {
                 const notificationOptions: NotificationOptions = {
@@ -215,22 +232,25 @@ export class OSNotificationService {
                 const notification = new Notification(title, notificationOptions);
 
                 notification.onshow = () => {
-                    console.debug('OS notification shown:', title);
+                    this.logger.debug('OS notification shown:', title);
                 };
 
                 notification.onerror = error => {
-                    console.error('OS notification error:', error);
+                    this.logger.error('OS notification error:', error);
                     reject(new Error('Failed to show notification'));
                 };
 
                 notification.onclick = () => {
-                    console.debug('OS notification clicked:', title);
+                    this.logger.debug('OS notification clicked:', title);
                     this.focusApplicationWindow();
+                    if (onClickCallback) {
+                        onClickCallback();
+                    }
                     notification.close();
                 };
 
                 notification.onclose = () => {
-                    console.debug('OS notification closed:', title);
+                    this.logger.debug('OS notification closed:', title);
                 };
 
                 resolve(notification);
@@ -254,7 +274,7 @@ export class OSNotificationService {
                 }
             }
         } catch (error) {
-            console.debug('Could not focus application window:', error);
+            this.logger.debug('Could not focus application window:', error);
         }
     }
 

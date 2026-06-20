@@ -54,10 +54,13 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
         this.chatContribution.widget.then(widget => {
             widget.onStateChanged(() => this.onChatWidgetStateChangedEmitter.fire());
         });
+        // The lock/unlock toolbar items hide on the overview (empty active session), so we need
+        // to refresh them whenever that state flips.
+        this.chatContribution.onActiveSessionEmptyChanged(() => this.onChatWidgetStateChangedEmitter.fire());
 
         this.commandRegistry.registerCommand(ChatCommands.EDIT_SESSION_SETTINGS, {
             execute: () => this.openJsonDataDialog(),
-            isEnabled: widget => this.activationService.isActive && widget instanceof ChatViewWidget,
+            isEnabled: widget => this.activationService.canRun && widget instanceof ChatViewWidget,
             isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
@@ -82,8 +85,9 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
         registry.registerItem({
             id: ChatCommands.EDIT_SESSION_SETTINGS.id,
             command: ChatCommands.EDIT_SESSION_SETTINGS.id,
-            tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings'),
+            tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings...'),
             priority: 3,
+            group: 'chat-settings',
             when: ENABLE_AI_CONTEXT_KEY
         });
     }

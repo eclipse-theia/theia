@@ -18,41 +18,47 @@ import * as React from '@theia/core/shared/react';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker';
-import { SingleTextInputDialog, TREE_NODE_INFO_CLASS, codicon, TreeWidget } from '@theia/core/lib/browser';
-import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
-import { nls, CommandService } from '@theia/core';
+import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
+import { TREE_NODE_INFO_CLASS, codicon, TreeWidget } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
+import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from '../model/debug-breakpoint';
 import { DebugCommands } from '../debug-commands';
 
-export class DebugExceptionBreakpoint implements TreeElement {
+export class DebugExceptionBreakpoint extends DebugBreakpoint<ExceptionBreakpoint> implements TreeElement {
 
-    readonly id: string;
-    protected treeWidget?: TreeWidget;
+    protected readonly sessionEnablement = new Set<string>();
+    /** Determines which exception breakpoints to show when no session is active. */
+    protected persistentlyVisible = false;
 
-    constructor(
-        readonly data: ExceptionBreakpoint,
-        readonly breakpoints: BreakpointManager,
-        protected readonly commandService: CommandService
-    ) {
-        this.id = data.raw.filter + ':' + data.raw.label;
+    static create(origin: ExceptionBreakpoint,
+        options: DebugBreakpointOptions): DebugExceptionBreakpoint {
+        return new this(origin, options);
     }
 
-    render(host: TreeWidget): React.ReactNode {
+    constructor(
+        readonly origin: ExceptionBreakpoint,
+        readonly options: DebugBreakpointOptions
+    ) {
+        super(BreakpointManager.EXCEPTION_URI, options);
+    }
+
+    override render(host: TreeWidget): React.ReactNode {
         this.treeWidget = host;
-        return <div title={this.data.raw.description || this.data.raw.label} className='theia-source-breakpoint'>
+        return <div title={this.origin.raw.description || this.origin.raw.label} className='theia-source-breakpoint'>
             <span className='theia-debug-breakpoint-icon' />
-            <input type='checkbox' checked={this.data.enabled} onChange={this.toggle} />
+            <input type='checkbox' checked={this.origin.enabled} onChange={this.toggle} />
             <span className='line-info'>
-                <span className='name'>{this.data.raw.label} </span>
-                {this.data.condition &&
-                    <span title={nls.localizeByDefault('Expression condition: {0}', this.data.condition)}
-                        className={'path ' + TREE_NODE_INFO_CLASS}>{this.data.condition} </span>}
+                <span className='name'>{this.origin.raw.label} </span>
+                {this.origin.condition &&
+                    <span title={nls.localizeByDefault('Expression condition: {0}', this.origin.condition)}
+                        className={'path ' + TREE_NODE_INFO_CLASS}>{this.origin.condition} </span>}
             </span>
             {this.renderActions()}
         </div>;
     }
 
     protected renderActions(): React.ReactNode {
-        if (this.data.raw.supportsCondition) {
+        if (this.origin.raw.supportsCondition) {
             return <div className='theia-debug-breakpoint-actions'>
                 <div className={codicon('edit', true)} title={nls.localizeByDefault('Edit Condition...')} onClick={this.onEdit} />
             </div>;
@@ -65,19 +71,45 @@ export class DebugExceptionBreakpoint implements TreeElement {
         this.commandService.executeCommand(DebugCommands.EDIT_BREAKPOINT_CONDITION.id);
     };
 
-    protected async selectInTree(): Promise<void> {
-        if (this.treeWidget?.model && SelectableTreeNode.is(this)) {
-            this.treeWidget.model.selectNode(this);
+    setSessionEnablement(sessionId: string, enabled: boolean): void {
+        if (enabled) {
+            this.sessionEnablement.add(sessionId);
+        } else {
+            this.sessionEnablement.delete(sessionId);
         }
     }
 
-    protected toggle = () => this.breakpoints.toggleExceptionBreakpoint(this.data.raw.filter);
+    isEnabledForSession(sessionId: string): boolean {
+        return this.sessionEnablement.has(sessionId);
+    }
+
+    setPersistentVisibility(visible: boolean): void {
+        this.persistentlyVisible = visible;
+    }
+
+    isPersistentlyVisible(): boolean {
+        return this.persistentlyVisible;
+    }
+
+    protected override doRender(): React.ReactNode {
+        return undefined;
+    }
+
+    protected toggle = (e: React.ChangeEvent<HTMLInputElement>) => this.setEnabled(e.currentTarget.checked);
+
+    override setEnabled(enabled: boolean): void {
+        this.breakpoints.enableBreakpoint(this, enabled);
+    }
+
+    override remove(): void {
+        this.breakpoints.enableBreakpoint(this, false);
+    }
 
     async editCondition(): Promise<void> {
         const inputDialog = new SingleTextInputDialog({
-            title: this.data.raw.label,
-            placeholder: this.data.raw.conditionDescription,
-            initialValue: this.data.condition
+            title: this.origin.raw.label,
+            placeholder: this.origin.raw.conditionDescription,
+            initialValue: this.origin.condition
         });
         let condition = await inputDialog.open();
         if (condition === undefined) {
@@ -86,8 +118,15 @@ export class DebugExceptionBreakpoint implements TreeElement {
         if (condition === '') {
             condition = undefined;
         }
-        if (condition !== this.data.condition) {
-            this.breakpoints.updateExceptionBreakpoint(this.data.raw.filter, { condition });
+        if (condition !== this.origin.condition) {
+            this.breakpoints.updateBreakpoint(this, { condition });
         }
+    }
+
+    protected override getBreakpointDecoration(message?: string[] | undefined): DebugBreakpointDecoration {
+        return {
+            className: 'never-decorated',
+            message: message ?? []
+        };
     }
 }

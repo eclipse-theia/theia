@@ -44,6 +44,18 @@ export namespace MonacoCommands {
         ['editor.action.clipboardPasteAction', CommonCommands.PASTE.id]
     ]);
 
+    /**
+     * Actions that directly manipulate input content (clipboard, select all).
+     * These should only be handled when the editor's text area has focus,
+     * not when an overlay widget (e.g. find/replace) or an unrelated input has focus.
+     */
+    export const INPUT_ACTIONS = new Set([
+        'editor.action.selectAll',
+        'editor.action.clipboardCutAction',
+        'editor.action.clipboardCopyAction',
+        'editor.action.clipboardPasteAction'
+    ]);
+
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
     export const EXCLUDE_ACTIONS = new Set([
@@ -138,13 +150,21 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             if (MonacoCommands.EXCLUDE_ACTIONS.has(id)) {
                 continue;
             }
+            const isCommonAction = MonacoCommands.COMMON_ACTIONS.has(id);
+            const isInputAction = MonacoCommands.INPUT_ACTIONS.has(id);
             const handler: CommandHandler = {
                 execute: (...args) => {
                     /*
                      * We check monaco focused code editor first since they can contain inline like the debug console and embedded editors like in the peek reference.
                      * If there is not such then we check last focused editor tracked by us.
+                     * For input actions (clipboard, select all), we require the editor to have text focus
+                     * (not just widget focus). This avoids intercepting operations meant for native input
+                     * fields, including inputs inside Monaco's own overlay widgets like find/replace.
                      */
-                    const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+                    const focusedEditor = codeEditorService.getFocusedCodeEditor();
+                    const editor = isInputAction
+                        ? (focusedEditor?.hasTextFocus() ? focusedEditor : undefined)
+                        : focusedEditor || codeEditorService.getActiveCodeEditor();
                     if (editorActions.has(id)) {
                         const action = editor && editor.getAction(id);
                         if (!action) {
@@ -161,13 +181,20 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                     );
                 },
                 isEnabled: () => {
-                    const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+                    // For input actions (clipboard, select all), only claim enabled when the editor
+                    // has text focus (not just widget focus). This allows fallback handlers to handle
+                    // these actions in native inputs, including inputs inside Monaco's own overlay
+                    // widgets like the find/replace widget.
+                    const focusedEditor = codeEditorService.getFocusedCodeEditor();
+                    const editor = isInputAction
+                        ? (focusedEditor?.hasTextFocus() ? focusedEditor : undefined)
+                        : focusedEditor || codeEditorService.getActiveCodeEditor();
 
                     if (editorActions.has(id)) {
                         const action = editor && editor.getAction(id);
                         return !!action && action.isSupported();
                     }
-                    if (!!EditorExtensionsRegistry.getEditorCommand(id) || MonacoCommands.COMMON_ACTIONS.has(id)) {
+                    if (!!EditorExtensionsRegistry.getEditorCommand(id) || isCommonAction) {
                         return !!editor;
                     }
                     return true;

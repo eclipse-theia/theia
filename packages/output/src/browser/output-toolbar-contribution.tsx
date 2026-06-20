@@ -19,9 +19,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { OutputWidget } from './output-widget';
 import { OutputCommands } from './output-commands';
-import { OutputContribution } from './output-contribution';
 import { OutputChannelManager } from './output-channel';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -31,8 +31,8 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
 
-    @inject(OutputContribution)
-    protected readonly outputContribution: OutputContribution;
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
 
     protected readonly onOutputWidgetStateChangedEmitter = new Emitter<void>();
     protected readonly onOutputWidgetStateChanged = this.onOutputWidgetStateChangedEmitter.event;
@@ -42,8 +42,10 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
 
     @postConstruct()
     protected init(): void {
-        this.outputContribution.widget.then(widget => {
-            widget.onStateChanged(() => this.onOutputWidgetStateChangedEmitter.fire());
+        this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
+            if (factoryId === OutputWidget.ID && widget instanceof OutputWidget) {
+                widget.onStateChanged(() =>  this.onOutputWidgetStateChangedEmitter.fire());
+            }
         });
         const fireChannelsChanged = () => this.onChannelsChangedEmitter.fire();
         this.outputChannelManager.onSelectedChannelChanged(fireChannelsChanged);

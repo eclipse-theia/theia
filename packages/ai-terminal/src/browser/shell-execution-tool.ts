@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolProvider, ToolRequest, AutoActionResult } from '@theia/ai-core';
+import { ShellCommandPermissionService } from './shell-command-permission-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
@@ -24,7 +25,7 @@ import {
     ShellExecutionCanceledResult,
     combineAndTruncate
 } from '../common/shell-execution-server';
-import { CancellationToken, generateUuid } from '@theia/core';
+import { CancellationToken, generateUuid, Path } from '@theia/core';
 
 @injectable()
 export class ShellExecutionTool implements ToolProvider {
@@ -34,6 +35,9 @@ export class ShellExecutionTool implements ToolProvider {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(ShellCommandPermissionService)
+    protected readonly shellCommandPermissionService: ShellCommandPermissionService;
 
     protected readonly runningExecutions = new Map<string, string>();
 
@@ -100,18 +104,63 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                         type: 'string',
                         description: 'The shell command to execute. Can include pipes, redirects, and shell features.'
                     },
+                    description: {
+                        type: 'string',
+                        description: 'Describe what this command actually does in active voice, ' +
+                            'so the user can verify the command matches their intent without ' +
+                            'parsing flags or shell syntax themselves. ' +
+                            'Never use words like "complex" or "risk".\n\n' +
+                            'Reflect the actual mechanics of the command: significant flags, ' +
+                            'filters, pipes, and output limits. When a less obvious tool or ' +
+                            'flag is chosen (e.g. `find` instead of `ls`, `-type f`, `head`, ' +
+                            '`sort`), state its effect rather than only the high-level goal.\n\n' +
+                            'For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):\n' +
+                            '- cat README.md -> "Print README file contents"\n' +
+                            '- git diff HEAD~1 -> "Show changes from last commit"\n' +
+                            '- npm test -> "Run project test suite"\n\n' +
+                            'For longer or piped commands, add enough context to clarify intent and behavior:\n' +
+                            '- grep -rn "TODO" src/ --include="*.ts" -> "Search TypeScript files in src for TODO comments"\n' +
+                            '- git log --oneline --since="1 week" | wc -l -> "Count commits from the past week"\n' +
+                            '- du -sh node_modules/* | sort -rh | head -5 -> "Show 5 largest packages in node_modules by size"\n' +
+                            '- find . -type f | head -100 -> "Recursively list up to the first 100 files (excluding directories) under the current directory"\n\n' +
+                            'Avoid descriptions that state only the intent and hide the mechanics ' +
+                            '(e.g. "List all files in the workspace" for `find . -type f | head -100` ' +
+                            'is too vague — it omits the recursion, file-only filter, and 100-entry limit).'
+                    },
                     cwd: {
                         type: 'string',
-                        description: 'Working directory for command execution. Can be absolute or relative to workspace root. Defaults to the workspace root.'
+                        description: 'Working directory for command execution. ' +
+                            'Use a workspace-relative path (e.g., "backend", "frontend/src") ' +
+                            'or an absolute filesystem path. ' +
+                            'If omitted, defaults to the workspace root (single-root workspaces only).'
                     },
                     timeout: {
                         type: 'number',
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
                     }
                 },
-                required: ['command']
+                required: ['command', 'description']
             },
-            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx)
+            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
+            checkAutoAction: (argString: string): AutoActionResult | undefined => {
+                try {
+                    const args = JSON.parse(argString);
+                    const result = this.shellCommandPermissionService.checkCommand(args.command);
+
+                    if (result.reason === 'denied') {
+                        return {
+                            action: 'deny',
+                            reason: `Command denied because it matched deny pattern: ${result.matchedPattern}`
+                        };
+                    }
+                    if (result.allowed) {
+                        return { action: 'allow' };
+                    }
+                    return undefined; // Show confirmation UI
+                } catch {
+                    return undefined; // Show confirmation UI
+                }
+            }
         };
     }
 
@@ -122,9 +171,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             timeout?: number;
         } = JSON.parse(argString);
 
-        // Get workspace root to pass to backend for path resolution
-        const rootUri = this.workspaceService.getWorkspaceRootUri(undefined);
-        const workspaceRoot = rootUri?.path.fsPath();
+        const resolvedCwd = this.resolveCwd(args.cwd);
 
         // Generate execution ID and get tool call ID from context
         const executionId = generateUuid();
@@ -141,11 +188,9 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         });
 
         try {
-            // Call the backend service (path resolution happens on the backend)
             const result = await this.shellServer.execute({
                 command: args.command,
-                cwd: args.cwd,
-                workspaceRoot,
+                cwd: resolvedCwd,
                 timeout: args.timeout,
                 executionId,
             });
@@ -178,7 +223,53 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         }
     }
 
-    protected extractToolCallId(ctx: unknown): string | undefined {
+    /**
+     * Resolves a cwd value to an absolute filesystem path.
+     * Handles: undefined (falls back to workspace root), absolute paths (pass-through),
+     * root-relative paths (<rootName>/...), and bare root names.
+     */
+    private resolveCwd(cwd: string | undefined): string {
+        const roots = this.workspaceService.tryGetRoots();
+
+        const rootNames = roots.map(r => r.resource.path.base);
+        if (!cwd) {
+            if (roots.length === 1) {
+                return roots[0].resource.path.fsPath();
+            }
+            throw new Error(
+                'A working directory (cwd) is required in a multi-root workspace. ' +
+                `Available workspace roots: ${rootNames.join(', ')}. ` +
+                'Provide one as cwd (e.g., "backend") or use a sub-path (e.g., "backend/src").'
+            );
+        }
+
+        const normalized = Path.normalizePathSeparator(cwd);
+
+        if (new Path(normalized).isAbsolute) {
+            return normalized;
+        }
+
+        const segments = normalized.split('/');
+        for (const root of roots) {
+            if (root.resource.path.base === segments[0]) {
+                const rest = segments.slice(1).join('/');
+                const resolved = rest ? root.resource.resolve(rest) : root.resource;
+                return resolved.path.fsPath();
+            }
+        }
+
+        if (roots.length === 1) {
+            return roots[0].resource.resolve(normalized).path.fsPath();
+        }
+
+        throw new Error(
+            `Could not resolve working directory '${cwd}' to a workspace root. ` +
+            'In a multi-root workspace, prefix paths with the workspace root name ' +
+            `(e.g., '${rootNames[0]}/path'). Available roots: ${rootNames.join(', ')}.`
+        );
+    }
+
+    protected extractToolCallId(ctx?: unknown): string | undefined {
         if (ctx && typeof ctx === 'object' && 'toolCallId' in ctx) {
             return (ctx as { toolCallId?: string }).toolCallId;
         }

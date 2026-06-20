@@ -23,6 +23,9 @@ import { ContainerInfoContribution } from './container-info-contribution';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
+import { DevContainerSuggestionContribution } from './dev-container-suggestion-contribution';
+import { bindDevContainerPreferences } from '../electron-common/dev-container-preferences';
+import { DevContainerStartupContribution } from './dev-container-startup-contribution';
 
 export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();
@@ -30,6 +33,7 @@ export default new ContainerModule(bind => {
     bind(WorkspaceOpenHandlerContribution).toService(ContainerConnectionContribution);
 
     bind(ContainerOutputProvider).toSelf().inSingletonScope();
+    bindDevContainerPreferences(bind);
 
     bind(RemoteContainerConnectionProvider).toDynamicValue(ctx => {
         const outputProvider = ctx.container.get(ContainerOutputProvider);
@@ -40,4 +44,10 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ContainerInfoContribution);
     bind(WindowTitleContribution).toService(ContainerInfoContribution);
     bind(LabelProviderContribution).toService(ContainerInfoContribution);
+
+    bind(DevContainerSuggestionContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(DevContainerSuggestionContribution);
+
+    bind(DevContainerStartupContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(DevContainerStartupContribution);
 });

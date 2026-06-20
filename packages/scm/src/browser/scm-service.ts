@@ -39,7 +39,7 @@ export class ScmService {
     readonly onDidAddRepository = this.onDidAddRepositoryEmitter.event;
 
     protected readonly onDidRemoveRepositoryEmitter = new Emitter<ScmRepository>();
-    readonly onDidRemoveRepository = this.onDidAddRepositoryEmitter.event;
+    readonly onDidRemoveRepository = this.onDidRemoveRepositoryEmitter.event;
 
     protected readonly onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
     readonly onDidChangeStatusBarCommands = this.onDidChangeStatusBarCommandsEmitter.event;
@@ -92,10 +92,13 @@ export class ScmService {
         repository.dispose = () => {
             this._repositories.delete(key);
             dispose.bind(repository)();
-            this.onDidRemoveRepositoryEmitter.fire(repository);
+            // Update the selected repository before firing the remove event so
+            // subscribers do not observe a stale selection pointing at the just
+            // disposed repository.
             if (this._selectedRepository === repository) {
                 this.selectedRepository = this._repositories.values().next().value;
             }
+            this.onDidRemoveRepositoryEmitter.fire(repository);
         };
         this._repositories.set(key, repository);
         this.onDidAddRepositoryEmitter.fire(repository);

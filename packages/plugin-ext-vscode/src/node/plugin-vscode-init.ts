@@ -16,7 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { register } from 'node:module';
 import * as theia from '@theia/plugin';
+import { isEqualOrParent } from '@theia/core/lib/common/paths';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
 
@@ -60,7 +62,7 @@ function overrideInternalLoad(): void {
             return internalLoad.apply(this, arguments);
         }
 
-        const plugin = findPlugin(parent.filename);
+        const plugin = findPlugin(plugins, parent.filename);
         if (plugin) {
             const apiImpl = pluginsApiImpl.get(plugin.model.id);
             return apiImpl;
@@ -73,8 +75,78 @@ function overrideInternalLoad(): void {
 
         return defaultApi;
     };
+
+    registerESMLoaderHook();
 }
 
-function findPlugin(filePath: string): Plugin | undefined {
-    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+/**
+ * Locate the plugin whose folder contains the given file.
+ *
+ * Matches on folder boundaries, so sibling plugins whose folder names share
+ * a prefix (e.g. `acme.foo` vs. `acme.foo-extras`) are not mismatched.
+ */
+export function findPlugin(pluginList: ReadonlyArray<Plugin>, filePath: string): Plugin | undefined {
+    return pluginList.find(plugin => isEqualOrParent(filePath, plugin.pluginFolder));
+}
+
+/**
+ * Register an ESM loader hook so that `import 'vscode'` from an ESM plugin
+ * resolves through the same `module._load` patch above.
+ *
+ * The hook emits a unique synthetic CommonJS module per importing parent.
+ * The synthetic source:
+ *   - looks up the plugin API via `Module._load('vscode', { filename: <parent path> })`,
+ *     reusing the existing `findPlugin(parent.filename)` lookup, and
+ *   - copies the API's top-level namespace into `exports.<name> = __api.<name>` so
+ *     `cjs-module-lexer` exposes them as ESM named exports (required by VS Code
+ *     extensions that do e.g. `import { commands, window } from 'vscode'`).
+ *
+ * Making the synthetic URL unique per importing parent gives each ESM plugin its
+ * own Node module-cache entry, so each plugin receives ITS OWN API rather than
+ * the first plugin's API being captured forever.
+ */
+function registerESMLoaderHook(): void {
+    const sampleApi = plugins.length > 0 ? pluginsApiImpl.get(plugins[0].model.id) : undefined;
+    const apiKeys = sampleApi ? Object.keys(sampleApi) : [];
+    const loaderSource = `
+import { fileURLToPath } from 'node:url';
+const SHIM_URL_PREFIX = 'theia-vscode-shim:///vscode.cjs?parent=';
+const API_KEYS = ${JSON.stringify(apiKeys)};
+
+export async function resolve(specifier, context, nextResolve) {
+    if (specifier === 'vscode' && context.parentURL && context.parentURL.startsWith('file:')) {
+        return {
+            shortCircuit: true,
+            url: SHIM_URL_PREFIX + encodeURIComponent(context.parentURL),
+            format: 'commonjs'
+        };
+    }
+    return nextResolve(specifier, context);
+}
+
+export async function load(url, context, nextLoad) {
+    if (url.startsWith(SHIM_URL_PREFIX)) {
+        const parentURL = decodeURIComponent(url.slice(SHIM_URL_PREFIX.length));
+        let parentPath = '';
+        if (parentURL.startsWith('file:')) {
+            try { parentPath = fileURLToPath(parentURL); } catch { parentPath = ''; }
+        }
+        const namedExports = API_KEYS
+            .map(k => 'exports[' + JSON.stringify(k) + '] = __api[' + JSON.stringify(k) + '];')
+            .join('\\n');
+        const source =
+            "const Module = require('module');\\n" +
+            "const __api = Module._load('vscode', { filename: " + JSON.stringify(parentPath) + " }, false);\\n" +
+            namedExports;
+        return { format: 'commonjs', shortCircuit: true, source };
+    }
+    return nextLoad(url, context);
+}
+`;
+    try {
+        const dataUrl = 'data:text/javascript;base64,' + Buffer.from(loaderSource, 'utf8').toString('base64');
+        register(dataUrl);
+    } catch (e) {
+        console.error('Failed to register VS Code ESM loader hook; ESM plugins will not load:', e);
+    }
 }

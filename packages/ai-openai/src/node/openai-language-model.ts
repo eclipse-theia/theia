@@ -21,23 +21,24 @@ import {
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelTextResponse,
-    TokenUsageService,
     UserRequest,
     ImageContent,
-    LanguageModelStatus
+    LanguageModelStatus,
+    ReasoningSupport
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
-import * as undici from 'undici';
+import { openAiReasoningFor } from './openai-reasoning';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
@@ -104,12 +105,17 @@ export class OpenAiModel implements LanguageModel {
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
         public useResponseApi: boolean = false,
-        protected readonly tokenUsageService?: TokenUsageService,
-        protected proxy?: string
+        public proxy?: string,
+        public reasoningSupport?: ReasoningSupport,
+        public maxInputTokens?: number
     ) { }
 
-    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        return request.settings ?? {};
+    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
+    protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
+        return {
+            ...request.settings,
+            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -161,7 +167,7 @@ export class OpenAiModel implements LanguageModel {
             });
         }
 
-        return { stream: new StreamingAsyncIterator(runner, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -174,20 +180,12 @@ export class OpenAiModel implements LanguageModel {
 
         const message = response.choices[0].message;
 
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && response.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: response.usage.prompt_tokens,
-                    outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
-            text: message.content ?? ''
+            text: message.content ?? '',
+            usage: response.usage ? {
+                input_tokens: response.usage.prompt_tokens,
+                output_tokens: response.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -209,21 +207,13 @@ export class OpenAiModel implements LanguageModel {
             console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
         }
 
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && result.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.prompt_tokens,
-                    outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
             content: message.content ?? '',
-            parsed: message.parsed
+            parsed: message.parsed,
+            usage: result.usage ? {
+                input_tokens: result.usage.prompt_tokens,
+                output_tokens: result.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -249,23 +239,17 @@ export class OpenAiModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
         const key = apiKey ?? 'no-key';
 
-        let fo;
-        if (this.proxy) {
-            const proxyAgent = new undici.ProxyAgent(this.proxy);
-            fo = {
-                dispatcher: proxyAgent,
-            };
-        }
+        const proxyFetch = createProxyFetch(this.proxy);
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetchOptions: fo });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetchOptions: fo });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
         }
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request);
+        const settings = this.getSettings(request, true);
         const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
 
         try {
@@ -279,7 +263,6 @@ export class OpenAiModel implements LanguageModel {
                 this.runnerOptions,
                 this.id,
                 isStreamingRequest,
-                this.tokenUsageService,
                 cancellationToken
             );
         } catch (error) {
@@ -386,7 +369,38 @@ export class OpenAiModelUtils {
         model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        const converted = processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: ChatCompletionMessageParam[]): ChatCompletionMessageParam[] {
+        const result: ChatCompletionMessageParam[] = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: ChatCompletionAssistantMessageParam = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent !== undefined && nextContent !== undefined) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent !== undefined) {
+                    merged.content = nextContent;
+                } else if (previousContent !== undefined) {
+                    merged.content = previousContent;
+                }
+
+                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
+                if (toolCalls.length > 0) {
+                    merged.tool_calls = toolCalls;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 
 }

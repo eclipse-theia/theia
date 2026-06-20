@@ -115,7 +115,7 @@
   color: var(--theia-descriptionForeground);
   flex: 1 1 auto;
   overflow: hidden;
-  white-space: nowrap;
+  white-space: pre;
 }
 
 .lm-TabBar-tail {
@@ -536,6 +536,7 @@
   font-weight: bolder;
   max-width: var(--theia-hover-preview-width);
   word-wrap: break-word;
+  white-space: pre-wrap !important;
   font-size: medium;
   margin: 0px 0px;
 }
@@ -544,6 +545,7 @@
   font-size: small;
   max-width: var(--theia-hover-preview-width);
   word-wrap: break-word;
+  white-space: pre-wrap !important;
   margin: 0px 0px;
   margin-top: 4px;
 }

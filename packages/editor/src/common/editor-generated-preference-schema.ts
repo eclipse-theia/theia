@@ -156,23 +156,45 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": PreferenceScope.Folder
 
     },
-    // @monaco-uplift GH-16401 - update to separate preferences instead of array
-    "editor.experimental.preferTreeSitter": {
-        "type": "array",
-        "items": {
-            "type": "string",
-            "enum": [
-                "typescript"
-            ]
-        },
-        "default": [],
+    "editor.experimental.preferTreeSitter.css": {
+        "type": "boolean",
+        "default": false,
         "markdownDescription":
-            nls.localize('theia/editor/editor.experimental.preferTreeSitter', "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for css. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for css."),
         "tags": [
             "experimental"
         ],
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.experimental.preferTreeSitter.typescript": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for typescript. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for typescript."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.experimental.preferTreeSitter.ini": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for ini."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.experimental.preferTreeSitter.regex": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for regex. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for regex."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
     },
     "editor.language.brackets": {
         "type": [

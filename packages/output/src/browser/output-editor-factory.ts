@@ -48,7 +48,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
             overviewRulerLanes: 3,
             lineNumbersMinChars: 3,
             fixedOverflowWidgets: true,
-            wordWrap: 'off',
+            wordWrap: 'on',
             lineNumbers: 'off',
             glyphMargin: false,
             lineDecorationsWidth: 20,

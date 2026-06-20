@@ -66,7 +66,7 @@ const WebSearchInProgressComponent: React.FC<{ query: string }> = ({ query }) =>
                 <span className="codex-tool command">{query}</span>
             </div>
             <div className="codex-tool header-right">
-                <span className="codex-tool badge">{nls.localize('theia/ai/codex/webSearch', 'Web Search')}</span>
+                <span className="codex-tool badge">{nls.localizeByDefault('Web Search')}</span>
             </div>
         </div>
     </div>
@@ -81,7 +81,7 @@ const WebSearchCompletedComponent: React.FC<{ item: WebSearchItem }> = ({ item }
                 <span className="codex-tool command">{item.query}</span>
             </div>
             <div className="codex-tool header-right">
-                <span className="codex-tool badge">{nls.localize('theia/ai/codex/webSearch', 'Web Search')}</span>
+                <span className="codex-tool badge">{nls.localizeByDefault('Web Search')}</span>
             </div>
         </div>
     </div>

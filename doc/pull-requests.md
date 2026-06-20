@@ -18,15 +18,19 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 - [1.](#pr-template) Each PR description has to follow the [PR template](https://github.com/eclipse-theia/theia/blob/master/.github/PULL_REQUEST_TEMPLATE.md)
 
+<a name="human-in-the-loop"></a>
+
+- [2.](#human-in-the-loop) Contributors can use whatever tools they would like to craft their contributions, but there must be a human in the loop. Contributors must read and review all LLM-generated code or text before they ask other project members to review it. The contributor is always the author and is fully accountable for their contributions. Contributors should be sufficiently confident that the contribution is high enough quality that asking for a review is a good use of scarce maintainer time, and they should be able to answer questions about their work themselves during review.
+
 <a name="design-review"></a>
 
-- [2.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
+- [3.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
   - A request on the design review should be an explicit comment.
   - Such PR should be marked as a draft or with the WIP prefix.
 
 <a name="fixups"></a>
 
-- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
+- [4.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
 ## Requesting a Review
 
@@ -161,4 +165,5 @@ then an author and maintainers have 2 days to resolve them after that a PR has t
   Such changes have to be done by an experienced maintainer to avoid regressions and long reviews.
   - It should be a 3rd party component, e.g. Theia is not a logging framework or a proxy server.
   - It changes development infrastructure, e.g. testing frameworks, packaging and so on.
-Such changes have to be done by active maintainers after agreement in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings).
+  Such changes have to be done by active maintainers after agreement in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings).
+  - It violates the [human-in-the-loop](#human-in-the-loop) policy.

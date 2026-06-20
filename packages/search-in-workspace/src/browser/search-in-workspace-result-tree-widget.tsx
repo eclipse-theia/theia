@@ -38,7 +38,7 @@ import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
     EditorWidget, EditorOpenerOptions, FindMatch, Position
 } from '@theia/editor/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceSearchFilterService, WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
@@ -52,7 +52,6 @@ import { minimatch, type MinimatchOptions } from 'minimatch';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { nls } from '@theia/core/lib/common/nls';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 
 const ROOT_ID = 'ResultTree';
 
@@ -146,7 +145,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
     @inject(ProgressService) protected readonly progressService: ProgressService;
     @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
-    @inject(FileSystemPreferences) protected readonly filesystemPreferences: FileSystemPreferences;
+    @inject(WorkspaceSearchFilterService) protected readonly searchFilterService: WorkspaceSearchFilterService;
     @inject(FileService) protected readonly fileService: FileService;
 
     constructor(
@@ -435,7 +434,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * - it is not explicitly present in a non-empty `includes` list.
      */
     protected shouldApplySearch(editorWidget: EditorWidget, searchOptions: SearchInWorkspaceOptions): boolean {
-        const excludePatterns = this.getExcludeGlobs(searchOptions.exclude);
+        const excludePatterns = this.getExcludeGlobs(searchOptions.exclude, !searchOptions.includeIgnored);
         if (this.inPatternList(editorWidget.editor.uri, excludePatterns)) {
             return false;
         }
@@ -605,7 +604,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.searchOptions = searchOptions;
         searchOptions = {
             ...searchOptions,
-            exclude: this.getExcludeGlobs(searchOptions.exclude)
+            exclude: this.getExcludeGlobs(searchOptions.exclude, !searchOptions.includeIgnored)
         };
         this.resultTree.clear();
         this.forceVisibleRootNode = false;
@@ -1262,10 +1261,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      *
      * @returns the list of exclude globs.
      */
-    protected getExcludeGlobs(excludeOptions?: string[]): string[] {
-        const excludePreferences = this.filesystemPreferences['files.exclude'];
-        const excludePreferencesGlobs = Object.keys(excludePreferences).filter(key => !!excludePreferences[key]);
-        return [...new Set([...excludePreferencesGlobs, ...excludeOptions || []])];
+    protected getExcludeGlobs(excludeOptions?: string[], useExcludeSettings = true): string[] {
+        if (!useExcludeSettings) {
+            return excludeOptions || [];
+        }
+        const exclusionGlobs = this.searchFilterService.getExclusionGlobs();
+        return [...new Set([...exclusionGlobs, ...excludeOptions || []])];
     }
 
     /**

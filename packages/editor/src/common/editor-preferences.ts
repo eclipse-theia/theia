@@ -127,6 +127,12 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'minimum': 0,
         'markdownDescription': nls.localizeByDefault('Controls the delay in milliseconds after which an editor with unsaved changes is saved automatically. Only applies when `#files.autoSave#` is set to `{0}`.', 'afterDelay')
     },
+    'files.autoSaveWhenNoErrors': {
+        'type': 'boolean',
+        'default': false,
+        'markdownDescription': nls.localize('theia/editor/autoSaveWhenNoErrors',
+            'When enabled, will limit auto save of editors to files that have no errors reported in them at the time the auto save is triggered. Only applies when {0} is enabled.', '`#files.autoSave#`')
+    },
     'files.refactoring.autoSave': {
         'type': 'boolean',
         'default': true,
@@ -140,6 +146,7 @@ interface FileContributionEditorPreferences {
     'files.eol': '\n' | '\r\n' | 'auto';
     'files.autoSave': 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
     'files.autoSaveDelay': number;
+    'files.autoSaveWhenNoErrors': boolean;
     'files.refactoring.autoSave': boolean
 }
 // #endregion

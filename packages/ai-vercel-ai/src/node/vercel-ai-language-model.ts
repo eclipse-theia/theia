@@ -25,7 +25,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
     ToolCall,
     UserRequest,
 } from '@theia/ai-core';
@@ -33,11 +32,8 @@ import { CancellationToken, Disposable, ILogger } from '@theia/core';
 import {
     CoreMessage,
     generateObject,
-    GenerateObjectResult,
     generateText,
-    GenerateTextResult,
     jsonSchema,
-    StepResult,
     streamText,
     TextStreamPart,
     tool,
@@ -46,12 +42,6 @@ import {
     ToolSet
 } from 'ai';
 import { VercelAiLanguageModelFactory, VercelAiProviderConfig } from './vercel-ai-language-model-factory';
-
-interface VercelCancellationToken extends Disposable {
-    signal: AbortSignal;
-    cancellationToken: CancellationToken;
-    isCancellationRequested: boolean;
-}
 
 type StreamPart = ToolResultPart | {
     type: string;
@@ -63,6 +53,12 @@ type StreamPart = ToolResultPart | {
     usage?: { promptTokens: number; completionTokens: number };
     signature?: string;
 };
+
+interface VercelCancellationToken extends Disposable {
+    signal: AbortSignal;
+    cancellationToken: CancellationToken;
+    isCancellationRequested: boolean;
+}
 
 interface VercelAiStream extends AsyncIterable<TextStreamPart<ToolSet>> {
     cancel: () => void;
@@ -80,6 +76,10 @@ export class VercelAiStreamTransformer {
         protected readonly fullStream: VercelAiStream,
         protected readonly context: StreamContext
     ) { }
+
+    private isToolResultPart(part: StreamPart): part is ToolResultPart {
+        return part.type === 'tool-result';
+    }
 
     async *transform(): AsyncGenerator<LanguageModelStreamResponsePart> {
         this.toolCallsMap.clear();
@@ -120,11 +120,20 @@ export class VercelAiStreamTransformer {
                         }
                         break;
 
-                    default:
+                    case 'step-finish': {
+                        const { usage } = part;
+                        if (usage && !isNaN(usage.promptTokens) && !isNaN(usage.completionTokens)) {
+                            yield { input_tokens: usage.promptTokens, output_tokens: usage.completionTokens };
+                        }
+                        break;
+                    }
+
+                    default: {
                         if (this.isToolResultPart(part)) {
                             toolCallUpdated = this.processToolResult(part);
                         }
                         break;
+                    }
                 }
 
                 if (toolCallUpdated && this.toolCallsMap.size > 0) {
@@ -134,10 +143,6 @@ export class VercelAiStreamTransformer {
         } catch (error) {
             this.context.logger.error('Error in AI SDK stream:', error);
         }
-    }
-
-    private isToolResultPart(part: StreamPart): part is ToolResultPart {
-        return part.type === 'tool-result';
     }
 
     private updateToolCall(id: string, name: string, args?: string): boolean {
@@ -189,7 +194,6 @@ export class VercelAiModel implements LanguageModel {
         protected readonly languageModelFactory: VercelAiLanguageModelFactory,
         protected providerConfig: () => VercelAiProviderConfig,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -267,9 +271,14 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
-        return { text: response.text };
+        const result: LanguageModelTextResponse = { text: response.text };
+        if (!isNaN(response.usage.completionTokens) && !isNaN(response.usage.promptTokens)) {
+            result.usage = {
+                input_tokens: response.usage.promptTokens,
+                output_tokens: response.usage.completionTokens,
+            };
+        }
+        return result;
     }
 
     protected createTools(request: UserRequest): ToolSet | undefined {
@@ -323,28 +332,17 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
-        return {
+        const result: LanguageModelParsedResponse = {
             content: JSON.stringify(response.object),
             parsed: response.object
         };
-    }
-
-    private async recordTokenUsage(
-        result: GenerateObjectResult<unknown> | GenerateTextResult<ToolSet, unknown>,
-        request: UserRequest
-    ): Promise<void> {
-        if (this.tokenUsageService && !isNaN(result.usage.completionTokens) && !isNaN(result.usage.promptTokens)) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.promptTokens,
-                    outputTokens: result.usage.completionTokens,
-                    requestId: request.requestId
-                }
-            );
+        if (!isNaN(response.usage.completionTokens) && !isNaN(response.usage.promptTokens)) {
+            result.usage = {
+                input_tokens: response.usage.promptTokens,
+                output_tokens: response.usage.completionTokens,
+            };
         }
+        return result;
     }
 
     protected async handleStreamingRequest(
@@ -366,15 +364,6 @@ export class VercelAiModel implements LanguageModel {
             maxRetries: this.maxRetries,
             toolCallStreaming: true,
             abortSignal,
-            onStepFinish: (stepResult: StepResult<ToolSet>) => {
-                if (!isNaN(stepResult.usage.completionTokens) && !isNaN(stepResult.usage.promptTokens)) {
-                    this.tokenUsageService?.recordTokenUsage(this.id, {
-                        inputTokens: stepResult.usage.promptTokens,
-                        outputTokens: stepResult.usage.completionTokens,
-                        requestId: request.requestId
-                    });
-                }
-            },
             ...settings
         });
 
@@ -388,7 +377,7 @@ export class VercelAiModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): Array<CoreMessage> {
-        return messages.map(message => {
+        const converted = messages.map(message => {
             const content = LanguageModelMessage.isTextMessage(message) ? message.text : '';
             let role: 'user' | 'assistant' | 'system';
             switch (message.actor) {
@@ -409,5 +398,31 @@ export class VercelAiModel implements LanguageModel {
                 content,
             };
         });
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: Array<CoreMessage>): Array<CoreMessage> {
+        const result: Array<CoreMessage> = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: CoreMessage = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent && nextContent) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent) {
+                    merged.content = nextContent;
+                } else if (previousContent) {
+                    merged.content = previousContent;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 }

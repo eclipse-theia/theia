@@ -17,17 +17,13 @@
 
 import { TestContribution, TestItem, TestRunProfileKind, TestService } from '@theia/test/lib/browser/test-service';
 import { CommandContribution, CommandRegistry, Path, URI } from '@theia/core';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { inject, injectable, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 import { TestControllerImpl, TestItemImpl, TestRunImpl } from './test-controller';
-
-const testController = new TestControllerImpl('SampleTestController', 'Sample Test Controller');
-testController.onItemsChanged(e => {
-    console.log(JSON.stringify(e, stringifyTransformer, 4));
-});
 
 function stringifyTransformer(key: string, value: any): any {
     if (value instanceof URI) {
@@ -62,12 +58,23 @@ export class SampleTestContribution implements TestContribution, CommandContribu
     @inject(FileService)
     private fileService: FileService;
 
+    @inject(ILogger) @named('api-samples')
+    private logger: ILogger;
+
+    private testController = new TestControllerImpl('SampleTestController', 'Sample Test Controller');
     private usedUris = new Set<string>();
     private nextTestId = 0;
     private nextRunId = 0;
 
+    @postConstruct()
+    protected init(): void {
+        this.testController.onItemsChanged(e => {
+            this.logger.debug(JSON.stringify(e, stringifyTransformer, 4));
+        });
+    }
+
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({ id: 'testController.addSomeTests', label: 'Add Some Tests', category: 'Tests Sample' }, {
+        commands.registerCommand({ id: 'testController.addSomeTests', label: 'Add Some Tests', category: 'API Samples' }, {
             execute: async (...args: any): Promise<any> => {
 
                 const root = (await this.workspaceService.roots)[0];
@@ -78,7 +85,7 @@ export class SampleTestContribution implements TestContribution, CommandContribu
                 for (let i = 0; i < Math.min(10, files.length); i++) {
                     const fileUri = new URI(files[i]);
                     const relativePath = root.resource.path.relative(fileUri.path);
-                    let collection = testController.items;
+                    let collection = this.testController.items;
 
                     let dirUri = root.resource;
 
@@ -104,43 +111,43 @@ export class SampleTestContribution implements TestContribution, CommandContribu
             }
         });
 
-        commands.registerCommand({ id: 'testController.dumpController', label: 'Dump Controller Contents', category: 'Tests Sample' }, {
-            execute(...args: any): any {
-                console.log(JSON.stringify(testController, stringifyTransformer, 4));
+        commands.registerCommand({ id: 'testController.dumpController', label: 'Dump Controller Contents', category: 'API Samples' }, {
+            execute: (...args: any): any => {
+                this.logger.debug(JSON.stringify(this.testController, stringifyTransformer, 4));
             }
         });
     }
 
     registerTestControllers(service: TestService): void {
-        testController.addProfile({
+        this.testController.addProfile({
             kind: TestRunProfileKind.Run,
             label: 'Sample run profile #1',
             isDefault: false,
             canConfigure: true,
             tag: '',
             run: (name: string, included: readonly TestItem[], excluded: readonly TestItem[]) => {
-                testController.addRun(new TestRunImpl(testController, `sample-run-id-${this.nextRunId}`, `sample-profile-1-${this.nextRunId++}`));
+                this.testController.addRun(new TestRunImpl(this.testController, `sample-run-id-${this.nextRunId}`, `sample-profile-1-${this.nextRunId++}`));
             },
-            configure: function (): void {
-                console.log('configuring the sample profile 1');
+            configure: (): void => {
+                this.logger.debug('configuring the sample profile 1');
             }
         });
 
-        testController.addProfile({
+        this.testController.addProfile({
             kind: TestRunProfileKind.Run,
             label: 'Sample run profile #2',
             isDefault: false,
             canConfigure: true,
             tag: '',
             run: (name: string, included: readonly TestItem[], excluded: readonly TestItem[]) => {
-                testController.addRun(new TestRunImpl(testController, `sample-run-id-${this.nextRunId}`, `sample-profile-2-${this.nextRunId++}`));
+                this.testController.addRun(new TestRunImpl(this.testController, `sample-run-id-${this.nextRunId}`, `sample-profile-2-${this.nextRunId++}`));
             },
-            configure: function (): void {
-                console.log('configuring the sample profile 2');
+            configure: (): void => {
+                this.logger.debug('configuring the sample profile 2');
             }
         });
 
-        service.registerTestController(testController);
+        service.registerTestController(this.testController);
     }
 }
 

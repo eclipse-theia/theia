@@ -29,7 +29,8 @@ export class SampleFileSystemCapabilities implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({
             id: 'toggleFileSystemReadonly',
-            label: 'Toggle File System Readonly'
+            label: 'Toggle File System Readonly',
+            category: 'API Samples'
         }, {
             execute: () => {
                 const readonly = (this.remoteFileSystemProvider.capabilities & FileSystemProviderCapabilities.Readonly) !== 0;
@@ -43,7 +44,8 @@ export class SampleFileSystemCapabilities implements CommandContribution {
 
         commands.registerCommand({
             id: 'addFileSystemReadonlyMessage',
-            label: 'Add a File System ReadonlyMessage for readonly'
+            label: 'Add File System ReadonlyMessage',
+            category: 'API Samples'
         }, {
             execute: () => {
                 const readonlyMessage = new MarkdownStringImpl(`Added new **Markdown** string '+${Date.now()}`);
@@ -53,7 +55,8 @@ export class SampleFileSystemCapabilities implements CommandContribution {
 
         commands.registerCommand({
             id: 'removeFileSystemReadonlyMessage',
-            label: 'Remove File System ReadonlyMessage for readonly'
+            label: 'Remove File System ReadonlyMessage',
+            category: 'API Samples'
         }, {
             execute: () => {
                 this.remoteFileSystemProvider['setReadOnlyMessage'](undefined);

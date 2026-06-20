@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { Event, Emitter, nls } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
@@ -30,6 +30,7 @@ import {
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 import { Severity } from '@theia/core/lib/common/severity';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ProblemMatcherRegistry {
@@ -39,6 +40,9 @@ export class ProblemMatcherRegistry {
 
     @inject(ProblemPatternRegistry)
     protected readonly problemPatternRegistry: ProblemPatternRegistry;
+
+    @inject(ILogger) @named('task:ProblemMatcherRegistry')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeProblemMatcherEmitter = new Emitter<void>();
     get onDidChangeProblemMatcher(): Event<void> {
@@ -65,7 +69,7 @@ export class ProblemMatcherRegistry {
      */
     register(matcher: ProblemMatcherContribution): Disposable {
         if (!matcher.name) {
-            console.error('Only named Problem Matchers can be registered.');
+            this.logger.error('Only named Problem Matchers can be registered.');
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection(Disposable.create(() => {

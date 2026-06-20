@@ -18,6 +18,18 @@ export const COPILOT_LANGUAGE_MODELS_MANAGER_PATH = '/services/copilot/language-
 export const CopilotLanguageModelsManager = Symbol('CopilotLanguageModelsManager');
 
 export const COPILOT_PROVIDER_ID = 'copilot';
+export const COPILOT_API_BASE_URL = 'https://api.githubcopilot.com';
+
+/**
+ * Returns the Copilot API base URL, taking an optional GitHub Enterprise domain into account.
+ */
+export function getCopilotApiBaseUrl(enterpriseUrl?: string): string {
+    if (enterpriseUrl) {
+        const domain = enterpriseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        return `https://copilot-api.${domain}`;
+    }
+    return COPILOT_API_BASE_URL;
+}
 
 export interface CopilotModelDescription {
     /**
@@ -53,7 +65,17 @@ export interface CopilotLanguageModelsManager {
      */
     removeLanguageModels(...modelIds: string[]): void;
     /**
+     * Set the GitHub Enterprise URL for Copilot API requests.
+     */
+    setEnterpriseUrl(url: string | undefined): void;
+    /**
      * Refresh the status of all Copilot models (e.g., after authentication state changes).
      */
     refreshModelsStatus(): Promise<void>;
+    /**
+     * Fetches the list of available model IDs from the Copilot API.
+     * Requires authentication. Returns an empty array if not authenticated
+     * or if the API call fails.
+     */
+    fetchAvailableModelIds(): Promise<string[]>;
 }

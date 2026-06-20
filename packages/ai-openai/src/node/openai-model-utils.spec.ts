@@ -126,6 +126,103 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
     });
 
+    describe('merging of consecutive assistant messages', () => {
+        it('should merge an assistant text message followed by an assistant tool_use into a single message', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'do something' },
+                { actor: 'ai', type: 'text', text: 'let me call a tool' },
+                { actor: 'ai', type: 'tool_use', id: 'call_1', name: 'foo', input: { x: 1 } }
+            ];
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result).to.deep.equal([
+                { role: 'user', content: 'do something' },
+                {
+                    role: 'assistant',
+                    content: 'let me call a tool',
+                    tool_calls: [{ id: 'call_1', function: { name: 'foo', arguments: JSON.stringify({ x: 1 }) }, type: 'function' }]
+                }
+            ]);
+        });
+
+        it('should merge multiple parallel assistant tool_use messages into a single message with multiple tool_calls', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'do parallel work' },
+                { actor: 'ai', type: 'tool_use', id: 'call_1', name: 'foo', input: { x: 1 } },
+                { actor: 'ai', type: 'tool_use', id: 'call_2', name: 'bar', input: { y: 2 } }
+            ];
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result).to.deep.equal([
+                { role: 'user', content: 'do parallel work' },
+                {
+                    role: 'assistant',
+                    tool_calls: [
+                        { id: 'call_1', function: { name: 'foo', arguments: JSON.stringify({ x: 1 }) }, type: 'function' },
+                        { id: 'call_2', function: { name: 'bar', arguments: JSON.stringify({ y: 2 }) }, type: 'function' }
+                    ]
+                }
+            ]);
+        });
+
+        it('should handle the bug scenario from issue #17104 (text+tool_use after a tool_result round-trip)', () => {
+            // Reproduces the role-alternation violation rejected by strict Jinja-template providers (e.g. llama.cpp serving Devstral).
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'first request' },
+                { actor: 'ai', type: 'tool_use', id: 'call_1', name: 'foo', input: {} },
+                { actor: 'user', type: 'tool_result', tool_use_id: 'call_1', name: 'foo', content: 'result_1' },
+                { actor: 'ai', type: 'text', text: 'follow-up reasoning' },
+                { actor: 'ai', type: 'tool_use', id: 'call_2', name: 'bar', input: {} }
+            ];
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result).to.deep.equal([
+                { role: 'user', content: 'first request' },
+                {
+                    role: 'assistant',
+                    tool_calls: [{ id: 'call_1', function: { name: 'foo', arguments: '{}' }, type: 'function' }]
+                },
+                { role: 'tool', tool_call_id: 'call_1', content: 'result_1' },
+                {
+                    role: 'assistant',
+                    content: 'follow-up reasoning',
+                    tool_calls: [{ id: 'call_2', function: { name: 'bar', arguments: '{}' }, type: 'function' }]
+                }
+            ]);
+            // Sanity check: no two consecutive assistant messages remain in the output.
+            for (let i = 1; i < result.length; i++) {
+                expect(result[i - 1].role === 'assistant' && result[i].role === 'assistant').to.equal(false);
+            }
+        });
+
+        it('should not merge non-adjacent assistant messages separated by a tool result', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'ai', type: 'tool_use', id: 'call_1', name: 'foo', input: {} },
+                { actor: 'user', type: 'tool_result', tool_use_id: 'call_1', name: 'foo', content: 'r' },
+                { actor: 'ai', type: 'text', text: 'final answer' }
+            ];
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result).to.deep.equal([
+                {
+                    role: 'assistant',
+                    tool_calls: [{ id: 'call_1', function: { name: 'foo', arguments: '{}' }, type: 'function' }]
+                },
+                { role: 'tool', tool_call_id: 'call_1', content: 'r' },
+                { role: 'assistant', content: 'final answer' }
+            ]);
+        });
+
+        it('should join multiple consecutive assistant text messages with a newline', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'q' },
+                { actor: 'ai', type: 'text', text: 'part one' },
+                { actor: 'ai', type: 'text', text: 'part two' }
+            ];
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result).to.deep.equal([
+                { role: 'user', content: 'q' },
+                { role: 'assistant', content: 'part one\npart two' }
+            ]);
+        });
+    });
+
     describe('role assignment for system messages when developerMessageSettings is one of the role strings', () => {
         it('should assign role as specified for a system message when developerMessageSettings is "user"', () => {
             const messages: LanguageModelMessage[] = [

@@ -139,7 +139,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         const title = typeof item.command.title === 'string' ? item.command.title : item.command.title.value;
         const label = this.removeMnemonic(title);
         const order = item.order ? String(item.order) : '';
-        return { commandId, order, label };
+        const when = item.when?.serialize();
+        return { commandId, order, label, when };
     }
 
     protected removeMnemonic(label: string): string {

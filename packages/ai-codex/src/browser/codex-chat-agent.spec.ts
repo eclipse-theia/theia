@@ -30,6 +30,8 @@ import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-s
 import { ChatAgentLocation, MarkdownChatResponseContentImpl, ThinkingChatResponseContentImpl, ErrorChatResponseContentImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { CodexFrontendService } from './codex-frontend-service';
 import { CodexChatAgent, CODEX_CHAT_AGENT_ID, CODEX_TOOL_CALLS_KEY, CODEX_INPUT_TOKENS_KEY, CODEX_OUTPUT_TOKENS_KEY } from './codex-chat-agent';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 import type {
     CommandExecutionItem,
@@ -96,11 +98,13 @@ describe('CodexChatAgent', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(CodexChatAgent).toSelf();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         const addContentStub = sinon.stub();
         const responseContentChangedStub = sinon.stub();
         const completeStub = sinon.stub();
         const errorStub = sinon.stub();
+        const setTokenUsageStub = sinon.stub();
         const getRequestsStub = sinon.stub().returns([]);
         const setSuggestionsStub = sinon.stub();
         const addDataStub = sinon.stub();
@@ -121,6 +125,7 @@ describe('CodexChatAgent', () => {
                 },
                 complete: completeStub,
                 error: errorStub,
+                setTokenUsage: setTokenUsageStub,
                 cancellationToken: { isCancellationRequested: false }
             },
             addData: addDataStub,
@@ -311,8 +316,15 @@ describe('CodexChatAgent', () => {
 
             const addDataStub = (mockRequest.addData as sinon.SinonStub);
             const completeStub = (mockRequest.response.complete as sinon.SinonStub);
+            const setTokenUsageStub = (mockRequest.response.setTokenUsage as sinon.SinonStub);
             expect(addDataStub.calledWith(CODEX_INPUT_TOKENS_KEY, 150)).to.be.true;
             expect(addDataStub.calledWith(CODEX_OUTPUT_TOKENS_KEY, 75)).to.be.true;
+            expect(setTokenUsageStub.calledOnce).to.be.true;
+            expect(setTokenUsageStub.firstCall.args[0]).to.deep.equal({
+                inputTokens: 150,
+                outputTokens: 75,
+                cacheCreationInputTokens: 0
+            });
             expect(completeStub.calledOnce).to.be.true;
         });
 

@@ -21,12 +21,16 @@ import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/brow
 import { StandaloneGotoLineQuickAccessProvider } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess';
 import { IQuickAccessRegistry, Extensions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
 
 export class GotoLineQuickAccess extends StandaloneGotoLineQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...services: any[]);
-    constructor(@ICodeEditorService private readonly service: ICodeEditorService) {
-        super(service);
+    constructor(
+        @ICodeEditorService private readonly service: ICodeEditorService,
+        @IStorageService storageService: IStorageService
+    ) {
+        super(service, storageService);
     }
 
     override get activeTextEditorControl(): ICodeEditor | undefined {

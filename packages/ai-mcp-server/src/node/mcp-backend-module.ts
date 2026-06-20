@@ -17,7 +17,7 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider, generateUuid } from '@theia/core';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider, generateUuid } from '@theia/core';
 import {
     MCPTheiaServer,
     MCPBackendContribution
@@ -69,7 +69,7 @@ export default new ContainerModule(bind => {
 
     bind(MCPFrontendContributionManager).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, MCPBackendContribution);
+    bindRootContributionProvider(bind, MCPBackendContribution);
 
     bind(ConnectionContainerModule).toConstantValue(mcpConnectionModule);
 });

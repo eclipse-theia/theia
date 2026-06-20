@@ -19,8 +19,8 @@ import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
 import SftpClient = require('ssh2-sftp-client');
 import SshConfig from 'ssh-config';
-import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { Emitter, Event, MessageService, QuickInputService, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../../electron-common/remote-ssh-connection-provider';
 import { RemoteConnectionService } from '../remote-connection-service';
 import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
@@ -50,6 +50,9 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(ILogger) @named('remote:RemoteSSHConnectionProviderImpl')
+    protected readonly logger: ILogger;
 
     protected passwordRetryCount = 3;
     protected passphraseRetryCount = 3;
@@ -168,7 +171,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                     deferred.reject(err);
                 }
             }).on('end', () => {
-                console.log(`Ended remote connection to host '${user}@${hostUrl.hostname}'`);
+                this.logger.info(`Ended remote connection to host '${user}@${hostUrl.hostname}'`);
             }).on('error', err => {
                 deferred.reject(err);
             }).connect({

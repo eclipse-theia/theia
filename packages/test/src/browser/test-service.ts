@@ -173,12 +173,14 @@ export interface TestController {
     readonly tests: readonly TestItem[];
     readonly testRunProfiles: readonly TestRunProfile[];
     readonly testRuns: readonly TestRun[];
+    readonly canResolveChildren: boolean;
 
     readonly onItemsChanged: Event<TreeDelta<string, TestItem>[]>;
     readonly onRunsChanged: Event<CollectionDelta<TestRun, TestRun>>;
     readonly onProfilesChanged: Event<CollectionDelta<TestRunProfile, TestRunProfile>>;
 
     refreshTests(token: CancellationToken): Promise<void>;
+    resolveChildren(item?: TestItem): void;
     clearRuns(): void;
 }
 

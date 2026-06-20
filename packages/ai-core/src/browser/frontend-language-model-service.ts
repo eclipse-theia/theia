@@ -14,24 +14,40 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceService } from '@theia/core/lib/common';
+import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
-import { LanguageModel, LanguageModelResponse, UserRequest } from '../common';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting, getRequestSettingSpecificity } from '../common/ai-core-preferences';
+import {
+    PREFERENCE_NAME_REQUEST_SETTINGS,
+    PREFERENCE_NAME_REASONING,
+    RequestSetting,
+    ReasoningPreferenceEntry,
+    getRequestSettingSpecificity
+} from '../common/ai-core-preferences';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
 
     override async sendRequest(
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+        const requestSettings = this.trustAwareReader.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
+        const reasoningEntries = this.trustAwareReader.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []) ?? [];
+        const trusted = await this.workspaceTrustService.getWorkspaceTrust();
+        if (!trusted) {
+            throw new Error(nls.localize('theia/ai-core/aiDisabledInRestrictedMode', 'AI features are not available in untrusted workspaces.'));
+        }
 
         const ids = languageModel.id.split('/');
         const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);
@@ -50,6 +66,18 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
             };
         }
 
+        // Reasoning resolution order (highest first): already-set session override → preference entry
+        // matching this scope → model's declared `defaultLevel`. The selector displays the same
+        // fallback chain, so what the user sees is what gets sent.
+        if (!languageModelRequest.reasoning) {
+            const matchingReasoning = mergeReasoningSettings(reasoningEntries, ids[1], ids[0], languageModelRequest.agentId);
+            if (matchingReasoning?.reasoning) {
+                languageModelRequest.reasoning = matchingReasoning.reasoning;
+            } else if (languageModel.reasoningSupport?.defaultLevel) {
+                languageModelRequest.reasoning = { level: languageModel.reasoningSupport.defaultLevel };
+            }
+        }
+
         return super.sendRequest(languageModel, languageModelRequest);
     }
 }
@@ -63,5 +91,35 @@ export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId:
         }));
     // merge all settings from lowest to highest, identical priorities will be overwritten by the following
     const matchingSetting = prioritizedSettings.reduceRight((acc, cur) => ({ ...acc, ...cur.value }), {} as RequestSetting);
+    return matchingSetting;
+};
+
+export const mergeReasoningSettings = (
+    reasoningEntries: ReasoningPreferenceEntry[],
+    modelId: string,
+    providerId: string,
+    agentId?: string
+): ReasoningPreferenceEntry | undefined => {
+    const prioritizedSettings = Prioritizeable.prioritizeAllSync(reasoningEntries,
+        setting => getRequestSettingSpecificity(setting, {
+            modelId,
+            providerId,
+            agentId
+        }));
+    const matchingSetting = prioritizedSettings.reduceRight<ReasoningPreferenceEntry | undefined>(
+        (acc, cur) => {
+            if (!acc) {
+                return cur.value;
+            }
+            return {
+                ...acc,
+                reasoning: {
+                    ...acc.reasoning,
+                    ...cur.value.reasoning
+                } as ReasoningSettings
+            };
+        },
+        undefined
+    );
     return matchingSetting;
 };

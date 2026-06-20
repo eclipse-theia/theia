@@ -21,6 +21,7 @@ import { ContributionProvider } from './contribution-provider';
 import { nls } from './nls';
 import debounce = require('p-debounce');
 import { isObject } from './types';
+import { ILogger } from './logger';
 
 /**
  * A command is a unique identifier of a function
@@ -190,6 +191,9 @@ export interface CommandService {
 @injectable()
 export class CommandRegistry implements CommandService {
 
+    @inject(ILogger) @named('core:CommandRegistry')
+    protected readonly logger: ILogger;
+
     protected readonly _commands: { [id: string]: Command } = {};
     protected readonly _handlers: { [id: string]: CommandHandler[] } = {};
 
@@ -232,7 +236,7 @@ export class CommandRegistry implements CommandService {
      */
     registerCommand(command: Command, handler?: CommandHandler): Disposable {
         if (this._commands[command.id]) {
-            console.warn(`A command ${command.id} is already registered.`);
+            this.logger.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection(this.doRegisterCommand(command));
@@ -363,7 +367,7 @@ export class CommandRegistry implements CommandService {
                         return handler;
                     }
                 } catch (error) {
-                    console.error(error);
+                    this.logger.error(error);
                 }
             }
         }
@@ -383,7 +387,7 @@ export class CommandRegistry implements CommandService {
                         return handler;
                     }
                 } catch (error) {
-                    console.error(error);
+                    this.logger.error(error);
                 }
             }
         }
@@ -403,7 +407,7 @@ export class CommandRegistry implements CommandService {
                         return handler;
                     }
                 } catch (error) {
-                    console.error(error);
+                    this.logger.error(error);
                 }
             }
         }

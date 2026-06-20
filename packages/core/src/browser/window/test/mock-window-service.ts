@@ -20,7 +20,8 @@ import { WindowService } from '../window-service';
 @injectable()
 export class MockWindowService implements WindowService {
     openNewWindow(): undefined { return undefined; }
-    openNewDefaultWindow(): void { }
+    async openNewDefaultWindow(): Promise<number> { return -1; }
+    closeWindow(): void { }
     focus(): void { }
     reload(): void { }
     isSafeToShutDown(): Promise<boolean> { return Promise.resolve(true); }

@@ -13,8 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+
 export const GOOGLE_LANGUAGE_MODELS_MANAGER_PATH = '/services/google/language-model-manager';
 export const GoogleLanguageModelsManager = Symbol('GoogleLanguageModelsManager');
+
 export interface GoogleModelDescription {
     /**
      * The identifier of the model which will be shown in the UI.
@@ -36,7 +39,14 @@ export interface GoogleModelDescription {
      * Maximum number of tokens to generate. Default is 4096.
      */
     maxTokens?: number;
-
+    /** When set, the UI exposes a reasoning selector and requests are translated to {@link reasoningApi}. */
+    reasoningSupport?: ReasoningSupport;
+    /**
+     * Which Gemini reasoning API shape to use. Required when `reasoningSupport` is set.
+     * - `'effort'`: `thinkingConfig.thinkingLevel` (Gemini 3+)
+     * - `'budget'`: `thinkingConfig.thinkingBudget` (Gemini 2.5)
+     */
+    reasoningApi?: ReasoningApi;
 }
 
 export interface GoogleLanguageModelsManager {

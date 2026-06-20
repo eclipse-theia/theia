@@ -15,25 +15,53 @@
  ********************************************************************************/
 
 import type { ApplicationShell } from './shell';
-import { injectable } from 'inversify';
-import { UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
+import { inject, injectable, named } from 'inversify';
+import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
 import { Navigatable, NavigatableWidget } from './navigatable-types';
 import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable';
 import { waitForClosed, Widget } from './widgets';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { FrontendApplication } from './frontend-application';
+import { WindowFocusService } from './window/window-focus-service';
 import throttle = require('lodash.throttle');
+
+export const SaveErrorChecker = Symbol('SaveErrorChecker');
+
+/**
+ * Contribution point for checking whether a given URI has errors.
+ * When `files.autoSaveWhenNoErrors` is enabled, auto-save will be suppressed
+ * for files where any registered checker reports errors.
+ */
+export interface SaveErrorChecker {
+    /**
+     * Returns `true` if the given URI has errors that should prevent auto-save.
+     */
+    hasErrors(uri: URI): boolean;
+    /**
+     * Event fired when the error state may have changed (e.g. diagnostics updated).
+     * The SaveableService listens to this to re-evaluate auto-save for dirty widgets.
+     */
+    onDidErrorStateChange: Event<void>;
+}
 
 @injectable()
 export class SaveableService implements FrontendApplicationContribution {
 
+    @inject(ContributionProvider) @named(SaveErrorChecker)
+    protected readonly errorCheckers: ContributionProvider<SaveErrorChecker>;
+
+    @inject(WindowFocusService)
+    protected readonly windowFocusService: WindowFocusService;
+
     protected saveThrottles = new Map<Widget, AutoSaveThrottle>();
     protected saveMode: AutoSaveMode = 'off';
     protected saveDelay = 1000;
+    protected saveWhenNoErrors = false;
     protected shell: ApplicationShell;
 
     protected readonly onDidAutoSaveChangeEmitter = new Emitter<AutoSaveMode>();
     protected readonly onDidAutoSaveDelayChangeEmitter = new Emitter<number>();
+    protected readonly onDidAutoSaveConditionsChangeEmitter = new Emitter<void>();
 
     get onDidAutoSaveChange(): Event<AutoSaveMode> {
         return this.onDidAutoSaveChangeEmitter.event;
@@ -41,6 +69,10 @@ export class SaveableService implements FrontendApplicationContribution {
 
     get onDidAutoSaveDelayChange(): Event<number> {
         return this.onDidAutoSaveDelayChangeEmitter.event;
+    }
+
+    get onDidAutoSaveConditionsChange(): Event<void> {
+        return this.onDidAutoSaveConditionsChangeEmitter.event;
     }
 
     get autoSave(): AutoSaveMode {
@@ -59,8 +91,22 @@ export class SaveableService implements FrontendApplicationContribution {
         this.updateAutoSaveDelay(value);
     }
 
+    get autoSaveWhenNoErrors(): boolean {
+        return this.saveWhenNoErrors;
+    }
+
+    set autoSaveWhenNoErrors(value: boolean) {
+        this.saveWhenNoErrors = value;
+    }
+
     onDidInitializeLayout(app: FrontendApplication): void {
         this.shell = app.shell;
+        // Listen to error state changes from all registered error checkers
+        for (const checker of this.errorCheckers.getContributions()) {
+            checker.onDidErrorStateChange(() => {
+                this.onDidAutoSaveConditionsChangeEmitter.fire();
+            });
+        }
         // Register restored editors first
         for (const widget of this.shell.widgets) {
             const saveable = Saveable.get(widget);
@@ -89,6 +135,35 @@ export class SaveableService implements FrontendApplicationContribution {
             this.saveThrottles.get(e)?.dispose();
             this.saveThrottles.delete(e);
         });
+        // Save all dirty editors when any application window loses focus
+        this.windowFocusService.onDidWindowChangeFocus(({ hasFocus }) => {
+            if (!hasFocus) {
+                this.saveOnWindowBlur();
+            }
+        });
+    }
+
+    /**
+     * Save all dirty saveables when the application window loses focus.
+     * Triggered for both `onFocusChange` and `onWindowChange` auto-save modes,
+     * matching VSCode's behavior where a window focus loss is a superset of
+     * editor focus loss.
+     */
+    protected saveOnWindowBlur(): void {
+        if (this.saveMode !== 'onWindowChange' && this.saveMode !== 'onFocusChange') {
+            return;
+        }
+        if (!this.shell) {
+            return;
+        }
+        for (const widget of this.shell.widgets) {
+            const saveable = Saveable.get(widget);
+            if (saveable && this.shouldAutoSave(widget, saveable)) {
+                saveable.save({
+                    saveReason: SaveReason.FocusChange
+                });
+            }
+        }
     }
 
     protected updateAutoSaveMode(mode: AutoSaveMode): void {
@@ -127,37 +202,11 @@ export class SaveableService implements FrontendApplicationContribution {
                         saveReason: SaveReason.AfterDelay
                     });
                 }
-            },
-            this.addBlurListener(widget, saveable)
+            }
         );
         this.saveThrottles.set(widget, saveThrottle);
         this.applySaveableWidget(widget, saveable);
         return saveThrottle;
-    }
-
-    protected addBlurListener(widget: Widget, saveable: Saveable): Disposable {
-        const document = widget.node.ownerDocument;
-        const listener = (() => {
-            if (this.saveMode === 'onWindowChange' && !this.windowHasFocus(document) && this.shouldAutoSave(widget, saveable)) {
-                saveable.save({
-                    saveReason: SaveReason.FocusChange
-                });
-            }
-        }).bind(this);
-        document.addEventListener('blur', listener);
-        return Disposable.create(() => {
-            document.removeEventListener('blur', listener);
-        });
-    }
-
-    protected windowHasFocus(document: Document): boolean {
-        if (document.visibilityState === 'hidden') {
-            return false;
-        } else if (document.hasFocus()) {
-            return true;
-        }
-        // TODO: Add support for iframes
-        return false;
     }
 
     protected shouldAutoSave(widget: Widget, saveable: Saveable): boolean {
@@ -165,9 +214,16 @@ export class SaveableService implements FrontendApplicationContribution {
         if (uri?.scheme === UNTITLED_SCHEME) {
             // Never auto-save untitled documents
             return false;
-        } else {
-            return saveable.autosaveable !== false && saveable.dirty;
         }
+        if (saveable.autosaveable === false || !saveable.dirty) {
+            return false;
+        }
+        if (this.saveWhenNoErrors && uri) {
+            if (this.errorCheckers.getContributions().some(checker => checker.hasErrors(uri))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected applySaveableWidget(widget: Widget, saveable: Saveable): void {
@@ -314,6 +370,9 @@ export class AutoSaveThrottle implements Disposable {
             }),
             saveService.onDidAutoSaveDelayChange(() => {
                 this.throttledSave(true);
+            }),
+            saveService.onDidAutoSaveConditionsChange(() => {
+                this.throttledSave();
             })
         );
     }

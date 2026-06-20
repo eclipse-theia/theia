@@ -231,7 +231,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
         registry.registerItem({
             id: 'chat-view.' + OPEN_AI_HISTORY_VIEW.id,
             command: OPEN_AI_HISTORY_VIEW.id,
-            tooltip: nls.localize('theia/ai/history/open-history-tooltip', 'Open AI history...'),
+            tooltip: nls.localize('theia/ai/history/open-history-tooltip', 'Open AI Agent History'),
             group: 'ai-settings',
             priority: 1,
             isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget

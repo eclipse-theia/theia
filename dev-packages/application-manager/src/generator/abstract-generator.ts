@@ -66,4 +66,13 @@ export abstract class AbstractGenerator {
         return JSON.stringify(object, undefined, 4);
     }
 
+    protected emitStartupLogger(component: string, epochLabel: string, options?: { requirePerformance?: boolean }): string {
+        const perfImport = options?.requirePerformance ? 'const { performance } = require(\'perf_hooks\');\n' : '';
+        return `${perfImport}const startupLog = (milestone) => console.debug(\`${component}: \${milestone} [\${(performance.now() / 1000).toFixed(3)} s since ${epochLabel}]\`);`;
+    }
+
+    protected emitStartupLog(milestone: string): string {
+        return `startupLog('${milestone}');`;
+    }
+
 }

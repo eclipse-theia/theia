@@ -165,7 +165,7 @@ export class ProblemWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected override renderTailDecorations(node: TreeNode, props: NodeProps): JSX.Element {
+    protected override renderTailDecorations(node: TreeNode, props: NodeProps): React.JSX.Element {
         return <div className='row-button-container'>
             {this.renderRemoveButton(node)}
         </div>;

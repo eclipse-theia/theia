@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import express = require('express');
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { BackendApplicationContribution } from '../../node';
 import { ElectronTokenValidator } from './electron-token-validator';
+import { ILogger } from '../../common/logger';
 
 /**
  * This component contributes an Express middleware that will refuse all
@@ -25,6 +26,9 @@ import { ElectronTokenValidator } from './electron-token-validator';
  */
 @injectable()
 export class ElectronTokenBackendContribution implements BackendApplicationContribution {
+
+    @inject(ILogger) @named('core:ElectronTokenBackendContribution')
+    protected readonly logger: ILogger;
 
     @inject(ElectronTokenValidator)
     protected readonly tokenValidator: ElectronTokenValidator;
@@ -40,7 +44,7 @@ export class ElectronTokenBackendContribution implements BackendApplicationContr
         if (this.tokenValidator.allowRequest(req)) {
             next();
         } else {
-            console.error(`refused an http request: ${req.connection.remoteAddress}`);
+            this.logger.error(`refused an http request: ${req.connection.remoteAddress}`);
             res.sendStatus(403);
         }
     }

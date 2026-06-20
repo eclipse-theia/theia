@@ -85,7 +85,7 @@ export interface TheiaCoreAPI {
     toggleDevTools(): void;
     openDevToolsForWindow(windowName: string): void;
     getZoomLevel(): Promise<number>;
-    setZoomLevel(desired: number): void;
+    setZoomLevel(desired: number, windowName?: string): void;
 
     isFullScreenable(): boolean; // TODO: this should really be async, since it blocks the renderer process
     isFullScreen(): boolean; // TODO: this should really be async, since it blocks the renderer process

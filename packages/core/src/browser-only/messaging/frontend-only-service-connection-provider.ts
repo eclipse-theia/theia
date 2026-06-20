@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Event, RpcProxy, Channel, RpcProxyFactory, Emitter } from '../../common';
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
+import { ILogger } from '../../common/logger';
 import { ConnectionSource } from '../../browser/messaging/connection-source';
 
 @injectable()
@@ -25,15 +26,19 @@ export class FrontendOnlyConnectionSource implements ConnectionSource {
 
 @injectable()
 export class FrontendOnlyServiceConnectionProvider extends ServiceConnectionProvider {
+
+    @inject(ILogger) @named('core:FrontendOnlyServiceConnectionProvider')
+    protected readonly logger: ILogger;
+
     onSocketDidOpen = Event.None;
     onSocketDidClose = Event.None;
     onIncomingMessageActivity = Event.None;
     override createProxy<T extends object>(path: unknown, target?: unknown): RpcProxy<T> {
-        console.debug(`[Frontend-Only Fallback] Created proxy connection for ${path}`);
+        this.logger.debug(`[Frontend-Only Fallback] Created proxy connection for ${path}`);
         const factory = target instanceof RpcProxyFactory ? target : new RpcProxyFactory<T>(target);
         return factory.createProxy();
     }
     override listen(path: string, handler: ServiceConnectionProvider.ConnectionHandler, reconnect: boolean): void {
-        console.debug('[Frontend-Only Fallback] Listen to websocket connection requested');
+        this.logger.debug('[Frontend-Only Fallback] Listen to websocket connection requested');
     }
 }

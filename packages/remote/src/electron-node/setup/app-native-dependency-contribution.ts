@@ -19,15 +19,33 @@ import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload
 import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { OS } from '@theia/core';
 
+/**
+ * GitHub release tag used for rolling pre-release publications of native
+ * dependencies for next-channel Theia versions (e.g. `1.71.0-next.28+sha`).
+ * Stable versions resolve to a `v<version>` tag instead.
+ */
+export const NEXT_RELEASE_TAG = 'next';
+
 @injectable()
 export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
 
     appDownloadUrlBase = 'https://github.com/eclipse-theia/theia/releases/download';
 
     protected getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
-        if (remotePlatform.arch !== 'x64') {
-            throw new Error(`Unsupported remote architecture '${remotePlatform.arch}'. Remote support is only available for x64 architectures.`);
-        }
+        this.validatePlatform(remotePlatform);
+        return `${this.appDownloadUrlBase}/${this.getReleaseTag(theiaVersion)}/${this.getAssetName(remotePlatform)}`;
+    }
+
+    /**
+     * Returns the GitHub release tag from which to download the native dependencies.
+     * Next-channel versions (containing `-next.`) resolve to the rolling `next`
+     * pre-release; stable versions resolve to `v<theiaVersion>`.
+     */
+    protected getReleaseTag(theiaVersion: string): string {
+        return /-next\./.test(theiaVersion) ? NEXT_RELEASE_TAG : `v${theiaVersion}`;
+    }
+
+    protected getAssetName(remotePlatform: RemotePlatform): string {
         let platform: string;
         if (remotePlatform.os === OS.Type.Windows) {
             platform = 'win32';
@@ -36,7 +54,24 @@ export class AppNativeDependencyContribution implements RemoteNativeDependencyCo
         } else {
             platform = 'linux';
         }
-        return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${platform}-${remotePlatform.arch}.zip`;
+        return `native-dependencies-${platform}-${remotePlatform.arch}.zip`;
+    }
+
+    /**
+     * Validates that native dependencies are actually published for the given
+     * remote platform. The set of supported (os, arch) pairs mirrors the set
+     * accepted by `RemoteNodeSetupService.validatePlatform`, minus combinations
+     * for which we don't yet build native-dependency zips in CI.
+     */
+    protected validatePlatform(remotePlatform: RemotePlatform): void {
+        const { os, arch } = remotePlatform;
+        const supported =
+            (os === OS.Type.Windows && arch === 'x64') ||
+            (os === OS.Type.Linux && arch === 'x64') ||
+            (os === OS.Type.OSX && (arch === 'x64' || arch === 'arm64'));
+        if (!supported) {
+            throw new Error(`No prebuilt native dependencies are published for '${os}-${arch}'.`);
+        }
     }
 
     async download(options: DownloadOptions): Promise<DependencyDownload> {

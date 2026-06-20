@@ -33,7 +33,8 @@ export const MCPServerManagerServerPath = '/services/mcpservermanagerserver';
  */
 export interface MCPServerManagerServer {
     addOrUpdateServer(description: MCPServerDescriptionRCP): Promise<void>;
-    setClient(client: MCPServerManagerServerClient): void
+    setClient(client: MCPServerManagerServerClient): void;
+    disconnectClient(client: MCPServerManagerServerClient): void;
 }
 
 export const MCPServerManagerServerClient = Symbol('MCPServerManagerServerClient');

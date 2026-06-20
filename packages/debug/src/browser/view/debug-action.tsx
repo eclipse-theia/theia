@@ -45,7 +45,7 @@ export class DebugAction extends React.Component<DebugAction.Props> {
     }
 
     protected ref: HTMLElement | undefined;
-    protected setRef = (ref: HTMLElement | null) => this.ref = ref || undefined;
+    protected setRef = (ref: HTMLElement | null): void => { this.ref = ref || undefined; };
 
 }
 export namespace DebugAction {

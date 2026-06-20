@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add welcome comment
-        uses: actions/github-script@e69ef5462fd455e02edcaf4dd7708eda96b9eda0 # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -24,7 +24,7 @@ jobs:
               '',
               'The Theia community will take a look soon. In the meantime, you might find helpful information in:',
               '- 📖 [Theia Documentation](https://theia-ide.org/docs/)',
-              '- ❓ [FAQ](https://theia-ide.org/docs/faq/)',
+              '- ❓ [FAQ](https://theia-ide.org/docs/faq/)',  
               '- 💬 [Previous Discussions](https://github.com/eclipse-theia/theia/discussions)',
               '',
               '---',

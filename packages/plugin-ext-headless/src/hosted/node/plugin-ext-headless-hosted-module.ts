@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ExtPluginApiProvider, HostedPluginServer, PluginHostEnvironmentVariable, PluginScanner } from '@theia/plugin-ext';
@@ -33,9 +33,9 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
-    bindContributionProvider(bind, PluginHostEnvironmentVariable);
-    bindContributionProvider(bind, SupportedHeadlessActivationEvents);
+    bindRootContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
+    bindRootContributionProvider(bind, PluginHostEnvironmentVariable);
+    bindRootContributionProvider(bind, SupportedHeadlessActivationEvents);
 
     bind(HeadlessHostedPluginServerImpl).toSelf().inSingletonScope();
     bind(HostedPluginServer).toService(HeadlessHostedPluginServerImpl);
@@ -52,10 +52,10 @@ export function bindHeadlessHosted(bind: interfaces.Bind): void {
     bind(PluginScanner).toService(TheiaHeadlessPluginScanner);
     bind(SupportedHeadlessActivationEvents).toConstantValue(['*', 'onStartupFinished']);
 
-    bind(BackendApplicationContribution).toDynamicValue(({container}) => {
+    bind(BackendApplicationContribution).toDynamicValue(({ container }) => {
         let hostedPluginSupport: HeadlessHostedPluginSupport | undefined;
 
-        return {
+        return new class HeadlessHostedPluginBackendContribution implements BackendApplicationContribution {
             onStart(): MaybePromise<void> {
                 // Create a child container to isolate the Headless Plugin hosting stack
                 // from all connection-scoped frontend/backend plugin hosts and
@@ -66,11 +66,10 @@ export function bindHeadlessHosted(bind: interfaces.Bind): void {
 
                 hostedPluginSupport = headlessPluginsContainer.get(HeadlessHostedPluginSupport);
                 hostedPluginSupport.onStart(headlessPluginsContainer);
-            },
-
+            }
             onStop(): void {
                 hostedPluginSupport?.shutDown();
             }
-        };
+        }();
     });
 }

@@ -19,17 +19,17 @@ import { injectable, interfaces } from '@theia/core/shared/inversify';
 
 export namespace SampleFilteredCommand {
 
-    const EXAMPLE_CATEGORY = 'Examples';
+    const API_SAMPLES_CATEGORY = 'API Samples';
 
     export const FILTERED: Command = {
         id: 'example_command.filtered',
-        category: EXAMPLE_CATEGORY,
+        category: API_SAMPLES_CATEGORY,
         label: 'This command should be filtered out'
     };
 
     export const FILTERED2: Command = {
         id: 'example_command.filtered2',
-        category: EXAMPLE_CATEGORY,
+        category: API_SAMPLES_CATEGORY,
         label: 'This command should be filtered out (2)'
     };
 }

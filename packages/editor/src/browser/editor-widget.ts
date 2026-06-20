@@ -56,6 +56,8 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     isExtractable: boolean = true;
     secondaryWindow: Window | undefined;
 
+    navigationHistorySupport: boolean = true;
+
     setSelection(): void {
         if (this.editor.isFocused() && this.selectionService.selection !== this.editor) {
             this.selectionService.selection = this.editor;
@@ -76,6 +78,14 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
         return this.editor.createMoveToUri(resourceUri);
+    }
+
+    override getPreviewNode(): Node | undefined {
+        if (!this.isVisible && this.editor.stageForPreview) {
+            this.editor.stageForPreview();
+            queueMicrotask(() => this.editor.unstagePreview?.());
+        }
+        return this.node;
     }
 
     protected override onActivateRequest(msg: Message): void {

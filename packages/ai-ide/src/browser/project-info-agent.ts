@@ -26,7 +26,7 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
     id = 'ProjectInfo';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'default/code',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
@@ -34,9 +34,7 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant for managing project information templates. This agent helps create, update, and review the .prompts/project-info.prompttemplate file which provides ' +
         'context about your project to other AI agents. It can analyze your workspace to suggest project information or update existing templates based on your requirements.');
 
-    override tags: string[] = [...this.tags, 'Alpha'];
-
     override prompts = [projectInfoSystemVariants, projectInfoTemplateVariants];
     protected override systemPromptId: string | undefined = projectInfoSystemVariants.id;
-
+    override iconClass: string = 'codicon codicon-repo';
 }

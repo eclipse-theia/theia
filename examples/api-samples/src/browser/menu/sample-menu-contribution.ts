@@ -21,50 +21,62 @@ import {
     Command, CommandContribution, CommandMenu, CommandRegistry, ContextExpressionMatcher, MAIN_MENU_BAR,
     MenuContribution, MenuModelRegistry, MenuPath, MessageService
 } from '@theia/core/lib/common';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 
+const API_SAMPLES_CATEGORY = 'API Samples';
+
 const SampleCommand: Command = {
     id: 'sample-command',
-    label: 'Sample Command'
+    label: 'Command',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleCommand2: Command = {
     id: 'sample-command2',
-    label: 'Sample Command2'
+    label: 'Command 2',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleCommandConfirmDialog: Command = {
     id: 'sample-command-confirm-dialog',
-    label: 'Sample Confirm Dialog'
+    label: 'Confirm Dialog',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleComplexCommandConfirmDialog: Command = {
     id: 'sample-command-complex-confirm-dialog',
-    label: 'Sample Complex Confirm Dialog'
+    label: 'Complex Confirm Dialog',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleCommandWithProgressMessage: Command = {
     id: 'sample-command-with-progress',
-    label: 'Sample Command With Progress Message'
+    label: 'Command With Progress Message',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleCommandWithIndeterminateProgressMessage: Command = {
     id: 'sample-command-with-indeterminate-progress',
-    label: 'Sample Command With Indeterminate Progress Message'
+    label: 'Command With Indeterminate Progress Message',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleQuickInputCommand: Command = {
     id: 'sample-quick-input-command',
-    category: 'Quick Input',
-    label: 'Test Positive Integer'
+    label: 'Test Positive Integer',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleSelectDialog: Command = {
     id: 'sample-command-select-dialog',
-    label: 'Sample Select Component Dialog'
+    label: 'Select Component Dialog',
+    category: API_SAMPLES_CATEGORY
 };
 const SamplePersistentNotification: Command = {
     id: 'sample-persistent-notification',
-    label: 'Sample Persistent Notification (No Timeout)'
+    label: 'Persistent Notification (No Timeout)',
+    category: API_SAMPLES_CATEGORY
 };
 const SampleVanishingNotification: Command = {
     id: 'sample-vanishing-notification',
-    label: 'Sample Vanishing Notification (500ms Timeout)'
+    label: 'Vanishing Notification (500ms Timeout)',
+    category: API_SAMPLES_CATEGORY
 };
 
 @injectable()
@@ -76,13 +88,16 @@ export class SampleCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(ILogger) @named('api-samples')
+    protected readonly logger: ILogger;
+
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({ id: 'create-quick-pick-sample', label: 'Internal QuickPick' }, {
+        commands.registerCommand({ id: 'create-quick-pick-sample', label: 'Internal QuickPick', category: API_SAMPLES_CATEGORY }, {
             execute: () => {
                 const pick = this.quickInputService.createQuickPick();
                 pick.items = [{ label: '1' }, { label: '2' }, { label: '3' }];
                 pick.onDidAccept(() => {
-                    console.log(`accepted: ${pick.selectedItems[0]?.label}`);
+                    this.logger.debug(`accepted: ${pick.selectedItems[0]?.label}`);
                     pick.hide();
                 });
                 pick.show();

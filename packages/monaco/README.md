@@ -31,11 +31,11 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 1. Clone the VSCode repo and make sure you have the following remotes:
 
 - <https://github.com/microsoft/vscode.git> - the official VSCode repo.
-- <https://github.com/theia-ide/vscode.git> - Theia's fork.
+- <https://github.com/eclipsesource/ms-vscode.git> - the fork used for building `@theia/monaco-editor-core`.
 
-2. Find the latest release tag in the official VSCode repo, and the most recent uplift branch in the Theia fork.
+2. Find the latest release tag in the official VSCode repo, and the most recent uplift branch in the fork.
 
- > At the time of this writing the latest release tag is `1.96.3`, and the uplift branch is `monaco-uplift-1.96.3`
+ > At the time of this writing the latest release tag is `1.108.2`, and the uplift branch is `monaco_uplift_1.108.2` (<https://github.com/eclipsesource/ms-vscode/tree/monaco_uplift_1.108.2>)
 
 3. Check out the release tag, cherry pick the tip of the uplift branch, and resolve any conflicts.
 
@@ -47,19 +47,21 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 
 #### Current State
 
-- build/gulpfile.editor.js: various changes to modify the treeshaking and output destinations.
-- build/lib/standalone.js/ts: changes to output sourcemaps etc. One small change to fix a build error due to having a directory named `model` and a file named `model.ts` in the same folder.
-- src/vs/base/browser/dompurify/dompurify.js changes for CommonJS rather than ESM
-- src/vs/base/common/marked/marked.js changes for CommonJS rather than ESM
+- build/gulpfile.editor.js: various changes to modify the treeshaking and output destinations (shakeLevel 0 — file-level only, no class-member shaking).
+- build/lib/standalone.js/ts: changes to output sourcemaps and declarations (`declaration: true`, `sourceMap: true`, `moduleResolution: Classic`).
+- src/vs/base/browser/dompurify/dompurify.js: changes for CommonJS rather than ESM (`module.exports` added).
+- src/vs/base/common/marked/marked.js: changes for CommonJS rather than ESM (`module.exports` added).
+- src/vs/base/common/platform.ts: guards `setTimeout0` with `$globalThis.addEventListener` check for non-browser environments.
+- build/monaco/esm.core.js: added `embeddedDiffEditorWidget` import to `editor.all.ts`.
 
 ### Setting up the Theia side
 
 For initial testing, it's easier to point dependencies to your local VSCode.
 
 1. Having built `monaco-editor-core` using the steps [above](#setting-up-the-vscode-side).
-2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"link:<path to your local build of monaco-editor-core>"`.
+2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"file:/<your-path-to>/vscode/out-monaco-editor-core"`.
 
-> Using `link:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
+> Using `file:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
 
 3. Delete your `node_modules` and `npm install` and build Theia.
 4. Fix any build errors.
@@ -73,19 +75,16 @@ private API and public API. Often public API fails to satisfy private declaratio
 
 > It may also be necessary to update our various `vscode` dependencies to match the current state of VSCode. It may not be necessary to upgrade all (or any) of these to successfully adopt a new Monaco version, but if something is misbehaving inexplicably, checking dependencies is a reasonable place to start. Check on:
 >
-> - `vscode-debugprotocol`
 > - `vscode-languageserver-protocol`
 > - `vscode-oniguruma`
-> - `vscode-proxy-agent`
-> - `vscode-ripgrep`
 > - `vscode-textmate`
 > - `vscode-uri`
 
 ### Publishing for testing
 
-Once you believe that everything is in working order, you'll need to publish the new `@theia/monaco-editor-core` for testing. The instructions for doing so are
-[here](https://github.com/theia-ide/vscode/wiki/Publish-%60@theia-monaco-editor-core%60). Once the package is published, point your `package.json`s at the testing version and make
-sure everything still works, then make a PR.
+Once you believe that everything is in working order, you'll need to publish the new `@theia/monaco-editor-core` for testing.
+You can use `npm pack` in the `out-monaco-editor-core/` directory of the VSCode fork to create a tarball, then publish it.
+Once the package is published, point your `package.json`s at the testing version and make sure everything still works, then make a PR.
 
 ## Additional Information
 

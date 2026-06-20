@@ -103,6 +103,13 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         });
     }
     onStart(): void {
+        // Monaco exposes its theme colors as `--vscode-*` CSS variables only through the `monaco-colors`
+        // stylesheet that `registerEditorContainer` injects. That stylesheet is otherwise created lazily,
+        // when the first standalone editor is opened, so popups that rely on those variables (e.g. the chat
+        // input's suggest widget) are unstyled until then. Register the main window up front so the variables
+        // are available document-wide from launch; `_updateCSS` keeps the stylesheet in sync on theme changes.
+        (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService).registerEditorContainer(document.body);
+
         this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => {
             if (widget instanceof EditorWidget && widget.editor instanceof MonacoEditor) {
                 const themeService = StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService;

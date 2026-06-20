@@ -18,7 +18,7 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import { PromptService, PromptServiceImpl } from './prompt-service';
+import { CustomAgentDescription, PromptService, PromptServiceImpl } from './prompt-service';
 import { DefaultAIVariableService, AIVariableService } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { ToolRequest } from './language-model';
@@ -34,7 +34,8 @@ describe('PromptService', () => {
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
         const logger = sinon.createStubInstance(Logger);
 
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = logger;
         const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
         variableService.registerResolver(nameVariable, {
             canResolve: () => 100,
@@ -332,7 +333,8 @@ describe('PromptService', () => {
         container.bind<ToolInvocationRegistry>(ToolInvocationRegistry).toConstantValue(toolInvocationRegistry as any);
 
         // Set up a variable service that returns a fragment with a function reference
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, sinon.createStubInstance(Logger));
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = sinon.createStubInstance(Logger);
         const fragmentVariable = { id: 'test', name: 'fragment', description: 'Test fragment with function' };
         variableService.registerResolver(fragmentVariable, {
             canResolve: () => 100,
@@ -503,6 +505,56 @@ describe('PromptService', () => {
         it('getFragmentByCommandName returns undefined for non-existent command', () => {
             const fragment = promptService.getPromptFragmentByCommandName('non-existent');
             expect(fragment).to.be.undefined;
+        });
+    });
+});
+
+describe('CustomAgentDescription', () => {
+    describe('is() type guard', () => {
+        const validDescription = {
+            id: 'test-agent',
+            name: 'Test Agent',
+            description: 'A test agent',
+            prompt: 'You are a test agent',
+            defaultLLM: 'gpt-4'
+        };
+
+        it('should return true for valid description with showInChat: true', () => {
+            const description = { ...validDescription, showInChat: true };
+            expect(CustomAgentDescription.is(description)).to.be.true;
+        });
+
+        it('should return true for valid description with showInChat: false', () => {
+            const description = { ...validDescription, showInChat: false };
+            expect(CustomAgentDescription.is(description)).to.be.true;
+        });
+
+        it('should return true for valid description without showInChat (backward compatibility)', () => {
+            expect(CustomAgentDescription.is(validDescription)).to.be.true;
+        });
+
+        it('should return false for description with invalid showInChat type (string)', () => {
+            const description = { ...validDescription, showInChat: 'true' };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+
+        it('should return false for description with invalid showInChat type (number)', () => {
+            const description = { ...validDescription, showInChat: 1 };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+
+        it('should return false for null', () => {
+            // eslint-disable-next-line no-null/no-null
+            expect(CustomAgentDescription.is(null)).to.be.false;
+        });
+
+        it('should return false for undefined', () => {
+            expect(CustomAgentDescription.is(undefined)).to.be.false;
+        });
+
+        it('should return false for missing required properties', () => {
+            expect(CustomAgentDescription.is({ id: 'test' })).to.be.false;
+            expect(CustomAgentDescription.is({ id: 'test', name: 'Test' })).to.be.false;
         });
     });
 });

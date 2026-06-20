@@ -71,45 +71,45 @@ export class SomeClass {
 ## Re-Exports
 
 - `@theia/core/electron-shared/...`
-  - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
-  - `electron` (from [`electron@38.4.0`](https://www.npmjs.com/package/electron/v/38.4.0))
-  - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
+  - `native-keymap` (from [`native-keymap@^2.5.0`](https://www.npmjs.com/package/native-keymap))
+  - `electron` (from [`electron@39.8.7`](https://www.npmjs.com/package/electron/v/39.8.7))
+  - `electron-store` (from [`electron-store@^8.2.0`](https://www.npmjs.com/package/electron-store))
 - `@theia/core/shared/...`
   - `@lumino/algorithm` (from [`@lumino/algorithm@^2.0.4`](https://www.npmjs.com/package/@lumino/algorithm))
   - `@lumino/commands` (from [`@lumino/commands@^2.3.3`](https://www.npmjs.com/package/@lumino/commands))
   - `@lumino/coreutils` (from [`@lumino/coreutils@^2.2.2`](https://www.npmjs.com/package/@lumino/coreutils))
   - `@lumino/domutils` (from [`@lumino/domutils@^2.0.4`](https://www.npmjs.com/package/@lumino/domutils))
-  - `@lumino/dragdrop` (from [`@lumino/dragdrop@^2.1.7`](https://www.npmjs.com/package/@lumino/dragdrop))
+  - `@lumino/dragdrop` (from [`@lumino/dragdrop@^2.1.8`](https://www.npmjs.com/package/@lumino/dragdrop))
   - `@lumino/messaging` (from [`@lumino/messaging@^2.0.4`](https://www.npmjs.com/package/@lumino/messaging))
   - `@lumino/properties` (from [`@lumino/properties@^2.0.4`](https://www.npmjs.com/package/@lumino/properties))
   - `@lumino/signaling` (from [`@lumino/signaling@^2.1.5`](https://www.npmjs.com/package/@lumino/signaling))
   - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.4`](https://www.npmjs.com/package/@lumino/virtualdom))
-  - `@lumino/widgets` (from [`@lumino/widgets@2.7.2`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.2))
-  - `@theia/application-package` (from [`@theia/application-package@1.68.0`](https://www.npmjs.com/package/@theia/application-package/v/1.68.0))
-  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.68.0`](https://www.npmjs.com/package/@theia/application-package/v/1.68.0))
-  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.68.0`](https://www.npmjs.com/package/@theia/application-package/v/1.68.0))
-  - `@theia/request` (from [`@theia/request@1.68.0`](https://www.npmjs.com/package/@theia/request/v/1.68.0))
-  - `@theia/request/lib/proxy` (from [`@theia/request@1.68.0`](https://www.npmjs.com/package/@theia/request/v/1.68.0))
-  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.68.0`](https://www.npmjs.com/package/@theia/request/v/1.68.0))
-  - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
+  - `@lumino/widgets` (from [`@lumino/widgets@2.7.5`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.5))
+  - `@theia/application-package` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
+  - `@theia/request` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/request/lib/proxy` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `fs-extra` (from [`fs-extra@^4.0.3`](https://www.npmjs.com/package/fs-extra))
   - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
-  - `inversify` (from [`inversify@^6.1.3`](https://www.npmjs.com/package/inversify))
-  - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
-  - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
-  - `react-virtuoso` (from [`react-virtuoso@^2.17.0`](https://www.npmjs.com/package/react-virtuoso))
-  - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@^3.17.2`](https://www.npmjs.com/package/vscode-languageserver-protocol))
-  - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
-  - `@parcel/watcher` (from [`@parcel/watcher@^2.5.0`](https://www.npmjs.com/package/@parcel/watcher))
-  - `dompurify` (from [`dompurify@^3.2.4`](https://www.npmjs.com/package/dompurify))
-  - `express` (from [`express@^4.21.0`](https://www.npmjs.com/package/express))
+  - `inversify` (from [`inversify@^6.2.2`](https://www.npmjs.com/package/inversify))
+  - `react-dom` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
+  - `react-dom/client` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
+  - `react-virtuoso` (from [`react-virtuoso@^2.19.1`](https://www.npmjs.com/package/react-virtuoso))
+  - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@3.17.5`](https://www.npmjs.com/package/vscode-languageserver-protocol/v/3.17.5))
+  - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
+  - `@parcel/watcher` (from [`@parcel/watcher@^2.5.6`](https://www.npmjs.com/package/@parcel/watcher))
+  - `dompurify` (from [`dompurify@^3.4.7`](https://www.npmjs.com/package/dompurify))
+  - `express` (from [`express@^4.22.2`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
-  - `markdown-it` (from [`markdown-it@^14.1.0`](https://www.npmjs.com/package/markdown-it))
+  - `markdown-it` (from [`markdown-it@^14.2.0`](https://www.npmjs.com/package/markdown-it))
   - `markdown-it-anchor` (from [`markdown-it-anchor@^9.2.0`](https://www.npmjs.com/package/markdown-it-anchor))
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.0.0`](https://www.npmjs.com/package/markdown-it-emoji))
-  - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
-  - `ws` (from [`ws@^8.17.1`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
+  - `react` (from [`react@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react))
+  - `ws` (from [`ws@^8.21.0`](https://www.npmjs.com/package/ws))
+  - `yargs` (from [`yargs@^17.7.2`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 
@@ -124,8 +124,11 @@ the log level of particular loggers, create a config file such as
 {
   "defaultLevel": "info",
   "levels": {
-    "terminal": "debug",
-    "task": "error"
+    "terminal*": "debug",
+    "task*": "error",
+    "ai-core*": "error",
+    "ai-core:DefaultPromptFragmentCustomizationService": "debug",
+    "*Token*": "warn"
   }
 }
 ```
@@ -135,6 +138,13 @@ contains the log level to use for loggers not specified in `levels`.  This file
 can then be specified using the `--log-config` option.  Theia will watch that
 file for changes, so it's possible to change log levels at runtime by
 modifying this file.
+
+**Wildcard Support and Precedence**
+
+In addition to exact logger names, you can configure log levels using wildcards (`*`) to target multiple loggers with a single rule (e.g., `ai-core*` or `*Token*`). When resolving the log level for a specific logger, the following precedence rules apply:
+
+- **Exact Match Priority:** An exact match to a logger name will always take the highest priority over any wildcard rules.
+- **Last One Wins:** If an exact match is not found, the system evaluates the wildcard rules. If multiple wildcard rules match a given logger, the *last* matching rule defined in the configuration file takes precedence.
 
 It's unfortunately currently not possible to query Theia for the list of
 existing loggers.  However, each log message specifies from which logger it

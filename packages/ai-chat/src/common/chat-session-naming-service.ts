@@ -52,7 +52,7 @@ export class ChatSessionNamingAgent implements Agent {
     prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-naming',
-        identifier: 'default/summarize',
+        identifier: 'default/fast',
     }];
     agentSpecificVariables = [
         {
@@ -98,6 +98,8 @@ export class ChatSessionNamingAgent implements Agent {
             throw new Error('Unable to create prompt message for generating chat session name');
         }
 
+        const variantInfo = this.promptService.getPromptVariantInfo(CHAT_SESSION_NAMING_PROMPT.id);
+
         const sessionId = generateUuid();
         const requestId = generateUuid();
         const request: UserRequest & { agentId: string } = {
@@ -108,7 +110,9 @@ export class ChatSessionNamingAgent implements Agent {
             }],
             requestId,
             sessionId,
-            agentId: this.id
+            agentId: this.id,
+            promptVariantId: variantInfo?.variantId,
+            isPromptVariantCustomized: variantInfo?.isCustomized
         };
         const result = await this.languageModelService.sendRequest(lm, request);
         const response = await getTextOfResponse(result);

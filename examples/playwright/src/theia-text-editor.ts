@@ -18,7 +18,6 @@ import { ElementHandle, Locator } from '@playwright/test';
 
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
-import { normalizeId } from './util';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 
 export class TheiaTextEditor extends TheiaEditor {
@@ -26,11 +25,14 @@ export class TheiaTextEditor extends TheiaEditor {
     protected monacoEditor: TheiaMonacoEditor;
 
     constructor(filePath: string, app: TheiaApp) {
-        // shell-tab-code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
-        // code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
+        // The editor widget ID includes a random counter suffix (e.g. :4728193746281937) that we can't predict,
+        // so we match by prefix using CSS attribute selectors. We don't use normalizeId here because
+        // the value is inside a quoted attribute selector, not a bare CSS ID selector.
+        const tabIdPrefix = `shell-tab-code-editor-opener:${app.workspace.pathAsUrl(filePath)}:`;
+        const viewIdPrefix = `code-editor-opener:${app.workspace.pathAsUrl(filePath)}:`;
         super({
-            tabSelector: normalizeId(`#shell-tab-code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`),
-            viewSelector: normalizeId(`#code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`) + '.theia-editor'
+            tabSelector: `[id^="${tabIdPrefix}"]`,
+            viewSelector: `[id^="${viewIdPrefix}"].theia-editor`
         }, app);
         this.monacoEditor = new TheiaMonacoEditor(this.page.locator(this.data.viewSelector), app);
     }
@@ -50,7 +52,7 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     protected async typeTextAndHitEnter(text: string): Promise<void> {
-        await this.page.keyboard.type(text);
+        await TheiaMonacoEditor.typeText(this.page, text);
         await this.page.keyboard.press('Enter');
     }
 
@@ -107,7 +109,7 @@ export class TheiaTextEditor extends TheiaEditor {
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
-        await this.page.keyboard.type(newText);
+        await TheiaMonacoEditor.typeText(this.page, newText);
     }
 
     async addTextToNewLineAfterLineByLineNumber(lineNumber: number, newText: string): Promise<void> {
@@ -115,7 +117,7 @@ export class TheiaTextEditor extends TheiaEditor {
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
-        await this.page.keyboard.type(newText);
+        await TheiaMonacoEditor.typeText(this.page, newText);
     }
 
     protected async selectLine(lineLocator: Locator | undefined): Promise<void> {

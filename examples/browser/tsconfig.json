@@ -9,9 +9,6 @@
       "path": "../../dev-packages/cli"
     },
     {
-      "path": "../../dev-packages/native-webpack-plugin"
-    },
-    {
       "path": "../../packages/ai-anthropic"
     },
     {
@@ -70,6 +67,9 @@
     },
     {
       "path": "../../packages/ai-openai"
+    },
+    {
+      "path": "../../packages/ai-registry"
     },
     {
       "path": "../../packages/ai-scanoss"

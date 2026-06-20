@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { Event, Emitter } from '../../common';
+import { Event, Emitter, ILogger } from '../../common';
 import { CorePreferences } from '../../common/core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution, OnWillStopAction } from '../frontend-application-contribution';
@@ -43,6 +43,9 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     @named(FrontendApplicationContribution)
     protected readonly contributions: ContributionProvider<FrontendApplicationContribution>;
 
+    @inject(ILogger) @named('core:DefaultWindowService')
+    protected readonly logger: ILogger;
+
     onStart(app: FrontendApplication): void {
         this.frontendApplication = app;
         this.registerUnloadListeners();
@@ -53,8 +56,13 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         return undefined;
     }
 
-    openNewDefaultWindow(): void {
+    async openNewDefaultWindow(): Promise<number> {
         this.openNewWindow(`#${DEFAULT_WINDOW_HASH}`);
+        return -1;
+    }
+
+    closeWindow(windowId: number): void {
+        // No-op in browser-only mode
     }
 
     focus(): void {
@@ -109,7 +117,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
             return true;
         }
         const preparedValues = await Promise.all(vetoes.map(e => e.prepare?.(stopReason)));
-        console.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
+        this.logger.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
         for (let i = 0; i < vetoes.length; i++) {
             try {
                 const result = await vetoes[i].action(preparedValues[i], stopReason);
@@ -117,10 +125,10 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
                     return false;
                 }
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
             }
         }
-        console.debug('OnWillStop actions resolved; allowing shutdown');
+        this.logger.debug('OnWillStop actions resolved; allowing shutdown');
         this.allowVetoes = false;
         return true;
     }
@@ -140,10 +148,10 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         const vetoes = this.collectContributionUnloadVetoes();
         if (vetoes.length) {
             // In the browser, we don't call the functions because this has to finish in a single tick, so we treat any desired action as a veto.
-            console.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
+            this.logger.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
             return this.preventUnload(event);
         }
-        console.debug('Shutdown will proceed.');
+        this.logger.debug('Shutdown will proceed.');
     }
 
     /**

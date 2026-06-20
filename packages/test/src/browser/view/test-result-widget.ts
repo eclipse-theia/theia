@@ -62,6 +62,10 @@ export class TestResultWidget extends BaseWidget {
                 this.setInput(e.messages);
             }
         })]);
+        const currentState = this.uiModel.selectedTestState;
+        if (TestFailure.is(currentState)) {
+            this.setInput(currentState.messages);
+        }
     }
 
     protected override onAfterAttach(msg: Message): void {

@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceService } from './workspace-service';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
@@ -33,6 +34,9 @@ export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(ILogger) @named('workspace:WorkspaceDuplicateHandler')
+    protected readonly logger: ILogger;
 
     /**
      * Determine if the command is visible.
@@ -67,7 +71,7 @@ export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
                 const target = FileSystemUtils.generateUniqueResourceURI(parent, uri, targetFileStat.isDirectory, 'copy');
                 await this.fileService.copy(uri, target);
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
             }
         }));
     }

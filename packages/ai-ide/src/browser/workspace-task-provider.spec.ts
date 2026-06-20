@@ -15,14 +15,34 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
-import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
+import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider';
 import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { TaskConfiguration, TaskInfo } from '@theia/task/lib/common';
+import { TaskConfiguration, TaskInfo, TaskScope } from '@theia/task/lib/common';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { WorkspaceFunctionScope } from './workspace-functions';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+
+const makeTrustAwareReader = (): TrustAwarePreferenceReader => ({
+    get: <T>(_name: string, fallback?: T) => fallback,
+    ready: Promise.resolve(),
+    onDidChangeTrust: () => ({ dispose: () => { } })
+} as unknown as TrustAwarePreferenceReader);
+
+const makeEnvVariablesServer = (): EnvVariablesServer => ({
+    getHomeDirUri: async () => 'file:///home/test',
+    getExecPath: async () => '',
+    getVariables: async () => [],
+    getValue: async () => undefined,
+    getConfigDirUri: async () => 'file:///home/test/.config'
+} as unknown as EnvVariablesServer);
 
 describe('Workspace Task Provider Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
@@ -48,15 +68,20 @@ describe('Workspace Task Provider Cancellation Tests', () => {
             getTasks: async (token: number) => [
                 {
                     label: 'build',
-                    _scope: 'workspace',
+                    _scope: 'file:///home/user/frontend',
                     type: 'shell'
                 } as TaskConfiguration,
                 {
                     label: 'test',
-                    _scope: 'workspace',
+                    _scope: 'file:///home/user/frontend',
                     type: 'shell'
                 } as TaskConfiguration
             ],
+            runTask: async (task: TaskConfiguration) => ({
+                taskId: 0,
+                terminalId: 0,
+                config: task
+            } as TaskInfo),
             runTaskByLabel: async (token: number, taskLabel: string) => {
                 if (taskLabel === 'build' || taskLabel === 'test') {
                     return {
@@ -64,7 +89,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
                         terminalId: 0,
                         config: {
                             label: taskLabel,
-                            _scope: 'workspace',
+                            _scope: 'file:///home/user/frontend',
                             type: 'shell'
                         }
                     } as TaskInfo;
@@ -74,7 +99,8 @@ describe('Workspace Task Provider Cancellation Tests', () => {
             terminateTask: async (activeTaskInfo: TaskInfo) => {
                 // Track termination
             },
-            getTerminateSignal: async () => 'SIGTERM'
+            getTerminateSignal: async () => 'SIGTERM',
+            isTaskRunning: () => false
         } as unknown as TaskService;
 
         mockTerminalService = {
@@ -87,15 +113,151 @@ describe('Workspace Task Provider Cancellation Tests', () => {
             } as unknown as TerminalWidget)
         } as unknown as TerminalService;
 
+        const mockWorkspaceService = {
+            tryGetRoots: () => [
+                { resource: new URI('file:///home/user/frontend') }
+            ],
+            roots: Promise.resolve([
+                { resource: new URI('file:///home/user/frontend') }
+            ]),
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
         // Register mocks in the container
         container.bind(TaskService).toConstantValue(mockTaskService);
         container.bind(TerminalService).toConstantValue(mockTerminalService);
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue({} as FileService);
+        container.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(TaskListProvider).toSelf();
         container.bind(TaskRunnerProvider).toSelf();
     });
 
     afterEach(() => {
         cancellationTokenSource.dispose();
+    });
+
+    describe('Task cancellation with completed tasks', () => {
+        it('should NOT terminate task if task has already completed (not in runningTasks)', async () => {
+            let terminateTaskCalled = false;
+            mockTaskService.terminateTask = async () => {
+                terminateTaskCalled = true;
+            };
+            // Simulate task already completed (isTaskRunning returns false)
+            mockTaskService.isTaskRunning = () => false;
+
+            // Mock getTerminateSignal to never resolve (simulates in-flight handler)
+            mockTaskService.getTerminateSignal = () => new Promise(() => { });
+
+            const taskRunnerProvider = container.get(TaskRunnerProvider);
+            const handler = taskRunnerProvider.getTool().handler;
+
+            // Start task execution (will hang on getTerminateSignal)
+            handler(JSON.stringify({ taskName: 'build' }), mockCtx);
+
+            // Give time for the handler to register the cancellation listener
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Cancel while handler is "in-flight"
+            cancellationTokenSource.cancel();
+
+            // Give time for cancellation to process
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // terminateTask should NOT have been called since isTaskRunning returns false
+            expect(terminateTaskCalled).to.be.false;
+        });
+
+        it('should terminate task if task is still running', async () => {
+            let terminateTaskCalled = false;
+            mockTaskService.terminateTask = async () => {
+                terminateTaskCalled = true;
+            };
+
+            // Mock isTaskRunning to return true (task still running)
+            mockTaskService.isTaskRunning = () => true;
+
+            // Mock getTerminateSignal to never resolve (simulates in-flight task)
+            mockTaskService.getTerminateSignal = () => new Promise(() => { });
+
+            const taskRunnerProvider = container.get(TaskRunnerProvider);
+            const handler = taskRunnerProvider.getTool().handler;
+
+            // Start task execution (will hang on getTerminateSignal)
+            handler(JSON.stringify({ taskName: 'build' }), mockCtx);
+
+            // Give time for the handler to register the cancellation listener
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Cancel while task is "in-flight"
+            cancellationTokenSource.cancel();
+
+            // Give time for cancellation to process
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // terminateTask SHOULD have been called since isTaskRunning returns true
+            expect(terminateTaskCalled).to.be.true;
+        });
+
+        it('should handle multiple tasks with shared cancellation token - only terminate running tasks', async () => {
+            const terminatedTasks: number[] = [];
+            mockTaskService.terminateTask = async (taskInfo: TaskInfo) => {
+                terminatedTasks.push(taskInfo.taskId);
+            };
+
+            // Mock isTaskRunning to simulate: task 0 completed, tasks 1 & 2 still running
+            mockTaskService.isTaskRunning = (taskId: number) => taskId !== 0;
+
+            // Mock getTerminateSignal to never resolve (simulates in-flight handlers)
+            mockTaskService.getTerminateSignal = () => new Promise(() => { });
+
+            // Override getTasks to return three tasks matching the handler calls
+            mockTaskService.getTasks = async () => [
+                { label: 'build', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+                { label: 'test', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+                { label: 'lint', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration
+            ];
+
+            // Mock runTask to return different task IDs for each invocation
+            let taskIdCounter = 0;
+            mockTaskService.runTask = async (task: TaskConfiguration) => ({
+                taskId: taskIdCounter++,
+                terminalId: taskIdCounter - 1,
+                config: task
+            } as TaskInfo);
+
+            const taskRunnerProvider = container.get(TaskRunnerProvider);
+            const handler = taskRunnerProvider.getTool().handler;
+
+            // Use ONE shared CancellationTokenSource (simulates real scenario)
+            const sharedCts = new CancellationTokenSource();
+            const sharedCtx: ToolInvocationContext = { cancellationToken: sharedCts.token };
+
+            // Call handler three times with the same shared cancellation token
+            handler(JSON.stringify({ taskName: 'build' }), sharedCtx);
+            handler(JSON.stringify({ taskName: 'test' }), sharedCtx);
+            handler(JSON.stringify({ taskName: 'lint' }), sharedCtx);
+
+            // Give time for handlers to register cancellation listeners
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Cancel the shared token once - this fires all registered listeners
+            sharedCts.cancel();
+
+            // Give time for cancellation listeners to fire
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Only task 1 and 2 should have been terminated (task 0 was completed)
+            expect(terminatedTasks).to.have.lengthOf(2);
+            expect(terminatedTasks).to.include(1);
+            expect(terminatedTasks).to.include(2);
+            expect(terminatedTasks).to.not.include(0);
+
+            sharedCts.dispose();
+        });
     });
 
     it('TaskListProvider should respect cancellation token', async () => {
@@ -107,6 +269,158 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('TaskListProvider should return tasks with workspace root info', async () => {
+        const taskListProvider = container.get(TaskListProvider);
+        const handler = taskListProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ filter: '' }), mockCtx);
+
+        const tasks = JSON.parse(result as string);
+        expect(tasks).to.have.lengthOf(2);
+        expect(tasks[0]).to.deep.equal({ label: 'build', workspaceRoot: 'frontend' });
+        expect(tasks[1]).to.deep.equal({ label: 'test', workspaceRoot: 'frontend' });
+    });
+
+    it('TaskListProvider should use scope tokens for workspace-scoped and global tasks', async () => {
+        mockTaskService.getTasks = async () => [
+            { label: 'folder-task', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+            { label: 'ws-task', _scope: TaskScope.Workspace, type: 'shell' } as unknown as TaskConfiguration,
+            { label: 'global-task', _scope: TaskScope.Global, type: 'shell' } as unknown as TaskConfiguration
+        ];
+
+        const taskListProvider = container.get(TaskListProvider);
+        const handler = taskListProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ filter: '' }), mockCtx);
+
+        const tasks = JSON.parse(result as string);
+        expect(tasks).to.have.lengthOf(3);
+        expect(tasks[0]).to.deep.equal({ label: 'folder-task', workspaceRoot: 'frontend' });
+        expect(tasks[1]).to.deep.equal({ label: 'ws-task', workspaceRoot: WORKSPACE_SCOPE_TOKEN });
+        expect(tasks[2]).to.deep.equal({ label: 'global-task', workspaceRoot: GLOBAL_SCOPE_TOKEN });
+    });
+
+    it('TaskRunnerProvider should disambiguate workspace-scoped task via scope token', async () => {
+        mockTaskService.getTasks = async () => [
+            { label: 'build', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+            { label: 'build', _scope: TaskScope.Workspace, type: 'shell' } as unknown as TaskConfiguration
+        ];
+        mockTaskService.runTask = async (task: TaskConfiguration) => ({
+            taskId: 0,
+            terminalId: 0,
+            config: task
+        } as TaskInfo);
+
+        const taskRunnerProvider = container.get(TaskRunnerProvider);
+        const handler = taskRunnerProvider.getTool().handler;
+
+        // Without workspaceRoot → ambiguous
+        const ambiguousResult = await handler(JSON.stringify({ taskName: 'build' }), mockCtx);
+        expect(ambiguousResult as string).to.include('Ambiguous');
+
+        // With (workspace) → picks the workspace-scoped task
+        const wsResult = await handler(JSON.stringify({ taskName: 'build', workspaceRoot: WORKSPACE_SCOPE_TOKEN }), mockCtx);
+        expect(wsResult as string).to.not.include('Ambiguous');
+        expect(wsResult as string).to.not.include('Did not find');
+    });
+
+    it('TaskRunnerProvider should run a uniquely-named task without workspaceRoot', async () => {
+        const taskRunnerProvider = container.get(TaskRunnerProvider);
+        const handler = taskRunnerProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ taskName: 'build' }), mockCtx);
+
+        // Should succeed — single match, no ambiguity
+        expect(result).to.be.a('string');
+        expect(result).to.not.include('Ambiguous');
+    });
+
+    it('TaskRunnerProvider should report ambiguity for duplicate task labels across roots', async () => {
+        // Override mock to return tasks in two different roots with the same label
+        const multiRootTaskService = {
+            ...mockTaskService,
+            getTasks: async () => [
+                { label: 'build', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+                { label: 'build', _scope: 'file:///home/user/backend', type: 'shell' } as TaskConfiguration
+            ]
+        } as unknown as TaskService;
+
+        const multiRootContainer = new Container();
+        const multiRootWorkspaceService = {
+            tryGetRoots: () => [
+                { resource: new URI('file:///home/user/frontend') },
+                { resource: new URI('file:///home/user/backend') }
+            ],
+            roots: Promise.resolve([
+                { resource: new URI('file:///home/user/frontend') },
+                { resource: new URI('file:///home/user/backend') }
+            ]),
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        multiRootContainer.bind(TaskService).toConstantValue(multiRootTaskService);
+        multiRootContainer.bind(TerminalService).toConstantValue(mockTerminalService);
+        multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+        multiRootContainer.bind(FileService).toConstantValue({} as FileService);
+        multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
+        multiRootContainer.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        multiRootContainer.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        multiRootContainer.bind(WorkspaceFunctionScope).toSelf();
+        multiRootContainer.bind(TaskRunnerProvider).toSelf();
+
+        const taskRunnerProvider = multiRootContainer.get(TaskRunnerProvider);
+        const handler = taskRunnerProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ taskName: 'build' }), mockCtx);
+
+        expect(result).to.be.a('string');
+        expect(result as string).to.include('Ambiguous');
+        expect(result as string).to.include('frontend');
+        expect(result as string).to.include('backend');
+    });
+
+    it('TaskRunnerProvider should disambiguate with workspaceRoot parameter', async () => {
+        const multiRootTaskService = {
+            ...mockTaskService,
+            getTasks: async () => [
+                { label: 'build', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
+                { label: 'build', _scope: 'file:///home/user/backend', type: 'shell' } as TaskConfiguration
+            ],
+            runTask: async (task: TaskConfiguration) => ({
+                taskId: 0,
+                terminalId: 0,
+                config: task
+            } as TaskInfo)
+        } as unknown as TaskService;
+
+        const multiRootContainer = new Container();
+        const multiRootWorkspaceService = {
+            tryGetRoots: () => [
+                { resource: new URI('file:///home/user/frontend') },
+                { resource: new URI('file:///home/user/backend') }
+            ],
+            roots: Promise.resolve([
+                { resource: new URI('file:///home/user/frontend') },
+                { resource: new URI('file:///home/user/backend') }
+            ]),
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        multiRootContainer.bind(TaskService).toConstantValue(multiRootTaskService);
+        multiRootContainer.bind(TerminalService).toConstantValue(mockTerminalService);
+        multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+        multiRootContainer.bind(FileService).toConstantValue({} as FileService);
+        multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
+        multiRootContainer.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        multiRootContainer.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        multiRootContainer.bind(WorkspaceFunctionScope).toSelf();
+        multiRootContainer.bind(TaskRunnerProvider).toSelf();
+
+        const taskRunnerProvider = multiRootContainer.get(TaskRunnerProvider);
+        const handler = taskRunnerProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ taskName: 'build', workspaceRoot: 'backend' }), mockCtx);
+
+        // Should succeed — disambiguated by workspace root
+        expect(result).to.be.a('string');
+        expect(result).to.not.include('Ambiguous');
     });
 
     it('TaskRunnerProvider should respect cancellation token at the beginning', async () => {

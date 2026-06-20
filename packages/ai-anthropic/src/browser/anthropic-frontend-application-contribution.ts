@@ -17,25 +17,11 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF } from '../common/anthropic-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/anthropic-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
-
-// Model-specific maxTokens values
-const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
-    'claude-3-opus-latest': 4096,
-    'claude-3-5-haiku-latest': 8192,
-    'claude-3-5-sonnet-latest': 8192,
-    'claude-3-7-sonnet-latest': 64000,
-    'claude-opus-4-20250514': 32000,
-    'claude-sonnet-4-20250514': 64000,
-    'claude-sonnet-4-5': 64000,
-    'claude-sonnet-4-0': 64000,
-    'claude-opus-4-5': 64000,
-    'claude-opus-4-1': 32000
-};
 
 @injectable()
 export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -50,6 +36,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     protected aiCorePreferences: AICorePreferences;
 
     protected prevModels: string[] = [];
+    protected prevCustomModels: Partial<AnthropicModelDescription>[] = [];
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
@@ -63,6 +50,10 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
 
+            const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+            this.prevCustomModels = [...customModels];
+
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
@@ -71,6 +62,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.updateAllModels();
+                } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 }
             });
 
@@ -94,17 +88,40 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevModels = newModels;
     }
 
+    protected handleCustomModelChanges(newCustomModels: Partial<AnthropicModelDescription>[]): void {
+        const oldModels = this.createCustomModelDescriptionsFromPreferences(this.prevCustomModels);
+        const newModels = this.createCustomModelDescriptionsFromPreferences(newCustomModels);
+
+        const modelsToRemove = oldModels.filter(model => !newModels.some(newModel => newModel.id === model.id));
+        const modelsToAddOrUpdate = newModels.filter(newModel =>
+            !oldModels.some(model =>
+                model.id === newModel.id &&
+                model.model === newModel.model &&
+                model.url === newModel.url &&
+                model.apiKey === newModel.apiKey &&
+                model.maxRetries === newModel.maxRetries &&
+                model.useCaching === newModel.useCaching &&
+                model.enableStreaming === newModel.enableStreaming));
+
+        this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
+        this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
+        this.prevCustomModels = [...newCustomModels];
+    }
+
     protected updateAllModels(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
+
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
+    /** Per-model details are resolved by the backend from the Anthropic /v1/models endpoint. */
     protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
-        const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
 
-        const description: AnthropicModelDescription = {
+        return {
             id: id,
             model: modelId,
             apiKey: true,
@@ -112,14 +129,27 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             useCaching: true,
             maxRetries: maxRetries
         };
+    }
 
-        if (maxTokens !== undefined) {
-            description.maxTokens = maxTokens;
-        } else {
-            description.maxTokens = 64000;
-        }
-
-        return description;
+    protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        return preferences.reduce((acc, pref) => {
+            if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
+                return acc;
+            }
+            return [
+                ...acc,
+                {
+                    id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
+                    model: pref.model,
+                    url: pref.url,
+                    apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
+                    enableStreaming: pref.enableStreaming ?? true,
+                    useCaching: pref.useCaching ?? true,
+                    maxRetries: pref.maxRetries ?? maxRetries
+                }
+            ];
+        }, []);
     }
 
 }

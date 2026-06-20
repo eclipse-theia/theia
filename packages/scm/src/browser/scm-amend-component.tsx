@@ -273,7 +273,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         this.props.setCommitMessage(message);
     }
 
-    override render(): JSX.Element {
+    override render(): React.JSX.Element {
         const neverShrink = this.state.amendingCommits.length <= 3;
 
         const style: React.CSSProperties = neverShrink
@@ -439,7 +439,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         </div>;
     }
 
-    protected renderCommitBeingAmended(commitData: { commit: ScmCommit, avatar: string }, isOldestAmendCommit: boolean): JSX.Element {
+    protected renderCommitBeingAmended(commitData: { commit: ScmCommit, avatar: string }, isOldestAmendCommit: boolean): React.JSX.Element {
         if (isOldestAmendCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'up') {
             return <div className={ScmAmendComponent.Styles.COMMIT_AVATAR_AND_TEXT} style={{ flexGrow: 0, flexShrink: 0 }} key={commitData.commit.id}>
                 <div className='fixed-height-commit-container'>

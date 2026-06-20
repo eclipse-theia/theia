@@ -203,7 +203,7 @@ export class ScanOSSDialog extends ReactDialog<void> {
     protected renderSummary(): React.ReactNode {
         return (
             <div className="scanoss-summary">
-                <h3>{nls.localize('theia/ai/scanoss/snippet/summary', 'Summary')}</h3>
+                <h3>{nls.localizeByDefault('Summary')}</h3>
                 <div>
                     {nls.localize('theia/ai/scanoss/snippet/match-count', 'Found {0} match(es)', this.results.length)}
                 </div>

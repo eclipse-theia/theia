@@ -1075,6 +1075,35 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 await open(this.openerService, uri, options);
             }
         });
+
+        // Temporary workaround: opens a single diff editor for the revealed resource.
+        // TODO: GH-16280 implement a proper MultiDiffEditor widget.
+        commands.registerCommand({ id: '_workbench.openMultiDiffEditor' }, {
+            execute: async (options: {
+                title: string;
+                resources?: { originalUri: UriComponents; modifiedUri: UriComponents }[];
+                reveal?: { modifiedUri: UriComponents };
+            }): Promise<void> => {
+                if (!options.resources?.length) {
+                    return;
+                }
+                const revealModified = options.reveal?.modifiedUri;
+                const revealStr = revealModified ? URI.revive(revealModified)?.toString() : undefined;
+                const target = revealStr
+                    ? options.resources.find(r => URI.revive(r.modifiedUri)?.toString() === revealStr)
+                    : undefined;
+                const resource = target ?? options.resources[0];
+                const left = URI.revive(resource.originalUri);
+                const right = URI.revive(resource.modifiedUri);
+                if (left && right) {
+                    await commands.executeCommand(VscodeCommands.DIFF.id, left, right, options.title);
+                } else if (right) {
+                    await commands.executeCommand(VscodeCommands.OPEN.id, right);
+                } else if (left) {
+                    await commands.executeCommand(VscodeCommands.OPEN.id, left);
+                }
+            },
+        });
     }
 
     private async deployPlugin(uri: TheiaURI | UriComponents): Promise<void> {

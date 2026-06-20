@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ScanOSSResult, ScanOSSService } from '../common';
-
+import { ILogger } from '@theia/core';
 import { Scanner, ScannerCfg, ScannerComponent } from 'scanoss';
 
 // Define our own type of what is actually returned by the scanner
@@ -35,6 +35,9 @@ class SequentialProcessor<T> {
 
 @injectable()
 export class ScanOSSServiceImpl implements ScanOSSService {
+
+    @inject(ILogger) @named('scanoss:ScanOSSServiceImpl')
+    protected readonly logger: ILogger;
 
     private readonly processor = new SequentialProcessor<ScanOSSResult>();
 
@@ -56,7 +59,7 @@ export class ScanOSSServiceImpl implements ScanOSSService {
                 key: 'content_scanning',
             });
         } catch (e) {
-            console.debug('SCANOSS error', e);
+            this.logger.debug('SCANOSS error', e);
 
             // map known errors to a more user-friendly message
 
@@ -90,7 +93,7 @@ export class ScanOSSServiceImpl implements ScanOSSService {
             };
         }
 
-        console.debug('SCANOSS results', JSON.stringify(results, undefined, 2));
+        this.logger.debug('SCANOSS results', JSON.stringify(results, undefined, 2));
 
         let contentScanning: ScannerComponent[] | undefined = results['/content_scanning'];
         if (!contentScanning) {

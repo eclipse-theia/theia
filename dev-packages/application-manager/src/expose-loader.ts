@@ -40,7 +40,10 @@ function exposeModule(modulePackage: { dir: string, name?: string }, resourcePat
     if (path.sep !== '/') {
         moduleName = moduleName.split(path.sep).join('/');
     }
-    return source + `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = this;\n`;
+    // Use `module.exports` with a fallback to `this` for compatibility with ESM modules.
+    // Webpack wraps ESM modules in arrow functions where `this` is `undefined`,
+    // but `module.exports` is available and points to the webpack exports object.
+    return source + `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = (typeof module === 'object' && module.exports) || this;\n`;
 }
 
 /**

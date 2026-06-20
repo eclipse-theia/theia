@@ -46,29 +46,15 @@ export class ContextFileValidationServiceImpl implements ContextFileValidationSe
 
             const exists = await this.fileService.exists(resolvedUri);
             if (!exists) {
-                const secondaryRootUri = await this.findInSecondaryWorkspaceRoots(pathOrUri);
-                if (secondaryRootUri) {
-                    return {
-                        state: FileValidationState.INVALID_SECONDARY,
-                        message: 'File is in a secondary workspace root. AI agents can only access files in the first workspace root.'
-                    };
-                }
                 return {
                     state: FileValidationState.INVALID_NOT_FOUND,
                     message: 'File does not exist'
                 };
             }
 
-            if (this.workspaceScope.isInPrimaryWorkspace(resolvedUri)) {
-                return {
-                    state: FileValidationState.VALID
-                };
-            }
-
             if (this.workspaceScope.isInWorkspace(resolvedUri)) {
                 return {
-                    state: FileValidationState.INVALID_SECONDARY,
-                    message: 'File is in a secondary workspace root. AI agents can only access files in the first workspace root.'
+                    state: FileValidationState.VALID
                 };
             }
 
@@ -82,39 +68,5 @@ export class ContextFileValidationServiceImpl implements ContextFileValidationSe
                 message: 'File does not exist'
             };
         }
-    }
-
-    protected async findInSecondaryWorkspaceRoots(pathOrUri: string | URI): Promise<URI | undefined> {
-        const roots = this.workspaceService.tryGetRoots();
-        if (roots.length <= 1) {
-            return undefined;
-        }
-
-        for (let i = 1; i < roots.length; i++) {
-            const root = roots[i];
-            let candidateUri: URI;
-
-            if (pathOrUri instanceof URI) {
-                candidateUri = pathOrUri;
-            } else if (pathOrUri.includes('://')) {
-                try {
-                    candidateUri = new URI(pathOrUri);
-                } catch {
-                    continue;
-                }
-            } else {
-                candidateUri = root.resource.resolve(pathOrUri);
-            }
-
-            try {
-                if (await this.fileService.exists(candidateUri)) {
-                    return candidateUri;
-                }
-            } catch {
-                continue;
-            }
-        }
-
-        return undefined;
     }
 }

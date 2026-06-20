@@ -14,13 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { parse as parseUrl, Url } from 'url';
-import * as httpAgent from 'http-proxy-agent';
-import * as httpsAgent from 'https-proxy-agent';
+import { ProxyAgent, Agent, Dispatcher } from 'undici';
 
-export type ProxyAgent = httpAgent.HttpProxyAgent | httpsAgent.HttpsProxyAgent;
-
-function getSystemProxyURI(requestURL: Url, env: typeof process.env): string | undefined {
+function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | undefined {
     if (requestURL.protocol === 'http:') {
         return env.HTTP_PROXY || env.http_proxy;
     } else if (requestURL.protocol === 'https:') {
@@ -35,27 +31,46 @@ export interface ProxySettings {
     strictSSL?: boolean;
 }
 
-export function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: ProxySettings = {}): ProxyAgent | undefined {
-    const requestURL = parseUrl(rawRequestURL);
+export function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: ProxySettings = {}): Dispatcher | undefined {
+    let requestURL: URL;
+    try {
+        requestURL = new URL(rawRequestURL);
+    } catch {
+        return undefined;
+    }
+
     const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL, env);
 
     if (!proxyURL) {
+        if (options.strictSSL === false) {
+            return new Agent({
+                connect: { rejectUnauthorized: false }
+            });
+        }
         return undefined;
     }
 
-    const proxyEndpoint = parseUrl(proxyURL);
-
-    if (!/^https?:$/.test(proxyEndpoint.protocol || '')) {
+    let proxyEndpoint: URL;
+    try {
+        proxyEndpoint = new URL(proxyURL);
+    } catch {
         return undefined;
     }
 
-    const opts = {
-        host: proxyEndpoint.hostname || '',
-        port: proxyEndpoint.port || (proxyEndpoint.protocol === 'https' ? '443' : '80'),
-        auth: proxyEndpoint.auth,
-        rejectUnauthorized: !!options.strictSSL,
+    if (!/^https?:$/.test(proxyEndpoint.protocol)) {
+        return undefined;
+    }
+
+    const proxyAgentOptions: ProxyAgent.Options = {
+        uri: proxyURL,
+        token: proxyEndpoint.username
+            ? `Basic ${Buffer.from(`${decodeURIComponent(proxyEndpoint.username)}:${decodeURIComponent(proxyEndpoint.password)}`).toString('base64')}`
+            : undefined,
     };
 
-    const createAgent = requestURL.protocol === 'http:' ? httpAgent : httpsAgent;
-    return createAgent(opts);
+    if (options.strictSSL === false) {
+        proxyAgentOptions.requestTls = { rejectUnauthorized: false };
+    }
+
+    return new ProxyAgent(proxyAgentOptions);
 }

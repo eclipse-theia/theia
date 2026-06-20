@@ -545,7 +545,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 return <this.ScrollingRowRenderer rows={rows} />;
             }
             return <TreeWidget.View
-                ref={view => this.view = (view || undefined)}
+                ref={view => { this.view = (view || undefined); }}
                 width={this.node.offsetWidth}
                 height={this.node.offsetHeight}
                 rows={rows}
@@ -671,7 +671,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             aria-label={node.checkboxInfo.accessibilityInformation?.label}
             role={node.checkboxInfo.accessibilityInformation?.role}
             className='theia-input'
-            onClick={event => this.toggleChecked(event)} />;
+            onClick={event => this.toggleChecked(event)}
+            onDoubleClick={event => event.stopPropagation()} />;
     }
 
     protected toggleChecked(event: React.MouseEvent<HTMLElement>): void {
@@ -1688,7 +1689,7 @@ export namespace TreeWidget {
         override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, renderNodeRow, onScrollEmitter, ...other } = this.props;
             return <Virtuoso
-                ref={list => {
+                ref={(list: VirtuosoHandle | null) => {
                     this.list = (list || undefined);
                     this.scrollIntoViewIfNeeded();
                 }}

@@ -24,6 +24,7 @@ import { ContextMenuRenderer } from '../../context-menu-renderer';
 import { TabBarToolbarItem } from './tab-toolbar-item';
 import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuModelRegistry, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../../common/menu';
+import { combineWhenExpressions } from '../../menu/utils';
 
 export const TOOLBAR_WRAPPER_ID_SUFFIX = '-as-tabbar-toolbar-item';
 
@@ -95,7 +96,7 @@ abstract class AbstractToolbarMenuWrapper {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
         const className = `${icon} ${ACTION_ITEM}`;
-        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
+        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={className}
                     title={this.tooltip || this.text}
@@ -128,6 +129,9 @@ export class SubmenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper impl
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
     priority?: number | undefined;
+    get when(): string | undefined {
+        return this.menuNode.when;
+    }
 
     executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
     }
@@ -164,6 +168,10 @@ export class CommandMenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper 
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
+    get when(): string | undefined {
+        return this.menuNode.when;
+    }
+
     isVisible(widget: Widget): boolean {
         return this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
     }
@@ -197,6 +205,10 @@ export class ToolbarActionWrapper extends AbstractToolbarMenuWrapper implements 
         protected readonly toolbarItem: RenderedToolbarAction
     ) {
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+    }
+
+    get when(): string | undefined {
+        return combineWhenExpressions(this.toolbarItem.when, this.menuNode?.when);
     }
 
     override isEnabled(widget?: Widget): boolean {
@@ -296,7 +308,7 @@ abstract class AbstractMenuNodeAsToolbarItemWrapper<T extends MenuNode> {
     }
 
     isVisible<K>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<K>, context: K | undefined, ...args: unknown[]): boolean {
-        return this.menuNode!.isVisible(this.effectiveMenuPath, contextMatcher, context, args);
+        return this.menuNode!.isVisible(this.effectiveMenuPath, contextMatcher, context, ...args);
     }
 }
 
@@ -309,7 +321,7 @@ class ToolbarItemAsSubmenuWrapper extends AbstractMenuNodeAsToolbarItemWrapper<C
         return this.menuNode.contextKeyOverlays;
     }
     isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, context, args);
+        return this.menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, context, ...args);
     }
     get children(): MenuNode[] {
         return this.menuNode.children;
@@ -328,7 +340,7 @@ class ToolbarItemAsCommandMenuWrapper extends AbstractMenuNodeAsToolbarItemWrapp
         return this.menuNode.isToggled(this.effectiveMenuPath, ...args);
     }
     run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
-        return this.menuNode.run(this.effectiveMenuPath, args);
+        return this.menuNode.run(this.effectiveMenuPath, ...args);
     }
 
     override get label(): string {

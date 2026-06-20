@@ -57,7 +57,7 @@ export class CommentThreadWidget extends BaseWidget {
     protected readonly zoneWidget: MonacoEditorZoneWidget;
     protected readonly containerNodeRoot: Root;
     protected readonly commentGlyphWidget: CommentGlyphWidget;
-    protected readonly commentFormRef: RefObject<CommentForm> = React.createRef<CommentForm>();
+    protected readonly commentFormRef = React.createRef<CommentForm>();
 
     protected isExpanded?: boolean;
 
@@ -329,7 +329,7 @@ namespace CommentForm {
 }
 
 export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extends React.Component<P, CommentForm.State> {
-    private inputRef: RefObject<HTMLTextAreaElement> = React.createRef<HTMLTextAreaElement>();
+    private inputRef = React.createRef<HTMLTextAreaElement>();
     private inputValue: string = '';
     private readonly getInput = () => this.inputValue;
     private toDisposeOnUnmount = new DisposableCollection();
@@ -504,7 +504,7 @@ namespace ReviewComment {
         contextKeyService: ContextKeyService;
         commentsContext: CommentsContext;
         commands: CommandRegistry;
-        commentForm: RefObject<CommentForm>;
+        commentForm: RefObject<CommentForm | null>;
     }
 
     export interface State {
@@ -619,13 +619,13 @@ namespace CommentEditContainer {
         menus: MenuModelRegistry,
         comment: Comment;
         commentThread: CommentThread;
-        commentForm: RefObject<CommentForm>;
+        commentForm: RefObject<CommentForm | null>;
         commands: CommandRegistry;
     }
 }
 
 export class CommentEditContainer extends React.Component<CommentEditContainer.Props> {
-    private readonly inputRef: RefObject<HTMLTextAreaElement> = React.createRef<HTMLTextAreaElement>();
+    private readonly inputRef = React.createRef<HTMLTextAreaElement>();
     private dirtyCommentMode: CommentMode | undefined;
     private dirtyCommentFormState: boolean | undefined;
 

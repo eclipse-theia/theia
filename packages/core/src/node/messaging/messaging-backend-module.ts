@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '../../common';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '../../common';
 // import { BackendApplicationContribution } from '../backend-application';
 import { DefaultMessagingService, MessagingContainer } from './default-messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
@@ -24,22 +24,26 @@ import { MessagingListener, MessagingListenerContribution } from './messaging-li
 import { FrontendConnectionService } from './frontend-connection-service';
 import { BackendApplicationContribution } from '../backend-application';
 import { connectionCloseServicePath } from '../../common/messaging/connection-management';
-import { WebsocketFrontendConnectionService } from './websocket-frontend-connection-service';
+import { ReconnectableSocketChannel, WebsocketFrontendConnectionService } from './websocket-frontend-connection-service';
 import { WebsocketEndpoint } from './websocket-endpoint';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 
 export const messagingBackendModule = new ContainerModule(bind => {
-    bindContributionProvider(bind, ConnectionContainerModule);
-    bindContributionProvider(bind, MessagingService.Contribution);
+    bindRootContributionProvider(bind, ConnectionContainerModule);
+    bindRootContributionProvider(bind, MessagingService.Contribution);
     bind(DefaultMessagingService).toSelf().inSingletonScope();
     bind(MessagingService.Identifier).toService(DefaultMessagingService);
     bind(BackendApplicationContribution).toService(DefaultMessagingService);
     bind(MessagingContainer).toDynamicValue(({ container }) => container).inSingletonScope();
     bind(WebsocketEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(WebsocketEndpoint);
+    // Transient: each connection gets its own private buffer and channel instances.
+    bind(SocketWriteBuffer).toSelf();
+    bind(ReconnectableSocketChannel).toSelf();
     bind(WebsocketFrontendConnectionService).toSelf().inSingletonScope();
     bind(FrontendConnectionService).toService(WebsocketFrontendConnectionService);
     bind(MessagingListener).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MessagingListenerContribution);
+    bindRootContributionProvider(bind, MessagingListenerContribution);
 
     bind(ConnectionHandler).toDynamicValue(context => {
         const connectionService = context.container.get<WebsocketFrontendConnectionService>(FrontendConnectionService);

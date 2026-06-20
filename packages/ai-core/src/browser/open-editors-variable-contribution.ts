@@ -23,7 +23,8 @@ import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResol
 
 export const OPEN_EDITORS_VARIABLE: AIVariable = {
     id: 'openEditors',
-    description: nls.localize('theia/ai/core/openEditorsVariable/description', 'A comma-separated list of all currently open files, relative to the workspace root.'),
+    description: nls.localize('theia/ai/core/openEditorsVariable/description',
+        'A comma-separated list of all currently open files as workspace-relative paths (e.g., my-project/src/index.ts).'),
     name: 'openEditors',
 };
 
@@ -80,9 +81,7 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
         return openFiles.join(', ');
     }
 
-    protected getWorkspaceRelativePath(uri: URI): string | undefined {
-        const workspaceRootUri = this.workspaceService.getWorkspaceRootUri(uri);
-        const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
-        return path && path.toString();
+    protected getWorkspaceRelativePath(uri: URI): string {
+        return this.workspaceService.getRootPrefixedPath(uri);
     }
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { load } from 'js-yaml';
+import { parseFrontmatter } from './frontmatter';
 
 /**
  * The standard filename for skill definition files.
@@ -137,54 +137,52 @@ export function validateSkillDescription(description: SkillDescription, director
  * @returns Object with parsed metadata (if valid) and the markdown content
  */
 export function parseSkillFile(content: string): { metadata: SkillDescription | undefined, content: string } {
-    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = content.match(frontMatterRegex);
-
-    if (!match) {
+    const { metadata, body } = parseFrontmatter<SkillDescription>(content, { isValid: SkillDescription.is });
+    if (!metadata) {
         return { metadata: undefined, content };
     }
-
-    try {
-        const yamlContent = match[1];
-        const markdownContent = match[2].trim();
-        const parsedYaml = load(yamlContent);
-
-        if (!parsedYaml || typeof parsedYaml !== 'object') {
-            return { metadata: undefined, content };
-        }
-
-        // Validate that required fields are present (name and description)
-        if (!SkillDescription.is(parsedYaml)) {
-            return { metadata: undefined, content };
-        }
-
-        return { metadata: parsedYaml, content: markdownContent };
-    } catch {
-        return { metadata: undefined, content };
-    }
+    return { metadata, content: body };
 }
 
 /**
- * Combines skill directories with proper priority ordering.
- * Workspace directory has highest priority, followed by configured directories, then default.
- * First directory wins on duplicates.
+ * Provenance tier of a skill directory, used to dispatch tier-specific processing.
+ */
+export type SkillDirectoryTier = 'workspace' | 'configured' | 'default';
+
+/**
+ * A skill directory paired with the tier it originates from.
+ */
+export interface SkillDirectoryEntry {
+    /** Absolute filesystem path to the skill directory */
+    path: string;
+    /** Tier the directory belongs to */
+    tier: SkillDirectoryTier;
+}
+
+/**
+ * Combines skill directories with proper priority ordering and provenance.
+ * Workspace directories have highest priority, followed by configured directories, then defaults.
+ * First occurrence of a path wins on duplicates; later occurrences (regardless of tier) are dropped.
  */
 export function combineSkillDirectories(
-    workspaceSkillsDir: string | undefined,
+    workspaceSkillsDirs: string[],
     configuredDirectories: string[],
-    defaultSkillsDir: string | undefined
-): string[] {
-    const allDirectories: string[] = [];
-    if (workspaceSkillsDir) {
-        allDirectories.push(workspaceSkillsDir);
-    }
-    for (const dir of configuredDirectories) {
-        if (!allDirectories.includes(dir)) {
-            allDirectories.push(dir);
+    defaultSkillsDirs: string[]
+): SkillDirectoryEntry[] {
+    const seen = new Set<string>();
+    const result: SkillDirectoryEntry[] = [];
+    const tiers: Array<{ dirs: string[]; tier: SkillDirectoryTier }> = [
+        { dirs: workspaceSkillsDirs, tier: 'workspace' },
+        { dirs: configuredDirectories, tier: 'configured' },
+        { dirs: defaultSkillsDirs, tier: 'default' }
+    ];
+    for (const { dirs, tier } of tiers) {
+        for (const dir of dirs) {
+            if (!seen.has(dir)) {
+                seen.add(dir);
+                result.push({ path: dir, tier });
+            }
         }
     }
-    if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
-        allDirectories.push(defaultSkillsDir);
-    }
-    return allDirectories;
+    return result;
 }

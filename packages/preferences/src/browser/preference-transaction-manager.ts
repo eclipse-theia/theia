@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationError, Listener, ListenerList, MaybePromise, MessageService, nls } from '@theia/core';
+import { CancellationError, Listener, ListenerList, MaybePromise, MessageService, nls, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct, named } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
@@ -186,6 +186,8 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
     @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(ILogger) @named('preferences:PreferenceTransaction')
+    protected readonly logger: ILogger;
 
     protected override async doInit(): Promise<void> {
         this.waitFor(this.prelude?.());
@@ -245,7 +247,7 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         } catch (e) {
             const message = `Failed to update the value of '${key}' in '${this.context.getConfigUri()}'.`;
             this.messageService.error(`${message} Please check if it is corrupted.`);
-            console.error(`${message}`, e);
+            this.logger.error(`${message}`, e);
             return false;
         }
     }

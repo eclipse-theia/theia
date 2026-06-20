@@ -84,11 +84,11 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         return { currentElement, instruction, sourcecode, cellDisposable, disposables };
     }
 
-    renderElement(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData, height: number | undefined): void {
-        this.renderElementInner(element, index, templateData, height);
+    renderElement(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData): void {
+        this.renderElementInner(element, index, templateData);
     }
 
-    protected async renderElementInner(element: DisassembledInstructionEntry, index: number, column: InstructionColumnTemplateData, height: number | undefined): Promise<void> {
+    protected async renderElementInner(element: DisassembledInstructionEntry, index: number, column: InstructionColumnTemplateData): Promise<void> {
         column.currentElement.element = element;
         const instruction = element.instruction;
         column.sourcecode.innerText = '';
@@ -155,7 +155,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         this.rerenderBackground(column.instruction, column.sourcecode, element);
     }
 
-    disposeElement(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData, height: number | undefined): void {
+    disposeElement(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData): void {
         dispose(templateData.cellDisposable);
         templateData.cellDisposable = [];
     }

@@ -16,17 +16,144 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, LocalizedMarkdown, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolRequest } from '@theia/ai-core';
 import { CommandMenu, ContextExpressionMatcher, MenuPath } from '@theia/core/lib/common/menu';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
+import { MarkdownRender } from './markdown-part-renderer';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
-export type ToolConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
+export interface CountdownTimerProps {
+    response: ToolCallChatResponseContent;
+}
+
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response }) => {
+    const timeoutSeconds = response.confirmationTimeout;
+    const effectiveTimeout = timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : 0;
+    const deadlineRef = React.useRef<number | undefined>(undefined);
+
+    const getRemainingSeconds = (): number => {
+        if (deadlineRef.current === undefined) {
+            return effectiveTimeout;
+        }
+        return Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+    };
+
+    const [remainingSeconds, setRemainingSeconds] = React.useState(effectiveTimeout);
+
+    React.useEffect(() => {
+        if (effectiveTimeout <= 0) {
+            return;
+        }
+        deadlineRef.current = Date.now() + effectiveTimeout * 1000;
+        const intervalId = setInterval(() => {
+            const remaining = getRemainingSeconds();
+            setRemainingSeconds(remaining);
+            if (remaining <= 0) {
+                clearInterval(intervalId);
+            }
+        }, 1000);
+        return () => clearInterval(intervalId);
+    }, [effectiveTimeout]);
+
+    if (remainingSeconds <= 0) {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+
+    return (
+        <div className='theia-tool-confirmation-countdown'>
+            {nls.localize('theia/ai/chat-ui/toolconfirmation/autoCancel',
+                'Auto-cancels in {0}', `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')}`)}
+        </div>
+    );
+};
+
+export type ToolConfirmationState = 'pending' | 'waiting' | 'allowed' | 'denied' | 'rejected';
 
 export type ConfirmationScope = 'once' | 'session' | 'forever';
+
+/**
+ * Shared hook that manages the confirmation state machine for tool calls.
+ *
+ * Handles initial state computation, auto-allow/deny via preference mode,
+ * and wiring up the response's confirmation and user-confirmation promises.
+ */
+export function useToolConfirmationState(
+    response: ToolCallChatResponseContent,
+    confirmationMode: ToolConfirmationPreferenceMode
+): { confirmationState: ToolConfirmationState; rejectionReason: unknown } {
+    const getInitialState = (): ToolConfirmationState => {
+        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
+            return 'allowed';
+        }
+        if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
+            return 'denied';
+        }
+        if (response.finished) {
+            return ToolCallChatResponseContent.isDenialResult(response.result) ? 'denied' : 'allowed';
+        }
+        return 'pending';
+    };
+
+    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(getInitialState);
+    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+
+    React.useEffect(() => {
+        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
+            response.confirm();
+            setConfirmationState('allowed');
+            return;
+        } else if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
+            response.deny();
+            setConfirmationState('denied');
+            return;
+        }
+        response.confirmed
+            .then(confirmed => {
+                setConfirmationState(confirmed ? 'allowed' : 'denied');
+            })
+            .catch(reason => {
+                setRejectionReason(reason);
+                setConfirmationState('rejected');
+            });
+        response.needsUserConfirmation.then(() => {
+            setConfirmationState(prev => prev === 'pending' ? 'waiting' : prev);
+        });
+    }, [response, confirmationMode]);
+
+    return { confirmationState, rejectionReason };
+}
+
+export function createConfirmationHandlers(
+    toolId: string | undefined,
+    response: ToolCallChatResponseContent,
+    toolConfirmationManager: ToolConfirmationManager,
+    chatId: string,
+    toolRequest?: ToolRequest
+): { handleAllow: (scope: ConfirmationScope) => void; handleDeny: (scope: ConfirmationScope, reason?: string) => void } {
+    const handleAllow = (scope: ConfirmationScope): void => {
+        if (scope === 'forever' && toolId) {
+            toolConfirmationManager.setConfirmationMode(toolId, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+        } else if (scope === 'session' && toolId) {
+            toolConfirmationManager.setSessionConfirmationMode(toolId, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+        }
+        response.confirm();
+    };
+    const handleDeny = (scope: ConfirmationScope, reason?: string): void => {
+        if (scope === 'forever' && toolId) {
+            toolConfirmationManager.setConfirmationMode(toolId, ToolConfirmationPreferenceMode.DISABLED);
+        } else if (scope === 'session' && toolId) {
+            toolConfirmationManager.setSessionConfirmationMode(toolId, ToolConfirmationPreferenceMode.DISABLED, chatId);
+        }
+        response.deny(reason);
+    };
+    return { handleAllow, handleDeny };
+}
 
 export interface ToolConfirmationCallbacks {
     toolRequest?: ToolRequest;
@@ -34,12 +161,19 @@ export interface ToolConfirmationCallbacks {
     onDeny: (scope: ConfirmationScope, reason?: string) => void;
 }
 
+export interface ToolConfirmationKeybindingHints {
+    allow?: string;
+    deny?: string;
+}
+
 export interface ToolConfirmationActionsProps extends ToolConfirmationCallbacks {
     toolName: string;
     contextMenuRenderer: ContextMenuRenderer;
+    autoFocus?: boolean;
+    keybindingHints?: ToolConfirmationKeybindingHints;
 }
 
-class InlineActionMenuNode implements CommandMenu {
+export class InlineActionMenuNode implements CommandMenu {
     constructor(
         readonly id: string,
         readonly label: string,
@@ -70,7 +204,9 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
     toolRequest,
     onAllow,
     onDeny,
-    contextMenuRenderer
+    contextMenuRenderer,
+    autoFocus,
+    keybindingHints
 }) => {
     const [allowScope, setAllowScope] = React.useState<ConfirmationScope>('once');
     const [denyScope, setDenyScope] = React.useState<ConfirmationScope>('once');
@@ -79,6 +215,14 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
     const [denyReason, setDenyReason] = React.useState('');
     // eslint-disable-next-line no-null/no-null
     const denyReasonInputRef = React.useRef<HTMLInputElement>(null);
+    // eslint-disable-next-line no-null/no-null
+    const allowButtonRef = React.useRef<HTMLButtonElement>(null);
+
+    React.useEffect(() => {
+        if (autoFocus && allowButtonRef.current) {
+            allowButtonRef.current.focus();
+        }
+    }, [autoFocus]);
 
     const handleAllow = React.useCallback(() => {
         if ((allowScope === 'forever' || allowScope === 'session') && toolRequest?.confirmAlwaysAllow) {
@@ -208,6 +352,9 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
         const selectedScope = type === 'allow' ? allowScope : denyScope;
         const setScope = type === 'allow' ? setAllowScope : setDenyScope;
         const handleMain = type === 'allow' ? handleAllow : handleDeny;
+        const keybindingHint = type === 'allow' ? keybindingHints?.allow : keybindingHints?.deny;
+        const mainLabel = scopeLabel(type, selectedScope);
+        const mainTitle = keybindingHint && selectedScope === 'once' ? `${mainLabel} (${keybindingHint})` : undefined;
 
         return (
             <div
@@ -215,10 +362,12 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
                 style={{ display: 'inline-flex', position: 'relative' }}
             >
                 <button
+                    ref={type === 'allow' ? allowButtonRef : undefined}
                     className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-main-btn`}
                     onClick={handleMain}
+                    title={mainTitle}
                 >
-                    {scopeLabel(type, selectedScope)}
+                    {mainLabel}
                 </button>
                 <button
                     className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-chevron-btn`}
@@ -306,10 +455,46 @@ export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, '
     onAllow: (scope?: ConfirmationScope) => void;
     onDeny: (scope?: ConfirmationScope, reason?: string) => void;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
+    pendingTracker?: PendingToolConfirmationTracker;
+    keybindingHints?: ToolConfirmationKeybindingHints;
+    chatId?: string;
+    markdownRenderer?: MarkdownRenderer;
 }
 
-export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer }) => {
+/**
+ * Command that opens the AI Configuration view on the Tools tab; its id is duplicated here as a
+ * string constant to keep ai-chat-ui free of an ai-ide dependency.
+ */
+const OPEN_TOOLS_CONFIGURATION_COMMAND_ID = 'aiConfiguration:openTools';
+
+const ToolConfirmationIntro: React.FC<{ markdownRenderer: MarkdownRenderer }> = ({ markdownRenderer }) => (
+    <div className="theia-tool-confirmation-intro">
+        <LocalizedMarkdown
+            localizationKey="theia/ai/chat-ui/toolconfirmation/intro"
+            defaultMarkdown={
+                'AI agents may want to use tools to act on your workspace. ' +
+                'By default each tool call needs your confirmation. ' +
+                'You can change this default or pre-approve individual tools in the [Tools configuration view]({0}).'
+            }
+            args={[`command:${OPEN_TOOLS_CONFIGURATION_COMMAND_ID}`]}
+            markdownRenderer={markdownRenderer}
+            markdownOptions={{
+                isTrusted: { enabledCommands: [OPEN_TOOLS_CONFIGURATION_COMMAND_ID] }
+            }}
+        />
+    </div>
+);
+
+export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({
+    response, toolRequest, onAllow, onDeny, contextMenuRenderer, openerService, pendingTracker, keybindingHints, chatId, markdownRenderer
+}) => {
     const [state, setState] = React.useState<ToolConfirmationState>('waiting');
+    // Pure initializer (no side effects): decide whether the intro should render. Marking the chat
+    // as "intro shown" happens in the effect below to keep the initializer pure for StrictMode.
+    const [showIntro] = React.useState<boolean>(
+        () => !!(pendingTracker && chatId && markdownRenderer && !pendingTracker.hasShownIntro(chatId))
+    );
 
     const handleAllow = React.useCallback((scope: ConfirmationScope) => {
         setState('allowed');
@@ -320,6 +505,25 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
         setState('denied');
         onDeny(scope, reason);
     }, [onDeny]);
+
+    React.useEffect(() => {
+        if (showIntro && pendingTracker && chatId) {
+            pendingTracker.markIntroShown(chatId);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        if (!pendingTracker || !chatId || state !== 'waiting') {
+            return;
+        }
+        const disposable = pendingTracker.register({
+            chatId,
+            response,
+            allow: () => handleAllow('once'),
+            deny: () => handleDeny('once')
+        });
+        return () => disposable.dispose();
+    }, [pendingTracker, chatId, response, handleAllow, handleDeny, state]);
 
     if (state === 'allowed') {
         return (
@@ -337,25 +541,72 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
         );
     }
 
+    const toolNameContent = (
+        <>
+            <span className="label">{nls.localizeByDefault('Tool')}:</span>
+            <span className="value">{response.name}</span>
+        </>
+    );
+
     return (
-        <div className="theia-tool-confirmation">
-            <div className="theia-tool-confirmation-header">
-                <span className={codicon('shield')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
-            </div>
-            <div className="theia-tool-confirmation-info">
-                <div className="theia-tool-confirmation-name">
-                    <span className="label">{nls.localizeByDefault('Tool')}:</span>
-                    <span className="value">{response.name}</span>
+        <>
+            {showIntro && markdownRenderer && <ToolConfirmationIntro markdownRenderer={markdownRenderer} />}
+            <div className="theia-tool-confirmation">
+                <div className="theia-tool-confirmation-header">
+                    <span className={codicon('shield')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
                 </div>
+                <div className="theia-tool-confirmation-info">
+                    {toolRequest?.description ? (
+                        <details className="theia-tool-confirmation-name">
+                            <summary>{toolNameContent}</summary>
+                            <div className="theia-tool-confirmation-description">
+                                {toolRequest.description}
+                            </div>
+                        </details>
+                    ) : (
+                        <div className="theia-tool-confirmation-name">{toolNameContent}</div>
+                    )}
+                    <ToolArgsDisplay args={response.arguments} openerService={openerService} />
+                </div>
+                <ToolConfirmationActions
+                    toolName={response.name ?? 'unknown'}
+                    toolRequest={toolRequest}
+                    onAllow={handleAllow}
+                    onDeny={handleDeny}
+                    contextMenuRenderer={contextMenuRenderer}
+                    autoFocus={true}
+                    keybindingHints={keybindingHints}
+                />
+                <CountdownTimer response={response} />
             </div>
-            <ToolConfirmationActions
-                toolName={response.name ?? 'unknown'}
-                toolRequest={toolRequest}
-                onAllow={handleAllow}
-                onDeny={handleDeny}
-                contextMenuRenderer={contextMenuRenderer}
+        </>
+    );
+};
+
+interface ToolArgsDisplayProps {
+    args: string | undefined;
+    openerService: OpenerService;
+}
+
+const ToolArgsDisplay: React.FC<ToolArgsDisplayProps> = ({ args, openerService }) => {
+    const trimmedArgs = args?.trim();
+    if (!trimmedArgs || trimmedArgs === '{}') {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+    const summaryLabel = condenseArguments(trimmedArgs) ?? '\u2026';
+    return (
+        <details className="theia-tool-confirmation-args">
+            <summary>
+                <span className="label">{nls.localizeByDefault('Arguments')}:</span>
+                <span className="theia-tool-confirmation-args-summary">{summaryLabel}</span>
+            </summary>
+            <MarkdownRender
+                text={formatArgsForTooltip(trimmedArgs)}
+                openerService={openerService}
+                className="theia-tool-confirmation-args-content"
             />
-        </div>
+        </details>
     );
 };
 
@@ -365,45 +616,44 @@ export interface WithToolCallConfirmationProps {
     toolConfirmationManager: ToolConfirmationManager;
     toolRequest?: ToolRequest;
     chatId: string;
+    getArgumentsLabel?: (toolName: string | undefined, args: string | undefined) => string;
+    showArgsTooltip?: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
+    pendingTracker?: PendingToolConfirmationTracker;
+    keybindingHints?: ToolConfirmationKeybindingHints;
+    markdownRenderer?: MarkdownRenderer;
 }
 
 export function withToolCallConfirmation<P extends object>(
     WrappedComponent: React.ComponentType<P>
-): React.FC<P & WithToolCallConfirmationProps> {
-    const WithConfirmation: React.FC<P & WithToolCallConfirmationProps> = props => {
+): React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> {
+    const WithConfirmation: React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> = props => {
+        const {
+            toolConfirmation,
+            ...componentProps
+        } = props;
         const {
             response,
             confirmationMode,
             toolConfirmationManager,
             toolRequest,
             chatId,
+            getArgumentsLabel,
+            showArgsTooltip,
             requestCanceled,
             contextMenuRenderer,
-            ...componentProps
-        } = props;
+            openerService,
+            pendingTracker,
+            keybindingHints,
+            markdownRenderer
+        } = toolConfirmation;
 
-        const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
+        const { confirmationState } = useToolConfirmationState(response, confirmationMode);
+        const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
 
-        React.useEffect(() => {
-            if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
-                response.confirm();
-                setConfirmationState('allowed');
-                return;
-            } else if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
-                response.deny();
-                setConfirmationState('denied');
-                return;
-            }
-            response.confirmed
-                .then(confirmed => {
-                    setConfirmationState(confirmed === true ? 'allowed' : 'denied');
-                })
-                .catch(() => {
-                    setConfirmationState('rejected');
-                });
-        }, [response, confirmationMode]);
+        const argsLabel = getArgumentsLabel?.(response.name, response.arguments) ?? '';
 
         const handleAllow = React.useCallback((scope: ConfirmationScope = 'once') => {
             if (scope === 'forever' && response.name) {
@@ -439,6 +689,18 @@ export function withToolCallConfirmation<P extends object>(
             );
         }
 
+        if (confirmationState === 'pending') {
+            return (
+                <div className="theia-tool-confirmation-status pending"
+                    ref={(el: HTMLElement | null) => { pendingRef.current = el ?? undefined; }}
+                    onMouseEnter={() => showArgsTooltip?.(response, pendingRef.current)}
+                >
+                    <span className={`${codicon('loading')} theia-animation-spin`}></span> {response.name}
+                    (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                </div>
+            );
+        }
+
         if (confirmationState === 'waiting' && !requestCanceled && !response.finished) {
             return (
                 <ToolConfirmation
@@ -447,6 +709,11 @@ export function withToolCallConfirmation<P extends object>(
                     onAllow={handleAllow}
                     onDeny={handleDeny}
                     contextMenuRenderer={contextMenuRenderer}
+                    openerService={openerService}
+                    pendingTracker={pendingTracker}
+                    keybindingHints={keybindingHints}
+                    chatId={chatId}
+                    markdownRenderer={markdownRenderer}
                 />
             );
         }

@@ -28,6 +28,8 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ContextFileValidationService, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { WorkspaceFunctionScope } from './workspace-functions';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 disableJSDOM();
 
@@ -76,7 +78,8 @@ describe('ContextFileValidationService', () => {
             roots: Promise.resolve([{
                 resource: workspaceRoot,
                 isDirectory: true
-            } as FileStat])
+            } as FileStat]),
+            onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
         // Mock FileService
@@ -110,6 +113,18 @@ describe('ContextFileValidationService', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue({
+            get: <T>(_name: string, fallback?: T) => fallback,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader);
+        container.bind(EnvVariablesServer).toConstantValue({
+            getHomeDirUri: async () => 'file:///home/user',
+            getExecPath: async () => '',
+            getVariables: async () => [],
+            getValue: async () => undefined,
+            getConfigDirUri: async () => 'file:///home/user/.config'
+        } as unknown as EnvVariablesServer);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(ContextFileValidationServiceImpl).toSelf();
         container.bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
@@ -286,6 +301,17 @@ describe('ContextFileValidationService', () => {
                     isDirectory: true
                 } as FileStat
             ];
+            // Also override the async roots property for multi-root path resolution
+            (mockWorkspaceService as { roots: Promise<FileStat[]> }).roots = Promise.resolve([
+                {
+                    resource: workspaceRoot,
+                    isDirectory: true
+                } as FileStat,
+                {
+                    resource: workspaceRoot2,
+                    isDirectory: true
+                } as FileStat
+            ]);
 
             // Add files in the second workspace
             existingFiles.set('file:///home/user/other-project/index.js', true);
@@ -299,23 +325,28 @@ describe('ContextFileValidationService', () => {
         });
 
         it('should validate file in first workspace root', async () => {
-            const result = await validationService.validateFile('src/index.tsx');
+            // Use root-prefixed path since resolveRelativePath requires it in multi-root
+            const result = await validationService.validateFile('workspace/src/index.tsx');
             expect(result.state).to.equal(FileValidationState.VALID);
         });
 
         it('should validate file in second workspace root with relative path', async () => {
-            const result = await validationService.validateFile('index.js');
-            expect(result.state).to.equal(FileValidationState.INVALID_SECONDARY);
+            // Use root-prefixed path since resolveRelativePath requires it in multi-root
+            const result = await validationService.validateFile('other-project/index.js');
+            // With multi-root support, files in any root are valid
+            expect(result.state).to.equal(FileValidationState.VALID);
         });
 
         it('should validate file in second workspace root with absolute path', async () => {
             const result = await validationService.validateFile('/home/user/other-project/index.js');
-            expect(result.state).to.equal(FileValidationState.INVALID_SECONDARY);
+            // With multi-root support, files in any root are valid
+            expect(result.state).to.equal(FileValidationState.VALID);
         });
 
         it('should validate file in second workspace root with file:// URI', async () => {
             const result = await validationService.validateFile('file:///home/user/other-project/lib/utils.js');
-            expect(result.state).to.equal(FileValidationState.INVALID_SECONDARY);
+            // With multi-root support, files in any root are valid
+            expect(result.state).to.equal(FileValidationState.VALID);
         });
 
         it('should still reject files outside both workspace roots', async () => {

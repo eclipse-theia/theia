@@ -32,7 +32,7 @@ import { SampleUpdater, UpdateStatus, SampleUpdaterClient } from '../../common/u
 
 export namespace SampleUpdaterCommands {
 
-    const category = 'Electron Updater Sample';
+    const category = 'API Samples';
 
     export const CHECK_FOR_UPDATES: Command = {
         id: 'electron-sample:check-for-updates',
@@ -49,13 +49,13 @@ export namespace SampleUpdaterCommands {
     // Mock
     export const MOCK_UPDATE_AVAILABLE: Command = {
         id: 'electron-sample:mock-update-available',
-        label: 'Mock - Available',
+        label: 'Mock Update - Available',
         category
     };
 
     export const MOCK_UPDATE_NOT_AVAILABLE: Command = {
         id: 'electron-sample:mock-update-not-available',
-        label: 'Mock - Not Available',
+        label: 'Mock Update - Not Available',
         category
     };
 
@@ -131,11 +131,11 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
                     }
                     case UpdateStatus.NotAvailable: {
                         const { applicationName } = FrontendApplicationConfigProvider.get();
-                        this.messageService.info(`[Not Available]: You’re all good. You’ve got the latest version of ${applicationName}.`, { timeout: 3000 });
+                        this.messageService.info(`[Sample Updater - Not Available]: You're all good. You've got the latest version of ${applicationName}.`, { timeout: 3000 });
                         break;
                     }
                     case UpdateStatus.InProgress: {
-                        this.messageService.warn('[Downloading]: Work in progress...', { timeout: 3000 });
+                        this.messageService.warn('[Sample Updater - Downloading]: Work in progress...', { timeout: 3000 });
                         break;
                     }
                     default: throw new Error(`Unexpected status: ${status}`);
@@ -167,7 +167,7 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
     }
 
     protected async handleUpdatesAvailable(): Promise<void> {
-        const answer = await this.messageService.info('[Available]: Found updates, do you want update now?', 'No', 'Yes');
+        const answer = await this.messageService.info('[Sample Updater - Available]: Found updates, do you want update now?', 'No', 'Yes');
         if (answer === 'Yes') {
             this.updater.onRestartToUpdateRequested();
         }

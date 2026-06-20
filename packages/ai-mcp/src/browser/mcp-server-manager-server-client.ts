@@ -14,15 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MCPServerDescription } from '../common';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServerClient } from '../common/mcp-protocol';
+import { ILogger } from '@theia/core';
 
 type StoredServerInfo = Pick<MCPServerDescription, 'name' | 'resolve'>;
 
 @injectable()
 export class MCPServerManagerServerClientImpl implements MCPServerManagerServerClient {
+
+    @inject(ILogger) @named('ai-mcp:MCPServerManagerServerClientImpl')
+    protected readonly logger: ILogger;
 
     protected serverDescriptions: Map<string, StoredServerInfo> = new Map();
 
@@ -74,7 +78,7 @@ export class MCPServerManagerServerClientImpl implements MCPServerManagerServerC
         // Remove descriptions for servers that no longer exist
         for (const [resolveId, storedInfo] of this.serverDescriptions.entries()) {
             if (storedInfo.name && !currentNamesSet.has(storedInfo.name)) {
-                console.debug('Removing a frontend stored resolve function because the corresponding MCP server was removed', storedInfo);
+                this.logger.debug('Removing a frontend stored resolve function because the corresponding MCP server was removed', storedInfo);
                 this.serverDescriptions.delete(resolveId);
             }
         }

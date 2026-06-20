@@ -24,8 +24,8 @@ import * as fuzzy from '@theia/core/shared/fuzzy';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/editor/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceSearchFilterService } from '@theia/workspace/lib/browser';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 
 export interface FilterAndRange {
@@ -71,18 +71,18 @@ export class QuickFileSelectService {
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
+    @inject(WorkspaceSearchFilterService)
+    protected readonly searchFilterService: WorkspaceSearchFilterService;
 
     /**
      * The score constants when comparing file search results.
      */
     private static readonly Scores = {
         max: 1000,  // represents the maximum score from fuzzy matching (Infinity).
-        exact: 500, // represents the score assigned to exact matching.
-        partial: 250 // represents the score assigned to partial matching.
+        exact: 5000, // represents the score assigned to exact matching.
+        partial: 2000 // represents the score assigned to partial matching.
     };
 
     async getPicks(
@@ -155,12 +155,16 @@ export class QuickFileSelectService {
                 limit: 200,
                 useGitIgnore: options.hideIgnoredFiles,
                 excludePatterns: options.hideIgnoredFiles
-                    ? Object.keys(this.fsPreferences['files.exclude'])
+                    ? this.getExcludePatterns()
                     : undefined,
             }, token).then(handler);
         } else {
             return roots.length !== 0 ? recentlyUsedItems : [];
         }
+    }
+
+    protected getExcludePatterns(): string[] {
+        return this.searchFilterService.getExclusionGlobs();
     }
 
     protected compareItems(
@@ -180,9 +184,10 @@ export class QuickFileSelectService {
                 return 0;
             }
 
+            const lowerStr = str.toLowerCase();
             let exactMatch = true;
             const partialMatches = querySplit.reduce((matched, part) => {
-                const partMatches = str.includes(part);
+                const partMatches = lowerStr.includes(part);
                 exactMatch = exactMatch && partMatches;
                 return partMatches ? matched + QuickFileSelectService.Scores.partial : matched;
             }, 0);
@@ -202,11 +207,13 @@ export class QuickFileSelectService {
         const queryJoin = querySplit.join('');
 
         const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
-        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
+        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
+            r.label.toLowerCase().indexOf(query) - l.label.toLowerCase().indexOf(query);
         const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
 
         const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
-        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
+        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
+            r.uri.path.toString().toLowerCase().indexOf(query) - l.uri.path.toString().toLowerCase().indexOf(query);
         const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
 
         return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);

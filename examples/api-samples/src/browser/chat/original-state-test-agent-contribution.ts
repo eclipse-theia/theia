@@ -40,8 +40,8 @@ export function bindOriginalStateTestAgentContribution(bind: interfaces.Bind): v
  */
 @injectable()
 export class OriginalStateTestAgent extends AbstractStreamParsingChatAgent {
-    readonly id = 'OriginalStateTest';
-    readonly name = 'OriginalStateTest';
+    readonly id = 'OriginalStateTestSample';
+    readonly name = 'OriginalStateTestSample';
     readonly defaultLanguageModelPurpose = 'chat';
     override readonly description = 'This chat will test originalState functionality with sequential changes.';
     override languageModelRequirements: LanguageModelRequirement[] = [];

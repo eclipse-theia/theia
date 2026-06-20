@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { nls, ILogger } from '@theia/core';
 import { ObservableUtils } from '@theia/core/lib/common/observable';
 import { codicon, DiffUris, LabelProvider, open, OpenerService } from '@theia/core/lib/browser';
 import { EditorDecoration, EditorOpenerOptions, Range } from '@theia/editor/lib/browser';
@@ -32,6 +32,9 @@ export abstract class MergeEditorSidePane extends MergeEditorPane {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(ILogger) @named('scm:MergeEditorSidePane')
+    protected readonly logger: ILogger;
 
     abstract get mergeSide(): MergeSide;
 
@@ -74,7 +77,7 @@ export abstract class MergeEditorSidePane extends MergeEditorPane {
         label += `${nls.localizeByDefault('Base')} ⟷ ${this.header.title.label}`;
         const options: EditorOpenerOptions = { selection: { start: this.editor.cursor } };
         open(this.openerService, DiffUris.encode(this.mergeEditor.baseUri, this.editor.uri, label), options).catch(e => {
-            console.error(e);
+            this.logger.error(e);
         });
     }
 

@@ -26,7 +26,7 @@ import {
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { FrontendApplicationConfigProvider } from '../../browser/frontend-application-config-provider';
-import { ZoomLevel } from '../../electron-common/electron-window-preferences';
+import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
@@ -156,7 +156,18 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             this.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
-                this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
+                const current = this.preferenceService.inspect('window.titleBarStyle');
+                const defaultActive = current?.globalValue === undefined;
+                const currentValueActive = !current // Preference undefined -> current value only source of truth.
+                    || (defaultActive && this.titleBarStyle === current?.defaultValue)
+                    || (!defaultActive && this.titleBarStyle === current.globalValue);
+                if (!currentValueActive) {
+                    this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
+                }
+                // Enable the change flag after initialization is complete.
+                // This ensures that user-initiated changes will trigger a restart,
+                // while the synchronization change above (if any) is ignored.
+                this.titleBarStyleChangeFlag = true;
             });
         });
 
@@ -171,7 +182,6 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                     window.electronTheiaCore.setTitleBarStyle(newTitleBarStyle);
                     this.handleRequiredRestart();
                 }
-                this.titleBarStyleChangeFlag = true;
             }
         });
     }
@@ -306,7 +316,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                     zoomLevel = ZoomLevel.MAX;
                     return;
                 };
-                this.preferenceService.set('window.zoomLevel', zoomLevel, PreferenceScope.User);
+                this.preferenceService.set(PREF_WINDOW_ZOOM_LEVEL, zoomLevel, PreferenceScope.User);
             }
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
@@ -318,11 +328,11 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                     zoomLevel = ZoomLevel.MIN;
                     return;
                 };
-                this.preferenceService.set('window.zoomLevel', zoomLevel, PreferenceScope.User);
+                this.preferenceService.set(PREF_WINDOW_ZOOM_LEVEL, zoomLevel, PreferenceScope.User);
             }
         });
         registry.registerCommand(ElectronCommands.RESET_ZOOM, {
-            execute: () => this.preferenceService.set('window.zoomLevel', ZoomLevel.DEFAULT, PreferenceScope.User)
+            execute: () => this.preferenceService.set(PREF_WINDOW_ZOOM_LEVEL, ZoomLevel.DEFAULT, PreferenceScope.User)
         });
 
         registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {

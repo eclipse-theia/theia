@@ -108,6 +108,14 @@ export abstract class EnvExtImpl {
 
     abstract get isNewAppInstall(): boolean;
 
+    /**
+     * @stubbed
+     * Portable mode detection is not yet communicated to the plugin host.
+     */
+    get isAppPortable(): boolean {
+        return false;
+    }
+
     get appHost(): string {
         return this.host;
     }

@@ -19,7 +19,7 @@ import { FrontendApplicationConfigProvider } from '../frontend-application-confi
 import { nls } from '../../common/nls';
 import { inject, injectable, named } from 'inversify';
 import { LocalizationServer } from '../../common/i18n/localization-server';
-import { ContributionProvider } from '../../common';
+import { ContributionProvider } from '../../common/contribution-provider';
 import { TextReplacementContribution } from './text-replacement-contribution';
 
 @injectable()

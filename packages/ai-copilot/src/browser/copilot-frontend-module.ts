@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { CommandContribution, Emitter, Event, nls, PreferenceContribution } from '@theia/core';
+import { CommandContribution, Emitter, Event, PreferenceContribution } from '@theia/core';
 import {
     FrontendApplicationContribution,
     RemoteConnectionProvider,
@@ -36,6 +36,7 @@ import { CopilotFrontendApplicationContribution } from './copilot-frontend-appli
 import { CopilotCommandContribution } from './copilot-command-contribution';
 import { CopilotStatusBarContribution } from './copilot-status-bar-contribution';
 import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog';
+import { CopilotAuthDialogMessages, DEFAULT_COPILOT_AUTH_DIALOG_MESSAGES } from './copilot-auth-dialog-messages';
 
 class CopilotAuthServiceClientImpl implements CopilotAuthServiceClient {
     protected readonly onAuthStateChangedEmitter = new Emitter<CopilotAuthState>();
@@ -54,9 +55,11 @@ export default new ContainerModule(bind => {
     bind(CopilotStatusBarContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(CopilotStatusBarContribution);
 
-    bind(CopilotAuthDialogProps).toConstantValue({
-        title: nls.localize('theia/ai/copilot/commands/signIn', 'Sign in to GitHub Copilot')
-    });
+    bind(CopilotAuthDialogMessages).toConstantValue(DEFAULT_COPILOT_AUTH_DIALOG_MESSAGES);
+    bind(CopilotAuthDialogProps).toDynamicValue(ctx => {
+        const messages = ctx.container.get<CopilotAuthDialogMessages>(CopilotAuthDialogMessages);
+        return { title: messages.title };
+    }).inSingletonScope();
     bind(CopilotAuthDialog).toSelf().inSingletonScope();
 
     bind(CopilotFrontendApplicationContribution).toSelf().inSingletonScope();

@@ -306,7 +306,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
                         }
                     }
 
-                    let pluginMain = this.host.loadPlugin(plugin);
+                    let pluginMain = await this.host.loadPlugin(plugin);
                     // see https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L372-L376
                     pluginMain = pluginMain || {};
                     await this.startPlugin(plugin, configStorage, pluginMain);

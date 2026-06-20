@@ -377,7 +377,9 @@ export class TestControllerImpl implements TestController {
     }
     onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.onDidFlush;
 
-    resolveChildren(item: TestItem): void {
+    canResolveChildren: boolean = false;
+
+    resolveChildren(item?: TestItem): void {
         // nothing to do
     }
 

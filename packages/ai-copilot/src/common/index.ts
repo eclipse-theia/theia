@@ -16,4 +16,5 @@
 
 export * from './copilot-language-models-manager';
 export * from './copilot-auth-service';
+export * from './copilot-oauth-config';
 export * from './copilot-preferences';

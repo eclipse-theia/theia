@@ -18,6 +18,7 @@ import { assert, expect, spy, use } from 'chai';
 import * as spies from 'chai-spies';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel';
+import { RpcProtocol } from './rpc-protocol';
 
 use(spies);
 
@@ -83,6 +84,121 @@ describe('Message Channel', () => {
             expect(rightFirstSpy).to.be.called();
 
             expect(openChannelSpy).to.be.called.exactly(4);
+        });
+
+        it('should reject pending open() promises when underlying channel closes', async () => {
+            const pipe = new ChannelPipe();
+            const leftMultiplexer = new ChannelMultiplexer(pipe.left);
+            // Don't create a right multiplexer, so no AckOpen will arrive
+
+            const openPromise = leftMultiplexer.open('test');
+
+            // Close the underlying channel
+            pipe.left.onCloseEmitter.fire({ reason: 'test close' });
+
+            // The open promise should reject, not hang forever
+            try {
+                await openPromise;
+                assert.fail('Expected open() promise to be rejected');
+            } catch (err) {
+                expect(err).to.be.instanceOf(Error);
+                expect((err as Error).message).to.contain('test close');
+            }
+        });
+
+        it('should fire onClose on sub-channels when underlying channel closes', async () => {
+            const pipe = new ChannelPipe();
+            const leftMultiplexer = new ChannelMultiplexer(pipe.left);
+            const rightMultiplexer = new ChannelMultiplexer(pipe.right);
+
+            const leftChannel = await leftMultiplexer.open('test');
+            const rightChannel = rightMultiplexer.getOpenChannel('test');
+            assert.isDefined(rightChannel);
+
+            const leftCloseSpy = spy(() => { });
+            leftChannel.onClose(leftCloseSpy);
+
+            // Close the underlying channel from the remote side
+            pipe.left.onCloseEmitter.fire({ reason: 'underlying closed' });
+
+            expect(leftCloseSpy).to.have.been.called();
+        });
+    });
+
+    describe('Channel close event ordering', () => {
+        it('should not deliver onClose after close() has been called', () => {
+            const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
+
+            const closeSpy = spy(() => { });
+            channel.onClose(closeSpy);
+
+            // Bug pattern: close() first (disposes emitters), then fire (no-op)
+            channel.close();
+            channel.onCloseEmitter.fire({ reason: 'too late' });
+
+            // The listener should not be called because close() already disposed the emitter
+            expect(closeSpy).to.not.have.been.called();
+        });
+
+        it('should deliver onClose when fired before close()', () => {
+            const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
+
+            const closeSpy = spy(() => { });
+            channel.onClose(closeSpy);
+
+            // Correct pattern: fire first, then close
+            channel.onCloseEmitter.fire({ reason: 'proper close' });
+            channel.close();
+
+            expect(closeSpy).to.have.been.called();
+        });
+    });
+
+    describe('RPC protocol with write buffer overflow', () => {
+        it('should reject the promise when commit fails due to buffer overflow', async () => {
+            // Simulate a channel whose write buffer throws on commit (e.g. SocketWriteBuffer overflow)
+            const channel = new ForwardingChannel('test', () => { }, () => {
+                const buffer = new Uint8ArrayWriteBuffer();
+                buffer.onCommit(() => {
+                    throw new Error('Max disconnected buffer size exceeded');
+                });
+                return buffer;
+            });
+
+            const protocol = new RpcProtocol(channel, undefined, { mode: 'clientOnly' });
+
+            // sendRequest should return a rejected promise, not throw synchronously
+            const promise = protocol.sendRequest('testMethod', []);
+
+            try {
+                await promise;
+                assert.fail('Expected promise to be rejected');
+            } catch (err) {
+                expect(err).to.be.instanceOf(Error);
+                expect((err as Error).message).to.contain('buffer size exceeded');
+            }
+        });
+
+        it('should not leak pending requests when commit fails', async () => {
+            const channel = new ForwardingChannel('test', () => { }, () => {
+                const buffer = new Uint8ArrayWriteBuffer();
+                buffer.onCommit(() => {
+                    throw new Error('Max disconnected buffer size exceeded');
+                });
+                return buffer;
+            });
+
+            const protocol = new RpcProtocol(channel, undefined, { mode: 'clientOnly' });
+
+            // sendRequest should return a rejected promise and clean up pendingRequests
+            try {
+                await protocol.sendRequest('testMethod', []);
+            } catch {
+                // expected: the promise is rejected due to buffer overflow
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expect((protocol as any).pendingRequests.size).to.equal(0);
         });
     });
 });

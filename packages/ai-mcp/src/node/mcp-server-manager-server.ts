@@ -24,10 +24,23 @@ export class MCPServerManagerServerImpl implements MCPServerManagerServer {
     @inject(MCPServerManager)
     protected readonly mcpServerManager: MCPServerManager;
 
-    protected client: MCPServerManagerServerClient;
+    protected client: MCPServerManagerServerClient | undefined;
 
     setClient(client: MCPServerManagerServerClient): void {
+        if (this.client && this.client !== client) {
+            throw new Error('MCP server manager server is scoped to a single frontend connection.');
+        }
         this.client = client;
+    }
+
+    disconnectClient(client: MCPServerManagerServerClient): void {
+        if (this.client !== undefined && this.client !== client) {
+            console.warn('MCP server manager server received disconnectClient for a non-current client; ignoring (one-client-per-container invariant violation).');
+            return;
+        }
+        if (this.client === client) {
+            this.client = undefined;
+        }
     }
 
     async addOrUpdateServer(descriptionRCP: MCPServerDescriptionRCP): Promise<void> {
@@ -35,15 +48,17 @@ export class MCPServerManagerServerImpl implements MCPServerManagerServer {
         if (descriptionRCP.resolveId) {
             description.resolve = async (desc: MCPServerDescription) => {
                 if (this.client) {
+                    // Discard `resolve` explicitly: it's a function and must not cross the RPC boundary.
+                    const { resolve: _resolve, ...descWithoutResolve } = desc;
                     const descRCP: MCPServerDescriptionRCP = {
-                        ...desc,
+                        ...descWithoutResolve,
                         resolveId: descriptionRCP.resolveId
                     };
                     return this.client.resolveServerDescription(descRCP);
                 }
-                return desc; // Fallback if no client is set
+                return desc;
             };
-        };
-        this.mcpServerManager.addOrUpdateServer(description);
+        }
+        await this.mcpServerManager.addOrUpdateServer(description);
     }
 }

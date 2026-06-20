@@ -18,7 +18,7 @@ import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
-    bindContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
+    bindRootContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath,
     bindPreferenceConfigurations,
     DefaultsPreferenceProvider,
@@ -34,7 +34,10 @@ import {
     PreferenceProviderProvider,
     PreferenceProvider
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
+import {
+    BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
+    BackendApplicationServer, BackendApplicationPath, RootContainer
+} from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
@@ -81,13 +84,20 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(quickPickConnectionModule);
 
     bind(CliManager).toSelf().inSingletonScope();
-    bindContributionProvider(bind, CliContribution);
+    bindRootContributionProvider(bind, CliContribution);
 
     bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(BackendApplicationCliContribution);
 
     bind(BackendApplication).toSelf().inSingletonScope();
-    bindContributionProvider(bind, BackendApplicationContribution);
+    bind(RootContainer).toDynamicValue(({ container }) => {
+        let root = container;
+        while (root.parent) {
+            root = root.parent;
+        }
+        return root;
+    }).inSingletonScope();
+    bindRootContributionProvider(bind, BackendApplicationContribution);
     // Bind the BackendApplicationServer as a BackendApplicationContribution
     // and fallback to an empty contribution if never bound.
     bind(BackendApplicationContribution).toDynamicValue(ctx => {
@@ -120,7 +130,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ApplicationPackage).toConstantValue(new ApplicationPackage({ projectPath: BackendApplicationPath }));
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
-    bindContributionProvider(bind, WsRequestValidatorContribution);
+    bindRootContributionProvider(bind, WsRequestValidatorContribution);
     bind(KeyStoreService).to(KeyStoreServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(keyStoreServicePath, () => ctx.container.get<KeyStoreService>(KeyStoreService))
@@ -140,7 +150,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ProxyCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(ProxyCliContribution);
 
-    bindContributionProvider(bind, RemoteCliContribution);
+    bindRootContributionProvider(bind, RemoteCliContribution);
     bind(BackendRemoteService).toSelf().inSingletonScope();
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
@@ -157,7 +167,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindPreferenceConfigurations(bind);
     bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
-    bindContributionProvider(bind, PreferenceContribution);
+    bindRootContributionProvider(bind, PreferenceContribution);
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);

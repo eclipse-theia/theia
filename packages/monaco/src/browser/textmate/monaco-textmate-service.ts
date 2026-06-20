@@ -50,7 +50,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     @inject(TextmateRegistry)
     protected readonly textmateRegistry: TextmateRegistry;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('monaco:MonacoTextmateService')
     protected readonly logger: ILogger;
 
     @inject(OnigasmProvider)
@@ -70,7 +70,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
     initialize(): void {
         if (!isBasicWasmSupported) {
-            console.log('Textmate support deactivated because WebAssembly is not detected.');
+            this.logger.info('Textmate support deactivated because WebAssembly is not detected.');
             return;
         }
 
@@ -78,7 +78,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             try {
                 grammarProvider.registerTextmateLanguage(this.textmateRegistry);
             } catch (err) {
-                console.error(err);
+                this.logger.error(err);
             }
         }
 

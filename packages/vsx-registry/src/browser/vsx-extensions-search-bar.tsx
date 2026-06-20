@@ -56,7 +56,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     protected render(): React.ReactNode {
         return <div className='vsx-search-container'>
             <input type='text'
-                ref={input => this.input = input || undefined}
+                ref={input => { this.input = input || undefined; }}
                 defaultValue={this.searchModel.query}
                 spellCheck={false}
                 className='theia-input'

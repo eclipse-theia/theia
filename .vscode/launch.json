@@ -36,7 +36,6 @@
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
       "cwd": "${workspaceFolder}/examples/electron",
-      "protocol": "inspector",
       "args": [
         ".",
         "--log-level=debug",
@@ -63,6 +62,18 @@
       "smartStep": true,
       "internalConsoleOptions": "openOnSessionStart",
       "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Start Theia Default (Browser backend, no debug)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start:browser"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     },
     {
       "type": "node",
@@ -100,7 +111,6 @@
       "name": "Attach to Plugin Host",
       "port": 9339,
       "timeout": 60000,
-      "stopOnEntry": false,
       "smartStep": true,
       "sourceMaps": true,
       "internalConsoleOptions": "openOnSessionStart",
@@ -112,7 +122,6 @@
     {
       "type": "node",
       "request": "launch",
-      "protocol": "inspector",
       "name": "Run Mocha Tests",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": [
@@ -122,9 +131,6 @@
         "${workspaceFolder}/configs/mocharc.yml",
         "**/${fileBasenameNoExtension}.js"
       ],
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
-      },
       "sourceMaps": true,
       "smartStep": true,
       "internalConsoleOptions": "openOnSessionStart",
@@ -134,38 +140,13 @@
       "name": "Launch Browser Frontend",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:3000/",
-      "webRoot": "${workspaceFolder}/examples/browser"
+      "url": "http://localhost:3000/"
     },
     {
       "type": "chrome",
       "request": "attach",
       "name": "Attach to Electron Frontend",
-      "port": 9222,
-      "webRoot": "${workspaceFolder}/examples/electron"
-    },
-    {
-      "name": "Launch VS Code Tests",
-      "type": "node",
-      "request": "launch",
-      "args": [
-        "${workspaceFolder}/examples/browser/lib/backend/main.js",
-        "${workspaceFolder}/plugins/vscode-api-tests/testWorkspace",
-        "--port",
-        "3030",
-        "--hostname",
-        "0.0.0.0",
-        "--extensionTestsPath=${workspaceFolder}/plugins/vscode-api-tests/out/singlefolder-tests",
-        "--hosted-plugin-inspect=9339"
-      ],
-      "env": {
-        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
-      },
-      "stopOnEntry": false,
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/../.js"
-      ]
+      "port": 9222
     }
   ],
   "compounds": [

@@ -29,6 +29,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
@@ -68,6 +69,7 @@ import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
 import { TaskContextKeyService } from './task-context-key-service';
+import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -119,7 +121,7 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskServer)
     protected readonly taskServer: TaskServer;
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:TaskService')
     protected readonly logger: ILogger;
 
     @inject(WidgetManager)
@@ -196,6 +198,11 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskContextKeyService)
     protected readonly taskContextKeyService: TaskContextKeyService;
+
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+    @inject(TerminalPreferences)
+    protected readonly terminalPreferences: TerminalPreferences;
 
     @postConstruct()
     protected init(): void {
@@ -331,7 +338,7 @@ export class TaskService implements TaskConfigurationClient {
             } else if (event.signal !== undefined) {
                 this.messageService.info(nls.localize('theia/task/taskTerminatedBySignal', "Task '{0}' was terminated by signal {1}.", taskIdentifier, event.signal));
             } else {
-                console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
+                this.logger.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
         });
     }
@@ -528,6 +535,9 @@ export class TaskService implements TaskConfigurationClient {
      * @param scope  The scope where to look for tasks
      */
     async run(token: number, source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
         let task: TaskConfiguration | undefined;
         task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) { // if a configured task cannot be found, search from detected tasks
@@ -578,7 +588,7 @@ export class TaskService implements TaskConfigurationClient {
             return this.runCompoundTask(token, task, runTaskOption);
         } else {
             return this.runTask(task, runTaskOption).catch(error => {
-                console.error('Error at launching task', error);
+                this.logger.error('Error at launching task', error);
                 return undefined;
             });
         }
@@ -596,12 +606,12 @@ export class TaskService implements TaskConfigurationClient {
             const rootNode = new TaskNode(task, [], []);
             this.detectDirectedAcyclicGraph(task, rootNode, tasks);
         } catch (error) {
-            console.error(`Error at launching task '${task.label}'`, error);
+            this.logger.error(`Error at launching task '${task.label}'`, error);
             this.messageService.error(error.message);
             return undefined;
         }
         return this.runTasksGraph(task, tasks, option).catch(error => {
-            console.error(`Error at launching task '${task.label}'`, error);
+            this.logger.error(`Error at launching task '${task.label}'`, error);
             return undefined;
         });
     }
@@ -746,9 +756,12 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        console.debug('entering runTask');
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
+        this.logger.debug('entering runTask');
         const releaseLock = await this.taskStartingLock.acquire();
-        console.debug('got lock');
+        this.logger.debug('got lock');
 
         try {
             // resolve problemMatchers
@@ -766,11 +779,11 @@ export class TaskService implements TaskConfigurationClient {
                 const taskConfig = taskInfo.config;
                 return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
             });
-            console.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
+            this.logger.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
 
             if (matchedRunningTaskInfo) { // the task is active
                 releaseLock();
-                console.debug('released lock');
+                this.logger.debug('released lock');
                 const taskName = this.taskNameResolver.resolve(task);
                 const terminalId = matchedRunningTaskInfo.terminalId;
                 if (terminalId) {
@@ -792,10 +805,10 @@ export class TaskService implements TaskConfigurationClient {
                     return this.restartTask(matchedRunningTaskInfo, option);
                 }
             } else { // run task as the task is not active
-                console.debug('task about to start');
+                this.logger.debug('task about to start');
                 const taskInfo = await this.doRunTask(task, option);
                 releaseLock();
-                console.debug('release lock 2');
+                this.logger.debug('release lock 2');
                 return taskInfo;
             }
         } catch (e) {
@@ -898,7 +911,7 @@ export class TaskService implements TaskConfigurationClient {
         return this.runTasksGraph(task, tasks, {
             customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
         }).catch(error => {
-            console.log(error.message);
+            this.logger.info(error.message);
             return undefined;
         });
     }
@@ -999,7 +1012,11 @@ export class TaskService implements TaskConfigurationClient {
         const taskLabel = resolvedTask.label;
         let taskInfo: TaskInfo | undefined;
         try {
-            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
+            const taskToRun: TaskConfiguration = {
+                ...resolvedTask,
+                enableCommandHistory: this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
+            };
+            taskInfo = await this.taskServer.run(taskToRun, this.getContext(), option);
             this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
@@ -1094,7 +1111,7 @@ export class TaskService implements TaskConfigurationClient {
         const widget = await this.taskTerminalWidgetManager.open({
             created: new Date().toString(),
             id: this.getTerminalWidgetId(terminalId),
-            title: nls.localize('theia/task/taskTerminalTitle', 'Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
+            title: nls.localizeByDefault('Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
             destroyTermOnClose: true,
             useServerTitle: false
         }, {
@@ -1160,8 +1177,32 @@ export class TaskService implements TaskConfigurationClient {
         return completedTask && completedTask.exitCode.promise;
     }
 
-    async getTerminateSignal(id: number): Promise<string | undefined> {
-        const completedTask = this.runningTasks.get(id);
-        return completedTask && completedTask.terminateSignal.promise;
+    async getTerminateSignal(taskId: number): Promise<string | undefined> {
+        const completedTask = this.runningTasks.get(taskId);
+        return completedTask?.terminateSignal.promise;
+    }
+
+    /**
+     * Checks if a task is currently running.
+     * A task is considered running if it exists in the runningTasks map AND has not yet exited.
+     * @param taskId The task ID to check
+     * @returns true if the task is still running, false otherwise
+     */
+    isTaskRunning(taskId: number): boolean {
+        const taskEntry = this.runningTasks.get(taskId);
+        if (!taskEntry) {
+            return false;
+        }
+        // Task is running if the terminateSignal deferred is still unresolved
+        return taskEntry.terminateSignal.state === 'unresolved';
+    }
+
+    /**
+     * Request workspace trust from the user. Returns true if the workspace is trusted,
+     * false if the user declined to trust the workspace.
+     */
+    protected async requestWorkspaceTrust(): Promise<boolean> {
+        const trusted = await this.workspaceTrustService.requestWorkspaceTrust();
+        return trusted === true;
     }
 }

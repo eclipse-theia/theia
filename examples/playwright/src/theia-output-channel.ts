@@ -82,6 +82,20 @@ export class TheiaOutputViewChannel extends TheiaPageObject {
         return 'info';
     }
 
+    async ansiClassesOfLineByLineNumber(lineNumber: number): Promise<string[]> {
+        await this.waitForVisible();
+        const lineElement = await (await this.monacoEditor.line(lineNumber)).elementHandle();
+        const contents = await lineElement?.$$('span > span.mtk1');
+        if (!contents || contents.length < 1) {
+            return [];
+        }
+        const classNames = await Promise.all(contents.map(
+            async content => (await content.getAttribute('class')) ?? ''));
+        return classNames
+            .flatMap(c => c.split(' '))
+            .filter(c => c.startsWith('ansi-'));
+    }
+
     async textContentOfLineByLineNumber(lineNumber: number): Promise<string | undefined> {
         return this.monacoEditor.textContentOfLineByLineNumber(lineNumber);
     }

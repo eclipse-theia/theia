@@ -92,8 +92,11 @@ the log level of particular loggers, create a config file such as
 {
   "defaultLevel": "info",
   "levels": {
-    "terminal": "debug",
-    "task": "error"
+    "terminal*": "debug",
+    "task*": "error",
+    "ai-core*": "error",
+    "ai-core:DefaultPromptFragmentCustomizationService": "debug",
+    "*Token*": "warn"
   }
 }
 ```
@@ -103,6 +106,13 @@ contains the log level to use for loggers not specified in `levels`.  This file
 can then be specified using the `--log-config` option.  Theia will watch that
 file for changes, so it's possible to change log levels at runtime by
 modifying this file.
+
+**Wildcard Support and Precedence**
+
+In addition to exact logger names, you can configure log levels using wildcards (`*`) to target multiple loggers with a single rule (e.g., `ai-core*` or `*Token*`). When resolving the log level for a specific logger, the following precedence rules apply:
+
+- **Exact Match Priority:** An exact match to a logger name will always take the highest priority over any wildcard rules.
+- **Last One Wins:** If an exact match is not found, the system evaluates the wildcard rules. If multiple wildcard rules match a given logger, the *last* matching rule defined in the configuration file takes precedence.
 
 It's unfortunately currently not possible to query Theia for the list of
 existing loggers.  However, each log message specifies from which logger it

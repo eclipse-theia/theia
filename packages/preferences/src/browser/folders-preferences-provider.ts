@@ -16,12 +16,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope, PreferenceUtils } from '@theia/core';
+import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope, PreferenceUtils, ILogger } from '@theia/core';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProviderImpl {
@@ -34,6 +34,9 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
+
+    @inject(ILogger) @named('preferences:FoldersPreferencesProvider')
+    protected readonly logger: ILogger;
 
     protected readonly providers = new Map<string, FolderPreferenceProvider>();
 
@@ -50,7 +53,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
 
         const readyPromises: Promise<void>[] = [];
         for (const provider of this.providers.values()) {
-            readyPromises.push(provider.ready.catch(e => console.error(e)));
+            readyPromises.push(provider.ready.catch(e => this.logger.error(e)));
         }
         Promise.all(readyPromises).then(() => this._ready.resolve());
     }

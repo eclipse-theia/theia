@@ -274,7 +274,6 @@ export class TestTreeWidget extends TreeWidget {
             case TestExecutionState.Failed: return `${codicon('error')} failed`;
             case TestExecutionState.Errored: return `${codicon('issues')} errored`;
             case TestExecutionState.Passed: return `${codicon('pass')} passed`;
-            case TestExecutionState.Running: return `${codicon('sync-spin')} running`;
             default: return codicon('circle');
         }
     }

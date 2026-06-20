@@ -112,6 +112,8 @@ export class BackendPreferenceStorage implements PreferenceStorage {
     }
 
     dispose(): void {
+        // Safe to dispose because the provider is bound transient and created solely for this storage.
+        this.fileSystem.dispose();
     }
 
 }

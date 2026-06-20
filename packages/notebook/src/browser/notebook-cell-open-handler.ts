@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI, MaybePromise } from '@theia/core';
+import { URI, MaybePromise, ILogger } from '@theia/core';
 import { OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { CellUri } from '../common';
 
@@ -25,6 +25,9 @@ export class NotebookCellOpenHandler implements OpenHandler {
 
     @inject(NotebookEditorWidgetService)
     protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
+
+    @inject(ILogger) @named('notebook:NotebookCellOpenHandler')
+    protected readonly logger: ILogger;
 
     id: string = 'notebook-cell-opener';
 
@@ -38,7 +41,7 @@ export class NotebookCellOpenHandler implements OpenHandler {
         const lineParam = params.get('line');
 
         if (!executionCountParam || !lineParam) {
-            console.error('Invalid vscode-notebook-cell URI: missing execution_count or line parameter', uri.toString(true));
+            this.logger.error('Invalid vscode-notebook-cell URI: missing execution_count or line parameter', uri.toString(true));
             return;
         }
 

@@ -77,26 +77,6 @@ export class ChatFocusContribution implements CommandContribution, KeybindingCon
     }
 
     protected findActiveChatViewWidget(): ChatViewWidget | undefined {
-        const activeWidget = this.shell.activeWidget;
-        if (activeWidget instanceof ChatViewWidget) {
-            return activeWidget;
-        }
-        // Also check if any part of the chat view has focus
-        const activeElement = document.activeElement;
-        if (activeElement instanceof HTMLElement) {
-            const widget = this.shell.findWidgetForElement(activeElement);
-            if (widget instanceof ChatViewWidget) {
-                return widget;
-            }
-            // Check parent widgets (e.g., when input widget has focus)
-            let parent = widget?.parent;
-            while (parent) {
-                if (parent instanceof ChatViewWidget) {
-                    return parent;
-                }
-                parent = parent.parent;
-            }
-        }
-        return undefined;
+        return ChatViewWidget.findActive(this.shell);
     }
 }

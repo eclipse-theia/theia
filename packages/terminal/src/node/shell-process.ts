@@ -37,6 +37,12 @@ export interface ShellProcessOptions {
     env?: { [key: string]: string | null },
     strictEnv?: boolean,
     isPseudo?: boolean,
+    /**
+     * Whether to inject shell integration scripts for command tracking.
+     * When enabled, shell integration scripts are injected to emit OSC 133 sequences.
+     * @default false
+     */
+    enableShellIntegration?: boolean;
 }
 
 export function getRootPath(rootURI?: string): string {

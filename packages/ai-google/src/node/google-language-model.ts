@@ -24,7 +24,8 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
+    ReasoningApi,
+    ReasoningSupport,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -33,6 +34,7 @@ import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
+import { googleReasoningFor } from './google-reasoning';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 
 interface ToolCallback {
@@ -136,7 +138,8 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
 }
 
 /**
- * Implements the Gemini language model integration for Theia
+ * Implements the Gemini language model integration for Theia. Reasoning-level
+ * translation lives in {@link googleReasoningFor}.
  */
 export class GoogleModel implements LanguageModel {
 
@@ -147,11 +150,16 @@ export class GoogleModel implements LanguageModel {
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public retrySettings: () => GoogleLanguageModelRetrySettings,
-        protected readonly tokenUsageService?: TokenUsageService
+        public reasoningSupport?: ReasoningSupport,
+        public reasoningApi?: ReasoningApi,
+        public maxInputTokens?: number
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? {};
+        return {
+            ...request.settings,
+            ...googleReasoningFor(request.reasoning?.level, this.reasoningApi)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -202,10 +210,6 @@ export class GoogleModel implements LanguageModel {
                             functionDeclarations
                         }]
                     }),
-                    thinkingConfig: {
-                        // https://ai.google.dev/gemini-api/docs/thinking#summaries
-                        includeThoughts: true,
-                    },
                     temperature: 1,
                     ...settings
                 },
@@ -312,15 +316,11 @@ export class GoogleModel implements LanguageModel {
                         }
 
                         // Report token usage if available
-                        if (chunk.usageMetadata && that.tokenUsageService && that.id) {
+                        if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
-                            if (promptTokens && completionTokens) {
-                                that.tokenUsageService.recordTokenUsage(that.id, {
-                                    inputTokens: promptTokens,
-                                    outputTokens: completionTokens,
-                                    requestId: request.requestId
-                                }).catch(error => console.error('Error recording token usage:', error));
+                            if (promptTokens !== undefined && completionTokens !== undefined) {
+                                yield { input_tokens: promptTokens, output_tokens: completionTokens };
                             }
                         }
                     }
@@ -450,19 +450,15 @@ export class GoogleModel implements LanguageModel {
                 responseText = model.text ?? '';
             }
 
-            // Record token usage if available
-            if (model.usageMetadata && this.tokenUsageService) {
+            const result: LanguageModelTextResponse = { text: responseText };
+            if (model.usageMetadata) {
                 const promptTokens = model.usageMetadata.promptTokenCount;
                 const completionTokens = model.usageMetadata.candidatesTokenCount;
-                if (promptTokens && completionTokens) {
-                    await this.tokenUsageService.recordTokenUsage(this.id, {
-                        inputTokens: promptTokens,
-                        outputTokens: completionTokens,
-                        requestId: request.requestId
-                    });
+                if (promptTokens !== undefined && completionTokens !== undefined) {
+                    result.usage = { input_tokens: promptTokens, output_tokens: completionTokens };
                 }
             }
-            return { text: responseText };
+            return result;
         } catch (error) {
             throw new Error(`Failed to get response from Gemini API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }

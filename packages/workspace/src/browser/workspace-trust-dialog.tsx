@@ -62,13 +62,22 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
                 <div className="workspace-trust-description">
                     {nls.localize(
                         'theia/workspace/trustDialogMessage',
-                        `If you trust the authors, code in this folder may be executed.
-
-                        If not, some features will be disabled.
-                        
-                        The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet.
-                        Check the 'Restricted Mode' indicator in the status bar for details.`
+                        'If you trust the authors, code in this folder may be executed, including tasks, debug configurations, extensions, and AI features.'
                     )}
+                </div>
+                <div className="workspace-trust-description">
+                    {nls.localize(
+                        'theia/workspace/trustDialogRestricted',
+                        "If you don't trust the authors, the workspace will open in Restricted Mode, which disables these features to protect against potentially harmful code."
+                    )}
+                </div>
+                <div className="workspace-trust-description">
+                    <a href="https://theia-ide.org/docs/workspace_trust/"
+                        title="https://theia-ide.org/docs/workspace_trust/"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        {nls.localize('theia/workspace/trustLearnMore', "Learn more about Theia's Workspace Trust")}
+                    </a>
                 </div>
                 {this.folderUris.length > 0 && (
                     <div className="workspace-trust-folder">

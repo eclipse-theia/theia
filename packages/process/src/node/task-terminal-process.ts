@@ -27,14 +27,55 @@ export class TaskTerminalProcess extends TerminalProcess {
 
     public exited = false;
     public attachmentAttempted = false;
+    /**
+     * Runtime-only property: whether to enable command history tracking for this task's terminal.
+     * This value is injected from the `terminal.integrated.enableCommandHistory` preference
+     * before the task is sent to the backend. It is not part of the task definition schema
+     * and should not be persisted in tasks.json.
+     */
+    protected _enableCommandHistory = false;
+
+    // to avoid multiple end OSC injections
+    protected _endOscInjected = false;
+
+    setEnableCommandHistory(enable: boolean): void {
+        this._enableCommandHistory = enable;
+    }
+
+    /**
+     * injects the command to be tracked into the terminal output stream
+     * only if command history tracking is enabled
+     */
+    injectCommandStartOsc(command: string): void {
+        if (this._enableCommandHistory) {
+            const encoded = Buffer.from(command).toString('hex');
+            this.ringBuffer.enq(`\x1b]133;command_started;${encoded}\x07`);
+            this._endOscInjected = false;
+        }
+    }
 
     protected override onTerminalExit(code: number | undefined, signal: string | undefined): void {
+        this.injectCommandEndOsc();
         this.emitOnExit(code, signal);
         this.exited = true;
         // Unregister process only if task terminal already attached (or failed attach),
         // Fixes https://github.com/eclipse-theia/theia/issues/2961
         if (this.attachmentAttempted) {
             this.unregisterProcess();
+        }
+    }
+
+    override kill(signal?: string): void {
+        this.injectCommandEndOsc();
+        super.kill(signal);
+    }
+
+    protected injectCommandEndOsc(): void {
+        if (this._enableCommandHistory && !this._endOscInjected) {
+            // Mark the task command as finished in command history tracking.
+            // OSC 133 'prompt_started' signals the end of command execution.
+            this.ringBuffer.enq('\x1b]133;prompt_started\x07');
+            this._endOscInjected = true;
         }
     }
 

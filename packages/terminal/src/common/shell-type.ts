@@ -65,6 +65,57 @@ export const shellTypesToRegex: Map<string, RegExp> = new Map([
     [GeneralShellType.Zsh, /^zsh$/]
 ]);
 
+const shellPrefixPatterns = [
+    /^noglob\s+/,
+    /^nocorrect\s+/,
+    /^command\s+/,
+    /^builtin\s+/,
+    /^exec\s+/,
+];
+
+/** Matches `user@host:` style prompts (e.g. `user@host:~/path`). */
+export function looksLikeHostPrompt(value: string): boolean {
+    return /^[^@\s]+@[^:\s]+:/.test(value);
+}
+
+/** Checks whether a single token looks like a file-system path (starts with `/`, `~`, or `./`). */
+export function looksLikePath(value: string): boolean {
+    return /^[/~]|^\.\//.test(value);
+}
+
+/**
+ * Cleans a shell-reported terminal title by stripping shell prefixes and
+ * extracting the base command name. Returns an empty string for CWD/prompt-style
+ * titles (e.g. `/home/user/project`, `user@host:~/path`) to signal that the
+ * title should not be updated.
+ */
+export function cleanTerminalTitle(title: string): string {
+    let cleaned = title.trim();
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const pattern of shellPrefixPatterns) {
+            const result = cleaned.replace(pattern, '');
+            if (result !== cleaned) {
+                cleaned = result;
+                changed = true;
+            }
+        }
+    }
+    // user@host:path is always a CWD/prompt, skip the update
+    if (looksLikeHostPrompt(cleaned)) {
+        return '';
+    }
+    const parts = cleaned.split(/\s+/);
+    // A single path-like token (no arguments) is likely a CWD, skip the update
+    if (parts.length <= 1 && looksLikePath(cleaned)) {
+        return '';
+    }
+    const command = parts[0];
+    const baseName = command.includes('/') ? command.substring(command.lastIndexOf('/') + 1) : command;
+    return baseName || title;
+}
+
 export function guessShellTypeFromExecutable(executable: string | undefined): string | undefined {
     if (!executable) {
         return undefined;

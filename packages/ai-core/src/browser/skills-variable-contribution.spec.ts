@@ -52,7 +52,8 @@ describe('SkillsVariableContribution', () => {
         skillService = {
             getSkills: sinon.stub(),
             getSkill: sinon.stub(),
-            onSkillsChanged: sinon.stub() as unknown as typeof skillService.onSkillsChanged
+            onSkillsChanged: sinon.stub() as unknown as typeof skillService.onSkillsChanged,
+            ready: sinon.stub() as unknown as typeof skillService.ready
         };
 
         container.bind(SkillService).toConstantValue(skillService as unknown as SkillService);

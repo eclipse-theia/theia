@@ -169,7 +169,7 @@ export namespace ScmItemComponent {
 }
 export class ScmItemComponent extends React.Component<ScmItemComponent.Props> {
 
-    override render(): JSX.Element {
+    override render(): React.JSX.Element {
         const { labelProvider, scmLabelProvider, change } = this.props;
         const icon = labelProvider.getIcon(change);
         const label = labelProvider.getName(change);

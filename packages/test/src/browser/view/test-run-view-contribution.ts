@@ -14,14 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractViewContribution, Widget } from '@theia/core/lib/browser';
+import { AbstractViewContribution, Widget, codicon } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TestRun, TestService } from '../test-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TestRunTreeWidget } from './test-run-widget';
+import { TestOutputViewContribution } from './test-output-view-contribution';
 import { TEST_VIEW_CONTAINER_ID, TestViewCommands } from './test-view-contribution';
-import { CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
+import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+
+export namespace TestRunViewCommands {
+    export const SHOW_OUTPUT: Command = Command.toLocalizedCommand({
+        id: 'testing.showTestOutput',
+        label: 'Show Test Output',
+        category: 'Test',
+        iconClass: codicon('symbol-keyword')
+    }, 'theia/test/showTestOutput', nls.getDefaultKey('Test'));
+}
 
 export const TEST_RUNS_CONTEXT_MENU = ['test-runs-context-menu'];
 export const TEST_RUNS_INLINE_MENU = [...TEST_RUNS_CONTEXT_MENU, 'inline'];
@@ -31,6 +41,7 @@ export class TestRunViewContribution extends AbstractViewContribution<TestRunTre
 
     @inject(TestService) protected readonly testService: TestService;
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
+    @inject(TestOutputViewContribution) protected readonly testOutputView: TestOutputViewContribution;
 
     constructor() {
         super({
@@ -45,6 +56,11 @@ export class TestRunViewContribution extends AbstractViewContribution<TestRunTre
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        registry.registerItem({
+            id: TestRunViewCommands.SHOW_OUTPUT.id,
+            command: TestRunViewCommands.SHOW_OUTPUT.id,
+            priority: 0
+        });
         registry.registerItem({
             id: TestViewCommands.CLEAR_ALL_RESULTS.id,
             command: TestViewCommands.CLEAR_ALL_RESULTS.id,
@@ -61,6 +77,11 @@ export class TestRunViewContribution extends AbstractViewContribution<TestRunTre
 
     override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
+        commands.registerCommand(TestRunViewCommands.SHOW_OUTPUT, {
+            isEnabled: w => this.withWidget(w, () => true),
+            isVisible: w => this.withWidget(w, () => true),
+            execute: () => this.testOutputView.openView({ activate: true })
+        });
         commands.registerCommand(TestViewCommands.CANCEL_RUN, {
             isEnabled: t => TestRun.is(t) && t.isRunning,
             isVisible: t => TestRun.is(t),

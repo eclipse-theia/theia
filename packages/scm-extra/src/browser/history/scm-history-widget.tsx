@@ -311,13 +311,13 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
 
                     const relPathAndRepo = [relPath, repoName].filter(Boolean).join(
-                        ` ${nls.localize('theia/git/prepositionIn', 'in')} `
+                        ` ${nls.localize('theia/scm/prepositionIn', 'in')} `
                     );
                     path = `${relPathAndRepo}`;
                 }
                 content = <AlertMessage
                     type='WARNING'
-                    header={nls.localize('theia/git/noHistoryForError', 'There is no history available for {0}', `${path}`)}>
+                    header={nls.localize('theia/scm/noHistoryForError', 'There is no history available for {0}', `${path}`)}>
                     {reason}
                 </AlertMessage>;
                 break;
@@ -354,7 +354,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected renderCommitList(): React.ReactNode {
         const list = <div className='listContainer' id={this.scrollContainer}>
             <ScmHistoryList
-                ref={listView => this.listView = (listView || undefined)}
+                ref={listView => { this.listView = (listView || undefined); }}
                 rows={this.scmNodes}
                 hasMoreRows={this.hasMoreCommits}
                 loadMoreRows={this.loadMoreRows}
@@ -538,7 +538,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
     override render(): React.ReactNode {
         const { hasMoreRows, loadMoreRows, rows } = this.props;
         return <Virtuoso
-            ref={list => this.list = (list || undefined)}
+            ref={(list: VirtuosoHandle | null) => { this.list = (list || undefined); }}
             data={rows}
             itemContent={index => this.renderRow(index)}
             endReached={hasMoreRows ? loadMoreRows : undefined}

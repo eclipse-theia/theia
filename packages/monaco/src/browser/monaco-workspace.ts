@@ -17,9 +17,10 @@
 /* eslint-disable no-null/no-null */
 
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
+import { ILogger } from '@theia/core';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
@@ -125,6 +126,9 @@ export class MonacoWorkspace {
 
     @inject(SaveableService)
     protected readonly saveService: SaveableService;
+
+    @inject(ILogger) @named('monaco:MonacoWorkspace')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -265,7 +269,7 @@ export class MonacoWorkspace {
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
             return { ariaSummary, isApplied: true };
         } catch (e) {
-            console.error('Failed to apply Resource edits:', e);
+            this.logger.error('Failed to apply Resource edits:', e);
             return {
                 ariaSummary: `Error applying Resource edits: ${e.toString()}`,
                 isApplied: false

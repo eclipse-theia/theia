@@ -81,12 +81,19 @@ describe('ChatService pinned agent behavior', () => {
             ['default-agent', mockDefaultAgent]
         ]);
 
+        readonly onDidChangeAgents = { dispose: () => { } };
+        readonly onDefaultAgentChanged = { dispose: () => { } };
+
         getAgent(id: string): ChatAgent | undefined {
             return this.agents.get(id);
         }
 
         removeAgent(id: string): void {
             this.agents.delete(id);
+        }
+
+        resolveAgent(): ChatAgent | undefined {
+            return this.agents.get('default-agent');
         }
     }
 

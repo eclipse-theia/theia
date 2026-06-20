@@ -323,6 +323,9 @@ describe('ChatRequestParserImpl', () => {
             invoke: async () => undefined,
         });
 
+        // Set up the parser's agent service so it can recognise agents during parsing
+        chatAgentService.getAgents.returns([createAgent('agentA'), createAgent('agentB')]);
+
         const tool = new AgentDelegationTool();
         (tool as unknown as { getChatAgentService: () => unknown }).getChatAgentService = () => ({
             getAgent: sinon.stub().withArgs('agentA').returns(createAgent('agentA')),
@@ -337,7 +340,7 @@ describe('ChatRequestParserImpl', () => {
 
             return {
                 requestCompleted: Promise.resolve({ cancel: () => undefined }),
-                responseCompleted: Promise.resolve({ response: { asString: () => 'ok' } }),
+                responseCompleted: Promise.resolve({ response: { content: [{ kind: 'text', content: 'ok', asString: () => 'ok' }] } }),
             };
         });
 
@@ -348,11 +351,12 @@ describe('ChatRequestParserImpl', () => {
                 id: 'session-1',
                 model: {
                     changeSet: {
-                        onDidChange: sinon.stub().returns({}),
+                        onDidChange: sinon.stub().returns({ dispose: sinon.stub() }),
                         getElements: sinon.stub().returns([]),
                         setTitle: sinon.stub(),
                         addElements: sinon.stub(),
-                    }
+                    },
+                    onDidChange: sinon.stub().returns({ dispose: sinon.stub() })
                 }
             }),
             sendRequest,

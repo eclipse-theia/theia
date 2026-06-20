@@ -92,6 +92,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         if (!pathExtension) {
             candidates.push(absolutePath + '.js');
             candidates.push(absolutePath + '.cjs');
+            candidates.push(absolutePath + '.mjs');
         }
 
         for (const candidate of candidates) {
