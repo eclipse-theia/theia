@@ -491,6 +491,7 @@ export enum MainMessageType {
 }
 
 export interface MainMessageOptions {
+    source?: string;
     detail?: string;
     modal?: boolean
     onCloseActionHandle?: number
