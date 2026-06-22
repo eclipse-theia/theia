@@ -84,6 +84,17 @@ import { DefaultChatAgentRecommendationService } from './default-chat-agent-reco
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
+import {
+    GoToDefinitionFunction,
+    GoToImplementationFunction,
+    GoToTypeDefinitionFunction,
+    FindReferencesFunction,
+    HoverFunction,
+    DocumentSymbolsFunction,
+    CallHierarchyFunction,
+    SearchWorkspaceSymbolsFunction
+} from './lsp-functions';
+import { LspToolSupport } from './lsp-tool-support';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
@@ -270,6 +281,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(ClearFileChanges, bind);
     bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
+    bind(LspToolSupport).toSelf().inSingletonScope();
+    bindToolProvider(GoToDefinitionFunction, bind);
+    bindToolProvider(GoToImplementationFunction, bind);
+    bindToolProvider(GoToTypeDefinitionFunction, bind);
+    bindToolProvider(FindReferencesFunction, bind);
+    bindToolProvider(HoverFunction, bind);
+    bindToolProvider(DocumentSymbolsFunction, bind);
+    bindToolProvider(CallHierarchyFunction, bind);
+    bindToolProvider(SearchWorkspaceSymbolsFunction, bind);
 
     bind(AIToolsConfigurationWidget).toSelf();
     bind(WidgetFactory)
