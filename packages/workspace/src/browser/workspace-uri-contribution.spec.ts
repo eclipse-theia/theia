@@ -26,7 +26,7 @@ import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/lab
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService, WorkspaceServiceImpl } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -53,7 +53,7 @@ beforeEach(() => {
         onDidCreateWidget: Event.None
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    const workspaceService = new WorkspaceService();
+    const workspaceService = new WorkspaceServiceImpl();
     workspaceService.tryGetRoots = () => roots;
     container.bind(WorkspaceService).toConstantValue(workspaceService);
     container.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
