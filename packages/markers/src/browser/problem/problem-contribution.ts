@@ -30,7 +30,6 @@ import { MarkerNode } from '../marker-tree';
 import { MenuPath, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { ProblemSelection } from './problem-selection';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -71,7 +70,6 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
 
     constructor() {
         super({
@@ -168,9 +166,9 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             })
         });
         commands.registerCommand(ProblemsCommands.SELECT_ALL, {
-            isEnabled: () => true,
-            isVisible: () => true,
-            execute: () => this.selectAllProblems()
+            isEnabled: () => this.withWidget(undefined, () => true),
+            isVisible: () => this.withWidget(undefined, () => true),
+            execute: () => this.withWidget(undefined, widget => this.selectAllProblems(widget))
         });
         commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
             isEnabled: widget => this.withWidget(widget, () => true),
@@ -228,8 +226,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    protected async selectAllProblems(): Promise<void> {
-        const widget = await this.widget;
+    protected async selectAllProblems(widget: ProblemWidget): Promise<void> {
         const { model } = widget;
         const root = model.root as CompositeTreeNode;
         if (root) {
@@ -238,7 +235,6 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    // Helper method to recursively select all nodes
     protected selectAllNodes(node: TreeNode, model: ProblemTreeModel): void {
         if (SelectableTreeNode.is(node)) {
             model.addSelection({ node, type: TreeSelection.SelectionType.TOGGLE });
