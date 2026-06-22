@@ -141,6 +141,9 @@ describe('TerminalManagerTreeModel', () => {
             const page1 = model.getNode(pageId1);
             expect(page1).to.not.be.undefined;
             expect(TerminalManagerTreeTypes.isPageNode(page1)).to.be.true;
+            expect(model.activePageNode?.id).to.equal(pageId1);
+            expect(model.activeTerminalNode?.id).to.equal(key1);
+            expect(model.selectedNodes.map(n => n.id)).to.deep.equal([key1]);
         });
 
         it('should select a neighbor terminal when the active terminal is deleted from a group', async () => {
@@ -167,10 +170,12 @@ describe('TerminalManagerTreeModel', () => {
             model.deleteTerminalNode(key2);
             await model.refresh();
 
-            // The remaining terminal should still be accessible
+            // The remaining terminal should still be accessible and selected
             const remaining = model.getNode(key1);
             expect(remaining).to.not.be.undefined;
             expect(TerminalManagerTreeTypes.isTerminalNode(remaining)).to.be.true;
+            expect(model.activeTerminalNode?.id).to.equal(key1);
+            expect(model.selectedNodes.map(n => n.id)).to.deep.equal([key1]);
         });
     });
 

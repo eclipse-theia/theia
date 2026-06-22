@@ -327,6 +327,17 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         widget.title.changed.connect(titleChangeHandler);
         disposables.push(Disposable.create(() => widget.title.changed.disconnect(titleChangeHandler)));
 
+        // When the terminal widget is disposed externally (e.g. debug process
+        // exits), remove its tree node so the manager doesn't show an empty
+        // entry.
+        const onWidgetDisposed = () => {
+            if (this.terminalWidgets.has(nodeId)) {
+                this.deleteTerminal(nodeId);
+            }
+        };
+        widget.disposed.connect(onWidgetDisposed);
+        disposables.push(Disposable.create(() => widget.disposed.disconnect(onWidgetDisposed)));
+
         this.terminalDisposables.set(nodeId, disposables);
     }
 
@@ -535,10 +546,12 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected handleTerminalDeleted(terminalId: TerminalManagerTreeTypes.TerminalKey): void {
         const terminalWidget = this.terminalWidgets.get(terminalId);
+        // Remove the reference before disposing so the disposed-signal
+        // handler does not re-enter deleteTerminal.
+        this.removeTerminalReferenceByNodeId(terminalId);
         if (!terminalWidget?.isDisposed) {
             terminalWidget?.dispose();
         }
-        this.removeTerminalReferenceByNodeId(terminalId);
     }
 
     protected handleOnDidChangeActiveWidget(widget: Widget | null): void {
