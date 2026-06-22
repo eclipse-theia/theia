@@ -861,6 +861,18 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * Whether a changed resource path affects custom agents, i.e. it is (or is inside) an `agents/`
+     * directory, or a legacy `customAgents.yml`. Matches the `agents` directory itself (e.g. when the
+     * whole folder is deleted), not only files within it, so removing `agents/` triggers a reload.
+     * @param path The string form of the changed resource URI
+     */
+    protected isCustomAgentChange(path: string): boolean {
+        return path.endsWith('customAgents.yml')
+            || path.includes(`/${CUSTOM_AGENTS_DIRECTORY}/`)
+            || path.endsWith(`/${CUSTOM_AGENTS_DIRECTORY}`);
+    }
+
+    /**
      * Sets up file watching for a template directory (works for both existing and non-existing directories)
      * @param dirURI URI of the directory to watch
      * @param priority Priority level for customizations in this directory
@@ -890,11 +902,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 return;
             }
 
-            const agentsDirSegment = `/${CUSTOM_AGENTS_DIRECTORY}/`;
-            if (event.changes.some(change => {
-                const path = change.resource.toString();
-                return path.endsWith('customAgents.yml') || path.includes(agentsDirSegment);
-            })) {
+            if (event.changes.some(change => this.isCustomAgentChange(change.resource.toString()))) {
                 this.onDidChangeCustomAgentsEmitter.fire();
             }
 

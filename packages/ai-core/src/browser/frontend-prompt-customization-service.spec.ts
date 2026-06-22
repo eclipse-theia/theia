@@ -682,3 +682,38 @@ describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () =
         expect(agents[0].description).to.equal('agents version');
     });
 });
+
+describe('DefaultPromptFragmentCustomizationService - custom agent change detection', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    class ChangeDetectionTestService extends DefaultPromptFragmentCustomizationService {
+        protected override init(): void { }
+        isAgentChange(path: string): boolean {
+            return this.isCustomAgentChange(path);
+        }
+    }
+
+    let service: ChangeDetectionTestService;
+    beforeEach(() => { service = new ChangeDetectionTestService(); });
+
+    it('detects deletion of the whole agents directory', () => {
+        expect(service.isAgentChange('file:///ws/.agents/agents')).to.be.true;
+    });
+
+    it('detects changes to an agent.md inside the agents directory', () => {
+        expect(service.isAgentChange('file:///ws/.agents/agents/foo/agent.md')).to.be.true;
+    });
+
+    it('detects changes to a legacy customAgents.yml', () => {
+        expect(service.isAgentChange('file:///ws/.prompts/customAgents.yml')).to.be.true;
+    });
+
+    it('ignores the scope directory itself', () => {
+        expect(service.isAgentChange('file:///ws/.agents')).to.be.false;
+    });
+
+    it('ignores unrelated files such as skills', () => {
+        expect(service.isAgentChange('file:///ws/.agents/skills/foo/SKILL.md')).to.be.false;
+    });
+});
