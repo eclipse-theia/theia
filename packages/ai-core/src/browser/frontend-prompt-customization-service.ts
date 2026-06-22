@@ -50,6 +50,14 @@ export const CUSTOM_AGENT_FILE_NAME = 'agent.md';
  */
 export const CUSTOM_AGENT_DEFAULT_PROMPT_STEM = 'prompt';
 
+/**
+ * Workspace-relative parent folders scanned for custom agents, independent of the configurable
+ * prompt-templates directories. `.agents` is listed first so it becomes the default location for
+ * newly created agents (matching the skills convention); `.prompts` is retained for backward
+ * compatibility with agents authored before the move to `.agents`.
+ */
+export const CUSTOM_AGENT_WORKSPACE_DIRECTORIES = ['.agents', '.prompts'];
+
 interface CustomAgentFrontmatter {
     name: string;
     description: string;
@@ -129,6 +137,13 @@ export interface PromptFragmentCustomizationProperties {
 
     /** Array of file extensions to consider as template files */
     extensions?: string[];
+
+    /**
+     * Absolute parent directories scanned for custom agents (their `agents/` and legacy
+     * `customAgents.yml`), independent of {@link directoryPaths}. Resolved from
+     * {@link CUSTOM_AGENT_WORKSPACE_DIRECTORIES} against the workspace roots.
+     */
+    agentDirectoryPaths?: string[];
 }
 
 /**
@@ -207,6 +222,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     /** Stores additional directory paths for loading template files. */
     protected additionalTemplateDirs = new Set<string>();
 
+    /**
+     * Built-in parent directories scanned for custom agents (`.agents`, `.prompts`), independent of
+     * {@link additionalTemplateDirs}. Insertion order is preserved so the first entry (`.agents`)
+     * acts as the default location for newly created agents.
+     */
+    protected customAgentDirs = new Set<string>();
+
     /** Contains file extensions that identify prompt template files. */
     protected templateExtensions = new Set<string>([PROMPT_TEMPLATE_EXTENSION]);
 
@@ -272,9 +294,26 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         // resolves to the main templates directory — a user can set both prefs to the same
         // path; re-processing the same dir overwrites the priority-1 entries with priority-2,
         // which then hides them from `editBuiltIn`'s priority-1-only lookup.
+        const processedScopeKeys = new Set<string>([templatesURI.toString()]);
         for (const dirURI of this.getDedupedAdditionalScopes(templatesURI)) {
+            processedScopeKeys.add(dirURI.toString());
             await this.processTemplateDirectory(
                 activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, dirURI, 2, CustomizationSource.FOLDER); // Priority 2 for folder fragments
+        }
+
+        // Process built-in custom-agent directories (`.agents`/`.prompts`) not already covered as
+        // template directories above: register the prompt fragments inside their `agents/<id>/`
+        // folders and watch them, so agents under `.agents` get the same live refresh and
+        // prompt-fragment editing as those under template directories — without loading loose
+        // prompt templates from `.agents` itself.
+        for (const dirPath of this.customAgentDirs) {
+            const scopeURI = URI.fromFilePath(dirPath);
+            if (processedScopeKeys.has(scopeURI.toString())) {
+                continue;
+            }
+            processedScopeKeys.add(scopeURI.toString());
+            await this.processCustomAgentScope(
+                activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, scopeURI, 2, CustomizationSource.FOLDER);
         }
 
         // Process specific template files (highest priority)
@@ -646,6 +685,36 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * Processes a built-in custom-agent scope (`.agents`/`.prompts`): registers the prompt fragments
+     * inside its `agents/<id>/` folders and watches the scope for changes. Unlike
+     * {@link processTemplateDirectory} it does not scan loose `*.prompttemplate` files in the scope
+     * root, so `.agents` does not become a general prompt-template directory.
+     * @param dirURI URI of the agent scope directory
+     * @param priority Priority level for customizations in this scope
+     * @param customizationSource Source type of the customization
+     */
+    protected async processCustomAgentScope(
+        activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        trackedTemplateURIsCopy: Set<string>,
+        allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        dirURI: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): Promise<void> {
+        await this.processCustomAgentFolders(
+            activeCustomizationsCopy,
+            trackedTemplateURIsCopy,
+            allCustomizationsCopy,
+            dirURI,
+            priority,
+            customizationSource
+        );
+        // Watch for changes (works for both existing and non-existing directories), restricted to
+        // agent folders so newly created/edited agents under `.agents` are picked up live.
+        this.setupDirectoryWatcher(dirURI, priority, customizationSource, true);
+    }
+
+    /**
      * Scan `<dirURI>/agents/<id>/*.prompttemplate` files and register each as a customized
      * prompt fragment so they appear in the Prompt Fragments configuration view and so
      * `editPromptFragmentCustomization` / `removePromptFragmentCustomization` can find their
@@ -796,11 +865,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * @param dirURI URI of the directory to watch
      * @param priority Priority level for customizations in this directory
      * @param customizationSource Source type of the customization
+     * @param agentsOnly When true, only `agents/<id>/` prompt files are registered on add; loose
+     * `*.prompttemplate` files in the scope root are ignored. Used for built-in agent scopes
+     * (`.agents`) that must not become general prompt-template directories.
      */
     protected setupDirectoryWatcher(
         dirURI: URI,
         priority: number,
-        customizationSource: CustomizationSource
+        customizationSource: CustomizationSource,
+        agentsOnly = false
     ): void {
         this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
@@ -874,7 +947,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 if (!this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
                     continue;
                 }
-                const isScopeRoot = addedFile.resource.parent.toString() === dirURI.toString();
+                const isScopeRoot = !agentsOnly && addedFile.resource.parent.toString() === dirURI.toString();
                 const agentFolderURI = this.matchesCustomAgentFolder(addedFile.resource, dirURI);
                 if (!isScopeRoot && !agentFolderURI) {
                     continue;
@@ -961,6 +1034,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
         }
 
+        if (properties.agentDirectoryPaths !== undefined) {
+            this.customAgentDirs.clear();
+            for (const path of properties.agentDirectoryPaths) {
+                this.customAgentDirs.add(path);
+            }
+        }
+
         if (properties.extensions !== undefined) {
             this.templateExtensions.clear();
             for (const ext of properties.extensions) {
@@ -1010,6 +1090,33 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
         }
         return result;
+    }
+
+    /**
+     * The deduplicated parent directories scanned for custom agents, in precedence order:
+     * the built-in {@link customAgentDirs} (`.agents` then `.prompts`) first, so `.agents` is both
+     * the discovery winner and the default creation target; then any configured
+     * {@link additionalTemplateDirs} that may also hold agents; then the global templates directory.
+     * Independent of the prompt-templates preference, mirroring how skills resolve their folders.
+     */
+    protected async getCustomAgentScopes(): Promise<URI[]> {
+        const seen = new Set<string>();
+        const scopes: URI[] = [];
+        const add = (uri: URI): void => {
+            const key = uri.toString();
+            if (!seen.has(key)) {
+                seen.add(key);
+                scopes.push(uri);
+            }
+        };
+        for (const dirPath of this.customAgentDirs) {
+            add(URI.fromFilePath(dirPath));
+        }
+        for (const dirPath of this.additionalTemplateDirs) {
+            add(URI.fromFilePath(dirPath));
+        }
+        add(await this.getTemplatesDirectoryURI());
+        return scopes;
     }
 
     /**
@@ -1344,16 +1451,12 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     async getCustomAgents(): Promise<CustomAgentDescription[]> {
         const agentsById = new Map<string, CustomAgentDescription>();
-        // First, process additional (workspace) template directories to give them precedence
-        for (const dirPath of this.additionalTemplateDirs) {
-            const dirURI = URI.fromFilePath(dirPath);
-            await this.loadCustomAgentsFromAgentsDirectory(dirURI, agentsById);
-            await this.loadCustomAgentsFromDirectory(dirURI, agentsById);
+        // Process scopes in precedence order (`.agents`/`.prompts` first, global last). The map only
+        // keeps the first agent seen per id, so earlier scopes win on conflicts.
+        for (const scope of await this.getCustomAgentScopes()) {
+            await this.loadCustomAgentsFromAgentsDirectory(scope, agentsById);
+            await this.loadCustomAgentsFromDirectory(scope, agentsById);
         }
-        // Then process global templates directory (only adding agents that don't conflict)
-        const globalTemplatesDir = await this.getTemplatesDirectoryURI();
-        await this.loadCustomAgentsFromAgentsDirectory(globalTemplatesDir, agentsById);
-        await this.loadCustomAgentsFromDirectory(globalTemplatesDir, agentsById);
         // Note: customAgentFolderByFragmentId is intentionally not cleared here. It grows
         // monotonically — stale entries (renamed/removed agents) at worst point at a folder
         // that no longer exists, which the file-create path mkdirps if needed. Clearing it
@@ -1591,25 +1694,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     /**
      * Returns all locations of existing customAgents.yml files and `agents/` directories,
-     * plus the canonical locations where new agents would be created (one per scope).
+     * plus the canonical locations where new agents would be created (one per scope). Scopes are
+     * returned in precedence order, so the first `agents-dir` entry is the default creation target.
      */
     async getCustomAgentsLocations(): Promise<CustomAgentsLocation[]> {
         const locations: CustomAgentsLocation[] = [];
-
-        const collect = async (parentDir: URI): Promise<void> => {
+        for (const parentDir of await this.getCustomAgentScopes()) {
             const agentsDirURI = parentDir.resolve(CUSTOM_AGENTS_DIRECTORY);
             locations.push({ uri: agentsDirURI, exists: await this.fileService.exists(agentsDirURI), kind: 'agents-dir' });
             const yamlURI = parentDir.resolve('customAgents.yml');
             locations.push({ uri: yamlURI, exists: await this.fileService.exists(yamlURI), kind: 'legacy-yaml' });
-        };
-
-        // Global templates directory
-        const templatesDir = await this.getTemplatesDirectoryURI();
-        await collect(templatesDir);
-        // Workspace / additional template directories — skip any that resolve to the global
-        // templates directory to avoid showing the same scope twice in the picker.
-        for (const dirURI of this.getDedupedAdditionalScopes(templatesDir)) {
-            await collect(dirURI);
         }
         return locations;
     }
@@ -1656,8 +1750,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     protected async doMigrateCustomAgentsYaml(): Promise<MigrationReport[]> {
-        const templatesURI = await this.getTemplatesDirectoryURI();
-        const scopes: URI[] = [templatesURI, ...this.getDedupedAdditionalScopes(templatesURI)];
+        const scopes = await this.getCustomAgentScopes();
         const reports: MigrationReport[] = [];
         for (const scope of scopes) {
             const report = await this.migrateSingleScope(scope);

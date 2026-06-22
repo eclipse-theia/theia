@@ -618,3 +618,67 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
         expect(await fileService.exists(yamlURI)).to.be.true;
     });
 });
+
+describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    /** Test subclass: skip @postConstruct and pin the global templates directory. */
+    class AgentScopeTestService extends DefaultPromptFragmentCustomizationService {
+        globalDir = new URI('file:///global/prompt-templates');
+        protected override init(): void { }
+        protected override getTemplatesDirectoryURI(): Promise<URI> {
+            return Promise.resolve(this.globalDir);
+        }
+        setCustomAgentDirs(paths: string[]): void {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any).customAgentDirs = new Set(paths);
+        }
+    }
+
+    const agentMd = (scope: URI, id: string): URI => scope.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(id).resolve(CUSTOM_AGENT_FILE_NAME);
+    const agentFile = (name: string, description: string): string =>
+        `---\nname: ${name}\ndescription: ${description}\ndefaultLLM: default/universal\n---\n${name} prompt`;
+
+    let fileService: FakeFileService;
+    let service: AgentScopeTestService;
+
+    beforeEach(() => {
+        fileService = new FakeFileService();
+        service = new AgentScopeTestService();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (service as any).fileService = fileService;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (service as any).logger = { debug(): void { }, info(): void { }, warn(): void { }, error(): void { } };
+    });
+
+    it('lists the built-in .agents scope before .prompts and the global directory', async () => {
+        service.setCustomAgentDirs(['/ws/.agents', '/ws/.prompts']);
+
+        const locations = await service.getCustomAgentsLocations();
+
+        const agentDirParents = locations.filter(l => l.kind === 'agents-dir').map(l => l.uri.parent.path.toString());
+        expect(agentDirParents).to.deep.equal(['/ws/.agents', '/ws/.prompts', '/global/prompt-templates']);
+    });
+
+    it('discovers custom agents stored under the .agents directory', async () => {
+        service.setCustomAgentDirs(['/ws/.agents']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), agentFile('Foo', 'Foo agent'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents.map(a => a.id)).to.deep.equal(['foo']);
+        expect(agents[0].name).to.equal('Foo');
+    });
+
+    it('prefers an agent in .agents over one with the same id in .prompts', async () => {
+        service.setCustomAgentDirs(['/ws/.agents', '/ws/.prompts']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'shared'), agentFile('FromAgents', 'agents version'));
+        fileService.write(agentMd(new URI('file:///ws/.prompts'), 'shared'), agentFile('FromPrompts', 'prompts version'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents).to.have.lengthOf(1);
+        expect(agents[0].description).to.equal('agents version');
+    });
+});
