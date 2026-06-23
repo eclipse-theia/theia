@@ -480,6 +480,10 @@ export class MonacoQuickInputService implements QuickInputService {
                     wrapped.activeItems = [options.activeItem];
                 }
 
+                if (options.value) {
+                    wrapped.value = options.value;
+                }
+
                 wrapped.onDidChangeValue((filter: string) => {
                     if (options.onDidChangeValue) {
                         options.onDidChangeValue(wrapped, filter);
