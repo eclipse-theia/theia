@@ -54,6 +54,16 @@ const DEFAULT_HOST = 'localhost';
 const DEFAULT_SSL = false;
 const DEFAULT_DNS_DEFAULT_RESULT_ORDER: DnsResultOrder = 'ipv4first';
 
+/**
+ * Shared registry for Express middleware that must run before static file handlers.
+ * Contributions push handlers during `initialize()`, and `BackendApplication`
+ * applies them at the start of `configure()`, before gzipped handlers and `express.static()`.
+ */
+@injectable()
+export class EarlyExpressMiddleware {
+    readonly handlers: express.Handler[] = [];
+}
+
 export const BackendApplicationServer = Symbol('BackendApplicationServer');
 /**
  * This service is responsible for serving the frontend files.
@@ -175,6 +185,9 @@ export class BackendApplication {
 
     protected readonly app: express.Application = express();
 
+    @inject(EarlyExpressMiddleware)
+    protected readonly earlyMiddleware: EarlyExpressMiddleware;
+
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
 
@@ -243,6 +256,11 @@ export class BackendApplication {
 
     protected async configure(): Promise<void> {
         await this.initialize();
+
+        // Apply early middleware before static file handlers.
+        for (const handler of this.earlyMiddleware.handlers) {
+            this.app.use(handler);
+        }
 
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));

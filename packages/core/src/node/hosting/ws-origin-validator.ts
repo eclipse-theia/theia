@@ -16,7 +16,6 @@
 
 import * as http from 'http';
 import { inject, injectable } from 'inversify';
-import * as url from 'url';
 import { WsRequestValidatorContribution } from '../ws-request-validators';
 import { BackendApplicationHosts } from './backend-application-hosts';
 
@@ -27,10 +26,30 @@ export class WsOriginValidator implements WsRequestValidatorContribution {
     protected readonly backendApplicationHosts: BackendApplicationHosts;
 
     allowWsUpgrade(request: http.IncomingMessage): boolean {
-        if (!this.backendApplicationHosts.hasKnownHosts() || !request.headers.origin) {
+        if (!request.headers.origin) {
+            // Browsers omit the Origin header for same-origin requests (e.g. Socket.IO polling).
+            // Absent Origin is safe: cross-origin browser requests always include it.
             return true;
         }
-        const origin = url.parse(request.headers.origin);
-        return this.backendApplicationHosts.hosts.has(origin.host!);
+
+        let originHost: string;
+        try {
+            originHost = new URL(request.headers.origin).host;
+        } catch {
+            return false;
+        }
+
+        if (this.backendApplicationHosts.hasKnownHosts()) {
+            // When THEIA_HOSTS is configured, validate against the explicit allowlist.
+            return this.backendApplicationHosts.hosts.has(originHost);
+        }
+
+        // When THEIA_HOSTS is not configured (the common development/default case),
+        // enforce same-origin: the Origin's host must match the request's Host header.
+        const hostHeader = request.headers.host;
+        if (!hostHeader) {
+            return false;
+        }
+        return originHost === hostHeader;
     }
 }

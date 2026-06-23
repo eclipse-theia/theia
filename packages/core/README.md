@@ -164,7 +164,7 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
     - e.g: `theia.app.com,some.other.domain:3000`
   - The port number is important if your application is not hosted on either `80` or `443`.
   - If possible, you should set this environment variable:
-    - When not set, Theia will allow any origin to access the WebSocket services.
+    - When not set, Theia will enforce same-origin access to the WebSocket services.
     - When set, Theia will only allow the origins defined in this environment variable.
 - `FRONTEND_CONNECTION_TIMEOUT`
   - The duration in milliseconds during which the backend keeps the connection contexts for the frontend to reconnect.
