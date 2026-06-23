@@ -31,10 +31,10 @@ import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handl
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
-import { OVSXApiFilterProvider, VSXExtensionRaw } from '@theia/ovsx-client';
+import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { DateTime } from 'luxon';
-import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { VSXRegistryService } from '../common/vsx-registry-service';
 import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
 import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
@@ -62,8 +62,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(LabelProvider) protected labelProvider: LabelProvider;
     @inject(ClipboardService) protected clipboardService: ClipboardService;
     @inject(PreferenceService) protected preferenceService: PreferenceService;
-    @inject(OVSXClientProvider) protected clientProvider: OVSXClientProvider;
-    @inject(OVSXApiFilterProvider) protected vsxApiFilter: OVSXApiFilterProvider;
+    @inject(VSXRegistryService) protected vsxRegistryService: VSXRegistryService;
     @inject(ApplicationServer) protected applicationServer: ApplicationServer;
     @inject(QuickInputService) protected quickInput: QuickInputService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
@@ -311,11 +310,9 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     protected async installAnotherVersion(extension: VSXExtension): Promise<void> {
         const extensionId = extension.id;
         const currentVersion = extension.version;
-        const client = await this.clientProvider();
-        const filter = await this.vsxApiFilter();
         const targetPlatform = await this.applicationServer.getApplicationPlatform();
-        const { extensions } = await client.query({ extensionId, includeAllVersions: true });
-        const latestCompatible = await filter.findLatestCompatibleExtension({
+        const { extensions } = await this.vsxRegistryService.query({ extensionId, includeAllVersions: true });
+        const latestCompatible = await this.vsxRegistryService.findLatestCompatibleExtension({
             extensionId,
             includeAllVersions: true,
             targetPlatform

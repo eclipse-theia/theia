@@ -22,3 +22,4 @@ export * from './messaging';
 export * from './cli';
 export * from './setting-service';
 export { FileSystemLocking } from './filesystem-locking';
+export { BackendRequestAllowedContribution } from './request/backend-request-facade';

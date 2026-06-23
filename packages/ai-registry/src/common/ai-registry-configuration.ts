@@ -21,7 +21,8 @@ import { injectable } from '@theia/core/shared/inversify';
  *
  * Defaults to the public Eclipse-hosted AI registry with tool name `'all'`. Products
  * that want a different registry or a tool-specific filter rebind this class in their
- * frontend module:
+ * frontend **and** backend modules (the backend binding is used to derive the allowed URL
+ * pattern for the request whitelist):
  *
  * ```ts
  * rebind(AIRegistryConfiguration).toConstantValue(new (class extends AIRegistryConfiguration {
