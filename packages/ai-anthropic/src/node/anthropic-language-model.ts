@@ -282,6 +282,13 @@ export class AnthropicModel implements LanguageModel {
         }
 
         const tools = this.createTools(request);
+        if (request.deferredToolIds?.length && tools) {
+            console.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
+                name: 'name' in tool ? tool.name : undefined,
+                type: 'type' in tool ? tool.type : 'custom',
+                defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
+            })));
+        }
         const params: Anthropic.MessageCreateParams = {
             max_tokens: this.maxTokens,
             messages: anthropicMessages,
@@ -322,6 +329,10 @@ export class AnthropicModel implements LanguageModel {
                             if (contentBlock.type === 'tool_use') {
                                 toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
                                 yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
+                            }
+                            const contentBlockType = contentBlock.type as string;
+                            if (contentBlockType === 'server_tool_use' || contentBlockType === 'tool_search_tool_result') {
+                                console.debug('Anthropic: received deferred tool stream block:', contentBlock);
                             }
                         } else if (event.type === 'content_block_delta') {
                             const delta = event.delta;

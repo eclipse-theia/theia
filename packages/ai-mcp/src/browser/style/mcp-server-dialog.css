@@ -59,7 +59,7 @@
 
 .mcp-dialog-form .mcp-form-checkbox label {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
   gap: calc(var(--theia-ui-padding) / 2);
   cursor: pointer;
   margin-bottom: 0;
@@ -69,6 +69,7 @@
   width: auto;
   flex-shrink: 0;
   margin: 0;
+  padding: 0;
 }
 
 .mcp-dialog-form .mcp-form-static-value {
