@@ -40,21 +40,10 @@
   padding-left: 4px;
 }
 
+/* The action buttons reuse Theia's `.action-label` for sizing, border-radius and hover, matching the other toolbar buttons. */
 .theia-MermaidViewer-actions {
   display: flex;
-}
-
-.theia-MermaidViewer-actions .button {
-  margin-left: 2px;
-  width: 18px;
-  height: 18px;
-  padding: 2px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.theia-MermaidViewer-actions .button:hover {
-  background-color: var(--theia-toolbar-hoverBackground);
+  gap: 2px;
 }
 
 .theia-MermaidViewer-viewport {

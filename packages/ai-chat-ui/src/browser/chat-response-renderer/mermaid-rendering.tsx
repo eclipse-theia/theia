@@ -43,6 +43,25 @@ const loadMermaid = (): Promise<Mermaid> => {
     return mermaidLoader;
 };
 
+/**
+ * Mermaid keeps its configuration in a global singleton, so {@link Mermaid.initialize} must not run on every render.
+ * We (re-)initialize it only when the workbench theme actually changes - tracked here across all diagram instances -
+ * instead of on every streaming tick. This is cheaper and shrinks the window in which diagrams race on the shared config.
+ */
+let initializedTheme: ThemeMode | undefined;
+const loadMermaidForTheme = async (themeMode: ThemeMode): Promise<Mermaid> => {
+    const mermaid = await loadMermaid();
+    if (initializedTheme !== themeMode) {
+        mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: 'strict',
+            theme: themeMode === 'dark' ? 'dark' : 'default'
+        });
+        initializedTheme = themeMode;
+    }
+    return mermaid;
+};
+
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
 const SCALE_STEP = 0.2;
@@ -66,8 +85,20 @@ const triggersNetworkRequest = (value: string | undefined): boolean => {
     return normalized.length > 0 && !normalized.startsWith('data:') && !normalized.startsWith('#');
 };
 
-/** Removes `url(...)` references to network resources from a CSS string, keeping `url(#...)` and `url(data:...)`. */
-const stripCssNetworkUrls = (css: string): string => css.replace(/url\(\s*(['"]?)(?!#|data:)[^)'"]*\1\s*\)/gi, 'url()');
+/**
+ * Removes references to network resources from a CSS string, keeping internal `url(#...)` references and inline
+ * `url(data:...)` resources. Neutralizes every construct that would fetch a remote resource on render: `url(...)`
+ * functions, `@import` at-rules (both the `@import "..."` and `@import url(...)` forms) and the string form of
+ * `image-set(...)` (its `url(...)` form is covered by the `url(...)` handling).
+ */
+const stripCssNetworkUrls = (css: string): string => css
+    // `@import` pulls in a remote stylesheet; drop the whole at-rule (covers both `@import "..."` and `@import url(...)`).
+    .replace(/@import\b[^;]*;?/gi, '')
+    // `image-set(...)` can list resources as bare strings; blank out the network ones (its `url(...)` form is handled below).
+    .replace(/image-set\(([^)]*)\)/gi, (_match: string, inner: string): string =>
+        `image-set(${inner.replace(/(["'])(?!\s*(?:#|data:))[^"']*\1/g, '$1$1')})`)
+    // `url(...)` resource references become an empty `url()`.
+    .replace(/url\(\s*(['"]?)(?!#|data:)[^)'"]*\1\s*\)/gi, 'url()');
 
 /**
  * Sanitizes the SVG produced by mermaid before it is injected via `dangerouslySetInnerHTML`.
@@ -75,8 +106,9 @@ const stripCssNetworkUrls = (css: string): string => css.replace(/url\(\s*(['"]?
  * Mermaid renders node labels as HTML inside SVG `<foreignObject>`, which DOMPurify strips by default. We allow
  * `foreignObject` and mark it as an HTML integration point so the labels survive while still being sanitized.
  * DOMPurify removes scripts, event handlers and `javascript:` URLs, but not resource loading, so the hooks below
- * additionally strip any attribute or CSS `url(...)` that would fetch a remote resource (an image-based
- * exfiltration vector), while keeping inline `data:` resources, internal `url(#...)` references and `<a>` links.
+ * additionally strip any attribute or CSS reference (`url(...)`, `@import`, `image-set(...)`) that would fetch a
+ * remote resource (an image-based exfiltration vector), while keeping inline `data:` resources, internal
+ * `url(#...)` references and `<a>` links.
  * Mermaid additionally runs with `securityLevel: 'strict'`.
  */
 export const sanitizeDiagram = (svg: string): string => {
@@ -149,12 +181,7 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ code, themeMode,
         const id = `theia-mermaid-${generateUuid()}`;
         const renderDiagram = async () => {
             try {
-                const mermaid = await loadMermaid();
-                mermaid.initialize({
-                    startOnLoad: false,
-                    securityLevel: 'strict',
-                    theme: themeMode === 'dark' ? 'dark' : 'default'
-                });
+                const mermaid = await loadMermaidForTheme(themeMode);
                 // `parse` throws for invalid definitions, which is the common case while the response is still streaming.
                 await mermaid.parse(definition);
                 const { svg: rendered } = await mermaid.render(id, definition);
@@ -239,7 +266,7 @@ export const splitMermaidSegments = (text: string): MarkdownMermaidSegment[] => 
 
 /** A small icon button (codicon) used in the diagram toolbar. */
 const ToolbarButton: React.FC<{ icon: string; title: string; onClick: () => void }> = ({ icon, title, onClick }) =>
-    <div className={`button codicon codicon-${icon}`} title={title} role='button' onClick={onClick}></div>;
+    <div className={`action-label codicon codicon-${icon}`} title={title} role='button' onClick={onClick}></div>;
 
 interface MermaidViewportProps {
     scale: number;

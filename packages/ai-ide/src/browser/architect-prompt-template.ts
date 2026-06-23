@@ -186,7 +186,7 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 
 # Diagrams
 
-When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 # Context
 
@@ -223,7 +223,7 @@ Use the following functions to interact with the workspace files as needed:
 
 ## Diagrams
 
-When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block). It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block). It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 ## Additional Context
 The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
@@ -456,7 +456,7 @@ When editing a plan:
 
 # Diagrams
 
-When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 # Context
 

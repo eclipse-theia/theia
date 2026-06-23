@@ -50,7 +50,11 @@ describe('sanitizeDiagram', () => {
             { name: '<input type=image>', body: htmlLabel(`<input type="image" src="${url}">`) },
             { name: '<video poster>', body: htmlLabel(`<video poster="${url}"></video>`) },
             { name: 'inline style background url()', body: htmlLabel(`<span style="background-image:url(${url})">x</span>`) },
-            { name: '<style> css url()', body: `<style>.n{background:url("${url}")}</style>` }
+            { name: '<style> css url()', body: `<style>.n{background:url("${url}")}</style>` },
+            { name: '<style> css @import string', body: `<style>@import "${url}";</style>` },
+            { name: '<style> css @import url()', body: `<style>@import url("${url}");</style>` },
+            { name: '<style> css image-set()', body: `<style>.n{background-image:image-set("${url}" 1x)}</style>` },
+            { name: 'inline style image-set()', body: htmlLabel(`<span style="background-image:image-set('${url}' 1x)">x</span>`) }
         ];
         cases.forEach(({ name, body }) => {
             it(name, () => {

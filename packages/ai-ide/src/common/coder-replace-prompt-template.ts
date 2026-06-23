@@ -625,7 +625,7 @@ Be aware this function operates on the workspace. If the user has not accepted a
 ## Diagrams
 
 When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your response. \
-It is rendered directly in the chat. Keep diagrams small and focused — the chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 ## Additional Context
 

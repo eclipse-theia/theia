@@ -172,8 +172,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
-    bind(CodePartRenderer).toSelf().inSingletonScope();
-    bind(ChatResponsePartRenderer).toService(CodePartRenderer);
+    bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
     bind(MermaidPartRenderer).toSelf().inSingletonScope();
     bind(ChatResponsePartRenderer).toService(MermaidPartRenderer);
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
