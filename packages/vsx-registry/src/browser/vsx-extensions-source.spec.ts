@@ -51,6 +51,7 @@ class StubContribution implements ExtensionsSourceContribution {
     constructor(
         readonly type: string,
         readonly displayName: string,
+        readonly searchToken: string,
         private readonly results: SearchResult[],
         readonly priority = 0
     ) { }
@@ -66,15 +67,6 @@ interface TaggedElement extends TreeElement {
 function makeResult(id: string, searchableText: string): SearchResult {
     const element: TaggedElement = { id, render: () => undefined };
     return { element, searchableText };
-}
-
-class StubSearchModel {
-    query: string = '';
-    enabledTypes: ReadonlySet<string> | undefined;
-    readonly onDidChangeFilter = new Emitter<void>().event;
-    isTypeEnabled(type: string): boolean {
-        return !this.enabledTypes || this.enabledTypes.has(type);
-    }
 }
 
 class StubPreferenceService {
@@ -95,19 +87,18 @@ function buildSource(contributions: ExtensionsSourceContribution[], query: strin
     } as unknown as VSXExtensionsModel);
     const provider: ContributionProvider<ExtensionsSourceContribution> = { getContributions: () => contributions };
     container.bind(ContributionProvider).toConstantValue(provider).whenTargetNamed(ExtensionsSourceContribution);
-    const searchModel = new StubSearchModel();
-    searchModel.query = query;
-    container.bind(VSXExtensionsSearchModel).toConstantValue(searchModel as unknown as VSXExtensionsSearchModel);
+    container.bind(VSXExtensionsSearchModel).toSelf().inSingletonScope();
     container.bind(PreferenceService).toConstantValue(new StubPreferenceService() as unknown as PreferenceService);
     container.bind(FuzzySearch).toSelf().inSingletonScope();
     container.bind(VSXExtensionsSource).toSelf().inSingletonScope();
+    container.get(VSXExtensionsSearchModel).query = query;
     return container.get(VSXExtensionsSource);
 }
 
 describe('VSXExtensionsSource.collectSearchResults', () => {
 
     it('passes hits through unranked when the query is empty', async () => {
-        const contribution = new StubContribution('extension', 'Extensions', [
+        const contribution = new StubContribution('extension', 'Extensions', '@extensions', [
             makeResult('a', 'alpha'),
             makeResult('b', 'beta')
         ]);
@@ -119,7 +110,7 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
     });
 
     it('passes hits through unranked when there is only one result, regardless of query', async () => {
-        const contribution = new StubContribution('extension', 'Extensions', [
+        const contribution = new StubContribution('extension', 'Extensions', '@extensions', [
             makeResult('only', 'unrelated text')
         ]);
         const source = buildSource([contribution], 'something');
@@ -133,10 +124,10 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
         // First contribution exposes a weak match for "git"; second contribution exposes
         // a much better match. Without global ranking the weak match would win simply
         // because it came from the earlier contribution.
-        const weak = new StubContribution('extension', 'Extensions', [
+        const weak = new StubContribution('extension', 'Extensions', '@extensions', [
             makeResult('weakly-related', 'configuration tool that integrates with git pipelines')
         ]);
-        const strong = new StubContribution('mcp-server', 'MCP Servers', [
+        const strong = new StubContribution('mcp-server', 'MCP Servers', '@mcp', [
             makeResult('strong-match', 'git')
         ], 100);
         const source = buildSource([weak, strong], 'git');
@@ -147,7 +138,7 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
     });
 
     it('drops hits whose searchableText does not match the query at all', async () => {
-        const contribution = new StubContribution('extension', 'Extensions', [
+        const contribution = new StubContribution('extension', 'Extensions', '@extensions', [
             makeResult('matches', 'git client'),
             makeResult('nope', 'totally unrelated content')
         ]);
@@ -156,5 +147,40 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
         const elements = [...(await source.getElements())] as TaggedElement[];
 
         expect(elements.map(e => e.id)).to.deep.equal(['matches']);
+    });
+
+    it('filters search results down to the contributions whose @-tokens appear in the query, ignoring the tokens themselves as search text', async () => {
+        // `@mcp` in the query restricts results to the MCP contribution; the token itself must
+        // not be treated as search text (otherwise the MCP entry's text wouldn't match it).
+        const extensions = new StubContribution('extension', 'Extensions', '@extensions', [
+            makeResult('ext-1', 'a great extension')
+        ]);
+        const mcp = new StubContribution('mcp-server', 'MCP Servers', '@mcp', [
+            makeResult('mcp-1', 'a useful mcp server')
+        ], 100);
+
+        const source = buildSource([extensions, mcp], '@mcp');
+
+        const elements = [...(await source.getElements())] as TaggedElement[];
+
+        expect(elements.map(e => e.id)).to.deep.equal(['mcp-1']);
+    });
+
+    it('composes @-tokens, including multiple type tokens', async () => {
+        const extensions = new StubContribution('extension', 'Extensions', '@extensions', [
+            makeResult('ext-1', 'ext alpha')
+        ]);
+        const mcp = new StubContribution('mcp-server', 'MCP Servers', '@mcp', [
+            makeResult('mcp-1', 'mcp alpha')
+        ], 100);
+        const skill = new StubContribution('skill', 'Skills', '@skills', [
+            makeResult('skill-1', 'skill alpha')
+        ], 200);
+
+        const source = buildSource([extensions, mcp, skill], '@mcp @skills');
+
+        const elements = [...(await source.getElements())] as TaggedElement[];
+
+        expect(elements.map(e => e.id).sort()).to.deep.equal(['mcp-1', 'skill-1']);
     });
 });

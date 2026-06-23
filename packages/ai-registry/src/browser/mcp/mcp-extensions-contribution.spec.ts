@@ -34,6 +34,7 @@ import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager'
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
+import { RegistrySearchFilter } from '../../common/registry-search-filter';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver';
 import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
@@ -73,6 +74,7 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     const container = new Container();
     container.bind(PreferenceService).toConstantValue(prefs);
     container.bind(RegistryFetchService).toConstantValue(fetch as unknown as RegistryFetchService);
+    container.bind(RegistrySearchFilter).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
     // Editor dependencies — the contribution doesn't invoke the install path here, but

@@ -176,7 +176,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         super.registerMenus(menus);
         menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
             commandId: VSXCommands.TOGGLE_EXTENSIONS.id,
-            label: nls.localizeByDefault('Extensions'),
+            label: VSXExtensionsViewContainer.LABEL,
             order: 'a20'
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {

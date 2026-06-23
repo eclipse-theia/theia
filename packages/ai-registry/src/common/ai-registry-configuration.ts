@@ -48,9 +48,6 @@ export class AIRegistryConfiguration {
     }
 
     getBaseUrl(): string {
-        // TODO: temporarily pointed at the eclipsefdn-ai-registry/ai-registry-core#32 preview deploy,
-        // which serves the new `tools/<toolName>.json` layout. Revert to the production URL
-        // 'https://eclipsefdn-ai-registry.github.io/ai-registry-core/api/v1/' once that PR is merged.
-        return 'https://preview-32--ai-open-vsx-org.eclipsecontent.org/api/v1/';
+        return 'https://eclipsefdn-ai-registry.github.io/ai-registry-core/api/v1/';
     }
 }

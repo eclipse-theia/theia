@@ -52,8 +52,12 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         this.onlyShowVerifiedExtensions = this.preferenceService.get('extensions.onlyShowVerifiedExtensions');
         this.id = 'vsx-extensions-search-bar';
         this.addClass('theia-vsx-extensions-search-bar');
-        this.searchModel.onDidChangeQuery((query: string) => this.updateSearchTerm(query));
-        this.searchModel.onDidChangeFilter(() => this.update());
+        this.searchModel.onDidChangeQuery((query: string) => {
+            this.updateSearchTerm(query);
+            // Funnel icon highlights when type tokens are present; re-render whenever the query
+            // changes so toggling tokens (via the popup or typing them by hand) updates the icon.
+            this.update();
+        });
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'extensions.onlyShowVerifiedExtensions') {
                 const newValue = this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false);
@@ -71,7 +75,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
                 defaultValue={this.searchModel.query}
                 spellCheck={false}
                 className='theia-input'
-                placeholder={nls.localize('theia/vsx-registry/searchPlaceholder', 'Search Extensions in {0}', 'Open VSX Registry')}
+                placeholder={nls.localize('theia/vsx-registry/searchPlaceholder', 'Search Open VSX Registry')}
                 onChange={this.updateQuery}>
             </input>
             {this.renderOptionContainer()}
@@ -98,10 +102,13 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         if ([...this.extensionsContributions.getContributions()].length < 2) {
             return undefined;
         }
-        const active = this.searchModel.enabledTypes !== undefined;
+        // Icon lights up whenever the query carries a real subset of type tokens; the indicator
+        // intentionally tracks the type filter only, since the mode tokens are already visible in
+        // the input text itself.
+        const active = this.searchModel.parseQuery().typeTokens.size > 0;
         return <span
             className={`${codicon(active ? 'filter-filled' : 'filter')} option action-label ${active ? 'enabled' : ''}`}
-            title={nls.localize('theia/vsx-registry/filterByType', 'Filter by Type')}
+            title={nls.localizeByDefault('Filter Extensions...')}
             onClick={this.handleFilterByTypeClick}>
         </span>;
     }

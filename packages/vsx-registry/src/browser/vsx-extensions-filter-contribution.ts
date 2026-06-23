@@ -15,22 +15,43 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MenuPath } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
+import { BUILTIN_QUERY, INSTALLED_QUERY, MODE_QUERIES, RECOMMENDED_QUERY, VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 
-/** Menu path of the anchored "Filter by Type" popup opened from the Extensions search bar. */
+/** Menu path of the anchored "Filter" popup opened from the Extensions search bar. */
 export const EXTENSIONS_FILTER_BY_TYPE_MENU: MenuPath = ['vsx-extensions-filter-by-type-context-menu'];
+
+/** Menu group for the per-contribution-type toggles (Extensions, MCP Servers, Skills, ...). */
+const FILTER_BY_TYPE_GROUP: MenuPath = [...EXTENSIONS_FILTER_BY_TYPE_MENU, '1_types'];
+/** Menu group for the existing search-mode queries (`@installed`, `@builtin`, `@recommended`). */
+const FILTER_BY_MODE_GROUP: MenuPath = [...EXTENSIONS_FILTER_BY_TYPE_MENU, '2_modes'];
 
 /** Command id prefix for the per-contribution-type toggle commands. */
 const FILTER_COMMAND_PREFIX = 'vsxExtensions.filterByType:';
+/** Command id prefix for the search-mode shortcut commands shown in the same popup. */
+const FILTER_MODE_COMMAND_PREFIX = 'vsxExtensions.filterByMode:';
+
+interface ModeFilterEntry {
+    readonly id: string;
+    readonly query: string;
+    readonly label: string;
+}
 
 /**
- * Registers one toggle command + menu item per {@link ExtensionsSourceContribution} type so the
- * search bar can offer an anchored "Filter by Type" popup (rendered through the
- * {@link ContextMenuRenderer}) with a checkmark per kind of result (Extensions, MCP Servers,
- * Skills, ...). Toggling updates {@link VSXExtensionsSearchModel.enabledTypes}.
+ * Registers commands + menu items for the anchored "Filter" popup opened from the Extensions
+ * search bar. Both kinds of filter go through the search query:
+ *
+ * - Per-contribution-type toggles insert/remove the contribution's `searchToken` (e.g. `@mcp`).
+ *   When no type token is present, all contributions are enabled; adding tokens narrows the
+ *   visible types. Multiple types compose (`@mcp @skills`).
+ * - Mode shortcuts insert/remove the existing `@installed` / `@builtin` / `@recommended` token,
+ *   which the view container interprets to switch widgets. Modes are mutually exclusive: clicking
+ *   one replaces any previously selected mode.
+ *
+ * Both kinds compose freely in the query (e.g. `@installed @mcp` shows only installed MCP
+ * servers), and clearing the query (`Clear Search Results`) automatically resets both.
  */
 @injectable()
 export class VSXExtensionsFilterContribution implements CommandContribution, MenuContribution {
@@ -41,23 +62,42 @@ export class VSXExtensionsFilterContribution implements CommandContribution, Men
     @inject(VSXExtensionsSearchModel)
     protected readonly searchModel: VSXExtensionsSearchModel;
 
+    protected readonly modeEntries: readonly ModeFilterEntry[] = [
+        { id: 'installed', query: INSTALLED_QUERY, label: nls.localize('theia/vsx-registry/filter/showInstalled', 'Show Installed') },
+        { id: 'builtin', query: BUILTIN_QUERY, label: nls.localize('theia/vsx-registry/filter/showBuiltin', 'Show Built-in') },
+        { id: 'recommended', query: RECOMMENDED_QUERY, label: nls.localize('theia/vsx-registry/filter/showRecommended', 'Show Recommended') }
+    ];
+
     registerCommands(commands: CommandRegistry): void {
         for (const contribution of this.orderedContributions()) {
-            const type = contribution.type;
+            const token = contribution.searchToken;
             // No `label`: these commands exist only for the filter popup, and a labelless command
             // is excluded from the command palette. The menu action below carries the visible label.
-            commands.registerCommand({ id: FILTER_COMMAND_PREFIX + type }, {
-                execute: () => this.toggle(type),
-                isToggled: () => this.searchModel.isTypeEnabled(type)
+            commands.registerCommand({ id: FILTER_COMMAND_PREFIX + contribution.type }, {
+                execute: () => this.toggleType(token),
+                isToggled: () => this.searchModel.isTokenEnabled(token)
+            });
+        }
+        for (const mode of this.modeEntries) {
+            commands.registerCommand({ id: FILTER_MODE_COMMAND_PREFIX + mode.id }, {
+                execute: () => this.toggleMode(mode.query),
+                isToggled: () => this.queryHasToken(mode.query)
             });
         }
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         this.orderedContributions().forEach((contribution, index) => {
-            menus.registerMenuAction(EXTENSIONS_FILTER_BY_TYPE_MENU, {
+            menus.registerMenuAction(FILTER_BY_TYPE_GROUP, {
                 commandId: FILTER_COMMAND_PREFIX + contribution.type,
                 label: contribution.displayName,
+                order: String(index)
+            });
+        });
+        this.modeEntries.forEach((mode, index) => {
+            menus.registerMenuAction(FILTER_BY_MODE_GROUP, {
+                commandId: FILTER_MODE_COMMAND_PREFIX + mode.id,
+                label: mode.label,
                 order: String(index)
             });
         });
@@ -68,17 +108,94 @@ export class VSXExtensionsFilterContribution implements CommandContribution, Men
     }
 
     /**
-     * Toggles whether the given type is shown. A full selection is normalized to "no filter"
-     * (`enabledTypes === undefined`) so the search bar's funnel icon only lights up for a real subset.
+     * Toggles whether the given type is currently ticked in the funnel popup.
+     *
+     * The query encoding has two equivalent representations of "every type ticked": no tokens at
+     * all, or every contribution's token spelled out. Clicking a ticked type from the implicit
+     * (no-tokens) representation must produce "all ticked except the clicked one" rather than
+     * "only the clicked one" - so the toggle materialises the effective tick set first, then flips
+     * the clicked entry, then normalises a full set back to the implicit form.
      */
-    protected toggle(type: string): void {
-        const allTypes = this.orderedContributions().map(c => c.type);
-        const enabled = new Set(allTypes.filter(t => this.searchModel.isTypeEnabled(t)));
-        if (enabled.has(type)) {
-            enabled.delete(type);
+    protected toggleType(token: string): void {
+        const allTokens = this.orderedContributions().map(c => c.searchToken);
+        const parsed = this.searchModel.parseQuery();
+        // Materialise the effective tick set: an empty `typeTokens` means all contributions are
+        // implicitly ticked, otherwise only the listed ones are ticked.
+        const ticked = parsed.typeTokens.size === 0
+            ? new Set(allTokens)
+            : new Set(parsed.typeTokens);
+        if (ticked.has(token)) {
+            ticked.delete(token);
         } else {
-            enabled.add(type);
+            ticked.add(token);
         }
-        this.searchModel.enabledTypes = enabled.size === allTypes.length ? undefined : enabled;
+        // Normalise the "every type ticked" case back to the empty-tokens representation so the
+        // funnel icon only highlights for a real subset.
+        if (ticked.size === allTokens.length) {
+            ticked.clear();
+        }
+        this.rewriteQuery({ typeTokens: ticked });
+    }
+
+    /**
+     * Toggles a search-mode token. Modes are mutually exclusive in the view container, so a new
+     * selection replaces the previous mode token; re-selecting the active mode clears it.
+     */
+    protected toggleMode(modeQuery: string): void {
+        const previous = this.modeTokenInQuery();
+        const nextMode = previous === modeQuery ? undefined : modeQuery;
+        this.rewriteQuery({ modeToken: nextMode });
+    }
+
+    /** The mode token present in the query, if any. */
+    protected modeTokenInQuery(): string | undefined {
+        for (const token of this.queryTokens()) {
+            if (MODE_QUERIES.includes(token)) {
+                return token;
+            }
+        }
+        return undefined;
+    }
+
+    /** True when the query contains the given token as a standalone word. */
+    protected queryHasToken(token: string): boolean {
+        return this.queryTokens().includes(token);
+    }
+
+    protected queryTokens(): string[] {
+        return this.searchModel.query.split(/\s+/).filter(Boolean);
+    }
+
+    /**
+     * Rebuilds the query, keeping the free-text remainder intact while swapping in the desired
+     * mode and type tokens. Tokens are emitted in a stable order (mode first, then types,
+     * then free text) so repeated toggles produce a tidy query.
+     */
+    protected rewriteQuery(update: { modeToken?: string; typeTokens?: ReadonlySet<string> }): void {
+        const parsed = this.searchModel.parseQuery();
+        const orderedTypeTokens = this.orderedContributions().map(c => c.searchToken);
+        const validTokens = new Set(orderedTypeTokens);
+        const previousModeToken = this.modeTokenInQuery();
+        // Use key presence to distinguish "caller wants to clear/replace" from "caller is only
+        // updating the other field". This applies symmetrically to both fields, so passing
+        // `{ modeToken: undefined }` or `{ typeTokens: undefined }` clears that field.
+        const nextModeToken = 'modeToken' in update ? update.modeToken : previousModeToken;
+        const nextTypeTokens = 'typeTokens' in update
+            ? new Set([...(update.typeTokens ?? [])].filter(t => validTokens.has(t)))
+            : new Set(parsed.typeTokens);
+        const parts: string[] = [];
+        if (nextModeToken) {
+            parts.push(nextModeToken);
+        }
+        // Preserve the contribution ordering so toggling later doesn't reshuffle visible tokens.
+        for (const token of orderedTypeTokens) {
+            if (nextTypeTokens.has(token)) {
+                parts.push(token);
+            }
+        }
+        if (parsed.freeText) {
+            parts.push(parsed.freeText);
+        }
+        this.searchModel.query = parts.join(' ');
     }
 }

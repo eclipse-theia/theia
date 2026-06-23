@@ -14,26 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from '@theia/core/shared/inversify';
+
 const SEGMENT_SEPARATOR = /[\p{P}\s]+/u;
 
-function tokenize(text: string): string[] {
-    return text.toLowerCase().split(SEGMENT_SEPARATOR).filter(Boolean);
-}
-
-/**
- * Reduces a registry identifier to its human-meaningful part for search matching.
- *
- * Registry identifiers are reverse-DNS ids with a path, e.g. `com.asana/mcp` or
- * `io.github.anthropics/algorithmic-art`. The leading domain labels (`com`, `io`, `github`, ...)
- * are shared boilerplate that would otherwise let a query like `git` match every `io.github.*`
- * entry. This keeps only the last domain label plus the path: `asana mcp`, `anthropics algorithmic-art`.
- *
- * Plain strings without a domain or path are returned unchanged.
- */
-export function meaningfulIdentifier(identifier: string): string {
-    const [domain, ...rest] = identifier.split('/');
-    const lastLabel = domain.split('.').pop() || domain;
-    return [lastLabel, ...rest].join(' ');
+export interface RegistrySearchEntry {
+    name: string;
+    identifier: string;
+    description: string;
 }
 
 /**
@@ -49,18 +37,45 @@ export function meaningfulIdentifier(identifier: string): string {
  *   (so `asana` matches `com.asana/mcp` and `art` matches `algorithmic-art`), or
  * - is the prefix of some word in the name, identifier or description
  *   (so `powerpoint` finds an entry whose description mentions "PowerPoint").
+ *
+ * Exposed as an injectable service so adopters can rebind it to tweak search semantics for
+ * their registry contributions.
  */
-export function matchesRegistrySearch(entry: { name: string; identifier: string; description: string }, query: string): boolean {
-    const terms = tokenize(query);
-    if (terms.length === 0) {
-        return true;
+@injectable()
+export class RegistrySearchFilter {
+
+    matches(entry: RegistrySearchEntry, query: string): boolean {
+        const terms = this.tokenize(query);
+        if (terms.length === 0) {
+            return true;
+        }
+        const name = this.meaningfulIdentifier(entry.name).toLowerCase();
+        const identifier = this.meaningfulIdentifier(entry.identifier).toLowerCase();
+        const words = [...this.tokenize(name), ...this.tokenize(identifier), ...this.tokenize(entry.description)];
+        return terms.every(term =>
+            name.includes(term)
+            || identifier.includes(term)
+            || words.some(word => word.startsWith(term))
+        );
     }
-    const name = meaningfulIdentifier(entry.name).toLowerCase();
-    const identifier = meaningfulIdentifier(entry.identifier).toLowerCase();
-    const words = [...tokenize(name), ...tokenize(identifier), ...tokenize(entry.description)];
-    return terms.every(term =>
-        name.includes(term)
-        || identifier.includes(term)
-        || words.some(word => word.startsWith(term))
-    );
+
+    /**
+     * Reduces a registry identifier to its human-meaningful part for search matching.
+     *
+     * Registry identifiers are reverse-DNS ids with a path, e.g. `com.asana/mcp` or
+     * `io.github.anthropics/algorithmic-art`. The leading domain labels (`com`, `io`, `github`, ...)
+     * are shared boilerplate that would otherwise let a query like `git` match every `io.github.*`
+     * entry. This keeps only the last domain label plus the path: `asana mcp`, `anthropics algorithmic-art`.
+     *
+     * Plain strings without a domain or path are returned unchanged.
+     */
+    meaningfulIdentifier(identifier: string): string {
+        const [domain, ...rest] = identifier.split('/');
+        const lastLabel = domain.split('.').pop() || domain;
+        return [lastLabel, ...rest].join(' ');
+    }
+
+    protected tokenize(text: string): string[] {
+        return text.toLowerCase().split(SEGMENT_SEPARATOR).filter(Boolean);
+    }
 }

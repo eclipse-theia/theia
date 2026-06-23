@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { MaybePromise, nls } from '@theia/core';
+import { Disposable, MaybePromise, nls } from '@theia/core';
 import { DialogError, DialogMode } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 
@@ -97,6 +97,11 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
         this.autostart = options.autostart ?? true;
         this.appendCloseButton(nls.localizeByDefault('Cancel'));
         this.appendAcceptButton(nls.localizeByDefault('Install'));
+        // Kick off the OAuth redirect URL resolution lazily after construction (rather than from
+        // `render()`, which must stay free of state-mutating side effects).
+        if (this.options.requireOAuth) {
+            this.ensureOAuthRedirectUrl();
+        }
     }
 
     get value(): MCPServerInstallParameters | undefined {
@@ -167,6 +172,9 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
         }
         this.oauthRedirectUrlRequested = true;
         this.redirectUrlProvider().then(url => {
+            if (this.isDisposed) {
+                return;
+            }
             this.oauthRedirectUrl = url;
             this.update();
         }).catch(error => {
@@ -178,15 +186,29 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
         if (!this.oauthRedirectUrl) {
             return;
         }
-        navigator.clipboard.writeText(this.oauthRedirectUrl);
-        this.redirectUrlCopied = true;
-        this.update();
-        setTimeout(() => {
-            this.redirectUrlCopied = false;
-            if (!this.isDisposed) {
-                this.update();
+        // `writeText` returns a promise; on rejection (e.g. permissions denied, non-secure
+        // context) we reset the "copied" indicator so the UI doesn't falsely confirm success.
+        navigator.clipboard.writeText(this.oauthRedirectUrl).then(() => {
+            if (this.isDisposed) {
+                return;
             }
-        }, 1500);
+            this.redirectUrlCopied = true;
+            this.update();
+            const handle = setTimeout(() => {
+                this.redirectUrlCopied = false;
+                if (!this.isDisposed) {
+                    this.update();
+                }
+            }, 1500);
+            this.toDispose.push(Disposable.create(() => clearTimeout(handle)));
+        }).catch(error => {
+            console.warn('Failed to copy the MCP OAuth redirect URL to the clipboard.', error);
+            if (this.isDisposed) {
+                return;
+            }
+            this.redirectUrlCopied = false;
+            this.update();
+        });
     };
 
     protected renderTrustBanner(): React.ReactNode {
@@ -284,7 +306,9 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
                         onChange={this.handleClientIdChange}
                         placeholder={nls.localize('theia/ai-mcp/installDialog/oauthClientIdPlaceholder', 'Required by this server to connect')}
                         spellCheck={false}
-                        autoFocus
+                        // Only autofocus when the auth-token field above isn't present; otherwise two
+                        // inputs would carry `autoFocus` and browser behaviour is undefined.
+                        autoFocus={!this.options.requireAuthToken}
                     />
                 </div>
 
@@ -304,9 +328,6 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
     }
 
     protected render(): React.ReactNode {
-        if (this.options.requireOAuth) {
-            this.ensureOAuthRedirectUrl();
-        }
         return (
             <div className="mcp-dialog-form">
                 {this.renderTrustBanner()}
