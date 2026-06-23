@@ -232,19 +232,19 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         expect(whitespace).to.be.empty;
     });
 
-    it('returns all entries with searchableText covering name, serverId and description so the global fuzzy ranker can match any of them', async () => {
+    it('returns only entries matching the query, with searchableText covering name, serverId and description', async () => {
         const prefs = new FakePreferenceService();
         const fetch = new StubRegistryFetchService([exampleRegistryEntry, githubEntry]);
         const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
 
-        // The contribution intentionally does not filter by the query string: that's the
-        // view's job (`VSXExtensionsSource.collectSearchResults` runs `FuzzySearch.filter`
-        // across results from every contribution). The contribution's only responsibility
-        // is to supply candidates with rich `searchableText`.
+        // The contribution pre-filters to entries that genuinely match the query (the view's
+        // shared `FuzzySearch.filter` then ranks the survivors). 'repositories' matches only the
+        // GitHub entry's description, not the unrelated example server - so flooding is avoided.
         const results = [...await contribution.resolveSearchResults('REPOSITORIES', { verifiedOnly: false })];
 
-        expect(results).to.have.length(2);
-        const githubResult = results.find(r => (r.element as MCPSearchResultEntry).entry.serverId === githubEntry.serverId)!;
+        expect(results).to.have.length(1);
+        const githubResult = results[0];
+        expect((githubResult.element as MCPSearchResultEntry).entry.serverId).to.equal(githubEntry.serverId);
         expect(githubResult.searchableText).to.contain(githubEntry.name);
         expect(githubResult.searchableText).to.contain(githubEntry.serverId);
         expect(githubResult.searchableText).to.contain(githubEntry.description);
@@ -284,8 +284,10 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
         const fetch = new StubRegistryFetchService([unverified, githubEntry]);
         const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
 
-        const all = [...await contribution.resolveSearchResults('example', { verifiedOnly: false })];
-        const verifiedOnly = [...await contribution.resolveSearchResults('example', { verifiedOnly: true })];
+        // 'mcp' matches both entries (server id / description), so the verified filter is what
+        // distinguishes them rather than the query.
+        const all = [...await contribution.resolveSearchResults('mcp', { verifiedOnly: false })];
+        const verifiedOnly = [...await contribution.resolveSearchResults('mcp', { verifiedOnly: true })];
 
         expect(all).to.have.length(2);
         expect(verifiedOnly).to.have.length(1);

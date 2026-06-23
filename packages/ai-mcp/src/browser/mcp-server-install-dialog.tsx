@@ -24,6 +24,10 @@ export interface MCPServerInstallParameters {
     autostart: boolean;
     /** Authentication token entered by the user; only collected for remote servers that need one. */
     serverAuthToken?: string;
+    /** OAuth client id entered by the user; only collected for servers that advertise OAuth. */
+    oauthClientId?: string;
+    /** OAuth client secret entered by the user; only collected for servers that advertise OAuth. */
+    oauthClientSecret?: string;
 }
 
 /**
@@ -46,6 +50,12 @@ export interface MCPServerInstallDialogOptions {
     readonly autostart?: boolean;
     /** Whether to show the auth-token field; set when the entry advertises an auth token slot. */
     readonly requireAuthToken?: boolean;
+    /**
+     * Whether to show the OAuth client-id / client-secret fields; set when the entry advertises an
+     * `oauth` block. Only the confidential-client credentials and the (read-only) redirect URL are
+     * surfaced - scopes, authorization server and resource stay fixed by the registry.
+     */
+    readonly requireOAuth?: boolean;
     /** When set, renders a trust banner explaining the registry approval status. */
     readonly trust?: MCPServerInstallTrust;
 }
@@ -68,8 +78,18 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
 
     protected autostart: boolean;
     protected serverAuthToken: string = '';
+    protected oauthClientId: string = '';
+    protected oauthClientSecret: string = '';
 
-    constructor(protected readonly options: MCPServerInstallDialogOptions) {
+    /** Resolved OAuth redirect URL shown read-only so the user can register it with their provider. */
+    protected oauthRedirectUrl: string | undefined;
+    protected oauthRedirectUrlRequested = false;
+    protected redirectUrlCopied = false;
+
+    constructor(
+        protected readonly options: MCPServerInstallDialogOptions,
+        protected readonly redirectUrlProvider?: () => Promise<string>
+    ) {
         super({
             title: nls.localize('theia/ai-mcp/installDialog/title', 'Install MCP Server'),
             maxWidth: 460
@@ -84,21 +104,33 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
             autostart: this.autostart,
             ...(this.options.requireAuthToken && this.serverAuthToken.trim()
                 ? { serverAuthToken: this.serverAuthToken.trim() }
+                : {}),
+            ...(this.options.requireOAuth && this.oauthClientId.trim()
+                ? { oauthClientId: this.oauthClientId.trim() }
+                : {}),
+            ...(this.options.requireOAuth && this.oauthClientSecret.trim()
+                ? { oauthClientSecret: this.oauthClientSecret.trim() }
                 : {})
         };
     }
 
     /**
-     * Guard the auth-token field: when the server requires a token, an empty value must
-     * block the install. Otherwise the registry-supplied placeholder (e.g.
-     * `<github-pat-or-app-token>`) would survive into settings.json and the server would
-     * fail later with an opaque error.
+     * Guard the credential fields: when the server requires them, empty values must block the
+     * install. Otherwise the registry-supplied placeholders (e.g. `<github-pat-or-app-token>`,
+     * `<clientId>`) would survive into settings.json and the server would fail later with an
+     * opaque error.
      */
     protected override isValid(_value: MCPServerInstallParameters | undefined, _mode: DialogMode): MaybePromise<DialogError> {
         if (this.options.requireAuthToken && !this.serverAuthToken.trim()) {
             return nls.localize(
                 'theia/ai-mcp/installDialog/authTokenRequired',
                 'An auth token is required to install this server.'
+            );
+        }
+        if (this.options.requireOAuth && (!this.oauthClientId.trim() || !this.oauthClientSecret.trim())) {
+            return nls.localize(
+                'theia/ai-mcp/installDialog/oauthCredentialsRequired',
+                'An OAuth client ID and client secret are required to install this server.'
             );
         }
         return '';
@@ -112,6 +144,49 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
     protected handleAuthTokenChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.serverAuthToken = e.target.value;
         this.update();
+    };
+
+    protected handleClientIdChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        this.oauthClientId = e.target.value;
+        this.update();
+    };
+
+    protected handleClientSecretChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        this.oauthClientSecret = e.target.value;
+        this.update();
+    };
+
+    /**
+     * Resolves the OAuth redirect URL once (through the backend, which knows whether the Electron
+     * loopback callback server overrides the frontend origin) so the user can register it with
+     * their OAuth provider.
+     */
+    protected ensureOAuthRedirectUrl(): void {
+        if (this.oauthRedirectUrlRequested || !this.redirectUrlProvider) {
+            return;
+        }
+        this.oauthRedirectUrlRequested = true;
+        this.redirectUrlProvider().then(url => {
+            this.oauthRedirectUrl = url;
+            this.update();
+        }).catch(error => {
+            console.warn('Failed to determine the MCP OAuth redirect URL; the redirect URL hint will not be shown.', error);
+        });
+    }
+
+    protected handleCopyRedirectUrl = (): void => {
+        if (!this.oauthRedirectUrl) {
+            return;
+        }
+        navigator.clipboard.writeText(this.oauthRedirectUrl);
+        this.redirectUrlCopied = true;
+        this.update();
+        setTimeout(() => {
+            this.redirectUrlCopied = false;
+            if (!this.isDisposed) {
+                this.update();
+            }
+        }, 1500);
     };
 
     protected renderTrustBanner(): React.ReactNode {
@@ -161,7 +236,77 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
         }
     }
 
+    /**
+     * Renders the user-settable OAuth credentials (confidential client id + secret) and the
+     * read-only redirect URL the user must register with their provider. The remaining OAuth
+     * parameters (scopes, authorization server, resource) are fixed by the registry and are not
+     * shown here.
+     */
+    protected renderOAuthFields(): React.ReactNode {
+        return (
+            <>
+                <div className="mcp-form-description">
+                    {nls.localize(
+                        'theia/ai-mcp/installDialog/oauthDescription',
+                        'This server uses OAuth with a pre-registered confidential client. Provide the client ID and secret from your OAuth provider.'
+                    )}
+                </div>
+
+                {this.oauthRedirectUrl && (
+                    <div className="mcp-form-field">
+                        <label>{nls.localize('theia/ai/mcpConfiguration/oauthRedirectUrl', 'Redirect URL')}:</label>
+                        <div className="mcp-oauth-redirect-url-row">
+                            <span className="mcp-form-static-value">{this.oauthRedirectUrl}</span>
+                            <button
+                                type="button"
+                                className="mcp-icon-button"
+                                title={nls.localizeByDefault('Copy')}
+                                onClick={this.handleCopyRedirectUrl}
+                            >
+                                <i className={this.redirectUrlCopied ? 'codicon codicon-check' : 'codicon codicon-copy'}></i>
+                            </button>
+                        </div>
+                        <div className="mcp-form-description">
+                            {nls.localize(
+                                'theia/ai/mcpConfiguration/form/oauthRedirectUrlDescription',
+                                'Authorization callbacks are delivered to this URL. With a static client ID, register it as a redirect URI with your OAuth provider.'
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientId', 'OAuth Client ID')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.oauthClientId}
+                        onChange={this.handleClientIdChange}
+                        placeholder={nls.localize('theia/ai-mcp/installDialog/oauthClientIdPlaceholder', 'Required by this server to connect')}
+                        spellCheck={false}
+                        autoFocus
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/oauthClientSecret', 'OAuth Client Secret')}:</label>
+                    <input
+                        type="password"
+                        className="theia-input"
+                        value={this.oauthClientSecret}
+                        onChange={this.handleClientSecretChange}
+                        placeholder={nls.localize('theia/ai-mcp/installDialog/oauthClientSecretPlaceholder', 'Required by this server to connect')}
+                        spellCheck={false}
+                    />
+                </div>
+            </>
+        );
+    }
+
     protected render(): React.ReactNode {
+        if (this.options.requireOAuth) {
+            this.ensureOAuthRedirectUrl();
+        }
         return (
             <div className="mcp-dialog-form">
                 {this.renderTrustBanner()}
@@ -187,6 +332,8 @@ export class MCPServerInstallDialog extends ReactDialog<MCPServerInstallParamete
                         />
                     </div>
                 )}
+
+                {this.options.requireOAuth && this.renderOAuthFields()}
 
                 <div className="mcp-form-field mcp-form-checkbox">
                     <label>

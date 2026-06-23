@@ -60,6 +60,8 @@ export class VSXExtensionsSource extends TreeSource {
         for (const contribution of this.contributions.getContributions()) {
             this.toDispose.push(contribution.onDidChange(() => this.scheduleFireDidChange()));
         }
+        // Re-collect search results when the contribution-type filter changes.
+        this.toDispose.push(this.searchModel.onDidChangeFilter(() => this.scheduleFireDidChange()));
     }
 
     protected scheduleFireDidChange = debounce(() => this.fireDidChange(), 100, { leading: false, trailing: true });
@@ -98,7 +100,8 @@ export class VSXExtensionsSource extends TreeSource {
         const ctx: SearchContext = {
             verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
         };
-        const results = await Promise.all(contributions.map(c => c.resolveSearchResults?.(query, ctx) ?? []));
+        const enabled = contributions.filter(c => this.searchModel.isTypeEnabled(c.type));
+        const results = await Promise.all(enabled.map(c => c.resolveSearchResults?.(query, ctx) ?? []));
         const all = results.flatMap(r => [...r]);
         const trimmed = query.trim();
         if (!trimmed || all.length <= 1) {

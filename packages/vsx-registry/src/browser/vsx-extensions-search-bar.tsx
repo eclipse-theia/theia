@@ -15,11 +15,15 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
+import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import { ReactWidget, Message, codicon } from '@theia/core/lib/browser/widgets';
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXExtensionsModel } from './vsx-extensions-model';
+import { ExtensionsSourceContribution } from './extensions-source-contribution';
+import { EXTENSIONS_FILTER_BY_TYPE_MENU } from './vsx-extensions-filter-contribution';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -34,6 +38,12 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ContributionProvider) @named(ExtensionsSourceContribution)
+    protected readonly extensionsContributions: ContributionProvider<ExtensionsSourceContribution>;
+
     protected input: HTMLInputElement | undefined;
     protected onlyShowVerifiedExtensions: boolean | undefined;
 
@@ -43,6 +53,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         this.id = 'vsx-extensions-search-bar';
         this.addClass('theia-vsx-extensions-search-bar');
         this.searchModel.onDidChangeQuery((query: string) => this.updateSearchTerm(query));
+        this.searchModel.onDidChangeFilter(() => this.update());
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'extensions.onlyShowVerifiedExtensions') {
                 const newValue = this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false);
@@ -76,9 +87,36 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     }
 
     protected renderOptionContainer(): React.ReactNode {
-        const showVerifiedExtensions = this.renderShowVerifiedExtensions();
-        return <div className='option-buttons'>{showVerifiedExtensions}</div>;
+        return <div className='option-buttons'>
+            {this.renderFilterByType()}
+            {this.renderShowVerifiedExtensions()}
+        </div>;
     }
+
+    protected renderFilterByType(): React.ReactNode {
+        // Only useful when more than one result kind exists (e.g. MCP servers / skills alongside extensions).
+        if ([...this.extensionsContributions.getContributions()].length < 2) {
+            return undefined;
+        }
+        const active = this.searchModel.enabledTypes !== undefined;
+        return <span
+            className={`${codicon(active ? 'filter-filled' : 'filter')} option action-label ${active ? 'enabled' : ''}`}
+            title={nls.localize('theia/vsx-registry/filterByType', 'Filter by Type')}
+            onClick={this.handleFilterByTypeClick}>
+        </span>;
+    }
+
+    // Anchored popup (not the centered quick input) listing each result kind with a checkmark;
+    // the menu items are the toggle commands registered by VSXExtensionsFilterContribution.
+    protected handleFilterByTypeClick = (event: React.MouseEvent<HTMLElement>): void => {
+        event.stopPropagation();
+        this.contextMenuRenderer.render({
+            menuPath: EXTENSIONS_FILTER_BY_TYPE_MENU,
+            anchor: { x: event.clientX, y: event.clientY },
+            context: event.currentTarget,
+            includeAnchorArg: false
+        });
+    };
 
     protected renderShowVerifiedExtensions(): React.ReactNode {
         return <span

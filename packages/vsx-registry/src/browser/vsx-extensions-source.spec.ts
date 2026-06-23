@@ -70,6 +70,11 @@ function makeResult(id: string, searchableText: string): SearchResult {
 
 class StubSearchModel {
     query: string = '';
+    enabledTypes: ReadonlySet<string> | undefined;
+    readonly onDidChangeFilter = new Emitter<void>().event;
+    isTypeEnabled(type: string): boolean {
+        return !this.enabledTypes || this.enabledTypes.has(type);
+    }
 }
 
 class StubPreferenceService {

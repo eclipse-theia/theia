@@ -35,6 +35,11 @@ export class VSXExtensionsSearchModel {
 
     protected readonly onDidChangeQueryEmitter = new Emitter<string>();
     readonly onDidChangeQuery = this.onDidChangeQueryEmitter.event;
+
+    protected readonly onDidChangeFilterEmitter = new Emitter<void>();
+    /** Fires when the contribution-type filter changes (see {@link enabledTypes}). */
+    readonly onDidChangeFilter = this.onDidChangeFilterEmitter.event;
+
     protected readonly specialQueries = new Map<string, VSXSearchMode>([
         [BUILTIN_QUERY, VSXSearchMode.Builtin],
         [INSTALLED_QUERY, VSXSearchMode.Installed],
@@ -51,6 +56,25 @@ export class VSXExtensionsSearchModel {
     }
     get query(): string {
         return this._query;
+    }
+
+    /**
+     * The set of enabled contribution types (e.g. `extension`, `mcp-server`, `skill`) for search
+     * results. `undefined` means "no filter" - all contribution types are shown.
+     */
+    protected _enabledTypes: ReadonlySet<string> | undefined;
+    set enabledTypes(types: ReadonlySet<string> | undefined) {
+        const normalized = types && types.size > 0 ? types : undefined;
+        this._enabledTypes = normalized;
+        this.onDidChangeFilterEmitter.fire();
+    }
+    get enabledTypes(): ReadonlySet<string> | undefined {
+        return this._enabledTypes;
+    }
+
+    /** True when search results of the given contribution type should be shown. */
+    isTypeEnabled(type: string): boolean {
+        return !this._enabledTypes || this._enabledTypes.has(type);
     }
 
     getModeForQuery(): VSXSearchMode {

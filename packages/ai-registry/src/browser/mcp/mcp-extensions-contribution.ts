@@ -24,6 +24,7 @@ import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manage
 import { MCPServersPreference, MCPServersPreferenceValue } from '@theia/ai-mcp/lib/common/mcp-server-preference-validator';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
+import { matchesRegistrySearch } from '../../common/registry-search-filter';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPInstallService } from './mcp-install-service';
 import { MCPEntryHandlers, MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
@@ -126,10 +127,13 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             if (context.verifiedOnly && !entry.mcpRegistryVerified) {
                 continue;
             }
-            // Hand all candidates to the view's global fuzzy ranker (`FuzzySearch.filter`
-            // in `VSXExtensionsSource.collectSearchResults`). It already discards entries
-            // that don't match the query, and a substring pre-filter would drop legitimate
-            // fuzzy matches such as "ChroDevTo" → "Chrome DevTools".
+            // Pre-filter to genuine matches. The shared Extensions ranker fuzzy-matches scattered
+            // characters across the combined searchable text, which - given long server descriptions
+            // and reverse-DNS ids - otherwise treats almost every server as a hit (e.g. "asana"
+            // matching every entry). The shared ranker still orders the survivors.
+            if (!matchesRegistrySearch({ name: entry.name, identifier: entry.serverId, description: entry.description }, query)) {
+                continue;
+            }
             const searchableText = `${entry.name} ${entry.serverId} ${entry.description}`;
             const state = this.installService.classifyRegistryEntry(entry, localDescriptions, registryEntries);
             result.push({
@@ -188,7 +192,9 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             autostart: true,
             // The registry sets `serverAuthToken` to mark auth as part of the connection
             // contract, even with no default value — so we check key presence, not value.
-            requireAuthToken: 'serverAuthToken' in entry.config
+            requireAuthToken: 'serverAuthToken' in entry.config,
+            // Likewise, an `oauth` block means the user must supply confidential-client credentials.
+            requireOAuth: 'oauth' in entry.config
         });
         const result = await dialog.open();
         if (!result) {

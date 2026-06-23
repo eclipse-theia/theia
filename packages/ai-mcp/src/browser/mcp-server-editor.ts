@@ -74,6 +74,10 @@ export interface MCPInstallOverrides {
     autostart?: boolean;
     /** Filled into a remote server's `serverAuthToken` slot when supplied by the user. */
     serverAuthToken?: string;
+    /** Filled into the entry's `oauth.clientId` slot when supplied by the user. */
+    oauthClientId?: string;
+    /** Filled into the entry's `oauth.clientSecret` slot when supplied by the user. */
+    oauthClientSecret?: string;
 }
 
 /**
@@ -203,6 +207,15 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         // Sanity-check: only persist a token when the config actually has the slot.
         if (overrides.serverAuthToken !== undefined && 'serverAuthToken' in config) {
             merged.serverAuthToken = overrides.serverAuthToken;
+        }
+        // Replace the registry's OAuth client placeholders with the user-supplied credentials,
+        // keeping the registry-fixed parts (scopes, authorization server, resource) intact.
+        if (config.oauth && (overrides.oauthClientId !== undefined || overrides.oauthClientSecret !== undefined)) {
+            merged.oauth = {
+                ...config.oauth,
+                ...(overrides.oauthClientId !== undefined && { clientId: overrides.oauthClientId }),
+                ...(overrides.oauthClientSecret !== undefined && { clientSecret: overrides.oauthClientSecret })
+            };
         }
         return merged;
     }

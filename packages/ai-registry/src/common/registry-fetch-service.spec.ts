@@ -95,14 +95,14 @@ describe('RegistryFetchService', () => {
         return container;
     }
 
-    it('fetches the per-tool JSON from <baseUrl>/<toolName>.json and returns resolved entries', async () => {
+    it('fetches the per-tool JSON from <baseUrl>/tools/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
         const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
-        expect(request.lastUrl).to.equal('https://example.test/api/v1/theia-ide.json');
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/tools/theia-ide.json');
         expect(entries).to.have.length(1);
         expect(entries[0]).to.deep.equal({
             serverId: 'io.github.example/example-mcp',
@@ -114,6 +114,16 @@ describe('RegistryFetchService', () => {
             configHash: 'hash-v1',
             mcpRegistryVerified: true
         });
+    });
+
+    it('fetches the aggregate registry from <baseUrl>/all.json for the default "all" tool', async () => {
+        const request = new FakeRequestService(payload());
+        const config = new FakeConfiguration('all', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+
+        await service.getEntries();
+
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/all.json');
     });
 
     it('fetches and resolves skill entries from the same per-tool JSON', async () => {

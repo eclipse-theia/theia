@@ -107,6 +107,9 @@ export class RegistryFetchServiceImpl implements RegistryFetchService {
         const base = this.configuration.getBaseUrl();
         const tool = this.configuration.getToolName();
         const separator = base.endsWith('/') ? '' : '/';
-        return `${base}${separator}${tool}.json`;
+        // The aggregate registry stays at `<base>/all.json`; tool-specific views moved under
+        // `<base>/tools/<toolName>.json` (see eclipsefdn-ai-registry/ai-registry-core#32).
+        const path = tool === 'all' ? 'all.json' : `tools/${tool}.json`;
+        return `${base}${separator}${path}`;
     }
 }
