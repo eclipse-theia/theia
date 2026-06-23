@@ -78,8 +78,10 @@ describe('VSXExtensionsContribution: "Install Specific Version" with no availabl
         let shownItems: QuickPickItem[] | undefined;
         Object.assign(contribution, {
             // The extension is not on the registry (e.g. VSIX or private install), so no versions are returned.
-            clientProvider: async () => ({ query: async () => ({ extensions: [] }) }),
-            vsxApiFilter: async () => ({ findLatestCompatibleExtension: async () => undefined }),
+            vsxRegistryService: {
+                query: async () => ({ extensions: [] }),
+                findLatestCompatibleExtension: async () => undefined
+            },
             applicationServer: { getApplicationPlatform: async () => 'linux-x64' },
             quickInput: {
                 showQuickPick: async (items: QuickPickItem[]) => {
