@@ -25,6 +25,8 @@ import {
     ToolInvocationResult,
     ToolResultPartDto,
     isToolInvocationError,
+    uint8ArrayToBase64,
+    base64ToUint8Array,
 } from '../common/lm-tool-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { PluginPackageLanguageModelToolContribution } from '../common';
@@ -149,7 +151,7 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             return { type: 'text', value: part.value };
         }
         if (this.isDataPart(part)) {
-            const base64 = this.uint8ArrayToBase64(part.data);
+            const base64 = uint8ArrayToBase64(part.data);
             return { type: 'data', base64, mimeType: part.mimeType };
         }
         if (this.isPromptTsxPart(part)) {
@@ -181,36 +183,11 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             case 'text':
                 return new LanguageModelTextPart(part.value);
             case 'data':
-                return new LanguageModelDataPart(this.base64ToUint8Array(part.base64), part.mimeType);
+                return new LanguageModelDataPart(base64ToUint8Array(part.base64), part.mimeType);
             case 'prompt-tsx':
                 return new LanguageModelPromptTsxPart(part.value);
             case 'unknown':
                 return new LanguageModelTextPart(part.json);
         }
-    }
-
-    private uint8ArrayToBase64(data: Uint8Array): string {
-        if (typeof Buffer !== 'undefined') {
-            return Buffer.from(data).toString('base64');
-        }
-        // Fallback for browser environments
-        let binary = '';
-        for (let i = 0; i < data.byteLength; i++) {
-            binary += String.fromCharCode(data[i]);
-        }
-        return btoa(binary);
-    }
-
-    private base64ToUint8Array(base64: string): Uint8Array {
-        if (typeof Buffer !== 'undefined') {
-            return new Uint8Array(Buffer.from(base64, 'base64'));
-        }
-        // Fallback for browser environments
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes;
     }
 }

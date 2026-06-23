@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LanguageModelToolsExtImpl } from './lm-tool-ext';
-import { ToolResultPartDto } from '../common/lm-tool-protocol';
+import { ToolResultPartDto, uint8ArrayToBase64 } from '../common/lm-tool-protocol';
 
 // Access private methods for testing
 interface LmToolExtInternals {
@@ -24,7 +24,6 @@ interface LmToolExtInternals {
     isTextPart(part: unknown): boolean;
     isDataPart(part: unknown): boolean;
     isPromptTsxPart(part: unknown): boolean;
-    uint8ArrayToBase64(data: Uint8Array): string;
 }
 
 function createInstance(): LmToolExtInternals {
@@ -87,19 +86,19 @@ describe('LanguageModelToolsExtImpl - Part to DTO conversion', () => {
 
     describe('uint8ArrayToBase64', () => {
         it('should encode an empty array', () => {
-            const result = instance.uint8ArrayToBase64(new Uint8Array([]));
+            const result = uint8ArrayToBase64(new Uint8Array([]));
             expect(result).to.equal('');
         });
 
         it('should encode a simple string as Uint8Array', () => {
             const data = new Uint8Array(Buffer.from('hello'));
-            const result = instance.uint8ArrayToBase64(data);
+            const result = uint8ArrayToBase64(data);
             expect(result).to.equal(Buffer.from('hello').toString('base64'));
         });
 
         it('should encode binary data', () => {
             const data = new Uint8Array([0, 1, 2, 255]);
-            const result = instance.uint8ArrayToBase64(data);
+            const result = uint8ArrayToBase64(data);
             expect(result).to.equal(Buffer.from([0, 1, 2, 255]).toString('base64'));
         });
     });

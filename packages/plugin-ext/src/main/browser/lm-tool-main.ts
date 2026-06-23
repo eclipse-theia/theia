@@ -22,7 +22,9 @@ import {
     LanguageModelToolDto,
     ToolResultPartDto,
     isToolInvocationError,
+    base64ToUint8Array,
 } from '../../common/lm-tool-protocol';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common';
 import { ToolRequest, ToolRequestParameters, ToolInvocationContext, ToolCallContent, ToolCallContentResult, createToolCallError } from '@theia/ai-core/lib/common/language-model';
@@ -111,7 +113,7 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
             return { type: 'audio', data: base64, mimeType };
         }
         // Text-like MIME types: decode base64 to string
-        const decoded = atob(base64);
+        const decoded = BinaryBuffer.wrap(base64ToUint8Array(base64)).toString();
         return { type: 'text', text: decoded };
     }
 }

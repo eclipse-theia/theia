@@ -22,8 +22,10 @@ import {
     ToolResultPromptTsxPartDto,
     ToolResultUnknownPartDto,
     ToolResultPartDto,
+    uint8ArrayToBase64,
 } from '../../common/lm-tool-protocol';
 import { ToolCallContentResult } from '@theia/ai-core/lib/common/language-model';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 // Access private methods for testing
 interface LmToolMainInternals {
@@ -111,6 +113,14 @@ describe('LanguageModelToolsMainImpl - DTO to ToolCallContentResult conversion',
             const part: ToolResultDataPartDto = { type: 'data', base64, mimeType: 'audio/wav' };
             const result = instance.convertDtoToToolCallResult(part);
             expect(result).to.deep.equal({ type: 'audio', data: base64, mimeType: 'audio/wav' });
+        });
+
+        it('should correctly decode UTF-8 text from base64 data part', () => {
+            const utf8Text = 'café 日本語';
+            const base64 = uint8ArrayToBase64(BinaryBuffer.fromString(utf8Text).buffer);
+            const part: ToolResultDataPartDto = { type: 'data', base64, mimeType: 'text/plain' };
+            const result = instance.convertDtoToToolCallResult(part);
+            expect(result).to.deep.equal({ type: 'text', text: utf8Text });
         });
     });
 });

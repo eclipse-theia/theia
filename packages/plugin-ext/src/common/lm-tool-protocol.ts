@@ -59,6 +59,23 @@ export type ToolInvocationResult = LanguageModelToolResultDto | LanguageModelToo
 export const isToolInvocationError = (result: ToolInvocationResult): result is LanguageModelToolInvocationErrorDto =>
     typeof result === 'object' && 'error' in result && !('content' in result);
 
+export function uint8ArrayToBase64(data: Uint8Array): string {
+    let binary = '';
+    for (let i = 0; i < data.byteLength; i++) {
+        binary += String.fromCharCode(data[i]);
+    }
+    return btoa(binary);
+}
+
+export function base64ToUint8Array(base64: string): Uint8Array {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
 /**
  * Main side of the language model tools registry.
  */

@@ -25,9 +25,9 @@ A sample Theia/VS Code plugin that demonstrates the `lm.registerTool` API by reg
 ## Testing
 
 1. Build and start the Theia browser application.
-2. Open the **AI Configuration** view and verify both tools appear in the Tools section
+2. Open the **AI Configuration** view and verify all three tools appear in the Tools section
 3. Use an agent with these tools enabled and ask it to tell the current time or sum numbers.
-4. Check the rendered tool call too verify the result
+4. Check the rendered tool call to verify the result
 
 ## License
 
