@@ -360,6 +360,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             }
         }
 
+        if (filteredExtensions.length === 0) {
+            // Extensions not on the registry (e.g. VSIX or private installs) have no other versions to offer.
+            // Show feedback instead of an empty quick pick, matching the `NO_TASKS_FOUND` pattern in the task package.
+            await this.quickInput.showQuickPick(
+                [{ label: nls.localize('theia/vsx-registry/vsx-extensions-contribution/no-other-versions', 'No other versions are available.') }],
+                { placeholder: nls.localizeByDefault('Select Version to Install') }
+            );
+            return;
+        }
+
         const items: QuickPickItem[] = filteredExtensions.map(ext => {
             const item = {
                 label: ext.version,

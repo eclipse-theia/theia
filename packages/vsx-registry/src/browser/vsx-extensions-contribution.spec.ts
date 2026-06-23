@@ -28,6 +28,7 @@ if (canvasProto) {
 try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a sibling spec */ }
 
 import { expect } from 'chai';
+import { QuickPickItem } from '@theia/core/lib/browser';
 import { Command, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { VSXExtension } from './vsx-extension';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
@@ -67,5 +68,30 @@ describe('VSXExtensionsContribution: "Install Specific Version" enablement', () 
         const handler = registerHandler();
         const extension = { builtin: true, downloadUrl: 'http://example.com/ext.vsix' } as unknown as VSXExtension;
         expect(handler.isEnabled!(extension)).to.equal(false);
+    });
+});
+
+describe('VSXExtensionsContribution: "Install Specific Version" with no available versions', () => {
+
+    it('shows a "No other versions are available." item instead of an empty quick pick', async () => {
+        const contribution = new VSXExtensionsContribution();
+        let shownItems: QuickPickItem[] | undefined;
+        Object.assign(contribution, {
+            // The extension is not on the registry (e.g. VSIX or private install), so no versions are returned.
+            clientProvider: async () => ({ query: async () => ({ extensions: [] }) }),
+            vsxApiFilter: async () => ({ findLatestCompatibleExtension: async () => undefined }),
+            applicationServer: { getApplicationPlatform: async () => 'linux-x64' },
+            quickInput: {
+                showQuickPick: async (items: QuickPickItem[]) => {
+                    shownItems = items;
+                    return undefined;
+                }
+            }
+        });
+        const extension = { id: 'foo.bar', version: '1.0.0', builtin: false } as unknown as VSXExtension;
+        await (contribution as unknown as { installAnotherVersion(e: VSXExtension): Promise<void> }).installAnotherVersion(extension);
+        expect(shownItems, 'a quick pick should be shown').to.not.equal(undefined);
+        expect(shownItems!).to.have.lengthOf(1);
+        expect(shownItems![0].label).to.equal('No other versions are available.');
     });
 });
