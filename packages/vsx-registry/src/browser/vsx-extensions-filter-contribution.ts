@@ -44,8 +44,9 @@ interface ModeFilterEntry {
  * search bar. Both kinds of filter go through the search query:
  *
  * - Per-contribution-type toggles insert/remove the contribution's `searchToken` (e.g. `@mcp`).
- *   When no type token is present, all contributions are enabled; adding tokens narrows the
- *   visible types. Multiple types compose (`@mcp @skills`).
+ *   The popup behaves as an "include this type" filter: with nothing ticked no type token is
+ *   present and every contribution is shown; ticking a type narrows the results to it. Multiple
+ *   types compose (`@mcp @skills`).
  * - Mode shortcuts insert/remove the existing `@installed` / `@builtin` / `@recommended` token,
  *   which the view container interprets to switch widgets. Modes are mutually exclusive: clicking
  *   one replaces any previously selected mode.
@@ -75,7 +76,9 @@ export class VSXExtensionsFilterContribution implements CommandContribution, Men
             // is excluded from the command palette. The menu action below carries the visible label.
             commands.registerCommand({ id: FILTER_COMMAND_PREFIX + contribution.type }, {
                 execute: () => this.toggleType(token),
-                isToggled: () => this.searchModel.isTokenEnabled(token)
+                // Ticked only when the type is explicitly included via its token. With no tokens
+                // present nothing is ticked, matching the "no filter" state of the funnel icon.
+                isToggled: () => this.searchModel.parseQuery().typeTokens.has(token)
             });
         }
         for (const mode of this.modeEntries) {
@@ -108,31 +111,16 @@ export class VSXExtensionsFilterContribution implements CommandContribution, Men
     }
 
     /**
-     * Toggles whether the given type is currently ticked in the funnel popup.
-     *
-     * The query encoding has two equivalent representations of "every type ticked": no tokens at
-     * all, or every contribution's token spelled out. Clicking a ticked type from the implicit
-     * (no-tokens) representation must produce "all ticked except the clicked one" rather than
-     * "only the clicked one" - so the toggle materialises the effective tick set first, then flips
-     * the clicked entry, then normalises a full set back to the implicit form.
+     * Toggles whether the given type is included by the filter. Nothing ticked means "no filter"
+     * (all types shown); ticking a type adds its token so the results narrow to it, and ticking
+     * a second type widens the selection to both. Unticking the last type returns to "no filter".
      */
     protected toggleType(token: string): void {
-        const allTokens = this.orderedContributions().map(c => c.searchToken);
-        const parsed = this.searchModel.parseQuery();
-        // Materialise the effective tick set: an empty `typeTokens` means all contributions are
-        // implicitly ticked, otherwise only the listed ones are ticked.
-        const ticked = parsed.typeTokens.size === 0
-            ? new Set(allTokens)
-            : new Set(parsed.typeTokens);
+        const ticked = new Set(this.searchModel.parseQuery().typeTokens);
         if (ticked.has(token)) {
             ticked.delete(token);
         } else {
             ticked.add(token);
-        }
-        // Normalise the "every type ticked" case back to the empty-tokens representation so the
-        // funnel icon only highlights for a real subset.
-        if (ticked.size === allTokens.length) {
-            ticked.clear();
         }
         this.rewriteQuery({ typeTokens: ticked });
     }

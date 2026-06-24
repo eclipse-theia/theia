@@ -67,46 +67,60 @@ class FakeMenuRegistry {
 
 describe('VSXExtensionsFilterContribution type filter toggles', () => {
 
-    it('starts with every type token enabled (no token in query)', () => {
+    it('starts with nothing ticked (no token in query) so the funnel shows "no filter"', () => {
         const { contribution, searchModel } = buildContribution();
         const commands = new FakeCommandRegistry();
         contribution.registerCommands(commands as unknown as CommandRegistry);
 
-        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(true);
+        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(false);
+        expect(commands.commands.get('vsxExtensions.filterByType:mcp-server')?.isToggled?.()).to.equal(false);
+        expect(commands.commands.get('vsxExtensions.filterByType:skill')?.isToggled?.()).to.equal(false);
+        expect(searchModel.query).to.equal('');
+    });
+
+    it('narrows to a single type with one click, ticking only it', () => {
+        const { contribution, searchModel } = buildContribution();
+        const commands = new FakeCommandRegistry();
+        contribution.registerCommands(commands as unknown as CommandRegistry);
+
+        // From the empty (no-filter) state, clicking MCP includes only MCP - a single click.
+        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
+
+        expect(searchModel.query).to.equal('@mcp');
+        expect(commands.commands.get('vsxExtensions.filterByType:mcp-server')?.isToggled?.()).to.equal(true);
+        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(false);
+        expect(commands.commands.get('vsxExtensions.filterByType:skill')?.isToggled?.()).to.equal(false);
+    });
+
+    it('unticking the only ticked type returns to the no-filter state', () => {
+        const { contribution, searchModel } = buildContribution();
+        const commands = new FakeCommandRegistry();
+        contribution.registerCommands(commands as unknown as CommandRegistry);
+
+        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
+        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
+
+        // First click includes MCP (`@mcp`); clicking it again removes the only token, so the
+        // query goes back to empty (no filter).
+        expect(searchModel.query).to.equal('');
+    });
+
+    it('widens the selection when a second type is ticked', () => {
+        const { contribution, searchModel } = buildContribution();
+        const commands = new FakeCommandRegistry();
+        contribution.registerCommands(commands as unknown as CommandRegistry);
+
+        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
+        commands.commands.get('vsxExtensions.filterByType:skill')?.execute();
+
+        // Order should mirror the contribution iteration order, so `@mcp @skills`, not `@skills @mcp`.
+        expect(searchModel.query).to.equal('@mcp @skills');
         expect(commands.commands.get('vsxExtensions.filterByType:mcp-server')?.isToggled?.()).to.equal(true);
         expect(commands.commands.get('vsxExtensions.filterByType:skill')?.isToggled?.()).to.equal(true);
-        expect(searchModel.query).to.equal('');
+        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(false);
     });
 
-    it('unticks a ticked type from the implicit all-ticked state, keeping the others ticked', () => {
-        const { contribution, searchModel } = buildContribution();
-        const commands = new FakeCommandRegistry();
-        contribution.registerCommands(commands as unknown as CommandRegistry);
-
-        // Empty query means all three are implicitly ticked. Clicking MCP must untick it (not
-        // become the sole ticked one), so the query lists the two that remain.
-        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
-
-        expect(searchModel.query).to.equal('@extensions @skills');
-        expect(commands.commands.get('vsxExtensions.filterByType:mcp-server')?.isToggled?.()).to.equal(false);
-        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(true);
-        expect(commands.commands.get('vsxExtensions.filterByType:skill')?.isToggled?.()).to.equal(true);
-    });
-
-    it('re-ticking the only unticked type returns to the implicit all-ticked state', () => {
-        const { contribution, searchModel } = buildContribution();
-        const commands = new FakeCommandRegistry();
-        contribution.registerCommands(commands as unknown as CommandRegistry);
-
-        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
-        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
-
-        // Toggling MCP off then on again: first click yields `@extensions @skills`; second
-        // re-ticks MCP, making all three ticked, which normalises back to the empty query.
-        expect(searchModel.query).to.equal('');
-    });
-
-    it('unticks a type from an explicit subset (typed-by-hand query) leaving the others alone', () => {
+    it('unticks one type from an explicit subset (typed-by-hand query) leaving the others alone', () => {
         const { contribution, searchModel } = buildContribution();
         const commands = new FakeCommandRegistry();
         contribution.registerCommands(commands as unknown as CommandRegistry);
@@ -118,19 +132,7 @@ describe('VSXExtensionsFilterContribution type filter toggles', () => {
         expect(searchModel.query).to.equal('@skills');
     });
 
-    it('ticks a previously unticked type when added back to an explicit subset', () => {
-        const { contribution, searchModel } = buildContribution();
-        const commands = new FakeCommandRegistry();
-        contribution.registerCommands(commands as unknown as CommandRegistry);
-
-        searchModel.query = '@mcp';
-        commands.commands.get('vsxExtensions.filterByType:skill')?.execute();
-
-        // Order should mirror the contribution iteration order, so `@mcp @skills`, not `@skills @mcp`.
-        expect(searchModel.query).to.equal('@mcp @skills');
-    });
-
-    it('keeps the existing mode token and free text intact when toggling a type', () => {
+    it('keeps the existing mode token and free text intact when ticking a type', () => {
         const { contribution, searchModel } = buildContribution();
         const commands = new FakeCommandRegistry();
         contribution.registerCommands(commands as unknown as CommandRegistry);
@@ -138,9 +140,30 @@ describe('VSXExtensionsFilterContribution type filter toggles', () => {
         searchModel.query = '@installed alpha';
         commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
 
-        // Mode first, then type tokens, then free text. Unticking MCP from the implicit
-        // all-ticked state under `@installed` leaves Extensions and Skills as the visible types.
-        expect(searchModel.query).to.equal('@installed @extensions @skills alpha');
+        // Mode first, then type tokens, then free text. Ticking MCP narrows to it while the
+        // `@installed` mode and the `alpha` search text stay put.
+        expect(searchModel.query).to.equal('@installed @mcp alpha');
+    });
+
+    it('ticking every type spells out all tokens (no auto-collapse) while keeping all results visible', () => {
+        const { contribution, searchModel } = buildContribution();
+        const commands = new FakeCommandRegistry();
+        contribution.registerCommands(commands as unknown as CommandRegistry);
+
+        commands.commands.get('vsxExtensions.filterByType:extension')?.execute();
+        commands.commands.get('vsxExtensions.filterByType:mcp-server')?.execute();
+        commands.commands.get('vsxExtensions.filterByType:skill')?.execute();
+
+        // Each click toggles exactly one checkbox - no surprising mass-untick - so all three
+        // tokens are spelled out in contribution-priority order.
+        expect(searchModel.query).to.equal('@extensions @mcp @skills');
+        expect(commands.commands.get('vsxExtensions.filterByType:extension')?.isToggled?.()).to.equal(true);
+        expect(commands.commands.get('vsxExtensions.filterByType:mcp-server')?.isToggled?.()).to.equal(true);
+        expect(commands.commands.get('vsxExtensions.filterByType:skill')?.isToggled?.()).to.equal(true);
+        // Every type is still enabled for the result set (all three explicitly included).
+        expect(searchModel.isTokenEnabled('@extensions')).to.equal(true);
+        expect(searchModel.isTokenEnabled('@mcp')).to.equal(true);
+        expect(searchModel.isTokenEnabled('@skills')).to.equal(true);
     });
 });
 
