@@ -252,7 +252,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 oauthScopes: '',
                 oauthAuthorizationServer: '',
                 oauthResource: '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         if (isRemoteMCPServerDescription(server)) {
@@ -273,7 +274,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
                 oauthAuthorizationServer: server.oauth?.authorizationServer ?? '',
                 oauthResource: server.oauth?.resource ?? '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         return undefined;
@@ -282,7 +284,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toLocalConfig(formData: MCPServerFormData): Partial<LocalMCPServerDescription> {
         const config: Partial<LocalMCPServerDescription> = {
             command: formData.command.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
         if (formData.args.trim()) {
             config.args = formData.args.trim().split(/\s+/);
@@ -297,7 +300,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toRemoteConfig(formData: MCPServerFormData): Partial<RemoteMCPServerDescription> {
         const config: Partial<RemoteMCPServerDescription> = {
             serverUrl: formData.serverUrl.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
         if (formData.serverType === 'remote') {
             if (formData.serverAuthToken.trim()) {

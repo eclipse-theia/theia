@@ -189,6 +189,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             oauthAuthorizationServer: '',
             oauthResource: '',
             autostart: false,
+            deferLoading: false,
             ...overrides
         };
     }
@@ -207,6 +208,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
+                deferLoading: false,
                 oauth: {
                     clientId: 'client-id',
                     clientSecret: 'client-secret',
@@ -231,7 +233,8 @@ describe('MCPServerEditor OAuth form handling', () => {
         expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
-                autostart: false
+                autostart: false,
+                deferLoading: false
             }
         });
     });
@@ -247,6 +250,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
+                deferLoading: false,
                 oauth: {}
             }
         });
@@ -270,6 +274,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
+                deferLoading: false,
                 serverAuthToken: 'token-123',
                 registryMetadata: { serverId: 'io.github.example/example-mcp' }
             }
@@ -292,6 +297,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 serverUrl: 'https://mcp.example.com/mcp',
                 autostart: false,
+                deferLoading: false,
                 oauth: { clientId: 'client-id' }
             }
         });
@@ -312,7 +318,8 @@ describe('MCPServerEditor OAuth form handling', () => {
         expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
             'oauth-server': {
                 command: 'npx',
-                autostart: false
+                autostart: false,
+                deferLoading: false
             }
         });
     });

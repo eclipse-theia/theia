@@ -383,6 +383,80 @@ describe('ChatRequestParserImpl', () => {
         expect(delegatedChatRequest.text).to.equal('@agentA do X @agentB do Y');
     });
 
+    describe('deferred tool references', () => {
+        const deferredTool: ToolRequest = {
+            id: 'deferredTool',
+            name: 'Deferred Tool',
+            handler: async () => undefined,
+            parameters: { type: 'object', properties: {} }
+        };
+        const eagerTool: ToolRequest = {
+            id: 'eagerTool',
+            name: 'Eager Tool',
+            handler: async () => undefined,
+            parameters: { type: 'object', properties: {} }
+        };
+
+        beforeEach(() => {
+            toolInvocationRegistry.getFunction.withArgs(deferredTool.id).returns(deferredTool);
+            toolInvocationRegistry.getFunction.withArgs(eagerTool.id).returns(eagerTool);
+        });
+
+        it('parses ~?toolId chat-format syntax as a deferred tool reference', async () => {
+            const req: ChatRequest = { text: 'Please use ~?deferredTool here' };
+            const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, { variables: [] });
+
+            const fnPart = result.parts.find(p => p instanceof ParsedChatRequestFunctionPart) as ParsedChatRequestFunctionPart;
+            expect(fnPart, 'expected a function part').to.not.be.undefined;
+            expect(fnPart.toolRequest.id).to.equal('deferredTool');
+            expect(fnPart.deferred).to.be.true;
+            expect(fnPart.text).to.equal('~?deferredTool');
+
+            expect(result.toolRequests.size).to.equal(1);
+            expect(result.deferredToolIds?.has('deferredTool')).to.be.true;
+        });
+
+        it('parses ~{?toolId} prompt-format syntax as a deferred tool reference', async () => {
+            const req: ChatRequest = { text: 'Use ~{?deferredTool} now.' };
+            const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, { variables: [] });
+
+            const fnPart = result.parts.find(p => p instanceof ParsedChatRequestFunctionPart) as ParsedChatRequestFunctionPart;
+            expect(fnPart, 'expected a function part').to.not.be.undefined;
+            expect(fnPart.toolRequest.id).to.equal('deferredTool');
+            expect(fnPart.deferred).to.be.true;
+
+            expect(result.deferredToolIds?.has('deferredTool')).to.be.true;
+        });
+
+        it('does not mark plain references as deferred', async () => {
+            const req: ChatRequest = { text: 'Use ~eagerTool and ~{eagerTool} please.' };
+            const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, { variables: [] });
+
+            const fnParts = result.parts.filter(p => p instanceof ParsedChatRequestFunctionPart) as ParsedChatRequestFunctionPart[];
+            expect(fnParts.length).to.equal(2);
+            for (const part of fnParts) {
+                expect(part.deferred).to.be.false;
+            }
+            expect(result.deferredToolIds?.size ?? 0).to.equal(0);
+        });
+
+        it('mixes deferred and non-deferred references in a single request', async () => {
+            const req: ChatRequest = { text: 'Use ~eagerTool first, then ~?deferredTool please' };
+            const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, { variables: [] });
+
+            const fnParts = result.parts.filter(p => p instanceof ParsedChatRequestFunctionPart) as ParsedChatRequestFunctionPart[];
+            expect(fnParts.length).to.equal(2);
+            const eagerPart = fnParts.find(p => p.toolRequest.id === 'eagerTool');
+            const deferredPart = fnParts.find(p => p.toolRequest.id === 'deferredTool');
+
+            expect(eagerPart?.deferred).to.be.false;
+            expect(deferredPart?.deferred).to.be.true;
+            expect(result.deferredToolIds?.size).to.equal(1);
+            expect(result.deferredToolIds?.has('deferredTool')).to.be.true;
+            expect(result.deferredToolIds?.has('eagerTool')).to.be.false;
+        });
+    });
+
     describe('parsed chat request part kind assignments', () => {
         it('ParsedChatRequestTextPart has kind assigned at runtime', () => {
             const part = new ParsedChatRequestTextPart({ start: 0, endExclusive: 5 }, 'hello');
