@@ -14,9 +14,11 @@
 - [ai-mcp] added OAuth 2.1 authorization for remote MCP servers, including interactive sign-in/sign-out, automatic token refresh and storage, and a command to retrieve the OAuth redirect URL [#17638](https://github.com/eclipse-theia/theia/pull/17638)
 - [ai] added support for provider-native server-side tools, with Anthropic `web_fetch`/`web_search` and Gemini `url_context`/`google_search` as the first adopters; selectable per agent in the capabilities panel and persisted per model vendor [#17707](https://github.com/eclipse-theia/theia/pull/17707)
 - [ai-chat-ui] fixed capability selections, capability overrides and the selected mode being dropped when editing and resending a chat request [#17707](https://github.com/eclipse-theia/theia/pull/17707)
+- [core, terminal-manager] fixed terminal manager tree corruption after deleting the last terminal of a group/page so that subsequent task or debug terminals reappear correctly under the dedicated page [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [core] added support for React 19 and declared React peer dependencies as `^18.3.1 || ^19.0.0`. [#17567](https://github.com/eclipse-theia/theia/pull/17567)
 - [task] fixed `onDidStartTaskProcess` never firing for process tasks because `TaskServer.runTask` omitted the `task` argument to `fireTaskCreatedEvent` [#17663](https://github.com/eclipse-theia/theia/pull/17663)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-- [core] added support for React 19 and declared React peer dependencies as `^18.3.1 || ^19.0.0`. [#17567](https://github.com/eclipse-theia/theia/pull/17567)
+- [terminal, task, terminal-manager] guaranteed uniqueness of `TerminalWidgetFactoryOptions.created` to prevent terminal-id collisions between widgets constructed within the same millisecond (and, for the task service, the same second) [#17587](https://github.com/eclipse-theia/theia/pull/17587)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
@@ -42,6 +44,10 @@
 - [vsx-registry] `VSXLanguageQuickPickService` no longer injects `RequestService` or `OVSXClientProvider`. It now uses `VSXRegistryService`.
 - [vsx-registry] The `OVSXClientProvider` binding from `vsx-registry-common-module` is still available but no longer used on the frontend by any Theia code. On the frontend, `OVSXHttpClient` uses the browser `RequestService`, which falls back to `BackendRequestFacade` for CORS bypass — these requests will be rejected by the URL allowlist unless a `BackendRequestAllowedContribution` is registered. Frontend code that depends on `OVSXClientProvider` should migrate to `VSXRegistryService` or register an appropriate allowlist contribution.
 - [core] WebSocket connections now enforce same-origin validation by default when `THEIA_HOSTS` is not set, and require a `SameSite=Strict` connection token cookie. The internal `fix-origin` header mechanism has been removed. Custom deployments that relied on `fix-origin` to pass origin validation must update accordingly. [#17701](https://github.com/eclipse-theia/theia/pull/17701)
+- [core] added `removeNode(node: TreeNode | undefined): void` to the `Tree` interface (and therefore `TreeModel`). The default `TreeImpl` implementation is now public (was `protected`). Downstream `Tree`/`TreeModel` implementations must add this method [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [core] `CompositeTreeNode.removeChild` now clears `parent`, `previousSibling`, and `nextSibling` on the removed node (symmetric with `setParent`). It also accepts an optional `tree?: Tree` parameter; when provided, the detached subtree is purged from the tree's id-to-node index so `Tree.getNode` no longer returns orphans. Existing callers that read the removed node's `parent` after detachment must capture it before the call [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [terminal] `TerminalWidgetFactoryOptions.created` is now produced by the exported `nextTerminalCreationToken()` helper and treated as an opaque, lifetime-unique identifier, consistent with its documentation. Downstream producers of terminal widgets should switch to `nextTerminalCreationToken()` to honor the uniqueness contract [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [terminal] `TerminalService.open` now returns `Promise<void>` instead of `void`; callers that depend on the return type must be updated [#17587](https://github.com/eclipse-theia/theia/pull/17587)
 
 ## 1.72.0 - 5/28/2026
 

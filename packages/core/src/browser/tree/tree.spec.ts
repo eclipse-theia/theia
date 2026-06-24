@@ -120,6 +120,36 @@ describe('Tree', () => {
 }`, node);
     });
 
+    it('removeChild - clears parent and sibling pointers on the removed node', () => {
+        const node = getNode();
+        const middle = node.children[1];
+        CompositeTreeNode.removeChild(node, middle);
+        expect(middle.parent).to.be.undefined;
+        expect(middle.previousSibling).to.be.undefined;
+        expect(middle.nextSibling).to.be.undefined;
+    });
+
+    it('removeChild - purges the detached subtree from the tree index when a tree is provided', () => {
+        const target = model.getNode('1.2');
+        expect(target).to.not.be.undefined;
+        const parent = target!.parent!;
+        expect(model.getNode('1.2.1')).to.not.be.undefined;
+        CompositeTreeNode.removeChild(parent, target!, model);
+        expect(model.getNode('1.2')).to.be.undefined;
+        expect(model.getNode('1.2.1')).to.be.undefined;
+    });
+
+    it('removeChild - leaves the index untouched when no tree is provided', () => {
+        const target = model.getNode('1.2')!;
+        const parent = target.parent!;
+        CompositeTreeNode.removeChild(parent, target);
+        // Until the caller explicitly purges, the orphan is still in the index.
+        expect(model.getNode('1.2')).to.equal(target);
+        // Explicit purge cleans it up.
+        model.removeNode(target);
+        expect(model.getNode('1.2')).to.be.undefined;
+    });
+
     let model: TreeModel;
     beforeEach(() => {
         model = createTreeModel();
