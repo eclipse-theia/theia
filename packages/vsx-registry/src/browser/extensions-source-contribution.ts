@@ -71,6 +71,17 @@ export interface ExtensionsSourceContribution {
     /** Human-readable label used as the group header in the view. */
     readonly displayName: string;
 
+    /**
+     * `@`-prefixed token recognised in the search query to scope results to this contribution
+     * alone. Composable with the existing `@installed` / `@builtin` / `@recommended` mode tokens
+     * (e.g. `@installed @mcp` shows installed servers of type `mcp-server` only). When no
+     * type token appears in the query, all contributions are shown.
+     *
+     * Contributors are expected to start the token with `@`; without the prefix the search model
+     * may treat the token as a plain word in the free-text part of the query.
+     */
+    readonly searchToken: string;
+
     /** Ordering hint when multiple contributions yield entries for the same section. Lower numbers come first. Defaults to 0. */
     readonly priority?: number;
 

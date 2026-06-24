@@ -57,7 +57,10 @@ export class VSXExtensionsModel {
     protected searchCancellationTokenSource = new CancellationTokenSource();
     protected updateSearchResult = debounce(async () => {
         const { token } = this.resetSearchCancellationTokenSource();
-        await this.doUpdateSearchResult({ query: this.search.query, includeAllVersions: true }, token);
+        // Only the free-text portion is sent to OVSX; `@`-prefixed mode and type tokens are
+        // consumed locally by the search model and would otherwise return no OVSX matches.
+        const { freeText } = this.search.parseQuery();
+        await this.doUpdateSearchResult({ query: freeText, includeAllVersions: true }, token);
     }, 500);
 
     @inject(VSXRegistryService)

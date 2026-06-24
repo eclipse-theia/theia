@@ -137,6 +137,35 @@ describe('MCPServerEditor.installFromEntry', () => {
         expect(prefs.snapshot<Record<string, Record<string, unknown>>>(MCP_SERVERS_PREF)!.example).to.not.have.property('serverAuthToken');
     });
 
+    it('fills the OAuth client credentials while keeping the registry-fixed OAuth parts', async () => {
+        const entry: MCPInstallEntry = {
+            localName: 'example',
+            config: {
+                serverUrl: 'https://mcp.example.com/mcp',
+                oauth: { clientId: '<clientId>', clientSecret: '<clientSecret>', resource: 'https://mcp.example.com' }
+            }
+        };
+
+        await editor.installFromEntry(entry, { oauthClientId: 'real-id', oauthClientSecret: 'real-secret' });
+
+        expect(prefs.snapshot<Record<string, { oauth?: object }>>(MCP_SERVERS_PREF)!.example.oauth).to.deep.equal({
+            clientId: 'real-id',
+            clientSecret: 'real-secret',
+            resource: 'https://mcp.example.com'
+        });
+    });
+
+    it('ignores OAuth credentials when the entry config does not advertise an oauth block', async () => {
+        const entry: MCPInstallEntry = {
+            localName: 'example',
+            config: { command: 'npx', args: ['-y', 'example-mcp'] }
+        };
+
+        await editor.installFromEntry(entry, { oauthClientId: 'should-be-ignored', oauthClientSecret: 'should-be-ignored' });
+
+        expect(prefs.snapshot<Record<string, Record<string, unknown>>>(MCP_SERVERS_PREF)!.example).to.not.have.property('oauth');
+    });
+
     it('preserves unrelated servers already in the preference', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
             other: { command: 'node', args: ['unrelated.js'] }

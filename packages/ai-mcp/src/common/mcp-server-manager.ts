@@ -207,6 +207,12 @@ export interface MCPInstallEntryConfig {
     serverAuthToken?: string;
     serverAuthTokenHeader?: string;
     headers?: Record<string, string>;
+    /**
+     * OAuth configuration for remote servers. The registry supplies the fixed parts (scopes,
+     * authorization server, resource); the confidential-client `clientId`/`clientSecret` are
+     * collected from the user at install time when the entry advertises them.
+     */
+    oauth?: MCPOAuthConfig;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {
