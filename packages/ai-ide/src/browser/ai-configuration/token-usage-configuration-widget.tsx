@@ -188,7 +188,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
                 <table className="ai-configuration-table">
                     <tfoot>
                         <tr className="ai-configuration-footer-total-row">
-                            <td className="token-usage-model-column">{nls.localize('theia/ai/tokenUsage/total', 'Total')}</td>
+                            <td className="token-usage-model-column">{nls.localizeByDefault('Total')}</td>
                             <td className="token-usage-column">{this.formatNumber(totalInputTokens)}</td>
                             {showCacheColumns && (
                                 <>

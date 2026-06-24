@@ -2643,7 +2643,7 @@ interface ReasoningSelectorProps {
 const reasoningLevelLabel = (level: ReasoningLevel): string => {
     switch (level) {
         case 'off': return nls.localizeByDefault('Off');
-        case 'minimal': return nls.localize('theia/ai/chat-ui/reasoning/minimal', 'Minimal');
+        case 'minimal': return nls.localizeByDefault('Minimal');
         case 'low': return nls.localizeByDefault('Low');
         case 'medium': return nls.localizeByDefault('Medium');
         case 'high': return nls.localizeByDefault('High');
