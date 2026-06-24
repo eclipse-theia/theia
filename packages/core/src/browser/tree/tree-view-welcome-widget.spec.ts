@@ -21,7 +21,7 @@ const disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import { expect } from 'chai';
-import { ReactElement } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import { CommandService } from '../../common';
 import { LabelParser } from '../label-parser';
 import { codicon } from '../widgets';
@@ -44,11 +44,13 @@ before(() => {
 
 describe('TreeViewWelcomeWidget#renderLabelWithIcons', () => {
 
+    type SpanElement = ReactElement<{ className?: string; children?: ReactNode }>;
+
     // Exercise the protected helper without standing up the full TreeWidget DI graph.
-    function render(label: string): ReactElement[] {
+    function render(label: string): SpanElement[] {
         const widget = Object.create(TreeViewWelcomeWidget.prototype) as {
             labelParser: LabelParser;
-            renderLabelWithIcons(label: string): ReactElement[];
+            renderLabelWithIcons(label: string): SpanElement[];
         };
         widget.labelParser = labelParser;
         return widget.renderLabelWithIcons(label);

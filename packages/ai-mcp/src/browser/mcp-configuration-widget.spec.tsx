@@ -28,7 +28,8 @@ try {
 
 import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { Emitter, Event, MessageService, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     LocalMCPServerDescription,
@@ -70,6 +71,7 @@ class TestAIMCPConfigurationWidget extends AIMCPConfigurationWidget {
 
 describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     let host: HTMLElement;
+    let root: Root | undefined;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -85,7 +87,8 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     });
 
     afterEach(() => {
-        ReactDOM.unmountComponentAtNode(host);
+        root?.unmount();
+        root = undefined;
         host.remove();
     });
 
@@ -134,7 +137,9 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     }
 
     function renderWidget(widget: TestAIMCPConfigurationWidget): void {
-        ReactDOM.render(widget.testRender() as React.ReactElement, host);
+        root ??= createRoot(host);
+        // root.render is async; flushSync keeps the tests' immediate assertions valid.
+        flushSync(() => root!.render(widget.testRender() as React.ReactElement));
     }
 
     const oauthServer: RemoteMCPServerDescription = {
