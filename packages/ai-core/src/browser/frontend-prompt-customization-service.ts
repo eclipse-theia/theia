@@ -52,9 +52,12 @@ export const CUSTOM_AGENT_DEFAULT_PROMPT_STEM = 'prompt';
 
 /**
  * Workspace-relative parent folders scanned for custom agents, independent of the configurable
- * prompt-templates directories. `.agents` is listed first so it becomes the default location for
- * newly created agents (matching the skills convention); `.prompts` is retained for backward
- * compatibility with agents authored before the move to `.agents`.
+ * prompt-templates directories. Scanning both folders mirrors the skills convention introduced
+ * in #17553, but the duplicate-id precedence is intentionally inverted: here `.agents` is listed
+ * first, so it becomes the default location for newly created agents and wins over `.prompts`,
+ * whereas for skills `.prompts` wins over `.agents` (see `combineSkillDirectories` in
+ * `skill-service.ts`). `.prompts` is retained for backward compatibility with agents authored
+ * before the move to `.agents`.
  */
 export const CUSTOM_AGENT_WORKSPACE_DIRECTORIES = ['.agents', '.prompts'];
 
@@ -303,9 +306,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
         // Process built-in custom-agent directories (`.agents`/`.prompts`) not already covered as
         // template directories above: register the prompt fragments inside their `agents/<id>/`
-        // folders and watch them, so agents under `.agents` get the same live refresh and
+        // folders and watch them, so agents under these scopes get the same live refresh and
         // prompt-fragment editing as those under template directories — without loading loose
-        // prompt templates from `.agents` itself.
+        // prompt templates from these built-in scopes themselves.
         for (const dirPath of this.customAgentDirs) {
             const scopeURI = URI.fromFilePath(dirPath);
             if (processedScopeKeys.has(scopeURI.toString())) {
