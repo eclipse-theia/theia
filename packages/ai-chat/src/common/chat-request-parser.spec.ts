@@ -20,7 +20,7 @@ import { ChatRequestParserImpl } from './chat-request-parser';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
 import { expect } from 'chai';
-import { AIVariable, DefaultAIVariableService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
+import { AIVariable, DefaultAIVariableService, PromptService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
 import { ILogger, Logger } from '@theia/core';
 import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 import { AgentDelegationTool } from '../browser/agent-delegation-tool';
@@ -274,6 +274,56 @@ describe('ChatRequestParserImpl', () => {
 
         const varPart = result.parts[0] as ParsedChatRequestVariablePart;
         expect(varPart.variableArg).to.equal('cmd|"arg with \\"quote\\"" other');
+    });
+
+    it('parses multiple commands in one message', async () => {
+        const req: ChatRequest = {
+            text: '/skill-one /skill-two'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        expect(result.parts.length).to.equal(3);
+        const firstCommand = result.parts[0] as ParsedChatRequestVariablePart;
+        const separator = result.parts[1] as ParsedChatRequestTextPart;
+        const secondCommand = result.parts[2] as ParsedChatRequestVariablePart;
+        expect(firstCommand.variableName).to.equal('prompt');
+        expect(firstCommand.variableArg).to.equal('skill-one');
+        expect(separator.text).to.equal(' ');
+        expect(secondCommand.variableName).to.equal('prompt');
+        expect(secondCommand.variableArg).to.equal('skill-two');
+    });
+
+    it('keeps path-like slash arguments as command arguments', async () => {
+        const req: ChatRequest = {
+            text: '/explain /path/to/file'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        expect(result.parts.length).to.equal(1);
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableName).to.equal('prompt');
+        expect(varPart.variableArg).to.equal('explain|/path/to/file');
+    });
+
+    it('uses known command names to disambiguate slash command arguments', async () => {
+        const promptService = {
+            getCommands: () => [
+                { id: 'command-skill-one', template: '', isCommand: true, commandName: 'skill-one' },
+                { id: 'command-skill-two', template: '', isCommand: true, commandName: 'skill-two' },
+            ]
+        } as unknown as PromptService;
+        const parserWithPromptService = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger, promptService);
+        const context: ChatContext = { variables: [] };
+
+        const multipleCommands = await parserWithPromptService.parseChatRequest({ text: '/skill-one /skill-two' }, ChatAgentLocation.Panel, context);
+        expect((multipleCommands.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-one');
+        expect((multipleCommands.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-two');
+
+        const pathArgument = await parserWithPromptService.parseChatRequest({ text: '/skill-one /tmp' }, ChatAgentLocation.Panel, context);
+        expect(pathArgument.parts.length).to.equal(1);
+        expect((pathArgument.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-one|/tmp');
     });
 
     it('treats the first @agent mention as the selector and does not allow later mentions to override it', async () => {
