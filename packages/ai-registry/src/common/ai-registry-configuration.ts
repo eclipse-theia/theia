@@ -48,6 +48,6 @@ export class AIRegistryConfiguration {
     }
 
     getBaseUrl(): string {
-        return 'https://eclipsefdn-ai-registry.github.io/ai-registry-core/api/v1/';
+        return 'https://ai.open-vsx.org/api/v1/';
     }
 }
