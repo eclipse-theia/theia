@@ -102,6 +102,7 @@ describe('ChatService Session Deletion', () => {
 
     const mockToolInvocationRegistry: ToolInvocationRegistry = {
         registerTool: () => { },
+        unregisterTool: () => { },
         getFunction: () => undefined,
         getFunctions: () => [],
         getAllFunctions: () => [],
