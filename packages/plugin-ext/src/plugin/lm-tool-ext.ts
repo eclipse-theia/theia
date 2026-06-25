@@ -66,7 +66,7 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         const handle = this.handleCounter++;
         const metadata: LanguageModelToolDto = {
             name,
-            description: contribution?.description,
+            description: contribution?.modelDescription,
             inputSchema: contribution?.inputSchema,
             tags: contribution?.tags,
         };
@@ -106,7 +106,7 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         for (const c of this.toolContributions.values()) {
             result.set(c.name, {
                 name: c.name,
-                description: c.description ?? '',
+                description: c.modelDescription ?? '',
                 inputSchema: c.inputSchema,
                 tags: c.tags ?? [],
             });

@@ -25,7 +25,8 @@
     "languageModelTools": [
       {
         "name": "sample-getCurrentTime",
-        "description": "Returns the current date and time in ISO format.",
+        "modelDescription": "Returns the current date and time in ISO format.",
+        "userDescription": "Get the current date and time",
         "tags": [
           "sample",
           "time"
@@ -37,7 +38,8 @@
       },
       {
         "name": "sample-calculateSum",
-        "description": "Calculates the sum of an array of numbers.",
+        "modelDescription": "Calculates the sum of an array of numbers.",
+        "userDescription": "Calculate the sum of numbers",
         "tags": [
           "sample",
           "math"
@@ -60,7 +62,8 @@
       },
       {
         "name": "sample-getSystemInfo",
-        "description": "Returns system information including platform, Node.js version, and uptime.",
+        "modelDescription": "Returns system information including platform, Node.js version, and uptime.",
+        "userDescription": "Get system information",
         "tags": [
           "sample",
           "system"
