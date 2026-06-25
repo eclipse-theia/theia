@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-browser",
-  "version": "1.72.0",
+  "version": "1.73.0",
   "browser": "./extension.js",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-namespace",
