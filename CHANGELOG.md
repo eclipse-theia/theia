@@ -4,53 +4,103 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.73.0 - tbd
+## 1.73.0 - 6/25/2026
 
-- [ai-chat] indicated and notified when a chat session is waiting for user input: the chat overview marks the session (bell icon, attention dot, bold title, tooltip badge) and a notification is shown; agent questions, tool confirmations, and the user-interaction tool now share this state
-- [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
-- [ai-core] discovered custom agents from the workspace `.agents` folder alongside `.prompts`, and made `.agents/agents/<id>/agent.md` the default location for newly created agents [#17692](https://github.com/eclipse-theia/theia/issues/17692)
-- [ai-core] reorganized custom agents into per-agent folders (`agents/<id>/agent.md` with YAML frontmatter); existing `customAgents.yml` files are auto-migrated on startup and preserved as `customAgents.yml.bak`, and the default prompt-override file is now `prompt.prompttemplate` [#17523](https://github.com/eclipse-theia/theia/pull/17523)
-- [ai-chat-ui] replaced the back/forward navigation stack with a single Home button in the chat view header (hidden on the overview); added `Ctrl/Cmd+Shift+L` to trigger it
-- [ai-ide] redesigned the chat session overview as a list with Active/Restored sections, agent icon per row, contextual toolbar (Home, Browse all chats..., lock/summarize hidden on the overview), and keybindings `Ctrl+Shift+L` (Home) and `Ctrl+Alt+L` (Browse all chats...)
-- [ai-mcp] added OAuth 2.1 authorization for remote MCP servers, including interactive sign-in/sign-out, automatic token refresh and storage, and a command to retrieve the OAuth redirect URL [#17638](https://github.com/eclipse-theia/theia/pull/17638)
-- [ai] added support for provider-native server-side tools, with Anthropic `web_fetch`/`web_search` and Gemini `url_context`/`google_search` as the first adopters; selectable per agent in the capabilities panel and persisted per model vendor [#17707](https://github.com/eclipse-theia/theia/pull/17707)
-- [ai-chat-ui] fixed capability selections, capability overrides and the selected mode being dropped when editing and resending a chat request [#17707](https://github.com/eclipse-theia/theia/pull/17707)
-- [core, terminal-manager] fixed terminal manager tree corruption after deleting the last terminal of a group/page so that subsequent task or debug terminals reappear correctly under the dedicated page [#17587](https://github.com/eclipse-theia/theia/pull/17587)
-- [core] added support for React 19 and declared React peer dependencies as `^18.3.1 || ^19.0.0`. [#17567](https://github.com/eclipse-theia/theia/pull/17567)
-- [filesystem] applied `files.watcherExclude` to all file watchers so excluded directories no longer consume OS file watches and overlapping watchers are de-duplicated [#17630](https://github.com/eclipse-theia/theia/pull/17630)
-- [plugin-ext] avoided exhausting OS file watches by not registering plugin watches rooted at an ancestor of the workspace folder (e.g. a language server watching the parent directory), which the backend would otherwise crawl recursively [#17633](https://github.com/eclipse-theia/theia/pull/17633)
-- [task] fixed `onDidStartTaskProcess` never firing for process tasks because `TaskServer.runTask` omitted the `task` argument to `fireTaskCreatedEvent` [#17663](https://github.com/eclipse-theia/theia/pull/17663)
-- [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-- [terminal, task, terminal-manager] guaranteed uniqueness of `TerminalWidgetFactoryOptions.created` to prevent terminal-id collisions between widgets constructed within the same millisecond (and, for the task service, the same second) [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [ai] supported deferred tool loading via provider tool search [#17449](https://github.com/eclipse-theia/theia/pull/17449)
+- [ai] supported provider-native server-side tools [#17707](https://github.com/eclipse-theia/theia/pull/17707)
+- [ai-chat] fixed filtering out thinking content from agent delegation tool result [#17642](https://github.com/eclipse-theia/theia/pull/17642) - contributed on behalf of Lonti.com Pty Ltd.
+- [ai-chat] surfaced when a chat is waiting for user input [#17676](https://github.com/eclipse-theia/theia/pull/17676)
+- [ai-chat] updated chat agent retrieval methods to optionally include hidden agents [#17640](https://github.com/eclipse-theia/theia/pull/17640) - contributed on behalf of Lonti.com Pty Ltd.
+- [ai-chat-ui] added shortcuts and bulk approve for tool confirmation [#17617](https://github.com/eclipse-theia/theia/pull/17617)
+- [ai-chat-ui] fixed guard tool-call result rendering against non-array content [#17602](https://github.com/eclipse-theia/theia/pull/17602)
+- [ai-chat-ui] rendered mermaid diagrams in the ai chat [#17686](https://github.com/eclipse-theia/theia/pull/17686)
+- [ai-core] discovered skills from .agents/skills directories [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-core] migrated raw console statements to unified ILogger across feature packages [#17541](https://github.com/eclipse-theia/theia/pull/17541)
+- [ai-core] reorganized custom agents into per-agent folders with frontmatter [#17523](https://github.com/eclipse-theia/theia/pull/17523)
+- [ai-core] updated default models and aliases [#17674](https://github.com/eclipse-theia/theia/pull/17674)
+- [ai-core, ai-ide] default custom agents to the .agents workspace folder [#17694](https://github.com/eclipse-theia/theia/pull/17694)
+- [ai-ide] fixed speed up workspace file tools and external-path matching issue [#17624](https://github.com/eclipse-theia/theia/pull/17624)
+- [ai-ide] guided reviewer in PR review walkthrough [#17678](https://github.com/eclipse-theia/theia/pull/17678)
+- [ai-ide] updated coder prompt next [#17652](https://github.com/eclipse-theia/theia/pull/17652)
+- [ai-mcp] added OAuth 2.1 support for remote MCP servers [#17638](https://github.com/eclipse-theia/theia/pull/17638)
+- [ai-mcp] fixed issue with preserving cursor when editing mcp server fields [#17712](https://github.com/eclipse-theia/theia/pull/17712)
+- [ai-mcp] focused window and revealed registry view on install link [#17594](https://github.com/eclipse-theia/theia/pull/17594)
+- [ai-registry] added skill registry support [#17635](https://github.com/eclipse-theia/theia/pull/17635)
+- [ai-registry] added support for AI Registry [#17546](https://github.com/eclipse-theia/theia/pull/17546)
+- [ai-registry] implemented review follow-ups on skill/MCP registry [#17703](https://github.com/eclipse-theia/theia/pull/17703)
+- [ai-registry] updated url for ai registry [#17711](https://github.com/eclipse-theia/theia/pull/17711)
+- [bundle-plugin] restored Linux trash file deletion in esbuild bundle [#17615](https://github.com/eclipse-theia/theia/pull/17615)
+- [cli] stabilized CI against the extract-zip race on Node.js 24 [#17575](https://github.com/eclipse-theia/theia/pull/17575)
+- [core] added wildcard support for logger configuration [#17627](https://github.com/eclipse-theia/theia/pull/17627)
+- [core] fixed issue 17621 [#17644](https://github.com/eclipse-theia/theia/pull/17644)
+- [core] hardened WebSocket and HTTP request validation [#17701](https://github.com/eclipse-theia/theia/pull/17701)
+- [core] kept specs compatible with React 19 [#17708](https://github.com/eclipse-theia/theia/pull/17708)
+- [core] merged changes from release branch [#17574](https://github.com/eclipse-theia/theia/pull/17574)
+- [core] npm upgrade [#17589](https://github.com/eclipse-theia/theia/pull/17589) - Contributed on behalf of STMicroelectronics
+- [core] preserved toolbar menu delegate arguments [#17672](https://github.com/eclipse-theia/theia/pull/17672)
+- [core] rendered codicons in viewswelcome button and link labels [#17690](https://github.com/eclipse-theia/theia/pull/17690)
+- [core] restored console.* in electron-main services [#17657](https://github.com/eclipse-theia/theia/pull/17657)
+- [core] supported React 19 [#17567](https://github.com/eclipse-theia/theia/pull/17567) - contributed on behalf of Bergauer AG
+- [core] translation update for version 1.73.0 [#17714](https://github.com/eclipse-theia/theia/pull/17714) - triggered by @ndoschek
+- [core] updated uuid to 11 [#17682](https://github.com/eclipse-theia/theia/pull/17682) - contributed on behalf of STMicroelectronics
+- [core, plugin] cleaned up two on-start logs [#17604](https://github.com/eclipse-theia/theia/pull/17604)
+- [debug] made DebugSession injectable [#17510](https://github.com/eclipse-theia/theia/pull/17510)
+- [doc] added factory usage coding guideline [#17520](https://github.com/eclipse-theia/theia/pull/17520)
+- [doc] updated logger coding guidelines [#15359](https://github.com/eclipse-theia/theia/pull/15359)
+- [docs] updated claude.md and project-info to match current codebase [#17613](https://github.com/eclipse-theia/theia/pull/17613)
+- [eslint-plugin] fixed ESLint configuration crash on MacOS [#17605](https://github.com/eclipse-theia/theia/pull/17605)
+- [filesystem] applied files.watcherExclude to all watchers [#17630](https://github.com/eclipse-theia/theia/pull/17630)
+- [filesystem] made parcel-watcher robust and survive log-dir rotation [#17609](https://github.com/eclipse-theia/theia/pull/17609)
+- [filesystem] respected files.watcherExclude to bound OS file watches [#17598](https://github.com/eclipse-theia/theia/pull/17598)
+- [github] replaced 3rd party action with native gh pages deployment [#17593](https://github.com/eclipse-theia/theia/pull/17593) - contributed on behalf of STMicroelectronics
+- [keymaps] captured physical keystrokes for keybindings [#17199](https://github.com/eclipse-theia/theia/pull/17199)
+- [markers] enabled multi select for problems view [#17684](https://github.com/eclipse-theia/theia/pull/17684)
+- [monaco] checked options.value when creating a quick pick modal with `MonacoQuickInputService` [#17688](https://github.com/eclipse-theia/theia/pull/17688)
+- [monaco] fixed incorrect colour ids in monacoquickinputservice [#17696](https://github.com/eclipse-theia/theia/pull/17696)
+- [monaco] Injected theme CSS variables at startup [#17608](https://github.com/eclipse-theia/theia/pull/17608)
+- [plugin] aligned icon, caption, id of custom editors with default editors [#17619](https://github.com/eclipse-theia/theia/pull/17619)
+- [plugin] registered tool via vscode registerTool function [#17396](https://github.com/eclipse-theia/theia/pull/17396) - Contributed on behalf of STMicroelectronics
+- [plugin-ext] disambiguated duplicate view entries [#17537](https://github.com/eclipse-theia/theia/pull/17537)
+- [plugin-ext] fixed plugin matching by folder boundary [#17512](https://github.com/eclipse-theia/theia/pull/17512)
+- [plugin-ext] fixed plugin watches rooted at an ancestor of the workspace [#17633](https://github.com/eclipse-theia/theia/pull/17633)
+- [plugin-ext] fixed rendering of viewsWelcome for views without a TreeDataProvider [#17689](https://github.com/eclipse-theia/theia/pull/17689)
+- [plugin-ext] fixed webviewView.show typeError and honored preserveFocus [#17543](https://github.com/eclipse-theia/theia/pull/17543)
+- [preview] deprecated `@theia/preview` package [#17680](https://github.com/eclipse-theia/theia/pull/17680)
+- [task] fixed emit onDidStartTaskProcess for created process tasks [#17663](https://github.com/eclipse-theia/theia/pull/17663)
+- [terminal] fixed pasting in terminals [#17603](https://github.com/eclipse-theia/theia/pull/17603)
+- [terminal] fixed task terminal history capture issue [#17401](https://github.com/eclipse-theia/theia/pull/17401)
+- [terminal] improved terminal creation handling and grouping in TerminalManager [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [vscode] API bump and nls update to 1.125.0 and implement MultiDocumentHighlightProvider for hover verbosity [#17709](https://github.com/eclipse-theia/theia/pull/17709) - Contributed on behalf of STMicroelectronics
+- [vsx-registry] fixed 'Install Specific Version' for installed extensions [#17685](https://github.com/eclipse-theia/theia/pull/17685)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>
 
 - [ai-chat] `WELCOME_SCREEN_SESSIONS_PREF` (`ai-features.chat.welcomeScreenSessions`) now controls the maximum number of chat sessions (active + restored combined) shown on the chat overview, replacing the previous "grid rows" semantics. Default raised from `3` to `20`, maximum cap (was `6`) removed; set it to `0` to hide the inline list (sessions remain reachable via "Browse all chats..."); lower it if a higher editor zoom causes a scrollbar
 - [ai-chat-ui] removed `AIChatNavigationService` along with the `ai-chat-ui.navigate-back` and `ai-chat-ui.navigate-forward` commands; the chat view header now shows a single Home button: the command id was renamed from `ai-chat-ui.new-chat` to `ai-chat-ui.home` (exported constant `AI_CHAT_NEW_CHAT_WINDOW_COMMAND` renamed to `AI_CHAT_HOME`), its label changed from "New Chat" to "Home" and icon from `add` to `home`; the `ai-chat-ui.show-chats` command was relabeled from "Show Chats..." to "Browse all chats..."
-- [ai-ide] renamed `ChatSessionCardActionContribution` to `ChatSessionItemActionContribution` (and `DefaultChatSessionCardActionContribution` to `DefaultChatSessionItemActionContribution`, `ChatSessionCardAction` to `ChatSessionItemAction`); the symbol and file were renamed to reflect the new list-row UI
 - [ai-core] `DefaultSkillService.getDefaultSkillsDirectoryPath()` has been renamed to `getDefaultSkillsDirectoryPaths()` and now returns `string[]` instead of `string` to include both the product configuration `skills` directory and the user's `~/.agents/skills` directory [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `combineSkillDirectories` signature changed: `workspaceSkillsDir` and `defaultSkillsDir` parameters are now `string[]` (previously `string | undefined`), and the return type is now `SkillDirectoryEntry[]` (an array of `{ path, tier }` entries) instead of `string[]` [#17553](https://github.com/eclipse-theia/theia/pull/17553)
 - [ai-core] `PromptFragmentCustomizationService` gained two required methods, `createCustomAgentFile` and `migrateCustomAgentsYaml`; adopters implementing this interface directly must provide them [#17523](https://github.com/eclipse-theia/theia/pull/17523)
 - [ai-core] `PromptFragmentCustomizationService.getCustomAgentsLocations()` now returns `CustomAgentsLocation[]`; each element gained a required `kind: 'agents-dir' | 'legacy-yaml'` field and the result mixes per-agent `agents/` directory entries with legacy `customAgents.yml` entries, so consumers must branch on `kind` instead of assuming yml-only results [#17523](https://github.com/eclipse-theia/theia/pull/17523)
 - [ai-core] renamed `AgentCompletionNotificationService` to `AgentNotificationService`, `CompletionNotificationOptions` to `AgentNotificationOptions`, and the `showCompletionNotification(agentId, options)` method to `showNotification(agentId, kind, options)`; `OSNotificationService.showAgentCompletionNotification(...)` was renamed to `showAgentNotification(agentName, kind, ...)`. These now cover both task-completion and input-needed notifications via a notification kind
+- [ai-ide] renamed `ChatSessionCardActionContribution` to `ChatSessionItemActionContribution` (and `DefaultChatSessionCardActionContribution` to `DefaultChatSessionItemActionContribution`, `ChatSessionCardAction` to `ChatSessionItemAction`); the symbol and file were renamed to reflect the new list-row UI
 - [ai-mcp] `MCPServerManager.removeServer` and `MCPServerManager.addOrUpdateServer` are now asynchronous (return `Promise<void>` instead of `void`); callers must await them to ensure lifecycle cleanup (e.g. OAuth cancellation, credential removal) and consistent manager state [#17638](https://github.com/eclipse-theia/theia/pull/17638)
+- [core] `BackendRequestFacade` now enforces a URL allowlist on `request()`. Frontend code using the `RequestService` to make HTTP requests via the backend will be rejected unless the target URL matches a pattern contributed via `BackendRequestAllowedContribution`. Out of the box, no URLs are allowed. Theia extensions that need backend-proxied HTTP requests must register a `BackendRequestAllowedContribution` in their backend module to declare their allowed URL patterns. Direct browser XHR requests (for URLs with CORS support) are not affected.
+- [core] `BackendRequestFacade.configure()` is now a no-op by default. The new `configureProxyFromPreferences` option in the backend application config (`theia.backend.config` in `package.json`) must be set to `true` for proxy preferences to propagate to the backend. The Theia example apps (browser and Electron) opt in. Custom Theia applications that rely on `http.proxy` preferences affecting backend requests must add `"configureProxyFromPreferences": true` to their backend config. CLI flags (`--proxy-url`, `--proxy-authorization`, `--strict-ssl`) and environment variables (`HTTP_PROXY`, `HTTPS_PROXY`) continue to work regardless.
+- [core] WebSocket connections now enforce same-origin validation by default when `THEIA_HOSTS` is not set, and require a `SameSite=Strict` connection token cookie. The internal `fix-origin` header mechanism has been removed. Custom deployments that relied on `fix-origin` to pass origin validation must update accordingly. [#17701](https://github.com/eclipse-theia/theia/pull/17701)
+- [core] added `removeNode(node: TreeNode | undefined): void` to the `Tree` interface (and therefore `TreeModel`). The default `TreeImpl` implementation is now public (was `protected`). Downstream `Tree`/`TreeModel` implementations must add this method [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [core] `CompositeTreeNode.removeChild` now clears `parent`, `previousSibling`, and `nextSibling` on the removed node (symmetric with `setParent`). It also accepts an optional `tree?: Tree` parameter; when provided, the detached subtree is purged from the tree's id-to-node index so `Tree.getNode` no longer returns orphans. Existing callers that read the removed node's `parent` after detachment must capture it before the call [#17587](https://github.com/eclipse-theia/theia/pull/17587)
 - [debug] Made DebugSession injectable [#17510](https://github.com/eclipse-theia/theia/pull/17510)
   - removed public constructors from DebugSession and PluginDebugSession in favor of dependency injection
   - added container parameter to DefaultDebugSessionFactory and PluginDebugSessionFactory constructors
   - renamed DebugSessionFactory.get to DebugSessionFactory.createSession and removed the manager parameter
 - [preview] deprecated the `@theia/preview` extension and stopped publishing it on npm. Please use the built-in VS Code Markdown extension instead, which offers the same feature set. [#17680](https://github.com/eclipse-theia/theia/pull/17680)
 - [terminal] `TerminalWidget` gained a new abstract method `paste(text: string)`; downstream subclasses must implement it (consistent with `getSelection()` / `hasSelection()` added in [#17290](https://github.com/eclipse-theia/theia/pull/17290)) [#17603](https://github.com/eclipse-theia/theia/pull/17603)
-- [core] `BackendRequestFacade` now enforces a URL allowlist on `request()`. Frontend code using the `RequestService` to make HTTP requests via the backend will be rejected unless the target URL matches a pattern contributed via `BackendRequestAllowedContribution`. Out of the box, no URLs are allowed. Theia extensions that need backend-proxied HTTP requests must register a `BackendRequestAllowedContribution` in their backend module to declare their allowed URL patterns. Direct browser XHR requests (for URLs with CORS support) are not affected.
-- [core] `BackendRequestFacade.configure()` is now a no-op by default. The new `configureProxyFromPreferences` option in the backend application config (`theia.backend.config` in `package.json`) must be set to `true` for proxy preferences to propagate to the backend. The Theia example apps (browser and Electron) opt in. Custom Theia applications that rely on `http.proxy` preferences affecting backend requests must add `"configureProxyFromPreferences": true` to their backend config. CLI flags (`--proxy-url`, `--proxy-authorization`, `--strict-ssl`) and environment variables (`HTTP_PROXY`, `HTTPS_PROXY`) continue to work regardless.
+- [terminal] `TerminalWidgetFactoryOptions.created` is now produced by the exported `nextTerminalCreationToken()` helper and treated as an opaque, lifetime-unique identifier, consistent with its documentation. Downstream producers of terminal widgets should switch to `nextTerminalCreationToken()` to honor the uniqueness contract [#17587](https://github.com/eclipse-theia/theia/pull/17587)
+- [terminal] `TerminalService.open` now returns `Promise<void>` instead of `void`; callers that depend on the return type must be updated [#17587](https://github.com/eclipse-theia/theia/pull/17587)
 - [vsx-registry] `VSXExtensionsModel` no longer injects `RequestService` or `OVSXClientProvider`. It now uses `VSXRegistryService` for all OVSX operations. Extensions that subclass `VSXExtensionsModel` and relied on the `request` or `clientProvider` fields must migrate to `vsxRegistryService`.
 - [vsx-registry] `VSXExtensionsContribution` no longer injects `OVSXClientProvider` or `OVSXApiFilterProvider`. It now uses `VSXRegistryService`. Extensions that subclass `VSXExtensionsContribution` and relied on `clientProvider` or `vsxApiFilter` must migrate to `vsxRegistryService`.
 - [vsx-registry] `VSXLanguageQuickPickService` no longer injects `RequestService` or `OVSXClientProvider`. It now uses `VSXRegistryService`.
 - [vsx-registry] The `OVSXClientProvider` binding from `vsx-registry-common-module` is still available but no longer used on the frontend by any Theia code. On the frontend, `OVSXHttpClient` uses the browser `RequestService`, which falls back to `BackendRequestFacade` for CORS bypass — these requests will be rejected by the URL allowlist unless a `BackendRequestAllowedContribution` is registered. Frontend code that depends on `OVSXClientProvider` should migrate to `VSXRegistryService` or register an appropriate allowlist contribution.
-- [core] WebSocket connections now enforce same-origin validation by default when `THEIA_HOSTS` is not set, and require a `SameSite=Strict` connection token cookie. The internal `fix-origin` header mechanism has been removed. Custom deployments that relied on `fix-origin` to pass origin validation must update accordingly. [#17701](https://github.com/eclipse-theia/theia/pull/17701)
-- [core] added `removeNode(node: TreeNode | undefined): void` to the `Tree` interface (and therefore `TreeModel`). The default `TreeImpl` implementation is now public (was `protected`). Downstream `Tree`/`TreeModel` implementations must add this method [#17587](https://github.com/eclipse-theia/theia/pull/17587)
-- [core] `CompositeTreeNode.removeChild` now clears `parent`, `previousSibling`, and `nextSibling` on the removed node (symmetric with `setParent`). It also accepts an optional `tree?: Tree` parameter; when provided, the detached subtree is purged from the tree's id-to-node index so `Tree.getNode` no longer returns orphans. Existing callers that read the removed node's `parent` after detachment must capture it before the call [#17587](https://github.com/eclipse-theia/theia/pull/17587)
-- [terminal] `TerminalWidgetFactoryOptions.created` is now produced by the exported `nextTerminalCreationToken()` helper and treated as an opaque, lifetime-unique identifier, consistent with its documentation. Downstream producers of terminal widgets should switch to `nextTerminalCreationToken()` to honor the uniqueness contract [#17587](https://github.com/eclipse-theia/theia/pull/17587)
-- [terminal] `TerminalService.open` now returns `Promise<void>` instead of `void`; callers that depend on the return type must be updated [#17587](https://github.com/eclipse-theia/theia/pull/17587)
 
 ## 1.72.0 - 5/28/2026
 
