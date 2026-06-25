@@ -8,6 +8,7 @@
 
 - [ai-chat] indicated and notified when a chat session is waiting for user input: the chat overview marks the session (bell icon, attention dot, bold title, tooltip badge) and a notification is shown; agent questions, tool confirmations, and the user-interaction tool now share this state
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [ai-core] discovered custom agents from the workspace `.agents` folder alongside `.prompts`, and made `.agents/agents/<id>/agent.md` the default location for newly created agents [#17692](https://github.com/eclipse-theia/theia/issues/17692)
 - [ai-core] reorganized custom agents into per-agent folders (`agents/<id>/agent.md` with YAML frontmatter); existing `customAgents.yml` files are auto-migrated on startup and preserved as `customAgents.yml.bak`, and the default prompt-override file is now `prompt.prompttemplate` [#17523](https://github.com/eclipse-theia/theia/pull/17523)
 - [ai-chat-ui] replaced the back/forward navigation stack with a single Home button in the chat view header (hidden on the overview); added `Ctrl/Cmd+Shift+L` to trigger it
 - [ai-ide] redesigned the chat session overview as a list with Active/Restored sections, agent icon per row, contextual toolbar (Home, Browse all chats..., lock/summarize hidden on the overview), and keybindings `Ctrl+Shift+L` (Home) and `Ctrl+Alt+L` (Browse all chats...)
