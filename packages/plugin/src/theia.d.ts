@@ -19901,6 +19901,7 @@ export module '@theia/plugin' {
          * confirmations will be shown.
          *
          * *Note* that a tool that invokes another tool during its invocation, can pass along the `toolInvocationToken` that it received.
+         * @stubbed
          */
         toolInvocationToken: ChatParticipantToolToken | undefined;
 
@@ -19925,6 +19926,7 @@ export module '@theia/plugin' {
     export interface LanguageModelToolTokenizationOptions {
         /**
          * If known, the maximum number of tokens the tool should emit in its result.
+         * @stubbed
          */
         tokenBudget: number;
 
@@ -19933,6 +19935,7 @@ export module '@theia/plugin' {
          * @param text A string.
          * @param token Optional cancellation token.  See {@link CancellationTokenSource} for how to create one.
          * @returns A thenable that resolves to the number of tokens.
+         * @stubbed
          */
         countTokens(text: string, token?: CancellationToken): Thenable<number>;
     }
@@ -19965,10 +19968,12 @@ export module '@theia/plugin' {
 
     /**
      * Options for {@link LanguageModelTool.prepareInvocation}.
+     * @stubbed
      */
     export interface LanguageModelToolInvocationPrepareOptions<T> {
         /**
          * The input that the tool is being invoked with.
+         * @stubbed
          */
         input: T;
     }
@@ -20004,11 +20009,13 @@ export module '@theia/plugin' {
     export interface LanguageModelToolConfirmationMessages {
         /**
          * The title of the confirmation message.
+         * @stubbed
          */
         title: string;
 
         /**
          * The body of the confirmation message.
+         * @stubbed
          */
         message: string | MarkdownString;
     }
@@ -20020,12 +20027,14 @@ export module '@theia/plugin' {
     export interface PreparedToolInvocation {
         /**
          * A customized progress message to show while the tool runs.
+         * @stubbed
          */
         invocationMessage?: string | MarkdownString;
 
         /**
          * The presence of this property indicates that the user should be asked to confirm before running the tool. The user
          * should be asked for confirmation for any tool that has a side-effect or may potentially be dangerous.
+         * @stubbed
          */
         confirmationMessages?: LanguageModelToolConfirmationMessages;
     }
