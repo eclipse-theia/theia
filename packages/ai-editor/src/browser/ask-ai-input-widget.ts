@@ -17,8 +17,7 @@
 import { ChatAgentLocation } from '@theia/ai-chat';
 import { AskAIInputBaseArgs, AskAIInputWidgetBase } from '@theia/ai-chat-ui/lib/browser/ask-ai-input-widget-base';
 import { AIChatInputConfiguration } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
-import { ILogger } from '@theia/core';
-import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 
 export const AskAIInputConfiguration = Symbol('AskAIInputConfiguration');
 export interface AskAIInputConfiguration extends AIChatInputConfiguration { }
@@ -35,9 +34,6 @@ export class AskAIInputWidget extends AskAIInputWidgetBase {
 
     @inject(AskAIInputArgs) @optional()
     protected override readonly args: AskAIInputArgs | undefined;
-
-    @inject(ILogger) @named('ai-editor:AskAIInputWidget')
-    protected override readonly logger: ILogger;
 
     @inject(AskAIInputConfiguration) @optional()
     protected override readonly configuration: AskAIInputConfiguration | undefined;
