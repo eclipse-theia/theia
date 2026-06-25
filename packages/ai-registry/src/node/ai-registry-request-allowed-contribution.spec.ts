@@ -33,7 +33,7 @@ describe('AIRegistryRequestAllowedContribution', () => {
     it('should return the default registry origin', () => {
         const contribution = createContribution();
         const patterns = contribution.getAllowedUrlPatterns();
-        expect(patterns).to.deep.equal(['https://eclipsefdn-ai-registry.github.io']);
+        expect(patterns).to.deep.equal(['https://ai.open-vsx.org']);
     });
 
     it('should extract origin from a custom base URL with port', () => {
