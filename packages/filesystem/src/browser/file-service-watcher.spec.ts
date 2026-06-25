@@ -805,3 +805,92 @@ describe('FileService watcher event delivery', () => {
         expect(received[0].toString()).to.equal(changedFile.toString());
     });
 });
+
+// ── files.watcherExclude applied to every watcher (#17247, #10794) ──────────
+
+describe('FileService applies files.watcherExclude to all watchers', () => {
+    const sandbox = sinon.createSandbox();
+    let disJSDOM: () => void;
+    let fileService: FileService;
+    let mockProvider: FileSystemProvider & { watchers: MockWatcher[] };
+
+    /** `watch()` schedules `doWatch` on a microtask; flush so the provider has been called. */
+    const flush = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
+    /** Install a `files.watcherExclude` preference value (other lookups return undefined). */
+    function stubWatcherExclude(value: { [pattern: string]: boolean } | undefined): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            get: (name: string) => (name === 'files.watcherExclude' ? value : undefined) as any
+        };
+    }
+
+    before(() => { disJSDOM = enableJSDOM(); });
+    after(() => { disJSDOM(); });
+
+    beforeEach(() => {
+        sandbox.restore();
+        fileService = new FileService();
+        mockProvider = createMockProvider();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sandbox.stub(fileService as any, 'withProvider').resolves(mockProvider);
+    });
+
+    afterEach(() => sandbox.restore());
+
+    it('merges enabled files.watcherExclude patterns into the watcher and skips disabled ones', async () => {
+        stubWatcherExclude({
+            '**/node_modules/**': true,
+            '**/.git/objects/**': true,
+            '**/disabled/**': false
+        });
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        expect(mockProvider.watchers).to.have.lengthOf(1);
+        const excludes = mockProvider.watchers[0].options.excludes;
+        expect(excludes).to.include('**/node_modules/**');
+        expect(excludes).to.include('**/.git/objects/**');
+        expect(excludes).to.not.include('**/disabled/**');
+        // the temporary-upload exclude is still always applied
+        expect(excludes).to.include('**/theia_upload_*');
+    });
+
+    it('keeps the caller-supplied excludes alongside the configured ones', async () => {
+        stubWatcherExclude({ '**/node_modules/**': true });
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: ['**/custom/**'] });
+        await flush();
+
+        const excludes = mockProvider.watchers[0].options.excludes;
+        expect(excludes).to.include('**/custom/**');
+        expect(excludes).to.include('**/node_modules/**');
+    });
+
+    it('still applies the temporary-upload exclude when no files.watcherExclude is configured', async () => {
+        stubWatcherExclude(undefined);
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        expect(mockProvider.watchers[0].options.excludes).to.deep.equal(['**/theia_upload_*']);
+    });
+
+    it('lets the workspace root watcher subsume an internal child watcher once excludes are consistent', async () => {
+        stubWatcherExclude({ '**/node_modules/**': true });
+
+        // The workspace root watcher already carries the configured excludes...
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: ['**/node_modules/**'] });
+        // ...while an internal recursive watcher (e.g. @theia/ai-core) requests a child directory
+        // with empty excludes. Previously their exclude lists differed, so the child was not
+        // subsumed and produced a second OS watcher (and duplicate change events, see #17247).
+        fileService.watch(new URI('file:///project/.prompts'), { recursive: true, excludes: [] });
+        await flush();
+
+        // With files.watcherExclude applied uniformly, the child's excludes now match the parent's,
+        // so the root watcher subsumes it — a single OS watcher instead of two.
+        expect(liveWatcherCount(mockProvider)).to.equal(1);
+    });
+});
