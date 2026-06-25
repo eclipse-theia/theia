@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "AI設定を表示",
   "ai.executePlanWithCoder": "現在のプランをCoderで実行",
   "aiConfiguration:open": "AI設定ビューを開く",
+  "aiConfiguration:openTools": "AIツールの設定を開く",
   "aiHistory:clear": "AI履歴:履歴を消去",
   "aiHistory:open": "AI履歴ビューを開く",
   "aiHistory:sortChronologically": "AI履歴:時系列順に並べ替え",
@@ -27,8 +28,8 @@
           "title": "機能のオーバーライド"
         },
         "completionNotification": {
-          "mdDescription": "このエージェントがタスクを完了した際の通知動作。設定されていない場合、グローバルデフォルトの通知設定が使用されます。\n                - `os-notification`: OS/システム通知を表示\n                - `message`: ステータスバー/メッセージ領域に通知を表示\n                - `blink`: UIを点滅またはハイライト表示\n                - `off`: このエージェントの通知を無効化",
-          "title": "補完通知"
+          "mdDescription": "このエージェントがユーザーの対応を必要とする場合(タスクの完了や入力の要求など)の通知動作。                     設定されていない場合は、グローバルなデフォルトの通知設定が使用されます。\n                    - `os-notification`: OS/システム通知を表示する\n                    - `message`: ステータスバー/メッセージ領域に通知を表示する\n                    - `blink`: UIを点滅またはハイライト表示する\n                    - `off`: このエージェントの通知を無効にする",
+          "title": "通知"
         },
         "enable": {
           "mdDescription": "エージェントを有効化(true)するか無効化(false)するかを指定します。",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "このエージェントに対して現在選択されているプロンプトバリアントを指定します。",
           "title": "選択されたバリエーション"
+        },
+        "serverToolSelections": {
+          "mdDescription": "プロバイダーのサーバーツールに対するユーザーの選択設定。モデルベンダーごとに分類されています。各値には、そのベンダーで有効になっているサーバーツールのIDが含まれています。",
+          "title": "サーバーツールの選択"
         },
         "showInChat": {
           "mdDescription": "エージェントをチャットUIに表示する(true)か非表示にする(false)かを指定します。",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "言語モデルの要件チェックをバイパスします。Theia言語モデルを必要としない外部エージェント(例:Claude Code)を使用している場合に有効にしてください。"
         },
+        "category": "AI",
         "changeSetDefaultTitle": "提案された変更点",
         "changeSetFileDiffUriLabel": "AI変更点: {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "この提案作成以降、ファイル {0} が変更されました。変更を元に戻すことを確認しますか?",
         "couldNotFindMatchingLM": "一致する言語モデルが見つかりませんでした。設定を確認してください！",
         "couldNotFindReadyLMforAgent": "エージェント{0}用の既製言語モデルが見つかりませんでした。設定を確認してください！",
+        "customAgents": {
+          "migrationResult": "カスタムエージェントの移行:{0} が移行済み、{1} が失敗、{2} のレガシー版 customAgents.yml が .bak にバックアップ済み、{3} のプロンプトのオーバーライドが agent.md に統合済み。",
+          "rerunMigration": "カスタムエージェントの移行を再実行する"
+        },
         "defaultAgent": {
           "description": "オプション: ユーザークエリで@<エージェント名>を明示的に指定していない場合、呼び出すべきチャットエージェントの<エージェント名>。デフォルトエージェントが設定されていない場合、Theiaのデフォルトが適用されます。"
         },
@@ -215,7 +225,7 @@
           "label": "AIチャット"
         },
         "welcomeScreenSessions": {
-          "description": "ウェルカム画面に表示する最近のチャットセッションの行数。表示されるセッション数は利用可能な幅によって異なります。最近のチャットセクションを非表示にするには0に設定してください。"
+          "description": "チャット概要(ホームビュー)に表示するチャットセッションの最大数。 アクティブなセッションが優先的に表示され、表示しきれない分は「すべてのチャットを閲覧...」リンクからアクセスできます。エディタのズーム率が高くなりすぎてスクロールバーが表示される場合は、この数値を下げてください。0に設定するとインラインリストが完全に非表示になりますが、「すべてのチャットを閲覧...」リンクから引き続きセッションにアクセスできます。"
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "{0}拡張機能によって提供される組み込み機能",
         "genericCapabilities": "汎用機能",
         "mcpFunctionsDescription": "接続済みサーバーからのモデルコンテキストプロトコル(MCP)機能",
+        "mermaid-rendering": {
+          "copySource": "ソースをコピー",
+          "error": "Mermaid 図をレンダリングできません。定義を確認するには、ソースビューに切り替えてください。",
+          "rendering": "図を表示中…",
+          "resetView": "ビューのリセット",
+          "showDiagram": "図を表示",
+          "showSource": "ソースを表示",
+          "title": "Mermaid 図",
+          "wheelZoomHint": "{0} + スクロール"
+        },
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
         "noMatchingCapabilities": "一致する機能はありません",
         "openDiff": "Open Diff",
@@ -300,14 +320,12 @@
         "performThisTask": "このタスクを実行してください。",
         "persistedSession": "永続化されたセッション(クリックで復元)",
         "promptFragmentsDescription": "会話に含めるカスタムプロンプトフラグメント",
-        "reasoning": {
-          "minimal": "最小限"
-        },
         "removeChat": "チャットを削除",
         "requestNotFoundForRetry": "リクエストが見つかりません。再試行してください。",
         "responseFrom": "{0}からの応答",
         "saveCurrentSelectionsToSettings": "機能設定の保存",
         "searchCapabilities": "検索機能",
+        "sectionRestored": "復元済み",
         "selectAgentQuickPickPlaceholder": "新しいセッション用のエージェントを選択してください",
         "selectAllInCategory": "このカテゴリのすべてを選択",
         "selectChat": "チャットを選択",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "タスクコンテキストを選択して添付",
         "selectVariableArguments": "可変引数を選択",
         "send": "送信(Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "サーバー",
+          "serverTooltip": "プロバイダーのサーバー上で実行されます(ローカルではありません)。サーバーツールは、選択すると自動的に承認されます。"
+        },
+        "serverToolWarning": "このツールは、選択されると自動的に承認されます。モデルによっていつでも実行される可能性があります。",
+        "serverTools": "サーバーツール",
+        "serverToolsDescription": "サーバーツールは、ベンダーのインフラストラクチャ上でLLMによってサーバー側で実行されます。",
+        "serverToolsWarning": "これらのツールは、選択されると自動的に承認されます。モデルによっていつでも実行される可能性があります。",
         "sessionNotFoundForRetry": "再試行用のセッションが見つかりません",
         "skillsDescription": "会話に追加可能な再利用可能なスキル指示",
         "switchAgentMode": "エージェントモードの切り替え",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "承知しました、自動承認を有効化します",
           "alwaysAllowGenericWarning": "このツールは自動承認を有効化する前に確認が必要です。有効化後は、今後のすべての呼び出しが確認なしで実行されます。このツールを信頼し、潜在的なリスクを理解している場合にのみ有効化してください。",
           "alwaysAllowTitle": "「{0}」の自動承認を有効にしますか?",
+          "approveLatest": "最新ツールの承認確認",
           "autoCancel": "{0} での自動キャンセル",
           "canceled": "ツールの実行がキャンセルされました",
           "denied": "ツールの実行が拒否されました",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "拒否理由を入力してください...",
           "deny-session": "このチャットを拒否する",
           "deny-with-reason": "理由を添えて拒否...",
+          "denyLatest": "最新ツールの確認を拒否",
           "executionDenied": "ツールの実行が拒否されました",
           "header": "ツールの実行を確認"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "現在のディレクトリ",
         "differentAgentRequestWarning": "前回のチャットリクエストは別のエージェントが対応しました。Claude Codeはそれらの他のメッセージを確認できません。",
-        "directory": "ディレクトリ",
-        "domain": "ドメイン",
         "edit": "{0} を編集",
         "editAutomatically": "自動編集",
         "editing": "編集",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "アクション",
           "addCustomAgent": "カスタムエージェントを追加",
           "availableCapabilities": "利用可能な機能",
-          "completionNotificationDescriptionPrefix": "このエージェントがタスクを完了した際の通知方法を選択してください。「デフォルト」は ",
+          "completionNotificationDescriptionPrefix": "このエージェントがユーザーの対応を必要とする場合(タスクが完了したときや、ユーザーの入力を要求したときなど)の通知方法を選択してください。「デフォルト」では、 ",
           "defaultNotificationDescription": "グローバルAI通知設定を使用します",
           "enableAgent": "エージェントを有効にする",
           "llmRequirements": "LLM要件",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "AIエージェントがタスクを完了した際に使用されるデフォルトの通知方法。個々のエージェントはこの設定を上書きできます。\n                - `os-notification`: OS/システム通知を表示\n                - `message`: ステータスバー/メッセージ領域に通知を表示\n                - `blink`: UIを点滅またはハイライト表示\n                - `off`: すべての通知を無効化",
+          "mdDescription": "AIエージェントがユーザーの注意を必要とする場合(タスクを完了したときや、ユーザーの入力を要求するときなど)に使用されるデフォルトの通知方法。個々のエージェントはこの設定を上書きすることができます。",
           "title": "デフォルト通知タイプ"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "カスタムリクエスト設定"
         },
         "skillDirectories": {
-          "description": "スキル定義(SKILL.mdファイル)を含む追加ディレクトリ。スキルはAIエージェントが参照可能な再利用可能な指示を提供します。ワークスペース内の.prompts/skillsディレクトリと製品設定フォルダ内のskillsディレクトリは常に含まれます。"
+          "description": "スキル定義(SKILL.mdファイル)を含む追加のディレクトリ。 スキルは、AIエージェントが参照できる再利用可能な指示を提供します。ワークスペース内の .prompts/skills および .agents/skills ディレクトリ、ホームディレクトリ内の .agents/skills ディレクトリ、および製品の設定フォルダ内の skills ディレクトリは、常に含まれます。"
         },
         "skillsVariable": {
           "description": "AIエージェントが使用可能な利用可能なスキルのリストを返します"
@@ -947,10 +972,8 @@
         "agent-description": "[AI設定ビュー]({0})で、有効化、LLM選択、プロンプトテンプレートのカスタマイズ、カスタムエージェント作成を含むAIエージェント設定を構成します。",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "新規ファイルを作成",
-            "openExistingFile": "既存のファイルを開く",
-            "placeholder": "カスタムエージェントファイルを作成または開く場所を選択してください",
-            "title": "カスタムエージェントファイルの保存場所を選択"
+            "placeholder": "agents/<id>/agent.md ファイルを作成する場所を選択してください",
+            "title": "新しいカスタムエージェントの配置場所を選択してください"
           },
           "genericCapabilitiesSettings": "一般的な機能",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "機能",
             "mcpFunctions": "MCP 関数",
             "promptFragments": "プロンプトの断片"
+          },
+          "newAgent": {
+            "createFailed": "カスタムエージェント「{0}」を作成できませんでした:{1}",
+            "defaultDescription": "カスタムエージェント。この説明は agent.md で編集してください。",
+            "defaultPrompt": "あなたは親切なエージェントです。必要に応じてこのプロンプトを調整してください。",
+            "idInvalid": "使用できるのは、英字、数字、ダッシュ、アンダースコア、ドットのみです。",
+            "idPrompt": "エージェントID(agents/ 配下のフォルダ名として使用)",
+            "idTitle": "新しいカスタムエージェント",
+            "noLocation": "カスタムエージェントを作成できません:プロンプトテンプレートの保存場所が設定されていません。グローバルまたはワークスペースのプロンプトテンプレートフォルダを設定してから、もう一度お試しください。"
           },
           "noDescription": "説明はありません",
           "resetAllCapabilities": "すべての機能をデフォルト値にリセットする",
@@ -1136,9 +1168,10 @@
           "description": "コードレビューのワークフロー全体を調整する、AI搭載のPRレビューエージェント。PR情報の取得、コードベースの探索、構造化された分析の実施、diffビューアを用いた発見事項のインタラクティブな説明、およびオプションでGitHub上に保留中のレビューを作成します。"
         },
         "prompt-template-description": "[AI設定ビュー]({0})でAIエージェントのプロンプトバリエーションを選択し、プロンプトテンプレートをカスタマイズします。",
-        "recentChats": "最近のチャット",
+        "restoredSession": "セッションの復元",
         "restrictedModeDetails": "AIチャット、インライン提案、コードアクション、およびプロンプトテンプレートは無効になっています",
         "restrictedModeLabel": "AI機能(制限モードでは無効化されています)",
+        "sectionRestored": "復元済み",
         "shellAllowlist": {
           "placeholder": "例: \"git log\" (正確なコマンド) または \"git log *\" (引数付き)"
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "スラッシュコマンド"
         },
+        "toolConfirmationInfo": {
+          "header": "ツールの確認"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "承知しました、自動承認を有効化します",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "デフォルトツール確認モード:"
+          },
+          "recommendedDefaults": {
+            "apply": "デフォルトのツールを許可する",
+            "dialogConfirm": "了解しました、許可します",
+            "dialogTitle": "デフォルトのツールを使用しますか?",
+            "message": "現在、ツールの呼び出しには承認が必要です。すべての組み込みツールを一括で自動的に許可します。追加の確認が必要なツール(例:シェル実行)、MCPツール、および今後追加されるツールについては、実行前に引き続き確認が行われます。",
+            "msg": {
+              "line1": "これにより、現在登録されているすべての組み込みツールが「常に許可」に設定されます。",
+              "line2": "追加の確認が必要なツール(シェル実行など)については、実行前に引き続き確認のメッセージが表示されます。",
+              "line3": "MCPツールはサードパーティ製であり、本製品には含まれていません。このビューで個別に許可することができます。",
+              "line4": "後で追加されたツールについても、引き続きデフォルトで「確認」が表示されるため、内容を確認することができます。",
+              "line5": "このビューで、後でこれを変更することができます。"
+            }
           },
           "resetAll": "すべてリセット",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "変数を選択してください。",
           "usedByAgents": "エージェントが使用する"
-        }
+        },
+        "waitingForInput": "入力をお待ちしています"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP サーバー(自動起動がブロックされています)",
         "error": {
           "allServersRunning": "すべてのMCPサーバーは既に稼働中です。",
+          "authenticationRequired": "MCPサーバー「{0}」では認証が必要です。サインインするには、サーバーを再起動してください。",
+          "getRedirectUrlFailed": "MCP OAuthのリダイレクトURLの特定中にエラーが発生しました。",
+          "noOAuthServersConfigured": "OAuth 対応の MCP サーバーが設定されていません。",
           "noRunningServers": "MCPサーバーは実行されていません。",
           "noServersConfigured": "MCPサーバーが設定されていません。",
-          "startFailed": "MCPサーバーの起動中にエラーが発生しました。"
+          "oauthRequiresTrustedWorkspace": "OAuth対応のMCPサーバーを起動するには、信頼されたワークスペースが必要です。",
+          "signInFailed": "MCPサーバーへのサインイン中にエラーが発生しました。",
+          "signOutFailed": "MCPサーバーからのサインアウト中にエラーが発生しました。",
+          "startFailed": "MCPサーバーの起動中にエラーが発生しました。",
+          "stopFailed": "MCPサーバーの停止中にエラーが発生しました。"
+        },
+        "getRedirectUrl": {
+          "label": "MCP: MCP OAuth リダイレクト URL の取得"
         },
         "info": {
-          "serverStarted": "MCPサーバー「{0}」が正常に起動しました。登録済みツール:{1}"
+          "oauthRedirectUrl": "MCP OAuth リダイレクト URL: {0}",
+          "serverSignedIn": "MCPサーバー「{0}」にサインインしました。",
+          "serverSignedOut": "MCPサーバー「{0}」からサインアウトしました。",
+          "serverStarted": "MCPサーバー「{0}」が正常に起動しました。登録済みツール:{1}",
+          "signInCancelled": "MCPサーバー「{0}」へのサインインがキャンセルされました。"
+        },
+        "oauth": {
+          "completeSignInInBrowser": "ブラウザで MCP OAuth サインインを完了してください。サインインタブが開かない場合は、ブラウザがポップアップをブロックしている可能性があります。",
+          "notification": {
+            "signInPrompt": "MCPサーバー「{0}」を起動するには、認証が必要です。"
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "MCPサーバーを起動するために使用されるコマンド。例:「uvx」または「npx」。",
             "title": "MCPサーバーを実行するコマンド"
           },
+          "deferLoading": {
+            "mdDescription": "有効になっている場合、このサーバーが提供するツールは、生成されたプロンプトフラグメント `mcp_<server>_tools` 内で「遅延」としてマークされます。遅延ツールは、モデルのコンテキストに事前に読み込まれません。 その代わりに、サポートされている場合、モデルはプロバイダー(Anthropic、OpenAI)に組み込まれたツール検索メカニズムを介して、オンデマンドでそれらを検出します。これにより、多数のツールを公開しているサーバーにおけるトークンのオーバーヘッドが大幅に削減されます。",
+            "title": "読み込みを遅延する"
+          },
           "env": {
             "mdDescription": "サーバー用に設定するオプションの環境変数(例:APIキーなど)。",
             "title": "環境変数"
           },
           "headers": {
-            "mdDescription": "サーバーへの各リクエストに含められるオプションの追加ヘッダー。",
+            "mdDescription": "サーバーへの各リクエストに含められる、オプションの追加ヘッダー。ヘッダーの値はプレーンテキストとして設定に保存されます。機密情報が含まれる場合は、ワークスペース設定の使用を避けてください。",
             "title": "ヘッダー"
           },
-          "mdDescription": "MCPサーバーの設定は、ローカル環境ではコマンド・引数・環境変数(任意)、リモート環境ではサーバーURL・認証トークン・認証ヘッダー名(任意)で行います。さらに自動起動設定(デフォルトはtrue)が可能です。 各サーバーは「brave-search」や「filesystem」などの一意のキーで識別されます。サーバーを起動するには「MCP: Start MCP Server」コマンドを使用し、目的のサーバーを選択します。サーバーを停止するには「MCP: Stop MCP Server」コマンドを使用します。自動起動は再起動後にのみ有効となるため、初回起動時は手動でサーバーを開始する必要があります。\n設定例:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "MCPサーバーの設定は、コマンド、引数、および必要に応じて環境変数を使用してローカルで設定するか、サーバーURL、認証トークン、OAuth設定、および必要に応じて認証ヘッダー名を使用してリモートで設定します。さらに、自動起動を設定することも可能です(デフォルトはtrue)。 各サーバーは、「brave-search」や「filesystem」などの一意のキーによって識別されます。サーバーを起動するには、「MCP: Start MCP Server」コマンドを使用し、目的のサーバーを選択します。サーバーを停止するには、「MCP: Stop MCP Server」コマンドを使用します。 自動起動は再起動後にのみ有効になるため、初回は手動でサーバーを起動する必要がある点に注意してください。AIレジストリからインストールされたサーバーには、自動的に管理される追加の `registryMetadata` ブロックが含まれており、手動で編集することは想定されていません。\n設定例:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "オプションの認証サーバーURLのオーバーライド。省略した場合、TheiaはMCPサーバーからそれを検出します。",
+              "title": "認証サーバー"
+            },
+            "clientId": {
+              "mdDescription": "オプションの静的 OAuth クライアント ID。省略された場合、Theia は動的なクライアント登録を試行します。",
+              "title": "クライアントID"
+            },
+            "clientSecret": {
+              "mdDescription": "事前登録済みの機密クライアントのみを受け入れる認証サーバー(動的なクライアント登録は不可)向けの、オプションの OAuth クライアントシークレット。クライアント ID と組み合わせてのみ使用されます。これは設定にプレーンテキストとして保存されます。シークレットが機密情報である場合は、ワークスペース設定の使用を避けてください。",
+              "title": "クライアントシークレット"
+            },
+            "mdDescription": "認証を必要とするリモート MCP サーバー向けの、オプションの OAuth 2.1 設定。このオブジェクトが存在すると、サーバーで OAuth が有効になります。OAuth を無効にするには、これを削除してください。Theia はデフォルトで PKCE を使用したパブリッククライアントを使用します。事前登録済みの機密クライアントを必要とするサーバーの場合にのみ、クライアントシークレットを設定してください。 変更は、MCPサーバーを再起動した後に有効になります。",
+            "resource": {
+              "mdDescription": "このMCPサーバーに対する、RFC 8707リソースインジケータのオプションのオーバーライド。",
+              "title": "リソース"
+            },
+            "scopes": {
+              "mdDescription": "サーバーがスコープを公開していない場合にリクエストする、オプションの OAuth スコープ。",
+              "title": "適用範囲"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "このサーバーのインストールに使用されたレジストリ承認のコンテンツハッシュ。",
+              "title": "レジストリ設定ハッシュ"
+            },
+            "mdDescription": "AIレジストリからインストールされたサーバーの来歴メタデータ。作成者:`@theia/ai-registry`。ユーザーによる編集はできません。",
+            "serverId": {
+              "mdDescription": "このサーバーがインストールされたAIレジストリエントリを識別します。",
+              "title": "レジストリのサーバーID"
+            },
+            "title": "レジストリのメタデータ",
+            "version": {
+              "mdDescription": "インストール時に記録された、レジストリに登録されたバージョン。",
+              "title": "レジストリのバージョン"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "サーバーの認証トークン(必要な場合)。これはリモートサーバーへの認証に使用されます。",
+            "mdDescription": "必要に応じて、サーバー用の認証トークン。これは設定ファイルにプレーンテキストで保存されます。トークンが機密情報である場合は、ワークスペース設定の使用を避けてください。",
             "title": "認証トークン"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "MCP サーバー構成"
         },
+        "signin": {
+          "label": "MCP: MCP サーバーへのサインイン"
+        },
+        "signout": {
+          "label": "MCP: MCPサーバーからサインアウト"
+        },
         "start": {
           "label": "MCP: MCPサーバーを起動"
         },
         "stop": {
           "label": "MCP: MCPサーバーを停止"
         },
+        "tool": {
+          "noTools": "利用可能なツールはありません。"
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "ルートは、サーバーがファイルシステム内で動作できる範囲を定義します。有効にすると、ワークスペースフォルダがルートとして使用されます。無効の場合、MCPサーバーはファイルシステム全体にアクセスできます。この設定を変更すると、実行中のすべてのMCPサーバーが再起動され、新しいルート設定が適用されます。",
           "title": "ワークスペースをルートとして使用する"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "MCP サーバーの設定変更の適用に失敗しました: {0}",
+          "signInNotCompleted": "MCPサーバー「{0}」へのサインインが完了しませんでした。"
         }
       },
       "mcpConfiguration": {
         "autostart": "自動起動",
-        "connectServer": "接続",
+        "browseAIRegistry": "AIレジストリを閲覧する",
+        "browseAIRegistryTooltip": "「拡張機能」ビューを開いて、AI レジストリエントリを閲覧します",
+        "command": {
+          "addServer": "ローカル MCP 設定を追加..."
+        },
         "connectingServer": "接続中...",
         "copiedAllList": "すべてのツールをクリップボードにコピーしました(全ツールのリスト)",
         "copiedAllSingle": "すべてのツールをクリップボードにコピーしました(すべてのツールを含む単一のプロンプトフラグメント)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "チャット用にすべてコピー(全ツールを含む単一プロンプトフラグメント)",
         "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
         "copyForPromptTemplate": "プロンプトテンプレート用にすべてをコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "deferLoading": "ツールの読み込みを遅延させる",
         "deleteServer": "サーバーを削除",
         "deleteServerDialogMsg": "サーバー「{0}」を削除してもよろしいですか?",
         "deleteServerDialogTitle": "MCPサーバーを削除",
@@ -1312,11 +1445,23 @@
           "autostart": "自動起動",
           "commandPlaceholder": "例: npx または uvx",
           "commandRequired": "ローカルサーバーにはコマンドが必要です",
+          "deferLoading": "ツールの読み込みを遅延させる(プロバイダーのツール検索機能を使用して、必要に応じてツールを検出する)",
           "envPlaceholder": "KEY=value (1行につき1組)",
           "headersPlaceholder": "ヘッダー名=値(1行につき1つ)",
           "localServer": "ローカル(コマンド)",
           "nameExists": "この名前のサーバーは既に存在します",
           "nameRequired": "サーバー名は必須です",
+          "oauthAuthorizationServerInvalid": "OAuth 認証サーバーは、有効な http(s) URL でなければなりません",
+          "oauthAuthorizationServerPlaceholder": "オプションの認証サーバーURL",
+          "oauthClientIdPlaceholder": "オプションの静的クライアントID",
+          "oauthClientSecretPlaceholder": "機密性の高いクライアントを必要とするサーバーのみ対象",
+          "oauthPublicClientDescription": "Theiaはデフォルトで、PKCE対応のパブリックOAuthクライアントを使用します。サーバーが事前登録済みの機密クライアントを要求する場合にのみ、クライアントシークレットを指定してください。",
+          "oauthRedirectUrlDescription": "認証のコールバックはこのURLに送信されます。静的なクライアントIDがある場合は、OAuthプロバイダーにリダイレクトURIとして登録してください。",
+          "oauthResourceInvalid": "OAuthリソースは、有効なHTTP(S) URLでなければなりません。",
+          "oauthResourcePlaceholder": "オプションのリソース URI",
+          "oauthScopesPlaceholder": "スペース区切りのスコープ",
+          "oauthSharedCredentialsDescription": "保存された OAuth セッションは、同じサーバー名および URL(またはリソース)を使用するワークスペース間で共有されます。",
+          "remoteOAuthServer": "リモート(OAuth)",
           "remoteServer": "リモート(URL)",
           "saveChanges": "変更を保存",
           "serverName": "サーバー名",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "例: https://mcp.example.com",
           "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
         },
+        "fromRegistryLink": "レジストリより",
         "headers": "ヘッダー",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "認証サーバー",
+        "oauthClientId": "OAuth クライアント ID",
+        "oauthClientSecret": "OAuthクライアントシークレット",
+        "oauthRedirectUrl": "リダイレクト先URL",
+        "oauthResource": "OAuthリソース",
+        "oauthScopes": "OAuthスコープ",
+        "openInRegistry": "AIレジストリで開く:{0}",
         "saveServerError": "MCPサーバー設定の保存に失敗しました: {0}",
         "serverAuthToken": "認証トークン",
         "serverAuthTokenHeader": "認証ヘッダー名",
         "serverUrl": "サーバーURL",
+        "signInServerFailed": "MCPサーバー「{0}」へのサインインに失敗しました。",
+        "signInServerNotCompleted": "MCPサーバー「{0}」へのサインインが完了しませんでした。",
+        "signInServerSucceeded": "MCPサーバー「{0}」にサインインしました。",
+        "signOutServerDialogMsg": "サーバー「{0}」からログアウトしてもよろしいですか?これにより、このサーバー用に保存されている OAuth トークンが削除されます。",
+        "signOutServerDialogTitle": "MCPサーバーからサインアウト",
+        "signOutServerFailed": "MCPサーバー「{0}」からのサインアウトに失敗しました。",
+        "startServerFailed": "MCP サーバー「{0}」の起動に失敗しました。",
+        "stopServerFailed": "MCP サーバー「{0}」の停止に失敗しました。",
         "tools": "ツール: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "出力トークン",
         "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
         "readCachedInputTokensTooltip": "「入力トークン」に加えて追跡されます。通常、キャッシュされていない場合よりもはるかに低コストです。通常、レート制限にはカウントされません。",
-        "total": "合計",
         "totalTokensTooltip": "'入力トークン' + '出力トークン'"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": ".gitignore を考慮する"
         },
         "createSkillAgent": {
-          "description": "新規スキル作成用AIアシスタント。スキルはAIエージェント向けに再利用可能な指示とドメイン知識を提供する。本エージェントは.prompts/skillsディレクトリ内に、適切なYAMLフロントマターとマークダウンコンテンツを備えた構造化されたスキルを作成する支援を行う。"
+          "description": "新しいスキルを作成するためのAIアシスタントです。スキルとは、AIエージェント向けに再利用可能な指示やドメイン知識を提供するものです。このエージェントは、適切なYAMLフロントマターとマークダウンコンテンツを備えた、.agents/skillsまたは.prompts/skillsディレクトリ内に、構造の整ったスキルを作成するのに役立ちます。この機能はまだ初期段階にあり、変更される可能性があります。"
         },
         "excludedPattern": {
           "description": "除外するファイル/フォルダ用のパターン(globまたは正規表現)のリスト。",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
+      "browseAllChats": "すべてのチャットを閲覧...",
       "confirm": "確認",
       "deleteChat": "チャットを削除",
+      "home": "ホーム",
       "initiate-session-task-context": "タスクコンテキスト: セッションの開始",
-      "navigate-back": "戻る",
-      "navigate-forward": "前方へ移動",
       "noOutput": "出力なし",
       "open-current-session-summary": "現在のセッションの概要を開く",
       "open-settings-tooltip": "AI設定を開く...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "スクロールロック",
       "scroll-unlock": "スクロールのロック解除",
       "session-settings": "セッション設定を設定する",
-      "showChats": "チャットを表示...",
       "summarize-current-session": "現在のセッションを要約する"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "エージェント「{0}」はタスクを完了しました。",
       "agentCompletionMessageWithSession": "エージェント「{0}」は「{1}」におけるタスクを完了しました。",
       "agentCompletionTitle": "エージェント「{0}」タスク完了",
+      "agentInputNeededMessage": "エージェント「{0}」があなたの入力を求めています。",
+      "agentInputNeededMessageWithSession": "エージェント「{0}」が、「{1}」であなたの入力を求めています。",
+      "agentInputNeededTitle": "エージェント「{0}」からの入力が必要です",
       "aiDisabledInRestrictedMode": "信頼されていないワークスペースでは、AI機能は利用できません。",
       "preferences": {
         "linuxEnvHint": "Linux では、デスクトップのショートカットからアプリケーションを起動する場合、変数が `~/.profile`(`~/.bashrc` だけでなく)に定義されていることを確認してください。詳細については、[ドキュメント](https://theia-ide.org/docs/user_ai/#setting-api-keys)を参照してください。",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "タスクなし"
       },
-      "userInteractionCanceled": "キャンセルされました",
       "userInteractionCommentPlaceholder": "この手順についてコメントを追加...",
       "userInteractionEmpty": "空",
       "userInteractionFinishStep": "完了",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "ユーザー操作の準備中...",
       "userInteractionPreparingSteps": "準備中:{0}({1}の手順)",
       "userInteractionPreparingTitle": "準備中:{0}",
-      "userInteractionStepLabel": "{1} のステップ{0}",
       "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCPサーバー(自動起動がブロックされています)"
+      "installDialog": {
+        "authTokenPlaceholder": "このサーバーへの接続に必要です",
+        "authTokenRequired": "このサーバーをインストールするには、認証トークンが必要です。",
+        "oauthClientIdPlaceholder": "このサーバーへの接続に必要です",
+        "oauthClientSecretPlaceholder": "このサーバーへの接続に必要です",
+        "oauthCredentialsRequired": "このサーバーをインストールするには、OAuthクライアントIDとクライアントシークレットが必要です。",
+        "oauthDescription": "このサーバーは、事前登録済みの機密クライアントを使用した OAuth を採用しています。OAuth プロバイダーから発行されたクライアント ID とシークレットを入力してください。",
+        "title": "MCP Serverのインストール",
+        "trust": {
+          "unknown": "AIレジストリが設定されていません。信頼性を確認できません。",
+          "unverified": "このサーバーは、AIレジストリ({0})に登録されていません。インストールは自己責任で行ってください。",
+          "verified": "AIレジストリ({0})により承認済み。"
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "「{0}」という名前の MCP サーバーはすでに設定されています。続行すると、レジストリの設定によって既存のエントリが上書きされます。",
+          "title": "MCPサーバーはすでにインストールされています"
+        },
+        "missingId": "インストールリンクに、必須の「id」パラメータが欠けています。",
+        "noRegistry": "MCPサーバー「{0}」をインストールできません。この製品にはAIレジストリが設定されていません。",
+        "success": "AIレジストリからMCPサーバー「{0}」をインストールしました。",
+        "unknownId": "MCPサーバー「{0}」がAIレジストリにリストされていません。"
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "設定の修正",
+        "link": "レジストリへのリンク",
+        "unlink": "リンクを解除",
+        "updateTooltip": "{0} から {1} への更新"
+      },
+      "skill": {
+        "action": {
+          "fix": "スキルを修正",
+          "link": "レジストリへのリンク",
+          "unlink": "リンクを解除"
+        },
+        "fixed": "スキル「{0}」を復元しました。",
+        "githubToken": {
+          "mdDescription": "GitHubからスキルをダウンロードする際に使用される、オプションのGitHub個人アクセストークン。このトークンを使用すると、GitHubのリクエスト制限が1時間あたり60件から5000件に引き上げられます。 **ご注意:** この設定を使用すると、トークンは Theia を実行しているマシン上に平文で保存されます。安全にトークンを指定するには、環境変数 `GITHUB_TOKEN` を使用することをお勧めします。"
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "{1}? からファイルをダウンロードして、「{0}」スキルをインストールしてください。",
+            "title": "スキルのインストール"
+          },
+          "fetchFailed": "スキル「{0}」をインストールするためにAIレジストリを読み込めませんでした。",
+          "missingId": "インストールリンクに、必須の「id」パラメータが欠けています。",
+          "success": "AIレジストリから「{0}」スキルをインストールしました。",
+          "unknownId": "スキル「{0}」は、AIレジストリにリストされていません。"
+        },
+        "installed": "「{0}」スキルをインストールしました。",
+        "linked": "関連スキル「{0}」。",
+        "uninstalled": "スキル「{0}」をアンインストールしました。",
+        "unlinked": "リンクされていないスキル「{0}」。",
+        "updated": "スキル「{0}」を更新しました。",
+        "warning": {
+          "fix": "このスキルのファイルはレジストリとは異なります。「スキルを修復」をクリックして復元してください。",
+          "linkStale": "このスキルはレジストリからインストールされましたが、レジストリにはもはやその記載がありません。「リンクを解除」をクリックしてレジストリのリンクを解除し、ファイルは残すか、「アンインストール」をクリックしてスキルを削除してください。",
+          "notInRegistry": "レジストリには存在しません"
+        },
+        "watcherStopped": "スキルフォルダへの変更監視を停止しました。インストール済みのスキルは自動的に更新されなくなる可能性があります。ウィンドウを再読み込みして再開してください。"
+      },
+      "warning": {
+        "fixConfig": "このサーバーの設定はレジストリの内容と異なります。「設定を修正」をクリックして復元してください。",
+        "linkStale": "このサーバーはレジストリからインストールされましたが、レジストリにはもはやその項目が表示されていません。このサーバーを確実に保持したい場合、かつ正常に動作している場合は、「リンクを解除」をクリックしてレジストリのリンクを削除してください。そうでない場合は、「アンインストール」をクリックしてサーバーを削除してください。",
+        "notInRegistry": "レジストリには存在しません"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "了解しました、すべて許可します",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "シェルコマンドの権限を設定する",
       "confirmExecution": "シェルコマンドの確認",
       "denialReason": "理由",
-      "executionCanceled": "キャンセル済み",
       "executionDenied": "拒否されました",
       "executionDeniedWithReason": "拒否されました(理由あり)",
       "partialOutput": "部分的な出力",
@@ -2159,7 +2387,6 @@
       "openByDefault": "デフォルトではエディターではなくプレビューを開く。"
     },
     "property-view": {
-      "directory": "ディレクトリ",
       "lastModified": "最終更新日",
       "noProperties": "プロパティは利用できません。",
       "properties": "プロパティ",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "閉じる 変更 プレビュー表示"
       },
-      "history": "履歴",
       "justNow": "ついさっき",
       "mergeEditor": {
         "resetConfirmationTitle": "このエディターでマージ結果を本当にリセットしますか?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "拡張機能の取得に失敗しました。",
       "errorFetchingConfigurationHint": "これはネットワーク設定の問題が原因である可能性があります。",
       "failedInstallingVSIX": "{0}のVSIXからのインストールに失敗しました。",
+      "filter": {
+        "showBuiltin": "組み込み機能を表示",
+        "showInstalled": "インストール済みを表示",
+        "showRecommended": "推奨を表示"
+      },
       "invalidVSIX": "選択されたファイルは有効な「*.vsix」プラグインではありません。",
       "license": "ライセンス: {0}",
       "onlyShowVerifiedExtensionsDescription": "これにより、{0}は検証済みの拡張機能のみを表示できるようになります。",
       "onlyShowVerifiedExtensionsTitle": "検証済み拡張機能のみを表示",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名称一覧。",
       "restrictedModeInstallWarning": "拡張機能「{0}」は、制限モードでの実行に対応していない場合、無効化される可能性があります。拡張機能が期待どおりに動作するようにするには、このワークスペースを信頼してください。",
-      "searchPlaceholder": "{0} で拡張機能を検索",
+      "searchPlaceholder": "Open VSX Registry を検索",
       "showInstalled": "インストール済み拡張機能を表示",
       "showRecommendedExtensions": "拡張機能の推奨に関する通知を表示するかどうかを制御します。",
       "vsx-extensions-contribution": {
+        "no-other-versions": "他のバージョンは提供されていません。",
         "update-version-uninstall-error": "拡張機能の削除中にエラーが発生しました: {0}.",
         "update-version-version-error": "{1} のバージョン {0} のインストールに失敗しました。"
       }

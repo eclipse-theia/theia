@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
   "ai.executePlanWithCoder": "Coder ile Mevcut Planı Yürüt",
   "aiConfiguration:open": "AI Yapılandırması görünümünü aç",
+  "aiConfiguration:openTools": "AI Araçları Yapılandırmasını Aç",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Açık AI Geçmişi görünümü",
   "aiHistory:sortChronologically": "AI Geçmişi: Kronolojik olarak sıralama",
@@ -27,8 +28,8 @@
           "title": "Yetenek Geçersiz Kılmaları"
         },
         "completionNotification": {
-          "mdDescription": "Bu aracı bir görevi tamamladığında bildirim davranışı. Ayarlanmamışsa, genel varsayılan bildirim ayarı kullanılır.\n- `os-notification`: İşletim sistemi/sistem bildirimlerini göster\n- `message`: Durum çubuğu/mesaj alanında bildirimleri göster\n- `blink`: Kullanıcı arayüzünü yanıp sönme veya vurgula\n- `off`: Bu aracı için bildirimleri devre dışı bırak",
-          "title": "Tamamlama Bildirimi"
+          "mdDescription": "Bu ajanın dikkatinizi gerektirdiği durumlarda (örneğin, bir görevi tamamladığında veya sizden girdi istediğinde) bildirim davranışı.                     Ayarlanmazsa, genel varsayılan bildirim ayarı kullanılır.\n                    - `os-notification`: İşletim sistemi/sistem bildirimlerini göster\n                    - `message`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                    - `blink`: Kullanıcı arayüzünü yanıp sönecek şekilde göster veya vurgulayın\n                    - `off`: Bu ajan için bildirimleri devre dışı bırak",
+          "title": "Bildirim"
         },
         "enable": {
           "mdDescription": "Ajanın etkinleştirilmesi (true) veya devre dışı bırakılması (false) gerektiğini belirtir.",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "Bu aracı için şu anda seçili olan komut istemi varyantlarını belirtir.",
           "title": "Seçilen Varyantlar"
+        },
+        "serverToolSelections": {
+          "mdDescription": "Sağlayıcı sunucu araçları için kullanıcı seçimleri, model satıcısına göre sıralanmıştır. Her değer, o satıcıya ait etkin sunucu araç kimliklerini içerir.",
+          "title": "Sunucu Aracı Seçenekleri"
         },
         "showInChat": {
           "mdDescription": "Ajanın sohbet kullanıcı arayüzünde gösterilip gösterilmeyeceğini (true) veya gizlenip gizlenmeyeceğini (false) belirtir.",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "Dil modeli gereksinimi kontrolünü atlayın. Theia dil modellerini gerektirmeyen harici ajanlar (ör. Claude Code) kullanıyorsanız bunu etkinleştirin."
         },
+        "category": "AI",
         "changeSetDefaultTitle": "Önerilen Değişiklikler",
         "changeSetFileDiffUriLabel": "AI Değişiklikleri: {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "{0} dosyası bu öneri oluşturulduğundan beri değiştirilmiştir. Değişikliği geri almak istediğinizden emin misiniz?",
         "couldNotFindMatchingLM": "Eşleşen bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "couldNotFindReadyLMforAgent": "{0} ajanı için hazır bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
+        "customAgents": {
+          "migrationResult": "Özel ajan geçişi: {0} geçişi tamamlandı, {1} başarısız oldu, {2} eski customAgents.yml dosyası .bak uzantısıyla yedeklendi, {3} komut istemi geçersiz kılmaları agent.md dosyasına aktarıldı.",
+          "rerunMigration": "Özel ajan geçişini yeniden çalıştır"
+        },
         "defaultAgent": {
           "description": "İsteğe bağlı: Kullanıcı sorgusunda @<agent-name> ile açıkça belirtilen bir ajan yoksa, çağrılacak Sohbet Ajanının <agent-name> adı. Varsayılan Ajan yapılandırılmamışsa, Theia'nın varsayılanları uygulanır."
         },
@@ -215,7 +225,7 @@
           "label": "AI Sohbet"
         },
         "welcomeScreenSessions": {
-          "description": "Karşılama ekranında görüntülenecek son sohbet oturumlarının satır sayısı. Görüntülenebilen oturum sayısı, kullanılabilir genişliğe bağlıdır. Son sohbetler bölümünü gizlemek için 0 olarak ayarlayın."
+          "description": "Sohbet genel bakışında (ana görünüm) gösterilecek maksimum sohbet oturumu sayısı. Önce aktif oturumlar gösterilir; fazlalık \"Tüm sohbetlere göz at...\" bağlantısı üzerinden erişilebilir. Editörün yakınlaştırma seviyesi yüksek olduğunda kaydırma çubuğu görünüyorsa bu değeri düşürün. Satır içi listeyi tamamen gizlemek için 0 olarak ayarlayın; oturumlara \"Tüm sohbetlere göz at...\" bağlantısı üzerinden erişilebilir."
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "{0}u uzantıları tarafından sağlanan yerleşik işlevler",
         "genericCapabilities": "Genel Yetenekler",
         "mcpFunctionsDescription": "Bağlı sunuculardan Model Bağlam Protokolü (MCP) işlevleri",
+        "mermaid-rendering": {
+          "copySource": "Kaynağı Kopyala",
+          "error": "Mermaid diyagramı görüntülenemiyor. Tanımı incelemek için kaynak görünümüne geçin.",
+          "rendering": "Şema oluşturuluyor…",
+          "resetView": "Görünümü Sıfırla",
+          "showDiagram": "Şemayı Göster",
+          "showSource": "Kaynağı Göster",
+          "title": "Mermaid Diyagramı",
+          "wheelZoomHint": "{0} + Kaydır"
+        },
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
         "noMatchingCapabilities": "Eşleşen özellik yok",
         "openDiff": "Açık Fark",
@@ -300,14 +320,12 @@
         "performThisTask": "Bu görevi gerçekleştirin.",
         "persistedSession": "Kalıcı oturum (geri yüklemek için tıklayın)",
         "promptFragmentsDescription": "Sohbete eklenecek özel komut istemi parçaları",
-        "reasoning": {
-          "minimal": "Minimal"
-        },
         "removeChat": "Sohbeti Kaldır",
         "requestNotFoundForRetry": "Yeniden denemek için istek bulunamadı",
         "responseFrom": "{0}'dan gelen yanıt",
         "saveCurrentSelectionsToSettings": "Yetenek ayarlarını kaydet",
         "searchCapabilities": "Arama yetenekleri",
+        "sectionRestored": "Geri yüklendi",
         "selectAgentQuickPickPlaceholder": "Yeni oturum için bir aracı seçin",
         "selectAllInCategory": "Bu kategorideki tümünü seç",
         "selectChat": "Sohbeti seç",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "Eklemek için bir görev bağlamı seçin",
         "selectVariableArguments": "Değişken argümanları seçin",
         "send": "Gönder (Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "sunucu",
+          "serverTooltip": "Sağlayıcının sunucularında (yerel olarak değil) çalıştırılır. Sunucu araçları seçildiğinde otomatik olarak onaylanır."
+        },
+        "serverToolWarning": "Bu araç, seçildiğinde otomatik olarak onaylanır. Model tarafından herhangi bir zamanda çalıştırılabilir.",
+        "serverTools": "Sunucu Araçları",
+        "serverToolsDescription": "Sunucu araçları, satıcının altyapısı üzerinde LLM tarafından sunucu tarafında çalıştırılır.",
+        "serverToolsWarning": "Bu araçlar seçildiğinde otomatik olarak onaylanır. Model tarafından herhangi bir zamanda çalıştırılabilirler.",
         "sessionNotFoundForRetry": "Yeniden denemek için oturum bulunamadı",
         "skillsDescription": "Sohbete eklenebilen yeniden kullanılabilir beceri talimatları",
         "switchAgentMode": "Ajan Modunu Değiştir",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "Anladım, otomatik onayı etkinleştir",
           "alwaysAllowGenericWarning": "Bu araç, otomatik onay etkinleştirilmeden önce onay gerektirir. Etkinleştirildikten sonra, gelecekteki tüm çağrılar onay olmadan yürütülecektir. Bu aracı güveniyorsanız ve olası riskleri anlıyorsanız etkinleştirin.",
           "alwaysAllowTitle": "\"{0}\" için Otomatik Onay'ı etkinleştirin?",
+          "approveLatest": "En Son Araç Onayını Onayla",
           "autoCancel": "{0}'da otomatik iptal",
           "canceled": "Araç yürütme iptal edildi",
           "denied": "Araç yürütme reddedildi",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "Reddetme nedenini girin...",
           "deny-session": "Bu Sohbeti Reddet",
           "deny-with-reason": "Sebep göstererek reddet...",
+          "denyLatest": "En Son Araç Onayını Reddet",
           "executionDenied": "Araç yürütme reddedildi",
           "header": "Aracın Çalıştırılmasını Onayla"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "geçerli dizin",
         "differentAgentRequestWarning": "Önceki sohbet isteği başka bir temsilci tarafından ele alınmıştır. Claude Code diğer mesajları görmez.",
-        "directory": "Dizin",
-        "domain": "Etki alanı",
         "edit": "{0} dosyasını düzenle",
         "editAutomatically": "Otomatik olarak düzenle",
         "editing": "Düzenleme",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Eylemler",
           "addCustomAgent": "Özel Ajan Ekle",
           "availableCapabilities": "Mevcut Yetenekler",
-          "completionNotificationDescriptionPrefix": "Bu aracı görevini tamamladığında nasıl bilgilendirilmek istediğinizi seçin. \"Varsayılan\" seçeneği ",
+          "completionNotificationDescriptionPrefix": "Bu ajanın dikkatinizi gerektirdiği durumlarda, yani görevini tamamladığında veya sizden girdi istediğinde nasıl bilgilendirilmek istediğinizi seçin. \"Varsayılan\" seçeneği ",
           "defaultNotificationDescription": "Küresel AI bildirim ayarını kullanır",
           "enableAgent": "Aracıyı Etkinleştir",
           "llmRequirements": "LLM Gereksinimleri",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "Bir AI ajanı bir görevi tamamladığında kullanılan varsayılan bildirim yöntemi. Bireysel ajanlar bu ayarı geçersiz kılabilir.\n- `os-notification`: OS/sistem bildirimlerini göster\n- `message`: Durum çubuğu/mesaj alanında bildirimleri göster\n- `blink`: Kullanıcı arayüzünü yanıp sönme veya vurgula\n- `off`: Tüm bildirimleri devre dışı bırak",
+          "mdDescription": "Bir AI ajanı dikkatinizi gerektirdiğinde, yani bir görevi tamamladığında veya sizden girdi istediğinde kullanılan varsayılan bildirim yöntemi. Tek tek ajanlar bu ayarı geçersiz kılabilir.",
           "title": "Varsayılan Bildirim Türü"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "Özel İstek Ayarları"
         },
         "skillDirectories": {
-          "description": "Beceri tanımlarını içeren ek dizinler (SKILL.md dosyaları). Beceriler, AI ajanları tarafından referans alınabilecek yeniden kullanılabilir talimatlar sağlar. Çalışma alanınızdaki .prompts/skills dizini ve ürününüzün yapılandırma klasöründeki beceri dizini her zaman dahil edilir."
+          "description": "Beceri tanımlarını (SKILL.md dosyaları) içeren ek dizinler. Beceri tanımları, AI ajanları tarafından referans alınabilecek yeniden kullanılabilir talimatlar sağlar. Çalışma alanınızdaki .prompts/skills ve .agents/skills dizinleri, ana dizininizdeki .agents/skills dizini ve ürününüzün yapılandırma klasöründeki skills dizini her zaman dahil edilir."
         },
         "skillsVariable": {
           "description": "AI ajanları tarafından kullanılabilecek mevcut becerilerin listesini döndürür."
@@ -947,10 +972,8 @@
         "agent-description": "[AI Yapılandırma Görünümü]({0}) içinde etkinleştirme, LLM seçimi, komut istemi şablonu özelleştirme ve özel ajan oluşturma dahil olmak üzere AI ajan ayarlarını yapılandırın.",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Yeni dosya oluştur",
-            "openExistingFile": "Mevcut dosyayı aç",
-            "placeholder": "Özel ajan dosyasını nerede oluşturacağınızı veya açacağınızı seçin",
-            "title": "Özel Ajanlar Dosyası için Konum Seç"
+            "placeholder": "agents/<id>/agent.md dosyasının oluşturulacağı konumu seçin",
+            "title": "Yeni özel ajanın konumunu seçin"
           },
           "genericCapabilitiesSettings": "Genel Yetenekler",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "İşlevler",
             "mcpFunctions": "MCP İşlevleri",
             "promptFragments": "Komut İstemi Parçaları"
+          },
+          "newAgent": {
+            "createFailed": "\"{0}\" adlı özel ajanı oluşturulamadı: {1}",
+            "defaultDescription": "Özel ajan. Bu açıklamayı agent.md dosyasında düzenleyin.",
+            "defaultPrompt": "Siz yardımsever bir temsilcisiniz. Bu komut istemini ihtiyaçlarınıza göre uyarlayın.",
+            "idInvalid": "Yalnızca harfler, rakamlar, tire, alt çizgi veya nokta kullanın.",
+            "idPrompt": "Ajan kimliği (agents/ altındaki klasör adı olarak kullanılır)",
+            "idTitle": "Yeni özel ajan",
+            "noLocation": "Özel bir ajan oluşturulamıyor: komut istemi şablonlarının konumu yapılandırılmamış. Genel veya çalışma alanı komut istemi şablonları klasörünü ayarlayın ve tekrar deneyin."
           },
           "noDescription": "Açıklama mevcut değil",
           "resetAllCapabilities": "Tüm özellikleri varsayılan değerlerine sıfırla",
@@ -1136,9 +1168,10 @@
           "description": "Tam bir kod inceleme iş akışını koordine eden, yapay zeka destekli bir PR inceleme aracısı: PR bilgilerini alır, kod tabanını inceler, yapılandırılmış analizler gerçekleştirir, diff görüntüleyicilerle kullanıcıyı bulgular arasında etkileşimli bir şekilde yönlendirir ve isteğe bağlı olarak GitHub'da bekleyen bir inceleme oluşturur."
         },
         "prompt-template-description": "[AI Yapılandırma Görünümü]({0}) içinde AI ajanları için komut istem varyantlarını seçin ve komut istem şablonlarını özelleştirin.",
-        "recentChats": "Son Sohbetler",
+        "restoredSession": "Geri yüklenen oturum",
         "restrictedModeDetails": "AI sohbeti, satır içi öneriler, kod eylemleri ve komut şablonları devre dışıdır",
         "restrictedModeLabel": "AI Özellikleri (Kısıtlı Modda devre dışı bırakılmıştır)",
+        "sectionRestored": "Geri yüklendi",
         "shellAllowlist": {
           "placeholder": "Örneğin, \"git log\" (tam) veya \"git log *\" (argümanlarla)."
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "Slash Komutları"
         },
+        "toolConfirmationInfo": {
+          "header": "Araç onayı"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "Anladım, otomatik onayı etkinleştir",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "Varsayılan Araç Onay Modu:"
+          },
+          "recommendedDefaults": {
+            "apply": "Varsayılan Araçlara İzin Ver",
+            "dialogConfirm": "Anladım, izin ver",
+            "dialogTitle": "Varsayılan Araçlara İzin Verilsin mi?",
+            "message": "Araç çağrıları şu anda onay gerektiriyor. Tüm yerleşik araçlara tek seferde otomatik olarak izin ver. Ek onay gerektiren araçlar (örn. kabuk çalıştırma), MCP araçları ve daha sonra eklenen araçlar, çalıştırılmadan önce yine de onay isteyecektir.",
+            "msg": {
+              "line1": "Bu ayar, şu anda kayıtlı tüm yerleşik araçları \"Her Zaman İzin Ver\" olarak ayarlar.",
+              "line2": "Ek onay gerektiren araçlar (kabuk çalıştırma gibi) çalıştırılmadan önce yine de onay isteyecektir.",
+              "line3": "MCP araçları üçüncü tarafa aittir ve pakete dahil değildir. Bu görünümde bunları tek tek etkinleştirebilirsiniz.",
+              "line4": "Daha sonra eklenen araçlar yine de varsayılan olarak \"Onayla\" seçeneğiyle gösterilecektir, böylece bunları inceleyebilirsiniz.",
+              "line5": "Bunu daha sonra bu görünümde değiştirebilirsiniz."
+            }
           },
           "resetAll": "Tümünü Sıfırla",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "Lütfen bir Değişken seçin.",
           "usedByAgents": "Ajanlar tarafından kullanılır."
-        }
+        },
+        "waitingForInput": "Girişinizi bekliyoruz"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP Sunucuları (otomatik başlatma engellendi)",
         "error": {
           "allServersRunning": "Tüm MCP sunucuları zaten çalışıyor.",
+          "authenticationRequired": "MCP sunucusu \"{0}\" kimlik doğrulaması gerektirir. Oturum açmak için sunucuyu yeniden başlatın.",
+          "getRedirectUrlFailed": "MCP OAuth yönlendirme URL'si belirlenirken bir hata oluştu.",
+          "noOAuthServersConfigured": "OAuth özellikli MCP sunucuları yapılandırılmamıştır.",
           "noRunningServers": "Çalışan MCP sunucusu yok.",
           "noServersConfigured": "MCP sunucusu yapılandırılmamış.",
-          "startFailed": "MCP sunucusu başlatılırken bir hata oluştu."
+          "oauthRequiresTrustedWorkspace": "OAuth özellikli MCP sunucularını başlatmak için güvenilir bir çalışma alanı gereklidir.",
+          "signInFailed": "MCP sunucusuna oturum açılırken bir hata oluştu.",
+          "signOutFailed": "MCP sunucusundan çıkış yapılırken bir hata oluştu.",
+          "startFailed": "MCP sunucusu başlatılırken bir hata oluştu.",
+          "stopFailed": "MCP sunucusunu durdururken bir hata oluştu."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: MCP OAuth Yönlendirme URL'sini Al"
         },
         "info": {
-          "serverStarted": "MCP sunucusu \"{0}\" başarıyla başlatıldı. Kayıtlı araçlar: {1}"
+          "oauthRedirectUrl": "MCP OAuth yönlendirme URL'si: {0}",
+          "serverSignedIn": "\"{0}\" adlı MCP sunucusuna oturum açıldı.",
+          "serverSignedOut": "\"{0}\" MCP sunucusundan çıkış yapıldı.",
+          "serverStarted": "MCP sunucusu \"{0}\" başarıyla başlatıldı. Kayıtlı araçlar: {1}",
+          "signInCancelled": "MCP sunucusu \"{0}\" oturum açma işlemi iptal edildi."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Tarayıcınızda MCP OAuth oturum açma işlemini tamamlayın. Oturum açma sekmesi açılmadıysa, tarayıcınız açılır pencereyi engellemiş olabilir.",
+          "notification": {
+            "signInPrompt": "MCP sunucusu \"{0}\" başlatılabilmesi için yetkilendirme gerektirir."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "MCP sunucusunu başlatmak için kullanılan komut, örneğin \"uvx\" veya \"npx\".",
             "title": "MCP sunucusunu çalıştırma komutu"
           },
+          "deferLoading": {
+            "mdDescription": "Etkinleştirilirse, bu sunucu tarafından sağlanan araçlar, oluşturulan `mcp_<server>_tools` komut istemi parçasında \"ertelenmiş\" olarak işaretlenir. Ertelenmiş araçlar, modelin bağlamına önceden yüklenmez. Bunun yerine, model, desteklendiği durumlarda sağlayıcının yerleşik araç arama mekanizması (Anthropic, OpenAI) aracılığıyla bunları talep üzerine keşfeder. Bu, çok sayıda araç sunan sunucular için token yükünü önemli ölçüde azaltır.",
+            "title": "Yüklemeyi Ertele"
+          },
           "env": {
             "mdDescription": "API anahtarı gibi sunucu için ayarlanacak isteğe bağlı ortam değişkenleri.",
             "title": "Ortam değişkenleri"
           },
           "headers": {
-            "mdDescription": "Sunucuya yapılan her istekte bulunan isteğe bağlı ek başlıklar.",
+            "mdDescription": "Sunucuya gönderilen her istekte yer alan isteğe bağlı ek başlıklar. Başlık değerleri, tercihlerde düz metin olarak saklanır; hassas değerler içeriyorsa çalışma alanı ayarlarından kaçının.",
             "title": "Başlıklar"
           },
-          "mdDescription": "MCP sunucularını komut, argümanlar ve isteğe bağlı olarak ortam değişkenleri ile yerel olarak veya sunucu URL'si, kimlik doğrulama jetonu ve isteğe bağlı olarak kimlik doğrulama başlık adı ile uzaktan yapılandırın. Ayrıca, otomatik başlatmayı yapılandırmak da mümkündür (varsayılan olarak doğrudur). Her sunucu, \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenizi sağlayan \"MCP: Start MCP Server\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: Stop MCP Server\" komutunu kullanın. Otomatik başlatma özelliğinin yalnızca yeniden başlatma sonrasında etkili olacağını ve ilk kez bir sunucuyu manuel olarak başlatmanız gerektiğini lütfen unutmayın.\nÖrnek yapılandırma:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "MCP sunucularını, komut, argümanlar ve isteğe bağlı olarak ortam değişkenleri ile yerel olarak ya da sunucu URL'si, kimlik doğrulama jetonu, OAuth yapılandırması ve isteğe bağlı olarak bir kimlik doğrulama başlığı adı ile uzaktan yapılandırabilirsiniz. Ayrıca, otomatik başlatma özelliğini yapılandırmak da mümkündür (varsayılan olarak true). Her sunucu, \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenize olanak tanıyan \"MCP: Start MCP Server\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: Stop MCP Server\" komutunu kullanın. Otomatik başlatma özelliğinin ancak yeniden başlatma sonrasında etkili olacağını lütfen unutmayın; sunucuyu ilk kez manuel olarak başlatmanız gerekir. Bir AI kayıt defterinden yüklenen sunucular, otomatik olarak yönetilen ve manuel olarak düzenlenmemesi gereken ek bir `registryMetadata` bloğu içerir.\nÖrnek yapılandırma:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "İsteğe bağlı yetkilendirme sunucusu URL'si geçersiz kılma. Belirtilmezse, Theia bunu MCP sunucusundan alır.",
+              "title": "Yetkilendirme Sunucusu"
+            },
+            "clientId": {
+              "mdDescription": "İsteğe bağlı statik OAuth istemci kimliği. Bu bilgi belirtilmezse, Theia dinamik istemci kaydını dener.",
+              "title": "Müşteri Kimliği"
+            },
+            "clientSecret": {
+              "mdDescription": "Yalnızca önceden kaydedilmiş gizli istemcileri kabul eden yetkilendirme sunucuları için isteğe bağlı OAuth istemci gizli anahtarı (dinamik istemci kaydı yoktur). Yalnızca istemci kimliğiyle birlikte kullanılır. Bu, tercihlerde düz metin olarak saklanır; gizli anahtar hassas ise çalışma alanı ayarlarından kaçının.",
+              "title": "Müşteri Gizli Anahtarı"
+            },
+            "mdDescription": "Yetkilendirme gerektiren uzak MCP sunucuları için isteğe bağlı OAuth 2.1 yapılandırması. Bu nesnenin varlığı, sunucu için OAuth'u etkinleştirir; OAuth'u devre dışı bırakmak için nesneyi kaldırın. Theia, varsayılan olarak PKCE özellikli genel istemciler kullanır; yalnızca önceden kaydedilmiş gizli bir istemci gerektiren sunucular için bir istemci gizli anahtarı yapılandırın. Değişiklikler, MCP sunucusunun yeniden başlatılmasından sonra yürürlüğe girer.",
+            "resource": {
+              "mdDescription": "Bu MCP sunucusu için isteğe bağlı RFC 8707 kaynak göstergesi geçersiz kılma.",
+              "title": "Kaynak"
+            },
+            "scopes": {
+              "mdDescription": "Sunucu kapsamları bildirmezse talep edilebilecek isteğe bağlı OAuth kapsamları.",
+              "title": "Kapsamlar"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "Bu sunucuyu kurmak için kullanılan kayıt defteri onayının içerik hash'i.",
+              "title": "Kayıt Defteri Yapılandırma Hash'i"
+            },
+            "mdDescription": "Bir AI kayıt defterinden kurulan sunucu için menşe meta verileri. `@theia/ai-registry` tarafından yazılmıştır; kullanıcı tarafından düzenlenemez.",
+            "serverId": {
+              "mdDescription": "Bu sunucunun kurulduğu AI kayıt defteri girdisini tanımlar.",
+              "title": "Kayıt Defteri Sunucu Kimliği"
+            },
+            "title": "Kayıt Defteri Meta Verileri",
+            "version": {
+              "mdDescription": "Yükleme sırasında kaydedilen, kayıt defterinde yayınlanan sürüm.",
+              "title": "Kayıt Defteri Sürümü"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "Gerekirse, sunucu için kimlik doğrulama belirteci. Bu, uzak sunucu ile kimlik doğrulaması yapmak için kullanılır.",
+            "mdDescription": "Gerekirse, sunucu için kimlik doğrulama jetonu. Bu, tercihlerde düz metin olarak saklanır; jeton hassas bir bilgi ise çalışma alanı ayarlarından kaçının.",
             "title": "Kimlik Doğrulama Jetonu"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "MCP Sunucu Yapılandırması"
         },
+        "signin": {
+          "label": "MCP: MCP Sunucusuna Giriş Yap"
+        },
+        "signout": {
+          "label": "MCP: MCP Sunucusundan Çıkış"
+        },
         "start": {
           "label": "MCP: MCP Sunucusunu Başlat"
         },
         "stop": {
           "label": "MCP: MCP Sunucusunu Durdur"
         },
+        "tool": {
+          "noTools": "Kullanılabilir araç yok."
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Kökler, sunucuların dosya sistemi içinde çalışabileceği sınırları tanımlar. Etkinleştirilirse, çalışma alanı klasörleri kök olarak kullanılır, aksi takdirde MCP sunucuları tüm dosya sistemine erişebilir. Bu ayarın değiştirilmesi, yeni kök yapılandırmasını uygulamak için çalışan tüm MCP sunucularını yeniden başlatır.",
           "title": "Çalışma Alanını Kök Olarak Kullan"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "MCP sunucu tercih değişiklikleri uygulanamadı: {0}",
+          "signInNotCompleted": "\"{0}\" MCP sunucusuna oturum açma işlemi tamamlanmadı."
         }
       },
       "mcpConfiguration": {
         "autostart": "Otomatik başlatma",
-        "connectServer": "Bağlan",
+        "browseAIRegistry": "AI kayıt defterine göz at",
+        "browseAIRegistryTooltip": "AI kayıt defteri girdilerini incelemek için Uzantılar görünümünü açın",
+        "command": {
+          "addServer": "Yerel MCP yapılandırması ekle..."
+        },
         "connectingServer": "Bağlanılıyor...",
         "copiedAllList": "Tüm araçları panoya kopyalandı (tüm araçların listesi)",
         "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçları içeren tek komut istemi parçası)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "Sohbet için tümünü kopyala (tüm araçları içeren tek komut istemi parçası)",
         "copyForPrompt": "Kopyalama aracı (sohbet veya komut istemi şablonu için)",
         "copyForPromptTemplate": "Hızlı şablon için tümünü kopyala (tüm araçları içeren tek hızlı şablon parçası)",
+        "deferLoading": "Araç yüklemesini ertele",
         "deleteServer": "Sunucuyu Sil",
         "deleteServerDialogMsg": "\"{0}\" sunucusunu silmek istediğinizden emin misiniz?",
         "deleteServerDialogTitle": "MCP Sunucusunu Sil",
@@ -1312,11 +1445,23 @@
           "autostart": "Otomatik başlatma",
           "commandPlaceholder": "Örneğin, npx veya uvx",
           "commandRequired": "Yerel sunucular için komut gereklidir.",
+          "deferLoading": "Araç yüklemeyi ertele (sağlayıcı araç araması yoluyla ihtiyaç duyulduğunda araçları keşfet)",
           "envPlaceholder": "KEY=değer (her satırda bir tane)",
           "headersPlaceholder": "Başlık-Ad=değer (her satırda bir tane)",
           "localServer": "Yerel (Komut)",
           "nameExists": "Bu ada sahip bir sunucu zaten mevcuttur.",
           "nameRequired": "Sunucu adı gereklidir",
+          "oauthAuthorizationServerInvalid": "OAuth Yetkilendirme Sunucusu geçerli bir http(s) URL'si olmalıdır",
+          "oauthAuthorizationServerPlaceholder": "İsteğe bağlı yetkilendirme sunucusu URL'si",
+          "oauthClientIdPlaceholder": "İsteğe bağlı statik istemci kimliği",
+          "oauthClientSecretPlaceholder": "Yalnızca gizli bir istemci gerektiren sunucular için",
+          "oauthPublicClientDescription": "Theia, varsayılan olarak PKCE özellikli genel OAuth istemcileri kullanır. Yalnızca sunucu önceden kayıtlı gizli bir istemci gerektiriyorsa istemci gizli anahtarı sağlayın.",
+          "oauthRedirectUrlDescription": "Yetkilendirme geri çağrıları bu URL'ye gönderilir. Statik bir istemci kimliği varsa, bunu OAuth sağlayıcınızda bir yönlendirme URI'si olarak kaydedin.",
+          "oauthResourceInvalid": "OAuth Kaynağı, geçerli bir http(s) URL'si olmalıdır",
+          "oauthResourcePlaceholder": "İsteğe bağlı kaynak URI'si",
+          "oauthScopesPlaceholder": "Boşlukla ayrılmış kapsamlar",
+          "oauthSharedCredentialsDescription": "Kaydedilmiş OAuth oturumları, aynı sunucu adını ve URL'yi (veya kaynağı) kullanan çalışma alanları arasında paylaşılır.",
+          "remoteOAuthServer": "Uzak (OAuth)",
           "remoteServer": "Uzak (URL)",
           "saveChanges": "Değişiklikleri Kaydet",
           "serverName": "Sunucu Adı",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "Örneğin, https://mcp.example.com",
           "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
         },
+        "fromRegistryLink": "Kayıt defterinden",
         "headers": "Başlıklar",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Yetkilendirme Sunucusu",
+        "oauthClientId": "OAuth İstemci Kimliği",
+        "oauthClientSecret": "OAuth İstemci Gizli Anahtarı",
+        "oauthRedirectUrl": "Yönlendirme URL'si",
+        "oauthResource": "OAuth Kaynağı",
+        "oauthScopes": "OAuth Kapsamları",
+        "openInRegistry": "AI kayıt defterinde aç: {0}",
         "saveServerError": "MCP sunucu yapılandırması kaydedilemedi: {0}",
         "serverAuthToken": "Kimlik Doğrulama Jetonu",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı",
         "serverUrl": "Sunucu URL'si",
+        "signInServerFailed": "\"{0}\" MCP sunucusuna oturum açılamadı.",
+        "signInServerNotCompleted": "\"{0}\" MCP sunucusuna oturum açma işlemi tamamlanmadı.",
+        "signInServerSucceeded": "\"{0}\" adlı MCP sunucusuna oturum açıldı.",
+        "signOutServerDialogMsg": "\"{0}\" sunucusundan oturumu kapatmak istediğinizden emin misiniz? Bu işlem, bu sunucu için saklanan OAuth belirteçlerini siler.",
+        "signOutServerDialogTitle": "MCP Sunucusundan Çıkış Yap",
+        "signOutServerFailed": "\"{0}\" MCP sunucusundan çıkış yapılamadı.",
+        "startServerFailed": "\"{0}\" adlı MCP sunucusu başlatılamadı.",
+        "stopServerFailed": "\"{0}\" adlı MCP sunucusu durdurulamadı.",
         "tools": "Araçlar: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "Çıktı Belirteçleri",
         "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
         "readCachedInputTokensTooltip": "\"Giriş Jetonu\"na ek olarak izlenir. Genellikle önbelleğe alınmamış halinden çok daha ucuzdur. Genellikle oran sınırlarına dahil edilmez.",
-        "total": "Toplam",
         "totalTokensTooltip": "'Giriş Belirteçleri' + 'Çıkış Belirteçleri'"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": ".gitignore'u düşünün."
         },
         "createSkillAgent": {
-          "description": "Yeni beceriler oluşturmak için bir AI asistanı. Beceriler, AI ajanları için yeniden kullanılabilir talimatlar ve alan bilgisi sağlar. Bu ajan, uygun YAML ön metni ve markdown içeriği ile .prompts/skills dizininde iyi yapılandırılmış beceriler oluşturmanıza yardımcı olur."
+          "description": "Yeni beceriler oluşturmaya yönelik bir yapay zeka asistanı. Beceriler, yapay zeka ajanları için yeniden kullanılabilir talimatlar ve alan bilgisi sağlar. Bu asistan, uygun YAML ön metni ve markdown içeriği ile .agents/skills veya .prompts/skills dizininde iyi yapılandırılmış beceriler oluşturmanıza yardımcı olur. Bu özellik henüz erken aşamadadır ve değişikliklere uğrayabilir."
         },
         "excludedPattern": {
           "description": "Hariç tutulacak dosyalar/klasörler için desenlerin (glob veya regex) listesi.",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
+      "browseAllChats": "Tüm sohbetlere göz at...",
       "confirm": "Onayla",
       "deleteChat": "Sohbeti Sil",
+      "home": "Ana Sayfa",
       "initiate-session-task-context": "Görev Bağlamı: Oturumu Başlat",
-      "navigate-back": "Geri Dön",
-      "navigate-forward": "İleriye Git",
       "noOutput": "Çıktı yok",
       "open-current-session-summary": "Geçerli Oturum Özetini Aç",
       "open-settings-tooltip": "AI ayarlarını aç...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "Kaydırmayı Kilitle",
       "scroll-unlock": "Kilit Açma Kaydırma",
       "session-settings": "Oturum Ayarlarını Yap",
-      "showChats": "Sohbetleri göster...",
       "summarize-current-session": "Mevcut Oturumu Özetle"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "\"{0}\" ajanı görevini tamamladı.",
       "agentCompletionMessageWithSession": "Ajan \"{0}\" \"{1}\" içindeki görevini tamamladı.",
       "agentCompletionTitle": "Ajan \"{0}\" Görevi Tamamlandı",
+      "agentInputNeededMessage": "\"{0}\" adlı ajan, sizin girdilerinize ihtiyaç duymaktadır.",
+      "agentInputNeededMessageWithSession": "\"{0}\" adlı ajan, \"{1}\" adresinde sizin girdilerinize ihtiyaç duymaktadır.",
+      "agentInputNeededTitle": "\"{0}\" adlı ajan, sizin görüşlerinize ihtiyaç duyuyor",
       "aiDisabledInRestrictedMode": "Güvenilmeyen çalışma alanlarında AI özellikleri kullanılamaz.",
       "preferences": {
         "linuxEnvHint": "Linux'ta, uygulamayı masaüstü kısayolundan başlatıyorsanız, değişkenin `~/.profile` dosyasında (sadece `~/.bashrc` dosyasında değil) tanımlandığından emin olun. Ayrıntılar için [belgelere](https://theia-ide.org/docs/user_ai/#setting-api-keys) bakın.",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "Görev yok"
       },
-      "userInteractionCanceled": "İptal edildi",
       "userInteractionCommentPlaceholder": "Bu adım için bir yorum ekleyin...",
       "userInteractionEmpty": "Boş",
       "userInteractionFinishStep": "Bitir",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "Kullanıcı etkileşimi hazırlanıyor...",
       "userInteractionPreparingSteps": "Hazırlık: {0} ({1} adımları)",
       "userInteractionPreparingTitle": "Hazırlık: {0}",
-      "userInteractionStepLabel": "{1}'un {0}. adımı",
       "userInteractionWorkingCopy": "Çalışma Kopyası"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCP Sunucuları (otomatik başlatma engellenmiş)"
+      "installDialog": {
+        "authTokenPlaceholder": "Bu sunucunun bağlanabilmesi için gereklidir",
+        "authTokenRequired": "Bu sunucuyu kurmak için bir kimlik doğrulama jetonu gereklidir.",
+        "oauthClientIdPlaceholder": "Bu sunucunun bağlanabilmesi için gereklidir",
+        "oauthClientSecretPlaceholder": "Bu sunucunun bağlanabilmesi için gereklidir",
+        "oauthCredentialsRequired": "Bu sunucuyu kurmak için bir OAuth istemci kimliği ve istemci gizli anahtarı gereklidir.",
+        "oauthDescription": "Bu sunucu, önceden kaydedilmiş gizli bir istemci ile OAuth kullanır. OAuth sağlayıcınızdan aldığınız istemci kimliğini ve gizli anahtarı girin.",
+        "title": "MCP Sunucusunu Kurun",
+        "trust": {
+          "unknown": "AI kayıt defteri yapılandırılmamıştır - güvenilirlik doğrulanamaz.",
+          "unverified": "Bu sunucu, AI kayıt defterinizde ({0}) listelenmemiştir. Kurulum riski size aittir.",
+          "verified": "AI kayıt defteriniz ({0}) tarafından onaylanmıştır."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "\"{0}\" adlı bir MCP sunucusu zaten yapılandırılmıştır. Devam edildiğinde, mevcut giriş kayıt defterindeki yapılandırma ile üzerine yazılacaktır.",
+          "title": "MCP sunucusu zaten yüklü"
+        },
+        "missingId": "Yükleme bağlantısında gerekli \"id\" parametresi eksik.",
+        "noRegistry": "MCP sunucusu \"{0}\" yüklenemiyor - bu üründe AI kayıt defteri yapılandırılmamış.",
+        "success": "AI kayıt defterinden \"{0}\" adlı MCP sunucusu yüklendi.",
+        "unknownId": "MCP sunucusu \"{0}\" AI kayıt defterinizde listelenmemiştir."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Yapılandırmayı düzelt",
+        "link": "Kayıt defterine bağlantı",
+        "unlink": "Bağlantıyı kaldır",
+        "updateTooltip": "{0} adresinden {1} adresine güncelleme"
+      },
+      "skill": {
+        "action": {
+          "fix": "Fix Skill",
+          "link": "Kayıt defterine bağlantı",
+          "unlink": "Bağlantıyı kaldır"
+        },
+        "fixed": "\"{0}\" becerisi geri yüklendi.",
+        "githubToken": {
+          "mdDescription": "GitHub'dan becerileri indirirken kullanılan isteğe bağlı GitHub kişisel erişim jetonu. Bu jeton, GitHub'ın saat başına istek sınırını 60'tan 5000'e yükseltir. **Lütfen dikkat:** Bu tercihi kullandığınızda, jeton Theia'nın çalıştığı makinede düz metin olarak saklanır. Jetonu güvenli bir şekilde sağlamak için `GITHUB_TOKEN` ortam değişkenini kullanmanızı öneririz."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "{1} adresinden dosyalarını indirerek \"{0}\" becerisini yükleyin.",
+            "title": "Beceri yükle"
+          },
+          "fetchFailed": "\"{0}\" becerisini yüklemek için AI kayıt defteri yüklenemedi.",
+          "missingId": "Yükleme bağlantısında gerekli \"id\" parametresi eksik.",
+          "success": "AI kayıt defterinden \"{0}\" becerisi yüklendi.",
+          "unknownId": "\"{0}\" becerisi, AI kayıt defterinizde listelenmemiştir."
+        },
+        "installed": "\"{0}\" becerisi yüklendi.",
+        "linked": "İlgili beceri: \"{0}\".",
+        "uninstalled": "\"{0}\" becerisi kaldırıldı.",
+        "unlinked": "Bağlantısı kesilmiş beceri \"{0}\".",
+        "updated": "\"{0}\" becerisi güncellendi.",
+        "warning": {
+          "fix": "Bu becerinin dosyaları kayıt defterinden farklıdır. Dosyaları geri yüklemek için \"Beceriyi Düzelt\" seçeneğine tıklayın.",
+          "linkStale": "Bu beceri kayıt defterinden yüklenmiştir, ancak kayıt defterinde artık listelenmemektedir. Kayıt defteri bağlantısını kaldırıp dosyaları korumak için Bağlantıyı Kaldır'ı, beceriyi kaldırmak için Kaldır'ı tıklayın.",
+          "notInRegistry": "Kayıt defterinde yok"
+        },
+        "watcherStopped": "Skills klasöründeki değişiklikleri izleme işlemi durduruldu. Yüklü beceriler artık otomatik olarak yenilenmeyebilir. Devam etmek için pencereyi yeniden yükleyin."
+      },
+      "warning": {
+        "fixConfig": "Bu sunucunun yapılandırması kayıt defterindekinden farklıdır. Geri yüklemek için \"Yapılandırmayı düzelt\" seçeneğine tıklayın.",
+        "linkStale": "Bu sunucu kayıt defterinden yüklenmiştir, ancak kayıt defterinde artık listelenmemektedir. Sunucuyu tutmak istediğinizden eminseniz ve sunucu hâlâ çalışıyor ise, kayıt defteri bağlantısını kaldırmak için Bağlantıyı Kaldır'ı tıklayın. Aksi takdirde, sunucuyu kaldırmak için Kaldır'ı tıklayın.",
+        "notInRegistry": "Kayıt defterinde yok"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "Anladım, tümünü izin ver",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "Kabuk komut izinlerini yapılandırın",
       "confirmExecution": "Kabuk Komutunu Onayla",
       "denialReason": "Sebep",
-      "executionCanceled": "İptal edildi",
       "executionDenied": "Reddedildi",
       "executionDeniedWithReason": "Sebep gösterilerek reddedildi",
       "partialOutput": "Kısmi Çıktı",
@@ -2159,7 +2387,6 @@
       "openByDefault": "Varsayılan olarak düzenleyici yerine önizlemeyi açın."
     },
     "property-view": {
-      "directory": "Dizin",
       "lastModified": "Son değiştirilme tarihi",
       "noProperties": "Kullanılabilir özellik yok.",
       "properties": "Özellikler",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "Kapat Değiştir Peek Görünümü"
       },
-      "history": "Geçmiş",
       "justNow": "az önce",
       "mergeEditor": {
         "resetConfirmationTitle": "Bu düzenleyicide birleştirme sonucunu gerçekten sıfırlamak istiyor musunuz?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "Uzantıları almada hata oluştu.",
       "errorFetchingConfigurationHint": "Bu durum, ağ yapılandırma sorunlarından kaynaklanıyor olabilir.",
       "failedInstallingVSIX": "VSIX'ten {0}'ın yüklenmesi başarısız oldu.",
+      "filter": {
+        "showBuiltin": "Yerleşik Olanları Göster",
+        "showInstalled": "Yüklü Olanları Göster",
+        "showRecommended": "Önerilenleri Göster"
+      },
       "invalidVSIX": "Seçilen dosya geçerli bir \"*.vsix\" eklentisi değildir.",
       "license": "Lisans: {0}",
       "onlyShowVerifiedExtensionsDescription": "Bu, {0}'un yalnızca doğrulanmış uzantıları göstermesini sağlar.",
       "onlyShowVerifiedExtensionsTitle": "Yalnızca Doğrulanmış Uzantıları Göster",
       "recommendedExtensions": "Bu çalışma alanında kullanılması önerilen uzantıların adlarının listesi.",
       "restrictedModeInstallWarning": "\"{0}\" uzantısı, Kısıtlı Modda çalışmayı desteklemiyorsa devre dışı bırakılabilir. Uzantının beklendiği gibi çalışmasını sağlamak için bu çalışma alanına güvenin.",
-      "searchPlaceholder": "{0}'da Uzantıları Ara",
+      "searchPlaceholder": "VSX Kayıt Defteri'ni Ara",
       "showInstalled": "Yüklü Uzantıları Göster",
       "showRecommendedExtensions": "Uzantı önerileri için bildirimlerin gösterilip gösterilmeyeceğini kontrol eder.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "Başka sürümler mevcut değildir.",
         "update-version-uninstall-error": "Uzantıyı kaldırırken hata oluştu: {0}.",
         "update-version-version-error": "{1}'nin {0} sürümünün yüklenmesi başarısız oldu."
       }

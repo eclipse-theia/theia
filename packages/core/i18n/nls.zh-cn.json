@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "显示 AI 设置",
   "ai.executePlanWithCoder": "使用Coder执行当前计划",
   "aiConfiguration:open": "打开 AI 配置视图",
+  "aiConfiguration:openTools": "打开 AI 工具配置",
   "aiHistory:clear": "AI历史记录:清除历史记录",
   "aiHistory:open": "打开 AI 历史记录视图",
   "aiHistory:sortChronologically": "AI历史:按时间顺序排序",
@@ -27,8 +28,8 @@
           "title": "功能覆盖"
         },
         "completionNotification": {
-          "mdDescription": "此代理完成任务时的通知行为。若未设置,将采用全局默认通知设置。\n                - `os-notification`:显示操作系统/系统通知\n                - `message`:在状态栏/消息区域显示通知\n                - `blink`:闪烁或突出显示界面\n                - `off`:禁用此代理的通知",
-          "title": "完成通知"
+          "mdDescription": "当该代理需要您关注时(例如完成任务或请求您输入)的通知行为。                     若未设置,将使用全局默认通知设置。\n                    - `os-notification`:显示操作系统/系统通知\n                    - `message`:在状态栏/消息区域显示通知\n                    - `blink`:使 UI 闪烁或高亮显示\n                    - `off`:禁用此代理的通知",
+          "title": "通知"
         },
         "enable": {
           "mdDescription": "指定代理程序应启用(true)还是禁用(false)。",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "指定当前为该代理选中的提示符变体。",
           "title": "选定变体"
+        },
+        "serverToolSelections": {
+          "mdDescription": "针对提供商服务器工具的用户选择,按模型供应商分类。每个值包含该供应商已启用的服务器工具 ID。",
+          "title": "服务器工具选择"
         },
         "showInChat": {
           "mdDescription": "指定代理程序是否应在聊天界面中显示(true)或隐藏(false)。",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "绕过语言模型要求检查。若您使用无需Theia语言模型的外部代理(如Claude Code),请启用此选项。"
         },
+        "category": "AI",
         "changeSetDefaultTitle": "建议修改",
         "changeSetFileDiffUriLabel": "AI修改:{0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "文件{0}自本建议创建后已发生变更。您确定要撤销此更改吗?",
         "couldNotFindMatchingLM": "未找到匹配的语言模型。请检查您的设置！",
         "couldNotFindReadyLMforAgent": "未能为代理{0}找到现成的语言模型。请检查您的设置！",
+        "customAgents": {
+          "migrationResult": "自定义代理迁移:{0} 已迁移,{1} 迁移失败,{2} 旧版 customAgents.yml 已备份至 .bak,{3} 提示信息覆盖内容已合并到 agent.md 中。",
+          "rerunMigration": "重新运行自定义代理迁移"
+        },
         "defaultAgent": {
           "description": "可选:当用户查询中未通过@<代理名称>显式指定代理时,将调用的聊天代理<代理名称>。若未配置默认代理,则应用Theia的默认设置。"
         },
@@ -215,7 +225,7 @@
           "label": "AI Chat"
         },
         "welcomeScreenSessions": {
-          "description": "欢迎界面显示的近期聊天会话行数。可见会话数量取决于可用宽度。设置为0可隐藏近期聊天区域。"
+          "description": "聊天概览(主视图)中显示的聊天会话最大数量。 活跃会话将优先显示;超出部分可通过“浏览所有聊天...”链接访问。如果编辑器缩放比例较高导致出现滚动条,请降低此数值。设置为 0 可完全隐藏内联列表;仍可通过“浏览所有聊天...”链接访问会话。"
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "{0}扩展提供的内置函数",
         "genericCapabilities": "通用功能",
         "mcpFunctionsDescription": "来自连接服务器的模型上下文协议(MCP)功能",
+        "mermaid-rendering": {
+          "copySource": "复制源代码",
+          "error": "无法渲染 Mermaid 图表。请切换到源代码视图以查看定义。",
+          "rendering": "正在渲染示意图……",
+          "resetView": "重置视图",
+          "showDiagram": "显示图表",
+          "showSource": "显示源代码",
+          "title": "Mermaid 图表",
+          "wheelZoomHint": "{0} + 滚动"
+        },
         "noChatAgentsAvailable": "没有可用的聊天机器人。",
         "noMatchingCapabilities": "无匹配功能",
         "openDiff": "打开差异",
@@ -300,14 +320,12 @@
         "performThisTask": "执行此任务。",
         "persistedSession": "持久化会话(点击恢复)",
         "promptFragmentsDescription": "用于对话的自定义提示片段",
-        "reasoning": {
-          "minimal": "简约"
-        },
         "removeChat": "移除聊天功能",
         "requestNotFoundForRetry": "请求未找到,请重试",
         "responseFrom": "来自 {0} 的响应",
         "saveCurrentSelectionsToSettings": "保存功能设置",
         "searchCapabilities": "搜索功能",
+        "sectionRestored": "已恢复",
         "selectAgentQuickPickPlaceholder": "为新会话选择代理",
         "selectAllInCategory": "选择此类别中的所有项目",
         "selectChat": "选择聊天",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "选择要附加的任务上下文",
         "selectVariableArguments": "选择可变参数",
         "send": "发送(回车)",
+        "server-toolcall-part-renderer": {
+          "indicator": "服务器",
+          "serverTooltip": "在提供商的服务器上运行(而非本地)。选择服务器工具时,系统会自动批准。"
+        },
+        "serverToolWarning": "选中此工具后,系统会自动批准其使用。模型可随时执行该工具。",
+        "serverTools": "服务器工具",
+        "serverToolsDescription": "服务器工具由大型语言模型(LLM)在供应商的基础设施上于服务器端执行。",
+        "serverToolsWarning": "选中这些工具后,它们将自动获得批准。模型可随时执行这些工具。",
         "sessionNotFoundForRetry": "未找到可重试的会话",
         "skillsDescription": "可重复使用的技能指令,可添加至对话中",
         "switchAgentMode": "切换代理模式",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "我明白了,启用自动批准",
           "alwaysAllowGenericWarning": "此工具需在启用自动批准功能前进行确认。启用后,所有后续调用将无需确认直接执行。仅当您信任该工具且理解潜在风险时才启用此功能。",
           "alwaysAllowTitle": "是否为“{0}”启用自动批准?",
+          "approveLatest": "批准最新工具确认",
           "autoCancel": "{0} 中的自动取消功能",
           "canceled": "工具执行已取消",
           "denied": "工具执行被拒绝",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "输入拒绝原因...",
           "deny-session": "拒绝本次聊天",
           "deny-with-reason": "拒绝并说明原因...",
+          "denyLatest": "拒绝最新工具确认",
           "executionDenied": "工具执行被拒绝",
           "header": "确认工具执行"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "当前目录",
         "differentAgentRequestWarning": "之前的聊天请求由其他客服处理。Claude Code 无法看到那些其他消息。",
-        "directory": "目录",
-        "domain": "领域",
         "edit": "编辑 {0}",
         "editAutomatically": "自动编辑",
         "editing": "编辑",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "操作",
           "addCustomAgent": "添加自定义代理",
           "availableCapabilities": "可用功能",
-          "completionNotificationDescriptionPrefix": "选择当此代理完成任务时希望接收的通知方式。\"默认\"使用 ",
+          "completionNotificationDescriptionPrefix": "选择当该代理需要您关注时(例如完成任务或请求您输入时)希望接收何种通知。“默认”选项使用 ",
           "defaultNotificationDescription": "使用全局AI通知设置",
           "enableAgent": "启用代理",
           "llmRequirements": "大型语言模型需求",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "AI 代理完成任务时使用的默认通知方式。各代理可覆盖此设置。\n                - `os-notification`:显示操作系统/系统通知\n                - `message`:在状态栏/消息区域显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:禁用所有通知",
+          "mdDescription": "当 AI 代理需要您关注时(例如完成任务或请求您输入)所采用的默认通知方式。各个代理可以覆盖此设置。",
           "title": "默认通知类型"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "自定义请求设置"
         },
         "skillDirectories": {
-          "description": "包含技能定义(SKILL.md文件)的附加目录。技能提供可复用的指令集,供AI代理调用。工作区中的.prompts/skills目录及产品配置文件夹内的skills目录始终包含在内。"
+          "description": "包含技能定义(SKILL.md 文件)的附加目录。 技能提供可重用的指令,AI 代理可以引用这些指令。您工作区中的 .prompts/skills 和 .agents/skills 目录、您的主目录中的 .agents/skills 目录,以及您产品配置文件夹中的 skills 目录始终会被包含在内。"
         },
         "skillsVariable": {
           "description": "返回可供AI代理使用的可用技能列表"
@@ -947,10 +972,8 @@
         "agent-description": "在[AI配置视图]({0})中配置AI代理设置,包括启用状态、LLM选择、提示模板自定义及自定义代理创建。",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "创建新文件",
-            "openExistingFile": "打开现有文件",
-            "placeholder": "选择创建或打开自定义代理文件的位置",
-            "title": "选择自定义代理程序文件的位置"
+            "placeholder": "选择创建 agents/<id>/agent.md 文件的位置",
+            "title": "选择新自定义代理的位置"
           },
           "genericCapabilitiesSettings": "通用功能",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "功能",
             "mcpFunctions": "MCP 功能",
             "promptFragments": "提示片段"
+          },
+          "newAgent": {
+            "createFailed": "无法创建自定义代理“{0}”:{1}",
+            "defaultDescription": "自定义代理。请在 agent.md 中编辑此描述。",
+            "defaultPrompt": "您是一位乐于助人的助手。请根据您的需求调整此提示。",
+            "idInvalid": "仅使用字母、数字、连字符、下划线或句点。",
+            "idPrompt": "代理 ID(用作 agents/ 下的文件夹名称)",
+            "idTitle": "新建自定义代理",
+            "noLocation": "无法创建自定义代理:未配置提示模板位置。请设置全局或工作区提示模板文件夹,然后重试。"
           },
           "noDescription": "无可用描述",
           "resetAllCapabilities": "将所有功能重置为默认值",
@@ -1136,9 +1168,10 @@
           "description": "一款由人工智能驱动的 PR 审查代理,可协调完整的代码审查工作流:获取 PR 信息、探索代码库、执行结构化分析、通过差异查看器引导用户交互式查看审查结果,并可选地在 GitHub 上创建待审请求。"
         },
         "prompt-template-description": "在[AI配置视图]({0})中为AI代理选择提示变体并自定义提示模板。",
-        "recentChats": "最近聊天记录",
+        "restoredSession": "恢复的会话",
         "restrictedModeDetails": "AI 聊天、内联建议、代码操作和提示模板已禁用",
         "restrictedModeLabel": "AI 功能(在受限模式下已禁用)",
+        "sectionRestored": "已恢复",
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精确命令)或\"git log *\"(带参数的命令)"
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "斜杠命令"
         },
+        "toolConfirmationInfo": {
+          "header": "工具确认"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "我明白了,启用自动批准",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "默认工具确认模式:"
+          },
+          "recommendedDefaults": {
+            "apply": "允许使用默认工具",
+            "dialogConfirm": "我明白了,允许",
+            "dialogTitle": "允许使用默认工具吗?",
+            "message": "当前,调用工具需要获得批准。可一次性自动允许所有内置工具。需要额外确认的工具(例如 shell 执行)、MCP 工具以及后续添加的任何工具,在运行前仍会提示用户确认。",
+            "msg": {
+              "line1": "此设置将所有当前已注册的内置工具设为“始终允许”。",
+              "line2": "需要额外确认的操作(例如 shell 执行)在运行前仍会提示用户确认。",
+              "line3": "MCP 工具属于第三方工具,未包含在内。您可以在此视图中逐一允许这些工具。",
+              "line4": "后续添加的工具仍将默认显示“确认”,以便您进行审核。",
+              "line5": "您稍后可在本视图中进行修改。"
+            }
           },
           "resetAll": "重置全部",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "请选择一个变量。",
           "usedByAgents": "供代理使用"
-        }
+        },
+        "waitingForInput": "等待您的输入"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP 服务器(自动启动被阻止)",
         "error": {
           "allServersRunning": "所有MCP服务器均已启动运行。",
+          "authenticationRequired": "MCP 服务器“{0}”需要身份验证。请重新启动服务器以登录。",
+          "getRedirectUrlFailed": "在确定 MCP OAuth 重定向 URL 时发生错误。",
+          "noOAuthServersConfigured": "未配置任何支持 OAuth 的 MCP 服务器。",
           "noRunningServers": "没有运行的MCP服务器。",
           "noServersConfigured": "未配置任何MCP服务器。",
-          "startFailed": "启动 MCP 服务器时发生错误。"
+          "oauthRequiresTrustedWorkspace": "启动支持 OAuth 的 MCP 服务器需要一个受信任的工作区。",
+          "signInFailed": "登录 MCP 服务器时发生错误。",
+          "signOutFailed": "从 MCP 服务器注销时发生错误。",
+          "startFailed": "启动 MCP 服务器时发生错误。",
+          "stopFailed": "停止 MCP 服务器时发生错误。"
+        },
+        "getRedirectUrl": {
+          "label": "MCP:获取 MCP OAuth 重定向 URL"
         },
         "info": {
-          "serverStarted": "MCP服务器\"{0}\"已成功启动。已注册工具:{1}"
+          "oauthRedirectUrl": "MCP OAuth 重定向 URL:{0}",
+          "serverSignedIn": "已登录到 MCP 服务器“{0}”。",
+          "serverSignedOut": "已从 MCP 服务器“{0}”注销。",
+          "serverStarted": "MCP服务器\"{0}\"已成功启动。已注册工具:{1}",
+          "signInCancelled": "MCP 服务器“{0}”的登录操作已被取消。"
+        },
+        "oauth": {
+          "completeSignInInBrowser": "请在浏览器中完成 MCP OAuth 登录。如果未打开登录标签页,可能是您的浏览器阻止了弹出窗口。",
+          "notification": {
+            "signInPrompt": "MCP 服务器“{0}”需要授权才能启动。"
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "用于启动MCP服务器的命令,例如\"uvx\"或\"npx\"。",
             "title": "执行 MCP 服务器的命令"
           },
+          "deferLoading": {
+            "mdDescription": "如果启用,该服务器提供的工具将在生成的提示片段 `mcp_<server>_tools` 中被标记为“延迟加载”。延迟加载的工具不会预先加载到模型上下文中。 相反,当受支持时,模型会通过提供商(Anthropic、OpenAI)内置的工具搜索机制按需发现这些工具。这大大降低了暴露大量工具的服务器在令牌方面的开销。",
+            "title": "延迟加载"
+          },
           "env": {
             "mdDescription": "为服务器设置的可选环境变量,例如API密钥。",
             "title": "环境变量"
           },
           "headers": {
-            "mdDescription": "每次向服务器发送请求时可选添加的额外标头。",
+            "mdDescription": "发送到服务器的每个请求中包含的可选附加标头。标头值以纯文本形式存储在首选项中;如果工作区设置中包含敏感值,请避免将其保存在工作区设置中。",
             "title": "标题"
           },
-          "mdDescription": "可通过命令行配置本地MCP服务器(含参数及可选环境变量),或通过服务器URL配置远程MCP服务器(含认证令牌及可选认证头名称)。此外支持配置自动启动功能(默认值为true)。 每个服务器通过唯一键标识,例如\"brave-search\"或\"filesystem\"。启动服务器时使用\"MCP: Start MCP Server\"命令,可从中选择目标服务器。停止服务器时使用\"MCP: Stop MCP Server\"命令。请注意:自动启动功能需重启后生效,首次启动服务器必须手动执行。\n示例配置:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"您的JIRA MCP服务器地址\",\n    \"serverAuthToken\": \"您的JIRA MCP服务器令牌\"\n  }\n}\n```",
+          "mdDescription": "可通过命令、参数(可选环境变量)配置本地 MCP 服务器,或通过服务器 URL、身份验证令牌、OAuth 配置(可选身份验证标头名称)配置远程 MCP 服务器。此外,还可配置自动启动(默认启用)。 每个服务器都由一个唯一的键标识,例如“brave-search”或“filesystem”。要启动服务器,请使用“MCP: Start MCP Server”命令,该命令允许您选择所需的服务器。要停止服务器,请使用“MCP: Stop MCP Server”命令。 请注意,自动启动功能仅在重启后生效,首次运行时需手动启动服务器。从 AI 注册表安装的服务器包含一个额外的 `registryMetadata` 块,该块由系统自动管理,不应手动编辑。\n配置示例:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "可选的授权服务器 URL 覆盖设置。若未指定,Theia 将从 MCP 服务器中获取该 URL。",
+              "title": "授权服务器"
+            },
+            "clientId": {
+              "mdDescription": "可选的静态 OAuth 客户端 ID。若省略,Theia 将尝试进行动态客户端注册。",
+              "title": "客户端 ID"
+            },
+            "clientSecret": {
+              "mdDescription": "可选的 OAuth 客户端密钥,适用于仅接受预注册机密客户端(不支持动态客户端注册)的授权服务器。仅与客户端 ID 配合使用。该密钥以明文形式存储在首选项中;若密钥敏感,请避免将其保存在工作区设置中。",
+              "title": "客户端密钥"
+            },
+            "mdDescription": "针对需要授权的远程 MCP 服务器,可选的 OAuth 2.1 配置。此对象的存在将启用服务器的 OAuth 功能;删除它可禁用 OAuth。Theia 默认使用支持 PKCE 的公共客户端;仅需为要求预注册机密客户端的服务器配置客户端密钥。 更改将在重启 MCP 服务器后生效。",
+            "resource": {
+              "mdDescription": "针对此 MCP 服务器,可选的 RFC 8707 资源指示符覆盖设置。",
+              "title": "资源"
+            },
+            "scopes": {
+              "mdDescription": "如果服务器未公开权限范围,则可选的 OAuth 权限范围。",
+              "title": "作用域"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "用于安装此服务器的注册表批准内容的哈希值。",
+              "title": "注册表配置哈希"
+            },
+            "mdDescription": "从 AI 注册表安装的服务器所对应的来源元数据。由 `@theia/ai-registry` 编写;用户无法编辑。",
+            "serverId": {
+              "mdDescription": "标识了安装此服务器的 AI 注册表项。",
+              "title": "注册表服务器 ID"
+            },
+            "title": "注册表元数据",
+            "version": {
+              "mdDescription": "安装时记录的注册表发布版本。",
+              "title": "注册表版本"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "若需服务器认证令牌,此令牌用于与远程服务器进行身份验证。",
+            "mdDescription": "如果需要,请提供服务器的身份验证令牌。该令牌以明文形式存储在首选项中;如果令牌属于敏感信息,请避免将其保存在工作区设置中。",
             "title": "认证令牌"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "MCP服务器配置"
         },
+        "signin": {
+          "label": "MCP:登录 MCP 服务器"
+        },
+        "signout": {
+          "label": "MCP:从 MCP 服务器注销"
+        },
         "start": {
           "label": "MCP:启动MCP服务器"
         },
         "stop": {
           "label": "MCP:停止MCP服务器"
         },
+        "tool": {
+          "noTools": "没有可用工具。"
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "根目录定义了服务器在文件系统中的操作边界。若启用此设置,工作区文件夹将作为根目录;否则MCP服务器将访问整个文件系统。更改此设置将重启所有运行中的MCP服务器以应用新的根目录配置。",
           "title": "以工作区为根目录"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "无法应用 MCP 服务器首选项更改:{0}",
+          "signInNotCompleted": "登录 MCP 服务器“{0}”未成功。"
         }
       },
       "mcpConfiguration": {
         "autostart": "自动启动",
-        "connectServer": "连接",
+        "browseAIRegistry": "浏览 AI 注册表",
+        "browseAIRegistryTooltip": "打开“扩展”视图以浏览 AI 注册表项",
+        "command": {
+          "addServer": "添加本地 MCP 配置..."
+        },
         "connectingServer": "正在连接...",
         "copiedAllList": "已将所有工具复制到剪贴板(工具完整列表)",
         "copiedAllSingle": "已将所有工具复制到剪贴板(包含所有工具的单行提示符片段)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "复制全部用于聊天(包含所有工具的单一提示符片段)",
         "copyForPrompt": "复制工具(用于聊天或提示模板)",
         "copyForPromptTemplate": "复制全部内容用于提示模板(包含所有工具的单一提示片段)",
+        "deferLoading": "延迟加载工具",
         "deleteServer": "删除服务器",
         "deleteServerDialogMsg": "您确定要删除服务器\"{0}\"吗?",
         "deleteServerDialogTitle": "删除 MCP 服务器",
@@ -1312,11 +1445,23 @@
           "autostart": "自动启动",
           "commandPlaceholder": "例如:npx 或 uvx",
           "commandRequired": "本地服务器需要命令行支持",
+          "deferLoading": "延迟加载工具(通过提供商工具搜索按需发现工具)",
           "envPlaceholder": "KEY=value(每行一个)",
           "headersPlaceholder": "Header-Name=value(每行一个)",
           "localServer": "本地(命令)",
           "nameExists": "已存在同名服务器",
           "nameRequired": "服务器名称为必填项",
+          "oauthAuthorizationServerInvalid": "OAuth 授权服务器必须是一个有效的 http(s) URL",
+          "oauthAuthorizationServerPlaceholder": "可选的授权服务器 URL",
+          "oauthClientIdPlaceholder": "可选的静态客户端 ID",
+          "oauthClientSecretPlaceholder": "仅适用于需要保密客户端的服务器",
+          "oauthPublicClientDescription": "Theia 默认使用支持 PKCE 的公共 OAuth 客户端。仅当服务器要求使用预注册的机密客户端时,才需提供客户端密钥。",
+          "oauthRedirectUrlDescription": "授权回调将发送到此 URL。请将静态客户端 ID 作为重定向 URI 注册到您的 OAuth 提供商处。",
+          "oauthResourceInvalid": "OAuth 资源必须是一个有效的 http(s) URL",
+          "oauthResourcePlaceholder": "可选资源 URI",
+          "oauthScopesPlaceholder": "以空格分隔的作用域",
+          "oauthSharedCredentialsDescription": "存储的 OAuth 会话会在使用相同服务器名称和 URL(或资源)的工作区之间共享。",
+          "remoteOAuthServer": "远程(OAuth)",
           "remoteServer": "远程(URL)",
           "saveChanges": "保存更改",
           "serverName": "服务器名称",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "例如:https://mcp.example.com",
           "serverUrlRequired": "远程服务器需提供服务器URL"
         },
+        "fromRegistryLink": "来自注册表",
         "headers": "标题",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "授权服务器",
+        "oauthClientId": "OAuth 客户端 ID",
+        "oauthClientSecret": "OAuth 客户端密钥",
+        "oauthRedirectUrl": "重定向 URL",
+        "oauthResource": "OAuth 资源",
+        "oauthScopes": "OAuth 权限范围",
+        "openInRegistry": "在 AI 注册表中打开:{0}",
         "saveServerError": "保存 MCP 服务器配置失败:{0}",
         "serverAuthToken": "授权令牌",
         "serverAuthTokenHeader": "身份验证标头名称",
         "serverUrl": "服务器URL",
+        "signInServerFailed": "无法登录 MCP 服务器“{0}”。",
+        "signInServerNotCompleted": "登录 MCP 服务器“{0}”未完成。",
+        "signInServerSucceeded": "已登录到 MCP 服务器“{0}”。",
+        "signOutServerDialogMsg": "您确定要从服务器“{0}”注销吗?此操作将删除该服务器存储的 OAuth 令牌。",
+        "signOutServerDialogTitle": "从 MCP 服务器注销",
+        "signOutServerFailed": "无法从 MCP 服务器“{0}”注销。",
+        "startServerFailed": "无法启动 MCP 服务器“{0}”。",
+        "stopServerFailed": "无法停止 MCP 服务器“{0}”。",
         "tools": "工具: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "输出令牌",
         "readCachedInputTokens": "从缓存中读取输入令牌",
         "readCachedInputTokensTooltip": "除\"输入令牌\"外额外追踪。通常比未缓存状态成本低得多。通常不计入速率限制。",
-        "total": "总计",
         "totalTokensTooltip": "'输入令牌' + '输出令牌'"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": "请考虑 .gitignore"
         },
         "createSkillAgent": {
-          "description": "用于创建新技能的人工智能助手。技能为AI代理提供可复用的指令与领域知识。该助手可协助您在.prompts/skills目录中创建结构完善的技能,包含规范的YAML前置信息和Markdown内容。"
+          "description": "一款用于创建新技能的 AI 助手。技能为 AI 代理提供可重用的指令和领域知识。该助手可帮助您在 .agents/skills 或 .prompts/skills 目录中创建结构良好的技能,并确保其包含正确的 YAML 前置信息和 Markdown 内容。此功能仍处于早期阶段,可能会有变动。"
         },
         "excludedPattern": {
           "description": "用于排除文件/文件夹的模式列表(通配符或正则表达式)。",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "建议修改内容"
     },
     "ai-chat-ui": {
+      "browseAllChats": "浏览所有聊天记录...",
       "confirm": "确认",
       "deleteChat": "删除聊天记录",
+      "home": "首页",
       "initiate-session-task-context": "任务背景:启动会话",
-      "navigate-back": "返回导航",
-      "navigate-forward": "向前导航",
       "noOutput": "无输出",
       "open-current-session-summary": "打开当前会话摘要",
       "open-settings-tooltip": "打开 AI 设置...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "锁定滚动",
       "scroll-unlock": "解锁滚动",
       "session-settings": "设置会话设置",
-      "showChats": "显示聊天...",
       "summarize-current-session": "总结当前会话"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "代理\"{0}\"已完成其任务。",
       "agentCompletionMessageWithSession": "代理\"{0}\"已在\"{1}\"中完成其任务。",
       "agentCompletionTitle": "代理\"{0}\"任务已完成",
+      "agentInputNeededMessage": "代理“{0}”需要您的输入。",
+      "agentInputNeededMessageWithSession": "代理“{0}”需要在“{1}”中获取您的输入。",
+      "agentInputNeededTitle": "代理“{0}”需要您的输入",
       "aiDisabledInRestrictedMode": "在不受信任的工作区中,AI 功能不可用。",
       "preferences": {
         "linuxEnvHint": "在 Linux 系统中,若通过桌面快捷方式启动应用程序,请确保该变量已在 `~/.profile`(而非仅在 `~/.bashrc`)中定义。详情请参阅 [文档](https://theia-ide.org/docs/user_ai/#setting-api-keys)。",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "无任务"
       },
-      "userInteractionCanceled": "已取消",
       "userInteractionCommentPlaceholder": "为这一步添加评论...",
       "userInteractionEmpty": "空",
       "userInteractionFinishStep": "完成",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "正在准备用户交互...",
       "userInteractionPreparingSteps": "准备工作:{0}({1} 步骤)",
       "userInteractionPreparingTitle": "准备中:{0}",
-      "userInteractionStepLabel": "{1} 的第{0}步",
       "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCP服务器(自动启动被阻止)"
+      "installDialog": {
+        "authTokenPlaceholder": "此服务器连接所需",
+        "authTokenRequired": "安装此服务器需要一个身份验证令牌。",
+        "oauthClientIdPlaceholder": "此服务器连接所需",
+        "oauthClientSecretPlaceholder": "此服务器连接所需",
+        "oauthCredentialsRequired": "安装此服务器需要 OAuth 客户端 ID 和客户端密钥。",
+        "oauthDescription": "该服务器使用 OAuth,并配有预先注册的机密客户端。请提供您 OAuth 提供商提供的客户端 ID 和密钥。",
+        "title": "安装 MCP 服务器",
+        "trust": {
+          "unknown": "未配置 AI 注册表——无法验证信任关系。",
+          "unverified": "该服务器未列入您的 AI 注册表({0})。安装需自行承担风险。",
+          "verified": "已获您的 AI 注册库({0})批准。"
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "已配置名为“{0}”的 MCP 服务器。继续操作将用注册表中的配置覆盖现有条目。",
+          "title": "MCP 服务器已安装"
+        },
+        "missingId": "安装链接缺少必需的“id”参数。",
+        "noRegistry": "无法安装 MCP 服务器“{0}”——该产品中未配置 AI 注册表。",
+        "success": "已从 AI 注册表安装了 MCP 服务器“{0}”。",
+        "unknownId": "MCP 服务器“{0}”未列在您的 AI 注册表中。"
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "修复配置",
+        "link": "注册表链接",
+        "unlink": "取消关联",
+        "updateTooltip": "更新自 {0} 至 {1}"
+      },
+      "skill": {
+        "action": {
+          "fix": "修复技能",
+          "link": "注册表链接",
+          "unlink": "取消链接"
+        },
+        "fixed": "已恢复技能“{0}”。",
+        "githubToken": {
+          "mdDescription": "从 GitHub 下载技能时可选用的 GitHub 个人访问令牌。该令牌可将 GitHub 的请求速率限制从每小时 60 次提高至 5000 次。 **请注意:**启用此设置后,令牌将以明文形式存储在运行 Theia 的机器上。建议使用环境变量 `GITHUB_TOKEN` 来安全地提供该令牌。"
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "请从 {1}? 下载文件,安装“{0}”技能。",
+            "title": "安装技能"
+          },
+          "fetchFailed": "无法加载 AI 注册表以安装技能“{0}”。",
+          "missingId": "安装链接缺少必需的“id”参数。",
+          "success": "已从 AI 注册表安装了技能“{0}”。",
+          "unknownId": "您的 AI 注册表中未列出“{0}”技能。"
+        },
+        "installed": "已安装技能“{0}”。",
+        "linked": "关联技能“{0}”。",
+        "uninstalled": "已卸载技能“{0}”。",
+        "unlinked": "未关联的技能“{0}”。",
+        "updated": "更新了技能“{0}”。",
+        "warning": {
+          "fix": "该技能的文件与注册表中的内容不一致。点击“修复技能”以恢复这些文件。",
+          "linkStale": "该技能是从注册表安装的,但注册表中已不再列出该技能。点击“解除链接”可删除注册表链接并保留文件,或点击“卸载”以移除该技能。",
+          "notInRegistry": "不在注册表中"
+        },
+        "watcherStopped": "已停止监听技能文件夹的更改。已安装的技能可能不再自动刷新。请重新加载窗口以恢复此功能。"
+      },
+      "warning": {
+        "fixConfig": "此服务器的配置与注册表不符。点击“修复配置”以恢复配置。",
+        "linkStale": "该服务器是从注册表安装的,但注册表中已不再列出该服务器。如果您确定要保留该服务器且其仍能正常工作,请单击“取消链接”以删除注册表链接。否则,请单击“卸载”以移除该服务器。",
+        "notInRegistry": "不在注册表中"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "我理解,允许所有",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "配置 shell 命令权限",
       "confirmExecution": "确认Shell命令",
       "denialReason": "原因",
-      "executionCanceled": "已取消",
       "executionDenied": "拒绝",
       "executionDeniedWithReason": "拒绝并说明原因",
       "partialOutput": "部分输出",
@@ -2159,7 +2387,6 @@
       "openByDefault": "默认情况下打开预览窗口而非编辑器。"
     },
     "property-view": {
-      "directory": "目录",
       "lastModified": "最后修改时间",
       "noProperties": "无可用属性。",
       "properties": "属性",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "关闭 更改 预览视图"
       },
-      "history": "历史",
       "justNow": "刚才",
       "mergeEditor": {
         "resetConfirmationTitle": "您确定要重置此编辑器中的合并结果吗?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "获取扩展时出错。",
       "errorFetchingConfigurationHint": "这可能是由于网络配置问题导致的。",
       "failedInstallingVSIX": "无法从VSIX安装{0}。",
+      "filter": {
+        "showBuiltin": "显示内置功能",
+        "showInstalled": "显示已安装",
+        "showRecommended": "显示推荐项"
+      },
       "invalidVSIX": "所选文件不是有效的\"*.vsix\"插件。",
       "license": "许可协议:{0}",
       "onlyShowVerifiedExtensionsDescription": "此设置使{0}仅显示经过验证的扩展程序。",
       "onlyShowVerifiedExtensionsTitle": "仅显示已验证的扩展",
       "recommendedExtensions": "此工作区推荐使用的扩展名称列表。",
       "restrictedModeInstallWarning": "如果“{0}”扩展不支持在受限模式下运行,则可能会被禁用。请信任此工作区以确保扩展能按预期运行。",
-      "searchPlaceholder": "在{0}中搜索扩展",
+      "searchPlaceholder": "搜索 Open VSX 注册表",
       "showInstalled": "显示已安装的扩展",
       "showRecommendedExtensions": "控制是否显示扩展推荐通知。",
       "vsx-extensions-contribution": {
+        "no-other-versions": "无其他版本可用。",
         "update-version-uninstall-error": "删除扩展时出错:{0}。",
         "update-version-version-error": "安装 {1} 的 {0} 版本失败。"
       }
