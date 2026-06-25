@@ -54,14 +54,11 @@ export class LanguageModelToolsMainImpl implements LanguageModelToolsMain {
         if (this.toolInvocationRegistry.getFunction(name)) {
             throw new Error(`Tool '${name}' is already registered.`);
         }
-        const parameters: ToolRequestParameters = ToolRequest.isToolRequestParameters(metadata.inputSchema) ? {
-            type: (metadata.inputSchema as ToolRequestParameters).type,
-            properties: (metadata.inputSchema as ToolRequestParameters).properties,
-            required: (metadata.inputSchema as ToolRequestParameters).required
-        } : {
-            type: 'object',
-            properties: {}
-        };
+        const parameters: ToolRequestParameters = ToolRequest.isToolRequestParameters(metadata.inputSchema)
+            ? metadata.inputSchema as ToolRequestParameters
+            : { type: 'object', properties: {} };
+        // Note: metadata.tags is not forwarded to ToolRequest as ToolRequest has no tags field.
+        // Tags are exposed to extensions on the Ext side via lm.tools (LanguageModelToolInformation).
         const toolRequest: ToolRequest = {
             id: name,
             name: name,

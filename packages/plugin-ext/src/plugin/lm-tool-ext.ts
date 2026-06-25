@@ -59,6 +59,10 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         if (!contribution) {
             this.logger.warn(`Tool '${name}' is not declared in package.json contributes.languageModelTools.`);
         }
+        if (this.toolNameToHandle.has(name)) {
+            this.logger.warn(`Tool '${name}' is already registered. Ignoring duplicate registration.`);
+            return Disposable.NULL;
+        }
         const handle = this.handleCounter++;
         const metadata: LanguageModelToolDto = {
             name,
