@@ -18,8 +18,26 @@ import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { HoverService } from '@theia/core/lib/browser';
-import { GenericCapabilitySelections } from '@theia/ai-core';
+import { GenericCapabilitySelections, ServerToolDescriptor } from '@theia/ai-core';
 import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service';
+
+/**
+ * Optional "Server Tools" section for the current model's provider. When present, the tree shows a
+ * dedicated root category (named after the provider) with a "Server Tools" sub-group. Selections here
+ * are stored separately from {@link GenericCapabilitySelections} and routed through {@link onChange}.
+ */
+export interface ServerToolsSection {
+    /** Display label for the root category (the current model's provider). */
+    providerName: string;
+    /** The current model's vendor; used to key the selections. */
+    vendor: string;
+    /** Server tools offered by the current model. */
+    tools: ServerToolDescriptor[];
+    /** Currently enabled server tool ids. */
+    selectedIds: string[];
+    /** Called when the enabled server tool ids change. */
+    onChange: (ids: string[]) => void;
+}
 
 export interface GenericCapabilitiesTreeProps {
     /** Current generic capability selections */
@@ -32,6 +50,8 @@ export interface GenericCapabilitiesTreeProps {
     availableCapabilities: AvailableGenericCapabilities;
     /** Items already in the agent prompt that should be disabled/greyed */
     disabledCapabilities: GenericCapabilitySelections;
+    /** Optional server tools section for the current model's provider */
+    serverTools?: ServerToolsSection;
     /** Whether the section is disabled */
     disabled?: boolean;
     /** Hover service for tooltips */
@@ -65,6 +85,8 @@ interface TreeNodeData {
     children?: TreeNodeData[];
     /** The original capability item ID (for leaf items only) */
     itemId?: string;
+    /** Marks nodes belonging to the provider server-tools category, which route to a separate selection store. */
+    isServerTool?: boolean;
 }
 
 type CheckboxState = 'checked' | 'unchecked' | 'indeterminate';
@@ -76,6 +98,21 @@ interface ParentCheckboxProps {
     onClick: (e: React.MouseEvent) => void;
     hoverService: HoverService;
 }
+
+/** Warning icon shown next to server tool entries (and the "Server Tools" category), explaining auto-approval. */
+const ServerToolWarning: React.FC<{ hoverService: HoverService, content: string }> = ({ hoverService, content }) => (
+    <span
+        className="codicon codicon-warning theia-GenericCapabilities-ServerTool-Warning"
+        onMouseEnter={e => {
+            e.stopPropagation();
+            hoverService.requestHover({
+                content,
+                target: e.currentTarget as HTMLElement,
+                position: 'bottom'
+            });
+        }}
+    />
+);
 
 /** Component for rendering parent node checkbox with indeterminate state support */
 const ParentCheckbox: React.FC<ParentCheckboxProps> = ({ checkboxState, name, onClick, hoverService }) => {
@@ -123,6 +160,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
     onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
+    serverTools,
     disabled,
     hoverService
 }) => {
@@ -203,7 +241,37 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             };
         };
 
+        const buildServerToolsRootNode = (): TreeNodeData | undefined => {
+            if (!serverTools || serverTools.tools.length === 0) {
+                return undefined;
+            }
+            const selected = new Set(serverTools.selectedIds);
+            return {
+                id: 'root-serverTools',
+                type: 'root',
+                name: nls.localize('theia/ai/chat-ui/serverTools', 'Server Tools'),
+                isServerTool: true,
+                children: [{
+                    id: `group-serverTools-${serverTools.vendor}`,
+                    type: 'group' as const,
+                    name: serverTools.providerName,
+                    isServerTool: true,
+                    children: serverTools.tools.map(tool => ({
+                        id: `item-serverTools-${tool.id}`,
+                        type: 'item' as const,
+                        name: tool.name,
+                        description: tool.description,
+                        itemId: tool.id,
+                        isServerTool: true,
+                        selected: selected.has(tool.id),
+                        disabled: false
+                    })).sort((a, b) => a.name.localeCompare(b.name))
+                }]
+            };
+        };
+
         return [
+            buildServerToolsRootNode(),
             buildFlatRootNode('skills', nls.localizeByDefault('Skills'), 'skills', availableCapabilities.skills),
             buildGroupedRootNode('mcp', nls.localizeByDefault('MCP'), 'mcpFunctions', availableCapabilities.mcpFunctions),
             buildFlatRootNode('agents', nls.localizeByDefault('Agents'), 'agentDelegation', availableCapabilities.agentDelegation),
@@ -211,7 +279,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             buildFlatRootNode('prompts', nls.localizeByDefault('Prompts'), 'promptFragments', availableCapabilities.promptFragments),
             buildFlatRootNode('variables', nls.localizeByDefault('Variables'), 'variables', availableCapabilities.variables),
         ].filter((node): node is TreeNodeData => node !== undefined);
-    }, [availableCapabilities, genericCapabilities, disabledCapabilities]);
+    }, [availableCapabilities, genericCapabilities, disabledCapabilities, serverTools]);
 
     // Filter tree based on search query
     const filteredTree = React.useMemo((): TreeNodeData[] => {
@@ -276,8 +344,8 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             // Only collapse when search was cleared, not on every re-render
             setExpandedNodes(new Set());
         }
-    // Only react to search query and filtered tree changes, not focusedNodeId.
-    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
+        // Only react to search query and filtered tree changes, not focusedNodeId.
+        // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
     }, [searchQuery, filteredTree]);
 
     // Get all visible node IDs for keyboard navigation
@@ -350,6 +418,18 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
     // Toggle all items under a parent node (for checkbox click)
     const handleParentCheckboxToggle = (node: TreeNodeData, e?: React.MouseEvent): void => {
         e?.stopPropagation();
+        if (node.isServerTool && serverTools) {
+            const state = getParentCheckboxState(node);
+            const allIds = getAllLeafItems(node).map(item => item.itemId).filter((id): id is string => !!id);
+            const selectedServerTools = new Set(serverTools.selectedIds);
+            if (state === 'checked' || state === 'indeterminate') {
+                allIds.forEach(id => selectedServerTools.delete(id));
+            } else {
+                allIds.forEach(id => selectedServerTools.add(id));
+            }
+            serverTools.onChange(Array.from(selectedServerTools));
+            return;
+        }
         if (!node.capabilityType) {
             return;
         }
@@ -401,6 +481,19 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
         }
 
         onGenericCapabilityChange(capabilityType, Array.from(current));
+    };
+
+    const handleServerToolToggle = (itemId: string): void => {
+        if (!serverTools) {
+            return;
+        }
+        const current = new Set(serverTools.selectedIds);
+        if (current.has(itemId)) {
+            current.delete(itemId);
+        } else {
+            current.add(itemId);
+        }
+        serverTools.onChange(Array.from(current));
     };
 
     const getIdsForType = (source: GenericCapabilitySelections, type: CapabilityType): string[] =>
@@ -489,9 +582,11 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                     e.preventDefault();
                     const foundNode = findNode(filteredTree, focusedNodeId);
                     if (foundNode) {
-                        if (foundNode.type === 'item' && foundNode.capabilityType && foundNode.itemId && !foundNode.disabled) {
+                        if (foundNode.type === 'item' && foundNode.itemId && !foundNode.disabled && foundNode.isServerTool) {
+                            handleServerToolToggle(foundNode.itemId);
+                        } else if (foundNode.type === 'item' && foundNode.capabilityType && foundNode.itemId && !foundNode.disabled) {
                             handleItemToggle(foundNode.capabilityType, foundNode.itemId);
-                        } else if ((foundNode.type === 'root' || foundNode.type === 'group') && foundNode.capabilityType) {
+                        } else if ((foundNode.type === 'root' || foundNode.type === 'group') && (foundNode.capabilityType || foundNode.isServerTool)) {
                             // Toggle checkbox for parent nodes on Enter/Space
                             handleParentCheckboxToggle(foundNode);
                         }
@@ -534,7 +629,13 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                     data-node-id={node.id}
                     className={`theia-GenericCapabilities-TreeItem${node.disabled ? ' theia-mod-disabled' : ''}${isFocused ? ' theia-mod-selected' : ''}`}
                     style={{ '--tree-indent': `${(depth * 12) + 8}px` } as React.CSSProperties}
-                    onClick={() => node.capabilityType && node.itemId && handleItemToggle(node.capabilityType, node.itemId)}
+                    onClick={() => {
+                        if (node.isServerTool && node.itemId) {
+                            handleServerToolToggle(node.itemId);
+                        } else if (node.capabilityType && node.itemId) {
+                            handleItemToggle(node.capabilityType, node.itemId);
+                        }
+                    }}
                     onMouseDown={() => setFocusedNodeId(node.id)}
                     role="treeitem"
                     aria-selected={isFocused}
@@ -557,6 +658,11 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                         onChange={() => { /* handled by parent div onClick */ }}
                         tabIndex={-1}
                     />
+                    {node.isServerTool && <ServerToolWarning
+                        hoverService={hoverService}
+                        content={nls.localize('theia/ai/chat-ui/serverToolWarning',
+                            'This tool is auto-approved when selected. It may be executed by the model at any time.')}
+                    />}
                     <span className="theia-GenericCapabilities-TreeItem-Name">{node.name}</span>
                 </div>
             );
@@ -565,6 +671,13 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
         // Root or group node
         const isRoot = node.type === 'root';
         const checkboxState = getParentCheckboxState(node);
+        let rootNameTooltip: string | undefined;
+        if (isRoot && node.isServerTool) {
+            rootNameTooltip = nls.localize('theia/ai/chat-ui/serverToolsDescription',
+                "Server tools are executed server-side by the LLM on the vendor's infrastructure.");
+        } else if (isRoot && node.capabilityType) {
+            rootNameTooltip = `${node.name}: ${ROOT_DESCRIPTIONS[node.capabilityType]?.() || node.name}`;
+        }
 
         return (
             <div key={node.id} className={`theia-GenericCapabilities-TreeNode${isRoot ? ' root' : ' group'}`}>
@@ -584,12 +697,16 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                         hoverService={hoverService}
                     />
                     <span className={`codicon ${isExpanded ? 'codicon-chevron-down' : 'codicon-chevron-right'} theia-GenericCapabilities-TreeNode-Chevron`} />
+                    {isRoot && node.isServerTool && <ServerToolWarning
+                        hoverService={hoverService}
+                        content={nls.localize('theia/ai/chat-ui/serverToolsWarning',
+                            'These tools are auto-approved when selected. They may be executed by the model at any time.')}
+                    />}
                     <span
                         className="theia-GenericCapabilities-TreeNode-Name"
-                        onMouseEnter={isRoot && node.capabilityType ? e => {
-                            const description = ROOT_DESCRIPTIONS[node.capabilityType!]?.() || node.name;
+                        onMouseEnter={rootNameTooltip ? e => {
                             hoverService.requestHover({
-                                content: `${node.name}: ${description}`,
+                                content: rootNameTooltip!,
                                 target: e.currentTarget as HTMLElement,
                                 position: 'bottom'
                             });

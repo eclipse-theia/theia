@@ -33,10 +33,14 @@ import { MCPServerInstallDialog, MCPServerInstallDialogOptions } from './mcp-ser
 // is robust to other specs in the package toggling the shared JSDOM globals.
 disableJSDOM();
 
-/** Exposes the protected validation hook and token field so we can assert on them directly. */
+/** Exposes the protected validation hook and credential fields so we can assert on them directly. */
 class TestInstallDialog extends MCPServerInstallDialog {
     setToken(token: string): void {
         this.serverAuthToken = token;
+    }
+    setOAuthCredentials(clientId: string, clientSecret: string): void {
+        this.oauthClientId = clientId;
+        this.oauthClientSecret = clientSecret;
     }
     runValidation(): DialogError {
         return this.isValid(this.value, 'open') as DialogError;
@@ -72,5 +76,19 @@ describe('MCPServerInstallDialog.isValid', () => {
         const d = dialog({ requireAuthToken: true });
         d.setToken('real-token');
         expect(d.runValidation()).to.equal('');
+    });
+
+    it('rejects missing OAuth credentials when the server requires OAuth', () => {
+        const d = dialog({ requireOAuth: true });
+        expect(d.runValidation()).to.match(/client ID and client secret are required/i);
+        d.setOAuthCredentials('client-id', '');
+        expect(d.runValidation()).to.match(/client ID and client secret are required/i);
+    });
+
+    it('accepts and returns OAuth credentials when both are provided', () => {
+        const d = dialog({ requireOAuth: true });
+        d.setOAuthCredentials('client-id', 'client-secret');
+        expect(d.runValidation()).to.equal('');
+        expect(d.value).to.deep.include({ oauthClientId: 'client-id', oauthClientSecret: 'client-secret' });
     });
 });

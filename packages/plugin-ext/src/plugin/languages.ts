@@ -44,6 +44,7 @@ import {
     SerializedDocumentFilter,
     SignatureHelp,
     DocumentHighlight,
+    MultiDocumentHighlightDto,
     Range,
     TextEdit,
     FormattingOptions,
@@ -81,6 +82,7 @@ import { HoverAdapter } from './languages/hover';
 import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression';
 import { InlineValuesAdapter } from './languages/inline-values';
 import { DocumentHighlightAdapter } from './languages/document-highlight';
+import { MultiDocumentHighlightAdapter } from './languages/multi-document-highlight';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
 import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
@@ -122,6 +124,7 @@ type Adapter = CompletionAdapter |
     EvaluatableExpressionAdapter |
     InlineValuesAdapter |
     DocumentHighlightAdapter |
+    MultiDocumentHighlightAdapter |
     DocumentFormattingAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
@@ -465,6 +468,23 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position, token), undefined);
     }
     // ### Document Highlight Provider end
+
+    // ### Multi Document Highlight Provider begin
+    registerMultiDocumentHighlightProvider(
+        selector: theia.DocumentSelector, provider: theia.MultiDocumentHighlightProvider, pluginInfo: PluginInfo
+    ): theia.Disposable {
+        const callId = this.addNewAdapter(new MultiDocumentHighlightAdapter(provider, this.documents));
+        this.proxy.$registerMultiDocumentHighlightProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideMultiDocumentHighlights(
+        handle: number, resource: UriComponents, position: Position, otherResources: UriComponents[], token: theia.CancellationToken
+    ): Promise<MultiDocumentHighlightDto[] | undefined> {
+        return this.withAdapter(handle, MultiDocumentHighlightAdapter,
+            adapter => adapter.provideMultiDocumentHighlights(URI.revive(resource), position, otherResources, token), undefined);
+    }
+    // ### Multi Document Highlight Provider end
 
     // ### WorkspaceSymbol Provider begin
     registerWorkspaceSymbolProvider(provider: theia.WorkspaceSymbolProvider, pluginInfo: PluginInfo): theia.Disposable {

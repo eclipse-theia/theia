@@ -35,6 +35,7 @@ export class VSXExtensionsContributionAdapter implements ExtensionsSourceContrib
 
     readonly type = 'extension';
     readonly displayName = nls.localizeByDefault('Extensions');
+    readonly searchToken = '@extensions';
     readonly priority = 0;
 
     @inject(VSXExtensionsModel)

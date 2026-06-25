@@ -117,6 +117,18 @@ Custom agents are no longer stored in a single `customAgents.yml` per scope. Eac
 - `PromptFragmentCustomizationService` gained two required methods, `createCustomAgentFile` and `migrateCustomAgentsYaml`. If you implement this interface directly, you must provide them.
 - `PromptFragmentCustomizationService.getCustomAgentsLocations()` now returns `CustomAgentsLocation[]`. Each element gained a required `kind: 'agents-dir' | 'legacy-yaml'` field, and the result interleaves per-agent `agents/` directory entries with legacy `customAgents.yml` entries (one of each per scope). Code that previously iterated the result assuming only `customAgents.yml` files should branch on `kind` instead.
 
+#### Custom agents default to the `.agents` workspace folder
+
+Custom agents are now scanned from both the `.agents/` and `.prompts/` folders of each workspace root, independent of the `ai-features.promptTemplates.WorkspaceTemplateDirectories` preference. `.agents/` is preferred and is the default location for newly created agents (matching the skills convention introduced in [#17553](https://github.com/eclipse-theia/theia/pull/17553)); `.prompts/agents/` continues to be discovered for backward compatibility.
+
+**End-user-facing:**
+
+- New custom agents are created under `.agents/agents/<id>/agent.md` by default. Existing agents under `.prompts/agents/` keep working and are still listed as a creation location.
+
+**Adopter-facing:**
+
+- `PromptFragmentCustomizationProperties` gained an optional `agentDirectoryPaths` field carrying the absolute parent directories scanned for custom agents. The `.agents`/`.prompts` parents are exported as `CUSTOM_AGENT_WORKSPACE_DIRECTORIES`.
+
 ### v1.70.0
 
 #### Removal of deprecated @theia/git extension from Theia codebase [#17148](https://github.com/eclipse-theia/theia/pull/17148)

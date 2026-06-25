@@ -37,6 +37,7 @@ import {
     MarkdownPartRenderer,
     MermaidPartRenderer,
     ToolCallPartRenderer,
+    ServerToolCallPartRenderer,
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
@@ -72,6 +73,7 @@ import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-cap
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
+import { ChatInputNeededNotificationContribution } from './chat-input-needed-notification-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);
@@ -113,6 +115,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ToolConfirmationKeybindingContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ToolConfirmationKeybindingContribution);
     bind(KeybindingContribution).toService(ToolConfirmationKeybindingContribution);
+
+    bind(ChatInputNeededNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatInputNeededNotificationContribution);
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
@@ -177,6 +182,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).toService(MermaidPartRenderer);
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(ServerToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();

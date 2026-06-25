@@ -74,6 +74,10 @@ export interface MCPInstallOverrides {
     autostart?: boolean;
     /** Filled into a remote server's `serverAuthToken` slot when supplied by the user. */
     serverAuthToken?: string;
+    /** Filled into the entry's `oauth.clientId` slot when supplied by the user. */
+    oauthClientId?: string;
+    /** Filled into the entry's `oauth.clientSecret` slot when supplied by the user. */
+    oauthClientSecret?: string;
 }
 
 /**
@@ -204,6 +208,15 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         if (overrides.serverAuthToken !== undefined && 'serverAuthToken' in config) {
             merged.serverAuthToken = overrides.serverAuthToken;
         }
+        // Replace the registry's OAuth client placeholders with the user-supplied credentials,
+        // keeping the registry-fixed parts (scopes, authorization server, resource) intact.
+        if (config.oauth && (overrides.oauthClientId !== undefined || overrides.oauthClientSecret !== undefined)) {
+            merged.oauth = {
+                ...config.oauth,
+                ...(overrides.oauthClientId !== undefined && { clientId: overrides.oauthClientId }),
+                ...(overrides.oauthClientSecret !== undefined && { clientSecret: overrides.oauthClientSecret })
+            };
+        }
         return merged;
     }
 
@@ -252,7 +265,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 oauthScopes: '',
                 oauthAuthorizationServer: '',
                 oauthResource: '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         if (isRemoteMCPServerDescription(server)) {
@@ -273,7 +287,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
                 oauthAuthorizationServer: server.oauth?.authorizationServer ?? '',
                 oauthResource: server.oauth?.resource ?? '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         return undefined;
@@ -282,7 +297,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toLocalConfig(formData: MCPServerFormData): Partial<LocalMCPServerDescription> {
         const config: Partial<LocalMCPServerDescription> = {
             command: formData.command.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
         if (formData.args.trim()) {
             config.args = formData.args.trim().split(/\s+/);
@@ -297,7 +313,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toRemoteConfig(formData: MCPServerFormData): Partial<RemoteMCPServerDescription> {
         const config: Partial<RemoteMCPServerDescription> = {
             serverUrl: formData.serverUrl.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
         if (formData.serverType === 'remote') {
             if (formData.serverAuthToken.trim()) {
