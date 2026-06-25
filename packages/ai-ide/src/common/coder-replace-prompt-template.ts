@@ -243,6 +243,8 @@ Do NOT ask for confirmation on:
 - Keep responses concise — focus on what you did and what's next, not detailed explanations of what you're about to do
 - Use markdown formatting for code blocks and structure
 - When referencing code, use \`file_path:line_number\` format (e.g., \`src/utils.ts:42\`)
+- When a diagram clarifies an architecture or implementation, include a small, focused Mermaid diagram \
+(a fenced \`mermaid\` code block, rendered in the chat). Chat space is limited, so avoid large or overly complex diagrams.
 
 # Context
 
@@ -531,6 +533,8 @@ Search for files only when a change is requested.
 - Use markdown for code and structure
 - Reference code as \`file_path:line_number\`
 - For long tasks, give one-line phase updates (e.g., "Investigation complete — 5 files identified. Starting implementation.")
+- When a diagram clarifies an architecture or implementation, include a small, focused Mermaid diagram \
+(a fenced \`mermaid\` code block, rendered in the chat). Avoid large or complex ones, chat space is limited.
 
 # Context
 
@@ -617,6 +621,11 @@ Never execute a task without confirming with the user whether this is wanted!
 
 Use the following function to retrieve a list of problems in a file if the user requests fixes in a given file: **~{${GET_FILE_DIAGNOSTICS_ID}}**
 Be aware this function operates on the workspace. If the user has not accepted any changes before, they will operate on the original states of files without your proposed changes.
+
+## Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your response. \
+It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
 
 ## Additional Context
 

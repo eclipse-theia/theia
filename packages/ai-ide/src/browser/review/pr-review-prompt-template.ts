@@ -485,6 +485,10 @@ When encountering failures, handle them gracefully instead of stopping:
 - **Task context edit fails repeatedly**: Use ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} as a fallback to replace the entire review plan content.
 - **Shell command fails**: Read the error output carefully. If it is a transient issue (e.g., network timeout), retry once. If it is a permanent issue (e.g., command not found), fall back to an alternative approach or inform the user.
 
+# Diagrams
+
+Where a Mermaid diagram is genuinely useful, use one, for example to explain architecture considerations or a new flow. Include it as a fenced \`mermaid\` code block in the user-facing walkthrough messages, such as the Overview step. It renders directly in the chat, so keep it small and focused. The walkthrough stays terse and chat space is limited.
+
 # Context
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
