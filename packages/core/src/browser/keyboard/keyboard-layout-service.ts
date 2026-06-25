@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import type { IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
-import { isWindows } from '../../common/os';
+import type { ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
+import { isOSX, isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
@@ -159,23 +159,10 @@ export class KeyboardLayoutService {
                 if (mappedKey && this.shouldIncludeKey(code)) {
                     if (isWindows) {
                         this.addWindowsKeyMapping(key2KeyCode, mappedKey, (keyMapping as IWindowsKeyMapping).vkey, keyMapping.value);
+                    } else if (isOSX) {
+                        this.addMacKeyMappings(key2KeyCode, mappedKey, keyMapping as IMacKeyMapping);
                     } else {
-                        // Dead keys (e.g. the combining-accent layer of Option+E on macOS US) report a display
-                        // glyph that collides with real keys, so they must not be registered as if they produced that
-                        // literal character. The dead-key flags only exist on macOS layouts; elsewhere they are undefined.
-                        const macMapping = keyMapping as IMacKeyMapping;
-                        if (keyMapping.value && !macMapping.valueIsDeadKey) {
-                            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
-                        }
-                        if (keyMapping.withShift && !macMapping.withShiftIsDeadKey) {
-                            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
-                        }
-                        if (keyMapping.withAltGr && !macMapping.withAltGrIsDeadKey) {
-                            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
-                        }
-                        if (keyMapping.withShiftAltGr && !macMapping.withShiftAltGrIsDeadKey) {
-                            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
-                        }
+                        this.addKeyMappings(key2KeyCode, mappedKey, keyMapping);
                     }
                 }
                 if (keyMapping.value) {
@@ -192,6 +179,39 @@ export class KeyboardLayoutService {
         // be resolved to `Digit3` (`Numpad3` is associated with `Key.DIGIT3`), effectively blocking the user
         // from typing `3` in an editor.
         return !code.startsWith('Numpad');
+    }
+
+    private addKeyMappings(key2KeyCode: KeyCode[], mappedKey: Key, keyMapping: ILinuxKeyMapping): void {
+        if (keyMapping.value) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
+        }
+        if (keyMapping.withShift) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
+        }
+        if (keyMapping.withAltGr) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
+        }
+        if (keyMapping.withShiftAltGr) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
+        }
+    }
+
+    private addMacKeyMappings(key2KeyCode: KeyCode[], mappedKey: Key, keyMapping: IMacKeyMapping): void {
+        // Dead keys (e.g. the combining-accent layer of Option+E on macOS US) await a following keystroke to
+        // compose a glyph and so never produce a committed character. They must not be registered as if they
+        // produced their display glyph, which would otherwise collide with the real key for that glyph.
+        if (keyMapping.value && !keyMapping.valueIsDeadKey) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
+        }
+        if (keyMapping.withShift && !keyMapping.withShiftIsDeadKey) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
+        }
+        if (keyMapping.withAltGr && !keyMapping.withAltGrIsDeadKey) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
+        }
+        if (keyMapping.withShiftAltGr && !keyMapping.withShiftAltGrIsDeadKey) {
+            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
+        }
     }
 
     private addKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, value: string, shift: boolean, alt: boolean): void {
