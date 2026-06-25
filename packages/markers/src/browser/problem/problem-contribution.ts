@@ -20,18 +20,24 @@ import {
     FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon,
     TreeNode, TreeSelection
 } from '@theia/core/lib/browser';
+import { MessageService } from '@theia/core/lib/common/message-service';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager, ProblemStat } from './problem-manager';
 import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemTreeModel } from './problem-tree-model';
-import { MarkerNode } from '../marker-tree';
+import { MarkerNode, MarkerInfoNode } from '../marker-tree';
 import { MenuPath, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ProblemSelection } from './problem-selection';
 import { nls } from '@theia/core/lib/common/nls';
+import { FileDialogService } from '@theia/filesystem/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export const PROBLEMS_CONTEXT_MENU: MenuPath = [PROBLEM_KIND];
 
@@ -48,15 +54,32 @@ export namespace ProblemsCommands {
         id: 'problems.collapse.all.toolbar',
         iconClass: codicon('collapse-all')
     };
-    export const COPY: Command = {
-        id: 'problems.copy'
-    };
-    export const COPY_MESSAGE: Command = {
+    export const COPY = Command.toDefaultLocalizedCommand({
+        id: 'problems.copy',
+        category: 'Problems',
+        label: 'Copy'
+    });
+    export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
         id: 'problems.copy.message',
-    };
-    export const SELECT_ALL: Command = {
-        id: 'problems.select.all'
-    };
+        category: 'Problems',
+        label: 'Copy Message'
+    });
+    export const COPY_AS_TEXT = Command.toLocalizedCommand({
+        id: 'problems.copy.as.text',
+        category: 'Problems',
+        label: 'Copy as Text'
+    }, 'theia/markers/copyAsText', nls.getDefaultKey('Problems'));
+    export const SELECT_ALL = Command.toDefaultLocalizedCommand({
+        id: 'problems.select.all',
+        category: 'Problems',
+        label: 'Select All'
+    });
+    export const EXPORT = Command.toLocalizedCommand({
+        id: 'problems.export',
+        category: 'Problems',
+        label: 'Export',
+        iconClass: codicon('arrow-circle-up', true)
+    }, 'theia/markers/export', nls.getDefaultKey('Problems'));
     export const CLEAR_ALL = Command.toLocalizedCommand({
         id: 'problems.clear.all',
         category: 'Problems',
@@ -66,10 +89,15 @@ export namespace ProblemsCommands {
 }
 
 @injectable()
-export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
+export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution, TabBarToolbarContribution, KeybindingContribution {
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
+    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
+    @inject(FileService) protected readonly fileService: FileService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     constructor() {
         super({
@@ -86,6 +114,12 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     onStart(app: FrontendApplication): void {
         this.updateStatusBarElement();
         this.problemManager.onDidChangeMarkers(this.updateStatusBarElement);
+        const problemsFocusKey = this.contextKeyService.createKey<boolean>('problemsFocus', false);
+        const updateFocusKey = () => {
+            problemsFocusKey.set(this.shell.activeWidget instanceof ProblemWidget);
+        };
+        updateFocusKey();
+        this.shell.onDidChangeActiveWidget(updateFocusKey);
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
@@ -165,10 +199,27 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 }
             })
         });
+        commands.registerCommand(ProblemsCommands.COPY_AS_TEXT, {
+            isEnabled: () => this.withWidget(undefined, () => true),
+            isVisible: () => this.withWidget(undefined, () => true),
+            execute: () => this.withWidget(undefined, widget => {
+                const selectedSet = new Set(widget.model.selectedNodes);
+                if (selectedSet.size > 0) {
+                    this.copyAsText(widget, widget.model.root, selectedSet);
+                }
+            })
+        });
         commands.registerCommand(ProblemsCommands.SELECT_ALL, {
             isEnabled: () => this.withWidget(undefined, () => true),
             isVisible: () => this.withWidget(undefined, () => true),
             execute: () => this.withWidget(undefined, widget => this.selectAllProblems(widget))
+        });
+        commands.registerCommand(ProblemsCommands.EXPORT, {
+            isEnabled: () => this.withWidget(undefined, () => true),
+            isVisible: () => this.withWidget(undefined, () => true),
+            execute: async () => {
+                await this.withWidget(undefined, async widget => await this.exportProblems(widget));
+            }
         });
         commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
             isEnabled: widget => this.withWidget(widget, () => true),
@@ -188,6 +239,14 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             commandId: ProblemsCommands.COPY_MESSAGE.id,
             label: nls.localizeByDefault('Copy Message'),
             order: '1'
+        });
+        menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
+            commandId: ProblemsCommands.COPY_AS_TEXT.id,
+            order: '2'
+        });
+        menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
+            commandId: ProblemsCommands.EXPORT.id,
+            order: '3'
         });
         menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
@@ -216,6 +275,19 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
+            command: ProblemsCommands.COPY.id,
+            keybinding: 'ctrlcmd+c',
+            when: 'problemsFocus'
+        });
+        keybindings.registerKeybinding({
+            command: ProblemsCommands.SELECT_ALL.id,
+            keybinding: 'ctrlcmd+a',
+            when: 'problemsFocus'
+        });
+    }
+
     protected async collapseAllProblems(): Promise<void> {
         const { model } = await this.widget;
         const root = model.root as CompositeTreeNode;
@@ -226,7 +298,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    protected async selectAllProblems(widget: ProblemWidget): Promise<void> {
+    protected selectAllProblems(widget: ProblemWidget): void {
         const { model } = widget;
         const root = model.root as CompositeTreeNode;
         if (root) {
@@ -264,22 +336,11 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     protected copy(selections: ProblemSelection | ProblemSelection[]): void {
         const selectionsArray = Array.isArray(selections) ? selections : [selections];
-        const serializedProblems = selectionsArray.map(selection => {
-            const marker = selection.marker as ProblemMarker;
-            return {
-                resource: marker.uri,
-                owner: marker.owner,
-                code: marker.data.code,
-                severity: marker.data.severity,
-                message: marker.data.message,
-                source: marker.data.source,
-                startLineNumber: marker.data.range.start.line,
-                startColumn: marker.data.range.start.character,
-                endLineNumber: marker.data.range.end.line,
-                endColumn: marker.data.range.end.character
-            };
-        });
-        this.addToClipboard(JSON.stringify(serializedProblems, undefined, '\t'));
+        const serializedProblems = selectionsArray.map(selection => this.serializeMarker(selection.marker as ProblemMarker));
+        const output = selectionsArray.length === 1
+            ? JSON.stringify(serializedProblems[0], undefined, '\t')
+            : JSON.stringify(serializedProblems, undefined, '\t');
+        this.addToClipboard(output);
     }
 
     protected copyMessage(selections: ProblemSelection | ProblemSelection[]): void {
@@ -289,6 +350,130 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             return marker.data.message;
         });
         this.addToClipboard(messages.join('\n'));
+    }
+
+    protected serializeMarker(marker: ProblemMarker): object {
+        return {
+            resource: marker.uri,
+            owner: marker.owner,
+            code: marker.data.code,
+            severity: marker.data.severity,
+            message: marker.data.message,
+            source: marker.data.source,
+            startLineNumber: marker.data.range.start.line,
+            startColumn: marker.data.range.start.character,
+            endLineNumber: marker.data.range.end.line,
+            endColumn: marker.data.range.end.character
+        };
+    }
+
+    protected copyAsText(widget: ProblemWidget, root: TreeNode | undefined, selectedSet: Set<TreeNode>): void {
+        const lines: string[] = [];
+        if (root) {
+            this.collectSelectedLinesInOrder(widget, root, selectedSet, lines);
+        }
+        this.addToClipboard(lines.join('\n'));
+    }
+
+    protected collectSelectedLinesInOrder(widget: ProblemWidget, node: TreeNode, selectedSet: Set<TreeNode>, lines: string[]): void {
+        if (selectedSet.has(node)) {
+            if (MarkerInfoNode.is(node)) {
+                lines.push(this.formatMarkerInfoNode(widget, node));
+            } else if (MarkerNode.is(node)) {
+                lines.push(this.formatMarkerNode(node));
+            }
+        }
+        if (CompositeTreeNode.is(node) && node.children) {
+            for (const child of node.children) {
+                this.collectSelectedLinesInOrder(widget, child, selectedSet, lines);
+            }
+        }
+    }
+
+    protected formatMarkerInfoNode(widget: ProblemWidget, node: MarkerInfoNode): string {
+        const name = widget.toNodeName(node);
+        const description = widget.toNodeDescription(node);
+        return description ? `${name} ${description}` : name;
+    }
+
+    protected formatMarkerNode(node: MarkerNode): string {
+        const marker = node.marker as ProblemMarker;
+        const severity = this.getSeverityLabel(marker.data.severity);
+        const line = marker.data.range.start.line + 1;
+        const column = marker.data.range.start.character + 1;
+        const location = nls.localizeByDefault('Ln {0}, Col {1}', line, column);
+        const source = marker.data.source ? `${marker.data.source}` : '';
+        const code = marker.data.code ? `(${marker.data.code})` : '';
+        const sourceCode = [source, code].filter(s => s).join(' ');
+        const suffix = sourceCode ? ` ${sourceCode}` : '';
+        return `${severity}: ${marker.data.message}${suffix} [${location}]`;
+    }
+
+    protected getSeverityLabel(severity: number | undefined): string {
+        switch (severity) {
+            case 1: return 'error';
+            case 2: return 'warning';
+            case 3: return 'info';
+            default: return 'hint';
+        }
+    }
+
+    protected async exportProblems(widget: ProblemWidget): Promise<void> {
+        const selectedNodes = widget.model.selectedNodes;
+
+        if (selectedNodes.length === 0) {
+            return;
+        }
+
+        const markerNodes = this.collectMarkerNodes(selectedNodes);
+
+        if (markerNodes.length === 0) {
+            return;
+        }
+
+        const filePath = await this.fileDialogService.showSaveDialog({
+            title: 'Export Problems',
+            filters: { 'JSON Files': ['json'] },
+            saveLabel: 'Export'
+        });
+
+        if (!filePath) {
+            return;
+        }
+
+        try {
+            const serializedProblems = markerNodes.map(node => this.serializeMarker(node.marker as ProblemMarker));
+            const content = JSON.stringify(serializedProblems, undefined, '\t');
+            await this.fileService.write(filePath, content);
+            this.messageService.info(nls.localize('theia/markers/exportSuccess', 'Problems exported successfully.'));
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.messageService.error(errorMessage);
+        }
+    }
+
+    protected collectMarkerNodes(nodes: readonly TreeNode[]): MarkerNode[] {
+        const seen = new Set<MarkerNode>();
+        for (const node of nodes) {
+            if (MarkerNode.is(node)) {
+                seen.add(node);
+            } else if (CompositeTreeNode.is(node)) {
+                this.collectMarkerNodesRecursive(node, seen);
+            }
+        }
+        return Array.from(seen);
+    }
+
+    protected collectMarkerNodesRecursive(node: CompositeTreeNode, seen: Set<MarkerNode>): void {
+        if (node.children) {
+            for (const child of node.children) {
+                if (MarkerNode.is(child)) {
+                    seen.add(child);
+                } else if (CompositeTreeNode.is(child)) {
+                    this.collectMarkerNodesRecursive(child, seen);
+                }
+            }
+        }
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (problems: ProblemWidget) => T): T | false {

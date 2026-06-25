@@ -175,6 +175,14 @@ export class ProblemWidget extends TreeWidget {
         return <ProblemMarkerRemoveButton model={this.model} node={node} />;
     }
 
+    override toNodeName(node: TreeNode): string {
+        return super.toNodeName(node);
+    }
+
+    override toNodeDescription(node: TreeNode): string {
+        return super.toNodeDescription(node);
+    }
+
     protected decorateMarkerNode(node: MarkerNode): React.ReactNode {
         if (ProblemMarker.is(node.marker)) {
             let severityClass: string = '';
