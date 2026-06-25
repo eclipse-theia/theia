@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
-import { generateUuid, ILogger, URI } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { generateUuid, URI } from '@theia/core';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 
@@ -29,9 +29,6 @@ export interface AskAIInputBaseArgs {
 export abstract class AskAIInputWidgetBase extends AIChatInputWidget {
     protected readonly resourceId = generateUuid();
     protected override heightInLines = 3;
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
     protected readonly args: AskAIInputBaseArgs | undefined;
 
     protected abstract readonly chatAgentLocation: ChatAgentLocation;
