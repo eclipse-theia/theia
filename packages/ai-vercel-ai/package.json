@@ -2,6 +2,7 @@
   "name": "@theia/ai-vercel-ai",
   "version": "1.73.0",
   "description": "Theia - Vercel AI SDK Integration",
+  "private": true,
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/openai": "^1.3.24",
