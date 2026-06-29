@@ -58,6 +58,8 @@ import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { bindChatViewPreferences } from './chat-view-preferences';
 import { ChatViewWidget } from './chat-view-widget';
+import { ChatBannerProvider } from './chat-banner-provider';
+import { ChatBannerWidget } from './chat-banner-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
@@ -122,6 +124,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
+    bindRootContributionProvider(bind, ChatBannerProvider);
+    bind(ChatBannerWidget).toSelf();
 
     bindChatViewWidget(bind);
 
