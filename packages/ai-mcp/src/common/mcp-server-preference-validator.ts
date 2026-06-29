@@ -19,6 +19,7 @@ import { MCPRegistryMetadata } from './mcp-server-manager';
 
 interface BaseMCPServerPreferenceValue {
     autostart?: boolean;
+    deferLoading?: boolean;
     /** Provenance link to an AI registry entry; written by `@theia/ai-registry`. */
     registryMetadata?: MCPRegistryMetadata;
 }
@@ -71,6 +72,7 @@ function isPreferenceValue(obj: unknown): obj is MCPServersPreferenceValue {
         (!('env' in candidate) || !!candidate.env && typeof candidate.env === 'object'
             && Object.values(candidate.env).every(value => typeof value === 'string')) &&
         (!('autostart' in candidate) || typeof candidate.autostart === 'boolean') &&
+        (!('deferLoading' in candidate) || typeof candidate.deferLoading === 'boolean') &&
         (!('serverUrl' in candidate) || typeof candidate.serverUrl === 'string') &&
         (!('serverAuthToken' in candidate) || typeof candidate.serverAuthToken === 'string') &&
         (!('serverAuthTokenHeader' in candidate) || typeof candidate.serverAuthTokenHeader === 'string') &&
@@ -157,6 +159,9 @@ function describeFieldMismatch(candidate: Record<string, unknown>): string | und
     }
     if ('autostart' in candidate && typeof candidate.autostart !== 'boolean') {
         return 'Field "autostart" must be a boolean.';
+    }
+    if ('deferLoading' in candidate && typeof candidate.deferLoading !== 'boolean') {
+        return 'Field "deferLoading" must be a boolean.';
     }
     if ('serverUrl' in candidate && typeof candidate.serverUrl !== 'string') {
         return 'Field "serverUrl" must be a string.';

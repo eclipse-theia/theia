@@ -20,9 +20,13 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
+import { UntitledResourceResolver } from '@theia/core';
 import { codicon, ContextMenuRenderer, KeybindingRegistry, OpenerService } from '@theia/core/lib/browser';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 import { nls } from '@theia/core/lib/common/nls';
-import { useMarkdownRendering } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/markdown-part-renderer';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { MarkdownWithMermaid } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/mermaid-rendering';
 import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import {
     APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
@@ -66,10 +70,14 @@ interface UserInteractionComponentProps {
      */
     onPartialResult: (result: UserInteractionResult) => void;
     openerService: OpenerService;
+    themeService: ThemeService;
+    clipboardService: ClipboardService;
+    editorProvider: MonacoEditorProvider;
+    untitledResourceResolver: UntitledResourceResolver;
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, result, onPartialResult, openerService
+    args, toolCallId, tool, finished, canceled, result, onPartialResult, openerService, themeService, clipboardService, editorProvider, untitledResourceResolver
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
@@ -93,7 +101,6 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
 
     const activeStep: UserInteractionStep | undefined = steps[currentStep];
     const isLastStep = currentStep === stepCount - 1;
-    const messageRef = useMarkdownRendering(activeStep?.message ?? '', openerService);
 
     // A finished tool call has no live handler anymore (completion, cancellation, or
     // restoration of a previously-pending interaction). Lock all inputs in that case.
@@ -225,7 +232,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     }
 
     const activeState = stepStates[currentStep];
-    const stepLabel = nls.localize('theia/ai-ide/userInteractionStepLabel', 'Step {0} of {1}', currentStep + 1, stepCount);
+    const stepLabel = nls.localizeByDefault('Step {0} of {1}', currentStep + 1, stepCount);
     const advanceLabel = isLastStep
         ? nls.localize('theia/ai-ide/userInteractionFinishStep', 'Finish')
         : nls.localizeByDefault('Next');
@@ -259,7 +266,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                         return (
                             <span className='user-interaction-tool status canceled'>
                                 <i className={codicon('close')} />
-                                {nls.localize('theia/ai-ide/userInteractionCanceled', 'Canceled')}
+                                {nls.localizeByDefault('Canceled')}
                             </span>
                         );
                     }
@@ -282,7 +289,24 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                     ))}
                 </div>
             )}
-            <div className='user-interaction-tool message' ref={messageRef} />
+            {/* Render every step's message up front, each in its own keyed container and hidden when inactive.
+                Mounting them all means any Mermaid diagrams render once (while hidden, so they add no layout
+                height) instead of rendering on first navigation to a step. A diagram that renders asynchronously
+                while its step is visible changes the row height a tick later, which makes the virtualized chat
+                scroll and can unmount the interaction; pre-rendering avoids that, and keeping each step mounted
+                also preserves its view state (zoom, source mode, ...) across navigation without bleeding into
+                other steps. */}
+            {steps.map((step, i) =>
+                <div key={i} className='user-interaction-tool message' hidden={i !== currentStep}>
+                    <MarkdownWithMermaid
+                        content={step.message ?? ''}
+                        openerService={openerService}
+                        themeService={themeService}
+                        clipboardService={clipboardService}
+                        editorProvider={editorProvider}
+                        untitledResourceResolver={untitledResourceResolver} />
+                </div>
+            )}
             {hasOptions && (
                 <div className='user-interaction-tool options'>
                     {activeStep.options!.map((option, i) => {
@@ -504,6 +528,18 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
     @inject(OpenerService)
     protected openerService: OpenerService;
 
+    @inject(ThemeService)
+    protected themeService: ThemeService;
+
+    @inject(ClipboardService)
+    protected clipboardService: ClipboardService;
+
+    @inject(MonacoEditorProvider)
+    protected editorProvider: MonacoEditorProvider;
+
+    @inject(UntitledResourceResolver)
+    protected untitledResourceResolver: UntitledResourceResolver;
+
     @inject(PendingToolConfirmationTracker)
     protected pendingToolConfirmationTracker: PendingToolConfirmationTracker;
 
@@ -554,6 +590,10 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                     response.updateResult(JSON.stringify(partial));
                 }}
                 openerService={this.openerService}
+                themeService={this.themeService}
+                clipboardService={this.clipboardService}
+                editorProvider={this.editorProvider}
+                untitledResourceResolver={this.untitledResourceResolver}
                 toolConfirmation={{
                     response,
                     confirmationMode,

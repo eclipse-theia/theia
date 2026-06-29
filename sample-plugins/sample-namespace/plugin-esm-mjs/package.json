@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-esm-mjs",
-  "version": "1.72.0",
+  "version": "1.73.0",
   "main": "extension.mjs",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-namespace",
@@ -16,7 +16,7 @@
     "onCommand:plugin-esm-mjs.hello"
   ],
   "devDependencies": {
-    "@types/vscode": "^1.118.0"
+    "@types/vscode": "^1.120.0"
   },
   "scripts": {
     "build": "vsce package --no-dependencies"

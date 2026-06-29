@@ -819,7 +819,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
 
     const getStatusLabel = (): string => {
         if (confirmationState === 'rejected') {
-            return nls.localize('theia/ai-terminal/executionCanceled', 'Canceled');
+            return nls.localizeByDefault('Canceled');
         }
         return denialReason
             ? nls.localize('theia/ai-terminal/executionDeniedWithReason', 'Denied with reason')
@@ -896,7 +896,7 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                         <span className="shell-execution-tool duration">{formatDuration(canceledResult.duration)}</span>
                     )}
                     <span className="shell-execution-tool status-label canceled">
-                        {nls.localize('theia/ai-terminal/executionCanceled', 'Canceled')}
+                        {nls.localizeByDefault('Canceled')}
                     </span>
                 </span>
             </div>

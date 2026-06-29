@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "Mostrar configurações de IA",
   "ai.executePlanWithCoder": "Executar plano atual com codificador",
   "aiConfiguration:open": "Abrir a visualização de configuração de IA",
+  "aiConfiguration:openTools": "Abrir a configuração das ferramentas de IA",
   "aiHistory:clear": "Histórico de IA: Limpar histórico",
   "aiHistory:open": "Abrir a visualização do histórico de IA",
   "aiHistory:sortChronologically": "Histórico da IA: Ordenar cronologicamente",
@@ -27,8 +28,8 @@
           "title": "Substituições de recursos"
         },
         "completionNotification": {
-          "mdDescription": "Comportamento de notificação quando este agente conclui uma tarefa. Se não estiver definido, será utilizada a configuração global padrão de notificação.\n- `os-notification`: Mostrar notificações do sistema operacional/sistema\n- `message`: Mostrar notificações na barra de status/área de mensagens\n- `blink`: Piscar ou destacar a interface do usuário\n- `off`: Desativar notificações para este agente",
-          "title": "Notificação de conclusão"
+          "mdDescription": "Comportamento das notificações quando este agente precisar de sua atenção, ou seja, quando concluir uma tarefa ou solicitar sua interação.                     Se não for definido, será utilizada a configuração padrão global de notificações.\n                    - `os-notification`: Exibir notificações do sistema operacional/sistema\n                    - `message`: Exibir notificações na barra de status/área de mensagens\n                    - `blink`: Fazer a interface do usuário piscar ou destacá-la\n                    - `off`: Desativar notificações para este agente",
+          "title": "Notificação"
         },
         "enable": {
           "mdDescription": "Especifica se o agente deve ser ativado (verdadeiro) ou desativado (falso).",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "Especifica as variantes de prompt selecionadas atualmente para este agente.",
           "title": "Variantes selecionadas"
+        },
+        "serverToolSelections": {
+          "mdDescription": "Seleções do usuário para ferramentas de servidor de provedores, organizadas por fabricante do modelo. Cada valor contém os IDs das ferramentas de servidor habilitadas para esse fabricante.",
+          "title": "Seleções de ferramentas de servidor"
         },
         "showInChat": {
           "mdDescription": "Especifica se o agente deve ser exibido na interface do usuário do chat (verdadeiro) ou ocultado (falso).",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "Ignore a verificação de requisitos do modelo de idioma. Habilite isso se estiver usando agentes externos (por exemplo, Claude Code) que não exigem modelos de idioma Theia."
         },
+        "category": "IA",
         "changeSetDefaultTitle": "Alterações sugeridas",
         "changeSetFileDiffUriLabel": "Alterações de IA: {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "O arquivo {0} foi alterado desde que esta sugestão foi criada. Tem certeza de que deseja reverter a alteração?",
         "couldNotFindMatchingLM": "Não foi possível encontrar um modelo de idioma correspondente. Verifique sua configuração!",
         "couldNotFindReadyLMforAgent": "Não foi possível encontrar um modelo de idioma pronto para o agente {0}. Verifique sua configuração!",
+        "customAgents": {
+          "migrationResult": "Migração do custom-agent: {0} migrado, {1} falhou, {2} o arquivo customAgents.yml legado foi copiado para .bak, {3} as substituições de prompt foram incorporadas ao agent.md.",
+          "rerunMigration": "Reexecutar a migração do agente personalizado"
+        },
         "defaultAgent": {
           "description": "Opcional: <nome-do-agente> do Agente de Chat que deve ser invocado, se nenhum agente for explicitamente mencionado com @<nome-do-agente> na consulta do usuário. Se nenhum Agente Padrão estiver configurado, os padrões do Theia serão aplicados."
         },
@@ -215,7 +225,7 @@
           "label": "Bate-papo com IA"
         },
         "welcomeScreenSessions": {
-          "description": "Número de linhas de sessões de bate-papo recentes a serem exibidas na tela de boas-vindas. O número de sessões visíveis depende da largura disponível. Defina como 0 para ocultar a seção de bate-papos recentes."
+          "description": "Número máximo de sessões de bate-papo a serem exibidas na visão geral do bate-papo (página inicial). As sessões ativas são exibidas primeiro; o excesso pode ser acessado pelo link “Exibir todos os chats...”. Reduza esse valor se um zoom maior no editor fizer com que apareça uma barra de rolagem. Defina como 0 para ocultar totalmente a lista embutida; as sessões continuam acessíveis pelo link “Exibir todos os chats...”."
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "Funções integradas fornecidas pelas extensões d{0}",
         "genericCapabilities": "Recursos genéricos",
         "mcpFunctionsDescription": "Funções do Protocolo de Contexto de Modelo (MCP) de servidores conectados",
+        "mermaid-rendering": {
+          "copySource": "Copiar código-fonte",
+          "error": "Não foi possível renderizar o diagrama Mermaid. Alterne para a visualização de código-fonte para inspecionar a definição.",
+          "rendering": "Renderizando diagrama…",
+          "resetView": "Redefinir visualização",
+          "showDiagram": "Mostrar diagrama",
+          "showSource": "Mostrar código-fonte",
+          "title": "Diagrama Mermaid",
+          "wheelZoomHint": "{0} + Rolar"
+        },
         "noChatAgentsAvailable": "Não há agentes de chat disponíveis.",
         "noMatchingCapabilities": "Sem recursos correspondentes",
         "openDiff": "Abrir Diff",
@@ -300,14 +320,12 @@
         "performThisTask": "Execute esta tarefa.",
         "persistedSession": "Sessão persistente (clique para restaurar)",
         "promptFragmentsDescription": "Fragmentos de prompt personalizados para incluir na conversa",
-        "reasoning": {
-          "minimal": "Mínimo"
-        },
         "removeChat": "Remover bate-papo",
         "requestNotFoundForRetry": "Solicitação não encontrada para nova tentativa",
         "responseFrom": "Resposta de {0}",
         "saveCurrentSelectionsToSettings": "Salvar configurações de recursos",
         "searchCapabilities": "Recursos de pesquisa",
+        "sectionRestored": "Restaurado",
         "selectAgentQuickPickPlaceholder": "Selecione um agente para a nova sessão",
         "selectAllInCategory": "Selecionar tudo nesta categoria",
         "selectChat": "Selecionar chat",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "Selecione um contexto de tarefa para anexar",
         "selectVariableArguments": "Selecionar argumentos variáveis",
         "send": "Enviar (Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "servidor",
+          "serverTooltip": "Executado nos servidores do provedor (não localmente). As ferramentas de servidor são aprovadas automaticamente quando selecionadas."
+        },
+        "serverToolWarning": "Esta ferramenta é aprovada automaticamente quando selecionada. Ela pode ser executada pelo modelo a qualquer momento.",
+        "serverTools": "Ferramentas de servidor",
+        "serverToolsDescription": "As ferramentas de servidor são executadas no lado do servidor pelo LLM na infraestrutura do fornecedor.",
+        "serverToolsWarning": "Essas ferramentas são aprovadas automaticamente quando selecionadas. Elas podem ser executadas pelo modelo a qualquer momento.",
         "sessionNotFoundForRetry": "Sessão não encontrada para nova tentativa",
         "skillsDescription": "Instruções de habilidades reutilizáveis que podem ser adicionadas à conversa",
         "switchAgentMode": "Alternar modo do agente",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "Entendo, habilitar aprovação automática",
           "alwaysAllowGenericWarning": "Esta ferramenta requer confirmação antes que a aprovação automática possa ser ativada. Uma vez ativada, todas as invocações futuras serão executadas sem confirmação. Ative esta opção apenas se confiar nesta ferramenta e compreender os riscos potenciais.",
           "alwaysAllowTitle": "Habilitar aprovação automática para “{0}”?",
+          "approveLatest": "Aprovar a confirmação da ferramenta mais recente",
           "autoCancel": "Cancelamento automático no {0}",
           "canceled": "Execução da ferramenta cancelada",
           "denied": "Execução da ferramenta negada",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "Insira o motivo da recusa...",
           "deny-session": "Negar para este chat",
           "deny-with-reason": "Negar com justificativa...",
+          "denyLatest": "Negar a confirmação da ferramenta mais recente",
           "executionDenied": "Execução da ferramenta negada",
           "header": "Confirmar execução da ferramenta"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "diretório atual",
         "differentAgentRequestWarning": "A solicitação de chat anterior foi atendida por um agente diferente. O Claude Code não vê essas outras mensagens.",
-        "directory": "Diretório",
-        "domain": "Domínio",
         "edit": "Editar {0}",
         "editAutomatically": "Editar automaticamente",
         "editing": "Edição",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Ações",
           "addCustomAgent": "Adicionar agente personalizado",
           "availableCapabilities": "Recursos disponíveis",
-          "completionNotificationDescriptionPrefix": "Selecione como você deseja ser notificado quando este agente concluir sua tarefa. “Padrão” usa o ",
+          "completionNotificationDescriptionPrefix": "Selecione como você deseja ser notificado quando este agente precisar de sua atenção, ou seja, quando concluir sua tarefa ou solicitar sua intervenção. A opção “Padrão” utiliza o ",
           "defaultNotificationDescription": "Usa a configuração global de notificação de IA.",
           "enableAgent": "Ativar agente",
           "llmRequirements": "Requisitos de LLM",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "O método de notificação padrão usado quando um agente de IA conclui uma tarefa. Agentes individuais podem substituir essa configuração.\n- `os-notification`: Mostrar notificações do sistema operacional/sistema\n- `message`: Mostrar notificações na barra de status/área de mensagens\n- `blink`: Piscar ou destacar a interface do usuário\n- `off`: Desativar todas as notificações",
+          "mdDescription": "O método padrão de notificação usado quando um agente de IA precisa da sua atenção, ou seja, quando ele concluiu uma tarefa ou solicita sua intervenção. Agentes individuais podem substituir essa configuração.",
           "title": "Tipo de notificação padrão"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "Configurações de solicitação personalizadas"
         },
         "skillDirectories": {
-          "description": "Diretórios adicionais contendo definições de habilidades (arquivos SKILL.md). As habilidades fornecem instruções reutilizáveis que podem ser referenciadas por agentes de IA. O diretório .prompts/skills em seu espaço de trabalho e o diretório skills na pasta de configuração do seu produto estão sempre incluídos."
+          "description": "Diretórios adicionais contendo definições de habilidades (arquivos SKILL.md). As habilidades fornecem instruções reutilizáveis que podem ser consultadas por agentes de IA. Os diretórios .prompts/skills e .agents/skills em seu espaço de trabalho, o diretório .agents/skills em seu diretório pessoal e o diretório skills na pasta de configuração do seu produto estão sempre incluídos."
         },
         "skillsVariable": {
           "description": "Retorna a lista de habilidades disponíveis que podem ser usadas por agentes de IA."
@@ -947,10 +972,8 @@
         "agent-description": "Configure as definições do agente de IA, incluindo ativação, seleção de LLM, personalização do modelo de prompt e criação de agente personalizado na [Visualização de configuração de IA]({0}).",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Criar novo arquivo",
-            "openExistingFile": "Abrir arquivo existente",
-            "placeholder": "Escolha onde criar ou abrir um arquivo de agentes personalizados",
-            "title": "Selecione o local para o arquivo de agentes personalizados"
+            "placeholder": "Escolha onde criar o arquivo agents/<id>/agent.md",
+            "title": "Selecione o local para o novo agente personalizado"
           },
           "genericCapabilitiesSettings": "Recursos genéricos",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "Funções",
             "mcpFunctions": "Funções MCP",
             "promptFragments": "Fragmentos de prompt"
+          },
+          "newAgent": {
+            "createFailed": "Não foi possível criar o agente personalizado “{0}”: {1}",
+            "defaultDescription": "Agente personalizado. Edite esta descrição no arquivo agent.md.",
+            "defaultPrompt": "Você é um agente prestativo. Adapte este prompt às suas necessidades.",
+            "idInvalid": "Use apenas letras, dígitos, traço, sublinhado ou ponto.",
+            "idPrompt": "ID do agente (usado como nome de pasta na pasta agents/)",
+            "idTitle": "Novo agente personalizado",
+            "noLocation": "Não é possível criar um agente personalizado: nenhum local para os modelos de prompt está configurado. Defina uma pasta global ou no espaço de trabalho para os modelos de prompt e tente novamente."
           },
           "noDescription": "Sem descrição disponível",
           "resetAllCapabilities": "Redefinir todas as configurações para seus valores padrão",
@@ -1136,9 +1168,10 @@
           "description": "Um agente de revisão de PRs alimentado por IA que coordena um fluxo de trabalho completo de revisão de código: busca informações de PRs, explora a base de código, realiza análises estruturadas, orienta o usuário interativamente pelas descobertas com visualizadores de diferenças e, opcionalmente, cria uma revisão pendente no GitHub."
         },
         "prompt-template-description": "Selecione variantes de prompt e personalize modelos de prompt para agentes de IA na [Visualização de configuração de IA]({0}).",
-        "recentChats": "Bate-papos recentes",
+        "restoredSession": "Sessão restaurada",
         "restrictedModeDetails": "O chat de IA, as sugestões embutidas, as ações de código e os modelos de prompt estão desativados",
         "restrictedModeLabel": "Recursos de IA (desativados no Modo Restrito)",
+        "sectionRestored": "Restaurado",
         "shellAllowlist": {
           "placeholder": "Por exemplo, “git log” (exato) ou “git log *” (com argumentos)."
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "Comandos de barra"
         },
+        "toolConfirmationInfo": {
+          "header": "Confirmação da ferramenta"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "Entendo, habilitar aprovação automática",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "Modo de confirmação da ferramenta padrão:"
+          },
+          "recommendedDefaults": {
+            "apply": "Permitir ferramentas padrão",
+            "dialogConfirm": "Entendi, permitir",
+            "dialogTitle": "Permitir ferramentas padrão?",
+            "message": "Atualmente, as chamadas de ferramentas exigem aprovação. Permitir automaticamente todas as ferramentas integradas de uma só vez. As ferramentas que exigem confirmação adicional (por exemplo, execução de shell), as ferramentas MCP e quaisquer ferramentas adicionadas posteriormente ainda solicitarão permissão antes de serem executadas.",
+            "msg": {
+              "line1": "Isso define todas as ferramentas integradas atualmente registradas como “Sempre Permitir”.",
+              "line2": "Ferramentas que exigem confirmação adicional (como a execução do shell) continuarão solicitando confirmação antes de serem executadas.",
+              "line3": "As ferramentas MCP são de terceiros e não estão incluídas. Você pode habilitá-las individualmente nesta visualização.",
+              "line4": "As ferramentas adicionadas posteriormente ainda terão como padrão a opção “Confirmar”, para que você possa revisá-las.",
+              "line5": "Você pode alterar isso mais adiante nesta tela."
+            }
           },
           "resetAll": "Redefinir tudo",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "Selecione uma variável.",
           "usedByAgents": "Usado por agentes"
-        }
+        },
+        "waitingForInput": "Aguardando sua entrada"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "Servidores MCP (inicialização automática bloqueada)",
         "error": {
           "allServersRunning": "Todos os servidores MCP já estão em execução.",
+          "authenticationRequired": "O servidor MCP “{0}” exige autenticação. Reinicie o servidor para fazer login.",
+          "getRedirectUrlFailed": "Ocorreu um erro ao determinar a URL de redirecionamento do MCP OAuth.",
+          "noOAuthServersConfigured": "Nenhum servidor MCP habilitado para OAuth foi configurado.",
           "noRunningServers": "Nenhum servidor MCP em execução.",
           "noServersConfigured": "Nenhum servidor MCP configurado.",
-          "startFailed": "Ocorreu um erro ao iniciar o servidor MCP."
+          "oauthRequiresTrustedWorkspace": "Para iniciar servidores MCP habilitados para OAuth, é necessário um espaço de trabalho confiável.",
+          "signInFailed": "Ocorreu um erro ao fazer login no servidor MCP.",
+          "signOutFailed": "Ocorreu um erro ao encerrar a sessão no servidor MCP.",
+          "startFailed": "Ocorreu um erro ao iniciar o servidor MCP.",
+          "stopFailed": "Ocorreu um erro ao parar o servidor MCP."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: Obter a URL de redirecionamento do OAuth do MCP"
         },
         "info": {
-          "serverStarted": "Servidor MCP “{0}” iniciado com sucesso. Ferramentas registradas: {1}"
+          "oauthRedirectUrl": "URL de redirecionamento do MCP OAuth: {0}",
+          "serverSignedIn": "Conectado ao servidor MCP “{0}”.",
+          "serverSignedOut": "Saída do servidor MCP “{0}”.",
+          "serverStarted": "Servidor MCP “{0}” iniciado com sucesso. Ferramentas registradas: {1}",
+          "signInCancelled": "O login no servidor MCP “{0}” foi cancelado."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Conclua o login MCP OAuth no seu navegador. Se nenhuma guia de login tiver sido aberta, talvez o seu navegador tenha bloqueado a janela pop-up.",
+          "notification": {
+            "signInPrompt": "O servidor MCP “{0}” requer autorização para ser iniciado."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "O comando usado para iniciar o servidor MCP, por exemplo, “uvx” ou “npx”.",
             "title": "Comando para executar o servidor MCP"
           },
+          "deferLoading": {
+            "mdDescription": "Se ativadas, as ferramentas fornecidas por este servidor são marcadas como diferidas no fragmento de prompt gerado `mcp_<server>_tools`. As ferramentas diferidas não são carregadas antecipadamente no contexto do modelo. Em vez disso, o modelo as descobre sob demanda por meio do mecanismo de busca de ferramentas integrado do provedor (Anthropic, OpenAI), quando compatível. Isso reduz significativamente a sobrecarga de tokens para servidores que expõem muitas ferramentas.",
+            "title": "Adiar carregamento"
+          },
           "env": {
             "mdDescription": "Variáveis de ambiente opcionais a serem definidas para o servidor, como uma chave API.",
             "title": "Variáveis de ambiente"
           },
           "headers": {
-            "mdDescription": "Cabeçalhos adicionais opcionais incluídos em cada solicitação ao servidor.",
+            "mdDescription": "Cabeçalhos adicionais opcionais incluídos em cada solicitação ao servidor. Os valores dos cabeçalhos são armazenados nas preferências como texto simples; evite configurações da área de trabalho se elas contiverem valores confidenciais.",
             "title": "Cabeçalhos"
           },
-          "mdDescription": "Configure servidores MCP localmente com comando, argumentos e, opcionalmente, variáveis de ambiente, ou remotamente com URL do servidor, token de autenticação e, opcionalmente, um nome de cabeçalho de autenticação. Além disso, é possível configurar o autostart (verdadeiro por padrão). Cada servidor é identificado por uma chave exclusiva, como “brave-search” ou “filesystem”. Para iniciar um servidor, use o comando “MCP: Start MCP Server”, que permite selecionar o servidor desejado. Para parar um servidor, use o comando “MCP: Stop MCP Server”. Observe que a inicialização automática só terá efeito após uma reinicialização; você precisa iniciar um servidor manualmente pela primeira vez.\nExemplo de configuração:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "Configure servidores MCP localmente com comando, argumentos e, opcionalmente, variáveis de ambiente, ou remotamente com URL do servidor, token de autenticação, configuração OAuth e, opcionalmente, um nome de cabeçalho de autenticação. Além disso, é possível configurar a inicialização automática (ativada por padrão). Cada servidor é identificado por uma chave única, como “brave-search” ou “filesystem”. Para iniciar um servidor, use o comando “MCP: Iniciar servidor MCP”, que permite selecionar o servidor desejado. Para parar um servidor, use o comando “MCP: Parar servidor MCP”. Observe que a inicialização automática só entrará em vigor após uma reinicialização; você precisa iniciar o servidor manualmente pela primeira vez. Servidores instalados a partir de um registro de IA contêm um bloco adicional `registryMetadata`, que é gerenciado automaticamente e não deve ser editado manualmente.\nExemplo de configuração:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"SUA_CHAVE_API\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"SUA_URL_DO_SERVIDOR_MCP_PROTEGIDO_POR_OAUTH\",\n    \"oauth\": {\n      \"clientId\": \"ID_DO_CLIENTE_OPCIONAL\",\n      \"scopes\": [\"ESCOPO_OPCIONAL\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "Substituição opcional da URL do servidor de autorização. Se omitida, o Theia a obtém do servidor MCP.",
+              "title": "Servidor de autorização"
+            },
+            "clientId": {
+              "mdDescription": "ID de cliente OAuth estático opcional. Se omitido, o Theia tenta o registro dinâmico do cliente.",
+              "title": "ID do cliente"
+            },
+            "clientSecret": {
+              "mdDescription": "Segredo de cliente OAuth opcional para servidores de autorização que aceitam apenas clientes confidenciais pré-registrados (sem registro dinâmico de clientes). Utilizado apenas em conjunto com o ID do cliente. Ele é armazenado nas preferências como texto simples; evite configurações do espaço de trabalho se o segredo for confidencial.",
+              "title": "Segredo do cliente"
+            },
+            "mdDescription": "Configuração opcional do OAuth 2.1 para servidores MCP remotos que exigem autorização. A presença desse objeto habilita o OAuth para o servidor; remova-o para desativar o OAuth. O Theia usa clientes públicos com PKCE por padrão; configure um segredo de cliente apenas para servidores que exijam um cliente confidencial pré-registrado. As alterações entram em vigor após a reinicialização do servidor MCP.",
+            "resource": {
+              "mdDescription": "Substituição opcional do indicador de recurso RFC 8707 para este servidor MCP.",
+              "title": "Recurso"
+            },
+            "scopes": {
+              "mdDescription": "Escopos OAuth opcionais a serem solicitados caso o servidor não anuncie escopos.",
+              "title": "Âmbitos"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "Hash do conteúdo da aprovação do registro usada para instalar este servidor.",
+              "title": "Hash de configuração do Registro"
+            },
+            "mdDescription": "Metadados de proveniência para um servidor instalado a partir de um registro de IA. Escrito por `@theia/ai-registry`; não editável pelo usuário.",
+            "serverId": {
+              "mdDescription": "Identifica a entrada do registro de IA a partir da qual este servidor foi instalado.",
+              "title": "ID do servidor de registro"
+            },
+            "title": "Metadados do Registro",
+            "version": {
+              "mdDescription": "A versão publicada no Registro registrada no momento da instalação.",
+              "title": "Versão do Registro"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "O token de autenticação para o servidor, se necessário. Ele é usado para autenticar com o servidor remoto.",
+            "mdDescription": "O token de autenticação para o servidor, se necessário. Ele é armazenado nas preferências como texto simples; evite configurá-lo no espaço de trabalho se o token for confidencial.",
             "title": "Token de autenticação"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "Configuração do servidor MCP"
         },
+        "signin": {
+          "label": "MCP: Fazer login no servidor MCP"
+        },
+        "signout": {
+          "label": "MCP: Sair do servidor MCP"
+        },
         "start": {
           "label": "MCP: Iniciar o servidor MCP"
         },
         "stop": {
           "label": "MCP: Parar servidor MCP"
         },
+        "tool": {
+          "noTools": "Não há ferramentas disponíveis."
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "As raízes definem os limites onde os servidores podem operar dentro do sistema de arquivos. Se ativadas, as pastas da área de trabalho serão usadas como raízes; caso contrário, os servidores MCP terão acesso a todo o sistema de arquivos. Alterar essa configuração reiniciará todos os servidores MCP em execução para aplicar a nova configuração de raízes.",
           "title": "Usar área de trabalho como raiz"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "Falha ao aplicar as alterações nas preferências do servidor MCP: {0}",
+          "signInNotCompleted": "O login no servidor MCP “{0}” não foi concluído."
         }
       },
       "mcpConfiguration": {
         "autostart": "Inicialização automática",
-        "connectServer": "Conectar",
+        "browseAIRegistry": "Navegar pelo registro de IA",
+        "browseAIRegistryTooltip": "Abra a visualização “Extensões” para navegar pelas entradas do registro de IA",
+        "command": {
+          "addServer": "Adicionar configuração MCP local..."
+        },
         "connectingServer": "Conectando...",
         "copiedAllList": "Copiei todas as ferramentas para a área de transferência (lista de todas as ferramentas)",
         "copiedAllSingle": "Copiei todas as ferramentas para a área de transferência (fragmento de prompt único com todas as ferramentas)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "Copiar tudo para o chat (fragmento de prompt único com todas as ferramentas)",
         "copyForPrompt": "Ferramenta de cópia (para chat ou modelo de prompt)",
         "copyForPromptTemplate": "Copiar tudo para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
+        "deferLoading": "Adiar o carregamento da ferramenta",
         "deleteServer": "Excluir servidor",
         "deleteServerDialogMsg": "Tem certeza de que deseja excluir o servidor “{0}”?",
         "deleteServerDialogTitle": "Excluir servidor MCP",
@@ -1312,11 +1445,23 @@
           "autostart": "Inicialização automática",
           "commandPlaceholder": "Por exemplo, npx ou uvx.",
           "commandRequired": "O comando é necessário para servidores locais.",
+          "deferLoading": "Adiar o carregamento de ferramentas (descobrir ferramentas sob demanda por meio da pesquisa de ferramentas do provedor)",
           "envPlaceholder": "CHAVE=valor (um por linha)",
           "headersPlaceholder": "Nome do cabeçalho=valor (um por linha)",
           "localServer": "Local (Comando)",
           "nameExists": "Já existe um servidor com este nome.",
           "nameRequired": "O nome do servidor é obrigatório.",
+          "oauthAuthorizationServerInvalid": "O servidor de autorização OAuth deve ser uma URL http(s) válida",
+          "oauthAuthorizationServerPlaceholder": "URL opcional do servidor de autorização",
+          "oauthClientIdPlaceholder": "ID estático opcional do cliente",
+          "oauthClientSecretPlaceholder": "Apenas para servidores que exigem um cliente confidencial",
+          "oauthPublicClientDescription": "O Theia usa clientes OAuth públicos com PKCE por padrão. Forneça um segredo de cliente somente se o servidor exigir um cliente confidencial pré-registrado.",
+          "oauthRedirectUrlDescription": "Os callbacks de autorização são enviados para esta URL. Com um ID de cliente estático, registre-o como um URI de redirecionamento junto ao seu provedor de OAuth.",
+          "oauthResourceInvalid": "O recurso OAuth deve ser uma URL http(s) válida",
+          "oauthResourcePlaceholder": "URI de recurso opcional",
+          "oauthScopesPlaceholder": "Escopos separados por espaço",
+          "oauthSharedCredentialsDescription": "As sessões OAuth armazenadas são compartilhadas entre espaços de trabalho que utilizam o mesmo nome de servidor e URL (ou recurso).",
+          "remoteOAuthServer": "Remoto (OAuth)",
           "remoteServer": "Remoto (URL)",
           "saveChanges": "Salvar alterações",
           "serverName": "Nome do servidor",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "Por exemplo, https://mcp.example.com",
           "serverUrlRequired": "A URL do servidor é necessária para servidores remotos."
         },
+        "fromRegistryLink": "Do registro",
         "headers": "Cabeçalhos",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Servidor de autorização",
+        "oauthClientId": "ID do cliente OAuth",
+        "oauthClientSecret": "Segredo do cliente OAuth",
+        "oauthRedirectUrl": "URL de redirecionamento",
+        "oauthResource": "Recurso OAuth",
+        "oauthScopes": "Escopos do OAuth",
+        "openInRegistry": "Abrir no registro de IA: {0}",
         "saveServerError": "Falha ao salvar a configuração do servidor MCP: {0}",
         "serverAuthToken": "Token de autenticação",
         "serverAuthTokenHeader": "Nome do cabeçalho de autenticação",
         "serverUrl": "URL do servidor",
+        "signInServerFailed": "Falha ao tentar fazer login no servidor MCP “{0}”.",
+        "signInServerNotCompleted": "O login no servidor MCP “{0}” não foi concluído.",
+        "signInServerSucceeded": "Conectado ao servidor MCP “{0}”.",
+        "signOutServerDialogMsg": "Tem certeza de que deseja sair do servidor “{0}”? Isso exclui os tokens OAuth armazenados para este servidor.",
+        "signOutServerDialogTitle": "Sair do servidor MCP",
+        "signOutServerFailed": "Falha ao tentar sair do servidor MCP “{0}”.",
+        "startServerFailed": "Falha ao iniciar o servidor MCP “{0}”.",
+        "stopServerFailed": "Falha ao parar o servidor MCP “{0}”.",
         "tools": "Ferramentas: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "Tokens de saída",
         "readCachedInputTokens": "Tokens de entrada lidos do cache",
         "readCachedInputTokensTooltip": "Rastreado adicionalmente como “Token de entrada”. Geralmente muito mais barato do que não armazenado em cache. Normalmente não conta para os limites de taxa.",
-        "total": "Total",
         "totalTokensTooltip": "“Tokens de entrada” + “Tokens de saída”"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": "Considere .gitignore"
         },
         "createSkillAgent": {
-          "description": "Um assistente de IA para criar novas habilidades. As habilidades fornecem instruções reutilizáveis e conhecimento de domínio para agentes de IA. Esse agente ajuda você a criar habilidades bem estruturadas no diretório .prompts/skills com frontmatter YAML e conteúdo markdown adequados."
+          "description": "Um assistente de IA para a criação de novas habilidades. As habilidades fornecem instruções reutilizáveis e conhecimento de domínio para agentes de IA. Esse assistente ajuda você a criar habilidades bem estruturadas nos diretórios .agents/skills ou .prompts/skills, com frontmatter YAML adequado e conteúdo em Markdown. Esse recurso ainda está em fase inicial e pode sofrer alterações."
         },
         "excludedPattern": {
           "description": "Lista de padrões (glob ou regex) para arquivos/pastas a serem excluídos.",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "Alterações propostas"
     },
     "ai-chat-ui": {
+      "browseAllChats": "Ver todas as conversas...",
       "confirm": "Confirmar",
       "deleteChat": "Excluir bate-papo",
+      "home": "Página inicial",
       "initiate-session-task-context": "Contexto da tarefa: Iniciar sessão",
-      "navigate-back": "Navegar para trás",
-      "navigate-forward": "Navegar para a frente",
       "noOutput": "Sem saída",
       "open-current-session-summary": "Abrir resumo da sessão atual",
       "open-settings-tooltip": "Abrir configurações de IA...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "Bloquear rolagem",
       "scroll-unlock": "Desbloquear rolagem",
       "session-settings": "Definir configurações da sessão",
-      "showChats": "Mostrar bate-papos...",
       "summarize-current-session": "Resumir sessão atual"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "O agente “{0}” concluiu sua tarefa.",
       "agentCompletionMessageWithSession": "O agente “{0}” concluiu sua tarefa em “{1}”.",
       "agentCompletionTitle": "Agente “{0}” Tarefa concluída",
+      "agentInputNeededMessage": "O agente “{0}” precisa da sua contribuição.",
+      "agentInputNeededMessageWithSession": "O agente “{0}” precisa da sua entrada em “{1}”.",
+      "agentInputNeededTitle": "O agente “{0}” precisa da sua opinião",
       "aiDisabledInRestrictedMode": "Os recursos de IA não estão disponíveis em áreas de trabalho não confiáveis.",
       "preferences": {
         "linuxEnvHint": "No Linux, certifique-se de que a variável esteja definida em `~/.profile` (não apenas em `~/.bashrc`) se você iniciar o aplicativo a partir de um atalho na área de trabalho. Consulte a [documentação](https://theia-ide.org/docs/user_ai/#setting-api-keys) para obter detalhes.",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "Sem tarefas"
       },
-      "userInteractionCanceled": "Cancelado",
       "userInteractionCommentPlaceholder": "Adicione um comentário para esta etapa...",
       "userInteractionEmpty": "Vazio",
       "userInteractionFinishStep": "Concluir",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "Preparando a interação do usuário...",
       "userInteractionPreparingSteps": "Preparação: {0} (etapas do {1})",
       "userInteractionPreparingTitle": "Preparação: {0}",
-      "userInteractionStepLabel": "Passo {0} de {1}",
       "userInteractionWorkingCopy": "Cópia de Trabalho"
     },
     "ai-mcp": {
-      "blockedServersLabel": "Servidores MCP (inicialização automática bloqueada)"
+      "installDialog": {
+        "authTokenPlaceholder": "Necessário para que este servidor se conecte",
+        "authTokenRequired": "É necessário um token de autenticação para instalar este servidor.",
+        "oauthClientIdPlaceholder": "Necessário para que este servidor se conecte",
+        "oauthClientSecretPlaceholder": "Necessário para que este servidor se conecte",
+        "oauthCredentialsRequired": "É necessário um ID de cliente OAuth e um segredo de cliente para instalar este servidor.",
+        "oauthDescription": "Este servidor utiliza OAuth com um cliente confidencial pré-registrado. Forneça o ID do cliente e o segredo do seu provedor de OAuth.",
+        "title": "Instalar o MCP Server",
+        "trust": {
+          "unknown": "Nenhum registro de IA está configurado — a confiabilidade não pode ser verificada.",
+          "unverified": "Este servidor não está listado no seu registro de IA ({0}). Instale por sua própria conta e risco.",
+          "verified": "Aprovado pelo seu registro de IA ({0})."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "Um servidor MCP chamado “{0}” já está configurado. Se continuar, a entrada existente será sobrescrita com a configuração do Registro.",
+          "title": "Servidor MCP já instalado"
+        },
+        "missingId": "O link de instalação não contém o parâmetro “id” necessário.",
+        "noRegistry": "Não é possível instalar o servidor MCP “{0}” — não há nenhum registro de IA configurado neste produto.",
+        "success": "Instalei o servidor MCP “{0}” a partir do registro de IA.",
+        "unknownId": "O servidor MCP “{0}” não está listado no seu registro de IA."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Corrigir configuração",
+        "link": "Link para o registro",
+        "unlink": "Desvincular",
+        "updateTooltip": "Atualização de {0} para {1}"
+      },
+      "skill": {
+        "action": {
+          "fix": "Corrigir habilidade",
+          "link": "Link para o registro",
+          "unlink": "Desvincular"
+        },
+        "fixed": "Habilidade “{0}” restaurada.",
+        "githubToken": {
+          "mdDescription": "Token de acesso pessoal opcional do GitHub, usado ao baixar habilidades do GitHub. Um token aumenta o limite de taxa do GitHub de 60 para 5.000 solicitações por hora. **Observação:** Ao usar essa preferência, o token é armazenado em texto simples na máquina em que o Theia está sendo executado. É recomendável usar a variável de ambiente `GITHUB_TOKEN` para fornecê-lo com segurança."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "Instale a habilidade “{0}” baixando seus arquivos em {1}?",
+            "title": "Habilidade de instalação"
+          },
+          "fetchFailed": "Não foi possível carregar o registro de IA para instalar a habilidade “{0}”.",
+          "missingId": "O link de instalação não contém o parâmetro “id” necessário.",
+          "success": "Instalei a habilidade “{0}” do registro de IA.",
+          "unknownId": "A habilidade “{0}” não está listada no seu registro de IA."
+        },
+        "installed": "Habilidade instalada: “{0}”.",
+        "linked": "Habilidade relacionada: “{0}”.",
+        "uninstalled": "Habilidade “{0}” desinstalada.",
+        "unlinked": "Habilidade não vinculada “{0}”.",
+        "updated": "Atualização da habilidade “{0}”.",
+        "warning": {
+          "fix": "Os arquivos desta habilidade diferem do registro. Clique em “Corrigir Habilidade” para restaurá-los.",
+          "linkStale": "Esta habilidade foi instalada a partir do Registro, mas o Registro não a lista mais. Clique em “Desvincular” para remover o link do Registro e manter os arquivos, ou em “Desinstalar” para remover a habilidade.",
+          "notInRegistry": "Não está no Registro"
+        },
+        "watcherStopped": "A monitorização de alterações na pasta de habilidades foi interrompida. As habilidades instaladas podem não ser mais atualizadas automaticamente. Atualize a janela para retomar."
+      },
+      "warning": {
+        "fixConfig": "A configuração deste servidor difere do registro. Clique em “Corrigir configuração” para restaurá-la.",
+        "linkStale": "Este servidor foi instalado a partir do Registro, mas o Registro não o lista mais. Se você tiver certeza de que deseja mantê-lo e ele ainda estiver funcionando, clique em “Desvincular” para remover o link do Registro. Caso contrário, clique em “Desinstalar” para remover o servidor.",
+        "notInRegistry": "Não está no Registro"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "Entendo, permitir tudo",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "Configurar permissões de comando do shell",
       "confirmExecution": "Confirmar comando do shell",
       "denialReason": "Motivo",
-      "executionCanceled": "Cancelado",
       "executionDenied": "Negado",
       "executionDeniedWithReason": "Negado com justificativa",
       "partialOutput": "Saída parcial",
@@ -2159,7 +2387,6 @@
       "openByDefault": "Abra a visualização em vez do editor por padrão."
     },
     "property-view": {
-      "directory": "Diretório",
       "lastModified": "Última modificação",
       "noProperties": "Nenhuma propriedade disponível.",
       "properties": "Propriedades",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "Fechar Alterar Visualização rápida"
       },
-      "history": "Histórico",
       "justNow": "agora mesmo",
       "mergeEditor": {
         "resetConfirmationTitle": "Você realmente deseja redefinir o resultado da mesclagem neste editor?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "Erro ao buscar extensões.",
       "errorFetchingConfigurationHint": "Isso pode ser causado por problemas de configuração de rede.",
       "failedInstallingVSIX": "Falha ao instalar o {0} do VSIX.",
+      "filter": {
+        "showBuiltin": "Mostrar recursos integrados",
+        "showInstalled": "Mostrar instalados",
+        "showRecommended": "Mostrar Recomendados"
+      },
       "invalidVSIX": "O arquivo selecionado não é um plug-in “*.vsix” válido.",
       "license": "Licença: {0}",
       "onlyShowVerifiedExtensionsDescription": "Isso permite que a {0} mostre apenas extensões verificadas.",
       "onlyShowVerifiedExtensionsTitle": "Mostrar apenas extensões verificadas",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "restrictedModeInstallWarning": "A extensão “{0}” pode ser desativada se não for compatível com a execução no Modo Restrito. Confie neste espaço de trabalho para garantir que a extensão funcione conforme o esperado.",
-      "searchPlaceholder": "Pesquisar extensões no {0}",
+      "searchPlaceholder": "Pesquisar no Registro do Open VSX",
       "showInstalled": "Mostrar extensões instaladas",
       "showRecommendedExtensions": "Controla se as notificações são exibidas para recomendações de extensões.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "Não há outras versões disponíveis.",
         "update-version-uninstall-error": "Erro ao remover a extensão: {0}.",
         "update-version-version-error": "Falha ao instalar a versão {0} do {1}."
       }

@@ -27,6 +27,7 @@ import {
     ParsedCapability,
     parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
+    CustomAgentsLocation,
     PromptService,
     NotificationType,
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
@@ -36,14 +37,13 @@ import {
 import { isChatAgent } from '@theia/ai-chat/lib/common';
 import { codicon, CommonCommands, QuickInputService } from '@theia/core/lib/browser';
 import { CommandService } from '@theia/core/lib/common/command';
-import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
-import { nls } from '@theia/core';
+import { MessageService, nls, URI } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { AgentNotificationSettings } from './components/agent-notification-settings';
@@ -54,6 +54,12 @@ interface ParsedPrompt {
     agentSpecificVariables: string[];
     capabilities: ParsedCapability[];
 };
+
+/** A candidate location for creating a new custom agent: its scope directory and `agents/` folder. */
+interface CustomAgentScopeOption {
+    scopeDir: URI;
+    agentsDir: URI;
+}
 
 @injectable()
 export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<Agent> {
@@ -90,6 +96,9 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected languageModels: LanguageModel[] | undefined;
     protected languageModelAliases: LanguageModelAlias[] = [];
@@ -310,7 +319,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                             <tr>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/templateName', 'Template')}</th>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/variant', 'Variant')}</th>
-                                <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                                <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -484,37 +493,85 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);
     }
 
-    protected async addCustomAgent(): Promise<void> {
-        const locations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
+    /**
+     * Selects the candidate creation locations from the reported agent locations. Only `agents/`
+     * directories are considered (legacy `customAgents.yml` entries exist for discovery only). A
+     * scope is offered when it already contains an `agents/` folder; the preferred scope (the first
+     * one, i.e. `.agents`) is always kept so a fresh workspace defaults to `.agents` without
+     * surfacing empty fallback folders such as `.prompts`.
+     */
+    protected selectAgentScopeOptions(locations: CustomAgentsLocation[]): CustomAgentScopeOption[] {
+        return locations
+            .filter(location => location.kind === 'agents-dir')
+            .filter((location, index) => index === 0 || location.exists)
+            .map(location => ({ scopeDir: location.uri.parent, agentsDir: location.uri }));
+    }
 
-        // If only one location is available, use the direct approach
-        if (locations.length === 1) {
-            this.promptFragmentCustomizationService.openCustomAgentYaml(locations[0].uri);
+    protected async addCustomAgent(): Promise<void> {
+        const allLocations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
+        const scopeOptions = this.selectAgentScopeOptions(allLocations);
+        if (scopeOptions.length === 0) {
+            this.messageService.warn(nls.localize('theia/ai/ide/agentConfiguration/newAgent/noLocation',
+                'Cannot create a custom agent: no prompt-templates location is configured. Set a global or workspace prompt-templates folder and try again.'));
             return;
         }
 
-        // Multiple locations - show quick picker
-        const quickPick = this.quickInputService.createQuickPick();
-        quickPick.title = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/title', 'Select Location for Custom Agents File');
-        quickPick.placeholder = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/placeholder', 'Choose where to create or open a custom agents file');
+        let chosen = scopeOptions[0];
+        if (scopeOptions.length > 1) {
+            chosen = await new Promise<typeof scopeOptions[number]>((resolve, reject) => {
+                const quickPick = this.quickInputService.createQuickPick();
+                quickPick.title = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/title',
+                    'Select location for the new custom agent');
+                quickPick.placeholder = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/placeholder',
+                    'Choose where to create the agents/<id>/agent.md file');
+                quickPick.items = scopeOptions.map(opt => ({
+                    label: opt.scopeDir.path.toString(),
+                    description: opt.agentsDir.path.toString(),
+                    option: opt
+                }));
+                quickPick.onDidAccept(() => {
+                    const selected = quickPick.selectedItems[0] as unknown as { option: typeof scopeOptions[number] };
+                    quickPick.dispose();
+                    if (selected?.option) {
+                        resolve(selected.option);
+                    } else {
+                        reject(new Error('No location selected'));
+                    }
+                });
+                quickPick.onDidHide(() => reject(new Error('Selection cancelled')));
+                quickPick.show();
+            }).catch(() => undefined) ?? scopeOptions[0];
+        }
 
-        quickPick.items = locations.map(location => ({
-            label: location.uri.path.toString(),
-            description: location.exists
-                ? nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/openExistingFile', 'Open existing file')
-                : nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/createNewFile', 'Create new file'),
-            location
-        }));
-
-        quickPick.onDidAccept(async () => {
-            const selectedItem = quickPick.selectedItems[0] as unknown as { location: { uri: URI, exists: boolean } };
-            if (selectedItem && selectedItem.location) {
-                quickPick.dispose();
-                this.promptFragmentCustomizationService.openCustomAgentYaml(selectedItem.location.uri);
-            }
+        const id = await this.quickInputService.input({
+            title: nls.localize('theia/ai/ide/agentConfiguration/newAgent/idTitle', 'New custom agent'),
+            prompt: nls.localize('theia/ai/ide/agentConfiguration/newAgent/idPrompt',
+                'Agent id (used as folder name under agents/)'),
+            placeHolder: 'my-agent',
+            validateInput: async value => /^[A-Za-z0-9._-]+$/.test(value)
+                ? undefined
+                : nls.localize('theia/ai/ide/agentConfiguration/newAgent/idInvalid',
+                    'Use letters, digits, dash, underscore, or dot only.')
         });
+        if (!id) {
+            return;
+        }
 
-        quickPick.show();
+        try {
+            await this.promptFragmentCustomizationService.createCustomAgentFile(chosen.scopeDir, {
+                id,
+                name: id,
+                description: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultDescription',
+                    'Custom agent. Edit this description in agent.md.'),
+                prompt: nls.localize('theia/ai/ide/agentConfiguration/newAgent/defaultPrompt',
+                    'You are a helpful agent. Adjust this prompt to fit your needs.'),
+                defaultLLM: 'default/universal',
+                showInChat: true
+            });
+        } catch (error) {
+            this.messageService.error(nls.localize('theia/ai/ide/agentConfiguration/newAgent/createFailed',
+                'Could not create the custom agent "{0}": {1}', id, error instanceof Error ? error.message : String(error)));
+        }
     }
 
     private toggleAgentEnabled = async () => {
@@ -841,7 +898,7 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
                 <tr>
                     <th>{nls.localizeByDefault('Type')}</th>
                     <th>{nls.localize('theia/ai/ide/agentConfiguration/selections', 'Selections')}</th>
-                    <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                    <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
                 </tr>
             </thead>
             <tbody>

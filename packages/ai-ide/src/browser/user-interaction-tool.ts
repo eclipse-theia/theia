@@ -16,6 +16,7 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
+import { ChatToolContext } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -346,9 +347,15 @@ export class UserInteractionTool implements ToolProvider {
         const cancellationToken = ToolInvocationContext.getCancellationToken(ctx);
         const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelPending(toolCallId));
 
+        // Mark the response as waiting for input while the interaction is pending, so it is
+        // surfaced consistently with agent questions and tool confirmations (e.g. in the
+        // session overview and notifications).
+        const response = ChatToolContext.is(ctx) ? ctx.response : undefined;
+        response?.waitForInput();
         try {
             return await pending.deferred.promise;
         } finally {
+            response?.stopWaitingForInput();
             cancellationListener?.dispose();
             this.pendingInteractions.delete(toolCallId);
         }

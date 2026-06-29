@@ -17,8 +17,11 @@
 import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
+import {
+    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation
+} from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
+import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
@@ -28,6 +31,63 @@ import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+
+/**
+ * Subdirectory (relative to a prompt-templates scope) holding one folder per custom agent.
+ */
+export const CUSTOM_AGENTS_DIRECTORY = 'agents';
+
+/**
+ * Filename of the per-agent definition file (frontmatter + prompt body) inside `agents/<id>/`.
+ */
+export const CUSTOM_AGENT_FILE_NAME = 'agent.md';
+
+/**
+ * Filename stem (without extension) reserved for the customization of a custom agent's
+ * default prompt. Lives at `<scope>/agents/<id>/prompt.prompttemplate` and maps to
+ * fragment id `<agent-name>_prompt`. Excluded from the variant loader so it doesn't double
+ * as an extra variant.
+ */
+export const CUSTOM_AGENT_DEFAULT_PROMPT_STEM = 'prompt';
+
+/**
+ * Workspace-relative parent folders scanned for custom agents, independent of the configurable
+ * prompt-templates directories. Scanning both folders mirrors the skills convention introduced
+ * in #17553, but the duplicate-id precedence is intentionally inverted: here `.agents` is listed
+ * first, so it becomes the default location for newly created agents and wins over `.prompts`,
+ * whereas for skills `.prompts` wins over `.agents` (see `combineSkillDirectories` in
+ * `skill-service.ts`). `.prompts` is retained for backward compatibility with agents authored
+ * before the move to `.agents`.
+ */
+export const CUSTOM_AGENT_WORKSPACE_DIRECTORIES = ['.agents', '.prompts'];
+
+interface CustomAgentFrontmatter {
+    name: string;
+    description: string;
+    defaultLLM: string;
+    showInChat?: boolean;
+    /** Allowed but ignored when present; if set, must match the folder name. */
+    id?: string;
+}
+
+namespace CustomAgentFrontmatter {
+    export function is(value: unknown): value is CustomAgentFrontmatter {
+        if (!value || typeof value !== 'object') {
+            return false;
+        }
+        const entry = value as Record<string, unknown>;
+        if (typeof entry.name !== 'string' || typeof entry.description !== 'string' || typeof entry.defaultLLM !== 'string') {
+            return false;
+        }
+        if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
+            return false;
+        }
+        if ('id' in entry && typeof entry.id !== 'string') {
+            return false;
+        }
+        return true;
+    }
+}
 
 /**
  * Default template entry for creating custom agents
@@ -80,6 +140,13 @@ export interface PromptFragmentCustomizationProperties {
 
     /** Array of file extensions to consider as template files */
     extensions?: string[];
+
+    /**
+     * Absolute parent directories scanned for custom agents (their `agents/` and legacy
+     * `customAgents.yml`), independent of {@link directoryPaths}. Resolved from
+     * {@link CUSTOM_AGENT_WORKSPACE_DIRECTORIES} against the workspace roots.
+     */
+    agentDirectoryPaths?: string[];
 }
 
 /**
@@ -158,6 +225,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     /** Stores additional directory paths for loading template files. */
     protected additionalTemplateDirs = new Set<string>();
 
+    /**
+     * Built-in parent directories scanned for custom agents (`.agents`, `.prompts`), independent of
+     * {@link additionalTemplateDirs}. Insertion order is preserved so the first entry (`.agents`)
+     * acts as the default location for newly created agents.
+     */
+    protected customAgentDirs = new Set<string>();
+
     /** Contains file extensions that identify prompt template files. */
     protected templateExtensions = new Set<string>([PROMPT_TEMPLATE_EXTENSION]);
 
@@ -167,6 +241,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     /** Maps URI strings to WatchedFileInfo objects for individually watched template files. */
     protected watchedFiles = new Map<string, WatchedFileInfo>();
 
+    /**
+     * For each known custom-agent prompt fragment id (i.e. `<name>_prompt`), the URI of the
+     * agent's folder (`<scope>/agents/<id>/`). Populated as agents are loaded and used to
+     * route customization writes/reads into the agent folder.
+     */
+    protected customAgentFolderByFragmentId = new Map<string, URI>();
+
     /** Collection of disposable resources for cleanup when the service updates or is disposed. */
     protected toDispose = new DisposableCollection();
 
@@ -174,6 +255,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     readonly onDidChangePromptFragmentCustomization: Event<string[]> = this.onDidChangePromptFragmentCustomizationEmitter.event;
 
     protected readonly onDidChangeCustomAgentsEmitter = new Emitter<void>();
+
+    /**
+     * In-flight migration promise used to serialize {@link migrateCustomAgentsYaml} calls.
+     * Multiple sources (initial onStart, onDidChangeCustomAgents events from async template-dir
+     * population) can request migration before the first run finishes; without serialization
+     * they race on the same `customAgents.yml`, causing one rename to succeed and the others
+     * to fail with ENOENT while concurrently moving fragment files clobber each other.
+     */
+    protected migrationInFlight: Promise<MigrationReport[]> | undefined;
     readonly onDidChangeCustomAgents: Event<void> = this.onDidChangeCustomAgentsEmitter.event;
 
     @postConstruct()
@@ -203,11 +293,30 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         await this.processTemplateDirectory(
             activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, templatesURI, 1, CustomizationSource.CUSTOMIZED); // Priority 1 for customized fragments
 
-        // Process additional template directories (medium priority)
-        for (const dirPath of this.additionalTemplateDirs) {
-            const dirURI = URI.fromFilePath(dirPath);
+        // Process additional template directories (medium priority). Skip any directory that
+        // resolves to the main templates directory — a user can set both prefs to the same
+        // path; re-processing the same dir overwrites the priority-1 entries with priority-2,
+        // which then hides them from `editBuiltIn`'s priority-1-only lookup.
+        const processedScopeKeys = new Set<string>([templatesURI.toString()]);
+        for (const dirURI of this.getDedupedAdditionalScopes(templatesURI)) {
+            processedScopeKeys.add(dirURI.toString());
             await this.processTemplateDirectory(
                 activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, dirURI, 2, CustomizationSource.FOLDER); // Priority 2 for folder fragments
+        }
+
+        // Process built-in custom-agent directories (`.agents`/`.prompts`) not already covered as
+        // template directories above: register the prompt fragments inside their `agents/<id>/`
+        // folders and watch them, so agents under these scopes get the same live refresh and
+        // prompt-fragment editing as those under template directories — without loading loose
+        // prompt templates from these built-in scopes themselves.
+        for (const dirPath of this.customAgentDirs) {
+            const scopeURI = URI.fromFilePath(dirPath);
+            if (processedScopeKeys.has(scopeURI.toString())) {
+                continue;
+            }
+            processedScopeKeys.add(scopeURI.toString());
+            await this.processCustomAgentScope(
+                activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, scopeURI, 2, CustomizationSource.FOLDER);
         }
 
         // Process specific template files (highest priority)
@@ -564,10 +673,153 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 priority,
                 customizationSource
             );
+            await this.processCustomAgentFolders(
+                activeCustomizationsCopy,
+                trackedTemplateURIsCopy,
+                allCustomizationsCopy,
+                dirURI,
+                priority,
+                customizationSource
+            );
         }
 
         // Set up file watching for the directory (works for both existing and non-existing directories)
         this.setupDirectoryWatcher(dirURI, priority, customizationSource);
+    }
+
+    /**
+     * Processes a built-in custom-agent scope (`.agents`/`.prompts`): registers the prompt fragments
+     * inside its `agents/<id>/` folders and watches the scope for changes. Unlike
+     * {@link processTemplateDirectory} it does not scan loose `*.prompttemplate` files in the scope
+     * root, so `.agents` does not become a general prompt-template directory.
+     * @param dirURI URI of the agent scope directory
+     * @param priority Priority level for customizations in this scope
+     * @param customizationSource Source type of the customization
+     */
+    protected async processCustomAgentScope(
+        activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        trackedTemplateURIsCopy: Set<string>,
+        allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        dirURI: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): Promise<void> {
+        await this.processCustomAgentFolders(
+            activeCustomizationsCopy,
+            trackedTemplateURIsCopy,
+            allCustomizationsCopy,
+            dirURI,
+            priority,
+            customizationSource
+        );
+        // Watch for changes (works for both existing and non-existing directories), restricted to
+        // agent folders so newly created/edited agents under `.agents` are picked up live.
+        this.setupDirectoryWatcher(dirURI, priority, customizationSource, true);
+    }
+
+    /**
+     * Scan `<dirURI>/agents/<id>/*.prompttemplate` files and register each as a customized
+     * prompt fragment so they appear in the Prompt Fragments configuration view and so
+     * `editPromptFragmentCustomization` / `removePromptFragmentCustomization` can find their
+     * source URIs.
+     *
+     * The reserved filename `prompt.prompttemplate` maps to the agent's default-variant
+     * fragment id (`<agent-name>_prompt` read from the sibling `agent.md`'s frontmatter).
+     * Any other `.prompttemplate` file uses its filename stem as the fragment id (matching
+     * how variants are registered via {@link readCustomAgentPromptVariants}).
+     */
+    protected async processCustomAgentFolders(
+        activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        trackedTemplateURIsCopy: Set<string>,
+        allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        scopeDir: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): Promise<void> {
+        const agentsDirURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let agentsStat;
+        try {
+            agentsStat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!agentsStat.isDirectory || !agentsStat.children?.length) {
+            return;
+        }
+        for (const agentChild of agentsStat.children) {
+            if (!agentChild.isDirectory) {
+                continue;
+            }
+            const defaultFragmentId = await this.readCustomAgentDefaultFragmentId(agentChild.resource);
+            if (defaultFragmentId) {
+                this.customAgentFolderByFragmentId.set(defaultFragmentId, agentChild.resource);
+            }
+            const folderStat = await this.fileService.resolve(agentChild.resource).catch(() => undefined);
+            if (!folderStat?.children?.length) {
+                continue;
+            }
+            for (const file of folderStat.children) {
+                if (!file.isFile || !this.isPromptTemplateExtension(file.resource.path.ext)) {
+                    continue;
+                }
+                const stem = this.removePromptTemplateSuffix(file.resource.path.name);
+                const fragmentId = stem === CUSTOM_AGENT_DEFAULT_PROMPT_STEM ? defaultFragmentId : stem;
+                if (!fragmentId) {
+                    continue;
+                }
+                trackedTemplateURIsCopy.add(file.resource.toString());
+                try {
+                    const fileContent = await this.fileService.read(file.resource);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
+                    this.addTemplate(
+                        activeCustomizationsCopy,
+                        fragmentId,
+                        parsed.template,
+                        file.resource.toString(),
+                        allCustomizationsCopy,
+                        priority,
+                        customizationSource,
+                        parsed.metadata
+                    );
+                } catch (e) {
+                    this.logger.debug(`Failed to load custom-agent customization ${file.resource.toString()}: ${e?.message ?? e}`);
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the parent URI when `resource` lives in `<scopeDirURI>/agents/<id>/`; otherwise
+     * undefined. Used to decide whether a newly-added file should be processed as a
+     * custom-agent prompt customization.
+     */
+    protected matchesCustomAgentFolder(resource: URI, scopeDirURI: URI): URI | undefined {
+        const parent = resource.parent;
+        const grandParent = parent.parent;
+        if (!grandParent) {
+            return undefined;
+        }
+        if (grandParent.path.base !== CUSTOM_AGENTS_DIRECTORY) {
+            return undefined;
+        }
+        if (!grandParent.parent.isEqual(scopeDirURI)) {
+            return undefined;
+        }
+        return parent;
+    }
+
+    /**
+     * Read `<agentFolderURI>/agent.md`'s frontmatter and return the implied default
+     * fragment id (`<name>_prompt`). Returns undefined if the file is missing or invalid.
+     */
+    protected async readCustomAgentDefaultFragmentId(agentFolderURI: URI): Promise<string | undefined> {
+        try {
+            const content = (await this.fileService.read(agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME), { encoding: 'utf-8' })).value;
+            const { metadata } = parseFrontmatter<CustomAgentFrontmatter>(content, { isValid: CustomAgentFrontmatter.is });
+            return metadata ? `${metadata.name}_prompt` : undefined;
+        } catch {
+            return undefined;
+        }
     }
 
     /**
@@ -612,15 +864,31 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * Whether a changed resource path affects custom agents, i.e. it is (or is inside) an `agents/`
+     * directory, or a legacy `customAgents.yml`. Matches the `agents` directory itself (e.g. when the
+     * whole folder is deleted), not only files within it, so removing `agents/` triggers a reload.
+     * @param path The string form of the changed resource URI
+     */
+    protected isCustomAgentChange(path: string): boolean {
+        return path.endsWith('customAgents.yml')
+            || path.includes(`/${CUSTOM_AGENTS_DIRECTORY}/`)
+            || path.endsWith(`/${CUSTOM_AGENTS_DIRECTORY}`);
+    }
+
+    /**
      * Sets up file watching for a template directory (works for both existing and non-existing directories)
      * @param dirURI URI of the directory to watch
      * @param priority Priority level for customizations in this directory
      * @param customizationSource Source type of the customization
+     * @param agentsOnly When true, only `agents/<id>/` prompt files are registered on add; loose
+     * `*.prompttemplate` files in the scope root are ignored. Used for built-in agent scopes
+     * (`.agents`) that must not become general prompt-template directories.
      */
     protected setupDirectoryWatcher(
         dirURI: URI,
         priority: number,
-        customizationSource: CustomizationSource
+        customizationSource: CustomizationSource,
+        agentsOnly = false
     ): void {
         this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
@@ -637,7 +905,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 return;
             }
 
-            if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
+            if (event.changes.some(change => this.isCustomAgentChange(change.resource.toString()))) {
                 this.onDidChangeCustomAgentsEmitter.fire();
             }
 
@@ -666,7 +934,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 if (this.trackedTemplateURIs.has(uriString)) {
                     const fileContent = await this.fileService.read(updatedFile.resource);
                     const parsed = this.parseTemplateWithMetadata(fileContent.value);
-                    const fragmentId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
+                    // Prefer the already-tracked fragment id over the filename stem so that
+                    // `<scope>/agents/<id>/prompt.prompttemplate` keeps mapping to `<name>_prompt`
+                    // instead of becoming a fragment called `prompt`.
+                    const fragmentId = this.allCustomizations.get(uriString)?.id
+                        ?? this.removePromptTemplateSuffix(updatedFile.resource.path.name);
                     this.addTemplate(
                         this.activeCustomizations,
                         fragmentId,
@@ -683,25 +955,41 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
             // Handle new templates
             for (const addedFile of event.getAdded()) {
-                if (addedFile.resource.parent.toString() === dirURI.toString() &&
-                    this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
-                    const uriString = addedFile.resource.toString();
-                    this.trackedTemplateURIs.add(uriString);
-                    const fileContent = await this.fileService.read(addedFile.resource);
-                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
-                    const fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
-                    this.addTemplate(
-                        this.activeCustomizations,
-                        fragmentId,
-                        parsed.template,
-                        uriString,
-                        this.allCustomizations,
-                        priority,
-                        customizationSource,
-                        parsed.metadata
-                    );
-                    changedFragmentIds.add(fragmentId);
+                if (!this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
+                    continue;
                 }
+                const isScopeRoot = !agentsOnly && addedFile.resource.parent.toString() === dirURI.toString();
+                const agentFolderURI = this.matchesCustomAgentFolder(addedFile.resource, dirURI);
+                if (!isScopeRoot && !agentFolderURI) {
+                    continue;
+                }
+                const uriString = addedFile.resource.toString();
+                this.trackedTemplateURIs.add(uriString);
+                const fileContent = await this.fileService.read(addedFile.resource);
+                const parsed = this.parseTemplateWithMetadata(fileContent.value);
+                let fragmentId: string | undefined;
+                if (agentFolderURI) {
+                    const stem = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                    fragmentId = stem === CUSTOM_AGENT_DEFAULT_PROMPT_STEM
+                        ? await this.readCustomAgentDefaultFragmentId(agentFolderURI)
+                        : stem;
+                } else {
+                    fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                }
+                if (!fragmentId) {
+                    continue;
+                }
+                this.addTemplate(
+                    this.activeCustomizations,
+                    fragmentId,
+                    parsed.template,
+                    uriString,
+                    this.allCustomizations,
+                    priority,
+                    customizationSource,
+                    parsed.metadata
+                );
+                changedFragmentIds.add(fragmentId);
             }
 
             const changedFragmentIdsArray = Array.from(changedFragmentIds);
@@ -757,6 +1045,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
         }
 
+        if (properties.agentDirectoryPaths !== undefined) {
+            this.customAgentDirs.clear();
+            for (const path of properties.agentDirectoryPaths) {
+                this.customAgentDirs.add(path);
+            }
+        }
+
         if (properties.extensions !== undefined) {
             this.templateExtensions.clear();
             for (const ext of properties.extensions) {
@@ -791,11 +1086,63 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * The additional (workspace) template directories as URIs, excluding any that resolves to the
+     * same location as `excluding` (typically the global templates directory). A user can point
+     * both the `promptTemplates` preference and a workspace template directory at the same path;
+     * processing that scope twice would hide priority-1 customizations behind priority-2 copies
+     * (see {@link update}) or list the same scope twice in the agent-location picker.
+     */
+    protected getDedupedAdditionalScopes(excluding: URI): URI[] {
+        const result: URI[] = [];
+        for (const dirPath of this.additionalTemplateDirs) {
+            const dirURI = URI.fromFilePath(dirPath);
+            if (!dirURI.isEqual(excluding)) {
+                result.push(dirURI);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * The deduplicated parent directories scanned for custom agents, in precedence order:
+     * the built-in {@link customAgentDirs} (`.agents` then `.prompts`) first, so `.agents` is both
+     * the discovery winner and the default creation target; then any configured
+     * {@link additionalTemplateDirs} that may also hold agents; then the global templates directory.
+     * Independent of the prompt-templates preference, mirroring how skills resolve their folders.
+     */
+    protected async getCustomAgentScopes(): Promise<URI[]> {
+        const seen = new Set<string>();
+        const scopes: URI[] = [];
+        const add = (uri: URI): void => {
+            const key = uri.toString();
+            if (!seen.has(key)) {
+                seen.add(key);
+                scopes.push(uri);
+            }
+        };
+        for (const dirPath of this.customAgentDirs) {
+            add(URI.fromFilePath(dirPath));
+        }
+        for (const dirPath of this.additionalTemplateDirs) {
+            add(URI.fromFilePath(dirPath));
+        }
+        add(await this.getTemplatesDirectoryURI());
+        return scopes;
+    }
+
+    /**
      * Gets the URI for a specific template file
      * @param fragmentId The fragment ID
      * @returns URI for the template file
      */
     protected async getTemplateURI(fragmentId: string): Promise<URI> {
+        // Custom-agent default prompts live inside their own folder under the reserved filename
+        // `prompt.prompttemplate`. Variants and other fragments fall back to scope-root behavior
+        // (where filename = fragment id), matching how Theia tracks all other customizations.
+        const agentFolder = this.customAgentFolderByFragmentId.get(fragmentId);
+        if (agentFolder) {
+            return agentFolder.resolve(`${CUSTOM_AGENT_DEFAULT_PROMPT_STEM}${PROMPT_TEMPLATE_EXTENSION}`);
+        }
         return (await this.getTemplatesDirectoryURI()).resolve(`${fragmentId}${PROMPT_TEMPLATE_EXTENSION}`);
     }
 
@@ -1115,22 +1462,199 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     async getCustomAgents(): Promise<CustomAgentDescription[]> {
         const agentsById = new Map<string, CustomAgentDescription>();
-        // First, process additional (workspace) template directories to give them precedence
-        for (const dirPath of this.additionalTemplateDirs) {
-            const dirURI = URI.fromFilePath(dirPath);
-            await this.loadCustomAgentsFromDirectory(dirURI, agentsById);
+        // Process scopes in precedence order (`.agents`/`.prompts` first, global last). The map only
+        // keeps the first agent seen per id, so earlier scopes win on conflicts.
+        for (const scope of await this.getCustomAgentScopes()) {
+            await this.loadCustomAgentsFromAgentsDirectory(scope, agentsById);
+            await this.loadCustomAgentsFromDirectory(scope, agentsById);
         }
-        // Then process global templates directory (only adding agents that don't conflict)
-        const globalTemplatesDir = await this.getTemplatesDirectoryURI();
-        await this.loadCustomAgentsFromDirectory(globalTemplatesDir, agentsById);
-        // Return the merged list of agents
+        // Note: customAgentFolderByFragmentId is intentionally not cleared here. It grows
+        // monotonically — stale entries (renamed/removed agents) at worst point at a folder
+        // that no longer exists, which the file-create path mkdirps if needed. Clearing it
+        // up front would create a race where a concurrent `getTemplateURI` call sees an empty
+        // map and falls back to the scope root.
         return Array.from(agentsById.values());
     }
 
     /**
-     * Load custom agents from a specific directory
-     * @param directoryURI The URI of the directory to load from
-     * @param agentsById Map to store the loaded agents by ID
+     * Load custom agents from `<parentDirectory>/agents/<id>/agent.md`. Each immediate
+     * subdirectory under `agents/` defines one custom agent: the folder name is the
+     * agent id (single source of truth), the file's YAML frontmatter holds the metadata,
+     * and the body is the prompt text. Folders without a readable `agent.md` are skipped.
+     */
+    protected async loadCustomAgentsFromAgentsDirectory(
+        parentDirectory: URI,
+        agentsById: Map<string, CustomAgentDescription>
+    ): Promise<void> {
+        const agentsDirURI = parentDirectory.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let directoryStat;
+        try {
+            directoryStat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!directoryStat.isDirectory || !directoryStat.children?.length) {
+            return;
+        }
+        for (const child of directoryStat.children) {
+            if (!child.isDirectory) {
+                continue;
+            }
+            const agent = await this.readCustomAgentFile(child.resource);
+            if (!agent) {
+                continue;
+            }
+            if (!agentsById.has(agent.id)) {
+                agentsById.set(agent.id, agent);
+            }
+        }
+    }
+
+    protected async readCustomAgentFile(agentFolderURI: URI): Promise<CustomAgentDescription | undefined> {
+        const id = agentFolderURI.path.base;
+        const fileURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
+        let content: string;
+        try {
+            content = (await this.fileService.read(fileURI, { encoding: 'utf-8' })).value;
+        } catch {
+            return undefined;
+        }
+        const { metadata, body } = parseFrontmatter<CustomAgentFrontmatter>(content, { isValid: CustomAgentFrontmatter.is });
+        if (!metadata) {
+            this.logger.debug(`Invalid or missing frontmatter in ${fileURI.toString()}`);
+            return undefined;
+        }
+        if (metadata.id !== undefined && metadata.id !== id) {
+            this.logger.debug(`Frontmatter id '${metadata.id}' in ${fileURI.toString()} does not match folder name '${id}'. Skipping.`);
+            return undefined;
+        }
+        const promptVariants = await this.readCustomAgentPromptVariants(agentFolderURI);
+        const fragmentId = `${metadata.name}_prompt`;
+        this.customAgentFolderByFragmentId.set(fragmentId, agentFolderURI);
+        return {
+            id,
+            name: metadata.name,
+            description: metadata.description,
+            prompt: body,
+            defaultLLM: metadata.defaultLLM,
+            showInChat: metadata.showInChat,
+            ...(promptVariants.length > 0 ? { promptVariants } : {})
+        };
+    }
+
+    /**
+     * Remove `<scopeDir>/agents/<id>/` directories that contain no `agent.md`. They are usually
+     * the leftover side effect of a previous migration whose `agent.md` write failed after the
+     * parent directory had already been created. Removing them lets the next run re-attempt.
+     */
+    protected async cleanupEmptyAgentFolders(scopeDir: URI): Promise<void> {
+        const agentsDirURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let stat;
+        try {
+            stat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!stat.children?.length) {
+            return;
+        }
+        for (const child of stat.children) {
+            if (!child.isDirectory) {
+                continue;
+            }
+            const agentMdURI = child.resource.resolve(CUSTOM_AGENT_FILE_NAME);
+            if (await this.fileService.exists(agentMdURI)) {
+                continue;
+            }
+            const childStat = await this.fileService.resolve(child.resource).catch(() => undefined);
+            if (childStat?.children?.length) {
+                continue;
+            }
+            try {
+                await this.fileService.delete(child.resource, { recursive: true });
+                this.logger.info(`Removed empty agent folder ${child.resource.toString()} left behind by a previous run.`);
+            } catch (e) {
+                this.logger.warn(`Failed to remove empty agent folder ${child.resource.toString()}: ${e?.message ?? e}`);
+            }
+        }
+    }
+
+    /**
+     * List `.prompttemplate` files directly inside the given scope directory (one level only).
+     * Returns each file's URI along with its filename stem to enable cheap prefix matching
+     * during migration.
+     */
+    protected async listScopeRootPromptTemplates(scopeDir: URI): Promise<Array<{ uri: URI, stem: string }>> {
+        let stat;
+        try {
+            stat = await this.fileService.resolve(scopeDir);
+        } catch {
+            return [];
+        }
+        if (!stat.children?.length) {
+            return [];
+        }
+        const result: Array<{ uri: URI, stem: string }> = [];
+        for (const child of stat.children) {
+            if (!child.isFile) {
+                continue;
+            }
+            if (!this.isPromptTemplateExtension(child.resource.path.ext)) {
+                continue;
+            }
+            result.push({ uri: child.resource, stem: this.removePromptTemplateSuffix(child.resource.path.name) });
+        }
+        return result;
+    }
+
+    /**
+     * Scan an agent folder for sibling `.prompttemplate` files; each becomes a variant
+     * of the agent's prompt. Variant id = filename stem (e.g. `concise.prompttemplate`
+     * yields a variant with id `concise`). Files inside subdirectories are ignored.
+     *
+     * The reserved filename `prompt.prompttemplate` is excluded: it represents the
+     * default-variant customization (overrides `agent.md`'s body), not an extra variant,
+     * and is registered by the prompt-fragment customization scan instead.
+     */
+    protected async readCustomAgentPromptVariants(agentFolderURI: URI): Promise<CustomAgentPromptVariant[]> {
+        let folderStat;
+        try {
+            folderStat = await this.fileService.resolve(agentFolderURI);
+        } catch {
+            return [];
+        }
+        if (!folderStat.children?.length) {
+            return [];
+        }
+        const variants: CustomAgentPromptVariant[] = [];
+        for (const child of folderStat.children) {
+            if (!child.isFile) {
+                continue;
+            }
+            if (!this.isPromptTemplateExtension(child.resource.path.ext)) {
+                continue;
+            }
+            const variantId = this.removePromptTemplateSuffix(child.resource.path.name);
+            if (variantId === CUSTOM_AGENT_DEFAULT_PROMPT_STEM) {
+                continue;
+            }
+            try {
+                const variantContent = (await this.fileService.read(child.resource, { encoding: 'utf-8' })).value;
+                const parsed = this.parseTemplateWithMetadata(variantContent);
+                variants.push({ id: variantId, template: parsed.template });
+            } catch (e) {
+                this.logger.debug(`Failed to read prompt variant ${child.resource.toString()}: ${e?.message ?? e}`);
+            }
+        }
+        // Stable order to keep equality checks deterministic between loads.
+        variants.sort((a, b) => a.id.localeCompare(b.id));
+        return variants;
+    }
+
+    /**
+     * @deprecated Reads legacy `customAgents.yml` files. New agents should live under
+     * `<scope>/agents/<id>/agent.md`. Kept as a fallback until existing files have been
+     * auto-migrated; loader logs a one-time warning per scope when it finds one.
      */
     protected async loadCustomAgentsFromDirectory(
         directoryURI: URI,
@@ -1141,6 +1665,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         if (!yamlExists) {
             return;
         }
+        this.warnOnceLegacyYaml(customAgentYamlUri);
 
         try {
             const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
@@ -1164,33 +1689,210 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
     }
 
+    private readonly warnedLegacyYamlUris = new Set<string>();
+    protected warnOnceLegacyYaml(uri: URI): void {
+        const key = uri.toString();
+        if (this.warnedLegacyYamlUris.has(key)) {
+            return;
+        }
+        this.warnedLegacyYamlUris.add(key);
+        this.logger.warn(
+            `Loading custom agents from legacy '${key}'. ` +
+            `Files in this format are auto-migrated to the '${CUSTOM_AGENTS_DIRECTORY}/' folder on startup. ` +
+            'If migration did not run, invoke the command \'AI: Re-run custom-agent migration\'.'
+        );
+    }
+
     /**
-     * Returns all locations of existing customAgents.yml files and potential locations where
-     * new customAgents.yml files could be created.
-     *
-     * @returns An array of objects containing the URI and whether the file exists
+     * Returns all locations of existing customAgents.yml files and `agents/` directories,
+     * plus the canonical locations where new agents would be created (one per scope). Scopes are
+     * returned in precedence order, so the first `agents-dir` entry is the default creation target.
      */
-    async getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]> {
-        const locations: { uri: URI, exists: boolean }[] = [];
-        // Check global templates directory
-        const globalTemplatesDir = await this.getTemplatesDirectoryURI();
-        const globalAgentsUri = globalTemplatesDir.resolve('customAgents.yml');
-        const globalExists = await this.fileService.exists(globalAgentsUri);
-        locations.push({ uri: globalAgentsUri, exists: globalExists });
-        // Check additional (workspace) template directories
-        for (const dirPath of this.additionalTemplateDirs) {
-            const dirURI = URI.fromFilePath(dirPath);
-            const agentsUri = dirURI.resolve('customAgents.yml');
-            const exists = await this.fileService.exists(agentsUri);
-            locations.push({ uri: agentsUri, exists: exists });
+    async getCustomAgentsLocations(): Promise<CustomAgentsLocation[]> {
+        const locations: CustomAgentsLocation[] = [];
+        for (const parentDir of await this.getCustomAgentScopes()) {
+            const agentsDirURI = parentDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+            locations.push({ uri: agentsDirURI, exists: await this.fileService.exists(agentsDirURI), kind: 'agents-dir' });
+            const yamlURI = parentDir.resolve('customAgents.yml');
+            locations.push({ uri: yamlURI, exists: await this.fileService.exists(yamlURI), kind: 'legacy-yaml' });
         }
         return locations;
     }
 
     /**
-     * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
+     * Creates `<parentDirectory>/agents/<id>/agent.md` from a `CustomAgentDescription` and opens it.
+     * The agent id determines the folder name; the prompt body is written verbatim under the YAML frontmatter.
+     */
+    async createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI> {
+        const fileURI = parentDirectory.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(agent.id).resolve(CUSTOM_AGENT_FILE_NAME);
+        const content = serializeCustomAgentFile(agent);
+        if (!(await this.fileService.exists(fileURI))) {
+            await this.fileService.createFile(fileURI, BinaryBuffer.fromString(content));
+        } else {
+            await this.fileService.writeFile(fileURI, BinaryBuffer.fromString(content));
+        }
+        const openHandler = await this.openerService.getOpener(fileURI);
+        openHandler.open(fileURI);
+        return fileURI;
+    }
+
+    /**
+     * Auto-migrate every legacy `customAgents.yml` reachable from the configured scopes to the new
+     * `agents/<id>/agent.md` layout. The original content is never deleted:
+     * - on full success the YAML is renamed to `customAgents.yml.bak`, replacing any previous backup;
+     * - on partial failure the YAML is renamed to `customAgents.yml.bak` only if no backup exists yet;
+     *   if one already exists the YAML is left in place, so the loader keeps serving it and the next
+     *   startup retries the migration.
      *
-     * @param uri The URI of the customAgents.yml file to open or create
+     * Idempotent: rerunning never overwrites an already-migrated agent file.
+     */
+    async migrateCustomAgentsYaml(): Promise<MigrationReport[]> {
+        // Coalesce concurrent calls. refreshCustomAgents() can re-fire during startup when
+        // additionalTemplateDirs is populated asynchronously; without this guard each call
+        // launches a parallel migration that races on the same `customAgents.yml` and on
+        // sibling `*_prompt*.prompttemplate` files.
+        if (this.migrationInFlight) {
+            return this.migrationInFlight;
+        }
+        this.migrationInFlight = this.doMigrateCustomAgentsYaml().finally(() => {
+            this.migrationInFlight = undefined;
+        });
+        return this.migrationInFlight;
+    }
+
+    protected async doMigrateCustomAgentsYaml(): Promise<MigrationReport[]> {
+        const scopes = await this.getCustomAgentScopes();
+        const reports: MigrationReport[] = [];
+        for (const scope of scopes) {
+            const report = await this.migrateSingleScope(scope);
+            if (report) {
+                reports.push(report);
+            }
+        }
+        if (reports.some(r => r.migrated > 0)) {
+            this.onDidChangeCustomAgentsEmitter.fire();
+        }
+        return reports;
+    }
+
+    protected async migrateSingleScope(scopeDir: URI): Promise<MigrationReport | undefined> {
+        const yamlURI = scopeDir.resolve('customAgents.yml');
+        if (!(await this.fileService.exists(yamlURI))) {
+            return undefined;
+        }
+        this.logger.info(`Migrating custom agents from ${yamlURI.toString()}`);
+        let entries: CustomAgentDescription[];
+        try {
+            const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
+            const doc = load(fileContent.value);
+            if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
+                this.logger.warn(`Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
+                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
+            }
+            entries = doc;
+        } catch (e) {
+            this.logger.warn(`Skipping migration of ${yamlURI.toString()}: ${e.message}`);
+            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
+        }
+
+        let migrated = 0;
+        let alreadyPresent = 0;
+        let failed = 0;
+        let promptOverridesMigrated = 0;
+
+        // A previous failed migration may have created `agents/<id>/` directories without an
+        // `agent.md` inside. Remove those empty placeholders so this run can recreate them cleanly.
+        await this.cleanupEmptyAgentFolders(scopeDir);
+
+        // Snapshot scope-root template files once so we can match per agent without re-listing.
+        const scopeRootTemplateFiles = await this.listScopeRootPromptTemplates(scopeDir);
+
+        // Prompt-fragment files are matched by agent *name* (the fragment id is `<name>_prompt`)
+        // while folders are keyed by the unique *id*. When two entries share a name, only the first
+        // can own the name-based files, so track seen names and skip the move for the duplicates.
+        const seenNames = new Set<string>();
+
+        for (const entry of entries) {
+            const agentFolderURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id);
+            const targetURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
+            if (await this.fileService.exists(targetURI)) {
+                alreadyPresent++;
+            } else {
+                try {
+                    await this.fileService.createFile(
+                        targetURI,
+                        BinaryBuffer.fromString(serializeCustomAgentFile(entry)),
+                        { overwrite: true }
+                    );
+                    migrated++;
+                } catch (e) {
+                    this.logger.warn(`Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
+                    failed++;
+                    continue;
+                }
+            }
+
+            if (seenNames.has(entry.name)) {
+                this.logger.warn(
+                    `Multiple custom agents in ${yamlURI.toString()} share the name '${entry.name}'; ` +
+                    'prompt fragment files were migrated to the first matching agent only.'
+                );
+                continue;
+            }
+            seenNames.add(entry.name);
+
+            // Move any scope-root .prompttemplate files that look like they belong to this agent
+            // (filename stem starts with `<name>_prompt`, followed by EOF or a separator).
+            // They become variants under `<scope>/agents/<id>/`.
+            for (const file of scopeRootTemplateFiles) {
+                if (!matchesAgentPromptPrefix(file.stem, entry.name)) {
+                    continue;
+                }
+                const destURI = agentFolderURI.resolve(file.uri.path.base);
+                if (await this.fileService.exists(destURI)) {
+                    continue;
+                }
+                try {
+                    await this.fileService.move(file.uri, destURI);
+                    promptOverridesMigrated++;
+                } catch (e) {
+                    this.logger.warn(`Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
+                }
+            }
+        }
+
+        let yamlBackedUp = false;
+        const backupURI = scopeDir.resolve('customAgents.yml.bak');
+        if (failed === 0) {
+            try {
+                await this.fileService.move(yamlURI, backupURI, { overwrite: true });
+                yamlBackedUp = true;
+            } catch (e) {
+                this.logger.warn(`Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
+            }
+        } else {
+            try {
+                if (!(await this.fileService.exists(backupURI))) {
+                    await this.fileService.move(yamlURI, backupURI);
+                    yamlBackedUp = true;
+                }
+            } catch (e) {
+                this.logger.warn(`Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
+            }
+        }
+
+        this.logger.info(
+            `Migration done for ${yamlURI.toString()}: ` +
+            `migrated=${migrated}, alreadyPresent=${alreadyPresent}, failed=${failed}, ` +
+            `yamlBackedUp=${yamlBackedUp}, promptOverridesMigrated=${promptOverridesMigrated}`
+        );
+        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlBackedUp, promptOverridesMigrated };
+    }
+
+    /**
+     * @deprecated Use {@link createCustomAgentFile} to author agents in the new
+     * `<scope>/agents/<id>/agent.md` layout. Retained so existing UI affordances keep
+     * working until they are migrated.
      */
     async openCustomAgentYaml(uri: URI): Promise<void> {
         const content = dump([newCustomAgentEntry]);
@@ -1203,4 +1905,50 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         const openHandler = await this.openerService.getOpener(uri);
         openHandler.open(uri);
     }
+}
+
+/**
+ * Outcome of attempting to migrate one scope's `customAgents.yml`.
+ */
+export interface MigrationReport {
+    scope: URI;
+    yamlURI: URI;
+    /** Number of agents written to `agents/<id>/agent.md`. */
+    migrated: number;
+    /** Number of agents skipped because an `agent.md` already existed (idempotency). */
+    alreadyPresent: number;
+    /** Number of agents whose new file failed to write. */
+    failed: number;
+    /** Whether the original YAML was renamed to `customAgents.yml.bak` during this run. */
+    yamlBackedUp: boolean;
+    /** Number of scope-root prompt customization files (`<name>_prompt.prompttemplate`) folded into agent.md and deleted. */
+    promptOverridesMigrated: number;
+}
+
+/**
+ * Returns true when a filename stem looks like a prompt fragment owned by the named agent —
+ * i.e. it begins with `<name>_prompt` followed by end-of-string or a separator
+ * (`-`, `_`, ` `, `.`). Used to scoop variant files like `Foo_prompt_old.prompttemplate` into
+ * the agent's folder during migration without grabbing unrelated fragments such as
+ * `FooBar_prompt.prompttemplate` for a different agent.
+ */
+function matchesAgentPromptPrefix(stem: string, agentName: string): boolean {
+    const prefix = `${agentName}_prompt`;
+    if (!stem.startsWith(prefix)) {
+        return false;
+    }
+    const next = stem.charAt(prefix.length);
+    return next === '' || next === '-' || next === '_' || next === ' ' || next === '.';
+}
+
+function serializeCustomAgentFile(agent: CustomAgentDescription): string {
+    const metadata: Record<string, unknown> = {
+        name: agent.name,
+        description: agent.description,
+        defaultLLM: agent.defaultLLM,
+    };
+    if (agent.showInChat !== undefined) {
+        metadata.showInChat = agent.showInChat;
+    }
+    return serializeFrontmatter(metadata, agent.prompt);
 }

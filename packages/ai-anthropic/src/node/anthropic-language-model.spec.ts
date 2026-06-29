@@ -18,9 +18,12 @@ import { expect } from 'chai';
 import { Container, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
 import {
-    isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
+    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages
+} from './anthropic-language-model';
+import {
+    isServerToolCallResponsePart, isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport,
+    ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -30,11 +33,14 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings() method. */
+/** Test helper that exposes the otherwise protected getSettings()/createTools() methods. */
 @injectable()
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
+    }
+    public callCreateTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
+        return this.createTools(request);
     }
 }
 
@@ -120,6 +126,11 @@ describe('AnthropicModel', () => {
             expect(model.enableStreaming).to.be.true;
             expect(model.maxTokens).to.equal(DEFAULT_MAX_TOKENS);
             expect(model.maxRetries).to.equal(5);
+        });
+
+        it('exposes the anthropic vendor (used to key server tool selections and the capabilities UI)', () => {
+            const model = createNonReasoningModel('claude-opus-4-5');
+            expect(model.vendor).to.equal('anthropic');
         });
 
         it('should set custom url when provided', () => {
@@ -625,4 +636,151 @@ describe('AnthropicModel', () => {
             expect(result.thinking).to.equal(undefined);
         });
     });
+
+    describe('server tools', () => {
+        it('createTools injects native params only for enabled server tool ids', () => {
+            const model = createNonReasoningModel('claude-opus-4-5');
+            const tools = model.callCreateTools({ messages: [], tools: [], serverTools: ['web_fetch', 'web_search'] });
+            expect(tools).to.deep.include({ type: 'web_fetch_20250910', name: 'web_fetch' });
+            expect(tools).to.deep.include({ type: 'web_search_20250305', name: 'web_search' });
+        });
+
+        it('createTools omits server tools that are not enabled', () => {
+            const model = createNonReasoningModel('claude-opus-4-5');
+            const tools = model.callCreateTools({ messages: [], tools: [], serverTools: ['web_fetch'] });
+            expect(tools?.some(tool => 'type' in tool && tool.type === 'web_fetch_20250910')).to.be.true;
+            expect(tools?.some(tool => 'type' in tool && tool.type === 'web_search_20250305')).to.be.false;
+        });
+
+        it('createTools returns undefined when neither client nor server tools are present', () => {
+            const model = createNonReasoningModel('claude-opus-4-5');
+            expect(model.callCreateTools({ messages: [], tools: [] })).to.equal(undefined);
+        });
+
+        it('surfaces a finished server tool call from server_tool_use + web_fetch_tool_result blocks', async () => {
+            const resultContent = { type: 'web_fetch_result', url: 'https://example.com', content: { type: 'document' } };
+            const events = [
+                { type: 'message_start', message: { usage: { input_tokens: 10, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'server_tool_use', id: 'srv-1', name: 'web_fetch', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"url":"https://example.com"}' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'content_block_start', index: 1, content_block: { type: 'web_fetch_tool_result', tool_use_id: 'srv-1', content: resultContent } },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildMockAnthropicStream(events);
+                }
+            }
+            const model = buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
+
+            const parts = await collectParts(model, 'fetch https://example.com');
+            const serverParts = parts.filter(isServerToolCallResponsePart);
+            const finished = serverParts.flatMap(p => p.server_tool_calls).find(c => c.finished);
+
+            expect(finished).to.not.be.undefined;
+            expect(finished!.id).to.equal('srv-1');
+            expect(finished!.name).to.equal('web_fetch');
+            expect(finished!.arguments).to.equal('{"url":"https://example.com"}');
+            // The result is a compact, human-readable summary for rendering...
+            expect(finished!.result).to.deep.equal({ content: [{ type: 'text', text: 'Fetched https://example.com' }] });
+            // ...while the raw provider block is preserved on `data` for faithful replay.
+            expect(JSON.parse(finished!.data![ANTHROPIC_RESULT_BLOCK_DATA_KEY])).to.deep.equal(resultContent);
+        });
+
+        it('reconstructs the server tool blocks from a ServerToolUseMessage on replay', async () => {
+            let capturedParams: Anthropic.MessageCreateParams | undefined;
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams = params;
+                                async function* iterate(): AsyncGenerator<object> { /* no events */ }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            }
+            const model = buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
+
+            const rawBlock = { type: 'web_fetch_result', url: 'https://example.com', content: { type: 'document', title: 'Example' } };
+            const request: UserRequest = {
+                messages: [
+                    { actor: 'user', type: 'text', text: 'hi' },
+                    {
+                        actor: 'ai', type: 'server_tool_use', id: 'srv-1', name: 'web_fetch',
+                        input: { url: 'https://example.com' },
+                        // The renderable summary lives on result; the faithful raw block lives on data.
+                        result: { content: [{ type: 'text', text: 'Fetched https://example.com' }] },
+                        data: { [ANTHROPIC_RESULT_BLOCK_DATA_KEY]: JSON.stringify(rawBlock) }
+                    }
+                ],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // drain to ensure stream() is invoked
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* no-op */ }
+            }
+
+            const allBlocks = (capturedParams?.messages ?? []).flatMap(m => Array.isArray(m.content) ? m.content : []);
+            expect(allBlocks.some(b => b.type === 'server_tool_use' && b.id === 'srv-1')).to.be.true;
+            const resultBlock = allBlocks.find(b => b.type === 'web_fetch_tool_result' && b.tool_use_id === 'srv-1');
+            expect(resultBlock).to.not.be.undefined;
+            // The raw block from `data` is reconstructed faithfully (not the rendering summary).
+            expect((resultBlock as { content: unknown }).content).to.deep.equal(rawBlock);
+        });
+    });
 });
+
+/** Builds a mock Anthropic client whose messages.stream() yields the supplied raw events. */
+function buildMockAnthropicStream(anthropicEvents: object[]): Anthropic {
+    return {
+        messages: {
+            stream: (_params: object) => {
+                async function* iterate(): AsyncGenerator<object> {
+                    for (const event of anthropicEvents) {
+                        yield event;
+                    }
+                }
+                const iter = iterate();
+                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                return iter;
+            }
+        }
+    } as unknown as Anthropic;
+}
+
+async function collectParts(model: AnthropicModel, text: string): Promise<LanguageModelStreamResponsePart[]> {
+    const request: UserRequest = {
+        messages: [{ actor: 'user', type: 'text', text }],
+        serverTools: ['web_fetch'],
+        agentId: 'test', sessionId: 'session', requestId: 'req'
+    };
+    const response = await model.request(request);
+    const parts: LanguageModelStreamResponsePart[] = [];
+    if ('stream' in response) {
+        for await (const part of response.stream) {
+            parts.push(part);
+        }
+    }
+    return parts;
+}

@@ -41,6 +41,7 @@ export interface MCPServerFormData {
     oauthAuthorizationServer: string;
     oauthResource: string;
     autostart: boolean;
+    deferLoading: boolean;
 }
 
 export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
@@ -58,7 +59,8 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     oauthScopes: '',
     oauthAuthorizationServer: '',
     oauthResource: '',
-    autostart: true
+    autostart: true,
+    deferLoading: false
 };
 
 /**
@@ -130,7 +132,16 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
 
     protected handleFormChange = (field: keyof MCPServerFormData, value: string | boolean): void => {
         this.formData = { ...this.formData, [field]: value };
-        this.update();
+        if (field === 'serverType') {
+            // serverType toggles which fields are shown - needs a re-render.
+            this.update();
+        } else {
+            // Inputs are uncontrolled (defaultValue/defaultChecked) so the DOM keeps the typed
+            // value without a React re-render. Skipping the re-render on every keystroke avoids
+            // the cursor-jump caused by Lumino's async update path with controlled inputs
+            // (GH-17414); we only refresh validation + accept-button state.
+            this.validate();
+        }
     };
 
     protected render(): React.ReactNode {
@@ -141,7 +152,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <input
                         type="text"
                         className="theia-input"
-                        value={this.formData.name}
+                        defaultValue={this.formData.name}
                         onChange={e => this.handleFormChange('name', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverNamePlaceholder', 'e.g., my-mcp-server')}
                         disabled={this.isEditing}
@@ -170,10 +181,21 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                         <input
                             type="checkbox"
                             className='theia-input'
-                            checked={this.formData.autostart}
+                            defaultChecked={this.formData.autostart}
                             onChange={e => this.handleFormChange('autostart', e.target.checked)}
                         />
                         {nls.localize('theia/ai/mcpConfiguration/form/autostart', 'Autostart')}
+                    </label>
+                </div>
+                <div className="mcp-form-field mcp-form-checkbox">
+                    <label>
+                        <input
+                            type="checkbox"
+                            className='theia-input'
+                            defaultChecked={this.formData.deferLoading}
+                            onChange={e => this.handleFormChange('deferLoading', e.target.checked)}
+                        />
+                        {nls.localize('theia/ai/mcpConfiguration/form/deferLoading', 'Defer tool loading (discover tools on demand via the provider tool search)')}
                     </label>
                 </div>
             </div>
@@ -188,7 +210,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <input
                         type="text"
                         className="theia-input"
-                        value={this.formData.command}
+                        defaultValue={this.formData.command}
                         onChange={e => this.handleFormChange('command', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/commandPlaceholder', 'e.g., npx or uvx')}
                         spellCheck={false}
@@ -200,7 +222,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <input
                         type="text"
                         className="theia-input"
-                        value={this.formData.args}
+                        defaultValue={this.formData.args}
                         onChange={e => this.handleFormChange('args', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/argsPlaceholder', 'Space-separated, e.g., -y @modelcontextprotocol/server-brave-search')}
                         spellCheck={false}
@@ -211,7 +233,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <label>{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables')}:</label>
                     <textarea
                         className="theia-input"
-                        value={this.formData.env}
+                        defaultValue={this.formData.env}
                         onChange={e => this.handleFormChange('env', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/envPlaceholder', 'KEY=value (one per line)')}
                         rows={3}
@@ -265,7 +287,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <input
                         type="text"
                         className="theia-input"
-                        value={this.formData.serverUrl}
+                        defaultValue={this.formData.serverUrl}
                         onChange={e => this.handleFormChange('serverUrl', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverUrlPlaceholder', 'e.g., https://mcp.example.com')}
                         spellCheck={false}
@@ -279,7 +301,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="password"
                                 className="theia-input"
-                                value={this.formData.serverAuthToken}
+                                defaultValue={this.formData.serverAuthToken}
                                 onChange={e => this.handleFormChange('serverAuthToken', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/authTokenPlaceholder', 'Optional authentication token')}
                                 spellCheck={false}
@@ -291,7 +313,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="text"
                                 className="theia-input"
-                                value={this.formData.serverAuthTokenHeader}
+                                defaultValue={this.formData.serverAuthTokenHeader}
                                 onChange={e => this.handleFormChange('serverAuthTokenHeader', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/authHeaderPlaceholder', 'Default: Authorization with Bearer')}
                                 spellCheck={false}
@@ -304,7 +326,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <label>{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</label>
                     <textarea
                         className="theia-input"
-                        value={this.formData.headers}
+                        defaultValue={this.formData.headers}
                         onChange={e => this.handleFormChange('headers', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/headersPlaceholder', 'Header-Name=value (one per line)')}
                         rows={3}
@@ -353,7 +375,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="text"
                                 className="theia-input"
-                                value={this.formData.oauthClientId}
+                                defaultValue={this.formData.oauthClientId}
                                 onChange={e => this.handleFormChange('oauthClientId', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthClientIdPlaceholder', 'Optional static client ID')}
                                 spellCheck={false}
@@ -365,7 +387,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="password"
                                 className="theia-input"
-                                value={this.formData.oauthClientSecret}
+                                defaultValue={this.formData.oauthClientSecret}
                                 onChange={e => this.handleFormChange('oauthClientSecret', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthClientSecretPlaceholder',
                                     'Only for servers requiring a confidential client')}
@@ -378,7 +400,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="text"
                                 className="theia-input"
-                                value={this.formData.oauthScopes}
+                                defaultValue={this.formData.oauthScopes}
                                 onChange={e => this.handleFormChange('oauthScopes', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthScopesPlaceholder', 'Space-separated scopes')}
                                 spellCheck={false}
@@ -390,7 +412,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="text"
                                 className="theia-input"
-                                value={this.formData.oauthAuthorizationServer}
+                                defaultValue={this.formData.oauthAuthorizationServer}
                                 onChange={e => this.handleFormChange('oauthAuthorizationServer', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthAuthorizationServerPlaceholder', 'Optional authorization server URL')}
                                 spellCheck={false}
@@ -402,7 +424,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             <input
                                 type="text"
                                 className="theia-input"
-                                value={this.formData.oauthResource}
+                                defaultValue={this.formData.oauthResource}
                                 onChange={e => this.handleFormChange('oauthResource', e.target.value)}
                                 placeholder={nls.localize('theia/ai/mcpConfiguration/form/oauthResourcePlaceholder', 'Optional resource URI')}
                                 spellCheck={false}

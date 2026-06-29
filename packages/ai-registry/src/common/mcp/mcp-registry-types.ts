@@ -28,7 +28,7 @@ export interface RegistryMCPInstallConfigBlob {
 
 /**
  * A single install config inside an approval. Already filtered per-tool by the registry
- * for the per-tool view (`<baseUrl>/<toolName>.json`).
+ * for the per-tool view (`<baseUrl>/tools/<toolName>.json`).
  */
 export interface RegistryInstallConfig {
     tool?: string;

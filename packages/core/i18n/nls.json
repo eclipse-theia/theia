@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "Show AI Settings",
   "ai.executePlanWithCoder": "Execute Current Plan with Coder",
   "aiConfiguration:open": "Open AI Configuration view",
+  "aiConfiguration:openTools": "Open AI Tools Configuration",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
   "aiHistory:sortChronologically": "AI History: Sort chronologically",
@@ -27,8 +28,8 @@
           "title": "Capability Overrides"
         },
         "completionNotification": {
-          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                    - `os-notification`: Show OS/system notifications\n                    - `message`: Show notifications in the status bar/message area\n                    - `blink`: Blink or highlight the UI\n                    - `off`: Disable notifications for this agent",
-          "title": "Completion Notification"
+          "mdDescription": "Notification behavior when this agent needs your attention, i.e. it completed a task or requests your input.                     If not set, the global default notification setting will be used.\n                    - `os-notification`: Show OS/system notifications\n                    - `message`: Show notifications in the status bar/message area\n                    - `blink`: Blink or highlight the UI\n                    - `off`: Disable notifications for this agent",
+          "title": "Notification"
         },
         "enable": {
           "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "Specifies the currently selected prompt variants for this agent.",
           "title": "Selected Variants"
+        },
+        "serverToolSelections": {
+          "mdDescription": "User selections for provider server tools, keyed by model vendor. Each value holds the enabled server tool ids for that vendor.",
+          "title": "Server Tool Selections"
         },
         "showInChat": {
           "mdDescription": "Specifies whether the agent should be shown in the chat UI (true) or hidden (false).",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "Bypass the language model requirement check. Enable this if you are using external agents (e.g., Claude Code) that do not require Theia language models."
         },
+        "category": "AI",
         "changeSetDefaultTitle": "Suggested Changes",
         "changeSetFileDiffUriLabel": "AI Changes: {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "The file {0} has changed since this suggestion was created. Are you certain you wish to revert the change?",
         "couldNotFindMatchingLM": "Couldn't find a matching language model. Please check your setup!",
         "couldNotFindReadyLMforAgent": "Couldn't find a ready language model for agent {0}. Please check your setup!",
+        "customAgents": {
+          "migrationResult": "Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml backed up to .bak, {3} prompt overrides folded into agent.md.",
+          "rerunMigration": "Re-run custom-agent migration"
+        },
         "defaultAgent": {
           "description": "Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query.         If no Default Agent is configured, Theia´s defaults will be applied."
         },
@@ -215,7 +225,7 @@
           "label": "AI Chat"
         },
         "welcomeScreenSessions": {
-          "description": "Number of rows of recent chat sessions to display on the welcome screen. The number of visible sessions depends on the available width. Set to 0 to hide the recent chats section."
+          "description": "Maximum number of chat sessions to show on the chat overview (home view). Active sessions are filled first; overflow is accessible via the \"Browse all chats...\" link. Lower this if a higher editor zoom causes a scrollbar. Set to 0 to hide the inline list entirely; sessions remain accessible via the \"Browse all chats...\" link."
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "Built-in functions provided by {0} extensions",
         "genericCapabilities": "Generic Capabilities",
         "mcpFunctionsDescription": "Model Context Protocol (MCP) functions from connected servers",
+        "mermaid-rendering": {
+          "copySource": "Copy Source",
+          "error": "Unable to render the Mermaid diagram. Switch to the source view to inspect the definition.",
+          "rendering": "Rendering diagram…",
+          "resetView": "Reset View",
+          "showDiagram": "Show Diagram",
+          "showSource": "Show Source",
+          "title": "Mermaid Diagram",
+          "wheelZoomHint": "{0} + Scroll"
+        },
         "noChatAgentsAvailable": "No chat agents available.",
         "noMatchingCapabilities": "No matching capabilities",
         "openDiff": "Open Diff",
@@ -300,14 +320,12 @@
         "performThisTask": "Perform this task.",
         "persistedSession": "Persisted session (click to restore)",
         "promptFragmentsDescription": "Custom prompt fragments to include in the conversation",
-        "reasoning": {
-          "minimal": "Minimal"
-        },
         "removeChat": "Remove Chat",
         "requestNotFoundForRetry": "Request not found for retry",
         "responseFrom": "Response from {0}",
         "saveCurrentSelectionsToSettings": "Save capability settings",
         "searchCapabilities": "Search capabilities",
+        "sectionRestored": "Restored",
         "selectAgentQuickPickPlaceholder": "Select an agent for the new session",
         "selectAllInCategory": "Select all in this category",
         "selectChat": "Select chat",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "Select a task context to attach",
         "selectVariableArguments": "Select variable arguments",
         "send": "Send (Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "server",
+          "serverTooltip": "Ran on the provider's servers (not locally). Server tools are auto-approved when selected."
+        },
+        "serverToolWarning": "This tool is auto-approved when selected. It may be executed by the model at any time.",
+        "serverTools": "Server Tools",
+        "serverToolsDescription": "Server tools are executed server-side by the LLM on the vendor's infrastructure.",
+        "serverToolsWarning": "These tools are auto-approved when selected. They may be executed by the model at any time.",
         "sessionNotFoundForRetry": "Session not found for retry",
         "skillsDescription": "Reusable skill instructions that can be added to the conversation",
         "switchAgentMode": "Switch Agent Mode",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "I understand, enable auto-approval",
           "alwaysAllowGenericWarning": "This tool requires confirmation before auto-approval can be enabled. Once enabled, all future invocations will execute without confirmation. Only enable this if you trust this tool and understand the potential risks.",
           "alwaysAllowTitle": "Enable Auto-Approval for \"{0}\"?",
+          "approveLatest": "Approve Latest Tool Confirmation",
           "autoCancel": "Auto-cancels in {0}",
           "canceled": "Tool execution canceled",
           "denied": "Tool execution denied",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "Enter reason for denial...",
           "deny-session": "Deny for this Chat",
           "deny-with-reason": "Deny with reason...",
+          "denyLatest": "Deny Latest Tool Confirmation",
           "executionDenied": "Tool execution denied",
           "header": "Confirm Tool Execution"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "current directory",
         "differentAgentRequestWarning": "The previous chat request was handled by a different agent. Claude Code does not see those other messages.",
-        "directory": "Directory",
-        "domain": "Domain",
         "edit": "Edit {0}",
         "editAutomatically": "Edit automatically",
         "editing": "Editing",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Actions",
           "addCustomAgent": "Add Custom Agent",
           "availableCapabilities": "Available Capabilities",
-          "completionNotificationDescriptionPrefix": "Select how you want to be notified when this agent completes its task. \"Default\" uses the ",
+          "completionNotificationDescriptionPrefix": "Select how you want to be notified when this agent needs your attention, i.e. it completes its task or requests your input. \"Default\" uses the ",
           "defaultNotificationDescription": "Uses the global AI notification setting",
           "enableAgent": "Enable Agent",
           "llmRequirements": "LLM Requirements",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "The default notification method used when an AI agent completes a task. Individual agents can override this setting.",
+          "mdDescription": "The default notification method used when an AI agent needs your attention, i.e. it completed a task or requests your input. Individual agents can override this setting.",
           "title": "Default Notification Type"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "Custom Request Settings"
         },
         "skillDirectories": {
-          "description": "Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. The .prompts/skills directory in your workspace and the skills directory in your product's configuration folder are always included."
+          "description": "Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. The .prompts/skills and .agents/skills directories in your workspace, the .agents/skills directory in your home directory, and the skills directory in your product's configuration folder are always included."
         },
         "skillsVariable": {
           "description": "Returns the list of available skills that can be used by AI agents"
@@ -947,10 +972,8 @@
         "agent-description": "Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Create new file",
-            "openExistingFile": "Open existing file",
-            "placeholder": "Choose where to create or open a custom agents file",
-            "title": "Select Location for Custom Agents File"
+            "placeholder": "Choose where to create the agents/<id>/agent.md file",
+            "title": "Select location for the new custom agent"
           },
           "genericCapabilitiesSettings": "Generic Capabilities",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "Functions",
             "mcpFunctions": "MCP Functions",
             "promptFragments": "Prompt Fragments"
+          },
+          "newAgent": {
+            "createFailed": "Could not create the custom agent \"{0}\": {1}",
+            "defaultDescription": "Custom agent. Edit this description in agent.md.",
+            "defaultPrompt": "You are a helpful agent. Adjust this prompt to fit your needs.",
+            "idInvalid": "Use letters, digits, dash, underscore, or dot only.",
+            "idPrompt": "Agent id (used as folder name under agents/)",
+            "idTitle": "New custom agent",
+            "noLocation": "Cannot create a custom agent: no prompt-templates location is configured. Set a global or workspace prompt-templates folder and try again."
           },
           "noDescription": "No description available",
           "resetAllCapabilities": "Reset all capabilities to their default values",
@@ -1136,9 +1168,10 @@
           "description": "An AI-powered PR review agent that orchestrates a full code review workflow: fetches PR info, explores the codebase, performs structured analysis, interactively walks the user through findings with diff viewers, and optionally creates a pending review on GitHub."
         },
         "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).",
-        "recentChats": "Recent Chats",
+        "restoredSession": "Restored session",
         "restrictedModeDetails": "AI chat, inline suggestions, code actions, and prompt templates are disabled",
         "restrictedModeLabel": "AI Features (disabled in Restricted Mode)",
+        "sectionRestored": "Restored",
         "shellAllowlist": {
           "placeholder": "e.g., \"git log\" (exact) or \"git log *\" (with args)"
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "Slash Commands"
         },
+        "toolConfirmationInfo": {
+          "header": "Tool confirmation"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "I understand, enable auto-approval",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "Default Tool Confirmation Mode:"
+          },
+          "recommendedDefaults": {
+            "apply": "Allow Default Tools",
+            "dialogConfirm": "I understand, allow",
+            "dialogTitle": "Allow Default Tools?",
+            "message": "Tool calls currently require approval. Auto-allow all built-in tools at once. Tools that require extra confirmation (e.g. shell execution), MCP tools, and any tools added later will still ask before running.",
+            "msg": {
+              "line1": "This sets all currently registered built-in tools to \"Always Allow\".",
+              "line2": "Tools that require extra confirmation (such as shell execution) will still ask before running.",
+              "line3": "MCP tools are third-party and are not included. You can allow them individually in this view.",
+              "line4": "Tools added later will still default to \"Confirm\" so you can review them.",
+              "line5": "You can change this later in this view."
+            }
           },
           "resetAll": "Reset All",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "Please select a Variable.",
           "usedByAgents": "Used by Agents"
-        }
+        },
+        "waitingForInput": "Waiting for your input"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP Servers (autostart blocked)",
         "error": {
           "allServersRunning": "All MCP servers are already running.",
+          "authenticationRequired": "MCP server \"{0}\" requires authentication. Start the server again to sign in.",
+          "getRedirectUrlFailed": "An error occurred while determining the MCP OAuth redirect URL.",
+          "noOAuthServersConfigured": "No OAuth-enabled MCP servers configured.",
           "noRunningServers": "No MCP servers running.",
           "noServersConfigured": "No MCP servers configured.",
-          "startFailed": "An error occurred while starting the MCP server."
+          "oauthRequiresTrustedWorkspace": "Starting OAuth-enabled MCP servers requires a trusted workspace.",
+          "signInFailed": "An error occurred while signing in to the MCP server.",
+          "signOutFailed": "An error occurred while signing out from the MCP server.",
+          "startFailed": "An error occurred while starting the MCP server.",
+          "stopFailed": "An error occurred while stopping the MCP server."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: Get MCP OAuth Redirect URL"
         },
         "info": {
-          "serverStarted": "MCP server \"{0}\" successfully started. Registered tools: {1}"
+          "oauthRedirectUrl": "MCP OAuth redirect URL: {0}",
+          "serverSignedIn": "Signed in to MCP server \"{0}\".",
+          "serverSignedOut": "Signed out from MCP server \"{0}\".",
+          "serverStarted": "MCP server \"{0}\" successfully started. Registered tools: {1}",
+          "signInCancelled": "MCP server \"{0}\" sign-in was cancelled."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Complete the MCP OAuth sign-in in your browser. If no sign-in tab opened, your browser may have blocked the popup.",
+          "notification": {
+            "signInPrompt": "MCP server \"{0}\" requires authorization to start."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "The command used to start the MCP server, e.g., \"uvx\" or \"npx\".",
             "title": "Command to execute the MCP server"
           },
+          "deferLoading": {
+            "mdDescription": "If enabled, the tools provided by this server are marked as deferred in the generated prompt fragment `mcp_<server>_tools`. Deferred tools are not loaded into the model's context upfront. Instead, the model discovers them on-demand via the provider's built-in tool search mechanism (Anthropic, OpenAI) when supported. This significantly reduces token overhead for servers that expose many tools.",
+            "title": "Defer Loading"
+          },
           "env": {
             "mdDescription": "Optional environment variables to set for the server, such as an API key.",
             "title": "Environment variables"
           },
           "headers": {
-            "mdDescription": "Optional additional headers included with each request to the server.",
+            "mdDescription": "Optional additional headers included with each request to the server. Header values are stored in preferences as plain text; avoid workspace settings if they contain sensitive values.",
             "title": "Headers"
           },
-          "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token, OAuth configuration and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time. Servers installed from an AI registry carry an additional `registryMetadata` block that is managed automatically and is not meant to be edited manually.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "Optional authorization server URL override. If omitted, Theia discovers it from the MCP server.",
+              "title": "Authorization Server"
+            },
+            "clientId": {
+              "mdDescription": "Optional static OAuth client ID. If omitted, Theia attempts dynamic client registration.",
+              "title": "Client ID"
+            },
+            "clientSecret": {
+              "mdDescription": "Optional OAuth client secret for authorization servers that only accept pre-registered confidential clients (no dynamic client registration). Only used together with the client ID. This is stored in preferences as plain text; avoid workspace settings if the secret is sensitive.",
+              "title": "Client Secret"
+            },
+            "mdDescription": "Optional OAuth 2.1 configuration for remote MCP servers that require authorization. The presence of this object enables OAuth for the server; remove it to disable OAuth. Theia uses public clients with PKCE by default; configure a client secret only for servers that require a pre-registered confidential client. Changes take effect after restarting the MCP server.",
+            "resource": {
+              "mdDescription": "Optional RFC 8707 resource indicator override for this MCP server.",
+              "title": "Resource"
+            },
+            "scopes": {
+              "mdDescription": "Optional OAuth scopes to request if the server does not advertise scopes.",
+              "title": "Scopes"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "Content hash of the registry approval used to install this server.",
+              "title": "Registry Config Hash"
+            },
+            "mdDescription": "Provenance metadata for a server installed from an AI registry. Written by `@theia/ai-registry`; not user-editable.",
+            "serverId": {
+              "mdDescription": "Identifies the AI registry entry this server was installed from.",
+              "title": "Registry Server Id"
+            },
+            "title": "Registry Metadata",
+            "version": {
+              "mdDescription": "The registry-published version recorded at the time of install.",
+              "title": "Registry Version"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "The authentication token for the server, if required. This is used to authenticate with the remote server.",
+            "mdDescription": "The authentication token for the server, if required. This is stored in preferences as plain text; avoid workspace settings if the token is sensitive.",
             "title": "Authentication Token"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "MCP Server Configuration"
         },
+        "signin": {
+          "label": "MCP: Sign In to MCP Server"
+        },
+        "signout": {
+          "label": "MCP: Sign Out from MCP Server"
+        },
         "start": {
           "label": "MCP: Start MCP Server"
         },
         "stop": {
           "label": "MCP: Stop MCP Server"
         },
+        "tool": {
+          "noTools": "No tools available."
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Roots define the boundaries of where servers can operate within the filesystem. If enabled, the workspace folders will be used as roots, otherwise the MCP servers will have access to the entire filesystem. Changing this setting will restart all running MCP servers to apply the new roots configuration.",
           "title": "Use Workspace as Root"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "Failed to apply MCP server preference changes: {0}",
+          "signInNotCompleted": "Sign-in to MCP server \"{0}\" was not completed."
         }
       },
       "mcpConfiguration": {
         "autostart": "Autostart",
-        "connectServer": "Connect",
+        "browseAIRegistry": "Browse AI registry",
+        "browseAIRegistryTooltip": "Open the Extensions view to browse AI registry entries",
+        "command": {
+          "addServer": "Add local MCP config..."
+        },
         "connectingServer": "Connecting...",
         "copiedAllList": "Copied all tools to clipboard (list of all tools)",
         "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "Copy all for chat (single prompt fragment with all tools)",
         "copyForPrompt": "Copy tool (for chat or prompt template)",
         "copyForPromptTemplate": "Copy all for prompt template (single prompt fragment with all tools)",
+        "deferLoading": "Defer tool loading",
         "deleteServer": "Delete Server",
         "deleteServerDialogMsg": "Are you sure you want to delete the server \"{0}\"?",
         "deleteServerDialogTitle": "Delete MCP Server",
@@ -1312,11 +1445,23 @@
           "autostart": "Autostart",
           "commandPlaceholder": "e.g., npx or uvx",
           "commandRequired": "Command is required for local servers",
+          "deferLoading": "Defer tool loading (discover tools on demand via the provider tool search)",
           "envPlaceholder": "KEY=value (one per line)",
           "headersPlaceholder": "Header-Name=value (one per line)",
           "localServer": "Local (Command)",
           "nameExists": "A server with this name already exists",
           "nameRequired": "Server name is required",
+          "oauthAuthorizationServerInvalid": "OAuth Authorization Server must be a valid http(s) URL",
+          "oauthAuthorizationServerPlaceholder": "Optional authorization server URL",
+          "oauthClientIdPlaceholder": "Optional static client ID",
+          "oauthClientSecretPlaceholder": "Only for servers requiring a confidential client",
+          "oauthPublicClientDescription": "Theia uses public OAuth clients with PKCE by default. Provide a client secret only if the server requires a pre-registered confidential client.",
+          "oauthRedirectUrlDescription": "Authorization callbacks are delivered to this URL. With a static client ID, register it as a redirect URI with your OAuth provider.",
+          "oauthResourceInvalid": "OAuth Resource must be a valid http(s) URL",
+          "oauthResourcePlaceholder": "Optional resource URI",
+          "oauthScopesPlaceholder": "Space-separated scopes",
+          "oauthSharedCredentialsDescription": "Stored OAuth sessions are shared across workspaces that use the same server name and URL (or resource).",
+          "remoteOAuthServer": "Remote (OAuth)",
           "remoteServer": "Remote (URL)",
           "saveChanges": "Save Changes",
           "serverName": "Server Name",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "e.g., https://mcp.example.com",
           "serverUrlRequired": "Server URL is required for remote servers"
         },
+        "fromRegistryLink": "From registry",
         "headers": "Headers",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Authorization Server",
+        "oauthClientId": "OAuth Client ID",
+        "oauthClientSecret": "OAuth Client Secret",
+        "oauthRedirectUrl": "Redirect URL",
+        "oauthResource": "OAuth Resource",
+        "oauthScopes": "OAuth Scopes",
+        "openInRegistry": "Open in AI registry: {0}",
         "saveServerError": "Failed to save MCP server configuration: {0}",
         "serverAuthToken": "Auth Token",
         "serverAuthTokenHeader": "Auth Header Name",
         "serverUrl": "Server URL",
+        "signInServerFailed": "Failed to sign in to MCP server \"{0}\".",
+        "signInServerNotCompleted": "Sign-in to MCP server \"{0}\" was not completed.",
+        "signInServerSucceeded": "Signed in to MCP server \"{0}\".",
+        "signOutServerDialogMsg": "Are you sure you want to sign out from the server \"{0}\"? This deletes the stored OAuth tokens for this server.",
+        "signOutServerDialogTitle": "Sign Out from MCP Server",
+        "signOutServerFailed": "Failed to sign out from MCP server \"{0}\".",
+        "startServerFailed": "Failed to start MCP server \"{0}\".",
+        "stopServerFailed": "Failed to stop MCP server \"{0}\".",
         "tools": "Tools: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "Output Tokens",
         "readCachedInputTokens": "Input Tokens Read From Cache",
         "readCachedInputTokensTooltip": "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits.",
-        "total": "Total",
         "totalTokensTooltip": "'Input Tokens' + 'Output Tokens'"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": "Consider .gitignore"
         },
         "createSkillAgent": {
-          "description": "An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. This agent helps you create well-structured skills in the .prompts/skills directory with proper YAML frontmatter and markdown content. This feature is still in an early stage and may undergo changes."
+          "description": "An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. This agent helps you create well-structured skills in either the .agents/skills or .prompts/skills directory with proper YAML frontmatter and markdown content. This feature is still in an early stage and may undergo changes."
         },
         "excludedPattern": {
           "description": "List of patterns (glob or regex) for files/folders to exclude.",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "Changes proposed"
     },
     "ai-chat-ui": {
+      "browseAllChats": "Browse all chats...",
       "confirm": "Confirm",
       "deleteChat": "Delete Chat",
+      "home": "Home",
       "initiate-session-task-context": "Task Context: Initiate Session",
-      "navigate-back": "Navigate Back",
-      "navigate-forward": "Navigate Forward",
       "noOutput": "No output",
       "open-current-session-summary": "Open Current Session Summary",
       "open-settings-tooltip": "Open AI Settings",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "Lock Scroll",
       "scroll-unlock": "Unlock Scroll",
       "session-settings": "Set Session Settings",
-      "showChats": "Show Chats...",
       "summarize-current-session": "Summarize Current Session"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
       "agentCompletionMessageWithSession": "Agent \"{0}\" has completed its task in \"{1}\".",
       "agentCompletionTitle": "Agent \"{0}\" Task Completed",
+      "agentInputNeededMessage": "Agent \"{0}\" needs your input.",
+      "agentInputNeededMessageWithSession": "Agent \"{0}\" needs your input in \"{1}\".",
+      "agentInputNeededTitle": "Agent \"{0}\" Needs Your Input",
       "aiDisabledInRestrictedMode": "AI features are not available in untrusted workspaces.",
       "preferences": {
         "linuxEnvHint": "On Linux, make sure the variable is defined in `~/.profile` (not just `~/.bashrc`) if you launch the application from a desktop shortcut. See the [documentation](https://theia-ide.org/docs/user_ai/#setting-api-keys) for details.",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "No tasks"
       },
-      "userInteractionCanceled": "Canceled",
       "userInteractionCommentPlaceholder": "Add a comment for this step...",
       "userInteractionEmpty": "Empty",
       "userInteractionFinishStep": "Finish",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "Preparing user interaction...",
       "userInteractionPreparingSteps": "Preparing: {0} ({1} steps)",
       "userInteractionPreparingTitle": "Preparing: {0}",
-      "userInteractionStepLabel": "Step {0} of {1}",
       "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCP Servers (autostart blocked)"
+      "installDialog": {
+        "authTokenPlaceholder": "Required by this server to connect",
+        "authTokenRequired": "An auth token is required to install this server.",
+        "oauthClientIdPlaceholder": "Required by this server to connect",
+        "oauthClientSecretPlaceholder": "Required by this server to connect",
+        "oauthCredentialsRequired": "An OAuth client ID and client secret are required to install this server.",
+        "oauthDescription": "This server uses OAuth with a pre-registered confidential client. Provide the client ID and secret from your OAuth provider.",
+        "title": "Install MCP Server",
+        "trust": {
+          "unknown": "No AI registry is configured - trust cannot be verified.",
+          "unverified": "This server is not listed in your AI registry ({0}). Install at your own risk.",
+          "verified": "Approved by your AI registry ({0})."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "An MCP server named \"{0}\" is already configured. Continuing will overwrite the existing entry with the configuration from the registry.",
+          "title": "MCP server already installed"
+        },
+        "missingId": "Install link is missing the required \"id\" parameter.",
+        "noRegistry": "Cannot install MCP server \"{0}\" - no AI registry is configured in this product.",
+        "success": "Installed MCP server \"{0}\" from the AI registry.",
+        "unknownId": "MCP server \"{0}\" is not listed in your AI registry."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Fix config",
+        "link": "Link to registry",
+        "unlink": "Unlink",
+        "updateTooltip": "Update from {0} to {1}"
+      },
+      "skill": {
+        "action": {
+          "fix": "Fix Skill",
+          "link": "Link to registry",
+          "unlink": "Unlink"
+        },
+        "fixed": "Restored skill \"{0}\".",
+        "githubToken": {
+          "mdDescription": "Optional GitHub personal access token used when downloading skills from GitHub. A token raises GitHub's rate limit from 60 to 5000 requests per hour. **Please note:** By using this preference the token is stored in clear text on the machine running Theia. Prefer the environment variable `GITHUB_TOKEN` to provide it securely."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "Install the skill \"{0}\" by downloading its files from {1}?",
+            "title": "Install skill"
+          },
+          "fetchFailed": "Could not load the AI registry to install skill \"{0}\".",
+          "missingId": "Install link is missing the required \"id\" parameter.",
+          "success": "Installed skill \"{0}\" from the AI registry.",
+          "unknownId": "Skill \"{0}\" is not listed in your AI registry."
+        },
+        "installed": "Installed skill \"{0}\".",
+        "linked": "Linked skill \"{0}\".",
+        "uninstalled": "Uninstalled skill \"{0}\".",
+        "unlinked": "Unlinked skill \"{0}\".",
+        "updated": "Updated skill \"{0}\".",
+        "warning": {
+          "fix": "This skill's files differ from the registry. Click 'Fix Skill' to restore them.",
+          "linkStale": "This skill was installed from the registry, but the registry no longer lists it. Click Unlink to drop the registry link and keep the files, or Uninstall to remove the skill.",
+          "notInRegistry": "Not in registry"
+        },
+        "watcherStopped": "Stopped watching the skills folder for changes. Installed skills may no longer refresh automatically. Reload the window to resume."
+      },
+      "warning": {
+        "fixConfig": "This server's configuration differs from the registry. Click 'Fix config' to restore it.",
+        "linkStale": "This server was installed from the registry, but the registry no longer lists it. If you are sure you want to keep it and it still works for you, click Unlink to drop the registry link. Otherwise click Uninstall to remove the server.",
+        "notInRegistry": "Not in registry"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "I understand, allow all",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "Configure shell command permissions",
       "confirmExecution": "Confirm Shell Command",
       "denialReason": "Reason",
-      "executionCanceled": "Canceled",
       "executionDenied": "Denied",
       "executionDeniedWithReason": "Denied with reason",
       "partialOutput": "Partial Output",
@@ -2159,7 +2387,6 @@
       "openByDefault": "Open the preview instead of the editor by default."
     },
     "property-view": {
-      "directory": "Directory",
       "lastModified": "Last modified",
       "noProperties": "No properties available.",
       "properties": "Properties",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "Close Change Peek View"
       },
-      "history": "History",
       "justNow": "just now",
       "mergeEditor": {
         "resetConfirmationTitle": "Do you really want to reset the merge result in this editor?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "Error fetching extensions.",
       "errorFetchingConfigurationHint": "This could be caused by network configuration issues.",
       "failedInstallingVSIX": "Failed to install {0} from VSIX.",
+      "filter": {
+        "showBuiltin": "Show Built-in",
+        "showInstalled": "Show Installed",
+        "showRecommended": "Show Recommended"
+      },
       "invalidVSIX": "The selected file is not a valid \"*.vsix\" plugin.",
       "license": "License: {0}",
       "onlyShowVerifiedExtensionsDescription": "This allows the {0} to only show verified extensions.",
       "onlyShowVerifiedExtensionsTitle": "Only Show Verified Extensions",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "restrictedModeInstallWarning": "The extension '{0}' may be disabled if it does not support running in Restricted Mode. Trust this workspace to ensure the extension works as expected.",
-      "searchPlaceholder": "Search Extensions in {0}",
+      "searchPlaceholder": "Search Open VSX Registry",
       "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "No other versions are available.",
         "update-version-uninstall-error": "Error while removing the extension: {0}.",
         "update-version-version-error": "Failed to install version {0} of {1}."
       }

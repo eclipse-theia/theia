@@ -85,4 +85,91 @@ describe('MutableChatResponseModel', () => {
             expect(response.tokenUsageEntries[1]).to.deep.equal(usage2);
         });
     });
+
+    describe('waiting-for-input ref counting', () => {
+        it('should not be waiting for input initially', () => {
+            const response = new MutableChatResponseModel('req-1');
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should be waiting after a single waitForInput call', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+        });
+
+        it('should stay waiting until all parallel waitForInput calls are released', () => {
+            const response = new MutableChatResponseModel('req-1');
+
+            response.waitForInput();
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+
+            response.stopWaitingForInput();
+            // Still waiting because the second waitForInput has not been released yet.
+            expect(response.isWaitingForInput).to.equal(true);
+
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should clamp at zero on extra stopWaitingForInput calls (underflow guard)', () => {
+            const response = new MutableChatResponseModel('req-1');
+
+            response.waitForInput();
+            response.stopWaitingForInput();
+            // Extra release: must not push the counter negative, otherwise a later waitForInput
+            // would have to be called twice before isWaitingForInput becomes true again.
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+        });
+
+        it('should fire onDidChange on each waitForInput / stopWaitingForInput', () => {
+            const response = new MutableChatResponseModel('req-1');
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            response.waitForInput();
+            response.stopWaitingForInput();
+
+            expect(fireCount).to.equal(2);
+        });
+
+        it('should hard-reset the waiting state on complete()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.complete();
+
+            expect(response.isWaitingForInput).to.equal(false);
+            // Counter is fully reset, not merely decremented: a subsequent stopWaitingForInput
+            // must not flip the state back via underflow.
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should hard-reset the waiting state on cancel()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.cancel();
+
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should hard-reset the waiting state on error()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.error(new Error('boom'));
+
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+    });
 });
