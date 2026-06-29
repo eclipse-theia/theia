@@ -2170,3 +2170,70 @@
   outline: 2px solid var(--theia-focusBorder);
   outline-offset: -2px;
 }
+
+/* Persistent banner strip rendered above the AI chat content when an AI session
+ * override (e.g. --session-preference) is active. */
+.chat-banner-host {
+  flex: none;
+  width: 100%;
+}
+
+.chat-banner-host:empty {
+  display: none;
+}
+
+.theia-ai-allow-all-mode-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--theia-ui-padding) * 0.75);
+  padding: calc(var(--theia-ui-padding) * 0.6) calc(var(--theia-ui-padding) * 1.5);
+  background-color: var(--theia-inputValidation-warningBackground);
+  font-size: var(--theia-ui-font-size1);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.theia-ai-allow-all-mode-strip.is-allow-all {
+  background-color: var(--theia-inputValidation-errorBackground);
+}
+
+.theia-ai-allow-all-mode-strip-icon {
+  flex: none;
+}
+
+.theia-ai-allow-all-mode-strip.is-allow-all .theia-ai-allow-all-mode-strip-icon {
+  color: var(--theia-errorForeground);
+}
+
+.theia-ai-allow-all-mode-strip-title {
+  font-weight: 600;
+}
+
+.theia-ai-allow-all-mode-strip-dismiss {
+  flex: none;
+  margin-left: calc(var(--theia-ui-padding) * 0.5);
+  padding: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  opacity: 0.7;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theia-ai-allow-all-mode-strip-dismiss:hover {
+  opacity: 1;
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ai-allow-all-mode-strip-dismiss:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
