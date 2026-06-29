@@ -4,6 +4,15 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.74.0 - TBD
+
+- [ai-chat-ui] replaced scroll-direction heuristics in `ChatViewTreeWidget` with Virtuoso's `atBottomStateChange` for reliable auto-scroll during streaming [#17728](https://github.com/eclipse-theia/theia/pull/17728)
+
+<a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
+
+- [ai-chat-ui] `ChatViewTreeWidget` scroll-lock is now driven by Virtuoso's `atBottomStateChange` callback instead of scroll-direction heuristics; the following `protected` members have been removed: `handleScrollEvent()`, `getCurrentScrollTop()`, `isAtAbsoluteBottom()`, `updateScrollToBottomButtonState()`, `lastScrollTop`, `_scrollButtonDebounceTimer`, `SCROLL_BUTTON_GRACE_PERIOD`, and the `updateScrollToRow()` override. Subclasses that override any of these should use the new `handleAtBottomStateChange(isAtBottom: boolean)` method instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
+- [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
+
 ## 1.73.0 - 6/25/2026
 
 - [ai] supported deferred tool loading via provider tool search [#17449](https://github.com/eclipse-theia/theia/pull/17449)
