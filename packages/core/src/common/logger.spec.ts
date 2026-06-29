@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { MockLogger } from './test/mock-logger';
-import { setRootLogger, unsetRootLogger, Logger } from './logger';
+import { setRootLogger, unsetRootLogger, Logger, LogLevel, Log } from './logger';
 import { DefaultLoggerSanitizer, LoggerSanitizer } from './logger-sanitizer';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -39,6 +39,24 @@ class TestableLogger extends Logger {
     public testSanitize(message: string): string {
         return this.sanitize(message);
     }
+
+    public testGetLog(logLevel: LogLevel): Promise<Log> {
+        return this.getLog(logLevel);
+    }
+
+    /** Configure the logger to behave as if the backend reported the given current log level. */
+    public configureLogLevel(level: LogLevel): void {
+        (this as any).created = Promise.resolve();
+        (this as any)._logLevel = Promise.resolve(level);
+        (this as any).server = {
+            log: (...args: any[]) => {
+                this.loggedMessages.push(args);
+                return Promise.resolve();
+            }
+        };
+    }
+
+    public readonly loggedMessages: any[][] = [];
 }
 
 describe('logger', () => {
@@ -64,6 +82,49 @@ describe('logger', () => {
             }
         }
         ).to.not.throw(ReferenceError);
+    });
+
+    describe('log level gating', () => {
+        it('resolves debug() when the debug level is not enabled', async function (): Promise<void> {
+            this.timeout(1000);
+            const logger = new TestableLogger();
+            logger.configureLogLevel(LogLevel.INFO); // DEBUG is below INFO, so it is disabled
+
+            await logger.debug('this should not hang');
+
+            expect(logger.loggedMessages).to.have.lengthOf(0);
+        });
+
+        it('resolves debug() and logs when the debug level is enabled', async () => {
+            const logger = new TestableLogger();
+            logger.configureLogLevel(LogLevel.DEBUG);
+
+            await logger.debug('hello');
+
+            expect(logger.loggedMessages).to.have.lengthOf(1);
+        });
+
+        it('does not invoke a loggable when the level is not enabled', async function (): Promise<void> {
+            this.timeout(1000);
+            const logger = new TestableLogger();
+            logger.configureLogLevel(LogLevel.INFO);
+            let invoked = false;
+
+            await logger.debug(() => { invoked = true; });
+
+            expect(invoked).to.equal(false);
+        });
+
+        it('getLog() resolves to a no-op when the level is not enabled', async function (): Promise<void> {
+            this.timeout(1000);
+            const logger = new TestableLogger();
+            logger.configureLogLevel(LogLevel.INFO);
+
+            const log = await logger.testGetLog(LogLevel.DEBUG);
+            log('this should be ignored');
+
+            expect(logger.loggedMessages).to.have.lengthOf(0);
+        });
     });
 
     describe('Logger sanitization', () => {
