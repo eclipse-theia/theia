@@ -1,4 +1,29 @@
-/** @type {import('eslint').Rule.RuleModule} */
+// *****************************************************************************
+// Copyright (C) 2026 Eclipse Foundation and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+// @ts-check
+
+/**
+ * @typedef {import('@typescript-eslint/utils').TSESTree.ClassDeclaration} ClassDeclaration
+ * @typedef {import('@typescript-eslint/utils').TSESTree.Decorator} Decorator
+ * @typedef {import('estree').Node} Node
+ * @typedef {import('eslint').Rule.RuleModule} RuleModule
+ */
+
+/** @type {RuleModule} */
 module.exports = {
     meta: {
         type: 'problem',
@@ -20,9 +45,12 @@ module.exports = {
         const injectableClassStack = [];
 
         return {
+            /**
+             * @param {ClassDeclaration} node
+             */
             ClassDeclaration(node) {
                 const hasInjectable = node.decorators?.some(
-                    (/** @type {any} */ d) =>
+                    (/** @type {Decorator} */ d) =>
                         d.expression &&
                         d.expression.type === 'CallExpression' &&
                         d.expression.callee &&
@@ -63,7 +91,7 @@ module.exports = {
                         const allDecorators = target.decorators || [];
 
                         const namedDecorator = allDecorators.find(
-                            (/** @type {any} */ d) =>
+                            (/** @type {Decorator} */ d) =>
                                 d.expression &&
                                 d.expression.type === 'CallExpression' &&
                                 d.expression.callee &&
