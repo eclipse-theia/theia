@@ -16,7 +16,7 @@
     "onStartupFinished"
   ],
   "devDependencies": {
-    "@types/vscode": "^1.99.0"
+    "@types/vscode": "^1.125.0"
   },
   "scripts": {
     "build": "vsce package --no-dependencies"
