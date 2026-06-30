@@ -163,7 +163,7 @@ describe('Preferences', function () {
     it('Allows deletion of individual keys in the override object.', async function () {
         const { startingTabSize } = await setUpOverride();
         await setPreference(tabSize, undefined, overrideIdentifier);
-        assert.equal(preferenceService.get(tabSize, undefined, override), startingTabSize);
+        assert.equal(preferenceService.get(tabSize, { override: overrideIdentifier }), startingTabSize);
         const prefs = await getPreferences();
         shouldBeUndefined(prefs, override, tabSize);
     });
