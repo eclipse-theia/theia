@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
+import { BackendRequestService, RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
@@ -84,7 +84,7 @@ describe('RegistryFetchService', () => {
 
     function buildContainer(requestService: RequestService, config: AIRegistryConfiguration): Container {
         const container = new Container();
-        container.bind(RequestService).toConstantValue(requestService);
+        container.bind(BackendRequestService).toConstantValue(requestService);
         container.bind(AIRegistryConfiguration).toConstantValue(config);
         container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
         container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
