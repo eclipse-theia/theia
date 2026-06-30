@@ -129,7 +129,7 @@ const LSToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/directory', 'Directory')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Directory')}</span>
                 <code className="claude-code-tool detail-value">{input.path}</code>
             </div>
             {input.ignore && input.ignore.length > 0 && (

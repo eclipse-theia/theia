@@ -27,6 +27,7 @@ import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-b
 import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../common/mcp/mcp-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from '../common/registry-fetch-service';
+import { RegistrySearchFilter } from '../common/registry-search-filter';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from '../common/skill/skill-registry-entry-resolver';
 import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
@@ -48,6 +49,7 @@ export default new ContainerModule(bind => {
     bind(SkillRegistryEntryResolver).toService(SkillRegistryEntryResolverImpl);
     bind(RegistryFetchServiceImpl).toSelf().inSingletonScope();
     bind(RegistryFetchService).toService(RegistryFetchServiceImpl);
+    bind(RegistrySearchFilter).toSelf().inSingletonScope();
     bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
     bind(MCPInstallService).toService(MCPInstallServiceImpl);
 

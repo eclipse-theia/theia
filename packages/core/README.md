@@ -85,12 +85,12 @@ export class SomeClass {
   - `@lumino/signaling` (from [`@lumino/signaling@^2.1.5`](https://www.npmjs.com/package/@lumino/signaling))
   - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.4`](https://www.npmjs.com/package/@lumino/virtualdom))
   - `@lumino/widgets` (from [`@lumino/widgets@2.7.5`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.5))
-  - `@theia/application-package` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/request` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
-  - `@theia/request/lib/proxy` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
-  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/application-package` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/request` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
+  - `@theia/request/lib/proxy` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
+  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
   - `fs-extra` (from [`fs-extra@^4.0.3`](https://www.npmjs.com/package/fs-extra))
   - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
   - `inversify` (from [`inversify@^6.2.2`](https://www.npmjs.com/package/inversify))
@@ -164,7 +164,7 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
     - e.g: `theia.app.com,some.other.domain:3000`
   - The port number is important if your application is not hosted on either `80` or `443`.
   - If possible, you should set this environment variable:
-    - When not set, Theia will allow any origin to access the WebSocket services.
+    - When not set, Theia will enforce same-origin access to the WebSocket services.
     - When set, Theia will only allow the origins defined in this environment variable.
 - `FRONTEND_CONNECTION_TIMEOUT`
   - The duration in milliseconds during which the backend keeps the connection contexts for the frontend to reconnect.

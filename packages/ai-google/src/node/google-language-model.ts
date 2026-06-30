@@ -26,15 +26,20 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    ServerToolCall,
+    ServerToolDescriptor,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
+import {
+    GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig, Tool, UrlContextMetadata, GroundingMetadata
+} from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
 import { googleReasoningFor } from './google-reasoning';
+import { GOOGLE_GOOGLE_SEARCH, GOOGLE_URL_CONTEXT } from './google-server-tools';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 
 interface ToolCallback {
@@ -71,6 +76,10 @@ const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined
         }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ functionResponse: { name: message.name, response: toFunctionResponse(message.content) } }];
+    } else if (LanguageModelMessage.isServerToolUseMessage(message)) {
+        // Gemini grounding / url-context is informational and re-derived by the provider on each turn,
+        // so server tool invocations are not replayed into the conversation history.
+        return undefined;
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
         return [{ thought: true, text: message.thinking }];
     } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
@@ -143,6 +152,9 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
  */
 export class GoogleModel implements LanguageModel {
 
+    /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
+    readonly vendor = 'google';
+
     constructor(
         public readonly id: string,
         public model: string,
@@ -152,7 +164,8 @@ export class GoogleModel implements LanguageModel {
         public retrySettings: () => GoogleLanguageModelRetrySettings,
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public serverTools?: ServerToolDescriptor[]
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -188,6 +201,7 @@ export class GoogleModel implements LanguageModel {
         const settings = this.getSettings(request);
         const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
+        const tools = this.createTools(request, functionDeclarations);
 
         const toolConfig: ToolConfig = {};
 
@@ -195,6 +209,11 @@ export class GoogleModel implements LanguageModel {
             toolConfig.functionCallingConfig = {
                 mode: FunctionCallingConfigMode.AUTO,
             };
+        }
+        // Required by Gemini when combining server tools (urlContext / googleSearch) with function
+        // declarations; without it the API rejects the request with INVALID_ARGUMENT.
+        if ((request.serverTools?.length ?? 0) > 0) {
+            toolConfig.includeServerSideToolInvocations = true;
         }
 
         // Wrap the API call in the retry mechanism
@@ -205,11 +224,7 @@ export class GoogleModel implements LanguageModel {
                     systemInstruction: systemMessage,
                     toolConfig,
                     responseModalities: [Modality.TEXT],
-                    ...(functionDeclarations.length > 0 && {
-                        tools: [{
-                            functionDeclarations
-                        }]
-                    }),
+                    ...(tools.length > 0 && { tools }),
                     temperature: 1,
                     ...settings
                 },
@@ -222,12 +237,22 @@ export class GoogleModel implements LanguageModel {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 const toolCallMap: { [key: string]: ToolCallback } = {};
                 const collectedParts: Part[] = [];
+                // Server tool (url_context / google_search) metadata is reported on the candidate, usually in the final chunk.
+                let latestUrlContextMetadata: UrlContextMetadata | undefined;
+                let latestGroundingMetadata: GroundingMetadata | undefined;
                 try {
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
                         }
-                        const finishReason = chunk.candidates?.[0].finishReason;
+                        const candidate = chunk.candidates?.[0];
+                        if (candidate?.urlContextMetadata) {
+                            latestUrlContextMetadata = candidate.urlContextMetadata;
+                        }
+                        if (candidate?.groundingMetadata) {
+                            latestGroundingMetadata = candidate.groundingMetadata;
+                        }
+                        const finishReason = candidate?.finishReason;
                         if (finishReason) {
                             switch (finishReason) {
                                 // 'STOP' is the only valid (non-error) finishReason
@@ -325,6 +350,12 @@ export class GoogleModel implements LanguageModel {
                         }
                     }
 
+                    // Surface any server tools (url_context / google_search) that the provider executed.
+                    const serverToolCalls = that.buildServerToolCalls(latestUrlContextMetadata, latestGroundingMetadata);
+                    if (serverToolCalls.length > 0) {
+                        yield { server_tool_calls: serverToolCalls };
+                    }
+
                     // Process tool calls if any exist
                     const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
@@ -409,6 +440,69 @@ export class GoogleModel implements LanguageModel {
             description: tool.description,
             parameters: (tool.parameters && Object.keys(tool.parameters.properties).length !== 0) ? tool.parameters as Schema : undefined
         }));
+    }
+
+    /**
+     * Builds the Gemini `tools` array, combining client function declarations with the enabled native server tools.
+     *
+     * Note: combining native tools (`googleSearch` / `urlContext`) with `functionDeclarations` in a single
+     * request requires a Gemini 2.0+ model. Older models (e.g. Gemini 1.5) reject the combination with a 400
+     * error. Since adopters configure both the model and which server tools to offer, this is left to the
+     * provider rather than silently dropping either set of tools.
+     */
+    protected createTools(request: LanguageModelRequest, functionDeclarations: FunctionDeclaration[]): Tool[] {
+        const tools: Tool[] = [];
+        if (functionDeclarations.length > 0) {
+            tools.push({ functionDeclarations });
+        }
+        const serverTools = request.serverTools ?? [];
+        if (serverTools.includes(GOOGLE_URL_CONTEXT)) {
+            tools.push({ urlContext: {} });
+        }
+        if (serverTools.includes(GOOGLE_GOOGLE_SEARCH)) {
+            tools.push({ googleSearch: {} });
+        }
+        return tools;
+    }
+
+    /**
+     * Summarizes the provider-executed server tools (url_context / google_search) into finished
+     * {@link ServerToolCall}s for display. Gemini does not provide tool ids, so a fresh id is generated;
+     * these calls are informational and are not replayed into the conversation history.
+     */
+    protected buildServerToolCalls(urlContextMetadata?: UrlContextMetadata, groundingMetadata?: GroundingMetadata): ServerToolCall[] {
+        const calls: ServerToolCall[] = [];
+        const urlMetadata = urlContextMetadata?.urlMetadata?.filter(entry => entry.retrievedUrl);
+        if (urlMetadata && urlMetadata.length > 0) {
+            const summary = urlMetadata.map(entry => `${entry.retrievedUrl} (${entry.urlRetrievalStatus ?? 'unknown'})`).join('\n');
+            calls.push({
+                id: UUID.uuid4().replace(/-/g, ''),
+                name: GOOGLE_URL_CONTEXT,
+                arguments: JSON.stringify({ urls: urlMetadata.map(entry => entry.retrievedUrl) }),
+                finished: true,
+                result: { content: [{ type: 'text', text: summary }] }
+            });
+        }
+        const webSearchQueries = groundingMetadata?.webSearchQueries;
+        if (webSearchQueries && webSearchQueries.length > 0) {
+            const sources = (groundingMetadata?.groundingChunks ?? [])
+                .map(chunk => chunk.web)
+                .filter((web): web is NonNullable<typeof web> => !!web)
+                .map(web => web.uri ? `${web.title ?? web.uri} (${web.uri})` : `${web.title ?? ''}`)
+                .filter(entry => entry.length > 0);
+            const summaryParts = [`Queries: ${webSearchQueries.join(', ')}`];
+            if (sources.length > 0) {
+                summaryParts.push(`Sources:\n${sources.join('\n')}`);
+            }
+            calls.push({
+                id: UUID.uuid4().replace(/-/g, ''),
+                name: GOOGLE_GOOGLE_SEARCH,
+                arguments: JSON.stringify({ queries: webSearchQueries }),
+                finished: true,
+                result: { content: [{ type: 'text', text: summaryParts.join('\n\n') }] }
+            });
+        }
+        return calls;
     }
 
     protected async handleNonStreamingRequest(

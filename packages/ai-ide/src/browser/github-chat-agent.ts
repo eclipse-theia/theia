@@ -79,6 +79,7 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
                     ],
                     request,
                     async selectedOption => {
+                        request.response.stopWaitingForInput();
                         if (selectedOption.value === 'configure') {
                             await this.offerConfiguration();
                             request.response.response.addContent(new MarkdownChatResponseContentImpl(nls.localize('theia/ai/ide/github/configureGitHubServer/followup',
@@ -108,6 +109,7 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
                     ],
                     request,
                     async selectedOption => {
+                        request.response.stopWaitingForInput();
                         if (selectedOption.value === 'yes') {
                             const progress = request.response.addProgressMessage({
                                 content: nls.localize('theia/ai/ide/github/startGitHubServer/progress', 'Starting GitHub MCP server.'),

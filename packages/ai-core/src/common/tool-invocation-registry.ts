@@ -57,6 +57,13 @@ export interface ToolInvocationRegistry {
     getAllFunctions(): ToolRequest[];
 
     /**
+     * Unregisters a single tool from the registry.
+     *
+     * @param toolId - The unique identifier of the tool to unregister.
+     */
+    unregisterTool(toolId: string): void;
+
+    /**
      * Unregisters all tools provided by a specific tool provider.
      *
      * @param providerName - The name of the tool provider whose tools should be removed (as specificed in the `ToolRequest`).
@@ -97,6 +104,12 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
         this.providers.getContributions().forEach(provider => {
             this.registerTool(provider.getTool());
         });
+    }
+
+    unregisterTool(toolId: string): void {
+        if (this.tools.delete(toolId)) {
+            this.onDidChangeEmitter.fire();
+        }
     }
 
     unregisterAllTools(providerName: string): void {

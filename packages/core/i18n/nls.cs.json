@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "Zobrazit nastavení AI",
   "ai.executePlanWithCoder": "Provést aktuální plán s Coderem",
   "aiConfiguration:open": "Otevřít zobrazení konfigurace AI",
+  "aiConfiguration:openTools": "Otevřít konfiguraci nástrojů AI",
   "aiHistory:clear": "Historie AI: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení historie AI",
   "aiHistory:sortChronologically": "Historie AI: Seřadit chronologicky",
@@ -27,8 +28,8 @@
           "title": "Přepsání funkcí"
         },
         "completionNotification": {
-          "mdDescription": "Chování oznámení, když tento agent dokončí úkol. Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n- `os-notification`: Zobrazit oznámení OS/systému\n- `message`: Zobrazit oznámení ve stavové liště/oblasti zpráv\n- `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n- `off`: Zakázat oznámení pro tohoto agenta",
-          "title": "Oznámení o dokončení"
+          "mdDescription": "Chování oznámení, když tento agent vyžaduje vaši pozornost, tj. dokončil úkol nebo žádá o váš vstup.                     Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n                    - `os-notification`: Zobrazovat oznámení operačního systému/systému\n                    - `message`: Zobrazovat oznámení ve stavovém řádku/oblasti zpráv\n                    - `blink`: Blikání nebo zvýraznění uživatelského rozhraní\n                    - `off`: Zakázat oznámení pro tento agent",
+          "title": "Oznámení"
         },
         "enable": {
           "mdDescription": "Určuje, zda má být agent povolen (true) nebo zakázán (false).",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "Určuje aktuálně vybrané varianty výzvy pro tohoto agenta.",
           "title": "Vybrané varianty"
+        },
+        "serverToolSelections": {
+          "mdDescription": "Uživatelské volby pro nástroje serveru poskytovatele, řazené podle výrobce modelu. Každá hodnota obsahuje ID povolených nástrojů serveru pro daného výrobce.",
+          "title": "Výběr nástrojů serveru"
         },
         "showInChat": {
           "mdDescription": "Určuje, zda se agent má zobrazit v uživatelském rozhraní chatu (true) nebo skrýt (false).",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "Obejít kontrolu požadavků jazykového modelu. Tuto možnost povolte, pokud používáte externí agenty (např. Claude Code), které nevyžadují jazykové modely Theia."
         },
+        "category": "AI",
         "changeSetDefaultTitle": "Navrhované změny",
         "changeSetFileDiffUriLabel": "Změny AI: {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "Soubor {0} se od vytvoření tohoto návrhu změnil. Opravdu chcete změnu vrátit zpět?",
         "couldNotFindMatchingLM": "Nebylo možné najít odpovídající jazykový model. Zkontrolujte prosím nastavení!",
         "couldNotFindReadyLMforAgent": "Nenašel jsem připravený jazykový model pro agent {0}. Zkontrolujte prosím nastavení!",
+        "customAgents": {
+          "migrationResult": "Migrace vlastních agentů: {0} migrováno, {1} selhalo, {2} starší soubor customAgents.yml zálohován do souboru .bak, {3} přepsání výzev začleněno do souboru agent.md.",
+          "rerunMigration": "Znovu spustit migraci vlastního agenta"
+        },
         "defaultAgent": {
           "description": "Volitelné: <název agenta> chatového agenta, který má být vyvolán, pokud není v dotazu uživatele explicitně uveden žádný agent pomocí @<název agenta>. Pokud není nakonfigurován žádný výchozí agent, budou použity výchozí nastavení Theia."
         },
@@ -215,7 +225,7 @@
           "label": "AI Chat"
         },
         "welcomeScreenSessions": {
-          "description": "Počet řádků posledních chatových relací, které se mají zobrazit na úvodní obrazovce. Počet viditelných relací závisí na dostupné šířce. Nastavte hodnotu 0, chcete-li skrýt sekci posledních chatů."
+          "description": "Maximální počet chatových relací, které se mají zobrazit v přehledu chatu (úvodní obrazovka). Nejprve se vyplní aktivní relace; další relace jsou přístupné přes odkaz „Procházet všechny chaty...“. Snižte tuto hodnotu, pokud při větším přiblížení editoru dochází k zobrazení posuvníku. Nastavením na 0 zcela skryjete vložený seznam; relace zůstanou přístupné přes odkaz „Procházet všechny chaty...“."
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "Vestavěné funkce poskytované rozšířeními {0}",
         "genericCapabilities": "Obecné schopnosti",
         "mcpFunctionsDescription": "Funkce protokolu Model Context Protocol (MCP) z připojených serverů",
+        "mermaid-rendering": {
+          "copySource": "Kopírovat zdroj",
+          "error": "Nelze vykreslit diagram Mermaid. Přepněte do zobrazení zdrojového kódu a zkontrolujte definici.",
+          "rendering": "Vykreslování schématu…",
+          "resetView": "Obnovit zobrazení",
+          "showDiagram": "Zobrazit schéma",
+          "showSource": "Zobrazit zdroj",
+          "title": "Diagram v Mermaid",
+          "wheelZoomHint": "{0} + Posunout"
+        },
         "noChatAgentsAvailable": "Žádní chatovací agenti nejsou k dispozici.",
         "noMatchingCapabilities": "Žádné odpovídající funkce",
         "openDiff": "Otevřít Diff",
@@ -300,14 +320,12 @@
         "performThisTask": "Proveďte tento úkol.",
         "persistedSession": "Trvalá relace (kliknutím obnovíte)",
         "promptFragmentsDescription": "Vlastní fragmenty výzev, které mají být zahrnuty do konverzace",
-        "reasoning": {
-          "minimal": "Minimální"
-        },
         "removeChat": "Odebrat chat",
         "requestNotFoundForRetry": "Požadavek nebyl nalezen, zkuste to znovu.",
         "responseFrom": "Odpověď od {0}",
         "saveCurrentSelectionsToSettings": "Uložit nastavení funkcí",
         "searchCapabilities": "Vyhledávací funkce",
+        "sectionRestored": "Obnoveno",
         "selectAgentQuickPickPlaceholder": "Vyberte agenta pro novou relaci",
         "selectAllInCategory": "Vybrat vše v této kategorii",
         "selectChat": "Vybrat chat",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "Vyberte kontext úkolu, který chcete připojit",
         "selectVariableArguments": "Vyberte proměnné argumenty",
         "send": "Odeslat (Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "server",
+          "serverTooltip": "Spuštěno na serverech poskytovatele (nikoli lokálně). Nástroje serveru jsou po výběru automaticky schváleny."
+        },
+        "serverToolWarning": "Tento nástroj je po výběru automaticky schválen. Model jej může spustit kdykoli.",
+        "serverTools": "Nástroje serveru",
+        "serverToolsDescription": "Serverové nástroje jsou spouštěny na straně serveru pomocí LLM v infrastruktuře dodavatele.",
+        "serverToolsWarning": "Tyto nástroje jsou po výběru automaticky schváleny. Model je může kdykoli spustit.",
         "sessionNotFoundForRetry": "Relace nebyla nalezena pro opakování pokusu",
         "skillsDescription": "Opakovaně použitelné pokyny k dovednostem, které lze přidat do konverzace",
         "switchAgentMode": "Přepnout režim agenta",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "Rozumím, povolit automatické schvalování",
           "alwaysAllowGenericWarning": "Tento nástroj vyžaduje potvrzení, než bude možné povolit automatické schvalování. Po povolení budou všechna budoucí vyvolání prováděna bez potvrzení. Povolte tuto funkci pouze v případě, že tomuto nástroji důvěřujete a rozumíte potenciálním rizikům.",
           "alwaysAllowTitle": "Povolit automatické schvalování pro „{0}“?",
+          "approveLatest": "Schválit potvrzení nejnovějšího nástroje",
           "autoCancel": "Automatické zrušení v{0}",
           "canceled": "Provedení nástroje zrušeno",
           "denied": "Spuštění nástroje zamítnuto",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "Zadejte důvod zamítnutí...",
           "deny-session": "Odmítnout pro tento chat",
           "deny-with-reason": "Odmítnout s odůvodněním...",
+          "denyLatest": "Odmítnout potvrzení nejnovějšího nástroje",
           "executionDenied": "Spuštění nástroje zamítnuto",
           "header": "Potvrzení spuštění nástroje"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "aktuální adresář",
         "differentAgentRequestWarning": "Předchozí požadavek na chat byl vyřízen jiným agentem. Claude Code tyto ostatní zprávy nevidí.",
-        "directory": "Adresář",
-        "domain": "Doména",
         "edit": "Upravit {0}",
         "editAutomatically": "Automaticky upravit",
         "editing": "Úpravy",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Akce",
           "addCustomAgent": "Přidat vlastní agenta",
           "availableCapabilities": "Dostupné funkce",
-          "completionNotificationDescriptionPrefix": "Vyberte, jakým způsobem chcete být informováni, když tento agent dokončí svůj úkol. „Výchozí“ používá ",
+          "completionNotificationDescriptionPrefix": "Vyberte, jakým způsobem chcete být upozorněni, když tento agent vyžaduje vaši pozornost, tj. když dokončí svůj úkol nebo požádá o váš vstup. „Výchozí“ používá ",
           "defaultNotificationDescription": "Používá globální nastavení oznámení AI.",
           "enableAgent": "Povolit agenta",
           "llmRequirements": "Požadavky LLM",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "Výchozí způsob oznámení používaný při dokončení úkolu agentem AI. Jednotliví agenti mohou toto nastavení přepsat.\n- `os-notification`: Zobrazit oznámení OS/systému\n- `message`: Zobrazit oznámení ve stavové liště/oblasti zpráv\n- `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n- `off`: Zakázat všechna oznámení",
+          "mdDescription": "Výchozí způsob upozornění používaný v případě, že agent AI potřebuje vaši pozornost, tj. dokončil úkol nebo žádá o váš vstup. Jednotliví agenti mohou toto nastavení přepsat.",
           "title": "Výchozí typ oznámení"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "Nastavení vlastních požadavků"
         },
         "skillDirectories": {
-          "description": "Další adresáře obsahující definice dovedností (soubory SKILL.md). Dovednosti poskytují opakovaně použitelné pokyny, na které mohou odkazovat agenti AI. Adresář .prompts/skills ve vašem pracovním prostoru a adresář skills ve složce konfigurace vašeho produktu jsou vždy zahrnuty."
+          "description": "Další adresáře obsahující definice dovedností (soubory SKILL.md). Dovednosti poskytují opakovaně použitelné pokyny, na které mohou odkazovat agenti AI. Adresáře .prompts/skills a .agents/skills ve vašem pracovním prostoru, adresář .agents/skills ve vašem domovském adresáři a adresář skills ve složce s konfigurací vašeho produktu jsou vždy zahrnuty."
         },
         "skillsVariable": {
           "description": "Vrací seznam dostupných dovedností, které mohou používat agenti AI."
@@ -947,10 +972,8 @@
         "agent-description": "Nastavte parametry AI agenta, včetně aktivace, výběru LLM, přizpůsobení šablony výzvy a vytvoření vlastního agenta v [AI Configuration View]({0}).",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Vytvořit nový soubor",
-            "openExistingFile": "Otevřít existující soubor",
-            "placeholder": "Vyberte, kde chcete vytvořit nebo otevřít soubor vlastních agentů.",
-            "title": "Vyberte umístění pro soubor vlastních agentů"
+            "placeholder": "Vyberte, kam chcete vytvořit soubor agents/<id>/agent.md",
+            "title": "Vyberte umístění pro nového vlastního agenta"
           },
           "genericCapabilitiesSettings": "Obecné funkce",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "Funkce",
             "mcpFunctions": "Funkce MCP",
             "promptFragments": "Fragmenty příkazových řádků"
+          },
+          "newAgent": {
+            "createFailed": "Nelze vytvořit vlastní agenta „{0}“: {1}",
+            "defaultDescription": "Vlastní agent. Tento popis upravte v souboru agent.md.",
+            "defaultPrompt": "Jste ochotný agent. Upravte tento pokyn podle svých potřeb.",
+            "idInvalid": "Používejte pouze písmena, číslice, pomlčku, podtržítko nebo tečku.",
+            "idPrompt": "ID agenta (používá se jako název složky v adresáři agents/)",
+            "idTitle": "Nový vlastní agent",
+            "noLocation": "Nelze vytvořit vlastní agenta: není nakonfigurováno umístění šablon příkazových řádků. Nastavte globální složku nebo složku šablon příkazových řádků v pracovním prostoru a zkuste to znovu."
           },
           "noDescription": "Popis není k dispozici.",
           "resetAllCapabilities": "Obnovit všechny funkce na jejich výchozí hodnoty",
@@ -1136,9 +1168,10 @@
           "description": "Agent pro kontrolu PR založený na umělé inteligenci, který koordinuje celý pracovní postup kontroly kódu: načítá informace o PR, prozkoumává kódovou základnu, provádí strukturovanou analýzu, interaktivně provádí uživatele nálezy pomocí prohlížečů rozdílů a volitelně vytváří čekající kontrolu na GitHubu."
         },
         "prompt-template-description": "Vyberte varianty výzev a přizpůsobte šablony výzev pro agenty AI v [zobrazení konfigurace AI]({0}).",
-        "recentChats": "Nedávné chaty",
+        "restoredSession": "Obnovená relace",
         "restrictedModeDetails": "Chat s AI, návrhy v textu, akce s kódem a šablony výzev jsou deaktivovány",
         "restrictedModeLabel": "Funkce AI (v omezeném režimu zakázány)",
+        "sectionRestored": "Obnoveno",
         "shellAllowlist": {
           "placeholder": "Např. „git log“ (přesné) nebo „git log *“ (s argumenty)"
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "Příkazy se lomítkem"
         },
+        "toolConfirmationInfo": {
+          "header": "Potvrzení nástroje"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "Rozumím, povolit automatické schvalování",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "Výchozí režim potvrzení nástroje:"
+          },
+          "recommendedDefaults": {
+            "apply": "Povolit výchozí nástroje",
+            "dialogConfirm": "Rozumím, povolit",
+            "dialogTitle": "Povolit výchozí nástroje?",
+            "message": "Spuštění nástrojů v současné době vyžaduje schválení. Automaticky povolit všechny vestavěné nástroje najednou. Nástroje, které vyžadují dodatečné potvrzení (např. spuštění shellu), nástroje MCP a jakékoli nástroje přidané později budou i nadále před spuštěním vyžadovat potvrzení.",
+            "msg": {
+              "line1": "Tím se u všech aktuálně registrovaných vestavěných nástrojů nastaví možnost „Vždy povolit“.",
+              "line2": "Nástroje, které vyžadují dodatečné potvrzení (například spuštění příkazového řádku), se i nadále budou před spuštěním ptát na souhlas.",
+              "line3": "Nástroje MCP pocházejí od třetích stran a nejsou součástí balíčku. V tomto zobrazení je můžete povolit jednotlivě.",
+              "line4": "U nástrojů přidaných později bude i nadále výchozí volbou „Potvrdit“, abyste si je mohli zkontrolovat.",
+              "line5": "Toto nastavení můžete později v tomto zobrazení změnit."
+            }
           },
           "resetAll": "Vynulovat vše",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "Vyberte proměnnou.",
           "usedByAgents": "Používá se agenty"
-        }
+        },
+        "waitingForInput": "Čekáme na váš vstup"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "Servery MCP (spouštění při startu systému zablokováno)",
         "error": {
           "allServersRunning": "Všechny servery MCP již běží.",
+          "authenticationRequired": "Server MCP „{0}“ vyžaduje ověření. Spusťte server znovu a přihlaste se.",
+          "getRedirectUrlFailed": "Při určování přesměrovací URL MCP OAuth došlo k chybě.",
+          "noOAuthServersConfigured": "Není nakonfigurován žádný server MCP s podporou OAuth.",
           "noRunningServers": "Žádné servery MCP nejsou spuštěny.",
           "noServersConfigured": "Není nakonfigurován žádný server MCP.",
-          "startFailed": "Při spouštění serveru MCP došlo k chybě."
+          "oauthRequiresTrustedWorkspace": "Spuštění serverů MCP s podporou OAuth vyžaduje důvěryhodný pracovní prostor.",
+          "signInFailed": "Při přihlašování k serveru MCP došlo k chybě.",
+          "signOutFailed": "Při odhlášení ze serveru MCP došlo k chybě.",
+          "startFailed": "Při spouštění serveru MCP došlo k chybě.",
+          "stopFailed": "Při zastavování serveru MCP došlo k chybě."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: Získat přesměrovací URL MCP OAuth"
         },
         "info": {
-          "serverStarted": "Server MCP „{0}“ byl úspěšně spuštěn. Registrované nástroje: {1}"
+          "oauthRedirectUrl": "Přesměrovací URL MCP OAuth: {0}",
+          "serverSignedIn": "Přihlášeno k serveru MCP „{0}“.",
+          "serverSignedOut": "Odhlášeno ze serveru MCP „{0}“.",
+          "serverStarted": "Server MCP „{0}“ byl úspěšně spuštěn. Registrované nástroje: {1}",
+          "signInCancelled": "Přihlášení k serveru MCP „{0}“ bylo zrušeno."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Dokončete přihlášení pomocí MCP OAuth ve svém prohlížeči. Pokud se neotevřela žádná karta pro přihlášení, váš prohlížeč pravděpodobně zablokoval vyskakovací okno.",
+          "notification": {
+            "signInPrompt": "Spuštění serveru MCP „{0}“ vyžaduje autorizaci."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "Příkaz používaný ke spuštění serveru MCP, např. „uvx“ nebo „npx“.",
             "title": "Příkaz k provedení serveru MCP"
           },
+          "deferLoading": {
+            "mdDescription": "Jsou-li povoleny, jsou nástroje poskytované tímto serverem označeny jako odložené ve vygenerovaném fragmentu výzvy `mcp_<server>_tools`. Odložené nástroje nejsou do kontextu modelu načteny předem. Místo toho je model vyhledává na vyžádání prostřednictvím vestavěného mechanismu vyhledávání nástrojů poskytovatele (Anthropic, OpenAI), je-li tento mechanismus podporován. To výrazně snižuje zátěž v podobě tokenů u serverů, které zpřístupňují mnoho nástrojů.",
+            "title": "Odložit načítání"
+          },
           "env": {
             "mdDescription": "Volitelné proměnné prostředí, které lze nastavit pro server, například klíč API.",
             "title": "Proměnné prostředí"
           },
           "headers": {
-            "mdDescription": "Volitelné doplňkové hlavičky zahrnuté v každém požadavku na server.",
+            "mdDescription": "Volitelná doplňková hlavička přiložená ke každému požadavku odeslanému na server. Hodnoty hlaviček jsou uloženy v předvolbách jako prostý text; vyhněte se nastavení pracovního prostoru, pokud obsahují citlivé hodnoty.",
             "title": "Záhlaví"
           },
-          "mdDescription": "Nakonfigurujte servery MCP buď lokálně pomocí příkazu, argumentů a volitelně proměnných prostředí, nebo vzdáleně pomocí URL serveru, ověřovacího tokenu a volitelně názvu ověřovací hlavičky. Navíc je možné nakonfigurovat automatické spuštění (výchozí nastavení je true). Každý server je identifikován jedinečným klíčem, například „brave-search“ nebo „filesystem“. Chcete-li spustit server, použijte příkaz „MCP: Start MCP Server“, který vám umožní vybrat požadovaný server. Chcete-li server zastavit, použijte příkaz „MCP: Stop MCP Server“. Upozorňujeme, že automatické spuštění se projeví až po restartu, proto je nutné server poprvé spustit ručně.\nPříklad konfigurace:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    „env“: {\n      „BRAVE_API_KEY“: „VÁŠ_API_KLÍČ“\n    },\n  },\n  „filesystem“: {\n    „command“: „npx“,\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "Servery MCP lze konfigurovat buď lokálně pomocí příkazu, argumentů a volitelně proměnných prostředí, nebo vzdáleně pomocí URL serveru, autentizačního tokenu, konfigurace OAuth a volitelně názvu autentizační hlavičky. Dále je možné nakonfigurovat automatické spuštění (ve výchozím nastavení true). Každý server je identifikován jedinečným klíčem, například „brave-search“ nebo „filesystem“. Chcete-li spustit server, použijte příkaz „MCP: Start MCP Server“, který vám umožní vybrat požadovaný server. Chcete-li server zastavit, použijte příkaz „MCP: Stop MCP Server“. Upozorňujeme, že automatické spuštění se projeví až po restartu; při prvním spuštění je nutné server spustit ručně. Servery nainstalované z registru AI obsahují dodatečný blok `registryMetadata`, který je spravován automaticky a není určen k ruční úpravě.\nPříklad konfigurace:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "Volitelné přepsání adresy URL autorizačního serveru. Pokud není zadáno, Theia ji zjistí ze serveru MCP.",
+              "title": "Autorizační server"
+            },
+            "clientId": {
+              "mdDescription": "Volitelný statický identifikátor klienta OAuth. Pokud není zadán, Theia se pokusí o dynamickou registraci klienta.",
+              "title": "ID klienta"
+            },
+            "clientSecret": {
+              "mdDescription": "Volitelný tajný klíč klienta OAuth pro autorizační servery, které přijímají pouze předem zaregistrované důvěrné klienty (bez dynamické registrace klientů). Používá se pouze společně s ID klienta. Ukládá se v předvolbách jako prostý text; pokud je tento tajný klíč citlivý, vyhněte se jeho ukládání v nastaveních pracovního prostoru.",
+              "title": "Tajný klíč klienta"
+            },
+            "mdDescription": "Volitelná konfigurace OAuth 2.1 pro vzdálené servery MCP, které vyžadují autorizaci. Přítomnost tohoto objektu povoluje OAuth pro daný server; jeho odstraněním OAuth zakážete. Theia ve výchozím nastavení používá veřejné klienty s PKCE; tajný klíč klienta nakonfigurujte pouze pro servery, které vyžadují předem zaregistrovaného důvěrného klienta. Změny se projeví po restartování serveru MCP.",
+            "resource": {
+              "mdDescription": "Volitelné přepsání indikátoru zdroje podle RFC 8707 pro tento server MCP.",
+              "title": "Zdroj"
+            },
+            "scopes": {
+              "mdDescription": "Volitelné rozsahy OAuth, o které lze požádat, pokud server tyto rozsahy neinzeruje.",
+              "title": "Rozsahy"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "Hash obsahu schválení registru použitého k instalaci tohoto serveru.",
+              "title": "Hash konfigurace registru"
+            },
+            "mdDescription": "Metadata o původu pro server nainstalovaný z registru AI. Napsáno uživatelem `@theia/ai-registry`; uživatel je nemůže upravovat.",
+            "serverId": {
+              "mdDescription": "Identifikuje položku registru AI, ze které byl tento server nainstalován.",
+              "title": "ID serveru registru"
+            },
+            "title": "Metadata registru",
+            "version": {
+              "mdDescription": "Verze zveřejněná v registru zaznamenaná v okamžiku instalace.",
+              "title": "Verze registru"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "Ověřovací token pro server, je-li vyžadován. Používá se k ověření u vzdáleného serveru.",
+            "mdDescription": "Ověřovací token pro server, je-li vyžadován. Ten je uložen v předvolbách jako prostý text; pokud je token citlivý, vyhněte se jeho ukládání do nastavení pracovního prostoru.",
             "title": "Ověřovací token"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "Konfigurace serveru MCP"
         },
+        "signin": {
+          "label": "MCP: Přihlášení k serveru MCP"
+        },
+        "signout": {
+          "label": "MCP: Odhlášení ze serveru MCP"
+        },
         "start": {
           "label": "MCP: Spustit server MCP"
         },
         "stop": {
           "label": "MCP: Zastavit server MCP"
         },
+        "tool": {
+          "noTools": "Nejsou k dispozici žádné nástroje."
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Kořeny definují hranice, kde mohou servery pracovat v rámci souborového systému. Pokud je tato možnost povolena, budou složky pracovního prostoru použity jako kořeny, jinak budou mít servery MCP přístup k celému souborovému systému. Změna tohoto nastavení restartuje všechny spuštěné servery MCP, aby se nová konfigurace kořenů uplatnila.",
           "title": "Použít pracovní prostor jako root"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "Nepodařilo se použít změny předvoleb serveru MCP: {0}",
+          "signInNotCompleted": "Přihlášení k serveru MCP „{0}“ nebylo dokončeno."
         }
       },
       "mcpConfiguration": {
         "autostart": "Automatické spuštění",
-        "connectServer": "Připojit",
+        "browseAIRegistry": "Procházet registr AI",
+        "browseAIRegistryTooltip": "Otevřete okno „Rozšíření“ a procházejte položky registru AI",
+        "command": {
+          "addServer": "Přidat lokální konfiguraci MCP..."
+        },
         "connectingServer": "Připojování...",
         "copiedAllList": "Zkopíroval všechny nástroje do schránky (seznam všech nástrojů)",
         "copiedAllSingle": "Zkopírováno všechny nástroje do schránky (jediný fragment příkazového řádku se všemi nástroji)",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "Kopírovat vše pro chat (jediný fragment výzvy se všemi nástroji)",
         "copyForPrompt": "Nástroj pro kopírování (pro chat nebo šablonu výzvy)",
         "copyForPromptTemplate": "Zkopírujte vše pro šablonu výzvy (jediný fragment výzvy se všemi nástroji)",
+        "deferLoading": "Odložit načtení nástrojů",
         "deleteServer": "Odstranit server",
         "deleteServerDialogMsg": "Opravdu chcete odstranit server „{0}“?",
         "deleteServerDialogTitle": "Odstranit server MCP",
@@ -1312,11 +1445,23 @@
           "autostart": "Automatické spuštění",
           "commandPlaceholder": "Např. npx nebo uvx",
           "commandRequired": "Pro místní servery je vyžadován příkaz.",
+          "deferLoading": "Odložit načítání nástrojů (vyhledávat nástroje podle potřeby pomocí vyhledávání nástrojů poskytovatele)",
           "envPlaceholder": "KEY=hodnota (jedna na řádek)",
           "headersPlaceholder": "Záhlaví-název=hodnota (jedno na řádek)",
           "localServer": "Místní (příkaz)",
           "nameExists": "Server s tímto názvem již existuje.",
           "nameRequired": "Název serveru je povinný.",
+          "oauthAuthorizationServerInvalid": "Autorizační server OAuth musí být platná adresa URL typu http(s)",
+          "oauthAuthorizationServerPlaceholder": "Volitelná adresa URL autorizačního serveru",
+          "oauthClientIdPlaceholder": "Volitelný statický identifikátor klienta",
+          "oauthClientSecretPlaceholder": "Pouze pro servery vyžadující důvěrného klienta",
+          "oauthPublicClientDescription": "Theia ve výchozím nastavení používá veřejné klienty OAuth s PKCE. Tajný klíč klienta zadejte pouze v případě, že server vyžaduje předem zaregistrovaného důvěrného klienta.",
+          "oauthRedirectUrlDescription": "Na tuto URL adresu jsou doručovány zpětné volání pro autorizaci. Pokud máte statické ID klienta, zaregistrujte jej u svého poskytovatele OAuth jako přesměrovací URI.",
+          "oauthResourceInvalid": "Zdroje OAuth musí být platné adresy URL typu http(s)",
+          "oauthResourcePlaceholder": "Volitelná adresa URI zdroje",
+          "oauthScopesPlaceholder": "Rozsahy oddělené mezerami",
+          "oauthSharedCredentialsDescription": "Uložené relace OAuth jsou sdíleny napříč pracovními prostory, které používají stejný název serveru a URL (nebo zdroj).",
+          "remoteOAuthServer": "Vzdálené (OAuth)",
           "remoteServer": "Vzdálený (URL)",
           "saveChanges": "Uložit změny",
           "serverName": "Název serveru",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "Např. https://mcp.example.com",
           "serverUrlRequired": "Pro vzdálené servery je vyžadována adresa URL serveru."
         },
+        "fromRegistryLink": "Z registru",
         "headers": "Záhlaví",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Autorizační server",
+        "oauthClientId": "ID klienta OAuth",
+        "oauthClientSecret": "Tajný klíč klienta OAuth",
+        "oauthRedirectUrl": "Přesměrovací URL",
+        "oauthResource": "Zdroje OAuth",
+        "oauthScopes": "Rozsahy oprávnění OAuth",
+        "openInRegistry": "Otevřít v registru AI: {0}",
         "saveServerError": "Nepodařilo se uložit konfiguraci serveru MCP: {0}",
         "serverAuthToken": "Autorizační token",
         "serverAuthTokenHeader": "Název záhlaví Auth",
         "serverUrl": "URL serveru",
+        "signInServerFailed": "Nepodařilo se přihlásit k serveru MCP „{0}“.",
+        "signInServerNotCompleted": "Přihlášení k serveru MCP „{0}“ nebylo dokončeno.",
+        "signInServerSucceeded": "Přihlášeno k serveru MCP „{0}“.",
+        "signOutServerDialogMsg": "Opravdu se chcete odhlásit ze serveru „{0}“? Tímto krokem dojde k odstranění uložených tokenů OAuth pro tento server.",
+        "signOutServerDialogTitle": "Odhlášení ze serveru MCP",
+        "signOutServerFailed": "Nepodařilo se odhlásit ze serveru MCP „{0}“.",
+        "startServerFailed": "Nepodařilo se spustit server MCP „{0}“.",
+        "stopServerFailed": "Nepodařilo se zastavit server MCP „{0}“.",
         "tools": "Nástroje: "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "Výstupní tokeny",
         "readCachedInputTokens": "Vstupní tokeny načtené z mezipaměti",
         "readCachedInputTokensTooltip": "Sledováno navíc k „vstupnímu tokenu“. Obvykle mnohem levnější než bez cache. Obvykle se nezapočítává do limitů rychlosti.",
-        "total": "Celkem",
         "totalTokensTooltip": "„Vstupní tokeny“ + „Výstupní tokeny“"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": "Zvažte .gitignore"
         },
         "createSkillAgent": {
-          "description": "AI asistent pro vytváření nových dovedností. Dovednosti poskytují opakovaně použitelné pokyny a znalosti v dané oblasti pro AI agenty. Tento agent vám pomáhá vytvářet dobře strukturované dovednosti v adresáři .prompts/skills s příslušným obsahem YAML frontmatter a markdown."
+          "description": "AI asistent pro vytváření nových dovedností. Dovednosti poskytují opakovaně použitelné pokyny a odborné znalosti pro AI agenty. Tento agent vám pomáhá vytvářet dobře strukturované dovednosti v adresáři .agents/skills nebo .prompts/skills s odpovídajícím úvodním blokem YAML a obsahem ve formátu Markdown. Tato funkce je stále v rané fázi vývoje a může dojít k jejím změnám."
         },
         "excludedPattern": {
           "description": "Seznam vzorů (glob nebo regex) pro soubory/složky, které mají být vyloučeny.",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "Navrhované změny"
     },
     "ai-chat-ui": {
+      "browseAllChats": "Prohlédnout si všechny konverzace...",
       "confirm": "Potvrdit",
       "deleteChat": "Smazat chat",
+      "home": "Domů",
       "initiate-session-task-context": "Kontext úkolu: Zahájit relaci",
-      "navigate-back": "Navigovat zpět",
-      "navigate-forward": "Přejít vpřed",
       "noOutput": "Žádný výstup",
       "open-current-session-summary": "Otevřít souhrn aktuální relace",
       "open-settings-tooltip": "Otevřít nastavení AI...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "Zamknout posouvání",
       "scroll-unlock": "Odemknout posouvání",
       "session-settings": "Nastavit parametry relace",
-      "showChats": "Zobrazit chaty...",
       "summarize-current-session": "Shrnout aktuální relaci"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "Agent „{0}“ dokončil svůj úkol.",
       "agentCompletionMessageWithSession": "Agent „{0}“ dokončil svůj úkol v „{1}“.",
       "agentCompletionTitle": "Agent „{0}“ Úkol dokončen",
+      "agentInputNeededMessage": "Agent „{0}“ potřebuje váš vstup.",
+      "agentInputNeededMessageWithSession": "Agent „{0}“ potřebuje váš vstup v „{1}“.",
+      "agentInputNeededTitle": "Agent „{0}“ potřebuje váš vstup",
       "aiDisabledInRestrictedMode": "Funkce AI nejsou k dispozici v nedůvěryhodných pracovních prostorech.",
       "preferences": {
         "linuxEnvHint": "V systému Linux se ujistěte, že je proměnná definována v `~/.profile` (nejen v `~/.bashrc`), pokud spouštíte aplikaci z ikony na ploše. Podrobnosti najdete v [dokumentaci](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "Žádné úkoly"
       },
-      "userInteractionCanceled": "Zrušeno",
       "userInteractionCommentPlaceholder": "Přidejte komentář k tomuto kroku...",
       "userInteractionEmpty": "Prázdné",
       "userInteractionFinishStep": "Dokončit",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "Příprava interakce s uživatelem...",
       "userInteractionPreparingSteps": "Příprava: {0} (kroky {1})",
       "userInteractionPreparingTitle": "Příprava: {0}",
-      "userInteractionStepLabel": "Krok {0} z {1}",
       "userInteractionWorkingCopy": "Pracovní kopie"
     },
     "ai-mcp": {
-      "blockedServersLabel": "Servery MCP (blokováno automatické spuštění)"
+      "installDialog": {
+        "authTokenPlaceholder": "Vyžadováno tímto serverem pro připojení",
+        "authTokenRequired": "K instalaci tohoto serveru je vyžadován autentizační token.",
+        "oauthClientIdPlaceholder": "Vyžadováno tímto serverem pro připojení",
+        "oauthClientSecretPlaceholder": "Vyžadováno tímto serverem pro připojení",
+        "oauthCredentialsRequired": "K instalaci tohoto serveru je nutné ID klienta OAuth a tajný klíč klienta.",
+        "oauthDescription": "Tento server používá OAuth s předem zaregistrovaným důvěrným klientem. Zadejte ID klienta a tajný klíč od svého poskytovatele OAuth.",
+        "title": "Nainstalujte MCP Server",
+        "trust": {
+          "unknown": "Není nakonfigurován žádný registr AI – nelze ověřit důvěryhodnost.",
+          "unverified": "Tento server není uveden ve vašem registru AI ({0}). Instalace na vlastní riziko.",
+          "verified": "Schváleno vaším registrem AI ({0})."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "Server MCP s názvem „{0}“ je již nakonfigurován. Pokračováním dojde k přepsání stávajícího záznamu konfigurací z registru.",
+          "title": "Server MCP je již nainstalován"
+        },
+        "missingId": "V odkazu na instalaci chybí povinný parametr „id“.",
+        "noRegistry": "Nelze nainstalovat server MCP „{0}“ – v tomto produktu není nakonfigurován žádný registr AI.",
+        "success": "Nainstalován server MCP „{0}“ z registru AI.",
+        "unknownId": "Server MCP „{0}“ není uveden ve vašem registru AI."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Oprava konfigurace",
+        "link": "Odkaz na registr",
+        "unlink": "Odpojit",
+        "updateTooltip": "Aktualizace z {0} na {1}"
+      },
+      "skill": {
+        "action": {
+          "fix": "Opravit dovednost",
+          "link": "Odkaz na registr",
+          "unlink": "Odpojit"
+        },
+        "fixed": "Obnovena dovednost „{0}“.",
+        "githubToken": {
+          "mdDescription": "Volitelný osobní přístupový token GitHubu, který se používá při stahování dovedností z GitHubu. Token zvyšuje limit GitHubu z 60 na 5000 požadavků za hodinu. **Upozornění:** Při použití tohoto nastavení se token ukládá v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné zadání tokenu upřednostněte použití proměnné prostředí `GITHUB_TOKEN`."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "Nainstalujte si dovednost „{0}“ stažením jejích souborů z adresy {1}?",
+            "title": "Nainstalovat dovednost"
+          },
+          "fetchFailed": "Nepodařilo se načíst registr AI pro instalaci dovednosti „{0}“.",
+          "missingId": "V odkazu na instalaci chybí povinný parametr „id“.",
+          "success": "Nainstalována dovednost „{0}“ z registru AI.",
+          "unknownId": "Dovednost „{0}“ není uvedena ve vašem registru AI."
+        },
+        "installed": "Nainstalovaná dovednost „{0}“.",
+        "linked": "Související dovednost „{0}“.",
+        "uninstalled": "Odinstalovaná dovednost „{0}“.",
+        "unlinked": "Neodkazovaná dovednost „{0}“.",
+        "updated": "Aktualizována dovednost „{0}“.",
+        "warning": {
+          "fix": "Soubory této dovednosti se liší od registru. Kliknutím na „Opravit dovednost“ je obnovíte.",
+          "linkStale": "Tato dovednost byla nainstalována z registru, ale v registru již není uvedena. Kliknutím na Odpojit odstraníte odkaz v registru a soubory ponecháte, nebo kliknutím na Odinstalovat dovednost odstraníte.",
+          "notInRegistry": "Není v registru"
+        },
+        "watcherStopped": "Sledování změn ve složce „skills“ bylo zastaveno. Nainstalované dovednosti se již nemusí automaticky aktualizovat. Pro obnovení aktualizace okno znovu načtěte."
+      },
+      "warning": {
+        "fixConfig": "Konfigurace tohoto serveru se liší od konfigurace v registru. Kliknutím na „Opravit konfiguraci“ ji obnovíte.",
+        "linkStale": "Tento server byl nainstalován z registru, ale v registru již není uveden. Pokud si jste jisti, že jej chcete ponechat a stále vám funguje, klikněte na Odpojit, čímž odstraníte odkaz v registru. V opačném případě klikněte na Odinstalovat a server odeberte.",
+        "notInRegistry": "Není v registru"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "Rozumím, povolit vše",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "Konfigurace oprávnění příkazů shellu",
       "confirmExecution": "Potvrdit příkaz shellu",
       "denialReason": "Důvod",
-      "executionCanceled": "Zrušeno",
       "executionDenied": "Odmítnuto",
       "executionDeniedWithReason": "Odmítnuto s odůvodněním",
       "partialOutput": "Částečný výstup",
@@ -2159,7 +2387,6 @@
       "openByDefault": "Ve výchozím nastavení otevřete náhled namísto editoru."
     },
     "property-view": {
-      "directory": "Adresář",
       "lastModified": "Poslední změna",
       "noProperties": "Žádné vlastnosti nejsou k dispozici.",
       "properties": "Vlastnosti",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "Zavřít Změnit Náhled"
       },
-      "history": "Historie",
       "justNow": "právě teď",
       "mergeEditor": {
         "resetConfirmationTitle": "Opravdu chcete resetovat výsledek sloučení v tomto editoru?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "Chyba při načítání rozšíření.",
       "errorFetchingConfigurationHint": "Příčinou mohou být problémy s konfigurací sítě.",
       "failedInstallingVSIX": "Nedařilo se nainstalovat {0} z VSIX.",
+      "filter": {
+        "showBuiltin": "Zobrazit vestavěné",
+        "showInstalled": "Zobrazit nainstalované",
+        "showRecommended": "Zobrazit doporučené"
+      },
       "invalidVSIX": "Vybraný soubor není platným pluginem „*.vsix“.",
       "license": "Licence: {0}",
       "onlyShowVerifiedExtensionsDescription": "Díky tomu může Centrum rozšíření ({0}) zobrazovat pouze ověřená rozšíření.",
       "onlyShowVerifiedExtensionsTitle": "Zobrazit pouze ověřená rozšíření",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "restrictedModeInstallWarning": "Rozšíření „{0}“ může být deaktivováno, pokud nepodporuje spuštění v omezeném režimu. Důvěřujte tomuto pracovnímu prostoru, aby rozšíření fungovalo podle očekávání.",
-      "searchPlaceholder": "Vyhledávání rozšíření v aplikaci {0}",
+      "searchPlaceholder": "Vyhledat v registru Open VSX",
       "showInstalled": "Zobrazit nainstalovaná rozšíření",
       "showRecommendedExtensions": "Ovládá, zda se zobrazují oznámení o doporučeních rozšíření.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "Jiné verze nejsou k dispozici.",
         "update-version-uninstall-error": "Chyba při odstraňování rozšíření: {0}.",
         "update-version-version-error": "Nepodařilo se nainstalovat verzi {0} aplikace {1}."
       }

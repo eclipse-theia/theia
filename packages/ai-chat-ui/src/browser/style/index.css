@@ -1174,6 +1174,18 @@ details.theia-tool-confirmation-args>summary::marker {
   font-size: 1em;
 }
 
+/* Small badge marking provider-executed server tools; explained via tooltip on hover. Mirrors the prompt-variant badge style. */
+.theia-serverToolCall-badge {
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: normal;
+  color: var(--theia-badge-foreground);
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  white-space: nowrap;
+  user-select: none;
+}
+
 .theia-toolCall-pending {
   color: var(--theia-descriptionForeground);
 }
@@ -2000,6 +2012,13 @@ details.theia-tool-confirmation-args>summary::marker {
   font-size: var(--theia-ui-font-size1);
   padding-bottom: 1px;
   margin-bottom: -1px;
+}
+
+/* Warning icon shown before each provider server tool entry. */
+.theia-GenericCapabilities-ServerTool-Warning {
+  color: var(--theia-editorWarning-foreground);
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 /* Two-column capabilities panel layout */

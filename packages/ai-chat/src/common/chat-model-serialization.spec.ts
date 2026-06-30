@@ -261,6 +261,39 @@ describe('ChatModel Serialization and Restoration', () => {
         });
     });
 
+    describe('Per-request capability selections', () => {
+        it('should serialize and restore serverToolSelections alongside the other capability selections', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const parsedRequest: ParsedChatRequest = {
+                request: {
+                    text: 'Fetch a URL',
+                    serverToolSelections: { anthropic: ['web_fetch', 'web_search'], google: ['url_context'] },
+                    genericCapabilitySelections: { skills: ['skill-1'] },
+                    capabilityOverrides: { 'fragment-1': true }
+                },
+                parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 11 }, 'Fetch a URL')],
+                toolRequests: new Map(),
+                variables: []
+            };
+            model.addRequest(parsedRequest);
+
+            const serialized = model.toSerializable();
+            expect(serialized.requests[0].serverToolSelections).to.deep.equal({
+                anthropic: ['web_fetch', 'web_search'],
+                google: ['url_context']
+            });
+
+            const restored = new MutableChatModel(serialized);
+            const restoredRequest = restored.getRequests()[0];
+            expect(restoredRequest.request.serverToolSelections).to.deep.equal({
+                anthropic: ['web_fetch', 'web_search'],
+                google: ['url_context']
+            });
+            expect(restoredRequest.request.genericCapabilitySelections).to.deep.equal({ skills: ['skill-1'] });
+            expect(restoredRequest.request.capabilityOverrides).to.deep.equal({ 'fragment-1': true });
+        });
+    });
+
     describe('Complete round-trip with complex tree', () => {
         it('should serialize and restore a complex tree structure', () => {
             // Create a complex chat with multiple edits

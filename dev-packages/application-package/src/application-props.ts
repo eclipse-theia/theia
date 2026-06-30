@@ -192,7 +192,8 @@ export namespace BackendApplicationConfig {
     export const DEFAULT: BackendApplicationConfig = {
         singleInstance: true,
         frontendConnectionTimeout: 0,
-        configurationFolder: '.theia'
+        configurationFolder: '.theia',
+        configureProxyFromPreferences: false
     };
     export interface Partial extends ApplicationConfig {
 
@@ -214,6 +215,20 @@ export namespace BackendApplicationConfig {
          * Defaults to `.theia`
          */
         readonly configurationFolder?: string;
+
+        /**
+         * When `true`, proxy-related user preferences (`http.proxy`, `http.proxyStrictSSL`,
+         * `http.proxyAuthorization`) will be read from the backend PreferenceService and applied
+         * to the backend's NodeRequestService. When `false` (the default), proxy settings can only
+         * be configured via CLI flags (`--proxy-url`, etc.) or environment variables (`HTTP_PROXY`,
+         * `HTTPS_PROXY`).
+         *
+         * Enable this for desktop/Electron deployments where the user is trusted. Leave disabled
+         * for cloud deployments where proxy configuration should be controlled by the operator.
+         *
+         * Defaults to `false`.
+         */
+        readonly configureProxyFromPreferences?: boolean;
     }
 }
 

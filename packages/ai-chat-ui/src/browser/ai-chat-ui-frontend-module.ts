@@ -16,6 +16,7 @@
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
+import '../../src/browser/style/mermaid-rendering.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -34,7 +35,9 @@ import {
     HorizontalLayoutPartRenderer,
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
+    MermaidPartRenderer,
     ToolCallPartRenderer,
+    ServerToolCallPartRenderer,
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
@@ -70,6 +73,7 @@ import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-cap
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
+import { ChatInputNeededNotificationContribution } from './chat-input-needed-notification-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);
@@ -111,6 +115,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ToolConfirmationKeybindingContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ToolConfirmationKeybindingContribution);
     bind(KeybindingContribution).toService(ToolConfirmationKeybindingContribution);
+
+    bind(ChatInputNeededNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatInputNeededNotificationContribution);
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
@@ -171,8 +178,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
+    bind(MermaidPartRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(MermaidPartRenderer);
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(ServerToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();

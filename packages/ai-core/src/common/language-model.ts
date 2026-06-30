@@ -42,7 +42,7 @@ export interface ReasoningSupport {
     readonly defaultLevel?: ReasoningLevel;
 }
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ServerToolUseMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -56,6 +56,9 @@ export namespace LanguageModelMessage {
     }
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
+    }
+    export function isServerToolUseMessage(obj: LanguageModelMessage): obj is ServerToolUseMessage {
+        return obj.type === 'server_tool_use';
     }
     export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
         return obj.type === 'image';
@@ -88,6 +91,23 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+    data?: Record<string, string>;
+}
+
+/**
+ * Replay message for a tool the provider executed on its own infrastructure (a server tool).
+ * Unlike {@link ToolUseMessage}/{@link ToolResultMessage}, the invocation and its result are
+ * carried together because the client never executes the tool. Providers reconstruct their
+ * native request blocks from this message on subsequent turns.
+ */
+export interface ServerToolUseMessage {
+    actor: 'ai';
+    type: 'server_tool_use';
+    id: string;
+    name: string;
+    input: unknown;
+    result?: ToolCallResult;
+    /** Provider-specific metadata needed to faithfully reconstruct the server tool blocks on replay. */
     data?: Record<string, string>;
 }
 export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
@@ -287,6 +307,17 @@ export namespace ToolRequest {
 export interface LanguageModelRequest {
     messages: LanguageModelMessage[],
     tools?: ToolRequest[];
+    /**
+     * Ids of tools whose definitions should be deferred and discovered
+     * on-demand via the provider's built-in tool search mechanism.
+     * Providers that do not support deferred loading should ignore this field.
+     */
+    deferredToolIds?: string[];
+    /**
+     * Ids of the provider's server tools (see {@link ServerToolDescriptor}) that are enabled for this
+     * request. Each provider translates the enabled ids into its native server tool configuration.
+     */
+    serverTools?: string[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
     clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
@@ -347,10 +378,10 @@ export interface LanguageModelTextResponse {
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
-export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ServerToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
 
 export const isLanguageModelStreamResponsePart = (part: unknown): part is LanguageModelStreamResponsePart =>
-    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part);
+    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part) || isServerToolCallResponsePart(part);
 
 export interface UsageResponsePart {
     input_tokens: number;
@@ -373,6 +404,26 @@ export interface ToolCallResponsePart {
 }
 export const isToolCallResponsePart = (part: unknown): part is ToolCallResponsePart =>
     !!(part && typeof part === 'object' && 'tool_calls' in part && Array.isArray(part.tool_calls));
+
+/**
+ * A server tool invocation (and its result) that the provider executed on its own infrastructure.
+ * The shape mirrors {@link ToolCall} but flattens name/arguments since there is no client handler.
+ */
+export interface ServerToolCall {
+    id: string;
+    name: string;
+    arguments?: string;
+    result?: ToolCallResult;
+    finished?: boolean;
+    /** Provider-specific metadata needed to faithfully reconstruct the server tool blocks on replay. */
+    data?: Record<string, string>;
+}
+
+export interface ServerToolCallResponsePart {
+    server_tool_calls: ServerToolCall[];
+}
+export const isServerToolCallResponsePart = (part: unknown): part is ServerToolCallResponsePart =>
+    !!(part && typeof part === 'object' && 'server_tool_calls' in part && Array.isArray((part as ServerToolCallResponsePart).server_tool_calls));
 
 export interface ThinkingResponsePart {
     thought: string;
@@ -450,6 +501,19 @@ export type LanguageModelResponse = LanguageModelTextResponse | LanguageModelStr
 export const LanguageModelProvider = Symbol('LanguageModelProvider');
 export type LanguageModelProvider = () => Promise<LanguageModel[]>;
 
+/**
+ * Describes a server tool a provider offers (e.g. Anthropic `web_search`, Gemini `url_context`).
+ * Server tools are executed by the provider's own infrastructure, not by Theia. Each provider
+ * package declares the descriptors it supports and attaches them to its models so that the chat
+ * UI can offer them for selection. The `id` is the stable identifier used in
+ * {@link LanguageModelRequest.serverTools}.
+ */
+export interface ServerToolDescriptor {
+    id: string;
+    name: string;
+    description?: string;
+}
+
 // See also VS Code `ILanguageModelChatMetadata`
 export interface LanguageModelMetaData {
     readonly id: string;
@@ -461,6 +525,11 @@ export interface LanguageModelMetaData {
     readonly maxOutputTokens?: number;
     readonly status: LanguageModelStatus;
     readonly reasoningSupport?: ReasoningSupport;
+    /**
+     * Server tools this model offers, declared code-level by the provider package.
+     * **Note:** If you provide these, you must also provide `vendor` because server tools are vendor-specific.
+     */
+    readonly serverTools?: ServerToolDescriptor[];
 }
 
 export namespace LanguageModelMetaData {

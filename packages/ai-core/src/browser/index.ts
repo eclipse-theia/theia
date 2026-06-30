@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './agent-completion-notification-service';
+export * from './agent-notification-service';
 export * from './os-notification-service';
 export * from './window-blink-service';
 export * from './ai-activation-service';

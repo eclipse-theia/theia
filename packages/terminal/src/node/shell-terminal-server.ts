@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { exec } from 'child_process';
+import * as fs from 'fs';
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -58,6 +59,7 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
 
     async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
+            this.validateTerminalOptions(options);
             if (options.strictEnv !== true) {
                 options.env = this.environmentUtils.mergeProcessEnv(options.env);
                 this.applyToProcessEnvironment(URI.fromFilePath(getRootPath(options.rootURI)), options.env);
@@ -68,6 +70,74 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
         } catch (error) {
             this.logger.error('Error while creating terminal', error);
             return -1;
+        }
+    }
+
+    /**
+     * Validates and sanitizes terminal options received from the client.
+     * Invalid values are replaced with safe defaults rather than rejecting the request,
+     * so legitimate users with misconfigured preferences still get a working terminal.
+     */
+    protected validateTerminalOptions(options: IShellTerminalServerOptions): void {
+        // Validate shell: must be an existing, executable file. Fall back to default otherwise.
+        if (options.shell !== undefined) {
+            if (typeof options.shell !== 'string' || !this.isValidShell(options.shell)) {
+                this.logger.warn(`Invalid shell "${options.shell}": falling back to default shell.`);
+                options.shell = undefined;
+            }
+        }
+
+        // Validate rootURI: must resolve to an existing directory.
+        if (options.rootURI !== undefined) {
+            try {
+                const rootPath = getRootPath(options.rootURI);
+                if (!fs.existsSync(rootPath) || !fs.statSync(rootPath).isDirectory()) {
+                    this.logger.warn(`Invalid rootURI "${options.rootURI}": falling back to home directory.`);
+                    options.rootURI = undefined;
+                }
+            } catch {
+                this.logger.warn(`Invalid rootURI "${options.rootURI}": falling back to home directory.`);
+                options.rootURI = undefined;
+            }
+        }
+
+        // Validate cols/rows: must be positive integers within reasonable bounds.
+        if (options.cols !== undefined) {
+            if (typeof options.cols !== 'number' || !Number.isInteger(options.cols) || options.cols < 1 || options.cols > 500) {
+                options.cols = undefined;
+            }
+        }
+        if (options.rows !== undefined) {
+            if (typeof options.rows !== 'number' || !Number.isInteger(options.rows) || options.rows < 1 || options.rows > 500) {
+                options.rows = undefined;
+            }
+        }
+
+        // Validate args: must be a string array or a single string.
+        if (options.args !== undefined) {
+            if (typeof options.args === 'string') {
+                // single string is fine
+            } else if (Array.isArray(options.args)) {
+                if (!options.args.every(arg => typeof arg === 'string')) {
+                    options.args = undefined;
+                }
+            } else {
+                options.args = undefined;
+            }
+        }
+    }
+
+    protected isValidShell(shell: string): boolean {
+        try {
+            // On Windows, cmd.exe and powershell.exe are resolved from PATH,
+            // so we only check accessibility for absolute paths.
+            if (isWindows && !/[/\\]/.test(shell)) {
+                return true;
+            }
+            fs.accessSync(shell, fs.constants.X_OK);
+            return true;
+        } catch {
+            return false;
         }
     }
 
