@@ -10,7 +10,7 @@
     "url": "https://github.com/eclipse-theia/theia.git"
   },
   "engines": {
-    "vscode": "^1.51.0"
+    "vscode": "^1.125.0"
   },
   "capabilities": {
     "untrustedWorkspaces": {
