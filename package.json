@@ -22,7 +22,7 @@
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "@typescript-eslint/parser": "^7.18.0",
-    "@vscode/vsce": "^2.32.0",
+    "@vscode/vsce": "^3.9.2",
     "archiver": "^5.3.2",
     "chai": "4.3.10",
     "chai-spies": "1.0.0",
