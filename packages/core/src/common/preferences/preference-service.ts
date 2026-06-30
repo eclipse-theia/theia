@@ -32,7 +32,7 @@ import { unreachable } from '../types.js';
 import { ILogger } from '../logger.js';
 
 /**
- * Options for {@link PreferenceService.get}.
+ * Options for {@link PreferenceService.get()}.
  */
 export interface PreferenceGetOptions<T> {
     /** Value to return when no stored value exists for the preference. */
