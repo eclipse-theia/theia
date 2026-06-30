@@ -127,12 +127,13 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
             getWorkspaceTrust: async () => true,
             onDidChangeWorkspaceTrust: Event.None
         };
-        (widget as unknown as { preferenceService: Partial<PreferenceService> }).preferenceService = {
+        const preferenceService = {
             get: () => options.preferenceValue ?? {},
             set: async (preferenceName: string, value: unknown, scope?: PreferenceScope) => {
                 options.onPreferenceSet?.(value as Record<string, object>);
             }
         };
+        (widget as unknown as { preferenceService: Partial<PreferenceService> }).preferenceService = (preferenceService as unknown as Partial<PreferenceService>);
         return widget;
     }
 

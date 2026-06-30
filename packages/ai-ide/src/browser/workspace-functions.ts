@@ -1332,7 +1332,7 @@ export class FindFilesByPattern implements ToolProvider {
         try {
             const maxResults = 200;
             const useGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, true);
-            const userExcludes = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+            const userExcludes = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
             const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.
