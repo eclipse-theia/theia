@@ -150,7 +150,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     }
 
     protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
-        const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
+        const maxSessions = this.preferenceService.get(WELCOME_SCREEN_SESSIONS_PREF, 20);
         const rows = this.sessionListService.buildRows(sections);
 
         return (
