@@ -10,7 +10,7 @@
     "url": "https://github.com/eclipse-theia/theia.git"
   },
   "engines": {
-    "vscode": "^1.118.0"
+    "vscode": "^1.120.0"
   },
   "activationEvents": [
     "onCommand:plugin-browser.hello"
