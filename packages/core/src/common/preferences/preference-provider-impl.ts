@@ -55,7 +55,7 @@ export abstract class PreferenceProviderBase {
         if (!this.deferredChanges) {
             this.deferredChanges = {};
         }
-        const key = `${change.preferenceName}.${change.overrideIdentifier}`;
+        const key = `${change.preferenceName}.${change.overrideIdentifier}`; // works for "undefined", as well
         const current = this.deferredChanges[key];
         const { newValue, scope, domain } = change;
         if (!current) {
