@@ -15,23 +15,26 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Emitter, Event, OverridePreferenceName, PreferenceChange, PreferenceChanges, PreferenceInspection, PreferenceScope, PreferenceService } from '../../../common';
+import {
+    Emitter, Event, PreferenceChange, PreferenceChanges, PreferenceGetOptions, PreferenceInspection,
+    PreferenceResolveResult, PreferenceScope, PreferenceService
+} from '../../../common';
 import URI from '../../../common/uri';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {
     constructor() { }
     dispose(): void { }
-    get<T>(preferenceName: string): T | undefined;
-    get<T>(preferenceName: string, defaultValue: T): T;
-    get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
+    get(preferenceName: string, defaultValue: string): string;
+    get(preferenceName: string, defaultValue: number): number;
+    get(preferenceName: string, defaultValue: boolean): boolean;
+    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
+    get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
+    get<T>(): T | undefined {
         return undefined;
     }
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): {
-        configUri?: URI,
-        value?: T
-    } {
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
         return {};
     }
     inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined {
@@ -47,12 +50,6 @@ export class MockPreferenceService implements PreferenceService {
     readonly isReady = true;
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
     readonly onPreferencesChanged: Event<PreferenceChanges> = new Emitter<PreferenceChanges>().event;
-    overridePreferenceName(options: OverridePreferenceName): string {
-        return options.preferenceName;
-    }
-    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
-        return undefined;
-    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validate(name: string, value: any): boolean { return true; }
