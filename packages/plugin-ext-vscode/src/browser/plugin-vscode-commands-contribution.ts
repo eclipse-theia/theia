@@ -85,6 +85,7 @@ import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { MergeEditorOpenerOptions, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
+import { findClosestEditorGroup, EditorGroupNavigationDirection, EditorGroupNavigationRect } from './editor-group-navigation';
 
 export namespace VscodeCommands {
 
@@ -249,6 +250,88 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }
 
         return false;
+    }
+
+    protected navigateEditorGroup(direction: EditorGroupNavigationDirection): boolean {
+        const current = this.currentMainAreaTabBar();
+        const currentRect = current && this.getEditorGroupRect(current);
+        if (!current || current.titles.length === 0 || !currentRect) {
+            return false;
+        }
+
+        const candidates: TabBar<Widget>[] = [];
+        const candidateRects: EditorGroupNavigationRect[] = [];
+        for (const tabBar of this.shell.mainAreaTabBars) {
+            if (tabBar === current || tabBar.titles.length === 0) {
+                continue;
+            }
+            const candidateRect = this.getEditorGroupRect(tabBar);
+            if (candidateRect) {
+                candidates.push(tabBar);
+                candidateRects.push(candidateRect);
+            }
+        }
+        const index = findClosestEditorGroup(currentRect, candidateRects, direction);
+        return index === -1 ? false : this.activateEditorGroup(candidates[index]);
+    }
+
+    protected navigateEditorGroups(): boolean {
+        const current = this.currentMainAreaTabBar();
+        const tabBars = this.shell.mainAreaTabBars.filter(tabBar => tabBar.titles.length > 0);
+        if (!current || tabBars.length < 2) {
+            return false;
+        }
+        const currentIndex = tabBars.indexOf(current);
+        if (currentIndex === -1) {
+            return false;
+        }
+        const target = tabBars[(currentIndex + 1) % tabBars.length];
+        return this.activateEditorGroup(target);
+    }
+
+    protected currentMainAreaTabBar(): TabBar<Widget> | undefined {
+        const mainAreaTabBars = this.shell.mainAreaTabBars;
+        const currentTabBar = this.shell.currentTabBar;
+        if (currentTabBar && mainAreaTabBars.includes(currentTabBar)) {
+            return currentTabBar;
+        }
+        const currentEditor = this.editorManager.currentEditor || this.editorManager.activeEditor;
+        if (currentEditor) {
+            const tabBar = this.shell.getTabBarFor(currentEditor);
+            if (tabBar && mainAreaTabBars.includes(tabBar)) {
+                return tabBar;
+            }
+        }
+        return undefined;
+    }
+
+    protected getEditorGroupRect(tabBar: TabBar<Widget>): EditorGroupNavigationRect | undefined {
+        const title = tabBar.currentTitle || tabBar.titles[0];
+        const rects = [
+            tabBar.node.getBoundingClientRect(),
+            title?.owner.node.getBoundingClientRect()
+        ].filter((rect): rect is DOMRect => !!rect && rect.width > 0 && rect.height > 0);
+        if (rects.length === 0) {
+            return undefined;
+        }
+        const left = Math.min(...rects.map(rect => rect.left));
+        const right = Math.max(...rects.map(rect => rect.right));
+        const top = Math.min(...rects.map(rect => rect.top));
+        const bottom = Math.max(...rects.map(rect => rect.bottom));
+        return { left, right, top, bottom, width: right - left, height: bottom - top };
+    }
+
+    protected activateEditorGroup(tabBar: TabBar<Widget>): boolean {
+        let title = tabBar.currentTitle;
+        if (!title && tabBar.titles.length > 0) {
+            tabBar.currentIndex = 0;
+            title = tabBar.currentTitle;
+        }
+        if (!title) {
+            return false;
+        }
+        this.shell.activateWidget(title.owner.id);
+        return true;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -559,6 +642,21 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
             execute: () => this.shell.activatePreviousTab()
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateLeft' }, {
+            execute: () => this.navigateEditorGroup('left')
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateRight' }, {
+            execute: () => this.navigateEditorGroup('right')
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateUp' }, {
+            execute: () => this.navigateEditorGroup('up')
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateDown' }, {
+            execute: () => this.navigateEditorGroup('down')
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateEditorGroups' }, {
+            execute: () => this.navigateEditorGroups()
         });
         commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
             execute: () => commands.executeCommand(EditorCommands.GO_BACK.id)
