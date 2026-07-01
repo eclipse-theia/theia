@@ -339,7 +339,7 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const isReopenWithEncoding = (selectedEncoding.value === reopenWithEncodingPick.value);
 
-        const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
+        const configuredEncoding = this.preferencesService.get<string>('files.encoding', { fallback: 'utf8', resource: editor.uri.toString() });
 
         const resource = await this.resourceProvider(editor.uri);
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;

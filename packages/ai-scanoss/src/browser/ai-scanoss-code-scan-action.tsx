@@ -96,7 +96,7 @@ const ScanOSSIntegration = React.memo((props: {
     preferenceService: PreferenceService;
 }) => {
     const [automaticCheck] = React.useState(() =>
-        props.preferenceService.get<string>(SCANOSS_MODE_PREF, 'off') === 'automatic'
+        props.preferenceService.get(SCANOSS_MODE_PREF, 'off') === 'automatic'
     );
     const [scanOSSResult, setScanOSSResult] = React.useState<
         ScanOSSResult | 'pending' | undefined | false

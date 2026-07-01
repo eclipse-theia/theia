@@ -529,7 +529,7 @@ export class WorkspaceFunctionScope {
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
         const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
-        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+        const userExcludePatterns = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
 
         if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
             return true;
@@ -818,7 +818,7 @@ export class FileContentFunction implements ToolProvider {
         }
 
         const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
-        const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+        const maxSizeKB = this.preferences.get(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
         const isEditorOpen = openEditorValue !== undefined;
         const isPaginated = offset !== undefined || limit !== undefined;
 
@@ -1332,7 +1332,7 @@ export class FindFilesByPattern implements ToolProvider {
         try {
             const maxResults = 200;
             const useGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, true);
-            const userExcludes = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+            const userExcludes = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
             const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.

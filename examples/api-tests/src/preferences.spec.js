@@ -45,8 +45,6 @@ describe('Preferences', function () {
     const tabSize = 'editor.tabSize';
     const fontSize = 'editor.fontSize';
     const override = overrideService.markLanguageOverride(overrideIdentifier);
-    const overriddenTabSize = overrideService.overridePreferenceName({ overrideIdentifier, preferenceName: tabSize });
-    const overriddenFontSize = overrideService.overridePreferenceName({ overrideIdentifier, preferenceName: fontSize });
     /**
      * @returns {Promise<Record<string, any>>}
      */
@@ -62,9 +60,10 @@ describe('Preferences', function () {
     /**
      * @param {string} key
      * @param {unknown} value
+     * @param {string} overrideIdentifier
      */
-    async function setPreference(key, value) {
-        return preferenceService.set(key, value, PreferenceScope.Workspace);
+    async function setPreference(key, value, overrideIdentifier) {
+        return preferenceService.set(key, value, PreferenceScope.Workspace, undefined, overrideIdentifier);
     }
 
     async function deleteAllValues() {
@@ -110,8 +109,8 @@ describe('Preferences', function () {
 
     beforeEach(async function () {
         const prefs = await getPreferences();
-        for (const key of [tabSize, fontSize, override, overriddenTabSize, overriddenFontSize]) {
-            shouldBeUndefined(prefs[key], key);
+        for (const key of [tabSize, fontSize, override, [override, tabSize], [override, fontSize]]) {
+            shouldBeUndefined(prefs, ...key);
         }
     });
 
@@ -120,11 +119,18 @@ describe('Preferences', function () {
     });
 
     /**
-     * @param {unknown} value
-     * @param {string} key
+     * @param {unknown} prefs
+     * @param {string[]} keys
      */
-    function shouldBeUndefined(value, key) {
-        assert.isUndefined(value, `There should be no ${key} object or value in the preferences.`);
+    function shouldBeUndefined(prefs, ...keys) {
+        let value = prefs;
+        for (const key of keys) {
+            if (value) {
+                value = value[key];
+            }
+
+        }
+        assert.isUndefined(value, `There should be no ${JSON.stringify(keys)} object or value in the preferences.`);
     }
 
     /**
@@ -133,16 +139,16 @@ describe('Preferences', function () {
     async function setUpOverride() {
         const startingTabSize = preferenceService.get(tabSize);
         const startingFontSize = preferenceService.get(fontSize);
-        assert.equal(preferenceService.get(overriddenTabSize), startingTabSize, 'The overridden value should equal the default.');
-        assert.equal(preferenceService.get(overriddenFontSize), startingFontSize, 'The overridden value should equal the default.');
+        assert.equal(preferenceService.get(tabSize, { override: overrideIdentifier }), startingTabSize, 'The overridden value should equal the default.');
+        assert.equal(preferenceService.get(fontSize, { override: overrideIdentifier }), startingFontSize, 'The overridden value should equal the default.');
         const newTabSize = startingTabSize + 2;
         const newFontSize = startingFontSize + 2;
         await Promise.all([
-            setPreference(overriddenTabSize, newTabSize),
-            setPreference(overriddenFontSize, newFontSize),
+            setPreference(tabSize, newTabSize, overrideIdentifier),
+            setPreference(fontSize, newFontSize, overrideIdentifier),
         ]);
-        assert.equal(preferenceService.get(overriddenTabSize), newTabSize, 'After setting, the new value should be active for the override.');
-        assert.equal(preferenceService.get(overriddenFontSize), newFontSize, 'After setting, the new value should be active for the override.');
+        assert.equal(preferenceService.get(tabSize, { override: overrideIdentifier }), newTabSize, 'After setting, the new value should be active for the override.');
+        assert.equal(preferenceService.get(fontSize, { override: overrideIdentifier }), newFontSize, 'After setting, the new value should be active for the override.');
         return { newTabSize, newFontSize, startingTabSize, startingFontSize };
     }
 
@@ -152,27 +158,14 @@ describe('Preferences', function () {
         assert.isObject(prefs[override], 'The override should be a key in the preference object.');
         assert.equal(prefs[override][tabSize], newTabSize, 'editor.tabSize should be a key in the override object and have the correct value.');
         assert.equal(prefs[override][fontSize], newFontSize, 'editor.fontSize should be a key in the override object and should have the correct value.');
-        shouldBeUndefined(prefs[overriddenTabSize], overriddenTabSize);
-        shouldBeUndefined(prefs[overriddenFontSize], overriddenFontSize);
     });
 
     it('Allows deletion of individual keys in the override object.', async function () {
         const { startingTabSize } = await setUpOverride();
-        await setPreference(overriddenTabSize, undefined);
-        assert.equal(preferenceService.get(overriddenTabSize), startingTabSize);
+        await setPreference(tabSize, undefined, overrideIdentifier);
+        assert.equal(preferenceService.get(tabSize, { override: overrideIdentifier }), startingTabSize);
         const prefs = await getPreferences();
-        shouldBeUndefined(prefs[override][tabSize], tabSize);
-        shouldBeUndefined(prefs[overriddenFontSize], overriddenFontSize);
-        shouldBeUndefined(prefs[overriddenTabSize], overriddenTabSize);
-    });
-
-    it('Allows deletion of the whole override object', async function () {
-        const { startingFontSize, startingTabSize } = await setUpOverride();
-        await setPreference(override, undefined);
-        assert.equal(preferenceService.get(overriddenTabSize), startingTabSize, 'The overridden value should revert to the default.');
-        assert.equal(preferenceService.get(overriddenFontSize), startingFontSize, 'The overridden value should revert to the default.');
-        const prefs = await getPreferences();
-        shouldBeUndefined(prefs[override], override);
+        shouldBeUndefined(prefs, override, tabSize);
     });
 
     it('Handles many synchronous settings of preferences gracefully', async function () {
@@ -200,7 +193,7 @@ describe('Preferences', function () {
         const results = await Promise.allSettled(promises);
         const expectedValues = { [searchPref]: searchDebounce, [channelPref]: channelHistory, [hoverPref]: hoverDelay };
         const actualValues = { [searchPref]: preferenceService.get(searchPref), [channelPref]: preferenceService.get(channelPref), [hoverPref]: preferenceService.get(hoverPref), }
-        const eventKeys = event && Object.keys(event).sort();
+        const eventKeys = event && event.map(evt => evt.preferenceName).sort();
         toDispose.dispose();
         assert(results.every(setting => setting.status === 'fulfilled'), 'All promises should have resolved rather than rejected.');
         assert.deepEqual([channelPref, searchPref, hoverPref], eventKeys, 'The event should contain the changed preference names.');

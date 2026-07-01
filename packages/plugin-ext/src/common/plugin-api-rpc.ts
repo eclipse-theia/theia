@@ -1551,13 +1551,15 @@ export interface PreferenceRegistryMain {
         key: string,
         value: any,
         resource?: string,
-        withLanguageOverride?: boolean
+        withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         resource?: string,
         withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
 }
 

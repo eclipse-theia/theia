@@ -177,7 +177,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'window.titleBarStyle') {
-                const newTitleBarStyle = this.preferenceService.get<string>('window.titleBarStyle', 'native');
+                const newTitleBarStyle = this.preferenceService.get('window.titleBarStyle', 'native');
                 if (this.titleBarStyleChangeFlag && this.titleBarStyle !== newTitleBarStyle) {
                     window.electronTheiaCore.setTitleBarStyle(newTitleBarStyle);
                     this.handleRequiredRestart();
