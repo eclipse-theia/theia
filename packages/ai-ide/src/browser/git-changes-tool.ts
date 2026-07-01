@@ -16,28 +16,22 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ToolRequestParameters } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { ToolInvocationContext, ToolRequestParameters } from '@theia/ai-core';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { PredefinedShellTool } from '@theia/ai-terminal/lib/browser/predefined-shell-tool';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { PredefinedShellTool, PredefinedShellToolCanceledResult, PredefinedShellToolResult } from '@theia/ai-terminal/lib/browser/predefined-shell-tool';
+import { combineAndTruncate } from '@theia/ai-terminal/lib/common/shell-execution-server';
 
 export const GET_GIT_CHANGES_FUNCTION_ID = 'getGitChanges';
 
 /**
- * Returns the unified git diff of changes in the current repository.
+ * Returns the git diff of the current repository. `git diff --cached`/`git diff HEAD` are plain,
+ * operator-free commands that behave the same on POSIX shells and Windows `cmd.exe`.
  *
- * The diff is fetched by invoking `git diff` under the selected SCM repository's root via
- * the existing shell-execution backend; if no repository is selected, falls back to the
- * workspace root.
- *
- * - With `stagedOnly = true` only staged changes are returned (`git diff --cached`).
- * - With `stagedOnly = false` all tracked changes vs HEAD **plus** the full content of
- *   untracked, non-ignored files are returned, so a brand-new file the user is about to
- *   commit is visible to the LLM. Untracked content is produced via
- *   `git diff --no-index /dev/null <file>` so it appears as a normal addition diff.
- *
- * The tool is a {@link PredefinedShellTool}, so it bypasses the user-confirmation flow
- * of the general-purpose `shellExecute` tool. The shell command is hardcoded here and
- * cannot be influenced by the LLM beyond toggling the `stagedOnly` flag.
+ * For the non-staged scope the content of untracked, non-ignored files is appended so brand-new
+ * files are visible. Untracked files are listed with `git ls-files -z` and read via the
+ * {@link FileService}, so their names never reach a shell and cannot inject a command.
  */
 @injectable()
 export class GetGitChangesTool extends PredefinedShellTool {
@@ -45,47 +39,83 @@ export class GetGitChangesTool extends PredefinedShellTool {
     @inject(ScmService)
     protected readonly scmService: ScmService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     readonly id = GET_GIT_CHANGES_FUNCTION_ID;
 
     readonly description =
-        'Returns the unified git diff of changes in the current repository. ' +
-        'By default returns all current changes vs HEAD (staged + unstaged tracked files) and ' +
-        'the full content of untracked, non-ignored files (as addition diffs); ' +
-        'pass stagedOnly=true to return only staged changes (untracked files are then omitted). ' +
-        'If the workspace is not a git repository the command exits non-zero with a message ' +
-        'like "fatal: not a git repository" — treat that as "no changes to commit".';
+        'Returns the git diff of the current repository. By default returns all current changes vs ' +
+        'HEAD (staged + unstaged tracked files) plus the content of untracked, non-ignored files; ' +
+        'pass stagedOnly=true to return only staged changes (untracked files are then omitted). If ' +
+        'the workspace is not a git repository the command reports "fatal: not a git repository", ' +
+        'which means there are no changes to commit.';
 
     protected override readonly parameters: ToolRequestParameters = {
         type: 'object',
         properties: {
             stagedOnly: {
                 type: 'boolean',
-                description:
-                    'If true, only staged changes (git diff --cached). ' +
-                    'Default false = all changes vs HEAD + untracked files as additions.'
+                description: 'If true, only staged changes (git diff --cached). Default false = all changes vs HEAD + untracked file content.'
             }
         }
     };
 
+    /** Runs the diff directly; the commit-message generator uses this to inject the changes into its prompt. */
+    async getChanges(stagedOnly: boolean, cancellationToken?: CancellationToken): Promise<string> {
+        const result = await this.execute(JSON.stringify({ stagedOnly }), { cancellationToken });
+        return result.output ?? '';
+    }
+
     protected buildCommand(args: Record<string, unknown>): string {
-        const stagedOnly = args.stagedOnly === true;
-        if (stagedOnly) {
-            return 'git diff --cached --no-color';
+        return args.stagedOnly === true ? 'git diff --cached --no-color' : 'git diff HEAD --no-color';
+    }
+
+    protected override async execute(
+        argString: string,
+        ctx?: ToolInvocationContext
+    ): Promise<PredefinedShellToolResult | PredefinedShellToolCanceledResult> {
+        const args: Record<string, unknown> = argString ? JSON.parse(argString) : {};
+        const result = await super.execute(argString, ctx);
+        if (args.stagedOnly === true || 'canceled' in result) {
+            return result;
         }
-        // Combine tracked changes vs HEAD with the contents of untracked, non-ignored files
-        // (rendered as addition diffs via `git diff --no-index`). The `--no-index` invocation
-        // exits with a non-zero status when a diff is produced, so we swallow that with `|| true`
-        // to keep the overall command success-signal meaningful (only `git diff HEAD` failures bubble up).
-        return 'git diff HEAD --no-color; '
-            + 'git ls-files --others --exclude-standard -z '
-            + '| xargs -0 -r -I{} sh -c \'git diff --no-index --no-color -- /dev/null "$1" || true\' _ {}';
+        const untracked = await this.collectUntracked(ctx?.cancellationToken);
+        return untracked ? { ...result, output: [result.output, untracked].filter(text => !!text).join('\n\n') } : result;
+    }
+
+    /** Content of untracked, non-ignored files, each as a labeled block. */
+    protected async collectUntracked(token?: CancellationToken): Promise<string> {
+        const rootUri = this.resolveRootUri();
+        if (!rootUri) {
+            return '';
+        }
+        const list = await this.shellServer.execute({
+            command: 'git ls-files --others --exclude-standard -z',
+            cwd: rootUri.path.fsPath(),
+            timeout: this.timeout
+        });
+        const blocks: string[] = [];
+        for (const file of (list.stdout ?? '').split('\0').filter(name => !!name)) {
+            if (token?.isCancellationRequested) {
+                break;
+            }
+            try {
+                const { value } = await this.fileService.read(rootUri.resolve(file));
+                blocks.push(value.includes('\0') ? `New binary file ${file}` : `New file ${file}:\n${value}`);
+            } catch {
+                // The file may be unreadable or have vanished since it was listed; skip it.
+            }
+        }
+        return combineAndTruncate(blocks.join('\n\n'), '');
+    }
+
+    protected resolveRootUri(): URI | undefined {
+        const repository = this.scmService.selectedRepository;
+        return repository ? new URI(repository.provider.rootUri) : this.workspaceService.getWorkspaceRootUri(undefined);
     }
 
     protected override resolveWorkspaceRoot(): string | undefined {
-        const repository = this.scmService.selectedRepository;
-        if (repository) {
-            return new URI(repository.provider.rootUri).path.fsPath();
-        }
-        return super.resolveWorkspaceRoot();
+        return this.resolveRootUri()?.path.fsPath();
     }
 }

@@ -15,20 +15,83 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent';
+import * as sinon from 'sinon';
+import { Container } from '@theia/core/shared/inversify';
+import { LanguageModel, LanguageModelRegistry, LanguageModelService, PromptService, UserRequest } from '@theia/ai-core';
+import { CommitMessageAgent } from './commit-message-agent';
+import { COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template';
 
-// Mirrors the regex used by `packages/ai-chat/src/common/chat-request-parser.ts`.
-const AGENT_MENTION_REG = /^@([\w_\-\.]+)(?=(\s|$|\b))/i;
+describe('CommitMessageAgent', () => {
 
-describe('CommitMessageAgent id', () => {
+    let container: Container;
+    let agent: CommitMessageAgent;
+    let registry: { selectLanguageModel: sinon.SinonStub };
+    let promptService: { getResolvedPromptFragment: sinon.SinonStub; getPromptVariantInfo: sinon.SinonStub };
+    let languageModelService: { sendRequest: sinon.SinonStub };
+    const fakeModel = {} as LanguageModel;
 
-    it('is parseable by the chat request @-mention regex', () => {
-        const match = `@${COMMIT_MESSAGE_AGENT_ID} hi`.match(AGENT_MENTION_REG);
-        expect(match, `@${COMMIT_MESSAGE_AGENT_ID} should match the chat agent mention regex`).to.not.be.null;
-        expect(match![1]).to.equal(COMMIT_MESSAGE_AGENT_ID);
+    beforeEach(() => {
+        container = new Container();
+        registry = { selectLanguageModel: sinon.stub().resolves(fakeModel) };
+        promptService = {
+            getResolvedPromptFragment: sinon.stub().callsFake((id: string) => Promise.resolve({ text: `resolved:${id}` })),
+            getPromptVariantInfo: sinon.stub().returns(undefined)
+        };
+        languageModelService = { sendRequest: sinon.stub().resolves({ text: 'feat: add thing\n' }) };
+
+        container.bind(LanguageModelRegistry).toConstantValue(registry as unknown as LanguageModelRegistry);
+        container.bind(PromptService).toConstantValue(promptService as unknown as PromptService);
+        container.bind(LanguageModelService).toConstantValue(languageModelService as unknown as LanguageModelService);
+        container.bind(CommitMessageAgent).toSelf();
+
+        agent = container.get(CommitMessageAgent);
     });
 
-    it('does not contain whitespace (which would break @-mentions)', () => {
-        expect(COMMIT_MESSAGE_AGENT_ID).to.not.match(/\s/);
+    afterEach(() => sinon.restore());
+
+    it('is a plain agent that exposes no functions', () => {
+        expect(agent.functions).to.be.empty;
+    });
+
+    it('resolves both prompts, sends the request and returns the trimmed message', async () => {
+        const result = await agent.generateCommitMessage('the diff', 'staged');
+
+        expect(result).to.equal('feat: add thing');
+        expect(promptService.getResolvedPromptFragment.calledWith(COMMIT_MESSAGE_SYSTEM_PROMPT_ID)).to.be.true;
+        expect(promptService.getResolvedPromptFragment.calledWith(COMMIT_MESSAGE_USER_PROMPT_ID)).to.be.true;
+        expect(languageModelService.sendRequest.calledOnce).to.be.true;
+    });
+
+    it('injects the diff and a human-readable scope into the prompt parameters', async () => {
+        await agent.generateCommitMessage('the diff', 'all');
+
+        const [, params] = promptService.getResolvedPromptFragment.firstCall.args;
+        expect(params).to.deep.equal({ changes: 'the diff', scope: 'current' });
+    });
+
+    it('sends a system and a user message tagged with the agent id and the cancellation token', async () => {
+        const token = { isCancellationRequested: false } as unknown as UserRequest['cancellationToken'];
+        await agent.generateCommitMessage('the diff', 'staged', token);
+
+        const request = languageModelService.sendRequest.firstCall.args[1] as UserRequest;
+        expect(request.agentId).to.equal(agent.id);
+        expect(request.cancellationToken).to.equal(token);
+        expect(request.messages.map(m => m.actor)).to.deep.equal(['system', 'user']);
+    });
+
+    it('throws when no language model is available', async () => {
+        registry.selectLanguageModel.resolves(undefined);
+
+        const error = await agent.generateCommitMessage('the diff', 'staged').then(() => undefined, e => e);
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.match(/No language model/);
+    });
+
+    it('throws when the prompts cannot be resolved', async () => {
+        promptService.getResolvedPromptFragment.resolves(undefined);
+
+        const error = await agent.generateCommitMessage('the diff', 'staged').then(() => undefined, e => e);
+        expect(error).to.be.instanceOf(Error);
+        expect((error as Error).message).to.match(/prompt service/);
     });
 });

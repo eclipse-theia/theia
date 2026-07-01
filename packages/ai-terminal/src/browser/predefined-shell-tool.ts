@@ -42,20 +42,15 @@ export interface PredefinedShellToolCanceledResult {
 }
 
 /**
- * Base class for tools that execute a fixed, hardcoded shell command. Subclasses declare
- * their own tool `id`, parameters and a `buildCommand(args)` method that assembles the
- * exact shell command from typed arguments — the LLM only supplies the typed arguments,
- * so the command itself is fully controlled by the subclass.
+ * Base class for tools that execute a fixed, hardcoded shell command. A subclass declares its
+ * tool `id`, its parameters and a `buildCommand(args)` method that assembles the command from
+ * typed arguments. The LLM only supplies the typed arguments, so the subclass stays in control
+ * of the command.
  *
- * Unlike the general-purpose `shellExecute` tool, instances of {@link PredefinedShellTool}
- * do not consult `ShellCommandPermissionService` and do not need to appear on the user's
- * shell allow/deny lists: the safety boundary is the subclass-controlled `buildCommand`,
- * which must not be coercible into running arbitrary commands.
- *
- * The tool itself participates in the regular tool-confirmation flow (`ToolConfirmationMode`).
- * Callers that drive an agent in a non-interactive context (where a confirmation modal would
- * have no UI to render in) are responsible for arranging the appropriate confirmation — e.g.
- * by setting `ALWAYS_ALLOW` on the user's behalf via `ToolConfirmationManager`.
+ * Unlike the general-purpose `shellExecute` tool, a {@link PredefinedShellTool} does not consult
+ * `ShellCommandPermissionService` and does not appear on the user's shell allow/deny lists. The
+ * safety boundary is the subclass `buildCommand`, which must not be coercible into running
+ * arbitrary commands.
  */
 @injectable()
 export abstract class PredefinedShellTool implements ToolProvider {
