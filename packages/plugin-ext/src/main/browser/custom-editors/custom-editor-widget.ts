@@ -17,8 +17,9 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
-import { ApplicationShell, DelegatingSaveable, NavigatableWidget, Saveable, SaveableSource } from '@theia/core/lib/browser';
+import { ApplicationShell, DelegatingSaveable, Message, NavigatableWidget, Saveable, SaveableSource } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
+import { Disposable, SelectionService } from '@theia/core/lib/common';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
 import { CustomEditorModel } from './custom-editors-main';
@@ -54,6 +55,9 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
     @inject(SaveableService)
     protected readonly saveService: SaveableService;
 
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
+
     @postConstruct()
     protected override init(): void {
         super.init();
@@ -63,6 +67,16 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
                 this.doMove(e.target.resource);
             }
         }));
+        this.toDispose.push(Disposable.create(() => {
+            if (this.selectionService.selection === this) {
+                this.selectionService.selection = undefined;
+            }
+        }));
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.selectionService.selection = this;
     }
 
     updateID(): void {
