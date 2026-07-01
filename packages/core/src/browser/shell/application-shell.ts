@@ -355,6 +355,7 @@ export class ApplicationShell extends Widget {
                 });
             }
         });
+        this.refreshBottomPanelToggleButton();
         this.initializedDeferred.resolve();
     }
 
@@ -689,14 +690,10 @@ export class ApplicationShell extends Widget {
             spacing: 0
         }, area => this.doToggleMaximized(area));
         dockPanel.id = BOTTOM_AREA_ID;
-        dockPanel.widgetAdded.connect((sender, widget) => {
-            this.refreshBottomPanelToggleButton();
-        });
         dockPanel.widgetRemoved.connect((sender, widget) => {
             if (sender.isEmpty) {
                 this.collapseBottomPanel();
             }
-            this.refreshBottomPanelToggleButton();
         }, this);
         dockPanel.node.addEventListener('lm-dragenter', event => {
             // Make sure that the main panel hides its overlay when the bottom panel is expanded
@@ -887,7 +884,6 @@ export class ApplicationShell extends Widget {
                     }
                 });
             }
-            this.refreshBottomPanelToggleButton();
         }
         // Proceed with the main panel once all others are set up
         await this.bottomPanelState.pendingUpdate;
@@ -1631,24 +1627,20 @@ export class ApplicationShell extends Widget {
      * and refers to the command `core.toggle.bottom.panel`.
      */
     protected refreshBottomPanelToggleButton(): void {
-        if (this.bottomPanel.isEmpty) {
-            this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
-        } else {
-            const label = nls.localize('theia/core/common/collapseBottomPanel', 'Toggle Bottom Panel');
-            const element: StatusBarEntry = {
-                name: label,
-                text: '$(codicon-window)',
-                alignment: StatusBarAlignment.RIGHT,
-                tooltip: label,
-                command: 'core.toggle.bottom.panel',
-                accessibilityInformation: {
-                    label: label,
-                    role: 'button'
-                },
-                priority: -1000
-            };
-            this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
-        }
+        const label = nls.localize('theia/core/common/collapseBottomPanel', 'Toggle Bottom Panel');
+        const element: StatusBarEntry = {
+            name: label,
+            text: '$(codicon-window)',
+            alignment: StatusBarAlignment.RIGHT,
+            tooltip: label,
+            command: 'core.toggle.bottom.panel',
+            accessibilityInformation: {
+                label: label,
+                role: 'button'
+            },
+            priority: -1000
+        };
+        this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
     }
 
     /**
