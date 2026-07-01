@@ -1566,9 +1566,11 @@ export class ApplicationShell extends Widget {
             let size: number | undefined;
             if (bottomPanel.isEmpty) {
                 bottomPanel.node.style.minHeight = '0';
-                size = this.options.bottomPanel.emptySize;
-            } else if (this.bottomPanelState.lastPanelSize) {
+            }
+            if (this.bottomPanelState.lastPanelSize) {
                 size = this.bottomPanelState.lastPanelSize;
+            } else if (bottomPanel.isEmpty) {
+                size = this.options.bottomPanel.emptySize;
             } else {
                 size = this.getDefaultBottomPanelSize();
             }
