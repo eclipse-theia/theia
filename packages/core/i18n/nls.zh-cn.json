@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "未找到匹配的语言模型。请检查您的设置！",
         "couldNotFindReadyLMforAgent": "未能为代理{0}找到现成的语言模型。请检查您的设置！",
         "customAgents": {
-          "migrationResult": "自定义代理迁移:{0} 已迁移,{1} 迁移失败,{2} 旧版 customAgents.yml 已备份至 .bak,{3} 提示信息覆盖内容已合并到 agent.md 中。",
+          "migratePrompt": {
+            "message": "您的自定义代理仍使用旧版 `customAgents.yml` 格式。 我们建议将其迁移到新的按代理分隔的格式(`agents/<id>/agent.md`),{0} 今后将采用该格式。每个代理都会在您的 `customAgents.yml` 文件旁边拥有自己的文件,而原始文件将作为 `customAgents.yml.bak` 备份保留下来。"
+          },
+          "migrationResult": {
+            "empty": "自定义代理迁移:无需迁移。"
+          },
           "rerunMigration": "重新运行自定义代理迁移"
         },
         "defaultAgent": {

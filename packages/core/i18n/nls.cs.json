@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Nebylo možné najít odpovídající jazykový model. Zkontrolujte prosím nastavení!",
         "couldNotFindReadyLMforAgent": "Nenašel jsem připravený jazykový model pro agent {0}. Zkontrolujte prosím nastavení!",
         "customAgents": {
-          "migrationResult": "Migrace vlastních agentů: {0} migrováno, {1} selhalo, {2} starší soubor customAgents.yml zálohován do souboru .bak, {3} přepsání výzev začleněno do souboru agent.md.",
+          "migratePrompt": {
+            "message": "Vaši vlastní agenti stále používají starší formát `customAgents.yml`. Doporučujeme je převést do nového formátu pro jednotlivé agenty (`agents/<id>/agent.md`), který bude v budoucnu používat {0}. Každý agent dostane svůj vlastní soubor vedle vašeho souboru `customAgents.yml` a původní soubor zůstane zachován jako záloha `customAgents.yml.bak`."
+          },
+          "migrationResult": {
+            "empty": "Migrace vlastního agenta: není co migrovat."
+          },
           "rerunMigration": "Znovu spustit migraci vlastního agenta"
         },
         "defaultAgent": {

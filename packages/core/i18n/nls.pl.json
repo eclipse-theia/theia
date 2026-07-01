@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Nie znaleziono pasującego modelu językowego. Sprawdź ustawienia!",
         "couldNotFindReadyLMforAgent": "Nie można znaleźć gotowego modelu językowego dla agenta {0}. Sprawdź swoją konfigurację!",
         "customAgents": {
-          "migrationResult": "Migracja niestandardowych agentów: {0} – migracja zakończona sukcesem, {1} – migracja nie powiodła się, {2} – kopia zapasowa starego pliku customAgents.yml zapisana w formacie .bak, {3} – nadpisania monitów włączone do pliku agent.md.",
+          "migratePrompt": {
+            "message": "Twoje niestandardowe agenty nadal korzystają ze starszego formatu `customAgents.yml`. Zalecamy migrację do nowego formatu dla poszczególnych agentów (`agents/<id>/agent.md`), z którego od tej pory korzysta {0}. Każdy agent otrzymuje własny plik umieszczony obok pliku `customAgents.yml`, a oryginał jest zachowywany jako kopia zapasowa o nazwie `customAgents.yml.bak`."
+          },
+          "migrationResult": {
+            "empty": "Migracja niestandardowego agenta: nie ma nic do migracji."
+          },
           "rerunMigration": "Ponowne uruchomienie migracji niestandardowego agenta"
         },
         "defaultAgent": {

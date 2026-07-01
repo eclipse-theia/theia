@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "一致する言語モデルが見つかりませんでした。設定を確認してください！",
         "couldNotFindReadyLMforAgent": "エージェント{0}用の既製言語モデルが見つかりませんでした。設定を確認してください！",
         "customAgents": {
-          "migrationResult": "カスタムエージェントの移行:{0} が移行済み、{1} が失敗、{2} のレガシー版 customAgents.yml が .bak にバックアップ済み、{3} のプロンプトのオーバーライドが agent.md に統合済み。",
+          "migratePrompt": {
+            "message": "カスタムエージェントは、依然として旧形式の `customAgents.yml` を使用しています。 {0}が今後採用する、エージェントごとの新しい形式(`agents/<id>/agent.md`)への移行をお勧めします。各エージェントには、`customAgents.yml`の隣に個別のファイルが作成され、元のファイルは`customAgents.yml.bak`としてバックアップとして保持されます。"
+          },
+          "migrationResult": {
+            "empty": "カスタムエージェントの移行:移行対象はありません。"
+          },
           "rerunMigration": "カスタムエージェントの移行を再実行する"
         },
         "defaultAgent": {

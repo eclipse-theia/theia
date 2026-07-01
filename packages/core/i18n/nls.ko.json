@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "일치하는 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
         "couldNotFindReadyLMforAgent": "에이전트{0}용 준비된 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
         "customAgents": {
-          "migrationResult": "커스텀 에이전트 마이그레이션: {0} 마이그레이션 완료, {1} 실패, {2} 기존 customAgents.yml 파일을 .bak로 백업, {3} 프롬프트 재정의 내용이 agent.md에 통합됨.",
+          "migratePrompt": {
+            "message": "사용자 정의 에이전트는 여전히 기존의 `customAgents.yml` 형식을 사용합니다. {0}에서 앞으로 사용할 새로운 에이전트별 형식(`agents/<id>/agent.md`)으로 마이그레이션하는 것을 권장합니다. 각 에이전트는 `customAgents.yml` 파일 옆에 별도의 파일을 갖게 되며, 원본 파일은 `customAgents.yml.bak`라는 이름으로 백업으로 보관됩니다."
+          },
+          "migrationResult": {
+            "empty": "사용자 지정 에이전트 마이그레이션: 마이그레이션할 항목이 없습니다."
+          },
           "rerunMigration": "사용자 지정 에이전트 마이그레이션 다시 실행"
         },
         "defaultAgent": {

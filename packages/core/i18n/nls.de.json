@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Es konnte kein passendes Sprachmodell gefunden werden. Bitte überprüfen Sie Ihre Einstellungen!",
         "couldNotFindReadyLMforAgent": "Es konnte kein fertiges Sprachmodell für die Agenten {0} gefunden werden. Bitte überprüfen Sie Ihre Einstellungen!",
         "customAgents": {
-          "migrationResult": "Migration der benutzerdefinierten Agenten: {0} wurde migriert, {1} schlug fehl, {2} die alte Datei „customAgents.yml“ wurde als .bak-Datei gesichert, {3} die Eingabeaufforderungs-Überschreibungen wurden in „agent.md“ integriert.",
+          "migratePrompt": {
+            "message": "Ihre benutzerdefinierten Agenten verwenden weiterhin das ältere Format `customAgents.yml`. Wir empfehlen, sie auf das neue, agentenspezifische Format (`agents/<id>/agent.md`) zu migrieren, das {0} künftig verwendet. Jeder Agent erhält eine eigene Datei neben Ihrer `customAgents.yml`, und das Original wird als Sicherungskopie unter dem Namen `customAgents.yml.bak` beibehalten."
+          },
+          "migrationResult": {
+            "empty": "Migration des benutzerdefinierten Agenten: Es gibt nichts zu migrieren."
+          },
           "rerunMigration": "Migration des benutzerdefinierten Agenten erneut ausführen"
         },
         "defaultAgent": {

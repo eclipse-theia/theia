@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Nem találtunk megfelelő nyelvi modellt. Kérjük, ellenőrizze a beállításokat!",
         "couldNotFindReadyLMforAgent": "Nem találtunk kész nyelvi modellt az agent {0}hez. Kérjük, ellenőrizze a beállításokat!",
         "customAgents": {
-          "migrationResult": "Egyéni ügynökök áttelepítése: {0} áttelepítve, {1} sikertelen, {2} a régi customAgents.yml fájl .bak kiterjesztéssel mentve, {3} a parancssori felugró ablakok felülírásai beépítve az agent.md fájlba.",
+          "migratePrompt": {
+            "message": "Az egyéni ügynökei továbbra is a régebbi `customAgents.yml` formátumot használják. Javasoljuk, hogy migrálja őket az új, ügynökönkénti formátumra (`agents/<id>/agent.md`), amelyet a {0} a jövőben fog használni. Minden ügynök saját fájlt kap a `customAgents.yml` fájl mellett, az eredeti pedig `customAgents.yml.bak` néven biztonsági másolatként megmarad."
+          },
+          "migrationResult": {
+            "empty": "Egyéni ügynök áttelepítése: nincs mit áttelepíteni."
+          },
           "rerunMigration": "A custom-agent migráció újbóli futtatása"
         },
         "defaultAgent": {

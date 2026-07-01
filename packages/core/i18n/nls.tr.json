@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Eşleşen bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "couldNotFindReadyLMforAgent": "{0} ajanı için hazır bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "customAgents": {
-          "migrationResult": "Özel ajan geçişi: {0} geçişi tamamlandı, {1} başarısız oldu, {2} eski customAgents.yml dosyası .bak uzantısıyla yedeklendi, {3} komut istemi geçersiz kılmaları agent.md dosyasına aktarıldı.",
+          "migratePrompt": {
+            "message": "Özel ajanlarınız hâlâ eski `customAgents.yml` biçimini kullanmaktadır. {0}'ın bundan sonra kullanacağı yeni ajan başına biçime (`agents/<id>/agent.md`) geçmenizi öneririz. Her ajan, `customAgents.yml` dosyanızın yanında kendine ait bir dosya alır ve orijinal dosya `customAgents.yml.bak` adıyla yedek olarak saklanır."
+          },
+          "migrationResult": {
+            "empty": "Özel ajan geçişi: geçirilecek hiçbir şey yoktur."
+          },
           "rerunMigration": "Özel ajan geçişini yeniden çalıştır"
         },
         "defaultAgent": {

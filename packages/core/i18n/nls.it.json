@@ -142,7 +142,12 @@
         "couldNotFindMatchingLM": "Impossibile trovare un modello linguistico corrispondente. Controlla la tua configurazione!",
         "couldNotFindReadyLMforAgent": "Impossibile trovare un modello linguistico pronto per l'{0} dell'agente. Controlla la tua configurazione!",
         "customAgents": {
-          "migrationResult": "Migrazione degli agenti personalizzati: {0} migrato, {1} non riuscito, {2} file legacy customAgents.yml salvato in formato .bak, {3} le sostituzioni dei prompt integrate in agent.md.",
+          "migratePrompt": {
+            "message": "I tuoi agenti personalizzati utilizzano ancora il vecchio formato `customAgents.yml`. Si consiglia di migrarli al nuovo formato per singolo agente (`agents/<id>/agent.md`), che {0} utilizzerà d'ora in poi. Ogni agente avrà il proprio file accanto al file `customAgents.yml`, mentre l'originale verrà conservato come backup con il nome `customAgents.yml.bak`."
+          },
+          "migrationResult": {
+            "empty": "Migrazione dell’agente personalizzato: nulla da migrare."
+          },
           "rerunMigration": "Esegui nuovamente la migrazione di custom-agent"
         },
         "defaultAgent": {
