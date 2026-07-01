@@ -19,7 +19,7 @@ import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { AnthropicLanguageModelFactory, AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 
@@ -47,6 +47,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(AnthropicLanguageModelFactory)
+    protected readonly anthropicLanguageModelFactory: AnthropicLanguageModelFactory;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -95,23 +98,23 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
-                new AnthropicModel(
-                    modelDescription.id,
-                    modelDescription.model,
+                this.anthropicLanguageModelFactory({
+                    id: modelDescription.id,
+                    model: modelDescription.model,
                     status,
-                    modelDescription.enableStreaming,
-                    modelDescription.useCaching,
-                    apiKeyProvider,
-                    modelDescription.url,
-                    metadata.maxTokens,
-                    modelDescription.maxRetries,
-                    proxyUrl,
-                    metadata.reasoningSupport,
-                    metadata.reasoningApi,
-                    metadata.supportsXHighEffort,
-                    metadata.maxInputTokens,
-                    ANTHROPIC_SERVER_TOOLS
-                )
+                    enableStreaming: modelDescription.enableStreaming,
+                    useCaching: modelDescription.useCaching,
+                    apiKey: apiKeyProvider,
+                    url: modelDescription.url,
+                    maxTokens: metadata.maxTokens,
+                    maxRetries: modelDescription.maxRetries,
+                    proxy: proxyUrl,
+                    reasoningSupport: metadata.reasoningSupport,
+                    reasoningApi: metadata.reasoningApi,
+                    supportsXHighEffort: metadata.supportsXHighEffort,
+                    maxInputTokens: metadata.maxInputTokens,
+                    serverTools: ANTHROPIC_SERVER_TOOLS
+                })
             ]);
         }
     }

@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    createToolCallError,
     ImageContent,
     LanguageModel,
     LanguageModelMessage,
@@ -29,10 +28,11 @@ import {
     ServerToolCall,
     ServerToolDescriptor,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig, Tool, UrlContextMetadata, GroundingMetadata
 } from '@google/genai';
@@ -146,27 +146,65 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
     }
 }
 
+export interface GoogleModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+}
+
+export const GoogleModelParams = Symbol('GoogleModelParams');
+
+export const GoogleLanguageModelFactory = Symbol('GoogleLanguageModelFactory');
+export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleModel;
+
 /**
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
  */
+@injectable()
 export class GoogleModel implements LanguageModel {
+
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'google';
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public apiKey: () => string | undefined,
-        public retrySettings: () => GoogleLanguageModelRetrySettings,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public maxInputTokens?: number,
-        public serverTools?: ServerToolDescriptor[]
-    ) { }
+    @inject(GoogleModelParams)
+    protected readonly params: GoogleModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.apiKey = params.apiKey;
+        this.retrySettings = params.retrySettings;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {
@@ -359,27 +397,11 @@ export class GoogleModel implements LanguageModel {
                     // Process tool calls if any exist
                     const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
-                        // Collect tool results
-                        const toolResult = await Promise.all(toolCalls.map(async tc => {
-                            const tool = request.tools?.find(t => t.name === tc.name);
-                            let result;
-                            if (!tool) {
-                                result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-                            } else {
-                                try {
-                                    result = await tool.handler(tc.args, ToolInvocationContext.create(tc.id));
-                                } catch (e) {
-                                    console.error(`Error executing tool ${tc.name}:`, e);
-                                    result = createToolCallError(e.message || 'Tool execution failed');
-                                }
-                            }
-                            return {
-                                name: tc.name,
-                                result: result,
-                                id: tc.id,
-                                arguments: tc.args,
-                            };
-                        }));
+                        const toolResult = await that.toolCallExecutor.executeToolCalls(
+                            toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args })),
+                            request.tools,
+                            { cancellationToken }
+                        );
 
                         // Generate tool call responses
                         const calls = toolResult.map(tr => ({

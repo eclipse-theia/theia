@@ -4,6 +4,20 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.74.0 - tbd
+
+- [ai-anthropic, ai-google, ai-ollama, ai-openai, ai-copilot] added rebindable `<provider>LanguageModelFactory` bindings for instantiating provider language models [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-core] executed a model turn's tool calls concurrently, including parallel agent delegations, instead of sequentially, via a new injectable `ToolCallExecutor` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-anthropic, ai-google, ai-ollama, ai-openai, ai-copilot] the provider language model classes are now `@injectable`, transient-scoped services constructed via their `<provider>LanguageModelFactory`, so adopters can rebind them to substitute custom implementations [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] added a rebindable `ChatCompletionStreamingAsyncIteratorFactory`; the chat-completion tool-call streaming iterator (used by the OpenAI and Copilot models) is now an injectable service that can be substituted [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+
+<a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
+
+- [ai-openai] `OpenAiLanguageModelsManagerImpl` no longer injects `OpenAiModelUtils` or `OpenAiResponseApiUtils` (the `openAiModelUtils` and `responseApiUtils` protected fields were removed); provider models are now constructed via the injected `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai, ai-copilot] `OpenAiModel.createTools()` and `CopilotLanguageModel.createTools()` now return `ChatCompletionTool[]` instead of `RunnableToolFunctionWithoutParse[]`, because the OpenAI SDK `runTools` runner is no longer used [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-copilot] removed the `protected runnerOptions` field from `CopilotLanguageModel`; its only purpose was the `maxChatCompletions` turn cap, which is gone now that the OpenAI SDK `runTools` runner is unused, so the tool loop runs until the model stops requesting tools. Subclasses that read or overrode `runnerOptions` must adapt. `OpenAiModel.runnerOptions` is retained, but its `maxChatCompletions` now bounds only the Response API path, not the Chat Completions tool loop [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-anthropic, ai-google, ai-ollama, ai-openai, ai-copilot] the provider language model classes (`AnthropicModel`, `GoogleModel`, `OllamaModel`, `OpenAiModel`, `CopilotLanguageModel`) no longer expose public constructors; they are `@injectable` and receive their configuration through an injected `<provider>ModelParams` object (a symbol) plus injected service dependencies. Instantiate them via the corresponding `<provider>LanguageModelFactory` (or the DI container) instead of `new`, and drop constructor overrides in subclasses [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+
 ## 1.73.0 - 6/25/2026
 
 - [ai] supported deferred tool loading via provider tool search [#17449](https://github.com/eclipse-theia/theia/pull/17449)

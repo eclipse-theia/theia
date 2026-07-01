@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { expect } from 'chai';
-import { OpenAiModelUtils } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { LanguageModelMessage } from '@theia/ai-core';
 import { OpenAiResponseApiUtils, recursiveStrictJSONSchema } from './openai-response-api-utils';
 import type { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';

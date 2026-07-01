@@ -17,7 +17,7 @@
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleGenAI, Model } from '@google/genai';
-import { GoogleModel } from './google-language-model';
+import { GoogleLanguageModelFactory, GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 
@@ -67,6 +67,9 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
+    @inject(GoogleLanguageModelFactory)
+    protected readonly googleLanguageModelFactory: GoogleLanguageModelFactory;
+
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
     }
@@ -115,18 +118,18 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
-                new GoogleModel(
-                    modelDescription.id,
-                    modelDescription.model,
+                this.googleLanguageModelFactory({
+                    id: modelDescription.id,
+                    model: modelDescription.model,
                     status,
-                    modelDescription.enableStreaming,
-                    apiKeyProvider,
-                    retrySettingsProvider,
-                    metadata.reasoningSupport,
-                    metadata.reasoningApi,
-                    metadata.maxInputTokens,
-                    GOOGLE_SERVER_TOOLS
-                )
+                    enableStreaming: modelDescription.enableStreaming,
+                    apiKey: apiKeyProvider,
+                    retrySettings: retrySettingsProvider,
+                    reasoningSupport: metadata.reasoningSupport,
+                    reasoningApi: metadata.reasoningApi,
+                    maxInputTokens: metadata.maxInputTokens,
+                    serverTools: GOOGLE_SERVER_TOOLS
+                })
             ]);
         }
     }

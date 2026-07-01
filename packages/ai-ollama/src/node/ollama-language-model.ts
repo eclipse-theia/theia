@@ -24,6 +24,8 @@ import {
     ReasoningSettings,
     ReasoningSupport,
     ToolCall,
+    ToolCallExecutor,
+    ToolCallResult,
     ToolRequest,
     ToolRequestParametersProperties,
     ImageContent,
@@ -33,12 +35,28 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
+export interface OllamaModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+}
+
+export const OllamaModelParams = Symbol('OllamaModelParams');
+
+export const OllamaLanguageModelFactory = Symbol('OllamaLanguageModelFactory');
+export type OllamaLanguageModelFactory = (params: OllamaModelParams) => OllamaModel;
+
+@injectable()
 export class OllamaModel implements LanguageModel {
 
     protected readonly DEFAULT_REQUEST_SETTINGS: Partial<Omit<ChatRequest, 'stream' | 'model'>> = {
@@ -50,19 +68,29 @@ export class OllamaModel implements LanguageModel {
     readonly providerId = 'ollama';
     readonly vendor: string = 'Ollama';
 
-    /**
-     * @param id the unique id for this language model. It will be used to identify the model in the UI.
-     * @param model the unique model name as used in the Ollama environment.
-     * @param hostProvider a function to provide the host URL for the Ollama server.
-     */
-    constructor(
-        public readonly id: string,
-        protected readonly model: string,
-        public status: LanguageModelStatus,
-        protected host: () => string | undefined,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport
-    ) { }
+    id: string;
+    protected model: string;
+    status: LanguageModelStatus;
+    protected host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+
+    @inject(OllamaModelParams)
+    protected readonly params: OllamaModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.host = params.host;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+    }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
@@ -363,18 +391,26 @@ export class OllamaModel implements LanguageModel {
 
     private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        const toolRequests: ToolRequest[] = tools.map(tool => ({
+            id: tool.function.name ?? '',
+            name: tool.function.name ?? '',
+            parameters: { type: 'object', properties: {} },
+            handler: async argString => (await tool.handler(argString)) as ToolCallResult
+        }));
+
+        const results = await this.toolCallExecutor.executeToolCalls(
+            toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
+            toolRequests
+        );
+
+        // Build the messages and response entries from the input-ordered results so that the
+        // next turn sees a deterministic ordering.
         const toolCallsForResponse: ToolCall[] = [];
-
-        for (const call of toolCalls) {
-            const functionToCall = tools.find(tool => tool.function.name === call.function!.name);
-            let funcResult: string;
-
-            if (functionToCall) {
-                const rawResult = await functionToCall.handler(call.function!.arguments!);
-                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
-            } else {
-                funcResult = 'error: Tool not found';
-            }
+        toolCalls.forEach((call, index) => {
+            const outcome = results[index];
+            const funcResult = outcome.notFound
+                ? 'error: Tool not found'
+                : typeof outcome.result === 'string' ? outcome.result : JSON.stringify(outcome.result);
 
             chatRequest.messages.push({
                 role: 'tool',
@@ -387,7 +423,7 @@ export class OllamaModel implements LanguageModel {
                 result: String(funcResult),
                 finished: true
             });
-        }
+        });
         return toolCallsForResponse;
     }
 

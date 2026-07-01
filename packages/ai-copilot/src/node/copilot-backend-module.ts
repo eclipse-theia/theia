@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
@@ -26,6 +26,7 @@ import {
 } from '../common';
 import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
+import { CopilotLanguageModel, CopilotLanguageModelFactory, CopilotLanguageModelParams } from './copilot-language-model';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
@@ -34,6 +35,16 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 
     bind(CopilotLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(CopilotLanguageModelsManager).toService(CopilotLanguageModelsManagerImpl);
+
+    bind(CopilotLanguageModel).toSelf().inTransientScope();
+    bind(CopilotLanguageModelFactory).toFactory<CopilotLanguageModel, [CopilotLanguageModelParams]>(
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(CopilotLanguageModelParams).toConstantValue(params);
+            return child.get(CopilotLanguageModel);
+        }
+    );
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<CopilotAuthServiceClient>(

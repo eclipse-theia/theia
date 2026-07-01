@@ -23,38 +23,73 @@ import {
     LanguageModelResponse,
     LanguageModelStatus,
     LanguageModelTextResponse,
+    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
-import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
+import { ChatCompletionStreamingAsyncIteratorFactory } from '@theia/ai-openai/lib/node/openai-chat-completion-stream';
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
-import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
+
+export interface CopilotLanguageModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    supportsStructuredOutput: boolean;
+    maxRetries: number;
+    accessTokenProvider: () => Promise<string | undefined>;
+    enterpriseUrlProvider: () => string | undefined;
+    userAgentProvider: () => string;
+}
+
+export const CopilotLanguageModelParams = Symbol('CopilotLanguageModelParams');
+
+export const CopilotLanguageModelFactory = Symbol('CopilotLanguageModelFactory');
+export type CopilotLanguageModelFactory = (params: CopilotLanguageModelParams) => CopilotLanguageModel;
 
 /**
  * Language model implementation for GitHub Copilot.
  * Uses the OpenAI SDK to communicate with the Copilot API.
  */
+@injectable()
 export class CopilotLanguageModel implements LanguageModel {
 
-    protected runnerOptions: RunnerOptions = {
-        maxChatCompletions: 100
-    };
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    supportsStructuredOutput: boolean;
+    maxRetries: number;
+    protected accessTokenProvider: () => Promise<string | undefined>;
+    protected enterpriseUrlProvider: () => string | undefined;
+    protected userAgentProvider: () => string;
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public supportsStructuredOutput: boolean,
-        public maxRetries: number,
-        protected readonly accessTokenProvider: () => Promise<string | undefined>,
-        protected readonly enterpriseUrlProvider: () => string | undefined,
-        protected readonly userAgentProvider: () => string,
-    ) { }
+    @inject(CopilotLanguageModelParams)
+    protected readonly params: CopilotLanguageModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ChatCompletionStreamingAsyncIteratorFactory)
+    protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.supportsStructuredOutput = params.supportsStructuredOutput;
+        this.maxRetries = params.maxRetries;
+        this.accessTokenProvider = params.accessTokenProvider;
+        this.enterpriseUrlProvider = params.enterpriseUrlProvider;
+        this.userAgentProvider = params.userAgentProvider;
+    }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
         return request.settings ?? {};
@@ -81,32 +116,31 @@ export class CopilotLanguageModel implements LanguageModel {
             settings['stream_options'] = { include_usage: true };
         }
 
-        let runner: ChatCompletionStream;
         const tools = this.createTools(request);
 
         if (tools) {
-            runner = openai.chat.completions.runTools({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                tools: tools,
-                tool_choice: 'auto',
-                ...settings
-            }, {
-                ...this.runnerOptions,
-                maxRetries: this.maxRetries
-            });
-        } else {
-            runner = openai.chat.completions.stream({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                ...settings
-            });
+            return {
+                stream: this.chatCompletionStreamFactory({
+                    openai,
+                    model: this.model,
+                    request,
+                    messages: this.processMessages(request.messages),
+                    settings,
+                    tools,
+                    maxRetries: this.maxRetries,
+                    toolCallExecutor: this.toolCallExecutor,
+                    cancellationToken
+                })
+            };
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return { stream: new StreamingAsyncIterator(runner as any, cancellationToken) };
+        const runner = openai.chat.completions.stream({
+            model: this.model,
+            messages: this.processMessages(request.messages),
+            stream: true,
+            ...settings
+        });
+        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -152,16 +186,15 @@ export class CopilotLanguageModel implements LanguageModel {
         };
     }
 
-    protected createTools(request: LanguageModelRequest): RunnableToolFunctionWithoutParse[] | undefined {
+    protected createTools(request: LanguageModelRequest): ChatCompletionTool[] | undefined {
         return request.tools?.map(tool => ({
             type: 'function',
             function: {
                 name: tool.name,
                 description: tool.description,
-                parameters: tool.parameters,
-                function: (args_string: string) => tool.handler(args_string)
+                parameters: tool.parameters
             }
-        } as RunnableToolFunctionWithoutParse));
+        } as unknown as ChatCompletionTool));
     }
 
     protected async initializeCopilotClient(): Promise<OpenAI> {
