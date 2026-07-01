@@ -17,45 +17,28 @@
 import { Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatRequestParser } from '@theia/ai-chat/lib/common/chat-request-parser';
-import { ChatAgentLocation } from '@theia/ai-chat/lib/common/chat-agents';
-import {
-    ChatContext,
-    ChatResponseModel,
-    MarkdownChatResponseContent,
-    MutableChatModel,
-    MutableChatRequestModel,
-    TextChatResponseContent
-} from '@theia/ai-chat/lib/common/chat-model';
-import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { CommitMessageAgent } from './commit-message-agent';
 import { CommitMessageScope } from './commit-message-commands';
-import { GET_GIT_CHANGES_FUNCTION_ID } from './git-changes-tool';
+import { GetGitChangesTool } from './git-changes-tool';
 
 /**
  * Tracks an in-flight commit-message generation for a given scope. `cts` is fired by
  * {@link CommitMessageRunner.cancel} so a click on the spinning button cancels the run
- * even while we are still in the pre-request phase (resolving the repository, awaiting
- * the overwrite confirmation, parsing the chat request). Once the request exists,
- * `request.cancel()` cancels the LLM call as well.
+ * even while we are still in the pre-request phase (resolving the repository, fetching the
+ * diff, awaiting the overwrite confirmation). Once the LLM request is under way, the same
+ * token cancels it via {@link CommitMessageAgent.generateCommitMessage}.
  */
 interface RunningSlot {
     readonly cts: CancellationTokenSource;
-    request?: MutableChatRequestModel;
 }
 
-const USER_MESSAGES: Record<CommitMessageScope, string> = {
-    staged: 'Provide a commit message for the staged changes.',
-    all: 'Provide a commit message for all current changes.'
-};
-
 /**
- * Runs the {@link CommitMessageAgent} silently — i.e. without creating a `ChatService`
- * session that would surface in the chat view — and writes the resulting commit message
- * into the SCM commit-message input of the currently selected repository.
+ * Drives the {@link CommitMessageAgent}: fetches the git diff for the requested scope, asks the
+ * agent to turn it into a commit message and writes the result into the SCM commit-message input
+ * of the currently selected repository. The agent is a plain (non-chat) agent, so there is no
+ * chat session, no tool-confirmation prompt and no chat-model bookkeeping here.
  */
 @injectable()
 export class CommitMessageRunner {
@@ -63,17 +46,14 @@ export class CommitMessageRunner {
     @inject(CommitMessageAgent)
     protected readonly commitMessageAgent: CommitMessageAgent;
 
-    @inject(ChatRequestParser)
-    protected readonly chatRequestParser: ChatRequestParser;
+    @inject(GetGitChangesTool)
+    protected readonly gitChangesTool: GetGitChangesTool;
 
     @inject(ScmService)
     protected readonly scmService: ScmService;
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
-
-    @inject(ToolConfirmationManager)
-    protected readonly confirmationManager: ToolConfirmationManager;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -88,26 +68,20 @@ export class CommitMessageRunner {
     }
 
     cancel(scope: CommitMessageScope): void {
-        const slot = this.running.get(scope);
-        if (!slot) {
-            return;
-        }
-        slot.cts.cancel();
-        slot.request?.cancel();
+        this.running.get(scope)?.cts.cancel();
     }
 
     async run(scope: CommitMessageScope): Promise<void> {
-        if (this.running.has(scope)) {
+        // Only one generation may run at a time: the two scopes share `repository.input.value`,
+        // so allowing both (e.g. from the command palette, which bypasses the widget's button
+        // disabling) would let them race on the input.
+        if (this.running.size > 0) {
             return;
         }
-        // Reserve the scope synchronously so a concurrent click cannot race past the guard.
-        // The token in the slot lets `cancel(scope)` abort the run during the pre-request
-        // phase (before `addRequest` has produced a `MutableChatRequestModel` to cancel).
         const slot: RunningSlot = { cts: new CancellationTokenSource() };
         this.running.set(scope, slot);
         this.onDidChangeEmitter.fire();
 
-        const model = new MutableChatModel(ChatAgentLocation.Panel);
         try {
             const repository = this.scmService.selectedRepository;
             if (!repository) {
@@ -116,17 +90,15 @@ export class CommitMessageRunner {
                 );
                 return;
             }
-            if (slot.cts.token.isCancellationRequested) {
-                return;
-            }
 
-            // Gate the tool on user consent before the agent gets a chance to call it. Background
-            // invocations like this one have no UI to render the regular per-call confirmation
-            // modal into, so we ask the user up-front to flip the tool to `ALWAYS_ALLOW`.
-            if (!(await this.ensureToolAllowed())) {
+            const changes = await this.gitChangesTool.getChanges(scope === 'staged', slot.cts.token);
+            if (slot.cts.token.isCancellationRequested) {
                 return;
             }
-            if (slot.cts.token.isCancellationRequested) {
+            if (!changes.trim()) {
+                await this.messageService.warn(
+                    nls.localize('theia/ai-ide/commit-message/no-changes', 'There are no changes to generate a commit message from.')
+                );
                 return;
             }
 
@@ -137,54 +109,29 @@ export class CommitMessageRunner {
                 return;
             }
 
-            const context: ChatContext = { variables: [] };
-            const parsedRequest = await this.chatRequestParser.parseChatRequest(
-                { text: USER_MESSAGES[scope] },
-                ChatAgentLocation.Panel,
-                context
-            );
+            const message = await this.commitMessageAgent.generateCommitMessage(changes, scope, slot.cts.token);
             if (slot.cts.token.isCancellationRequested) {
                 return;
             }
-
-            const request = model.addRequest(parsedRequest, this.commitMessageAgent.id, context);
-            slot.request = request;
-            // A cancel that arrived while we were building the request must propagate to it now.
-            if (slot.cts.token.isCancellationRequested) {
-                request.cancel();
-                return;
-            }
-
-            await this.invokeAndAwaitCompletion(request);
-
-            if (request.response.isCanceled) {
-                return;
-            }
-            if (request.response.isError) {
-                const reason = request.response.errorObject?.message
-                    ?? nls.localize('theia/ai-ide/commit-message/unknown-error', 'unknown error');
-                this.notifyFailure(reason);
-                return;
-            }
-
-            const text = this.extractCommitMessageText(request.response);
-            if (!text) {
+            if (!message) {
                 this.messageService.warn(
                     nls.localize('theia/ai-ide/commit-message/empty', 'The model returned an empty commit message.')
                 );
                 return;
             }
 
-            repository.input.value = text;
+            repository.input.value = message;
             repository.input.focus();
         } catch (error) {
+            if (slot.cts.token.isCancellationRequested) {
+                return;
+            }
             this.logger.error('Failed to run commit-message agent', error);
             this.notifyFailure(error instanceof Error ? error.message : String(error));
         } finally {
             this.running.delete(scope);
             this.onDidChangeEmitter.fire();
             slot.cts.dispose();
-            model.dispose();
         }
     }
 
@@ -196,58 +143,6 @@ export class CommitMessageRunner {
                 reason
             )
         );
-    }
-
-    /**
-     * Extracts the commit-message text from the response, discarding non-textual content
-     * such as thinking blocks (whose `asString()` serializes as JSON) and tool calls.
-     */
-    protected extractCommitMessageText(response: ChatResponseModel): string {
-        return response.response.content
-            .filter(c => TextChatResponseContent.is(c) || MarkdownChatResponseContent.is(c))
-            .map(c => c.asString?.() ?? '')
-            .filter(text => !!text)
-            .join('\n\n')
-            .trim();
-    }
-
-    /**
-     * Ensures the `getGitChanges` tool is set to {@link ToolConfirmationMode.ALWAYS_ALLOW} for
-     * the upcoming agent invocation. If the tool is already on `ALWAYS_ALLOW` (per user choice
-     * or a session override), this is a no-op. Otherwise the user is asked once; on accept the
-     * preference is persisted so subsequent runs do not show the dialog again.
-     *
-     * Returns `true` when the run should proceed.
-     */
-    protected async ensureToolAllowed(): Promise<boolean> {
-        // No `chatId` is meaningful here because the runner owns a private, throw-away model;
-        // pass an empty string so the manager falls through to the persisted preference.
-        const mode = this.confirmationManager.getConfirmationMode(GET_GIT_CHANGES_FUNCTION_ID, '');
-        if (mode === ToolConfirmationMode.ALWAYS_ALLOW) {
-            return true;
-        }
-        const allow = nls.localizeByDefault('Allow');
-        const cancel = nls.localizeByDefault('Cancel');
-        const message = mode === ToolConfirmationMode.DISABLED
-            ? nls.localize(
-                'theia/ai-ide/commit-message/allow-tool-prompt-disabled',
-                'The `{0}` tool is currently disabled. Allow it from now on to generate a commit message?',
-                GET_GIT_CHANGES_FUNCTION_ID
-            )
-            : nls.localize(
-                'theia/ai-ide/commit-message/allow-tool-prompt-confirm',
-                'Generating a commit message requires the `{0}` tool. Allow it from now on?',
-                GET_GIT_CHANGES_FUNCTION_ID
-            );
-        const choice = await this.messageService.warn(message, allow, cancel);
-        if (choice !== allow) {
-            return false;
-        }
-        await this.confirmationManager.setConfirmationMode(
-            GET_GIT_CHANGES_FUNCTION_ID,
-            ToolConfirmationMode.ALWAYS_ALLOW
-        );
-        return true;
     }
 
     /** Returns `true` if the operation should proceed. */
@@ -266,34 +161,5 @@ export class CommitMessageRunner {
             cancel
         );
         return choice === replace;
-    }
-
-    protected async invokeAndAwaitCompletion(request: MutableChatRequestModel): Promise<void> {
-        const completion = new Promise<void>(resolve => {
-            if (this.isResponseFinished(request)) {
-                resolve();
-                return;
-            }
-            const listener = request.response.onDidChange(() => {
-                if (this.isResponseFinished(request)) {
-                    listener.dispose();
-                    resolve();
-                }
-            });
-        });
-        await Promise.all([
-            this.commitMessageAgent.invoke(request).catch(error => {
-                this.logger.error('Commit message agent threw', error);
-                if (!request.response.isComplete && !request.response.isCanceled && !request.response.isError) {
-                    request.response.error(error instanceof Error ? error : new Error(String(error)));
-                }
-            }),
-            completion
-        ]);
-    }
-
-    protected isResponseFinished(request: MutableChatRequestModel): boolean {
-        const response = request.response;
-        return response.isComplete || response.isCanceled || response.isError;
     }
 }

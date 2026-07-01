@@ -357,10 +357,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
 
-    // CommitMessageAgent is intentionally NOT bound as a `ChatAgent`: it is a single-purpose
-    // agent driven from the SCM commit widget via `CommitMessageRunner` and should not appear
-    // in chat `@`-mention completion or the chat agent list. The `Agent` binding registers
-    // its prompt fragments with the prompt service.
+    // CommitMessageAgent is a plain (non-chat) `Agent`: it is driven exclusively from the SCM
+    // commit widget via `CommitMessageRunner`, so it does not appear in chat `@`-mention
+    // completion or the chat agent list. The `Agent` binding registers its prompt fragments
+    // with the prompt service.
     bind(CommitMessageAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CommitMessageAgent);
     bindToolProvider(GetGitChangesTool, bind);

@@ -17,23 +17,14 @@
 import { BasePromptFragment } from '@theia/ai-core/lib/common';
 
 export const COMMIT_MESSAGE_SYSTEM_PROMPT_ID = 'commit-message-system';
+export const COMMIT_MESSAGE_USER_PROMPT_ID = 'commit-message-user';
 
 export const commitMessageSystemPrompt: BasePromptFragment = {
     id: COMMIT_MESSAGE_SYSTEM_PROMPT_ID,
     template: `# Role
 
-You are an assistant that produces **git commit messages** for changes in a workspace's git repository.
-
-# Tools
-
-- ~{getGitChanges}
-
-## When to call the tool
-
-- If the user asks for a commit message for the **staged** changes, call \`getGitChanges\` with \`{ "stagedOnly": true }\`.
-- If the user asks for a commit message for **all** current changes (or just "the changes"), call \`getGitChanges\` with \`{ "stagedOnly": false }\` (or no arguments).
-- If the user already provided the diff (or any code/changes) in their message, do **not** call the tool. Generate the commit message from the provided text.
-- If the tool returns an empty diff, respond with exactly: \`No changes to commit.\`
+You are an assistant that produces **git commit messages** from a unified diff of changes in a
+workspace's git repository. The diff is provided to you directly in the user message.
 
 # Output Format
 
@@ -51,13 +42,24 @@ Return ONLY the commit message text. Nothing else.
 
 # Constraints
 
-- Never include the diff itself in the response.
+- Base the message only on the provided diff. Never include the diff itself in the response.
 - Never include sign-off lines, issue numbers, or co-authored-by trailers unless they are
   clearly present in the provided changes.
-- If you cannot determine a meaningful message (no diff, tool errored), respond with exactly: \`No changes to commit.\`
+- If the provided diff is empty or you cannot determine a meaningful message, respond with exactly: \`No changes to commit.\`
+`
+};
+
+export const commitMessageUserPrompt: BasePromptFragment = {
+    id: COMMIT_MESSAGE_USER_PROMPT_ID,
+    template: `Generate a commit message for the following {{scope}} changes.
+
+\`\`\`diff
+{{changes}}
+\`\`\`
 `
 };
 
 export const commitMessagePrompts = [
-    { id: COMMIT_MESSAGE_SYSTEM_PROMPT_ID, defaultVariant: commitMessageSystemPrompt, variants: [] }
+    { id: COMMIT_MESSAGE_SYSTEM_PROMPT_ID, defaultVariant: commitMessageSystemPrompt, variants: [] },
+    { id: COMMIT_MESSAGE_USER_PROMPT_ID, defaultVariant: commitMessageUserPrompt, variants: [] }
 ];
