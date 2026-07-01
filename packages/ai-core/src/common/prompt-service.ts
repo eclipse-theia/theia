@@ -385,11 +385,21 @@ export interface PromptFragmentCustomizationService {
     createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI>;
 
     /**
-     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout.
+     * Returns `true` if migration would write anything: a scope still holds a legacy
+     * `customAgents.yml`, or a previously migrated scope has `agent.md` files that can be corrected
+     * (e.g. headings that were folded by an earlier migration). Read-only; performs no writes and is
+     * intended for deciding whether to prompt the user before migrating.
+     */
+    hasPendingCustomAgentMigration(): Promise<boolean>;
+
+    /**
+     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout and
+     * corrects already-migrated `agent.md` files whose headings were folded by an earlier migration.
      * The user's original content is never deleted: on success (or on partial failure when no backup
      * exists yet) the YAML is renamed to `customAgents.yml.bak`; if a `.bak` already exists it is not
-     * overwritten and the YAML is left in place.
-     * Idempotent — rerunning never overwrites an already-migrated agent file.
+     * overwritten and the YAML is left in place. Corrections only overwrite `agent.md` files the user
+     * has not edited since migration.
+     * Idempotent — rerunning never overwrites an already up-to-date agent file.
      */
     migrateCustomAgentsYaml(): Promise<Array<{
         scope: URI;
@@ -399,6 +409,7 @@ export interface PromptFragmentCustomizationService {
         failed: number;
         yamlBackedUp: boolean;
         promptOverridesMigrated: number;
+        corrected: number;
     }>>;
 
     /**
