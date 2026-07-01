@@ -14,5 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './shell-command-permission-service';
-export * from './predefined-shell-tool';
+import { Command } from '@theia/core';
+
+export type CommitMessageScope = 'staged' | 'all';
+
+export namespace CommitMessageCommands {
+    export const GENERATE_FROM_STAGED: Command = Command.toLocalizedCommand({
+        id: 'ai-ide.commit-message.generate-from-staged',
+        category: 'AI',
+        label: 'Generate Commit Message from Staged Changes'
+    }, 'theia/ai-ide/commit-message/generate-from-staged');
+
+    export const GENERATE_FROM_ALL: Command = Command.toLocalizedCommand({
+        id: 'ai-ide.commit-message.generate-from-all',
+        category: 'AI',
+        label: 'Generate Commit Message from All Changes'
+    }, 'theia/ai-ide/commit-message/generate-from-all');
+}
