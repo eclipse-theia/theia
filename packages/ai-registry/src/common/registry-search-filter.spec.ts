@@ -19,9 +19,12 @@ import { RegistrySearchFilter } from './registry-search-filter';
 
 describe('RegistrySearchFilter.meaningfulIdentifier', () => {
     const filter = new RegistrySearchFilter();
-    it('reduces a reverse-DNS id to its last domain label plus path', () => {
+    it('drops the reverse-DNS TLD and hosting namespace, keeping the owner label plus path', () => {
         expect(filter.meaningfulIdentifier('com.asana/mcp')).to.equal('asana mcp');
         expect(filter.meaningfulIdentifier('io.github.anthropics/algorithmic-art')).to.equal('anthropics algorithmic-art');
+    });
+    it('keeps a distinctive intermediate domain label instead of only the last one', () => {
+        expect(filter.meaningfulIdentifier('com.cloudflare.mcp/mcp')).to.equal('cloudflare mcp mcp');
     });
     it('leaves a plain string unchanged', () => {
         expect(filter.meaningfulIdentifier('Hugging Face')).to.equal('Hugging Face');
@@ -49,6 +52,17 @@ describe('RegistrySearchFilter.matches', () => {
         expect(filter.matches(art, 'git')).to.equal(false);
         // ...but a genuine GitHub entry still matches.
         expect(filter.matches(github, 'git')).to.equal(true);
+    });
+
+    it('finds an entry by its full reverse-DNS server id (e.g. copied from the registry website)', () => {
+        expect(filter.matches(asana, 'com.asana/mcp')).to.equal(true);
+        expect(filter.matches(grafana, 'io.github.grafana/mcp-grafana')).to.equal(true);
+        expect(filter.matches(github, 'io.github.github/github-mcp-server')).to.equal(true);
+    });
+
+    it('pinpoints the entry when searching a full server id, excluding unrelated ones', () => {
+        expect(filter.matches(grafana, 'com.asana/mcp')).to.equal(false);
+        expect(filter.matches(asana, 'io.github.grafana/mcp-grafana')).to.equal(false);
     });
 
     it('matches a substring of the kebab-case name', () => {

@@ -61,14 +61,13 @@ function buildBridge(searchModel: { query: string }, entries: ResolvedRegistryEn
     container.bind(RegistryFetchService).toConstantValue(new StubRegistryFetchService(entries) as unknown as RegistryFetchService);
     container.bind(VSXExtensionsContribution).toConstantValue({ openView: async () => undefined } as unknown as VSXExtensionsContribution);
     container.bind(VSXExtensionsSearchModel).toConstantValue(searchModel as unknown as VSXExtensionsSearchModel);
-    container.bind(RegistrySearchFilter).toSelf().inSingletonScope();
     container.bind(MCPRegistryUiBridgeImpl).toSelf().inSingletonScope();
     return container.get(MCPRegistryUiBridgeImpl);
 }
 
 describe('MCPRegistryUiBridgeImpl.openRegistry', () => {
 
-    it('sets a search query that actually surfaces the linked registry entry', async () => {
+    it('searches by the raw server id, which the filter surfaces to the linked entry', async () => {
         const searchModel = { query: '' };
         const bridge = buildBridge(searchModel, [exampleRegistryEntry]);
         await bridge.ready();
@@ -81,12 +80,10 @@ describe('MCPRegistryUiBridgeImpl.openRegistry', () => {
             identifier: exampleRegistryEntry.serverId,
             description: exampleRegistryEntry.description
         };
-        expect(searchModel.query).to.not.be.empty;
-        // The query the bridge picks must match the entry in the Extensions search.
+        // The bridge fills the search box with the clean, user-recognizable server id...
+        expect(searchModel.query).to.equal(exampleRegistryEntry.serverId);
+        // ...and the filter reduces that id so it surfaces the linked entry.
         expect(filter.matches(searchEntry, searchModel.query)).to.equal(true);
-        // Regression guard: the raw serverId does not match, because the filter strips the
-        // reverse-DNS labels (`io`, `github`) it would still require as query terms.
-        expect(filter.matches(searchEntry, exampleRegistryEntry.serverId)).to.equal(false);
     });
 
     it('leaves the query untouched for an unknown server id', async () => {

@@ -23,7 +23,6 @@ import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-e
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
 
 @injectable()
 export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
@@ -36,9 +35,6 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
 
     @inject(VSXExtensionsSearchModel)
     protected readonly searchModel: VSXExtensionsSearchModel;
-
-    @inject(RegistrySearchFilter)
-    protected readonly searchFilter: RegistrySearchFilter;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -86,10 +82,10 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
         // (with a warning + Unlink / Uninstall); jumping to an empty search hides it, so
         // we just show the view and let the user see the warning in Installed.
         if (serverId && this.hasServer(serverId)) {
-            // Use the same reduction the registry search filter applies to entry ids: it strips
-            // the reverse-DNS domain labels (e.g. `io`, `github`), so feeding it the raw serverId
-            // would require those stripped labels to match and yield no results. See `RegistrySearchFilter`.
-            this.searchModel.query = this.searchFilter.meaningfulIdentifier(serverId);
+            // Search by the raw server id: it's the clean, user-recognizable string (the same one
+            // shown on the registry website) and `RegistrySearchFilter` reduces it to surface the
+            // linked entry. See `RegistrySearchFilter.reduceQuery`.
+            this.searchModel.query = serverId;
         }
         await this.viewContribution.openView({ activate: true });
     }
