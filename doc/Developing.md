@@ -52,10 +52,11 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
-- Node.js `>= 22` and `<= 24`.
+- Node.js `>= 22` (Node 24 is the recommended default).
   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
+  - On Windows, note that the Node.js version determines the Visual Studio Build Tools version required for native module compilation. See [Building on Windows](#building-on-windows) for details.
 - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
-- Python3 is required for the build due to [`node-gyp`](https://github.com/nodejs/node-gyp/tree/v11.4.0#installation)
+- Python3 is required for the build due to [`node-gyp`](https://github.com/nodejs/node-gyp#installation)
 
 Some additional tools and libraries are needed depending on your platform:
 
@@ -243,7 +244,7 @@ npm run rebuild:browser
 ## Run the Electron-based example application
 
 ```sh
-npm start:electron
+npm run start:electron
 ```
 
 ## Rebuilding
@@ -493,9 +494,8 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
 - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
 - Install Node.js with `nvm`: `nvm install lts`, then use it: `nvm use lts`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
-- If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
-- If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
-  - Visual Studio [build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) 17
+- Modern Node.js installers on Windows can install the required build tools for you (see the "Automatically install the necessary tools" checkbox in the Node.js installer). If you need to install them manually, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
+- If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) on how to install the dependencies manually. For Node 22 and later, this means at least [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) (v17) with the "Desktop development with C++" workload.
 - If you have multiple versions of either python or Visual Studio installed, or if the tool is not found, you may adjust the version used as described
  [here](https://github.com/nodejs/node-gyp?tab=readme-ov-file#configuring-python-dependency)
 
@@ -514,12 +514,13 @@ If you do not have Git Bash installed on your system, [get one](https://gitforwi
 
 ### Installing Windows Build Tools
 
-- Previously, [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools) is required to build Native Nodes modules on Windows. The npm package is now [`deprecated`](https://www.npmjs.com/package/windows-build-tools) because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools.
-- In case you need to install the tool manually, run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
+- The modern Node.js installer for Windows offers to install the required build tools (Visual Studio Build Tools with the C++ workload and Python) during setup. This is the recommended path.
+- If you skipped that step, install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) (2022 or later) with the "Desktop development with C++" workload, plus Python 3. See the [node-gyp Windows guide](https://github.com/nodejs/node-gyp#on-windows) for details.
+- The legacy [`windows-build-tools`](https://www.npmjs.com/package/windows-build-tools) npm package is deprecated and should no longer be used.
 
 ## Troubleshooting
 
-> First make sure that you follow the steps given in the [docs](https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#run-the-browser-based-example-applicatio) correctly.
+> First make sure that you follow the steps given in the [docs](https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#run-the-browser-based-example-application) correctly.
 
 ### Linux
 
@@ -534,7 +535,7 @@ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo s
 
 ### Windows
 
-If you see `LINK : fatal error LNK1104: cannot open file 'C:\\Users\\path\\to\\node.lib' [C:\path\to\theia\node_modules\drivelist\build\drivelist.vcxproj]`, then set the Visual Studio version manually with `npm config set msvs_version 2017 --global`.
+If you see `LINK : fatal error LNK1104: cannot open file 'C:\\Users\\path\\to\\node.lib' [C:\path\to\theia\node_modules\drivelist\build\drivelist.vcxproj]`, then set the Visual Studio version manually, e.g. `npm config set msvs_version 2022 --global`. Note that the required Visual Studio version depends on your Node.js version: Node 22 and later require at least Visual Studio 2022 Build Tools. See the [node-gyp Windows guide](https://github.com/nodejs/node-gyp#on-windows) for the current requirements.
 
 If you are facing with `EPERM: operation not permitted` or `permission denied`
 errors while building, testing or running the application then;
@@ -551,7 +552,7 @@ errors while building, testing or running the application then;
  operating systems. Hence, we are more than happy to receive any Windows-related
  feedbacks, [bug](https://github.com/eclipse-theia/theia/issues) reports.
 
-If you're still struggling with the build, but you use Windows 10, then you can enable the `Windows Subsystem for Linux` and you can get a Linux distro for free.
+If you're still struggling with the build on Windows 10 or later, you can enable the `Windows Subsystem for Linux` and get a Linux distro for free.
 
 ### macOS
 
