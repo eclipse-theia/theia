@@ -415,7 +415,7 @@ export class ApplicationShell extends Widget {
     }
 
     protected setTopPanelVisibility(preference: string): void {
-        const hiddenPreferences = ['compact', 'hidden'];
+        const hiddenPreferences = ['compact', 'hidden', 'toggle'];
         this.topPanel.setHidden(hiddenPreferences.includes(preference));
     }
 

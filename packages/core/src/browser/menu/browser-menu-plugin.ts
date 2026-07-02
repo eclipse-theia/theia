@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { Menu, MenuBar, Menu as MenuWidget, Widget } from '@lumino/widgets';
 import { CommandRegistry as LuminoCommandRegistry } from '@lumino/commands';
 import {
-    environment, DisposableCollection,
+    environment, Disposable, DisposableCollection,
     AcceleratorSource,
     ArrayUtils,
     PreferenceService
@@ -92,7 +92,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
     }
 
     protected showMenuBar(menuBar: DynamicMenuBarWidget, preference = this.getMenuBarVisibility()): void {
-        if (preference && ['classic', 'visible'].includes(preference)) {
+        if (preference && ['classic', 'visible', 'toggle'].includes(preference)) {
             menuBar.clearMenus();
             this.fillMenuBar(menuBar);
         } else {
@@ -432,6 +432,8 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    protected toggleModeListeners = new DisposableCollection();
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
@@ -449,18 +451,141 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         shell.addWidget(logo, { area: 'top' });
         const menu = this.factory.createMenuBar();
         shell.addWidget(menu, { area: 'top' });
-        // Hiding the menu is only necessary in electron
-        // In the browser we hide the whole top panel
         if (environment.electron.is()) {
             this.preferenceService.ready.then(() => {
-                menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
+                this.updateElectronMenuToggleMode(menu, logo);
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+                    this.updateElectronMenuToggleMode(menu, logo);
+                }
+            });
+        } else {
+            // In the browser, the whole top panel is hidden for compact/hidden/toggle
+            // (handled by ApplicationShell). For toggle mode, this installs an Alt-key
+            // listener that temporarily shows the top panel.
+            this.preferenceService.ready.then(() => {
+                this.updateBrowserMenuToggleMode(menu);
+            });
+            this.preferenceService.onPreferenceChanged(change => {
+                if (change.preferenceName === 'window.menuBarVisibility') {
+                    this.updateBrowserMenuToggleMode(menu);
                 }
             });
         }
+    }
+
+    /**
+     * Manages Lumino menu bar visibility and Alt-key toggling in Electron.
+     *
+     * With native title bar, the native Electron menu bar handles toggle via
+     * `autoHideMenuBar`, so the Lumino menu bar is simply hidden.
+     *
+     * With custom title bar, the Lumino menu bar is the only menu bar visible
+     * to the user. For 'toggle' mode, an Alt-key listener is installed to
+     * show/hide the menu bar widget.
+     */
+    protected updateElectronMenuToggleMode(menu: MenuBarWidget, logo: Widget): void {
+        this.toggleModeListeners.dispose();
+        const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+        const shouldHide = ['compact', 'hidden', 'toggle'].includes(pref);
+        menu.setHidden(shouldHide);
+        logo.setHidden(shouldHide);
+        if (pref === 'toggle') {
+            this.toggleModeListeners = this.installAltKeyToggle(menu, [menu, logo]);
+        }
+    }
+
+    /**
+     * Manages Alt-key toggle behavior for 'toggle' mode in the browser.
+     * The top panel's initial visibility is handled by {@link ApplicationShell.setTopPanelVisibility};
+     * this method only installs or removes the Alt-key listener.
+     */
+    protected updateBrowserMenuToggleMode(menu: MenuBarWidget): void {
+        this.toggleModeListeners.dispose();
+        const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+        if (pref === 'toggle') {
+            this.toggleModeListeners = this.installAltKeyToggle(menu, [this.shell.topPanel]);
+        }
+    }
+
+    /**
+     * Installs Alt-key listeners to toggle menu bar visibility.
+     * A clean Alt press (press and release without other keys) shows the
+     * given toggle targets and focuses the first menu. Pressing Alt again
+     * or clicking outside hides them.
+     *
+     * @param menu the menu bar widget to focus when shown
+     * @param toggleTargets the widgets to show/hide on Alt toggle
+     */
+    protected installAltKeyToggle(menu: MenuBarWidget, toggleTargets: Widget[]): DisposableCollection {
+        const disposables = new DisposableCollection();
+        let altKeyPressed = false;
+        let lastKeyWasAlt = false;
+
+        const isHidden = (): boolean => toggleTargets.some(w => w.isHidden);
+
+        const hide = (): void => {
+            for (const w of toggleTargets) {
+                w.setHidden(true);
+            }
+        };
+
+        const show = (): void => {
+            for (const w of toggleTargets) {
+                w.setHidden(false);
+            }
+        };
+
+        const onKeyDown = (e: KeyboardEvent): void => {
+            if (e.key === 'Alt') {
+                if (!e.repeat) {
+                    altKeyPressed = true;
+                    lastKeyWasAlt = true;
+                }
+            } else {
+                // Any other key invalidates the Alt-only gesture
+                lastKeyWasAlt = false;
+            }
+        };
+
+        const onKeyUp = (e: KeyboardEvent): void => {
+            if (e.key === 'Alt' && altKeyPressed && lastKeyWasAlt) {
+                altKeyPressed = false;
+                if (isHidden()) {
+                    show();
+                    menu.activeIndex = 0;
+                    menu.node.focus();
+                } else {
+                    hide();
+                }
+            }
+            if (e.key === 'Alt') {
+                altKeyPressed = false;
+            }
+        };
+
+        // When a menu closes and focus leaves the menu bar, hide it again
+        const onFocusOut = (): void => {
+            // Use setTimeout to allow focus to settle (e.g. focus moving between menu items)
+            setTimeout(() => {
+                if (!isHidden() && !menu.node.contains(document.activeElement)) {
+                    hide();
+                }
+            }, 100);
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        document.addEventListener('keyup', onKeyUp, true);
+        menu.node.addEventListener('focusout', onFocusOut);
+
+        disposables.push(Disposable.create(() => {
+            document.removeEventListener('keydown', onKeyDown, true);
+            document.removeEventListener('keyup', onKeyUp, true);
+            menu.node.removeEventListener('focusout', onFocusOut);
+        }));
+
+        return disposables;
     }
 
     protected createLogo(): Widget {
