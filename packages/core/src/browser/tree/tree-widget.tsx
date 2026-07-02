@@ -64,27 +64,9 @@ export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
 /**
- * Threshold in pixels to consider the view as being scrolled to the bottom
+ * Threshold in pixels to consider the view as being scrolled to the bottom.
  */
 export const SCROLL_BOTTOM_THRESHOLD = 30;
-
-/**
- * Tree scroll event data.
- */
-export interface TreeScrollEvent {
-    readonly scrollTop: number;
-    readonly scrollLeft: number;
-}
-
-/**
- * Tree scroll state data.
- */
-export interface TreeScrollState {
-    readonly scrollTop: number;
-    readonly isAtBottom: boolean;
-    readonly scrollHeight?: number;
-    readonly clientHeight?: number;
-}
 
 export const TreeProps = Symbol('TreeProps');
 
@@ -189,8 +171,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected searchBox: SearchBox;
     protected searchHighlights: Map<string, TreeDecoration.CaptionHighlight>;
 
-    protected readonly onScrollEmitter = new Emitter<TreeScrollEvent>();
-    readonly onScroll: TheiaEvent<TreeScrollEvent> = this.onScrollEmitter.event;
+    protected readonly onAtBottomStateChangeEmitter = new Emitter<boolean>();
+    readonly onAtBottomStateChange: TheiaEvent<boolean> = this.onAtBottomStateChangeEmitter.event;
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
@@ -285,7 +267,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.node.addEventListener('mouseup', this.handleMiddleClickEvent.bind(this));
         this.node.addEventListener('auxclick', this.handleMiddleClickEvent.bind(this));
         this.toDispose.pushAll([
-            this.onScrollEmitter,
+            this.onAtBottomStateChangeEmitter,
             this.model,
             this.model.onChanged(() => this.updateRows()),
             this.model.onSelectionChanged(() => this.scheduleUpdateScrollToRow({ resize: false })),
@@ -551,7 +533,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 rows={rows}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
-                onScrollEmitter={this.onScrollEmitter}
+                onAtBottomStateChangeEmitter={this.onAtBottomStateChangeEmitter}
                 {...this.props.viewProps}
             />;
         }
@@ -1201,39 +1183,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.node;
     }
 
-    /**
-     * Get the current scroll state from the virtualized view.
-     * This should be used instead of accessing the DOM scroll properties directly
-     * when the tree is virtualized.
-     */
-    protected getVirtualizedScrollState(): TreeScrollState | undefined {
-        return this.view?.getScrollState();
-    }
-
-    /**
-     * Check if the tree is scrolled to the bottom.
-     * Works with both virtualized and non-virtualized trees.
-     */
-    isScrolledToBottom(): boolean {
-        if (this.props.virtualized !== false && this.view) {
-            // Use virtualized scroll state
-            const scrollState = this.getVirtualizedScrollState();
-            return scrollState?.isAtBottom ?? true;
-        } else {
-            // Fallback to DOM-based calculation for non-virtualized trees
-            const scrollContainer = this.node;
-            const scrollHeight = scrollContainer.scrollHeight;
-            const scrollTop = scrollContainer.scrollTop;
-            const clientHeight = scrollContainer.clientHeight;
-
-            if (scrollHeight <= clientHeight) {
-                return true;
-            }
-
-            return scrollHeight - scrollTop - clientHeight <= SCROLL_BOTTOM_THRESHOLD;
-        }
-    }
-
     protected override onAfterAttach(msg: Message): void {
         const up = [
             Key.ARROW_UP,
@@ -1658,11 +1607,14 @@ export namespace TreeWidget {
         /**
          * Optional scroll event emitter.
          */
-        onScrollEmitter?: Emitter<TreeScrollEvent>
+        /**
+         * Optional emitter fired when the at-bottom state changes.
+         */
+        onAtBottomStateChangeEmitter?: Emitter<boolean>
     }
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
-        private lastScrollState: TreeScrollState = { scrollTop: 0, isAtBottom: true, scrollHeight: 0, clientHeight: 0 };
+
         /**
          * Ensure the selected row is scrolled into view when virtualization finishes updating.
          */
@@ -1687,28 +1639,14 @@ export namespace TreeWidget {
         }
 
         override render(): React.ReactNode {
-            const { rows, width, height, scrollToRow, renderNodeRow, onScrollEmitter, ...other } = this.props;
+            const { rows, width, height, scrollToRow, renderNodeRow, onAtBottomStateChangeEmitter, ...other } = this.props;
             return <Virtuoso
                 ref={(list: VirtuosoHandle | null) => {
                     this.list = (list || undefined);
                     this.scrollIntoViewIfNeeded();
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onScroll={(e: any) => {
-                    const scrollTop = e.target.scrollTop;
-                    const scrollHeight = e.target.scrollHeight;
-                    const clientHeight = e.target.clientHeight;
-                    const isAtBottom = scrollHeight - scrollTop - clientHeight <= SCROLL_BOTTOM_THRESHOLD;
-
-                    // Store scroll state before firing the event to prevent jitter during inference and scrolling
-                    this.lastScrollState = { scrollTop, isAtBottom, scrollHeight, clientHeight };
-                    onScrollEmitter?.fire({ scrollTop, scrollLeft: e.target.scrollLeft || 0 });
-                }}
                 atBottomStateChange={(atBottom: boolean) => {
-                    this.lastScrollState = {
-                        ...this.lastScrollState,
-                        isAtBottom: atBottom
-                    };
+                    onAtBottomStateChangeEmitter?.fire(atBottom);
                 }}
                 atBottomThreshold={SCROLL_BOTTOM_THRESHOLD}
                 totalCount={rows.length}
@@ -1720,10 +1658,6 @@ export namespace TreeWidget {
                 overscan={800}
                 {...other}
             />;
-        }
-
-        getScrollState(): TreeScrollState {
-            return { ...this.lastScrollState };
         }
     }
 }
