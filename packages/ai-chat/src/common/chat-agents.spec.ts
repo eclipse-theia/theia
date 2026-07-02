@@ -17,9 +17,14 @@
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse, LanguageModelService, ServerToolDescriptor, UserRequest } from '@theia/ai-core';
-import { AbstractChatAgent, ChatAgentLocation } from './chat-agents';
 import {
+    LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse,
+    LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
+} from '@theia/ai-core';
+import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
+import {
+    ChatResponseContent,
+    CompactionChatResponseContent,
     MutableChatModel,
     MutableChatRequestModel,
     ChatModel,
@@ -180,5 +185,29 @@ describe('AbstractChatAgent.sendLlmRequest server tools', () => {
         const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
         const { captured } = setup(model, undefined);
         expect(captured()!.serverTools).to.equal(undefined);
+    });
+});
+
+class StreamParsingTestChatAgent extends AbstractStreamParsingChatAgent {
+    readonly id = 'stream-test-agent';
+    readonly name = 'Stream Test Agent';
+    readonly languageModelRequirements: LanguageModelRequirement[] = [];
+    protected readonly defaultLanguageModelPurpose = 'chat';
+
+    exposeParse(token: LanguageModelStreamResponsePart): ChatResponseContent | ChatResponseContent[] {
+        return this.parse(token, undefined as never);
+    }
+}
+
+describe('AbstractChatAgent.parse compaction', () => {
+    it('creates compaction content from a compaction response part', () => {
+        const agent = new StreamParsingTestChatAgent();
+        const content = agent.exposeParse({ compaction: { provider: 'anthropic', data: { b: 1 }, summary: 's' } });
+        expect(ChatResponseContent.is(content)).to.equal(true);
+        expect(CompactionChatResponseContent.is(content)).to.equal(true);
+        const compaction = content as CompactionChatResponseContent;
+        expect(compaction.provider).to.equal('anthropic');
+        expect(compaction.data).to.deep.equal({ b: 1 });
+        expect(compaction.summary).to.equal('s');
     });
 });
