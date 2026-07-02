@@ -19,18 +19,25 @@ import { shouldBypassProxy } from '../common/proxy-util';
 
 /**
  * Creates a custom fetch function that routes requests through the given HTTP proxy.
- * Returns `undefined` if no proxy URL is provided.
  *
  * @param proxyUrl - The proxy URL to use, or `undefined` for no proxy.
- * @returns A custom fetch function using the proxy, or `undefined`.
+ * @returns A custom fetch function using the proxy, when it is defined.
  */
-export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | undefined {
-    if (!proxyUrl) {
-        return undefined;
-    }
-    const proxyAgent = new undici.ProxyAgent(proxyUrl);
+export function createProxyFetch(proxyUrl: string | undefined, timeout?: number): typeof fetch | undefined {
+    // Set timeouts for http responses to 3600000 (1h) by default
+    const defaultTimeouts = (timeout !== undefined)
+        ? { headersTimeout: timeout, bodyTimeout: timeout }
+        : { headersTimeout: 3600000, bodyTimeout: 3600000 };
+
+    const clientFactory = (origin: string | URL, opts: undici.Client.Options) =>
+        new undici.Client(origin, { ...opts, ...defaultTimeouts });
+
+    const dispatcher = proxyUrl
+        ? new undici.ProxyAgent({ uri: proxyUrl, factory: clientFactory })
+        : new undici.Agent({ factory: clientFactory });
+
     return ((input: string | URL | Request, init?: RequestInit) =>
-        fetch(input, { ...init, dispatcher: proxyAgent } as RequestInit)
+        fetch(input, { ...init, dispatcher: dispatcher } as RequestInit)
     ) as typeof fetch;
 }
 

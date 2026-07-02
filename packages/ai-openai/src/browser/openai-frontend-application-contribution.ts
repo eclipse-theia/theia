@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ReasoningSupport } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF, TIMEOUT_PREF } from '../common/openai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
@@ -105,6 +105,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming &&
+                model.timeout === newModel.timeout &&
                 model.useResponseApi === newModel.useResponseApi &&
                 reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
@@ -125,6 +126,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const timeout = this.preferenceService.get<number>(TIMEOUT_PREF, 3600000);
         const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
@@ -132,6 +134,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             apiKey: true,
             apiVersion: true,
             maxRetries: maxRetries,
+            timeout: timeout,
             useResponseApi: useResponseApi
         };
     }
@@ -157,6 +160,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     supportsStructuredOutput: pref.supportsStructuredOutput,
                     enableStreaming: pref.enableStreaming,
                     maxRetries: pref.maxRetries ?? maxRetries,
+                    timeout: pref.timeout ?? 3600000,
                     useResponseApi: pref.useResponseApi ?? false,
                     reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined
                 }

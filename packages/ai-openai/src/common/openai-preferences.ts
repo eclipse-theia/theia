@@ -20,6 +20,7 @@ import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
+export const TIMEOUT_PREF = 'ai-features.openAiCustom.timeout';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
@@ -84,6 +85,8 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
             \n\
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
+            - specify `timeout: 3600000` sets the maximum amount of time (in milliseconds) to wait for a request response. Defaults to 3600000 (1h).\
+            \n\
             - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).\
             \n\
             - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
@@ -139,6 +142,11 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
                         type: 'boolean',
                         title: nls.localize('theia/ai/openai/customEndpoints/enableStreaming/title',
                             'Indicates whether the streaming API shall be used. `true` by default.'),
+                    },
+                    timeout: {
+                        type: 'number',
+                        title: nls.localize('theia/ai/openai/customEndpoints/timeout/title',
+                            'The maximum amount of time (in milliseconds) to wait for a request response. Defaults to 3600000 (1h).'),
                     },
                     useResponseApi: {
                         type: 'boolean',
