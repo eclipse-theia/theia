@@ -10,7 +10,7 @@
     "url": "https://github.com/eclipse-theia/theia.git"
   },
   "engines": {
-    "vscode": "^1.51.0"
+    "vscode": "^1.120.0"
   },
   "capabilities": {
     "untrustedWorkspaces": {
@@ -22,7 +22,7 @@
     "onCommand:plugin-a.hello"
   ],
   "devDependencies": {
-    "@types/vscode": "^1.120.0"
+    "@types/vscode": "^1.125.0"
   },
   "scripts": {
     "build": "vsce package --no-dependencies"
