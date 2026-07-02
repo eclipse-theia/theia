@@ -29,6 +29,10 @@ The rule prevents the following localization related issues:
 - incorrect usage of the `nls.localizeByDefault` function by using an incorrect default value.
 - unnecessary call to `nls.localize` which could be replaced by `nls.localizeByDefault`.
 
+### `named-logger-check`
+
+The rule enforces the new logger coding guidelines by preventing the use of `console.*` statements in `@injectable()` classes and ensuring that injected `ILogger` instances use the `@named` decorator with the correct naming convention.
+
 ### `no-src-import`
 
 The rule prevents imports using `/src/` rather than `/lib/` as it causes build failures.
