@@ -80,6 +80,8 @@ import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-t
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
 import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
+import { ChatBannerProvider } from '@theia/ai-chat-ui/lib/browser/chat-banner-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
@@ -194,6 +196,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
+    bind(ChatBannerProvider).to(AiAllowAllModeChatBanner).inSingletonScope();
     bindRootContributionProvider(bind, ChatSessionItemActionContribution);
     bind(DefaultChatSessionItemActionContribution).toSelf().inSingletonScope();
     bind(ChatSessionItemActionContribution).toService(DefaultChatSessionItemActionContribution);
