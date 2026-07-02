@@ -34,6 +34,7 @@ import {
     ToolCallContent,
     ToolCallResult,
     ToolInvocationContext,
+    ToolRequest,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray, nls } from '@theia/core';
@@ -42,6 +43,7 @@ import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlo
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
 import { ANTHROPIC_TOOL_SEARCH, ANTHROPIC_TOOL_SEARCH_NATIVE, ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
+import { AnthropicMemoryTool, MEMORY_TOOL_BETA, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -330,7 +332,8 @@ export class AnthropicModel implements LanguageModel {
         public maxInputTokens?: number,
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
-        public serverSideCompactionEnabledByDefault: boolean = false
+        public serverSideCompactionEnabledByDefault: boolean = false,
+        public memoryToolFolder?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -345,17 +348,37 @@ export class AnthropicModel implements LanguageModel {
         return resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction);
     }
 
+    /** Whether this request routes through the Anthropic Beta Messages API (server-side compaction and/or the memory tool). */
+    protected useBetaMessages(request: LanguageModelRequest): boolean {
+        return this.useServerSideCompaction(request) || this.hasMemoryTool(request);
+    }
+
+    /** Whether Anthropic's built-in memory tool is active for this request: its storage folder is configured and the tool has been injected (see {@link withMemoryTool}). */
+    protected hasMemoryTool(request: LanguageModelRequest): boolean {
+        return !!this.memoryToolFolder && !!request.tools?.some(tool => tool.name === MEMORY_TOOL_NAME);
+    }
+
     /**
-     * Augments the base message-create params with the beta flag and context-management edit when server-side compaction
-     * is enabled for the given request. When disabled, the params are returned unchanged so the default (stable) path is byte-for-byte identical.
+     * Augments the base message-create params for the Beta Messages API: it sets the `betas` header and, when server-side
+     * compaction is enabled for the request, the context-management edit. When neither server-side compaction nor the
+     * memory tool is active, the params are returned unchanged so the default (stable) path is byte-for-byte identical.
      */
-    protected applyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
-        if (!this.useServerSideCompaction(request)) {
+    protected applyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        const useCompaction = this.useServerSideCompaction(request);
+        const useMemory = this.hasMemoryTool(request);
+        if (!useCompaction && !useMemory) {
             return params;
         }
         const betaParams = params as T & Anthropic.Beta.Messages.MessageCreateParams;
-        betaParams.betas = ['compact-2026-01-12'];
-        betaParams.context_management = { edits: [{ type: 'compact_20260112' }] };
+        const betas: string[] = [];
+        if (useCompaction) {
+            betas.push('compact-2026-01-12');
+            betaParams.context_management = { edits: [{ type: 'compact_20260112' }] };
+        }
+        if (useMemory) {
+            betas.push(MEMORY_TOOL_BETA);
+        }
+        betaParams.betas = betas;
         return betaParams;
     }
 
@@ -365,12 +388,13 @@ export class AnthropicModel implements LanguageModel {
         }
 
         const anthropic = this.initializeAnthropic();
+        const effectiveRequest = this.withMemoryTool(request);
 
         try {
             if (this.enableStreaming) {
-                return this.handleStreamingRequest(anthropic, request, cancellationToken);
+                return this.handleStreamingRequest(anthropic, effectiveRequest, cancellationToken);
             }
-            return this.handleNonStreamingRequest(anthropic, request);
+            return this.handleNonStreamingRequest(anthropic, effectiveRequest);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             throw new Error(`Anthropic API request failed: ${errorMessage}`);
@@ -385,7 +409,9 @@ export class AnthropicModel implements LanguageModel {
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction);
+        const useBeta = this.useBetaMessages(request);
+        const { messages, systemMessage: baseSystemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction);
+        const systemMessage = this.appendMemoryGuidance(baseSystemMessage, request);
 
         let anthropicMessages = [...messages, ...(toolMessages ?? [])];
 
@@ -401,7 +427,7 @@ export class AnthropicModel implements LanguageModel {
                 defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
             })));
         }
-        const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
+        const params: Anthropic.MessageCreateParams = this.applyBetaParams({
             max_tokens: this.maxTokens,
             messages: anthropicMessages,
             tools,
@@ -413,7 +439,7 @@ export class AnthropicModel implements LanguageModel {
         // The beta message params are a structural superset of the stable ones for the content we build, so the cast at the beta call boundary is safe.
         // The beta stream is likewise structurally compatible with the stable MessageStream: we narrow compaction events via explicit casts in the
         // loop below, and casting the stream here keeps the iterator and lifecycle handling identical on both paths.
-        const stream = useCompaction
+        const stream = useBeta
             ? anthropic.beta.messages.stream(params as unknown as Anthropic.Beta.Messages.MessageCreateParamsStreaming,
                 { maxRetries: this.maxRetries }) as unknown as ReturnType<Anthropic['messages']['stream']>
             : anthropic.messages.stream(params, { maxRetries: this.maxRetries });
@@ -621,14 +647,44 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
+    /**
+     * Returns the request extended with the memory tool if it is activated (see {@link memoryToolFolder}), so that memory tool
+     * calls are dispatched like any other tool call. Request tools with a conflicting name are replaced.
+     */
+    protected withMemoryTool<T extends LanguageModelRequest>(request: T): T {
+        const memoryTool = this.createMemoryTool();
+        if (!memoryTool) {
+            return request;
+        }
+        const memoryToolRequest: ToolRequest = {
+            id: MEMORY_TOOL_NAME,
+            name: MEMORY_TOOL_NAME,
+            description: 'Anthropic\'s built-in memory tool, executed against the configured memory folder.',
+            parameters: { type: 'object', properties: {} },
+            handler: argsJson => memoryTool.execute(argsJson)
+        };
+        return {
+            ...request,
+            tools: [memoryToolRequest, ...(request.tools?.filter(tool => tool.name !== MEMORY_TOOL_NAME) ?? [])]
+        };
+    }
+
+    /**
+     * Maps the request tools to Anthropic tool parameters. The activated memory tool (see {@link withMemoryTool}) is mapped
+     * to Anthropic's built-in `memory_20250818` tool type instead of a custom schema tool, so that the model uses its native
+     * memory behavior and the memory protocol system prompt is injected automatically by the API.
+     */
     protected createTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         const deferred = new Set(request.deferredToolIds ?? []);
-        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: { ...tool.parameters, type: 'object' },
-            defer_loading: deferred.has(tool.id) ? true : undefined
-        } as Anthropic.Messages.Tool));
+        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool =>
+            this.memoryToolFolder && tool.name === MEMORY_TOOL_NAME
+                ? { type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME } as Anthropic.Messages.MemoryTool20250818
+                : {
+                    name: tool.name,
+                    description: tool.description,
+                    input_schema: { ...tool.parameters, type: 'object' },
+                    defer_loading: deferred.has(tool.id) ? true : undefined
+                } as Anthropic.Messages.Tool);
         if (deferred.size > 0) {
             tools.push({
                 type: ANTHROPIC_TOOL_SEARCH_NATIVE,
@@ -656,15 +712,53 @@ export class AnthropicModel implements LanguageModel {
         return serverTools;
     }
 
+    protected createMemoryTool(): AnthropicMemoryTool | undefined {
+        return this.memoryToolFolder ? new AnthropicMemoryTool(this.memoryToolFolder) : undefined;
+    }
+
+    /**
+     * Appends session-scoped memory guidance to the system prompt when the memory tool is active. The guidance is added as a
+     * separate trailing block (after the cached prompt) because it varies per session and must not become part of the cached prefix.
+     */
+    protected appendMemoryGuidance(
+        systemMessage: Anthropic.Messages.TextBlockParam[] | undefined,
+        request: UserRequest
+    ): Anthropic.Messages.TextBlockParam[] | undefined {
+        if (!this.hasMemoryTool(request)) {
+            return systemMessage;
+        }
+        const guidance: Anthropic.Messages.TextBlockParam = { type: 'text', text: this.buildMemoryGuidance(request.sessionId) };
+        return systemMessage ? [...systemMessage, guidance] : [guidance];
+    }
+
+    /** Builds the session-scoped memory guidance, deriving a short per-session file suffix from the session id. */
+    protected buildMemoryGuidance(sessionId: string): string {
+        const suffix = sessionId.replace(/-/g, '').slice(0, 8) || 'default';
+        const sessionFile = `/memories/sessions/<short-task-name>-${suffix}.md`;
+        return [
+            'You have a persistent memory directory at `/memories`. Maintain two kinds of memory there:',
+            '',
+            '- General knowledge: durable, cross-session information (user preferences, project facts, conventions, and anything',
+            '  likely useful in future sessions). Organize it across multiple topic files under `/memories/` (roughly one file per',
+            '  topic or area) rather than a single file. Create and update these files whenever you learn something durable.',
+            '- Session memory: information specific to the current chat session (its goal, key decisions, and progress). Store it in',
+            `  \`${sessionFile}\`, where \`<short-task-name>\` is a short, descriptive slug for this session's task. Create it if it does not exist.`,
+            '- Cross-link both directions so navigation works either way: from the relevant general topic file(s) add a link to the',
+            '  session file, and from the session file add a link back to the relevant general topic file(s). Both must link to each other.'
+        ].join('\n');
+    }
+
     protected async handleNonStreamingRequest(
         anthropic: Anthropic,
         request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction);
+        const useBeta = this.useBetaMessages(request);
+        const { messages, systemMessage: baseSystemMessage } = transformToAnthropicParams(request.messages, true, useCompaction);
+        const systemMessage = this.appendMemoryGuidance(baseSystemMessage, request);
 
-        const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
+        const params: Anthropic.MessageCreateParams = this.applyBetaParams({
             max_tokens: this.maxTokens,
             messages,
             model: this.model,
@@ -674,7 +768,7 @@ export class AnthropicModel implements LanguageModel {
 
         try {
             // The beta message params are a structural superset of the stable ones, so the cast at the beta call boundary is safe.
-            const response = useCompaction
+            const response = useBeta
                 ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
                 : await anthropic.messages.create(params);
             const textContent = response.content[0];
