@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 export const ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH = '/services/anthropic/language-model-manager';
 export const AnthropicLanguageModelsManager = Symbol('AnthropicLanguageModelsManager');
 
@@ -31,6 +32,13 @@ export interface AnthropicModelDescription {
     useCaching: boolean;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Resolved default enablement of server-side compaction (global preference folded with the per-provider override). Defaults to disabled when omitted. */
+    serverSideCompactionEnabledByDefault?: boolean;
+    /**
+     * Absolute path to the folder below which the files of Anthropic's built-in memory tool are stored (in a `memories` subdirectory).
+     * If set, the memory tool is offered to the model. If `undefined`, the memory tool is disabled.
+     */
+    memoryToolFolder?: string;
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

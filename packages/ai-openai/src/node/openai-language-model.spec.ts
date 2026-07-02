@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
+import { LanguageModelMessage, LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 
@@ -33,6 +33,9 @@ class TestableOpenAiModel extends OpenAiModel {
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
     }
+    public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
+        return this.applyResponseApiCompaction(settings, request);
+    }
 }
 
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
@@ -42,6 +45,16 @@ function createModel(modelId: string, reasoningSupport?: ReasoningSupport): Test
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
         'developer', 3, false, undefined, reasoningSupport
+    );
+}
+
+function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, useResponseApi: boolean = true): TestableOpenAiModel {
+    return new TestableOpenAiModel(
+        'test-id', 'gpt-5', { status: 'ready' }, true,
+        () => 'test-key', () => undefined,
+        false, undefined, undefined,
+        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
+        'developer', 3, useResponseApi, undefined, undefined, undefined, serverSideCompactionEnabledByDefault
     );
 }
 
@@ -100,5 +113,64 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning).to.equal(undefined);
             expect(result.reasoning_effort).to.equal(undefined);
         });
+    });
+});
+
+describe('OpenAiModelUtils Chat Completions processMessages', () => {
+    it('drops a CompactionMessage without throwing when useResponseApi is off', () => {
+        const utils = new OpenAiModelUtils();
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'text', text: 'hello' },
+            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc' } },
+            { actor: 'ai', type: 'text', text: 'world' }
+        ];
+
+        let result: ReturnType<OpenAiModelUtils['processMessages']> | undefined;
+        expect(() => { result = utils.processMessages(messages, 'developer'); }).to.not.throw();
+
+        // The compaction marker must not appear in the output
+        const hasCompaction = result?.some(m => 'content' in m && typeof m.content === 'string' && m.content.includes('enc'));
+        expect(hasCompaction).to.equal(false);
+
+        // The surrounding real messages must still be present
+        const texts = result?.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+        expect(texts).to.contain('hello');
+        expect(texts).to.contain('world');
+    });
+});
+
+describe('OpenAiModel server-side compaction (Response API)', () => {
+
+    it('adds context_management when model default is on and request has no compaction setting', () => {
+        const model = createCompactionModel(true);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
+        expect(result.stream).to.equal(true);
+    });
+
+    it('leaves settings unchanged when model default is off and request has no compaction setting', () => {
+        const model = createCompactionModel(false);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
+        expect(result.context_management).to.equal(undefined);
+        expect(result).to.deep.equal({ stream: true });
+    });
+
+    it('session enabled=true activates compaction over a false model default', () => {
+        const model = createCompactionModel(false);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { enabled: true } });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
+    });
+
+    it('session enabled=false deactivates compaction even when model default is true', () => {
+        const model = createCompactionModel(true);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { enabled: false } });
+        expect(result.context_management).to.equal(undefined);
+    });
+
+    it('does not add context_management when capability is false (useResponseApi=false), even with session enabled=true', () => {
+        const model = createCompactionModel(true, false);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [], compaction: { enabled: true } });
+        expect(result.context_management).to.equal(undefined);
+        expect(result).to.deep.equal({ stream: true });
     });
 });

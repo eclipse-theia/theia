@@ -15,9 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
 import {
-    isServerToolCallResponsePart, isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
+    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
+    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
+} from './anthropic-language-model';
+import { AnthropicMemoryTool, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
+import {
+    CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
+    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolRequest, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -27,13 +32,19 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings()/createTools() methods. */
+/** Test helper that exposes the otherwise protected getSettings(), createTools(), applyBetaParams(), and computeServerSideCompactionSupport() methods. */
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
     }
     public callCreateTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         return this.createTools(request);
+    }
+    public callApplyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        return this.applyBetaParams(params, request);
+    }
+    public callComputeServerSideCompactionSupport(): boolean {
+        return this.computeServerSideCompactionSupport();
     }
 }
 
@@ -721,6 +732,433 @@ describe('AnthropicModel', () => {
             expect(resultBlock).to.not.be.undefined;
             // The raw block from `data` is reconstructed faithfully (not the rendering summary).
             expect((resultBlock as { content: unknown }).content).to.deep.equal(rawBlock);
+        });
+    });
+
+    describe('server-side compaction', () => {
+
+        function textMessage(text: string, actor: 'user' | 'ai' = 'user'): LanguageModelMessage {
+            return { actor, type: 'text', text, query: text } as unknown as LanguageModelMessage;
+        }
+
+        function compactionMessage(provider: string): CompactionMessage {
+            return {
+                actor: 'ai',
+                type: 'compaction',
+                provider,
+                data: { content: 'summary of earlier turns', encrypted_content: 'opaque-blob' },
+                summary: 'summary of earlier turns'
+            };
+        }
+
+        function findCompactionBlock(messages: Anthropic.Messages.MessageParam[]): { type: string; content: unknown; encrypted_content: unknown } | undefined {
+            for (const message of messages) {
+                if (Array.isArray(message.content)) {
+                    for (const block of message.content) {
+                        if ((block as { type?: string }).type === 'compaction') {
+                            return block as unknown as { type: string; content: unknown; encrypted_content: unknown };
+                        }
+                    }
+                }
+            }
+            return undefined;
+        }
+
+        function createCompactionModel(serverSideCompactionEnabledByDefault: boolean): TestableAnthropicModel {
+            return new TestableAnthropicModel(
+                'test-id', 'claude-opus-4-6', { status: 'ready' }, true, false, () => 'test-key', undefined,
+                DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, serverSideCompactionEnabledByDefault
+            );
+        }
+
+        describe('transformToAnthropicParams', () => {
+            it('emits a compaction block for an anthropic compaction message when compaction is enabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                const compactionBlock = findCompactionBlock(result);
+                expect(compactionBlock, 'compaction block present').to.not.equal(undefined);
+                expect(compactionBlock!.content).to.equal('summary of earlier turns');
+                expect(compactionBlock!.encrypted_content).to.equal('opaque-blob');
+
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('omits the compaction block when compaction is disabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, false);
+
+                expect(findCompactionBlock(result), 'no compaction block').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('skips a foreign-provider compaction message even when compaction is enabled', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('openai-responses'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                expect(findCompactionBlock(result), 'no compaction block for foreign provider').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+        });
+
+        describe('applyBetaParams', () => {
+            function baseParams(): Anthropic.MessageCreateParams {
+                return { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] };
+            }
+
+            it('adds the beta flag and context_management when compaction is enabled by default (capable model)', () => {
+                // claude-opus-4-6 is capable; serverSideCompactionEnabledByDefault=true, no session override.
+                const model = createCompactionModel(true);
+                const params = model.callApplyBetaParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.betas).to.deep.equal(['compact-2026-01-12']);
+                expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+            });
+
+            it('leaves params unchanged when compaction is disabled by default', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyBetaParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('session enables compaction over a false default (capable model)', () => {
+                const model = createCompactionModel(false);
+
+                const enabled = model.callApplyBetaParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(enabled.betas).to.deep.equal(['compact-2026-01-12']);
+            });
+
+            it('session disables compaction over a true default', () => {
+                const model = createCompactionModel(true);
+
+                // compaction.enabled=false wins even when serverSideCompactionEnabledByDefault is true
+                const forcedOff = model.callApplyBetaParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: false }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(forcedOff.betas).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when the model is incapable (e.g. claude-haiku-4-5), regardless of activation', () => {
+                const incapableModel = new TestableAnthropicModel(
+                    'test-id', 'claude-haiku-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined,
+                    DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, true
+                );
+                const params = incapableModel.callApplyBetaParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when no compaction request settings are provided and default is false', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyBetaParams(baseParams(), { messages: [] });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+        });
+
+        describe('computeServerSideCompactionSupport', () => {
+            function capabilityFor(modelId: string): boolean {
+                return new TestableAnthropicModel(
+                    'test-id', modelId, { status: 'ready' }, true, false, () => 'test-key', undefined
+                ).callComputeServerSideCompactionSupport();
+            }
+
+            it('returns true for claude-opus-4-6', () => {
+                expect(capabilityFor('claude-opus-4-6')).to.equal(true);
+            });
+            it('returns true for claude-sonnet-4-6', () => {
+                expect(capabilityFor('claude-sonnet-4-6')).to.equal(true);
+            });
+            it('returns true for claude-opus-4-7 (newer minor version)', () => {
+                expect(capabilityFor('claude-opus-4-7')).to.equal(true);
+            });
+            it('returns false for claude-haiku-4-5 (haiku variant)', () => {
+                expect(capabilityFor('claude-haiku-4-5')).to.equal(false);
+            });
+            it('returns false for claude-opus-4-5 (older minor version)', () => {
+                expect(capabilityFor('claude-opus-4-5')).to.equal(false);
+            });
+            it('returns false for claude-sonnet-4-5 (older minor version, sonnet variant)', () => {
+                expect(capabilityFor('claude-sonnet-4-5')).to.equal(false);
+            });
+            it('returns true for claude-opus-5-0 (newer major version)', () => {
+                expect(capabilityFor('claude-opus-5-0')).to.equal(true);
+            });
+            it('returns false for claude-3-opus-20240229 (old date-style id)', () => {
+                expect(capabilityFor('claude-3-opus-20240229')).to.equal(false);
+            });
+            it('returns false for claude-sonnet-4-20250514 (4.0 with a date suffix, not minor 20250514)', () => {
+                expect(capabilityFor('claude-sonnet-4-20250514')).to.equal(false);
+            });
+            it('returns true for claude-opus-4-6-20250101 (4.6 with a date suffix)', () => {
+                expect(capabilityFor('claude-opus-4-6-20250101')).to.equal(true);
+            });
+            it('returns false for an unrecognized model id', () => {
+                expect(capabilityFor('gpt-4o')).to.equal(false);
+            });
+        });
+    });
+
+    describe('memory tool', () => {
+        class MemoryTestModel extends AnthropicModel {
+            public executedArgs: string[] = [];
+            public streamParams: Anthropic.MessageCreateParams[] = [];
+            public eventQueue: object[][] = [];
+
+            constructor(memoryToolFolder?: string, useCaching: boolean = false) {
+                super('test-id', 'claude-opus-4-6', { status: 'ready' }, true, useCaching,
+                    () => 'test-key', undefined, DEFAULT_MAX_TOKENS, 3,
+                    undefined, undefined, undefined, undefined, undefined, undefined, false, memoryToolFolder);
+            }
+
+            public callCreateTools(request: LanguageModelRequest): Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined {
+                return this.createTools(this.withMemoryTool(request)) as Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined;
+            }
+
+            public callApplyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+                return this.applyBetaParams(params, this.withMemoryTool(request));
+            }
+
+            protected override createMemoryTool(): AnthropicMemoryTool | undefined {
+                if (!this.memoryToolFolder) {
+                    return undefined;
+                }
+                const executedArgs = this.executedArgs;
+                return {
+                    execute: (args: string) => {
+                        executedArgs.push(args);
+                        return Promise.resolve('direct memory result');
+                    }
+                } as unknown as AnthropicMemoryTool;
+            }
+
+            protected override initializeAnthropic(): Anthropic {
+                const streamParams = this.streamParams;
+                const eventQueue = this.eventQueue;
+                const stream = (params: Anthropic.MessageCreateParams) => {
+                    streamParams.push(params);
+                    const events = eventQueue.shift() ?? [];
+                    async function* iterate(): AsyncGenerator<object> {
+                        for (const event of events) {
+                            yield event;
+                        }
+                    }
+                    const iter = iterate();
+                    (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                    (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                    return iter;
+                };
+                return {
+                    messages: { stream },
+                    beta: { messages: { stream } }
+                } as unknown as Anthropic;
+            }
+        }
+
+        const someTool: ToolRequest = {
+            id: 'other',
+            name: 'other',
+            description: 'some tool',
+            parameters: { type: 'object', properties: {} },
+            handler: async () => 'other result'
+        };
+
+        function memoryToolRequest(executedArgs: string[]): ToolRequest {
+            return {
+                id: MEMORY_TOOL_NAME,
+                name: MEMORY_TOOL_NAME,
+                description: 'memory tool',
+                parameters: { type: 'object', properties: {} },
+                handler: async args => {
+                    executedArgs.push(args);
+                    return 'memory result';
+                }
+            };
+        }
+
+        function memoryCallEventQueue(): object[][] {
+            return [
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 10, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu_1', name: 'memory' } },
+                    { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"command":"view","path":"/memories"}' } },
+                    { type: 'content_block_stop', index: 0 },
+                    { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                    { type: 'message_stop' }
+                ],
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 12, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'done' } },
+                    { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } },
+                    { type: 'message_stop' }
+                ]
+            ];
+        }
+
+        function chatRequest(tools?: ToolRequest[]): UserRequest {
+            return {
+                messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+                agentId: 'test',
+                sessionId: 'test-session',
+                requestId: 'test-req',
+                tools
+            };
+        }
+
+        async function drainRequest(model: MemoryTestModel, request: UserRequest): Promise<LanguageModelStreamResponsePart[]> {
+            const response = await model.request(request);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            return parts;
+        }
+
+        it('offers the native memory tool when activated even without request tools', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('offers the native memory tool in addition to request tools when activated', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools).to.have.lengthOf(2);
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME });
+            expect(tools![1].name).to.equal('other');
+        });
+
+        it('filters out conflicting request tools named like the memory tool', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [memoryToolRequest([])] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('does not offer the memory tool when it is not activated', () => {
+            const tools = new MemoryTestModel(undefined).callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools?.some(tool => 'type' in tool && tool.type === MEMORY_TOOL_TYPE)).to.not.equal(true);
+        });
+
+        it('adds a cache control breakpoint to the memory tool when it is the last tool and caching is enabled', () => {
+            const tools = new MemoryTestModel('/tmp/memory', true).callCreateTools({ messages: [] });
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME, cache_control: { type: 'ephemeral' } });
+        });
+
+        it('applyBetaParams adds the memory beta header when the memory tool is activated', () => {
+            const params = new MemoryTestModel('/tmp/memory').callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [] }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.deep.equal(['context-management-2025-06-27']);
+            expect(beta.context_management).to.equal(undefined);
+        });
+
+        it('applyBetaParams leaves params unchanged when the memory tool is not activated', () => {
+            const params = new MemoryTestModel(undefined).callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [] }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.equal(undefined);
+            expect(beta.context_management).to.equal(undefined);
+        });
+
+        it('applyBetaParams combines compaction and memory betas when both are active', () => {
+            const params = new MemoryTestModel('/tmp/memory').callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [], compaction: { enabled: true } }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.deep.equal(['compact-2026-01-12', 'context-management-2025-06-27']);
+            expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+        });
+
+        it('executes memory tool calls directly and feeds the result back to the model', async () => {
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            const parts = await drainRequest(model, chatRequest());
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(model.streamParams).to.have.lengthOf(2);
+            expect(model.streamParams[0].tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+            const followUpMessages = model.streamParams[1].messages;
+            expect(followUpMessages[followUpMessages.length - 1]).to.deep.equal({
+                role: 'user',
+                content: [{ type: 'tool_result', tool_use_id: 'tu_1', content: 'direct memory result' }]
+            });
+            const finishedToolCall = parts.find(part =>
+                'tool_calls' in part && part.tool_calls?.some(call => call.finished && call.result !== undefined));
+            expect(finishedToolCall, 'expected a finished memory tool call part').to.not.equal(undefined);
+        });
+
+        it('executes memory tool calls directly even when the request contains a conflicting memory tool', async () => {
+            const externalArgs: string[] = [];
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            await drainRequest(model, chatRequest([memoryToolRequest(externalArgs)]));
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(externalArgs).to.deep.equal([]);
+        });
+
+        function textReplyEventQueue(): object[][] {
+            return [[
+                { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 1, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'hi' } },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+                { type: 'message_stop' }
+            ]];
+        }
+
+        it('appends session-scoped memory guidance to the system prompt when activated', async () => {
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = textReplyEventQueue();
+
+            await drainRequest(model, chatRequest());
+
+            const system = model.streamParams[0].system as Anthropic.Messages.TextBlockParam[];
+            const systemText = system.map(block => block.text).join('\n');
+            expect(systemText).to.contain('/memories/sessions/<short-task-name>-testsess.md');
+            expect(systemText).to.contain('multiple topic files');
+        });
+
+        it('does not append memory guidance when the tool is not activated', async () => {
+            const model = new MemoryTestModel(undefined);
+            model.eventQueue = textReplyEventQueue();
+
+            await drainRequest(model, chatRequest());
+
+            expect(model.streamParams[0].system).to.equal(undefined);
         });
     });
 });

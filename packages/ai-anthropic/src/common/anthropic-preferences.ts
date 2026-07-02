@@ -14,12 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
+export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideCompaction';
+export const MEMORY_TOOL_PREF = 'ai-features.anthropic.memoryTool';
+export const MEMORY_TOOL_FOLDER_PREF = 'ai-features.anthropic.memoryToolFolder';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -45,6 +48,40 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [SERVER_SIDE_COMPACTION_PREF]: {
+            type: 'string',
+            enum: ['default', 'enabled', 'disabled'],
+            enumDescriptions: [
+                nls.localize('theia/ai/anthropic/compaction/default', 'Follow the global chat server-side compaction setting.'),
+                nls.localize('theia/ai/anthropic/compaction/enabled', 'Always request server-side compaction for Anthropic models.'),
+                nls.localize('theia/ai/anthropic/compaction/disabled', 'Never request server-side compaction for Anthropic models.')
+            ],
+            default: 'default',
+            markdownDescription: nls.localize('theia/ai/anthropic/compaction/description',
+                'Override provider-native server-side compaction for Anthropic models. "default" follows the global chat setting ' +
+                '({0}). When effectively enabled, the Anthropic Beta Messages API is used so the provider can summarize ' +
+                'older turns once the conversation grows past its threshold.',
+                `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryTool/mdDescription',
+                'Activate Anthropic\'s built-in memory tool (`memory_20250818`) for all Anthropic models, letting them store and consult information across\
+            conversations in memory files in the configured memory tool folder. Memory tool commands are executed directly by Theia, without the\
+            tool confirmation flow.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_FOLDER_PREF]: {
+            type: 'string',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryToolFolder/mdDescription',
+                'The folder below which the memory tool stores its files (in a `memories` subdirectory, mirroring the model\'s virtual `/memories` root).\
+            Relative paths are resolved against the first workspace root; absolute paths are used as-is. If the path is relative and no workspace is open,\
+            the memory tool is disabled.'),
+            default: 'memory',
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',

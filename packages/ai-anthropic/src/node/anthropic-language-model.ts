@@ -28,11 +28,13 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    resolveServerSideCompaction,
     ServerToolCallResponsePart,
     ServerToolDescriptor,
     ToolCallContent,
     ToolCallResult,
     ToolInvocationContext,
+    ToolRequest,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
@@ -41,6 +43,7 @@ import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlo
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
 import { ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
+import { AnthropicMemoryTool, MEMORY_TOOL_BETA, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -58,8 +61,16 @@ interface ToolCallback {
     args: string;
 }
 
-const createMessageContent = (message: LanguageModelMessage): MessageParam['content'] => {
-    if (LanguageModelMessage.isTextMessage(message)) {
+const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean): MessageParam['content'] => {
+    if (LanguageModelMessage.isCompactionMessage(message)) {
+        // Only replay our own provider's compaction blocks, and only when the request will use the beta endpoint.
+        // Returning [] for a skipped/foreign/disabled compaction message lets the surrounding real history carry the context.
+        if (compactionEnabled && message.provider === 'anthropic') {
+            const data = message.data as { content: string | null; encrypted_content: string | null };
+            return [{ type: 'compaction', content: data.content, encrypted_content: data.encrypted_content }] as unknown as MessageParam['content'];
+        }
+        return [];
+    } else if (LanguageModelMessage.isTextMessage(message)) {
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
@@ -135,11 +146,14 @@ function isNonThinkingParam(
 /**
  * Transforms Theia language model messages to Anthropic API format
  * @param messages Array of LanguageModelRequestMessage to transform
+ * @param addCacheControl whether to add prompt-cache control to the system message
+ * @param compactionEnabled whether the request will use the beta endpoint, so compaction replay blocks may be emitted
  * @returns Object containing transformed messages and optional system message
  */
-function transformToAnthropicParams(
+export function transformToAnthropicParams(
     messages: readonly LanguageModelMessage[],
-    addCacheControl: boolean = true
+    addCacheControl: boolean = true,
+    compactionEnabled: boolean = false
 ): { messages: MessageParam[]; systemMessage?: Anthropic.Messages.TextBlockParam[] } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
@@ -151,8 +165,10 @@ function transformToAnthropicParams(
         .filter(message => message.actor !== 'system')
         .map(message => ({
             role: toAnthropicRole(message),
-            content: createMessageContent(message)
-        }));
+            content: createMessageContent(message, compactionEnabled)
+        }))
+        // Drop messages whose content converted to empty (e.g. a skipped compaction message), so no empty turns are sent.
+        .filter(message => !Array.isArray(message.content) || message.content.length > 0);
 
     return {
         messages: mergeConsecutiveSameRoleMessages(convertedMessages),
@@ -311,8 +327,29 @@ export class AnthropicModel implements LanguageModel {
         public reasoningApi?: ReasoningApi,
         public supportsXHighEffort?: boolean,
         public maxInputTokens?: number,
-        public serverTools?: ServerToolDescriptor[]
+        public serverTools?: ServerToolDescriptor[],
+        public serverSideCompactionEnabledByDefault: boolean = false,
+        public memoryToolFolder?: string
     ) { }
+
+    get serverSideCompactionSupport(): boolean {
+        return this.computeServerSideCompactionSupport();
+    }
+
+    /**
+     * Server-side compaction (`compact_20260112`) is available on Claude Opus and Sonnet 4.6 and later.
+     * Heuristic over the model id; override for custom endpoints with different support.
+     */
+    protected computeServerSideCompactionSupport(): boolean {
+        const match = /(opus|sonnet)-(\d+)-(\d+)/.exec(this.model);
+        if (!match) {
+            return false;
+        }
+        const major = Number(match[2]);
+        // A 4+ digit "minor" is a date suffix on a `.0` model id (e.g. claude-sonnet-4-20250514), not a minor version.
+        const minor = Number(match[3]) >= 1000 ? 0 : Number(match[3]);
+        return major > 4 || (major === 4 && minor >= 6);
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {
@@ -321,18 +358,58 @@ export class AnthropicModel implements LanguageModel {
         };
     }
 
+    /** Resolves whether this request will route through the Anthropic Beta Messages API for server-side compaction. */
+    protected useServerSideCompaction(request: LanguageModelRequest): boolean {
+        return resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction);
+    }
+
+    /** Whether this request routes through the Anthropic Beta Messages API (server-side compaction and/or the memory tool). */
+    protected useBetaMessages(request: LanguageModelRequest): boolean {
+        return this.useServerSideCompaction(request) || this.hasMemoryTool(request);
+    }
+
+    /** Whether Anthropic's built-in memory tool is active for this request: its storage folder is configured and the tool has been injected (see {@link withMemoryTool}). */
+    protected hasMemoryTool(request: LanguageModelRequest): boolean {
+        return !!this.memoryToolFolder && !!request.tools?.some(tool => tool.name === MEMORY_TOOL_NAME);
+    }
+
+    /**
+     * Augments the base message-create params for the Beta Messages API: it sets the `betas` header and, when server-side
+     * compaction is enabled for the request, the context-management edit. When neither server-side compaction nor the
+     * memory tool is active, the params are returned unchanged so the default (stable) path is byte-for-byte identical.
+     */
+    protected applyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        const useCompaction = this.useServerSideCompaction(request);
+        const useMemory = this.hasMemoryTool(request);
+        if (!useCompaction && !useMemory) {
+            return params;
+        }
+        const betaParams = params as T & Anthropic.Beta.Messages.MessageCreateParams;
+        const betas: string[] = [];
+        if (useCompaction) {
+            betas.push('compact-2026-01-12');
+            betaParams.context_management = { edits: [{ type: 'compact_20260112' }] };
+        }
+        if (useMemory) {
+            betas.push(MEMORY_TOOL_BETA);
+        }
+        betaParams.betas = betas;
+        return betaParams;
+    }
+
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         if (!request.messages?.length) {
             throw new Error('Request must contain at least one message');
         }
 
         const anthropic = this.initializeAnthropic();
+        const effectiveRequest = this.withMemoryTool(request);
 
         try {
             if (this.enableStreaming) {
-                return this.handleStreamingRequest(anthropic, request, cancellationToken);
+                return this.handleStreamingRequest(anthropic, effectiveRequest, cancellationToken);
             }
-            return this.handleNonStreamingRequest(anthropic, request);
+            return this.handleNonStreamingRequest(anthropic, effectiveRequest);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             throw new Error(`Anthropic API request failed: ${errorMessage}`);
@@ -346,7 +423,10 @@ export class AnthropicModel implements LanguageModel {
         toolMessages?: readonly Anthropic.Messages.MessageParam[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching);
+        const useCompaction = this.useServerSideCompaction(request);
+        const useBeta = this.useBetaMessages(request);
+        const { messages, systemMessage: baseSystemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction);
+        const systemMessage = this.appendMemoryGuidance(baseSystemMessage, request);
 
         let anthropicMessages = [...messages, ...(toolMessages ?? [])];
 
@@ -362,7 +442,7 @@ export class AnthropicModel implements LanguageModel {
                 defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
             })));
         }
-        const params: Anthropic.MessageCreateParams = {
+        const params: Anthropic.MessageCreateParams = this.applyBetaParams({
             max_tokens: this.maxTokens,
             messages: anthropicMessages,
             tools,
@@ -370,8 +450,14 @@ export class AnthropicModel implements LanguageModel {
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
-        };
-        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
+        }, request);
+        // The beta message params are a structural superset of the stable ones for the content we build, so the cast at the beta call boundary is safe.
+        // The beta stream is likewise structurally compatible with the stable MessageStream: we narrow compaction events via explicit casts in the
+        // loop below, and casting the stream here keeps the iterator and lifecycle handling identical on both paths.
+        const stream = useBeta
+            ? anthropic.beta.messages.stream(params as unknown as Anthropic.Beta.Messages.MessageCreateParamsStreaming,
+                { maxRetries: this.maxRetries }) as unknown as ReturnType<Anthropic['messages']['stream']>
+            : anthropic.messages.stream(params, { maxRetries: this.maxRetries });
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();
@@ -390,6 +476,8 @@ export class AnthropicModel implements LanguageModel {
                 let currentMessage: Message | undefined = undefined;
                 let currentOutputTokens: number = 0;
                 let usageYielded = false;
+                // Accumulator for a streamed compaction block (beta path only): content + opaque encrypted_content across start + deltas.
+                let compaction: { index: number; content: string | null; encrypted_content: string | null } | undefined;
 
                 try {
                     for await (const event of stream) {
@@ -401,6 +489,11 @@ export class AnthropicModel implements LanguageModel {
                             }
                             if (contentBlock.type === 'text') {
                                 yield { content: contentBlock.text };
+                            }
+                            // Compaction blocks only occur on the beta path; guard via type narrowing.
+                            if (contentBlock.type === 'compaction') {
+                                const block = contentBlock as Anthropic.Beta.Messages.BetaCompactionBlock;
+                                compaction = { index: event.index, content: block.content, encrypted_content: block.encrypted_content };
                             }
                             if (contentBlock.type === 'tool_use') {
                                 toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
@@ -449,6 +542,11 @@ export class AnthropicModel implements LanguageModel {
                             if (delta.type === 'text_delta') {
                                 yield { content: delta.text };
                             }
+                            if (compaction && delta.type === 'compaction_delta') {
+                                const compactionDelta = delta as Anthropic.Beta.Messages.BetaCompactionContentBlockDelta;
+                                compaction.content = compactionDelta.content;
+                                compaction.encrypted_content = compactionDelta.encrypted_content;
+                            }
                             if (toolCall && delta.type === 'input_json_delta') {
                                 toolCall.args += delta.partial_json;
                                 yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
@@ -465,6 +563,11 @@ export class AnthropicModel implements LanguageModel {
                             if (serverToolCall && serverToolCall.index === event.index) {
                                 serverToolCalls.push(serverToolCall);
                                 serverToolCall = undefined;
+                            }
+                            if (compaction && compaction.index === event.index) {
+                                const data = { content: compaction.content, encrypted_content: compaction.encrypted_content };
+                                yield { compaction: { provider: 'anthropic', data, summary: compaction.content ?? undefined } };
+                                compaction = undefined;
                             }
                         } else if (event.type === 'message_delta') {
                             currentOutputTokens = event.usage.output_tokens;
@@ -548,14 +651,44 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
+    /**
+     * Returns the request extended with the memory tool if it is activated (see {@link memoryToolFolder}), so that memory tool
+     * calls are dispatched like any other tool call. Request tools with a conflicting name are replaced.
+     */
+    protected withMemoryTool<T extends LanguageModelRequest>(request: T): T {
+        const memoryTool = this.createMemoryTool();
+        if (!memoryTool) {
+            return request;
+        }
+        const memoryToolRequest: ToolRequest = {
+            id: MEMORY_TOOL_NAME,
+            name: MEMORY_TOOL_NAME,
+            description: 'Anthropic\'s built-in memory tool, executed against the configured memory folder.',
+            parameters: { type: 'object', properties: {} },
+            handler: argsJson => memoryTool.execute(argsJson)
+        };
+        return {
+            ...request,
+            tools: [memoryToolRequest, ...(request.tools?.filter(tool => tool.name !== MEMORY_TOOL_NAME) ?? [])]
+        };
+    }
+
+    /**
+     * Maps the request tools to Anthropic tool parameters. The activated memory tool (see {@link withMemoryTool}) is mapped
+     * to Anthropic's built-in `memory_20250818` tool type instead of a custom schema tool, so that the model uses its native
+     * memory behavior and the memory protocol system prompt is injected automatically by the API.
+     */
     protected createTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         const deferred = new Set(request.deferredToolIds ?? []);
-        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: { ...tool.parameters, type: 'object' },
-            defer_loading: deferred.has(tool.id) ? true : undefined
-        } as Anthropic.Messages.Tool));
+        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool =>
+            this.memoryToolFolder && tool.name === MEMORY_TOOL_NAME
+                ? { type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME } as Anthropic.Messages.MemoryTool20250818
+                : {
+                    name: tool.name,
+                    description: tool.description,
+                    input_schema: { ...tool.parameters, type: 'object' },
+                    defer_loading: deferred.has(tool.id) ? true : undefined
+                } as Anthropic.Messages.Tool);
         if (deferred.size > 0) {
             tools.push({
                 type: 'tool_search_tool_bm25',
@@ -583,23 +716,65 @@ export class AnthropicModel implements LanguageModel {
         return serverTools;
     }
 
+    protected createMemoryTool(): AnthropicMemoryTool | undefined {
+        return this.memoryToolFolder ? new AnthropicMemoryTool(this.memoryToolFolder) : undefined;
+    }
+
+    /**
+     * Appends session-scoped memory guidance to the system prompt when the memory tool is active. The guidance is added as a
+     * separate trailing block (after the cached prompt) because it varies per session and must not become part of the cached prefix.
+     */
+    protected appendMemoryGuidance(
+        systemMessage: Anthropic.Messages.TextBlockParam[] | undefined,
+        request: UserRequest
+    ): Anthropic.Messages.TextBlockParam[] | undefined {
+        if (!this.hasMemoryTool(request)) {
+            return systemMessage;
+        }
+        const guidance: Anthropic.Messages.TextBlockParam = { type: 'text', text: this.buildMemoryGuidance(request.sessionId) };
+        return systemMessage ? [...systemMessage, guidance] : [guidance];
+    }
+
+    /** Builds the session-scoped memory guidance, deriving a short per-session file suffix from the session id. */
+    protected buildMemoryGuidance(sessionId: string): string {
+        const suffix = sessionId.replace(/-/g, '').slice(0, 8) || 'default';
+        const sessionFile = `/memories/sessions/<short-task-name>-${suffix}.md`;
+        return [
+            'You have a persistent memory directory at `/memories`. Maintain two kinds of memory there:',
+            '',
+            '- General knowledge: durable, cross-session information (user preferences, project facts, conventions, and anything',
+            '  likely useful in future sessions). Organize it across multiple topic files under `/memories/` (roughly one file per',
+            '  topic or area) rather than a single file. Create and update these files whenever you learn something durable.',
+            '- Session memory: information specific to the current chat session (its goal, key decisions, and progress). Store it in',
+            `  \`${sessionFile}\`, where \`<short-task-name>\` is a short, descriptive slug for this session's task. Create it if it does not exist.`,
+            '- Cross-link both directions so navigation works either way: from the relevant general topic file(s) add a link to the',
+            '  session file, and from the session file add a link back to the relevant general topic file(s). Both must link to each other.'
+        ].join('\n');
+    }
+
     protected async handleNonStreamingRequest(
         anthropic: Anthropic,
         request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages);
+        const useCompaction = this.useServerSideCompaction(request);
+        const useBeta = this.useBetaMessages(request);
+        const { messages, systemMessage: baseSystemMessage } = transformToAnthropicParams(request.messages, true, useCompaction);
+        const systemMessage = this.appendMemoryGuidance(baseSystemMessage, request);
 
-        const params: Anthropic.MessageCreateParams = {
+        const params: Anthropic.MessageCreateParams = this.applyBetaParams({
             max_tokens: this.maxTokens,
             messages,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings,
-        };
+        }, request);
 
         try {
-            const response = await anthropic.messages.create(params);
+            // The beta message params are a structural superset of the stable ones, so the cast at the beta call boundary is safe.
+            const response = useBeta
+                ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
+                : await anthropic.messages.create(params);
             const textContent = response.content[0];
 
             const usage = response.usage ? {
