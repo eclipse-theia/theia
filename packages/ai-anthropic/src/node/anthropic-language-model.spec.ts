@@ -722,6 +722,86 @@ describe('AnthropicModel', () => {
             // The raw block from `data` is reconstructed faithfully (not the rendering summary).
             expect((resultBlock as { content: unknown }).content).to.deep.equal(rawBlock);
         });
+
+        it('surfaces the deferred tool search as a running then finished server tool call', async () => {
+            const events = [
+                { type: 'message_start', message: { usage: { input_tokens: 10, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'server_tool_use', id: 'ts-1', name: 'tool_search_tool_bm25', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"query":"file"}' } },
+                { type: 'content_block_stop', index: 0 },
+                {
+                    type: 'content_block_start', index: 1,
+                    content_block: {
+                        type: 'tool_search_tool_result', tool_use_id: 'ts-1',
+                        content: { type: 'tool_search_tool_search_result', tool_references: [{}, {}] }
+                    }
+                },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            const model = new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildMockAnthropicStream(events);
+                }
+            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+
+            const parts = await collectParts(model, 'do something requiring a deferred tool');
+            const calls = parts.filter(isServerToolCallResponsePart).flatMap(p => p.server_tool_calls);
+
+            // The native `tool_search_tool_bm25` invocation is surfaced under the stable, user-facing name.
+            const running = calls.find(c => !c.finished && c.name === 'tool_search');
+            expect(running).to.not.be.undefined;
+            expect(running!.id).to.equal('ts-1');
+
+            const finished = calls.find(c => c.finished);
+            expect(finished).to.not.be.undefined;
+            expect(finished!.id).to.equal('ts-1');
+            expect(finished!.name).to.equal('tool_search');
+            expect(finished!.arguments).to.equal('{"query":"file"}');
+            expect(finished!.result).to.deep.equal({ content: [{ type: 'text', text: 'Found 2 tools.' }] });
+        });
+
+        it('drops the deferred tool search server tool use message on replay', async () => {
+            let capturedParams: Anthropic.MessageCreateParams | undefined;
+            const model = new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams = params;
+                                async function* iterate(): AsyncGenerator<object> { /* no events */ }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+
+            const request: UserRequest = {
+                messages: [
+                    { actor: 'user', type: 'text', text: 'hi' },
+                    {
+                        actor: 'ai', type: 'server_tool_use', id: 'ts-1', name: 'tool_search',
+                        input: { query: 'file' },
+                        result: { content: [{ type: 'text', text: 'Found 2 tools.' }] }
+                    }
+                ],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* no-op */ }
+            }
+
+            const allBlocks = (capturedParams?.messages ?? []).flatMap(m => Array.isArray(m.content) ? m.content : []);
+            expect(allBlocks.some(b => b.type === 'server_tool_use')).to.be.false;
+        });
     });
 });
 

@@ -38,11 +38,19 @@ import type {
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCall,
     ResponseInputItem,
-    ResponseStreamEvent
+    ResponseStreamEvent,
+    ResponseToolSearchCall,
+    ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
 import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
+
+/**
+ * User-facing name under which the provider's built-in deferred-tool search is surfaced in the chat UI.
+ * Matches the native Response API tool type (`tool_search`), which OpenAI executes on its own infrastructure.
+ */
+export const OPENAI_TOOL_SEARCH = 'tool_search';
 
 interface ToolCall {
     id: string;
@@ -328,6 +336,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Current iteration state
     protected currentInput: ResponseInputItem[];
     protected currentToolCalls = new Map<string, ToolCall>();
+    // Id under which the current deferred-tool search is surfaced, so the running and finished parts merge in the UI.
+    protected toolSearchCallId: string | undefined;
     protected iteration = 0;
     protected readonly maxIterations: number;
     protected readonly tools: Tool[] | undefined;
@@ -465,6 +475,20 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             this.handleIncoming({ content: this.currentResponseText });
         }
 
+        // Surface any deferred-tool search OpenAI executed while producing this response (see handleToolSearchOutput).
+        const toolSearchOutputs = response.output?.filter((item): item is ResponseToolSearchOutputItem => item.type === 'tool_search_output') || [];
+        for (const output of toolSearchOutputs) {
+            const found = output.tools?.length ?? 0;
+            this.handleIncoming({
+                server_tool_calls: [{
+                    id: output.call_id ?? output.id,
+                    name: OPENAI_TOOL_SEARCH,
+                    finished: true,
+                    result: { content: [{ type: 'text', text: `Found ${found} tool${found === 1 ? '' : 's'}.` }] }
+                }]
+            });
+        }
+
         // Find function calls in the response
         const functionCalls = response.output?.filter((item): item is ResponseFunctionToolCall => item.type === 'function_call') || [];
 
@@ -506,6 +530,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.added':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallAdded(event.item);
+                } else if (event.item?.type === 'tool_search_call') {
+                    this.handleToolSearchCall(event.item);
                 }
                 break;
 
@@ -520,6 +546,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.done':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
+                } else if (event.item?.type === 'tool_search_output') {
+                    this.handleToolSearchOutput(event.item);
                 }
                 break;
 
@@ -611,6 +639,36 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             toolCall.name = event.name || toolCall.name;
             toolCall.arguments = event.arguments || toolCall.arguments;
         }
+    }
+
+    /**
+     * The deferred-tool search runs on OpenAI's infrastructure and is reported as `tool_search_call` /
+     * `tool_search_output` output items. Surface it as a server tool call so the chat UI shows the search
+     * running and, once finished, how many tools were loaded. It is never executed by a client handler.
+     */
+    protected handleToolSearchCall(item: ResponseToolSearchCall): void {
+        this.toolSearchCallId = item.call_id ?? item.id;
+        this.handleIncoming({
+            server_tool_calls: [{
+                id: this.toolSearchCallId,
+                name: OPENAI_TOOL_SEARCH,
+                arguments: typeof item.arguments === 'string' ? item.arguments : JSON.stringify(item.arguments ?? ''),
+                finished: false
+            }]
+        });
+    }
+
+    protected handleToolSearchOutput(item: ResponseToolSearchOutputItem): void {
+        const found = item.tools?.length ?? 0;
+        this.handleIncoming({
+            server_tool_calls: [{
+                id: this.toolSearchCallId ?? item.call_id ?? item.id,
+                name: OPENAI_TOOL_SEARCH,
+                finished: true,
+                result: { content: [{ type: 'text', text: `Found ${found} tool${found === 1 ? '' : 's'}.` }] }
+            }]
+        });
+        this.toolSearchCallId = undefined;
     }
 
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
