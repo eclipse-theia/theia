@@ -23,6 +23,8 @@ export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideCompaction';
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.anthropic.serverSideCompactionTokenThreshold';
+export const MEMORY_TOOL_PREF = 'ai-features.anthropic.memoryTool';
+export const MEMORY_TOOL_FOLDER_PREF = 'ai-features.anthropic.memoryToolFolder';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -71,6 +73,24 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/anthropic/compactionTokenThreshold/description',
                 'Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies. ' +
                 'If set, the value must be at least 50,000 tokens.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_PREF]: {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryTool/mdDescription',
+                'Activate Anthropic\'s built-in memory tool (`memory_20250818`) for all Anthropic models, letting them store and consult information across\
+    conversations in memory files in the configured memory tool folder. Memory tool commands are executed directly by Theia, without the\
+    tool confirmation flow.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [MEMORY_TOOL_FOLDER_PREF]: {
+            type: 'string',
+            markdownDescription: nls.localize('theia/ai/anthropic/memoryToolFolder/mdDescription',
+                'The folder below which the memory tool stores its files (in a `memories` subdirectory, mirroring the model\'s virtual `/memories` root).\
+    Relative paths are resolved against the first workspace root; absolute paths are used as-is. If the path is relative and no workspace is open,\
+    the memory tool is disabled.'),
+            default: 'memory',
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
