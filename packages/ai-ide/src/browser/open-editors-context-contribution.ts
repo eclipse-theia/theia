@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { PREFERENCE_NAME_AUTO_ADD_OPEN_EDITORS } from '../common/ai-ide-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { ChatContextManager, ChatService, isSessionCreatedEvent } from '@theia/ai-chat/lib/common';
@@ -44,9 +46,19 @@ export class OpenEditorsContextContribution implements FrontendApplicationContri
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    protected get isEnabled(): boolean {
+        return this.preferenceService.get<boolean>(PREFERENCE_NAME_AUTO_ADD_OPEN_EDITORS, true);
+    }
+
     onStart(): void {
         this.chatService.onSessionEvent(event => {
             if (isSessionCreatedEvent(event)) {
+                if (!this.isEnabled) {
+                    return;
+                }
                 const activeSession = this.chatService.getActiveSession();
                 if (activeSession && activeSession.id === event.sessionId) {
                     for (const editor of this.editorManager.all) {
@@ -60,6 +72,9 @@ export class OpenEditorsContextContribution implements FrontendApplicationContri
         });
 
         this.editorManager.onCreated(widget => {
+            if (!this.isEnabled) {
+                return;
+            }
             const uri = widget.getResourceUri();
             if (uri) {
                 const activeSession = this.chatService.getActiveSession();
