@@ -19,6 +19,7 @@ import {
   GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
 import {
   CREATE_TASK_CONTEXT_FUNCTION_ID,
   GET_TASK_CONTEXT_FUNCTION_ID,
@@ -194,6 +195,8 @@ When a diagram clarifies an architectural concept or how something is implemente
 
 {{prompt:project-info}}
 
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
+
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `
   },
@@ -231,6 +234,8 @@ Always look at the relevant files to understand your task using the function ~{$
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 `
     },
     {
@@ -463,6 +468,8 @@ When a diagram clarifies an architectural concept or how something is implemente
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `
