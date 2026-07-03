@@ -26,7 +26,7 @@ import {
     ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, unreachable } from '@theia/core';
+import { CancellationToken, nls, unreachable } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
@@ -51,6 +51,12 @@ import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
  * Matches the native Response API tool type (`tool_search`), which OpenAI executes on its own infrastructure.
  */
 export const OPENAI_TOOL_SEARCH = 'tool_search';
+
+function openAiToolSearchFoundText(found: number): string {
+    return found === 1
+        ? nls.localize('theia/ai/openai/toolSearch/foundOne', 'Found 1 tool.')
+        : nls.localize('theia/ai/openai/toolSearch/found', 'Found {0} tools.', found);
+}
 
 interface ToolCall {
     id: string;
@@ -484,7 +490,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     id: output.call_id ?? output.id,
                     name: OPENAI_TOOL_SEARCH,
                     finished: true,
-                    result: { content: [{ type: 'text', text: `Found ${found} tool${found === 1 ? '' : 's'}.` }] }
+                    result: { content: [{ type: 'text', text: openAiToolSearchFoundText(found) }] }
                 }]
             });
         }
@@ -665,7 +671,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 id: this.toolSearchCallId ?? item.call_id ?? item.id,
                 name: OPENAI_TOOL_SEARCH,
                 finished: true,
-                result: { content: [{ type: 'text', text: `Found ${found} tool${found === 1 ? '' : 's'}.` }] }
+                result: { content: [{ type: 'text', text: openAiToolSearchFoundText(found) }] }
             }]
         });
         this.toolSearchCallId = undefined;

@@ -35,7 +35,7 @@ import {
     ToolInvocationContext,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isArray } from '@theia/core';
+import { CancellationToken, isArray, nls } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
@@ -443,9 +443,12 @@ export class AnthropicModel implements LanguageModel {
                                 let result: ToolCallContent;
                                 if (searchContent.type === 'tool_search_tool_search_result') {
                                     const found = searchContent.tool_references.length;
-                                    result = { content: [{ type: 'text', text: `Found ${found} tool${found === 1 ? '' : 's'}.` }] };
+                                    const text = found === 1
+                                        ? nls.localize('theia/ai/anthropic/toolSearch/foundOne', 'Found 1 tool.')
+                                        : nls.localize('theia/ai/anthropic/toolSearch/found', 'Found {0} tools.', found);
+                                    result = { content: [{ type: 'text', text }] };
                                 } else {
-                                    result = createToolCallError(`Tool search failed: ${searchContent.error_code}`);
+                                    result = createToolCallError(nls.localize('theia/ai/anthropic/toolSearch/failed', 'Tool search failed: {0}', searchContent.error_code));
                                 }
                                 yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_TOOL_SEARCH, result, searchContent);
                             }
