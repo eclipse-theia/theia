@@ -54,11 +54,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/useResponseApi/mdDescription',
                 'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models.\
-\
-This setting only applies to official OpenAI models - custom providers must configure this individually.\
-\
-Note that for the response API, tool call definitions must satisfy Open AI\'s [strict schema definition](https://platform.openai.com/docs/guides/function-calling#strict-mode).\
-Best effort is made to convert non-conformant schemas, but errors are still possible.')
+                \
+                This setting only applies to official OpenAI models - custom providers must configure this individually.')
         },
         [SERVER_SIDE_COMPACTION_PREF]: {
             type: 'string',
