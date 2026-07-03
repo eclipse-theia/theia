@@ -35,7 +35,7 @@
     "async-mutex": "^0.4.1",
     "body-parser": "^1.20.5",
     "cookie": "^1.1.1",
-    "dompurify": "^3.4.7",
+    "dompurify": "^3.4.11",
     "drivelist": "^12.0.2",
     "express": "^4.22.2",
     "fast-json-stable-stringify": "^2.1.0",
@@ -51,10 +51,10 @@
     "keytar": "7.9.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
-    "markdown-it": "^14.2.0",
+    "markdown-it": "^14.3.0",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-emoji": "^3.0.0",
-    "msgpackr": "^1.11.12",
+    "msgpackr": "^1.12.1",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "1.5.5",
     "react-tooltip": "^4.5.1",
@@ -69,7 +69,7 @@
     "vscode-languageserver-protocol": "3.17.5",
     "vscode-uri": "3.0.8",
     "ws": "^8.21.0",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.3"
   },
   "peerDependencies": {
     "@theia/electron": "*",
@@ -220,7 +220,7 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.73.0",
     "@theia/re-exports": "1.73.0",
-    "@types/react": "^18.3.28",
+    "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "minimist": "^1.2.8",
     "nodejs-file-downloader": "4.13.0",
