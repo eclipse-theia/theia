@@ -76,6 +76,7 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 - [doc/Developing.md](doc/Developing.md) — full build/setup details.
 - [doc/Migration.md](doc/Migration.md) — adopter-facing breaking-change notes.
 - [doc/runtime-policy.md](doc/runtime-policy.md) / [doc/Publishing.md](doc/Publishing.md) — Node/Electron support and release process.
+- [doc/lockfile-maintenance.md](doc/lockfile-maintenance.md) — regenerating `package-lock.json` across the Node 22/24 CI matrix; consult before committing lockfile changes.
 
 **Code Style:**
 - 4 spaces indentation, single quotes, `undefined` over `null`
