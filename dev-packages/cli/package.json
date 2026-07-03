@@ -49,7 +49,7 @@
     "http-server": "^14.1.1",
     "limiter": "^2.1.0",
     "log-update": "^4.0.0",
-    "mocha": "^10.8.2",
+    "mocha": "^11.0.0",
     "patch-package": "^8.0.1",
     "puppeteer": "25.1.0",
     "puppeteer-core": "25.1.0",
