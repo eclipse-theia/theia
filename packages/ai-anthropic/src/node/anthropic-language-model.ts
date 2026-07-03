@@ -35,12 +35,12 @@ import {
     ToolInvocationContext,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isArray } from '@theia/core';
+import { CancellationToken, isArray, nls } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
-import { ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
+import { ANTHROPIC_TOOL_SEARCH, ANTHROPIC_TOOL_SEARCH_NATIVE, ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -149,6 +149,9 @@ function transformToAnthropicParams(
 
     const convertedMessages = messages
         .filter(message => message.actor !== 'system')
+        // The deferred-tool search is surfaced to the UI (see stream handling) but is executed by Anthropic
+        // internally; it must not be echoed back as history, so drop it before replay.
+        .filter(message => !(LanguageModelMessage.isServerToolUseMessage(message) && message.name === ANTHROPIC_TOOL_SEARCH))
         .map(message => ({
             role: toAnthropicRole(message),
             content: createMessageContent(message)
@@ -407,14 +410,12 @@ export class AnthropicModel implements LanguageModel {
                                 yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
                             }
                             if (contentBlock.type === 'server_tool_use') {
-                                // The deferred-tool search invocation also arrives as `server_tool_use`; it is handled by Anthropic
-                                // internally and must not be surfaced to the UI as a server tool call.
-                                if (contentBlock.name === 'tool_search_tool_bm25') {
-                                    console.debug('Anthropic: received deferred tool stream block:', contentBlock);
-                                } else {
-                                    serverToolCall = { name: contentBlock.name, args: '', id: contentBlock.id, index: event.index };
-                                    yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: '', finished: false }] };
-                                }
+                                // The deferred-tool search invocation also arrives as `server_tool_use` (native name
+                                // `tool_search_tool_bm25`); surface it under a stable, user-facing name so the UI shows the
+                                // search running. Anthropic executes it on its own infrastructure, like other server tools.
+                                const name = contentBlock.name === ANTHROPIC_TOOL_SEARCH_NATIVE ? ANTHROPIC_TOOL_SEARCH : contentBlock.name;
+                                serverToolCall = { name, args: '', id: contentBlock.id, index: event.index };
+                                yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: '', finished: false }] };
                             }
                             if (contentBlock.type === 'web_fetch_tool_result') {
                                 // Result blocks are delivered complete (not streamed). Surface them as a finished server tool call.
@@ -435,8 +436,21 @@ export class AnthropicModel implements LanguageModel {
                                 }
                                 yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_WEB_SEARCH, result, searchContent);
                             }
-                            if ((contentBlock.type as string) === 'tool_search_tool_result') {
-                                console.debug('Anthropic: received deferred tool stream block:', contentBlock);
+                            if (contentBlock.type === 'tool_search_tool_result') {
+                                // Result blocks are delivered complete (not streamed). Finish the search server tool call so
+                                // the UI replaces the spinner with a summary.
+                                const searchContent = contentBlock.content;
+                                let result: ToolCallContent;
+                                if (searchContent.type === 'tool_search_tool_search_result') {
+                                    const found = searchContent.tool_references.length;
+                                    const text = found === 1
+                                        ? nls.localize('theia/ai/anthropic/toolSearch/foundOne', 'Found 1 tool.')
+                                        : nls.localize('theia/ai/anthropic/toolSearch/found', 'Found {0} tools.', found);
+                                    result = { content: [{ type: 'text', text }] };
+                                } else {
+                                    result = createToolCallError(nls.localize('theia/ai/anthropic/toolSearch/failed', 'Tool search failed: {0}', searchContent.error_code));
+                                }
+                                yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_TOOL_SEARCH, result, searchContent);
                             }
                         } else if (event.type === 'content_block_delta') {
                             const delta = event.delta;
@@ -558,8 +572,8 @@ export class AnthropicModel implements LanguageModel {
         } as Anthropic.Messages.Tool));
         if (deferred.size > 0) {
             tools.push({
-                type: 'tool_search_tool_bm25',
-                name: 'tool_search_tool_bm25'
+                type: ANTHROPIC_TOOL_SEARCH_NATIVE,
+                name: ANTHROPIC_TOOL_SEARCH_NATIVE
             });
         }
         // Cache the client tools as before; server tools are appended afterwards.
