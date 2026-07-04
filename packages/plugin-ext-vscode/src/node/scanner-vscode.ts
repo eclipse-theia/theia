@@ -16,10 +16,12 @@
 
 import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle, PluginEntryPoint, buildFrontendModuleName, UIKind, PluginIdentifiers } from '@theia/plugin-ext';
+import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle, PluginIdentifiers } from '@theia/plugin-ext';
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
+import { buildLifecycle, buildModelForVsCode } from '@theia/plugin-utils/lib/plugin-model';
+import { UIKind } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 
 const uiKind = environment.electron.is() ? UIKind.Desktop : UIKind.Web;
 
@@ -33,80 +35,32 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     }
 
     override getModel(plugin: PluginPackage): PluginModel {
-        // publisher can be empty on vscode extension development
-        const publisher = plugin.publisher ?? PluginIdentifiers.UNPUBLISHED;
-
-        // Only one entrypoint is valid in vscode extensions
-        // Mimic choosing frontend (web extension) and backend (local/remote extension) as described here:
-        // https://code.visualstudio.com/api/advanced-topics/extension-host#preferred-extension-location
-        const entryPoint: PluginEntryPoint = {};
-
-        // Act like codespaces when run in the browser (UIKind === 'web' and extensionKind is ['ui'])
-        const preferFrontend = uiKind === UIKind.Web && (plugin.extensionKind?.length === 1 && plugin.extensionKind[0] === 'ui');
-
-        if (plugin.browser && (!plugin.main || preferFrontend)) {
-            // Use frontend if available and there is no backend or frontend is preferred
-            entryPoint.frontend = plugin.browser;
-        } else {
-            // Default to using backend
-            entryPoint.backend = plugin.main;
-        }
-        if (plugin.theiaPlugin?.headless) {
-            // Support the Theia-specific extension for headless plugins
-            entryPoint.headless = plugin.theiaPlugin?.headless;
-        }
-
-        const result: PluginModel = {
-            packagePath: plugin.packagePath,
+        return buildModelForVsCode({
+            ...plugin,
+            publisher: plugin.publisher ?? PluginIdentifiers.UNPUBLISHED,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
-            // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
-            id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
-            name: plugin.name,
-            publisher: publisher,
-            version: plugin.version,
-            displayName: plugin.displayName,
-            description: plugin.description,
-            engine: {
-                type: this.VSCODE_TYPE,
-                version: plugin.engines[this.VSCODE_TYPE]
-            },
-            entryPoint,
-            iconUrl: plugin.icon && PluginPackage.toPluginUrl(plugin, plugin.icon),
-            l10n: plugin.l10n,
-            readmeUrl: this.getReadmeUrl(plugin),
-            licenseUrl: this.getLicenseUrl(plugin)
-        };
-        this.applyTrustExtraction(plugin, result);
-        return result;
+        }, { uiKind: uiKind === UIKind.Web ? 'web' : 'desktop' });
     }
 
     /**
      * Maps extension dependencies to deployable extension dependencies.
      */
     override getDependencies(plugin: PluginPackage): Map<string, string> | undefined {
-        // Store the list of dependencies.
         const dependencies = new Map<string, string>();
-        // Iterate through the list of dependencies from `extensionDependencies` and `extensionPack`.
         for (const dependency of [plugin.extensionDependencies, plugin.extensionPack]) {
             if (dependency !== undefined) {
-                // Iterate over the list of dependencies present, and add them to the collection.
                 dependency.forEach((dep: string) => {
                     const dependencyId = dep.toLowerCase();
                     dependencies.set(dependencyId, VSCodeExtensionUri.fromId(dependencyId).toString());
                 });
             }
         }
-        // Return the map of dependencies if present, else `undefined`.
         return dependencies.size > 0 ? dependencies : undefined;
     }
 
     override getLifecycle(plugin: PluginPackage): PluginLifecycle {
         return {
-            startMethod: 'activate',
-            stopMethod: 'deactivate',
-            frontendModuleName: buildFrontendModuleName(plugin),
-
-            frontendInitPath: 'plugin-vscode-init-fe.js',
+            ...buildLifecycle(plugin, 'vscode'),
             backendInitPath: path.join(__dirname, 'plugin-vscode-init'),
         };
     }

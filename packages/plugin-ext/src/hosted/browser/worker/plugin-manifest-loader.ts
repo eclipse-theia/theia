@@ -16,11 +16,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PluginIdentifiers, PluginModel, PluginPackage } from '../../../common/plugin-protocol';
+import { PluginModel, PluginPackage } from '../../../common/plugin-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import URI from '@theia/core/lib/common/uri';
-
-const NLS_REGEX = /^%([\w\d.-]+)%$/i;
+import { localizeWithResolver } from '@theia/plugin-utils/lib/package-nls';
+import { prepareLoadedManifest } from '@theia/plugin-utils/lib/plugin-manifest';
 
 function getUri(pluginModel: PluginModel, relativePath: string): URI {
     const ownURI = new Endpoint().getRestUrl();
@@ -54,23 +54,18 @@ function readContents(uri: string): Promise<string> {
 
 async function readPluginJson(pluginModel: PluginModel, relativePath: string): Promise<any> {
     const content = await readPluginFile(pluginModel, relativePath);
-    const json = JSON.parse(content) as PluginPackage;
-    json.publisher ??= PluginIdentifiers.UNPUBLISHED;
-    return json;
+    return JSON.parse(content);
 }
 
 export async function loadManifest(pluginModel: PluginModel): Promise<any> {
     const [manifest, translations] = await Promise.all([
-        readPluginJson(pluginModel, 'package.json'),
+        readPluginJson(pluginModel, 'package.json').then(raw =>
+            prepareLoadedManifest(raw as PluginPackage, { updateActivationEvents: false })
+        ),
         loadTranslations(pluginModel)
     ]);
-    // translate vscode builtins, as they are published with a prefix.
-    const built_prefix = '@theia/vscode-builtin-';
-    if (manifest && manifest.name && manifest.name.startsWith(built_prefix)) {
-        manifest.name = manifest.name.substring(built_prefix.length);
-    }
     return manifest && translations && Object.keys(translations).length ?
-        localize(manifest, translations) :
+        localizeWithResolver(manifest, key => translations[key]) :
         manifest;
 }
 
@@ -83,32 +78,4 @@ async function loadTranslations(pluginModel: PluginModel): Promise<any> {
         }
         return {};
     }
-}
-
-function localize(value: any, translations: {
-    [key: string]: string
-}): any {
-    if (typeof value === 'string') {
-        const match = NLS_REGEX.exec(value);
-        return match && translations[match[1]] || value;
-    }
-    if (Array.isArray(value)) {
-        const result = [];
-        for (const item of value) {
-            result.push(localize(item, translations));
-        }
-        return result;
-    }
-    if (value === null) {
-        return value;
-    }
-    if (typeof value === 'object') {
-        const result: { [key: string]: any } = {};
-        // eslint-disable-next-line guard-for-in
-        for (const propertyName in value) {
-            result[propertyName] = localize(value[propertyName], translations);
-        }
-        return result;
-    }
-    return value;
 }

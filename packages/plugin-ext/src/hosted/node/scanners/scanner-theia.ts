@@ -18,151 +18,93 @@
 
 import { inject, injectable, unmanaged, named } from '@theia/core/shared/inversify';
 import {
-    AutoClosingPair,
-    AutoClosingPairConditional,
-    buildFrontendModuleName,
+    CustomEditor,
     DebuggerContribution,
-    IconThemeContribution,
-    IconContribution,
     IconUrl,
     Keybinding,
-    LanguageConfiguration,
-    LanguageContribution,
+    Localization,
     Menu,
     PluginCommand,
     PluginContribution,
     PluginEngine,
+    PluginEntryPoint,
     PluginLifecycle,
     PluginModel,
     PluginPackage,
     PluginPackageCommand,
+    PluginPackageContribution,
+    PluginPackageCustomEditor,
     PluginPackageDebuggersContribution,
+    PluginPackageGrammarsContribution,
     PluginPackageKeybinding,
     PluginPackageLanguageContribution,
-    PluginPackageLanguageContributionConfiguration,
+    PluginPackageLocalization,
     PluginPackageMenu,
     PluginPackageSubmenu,
+    PluginPackageTranslation,
     PluginPackageView,
     PluginPackageViewContainer,
     PluginPackageViewWelcome,
     PluginScanner,
     PluginTaskDefinitionContribution,
-    SnippetContribution,
+    PluginIdentifiers,
     Submenu,
-    ThemeContribution,
+    TerminalProfile,
+    Translation,
     View,
     ViewContainer,
     ViewWelcome,
-    PluginPackageCustomEditor,
-    CustomEditor,
-    CustomEditorPriority,
-    PluginPackageLocalization,
-    Localization,
-    PluginPackageTranslation,
-    Translation,
-    PluginIdentifiers,
-    TerminalProfile,
-    PluginIconContribution,
-    PluginEntryPoint,
-    PluginPackageContribution
 } from '../../../common/plugin-protocol';
-import { promises as fs, readdirSync } from 'fs';
+import { promises as fs } from 'fs';
 import * as path from 'path';
-import { isObject, isStringArray } from '@theia/core/lib/common/types';
-import { GrammarsReader } from './grammars-reader';
-import { CharacterPair } from '../../../common/plugin-api-rpc';
-import { isENOENT } from '../../../common/errors';
 import * as jsoncparser from 'jsonc-parser';
-import { IJSONSchema, JsonType } from '@theia/core/lib/common/json-schema';
-import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { deepClone } from '@theia/core/lib/common/objects';
-import { PreferenceSchema, PreferenceDataProperty } from '@theia/core/lib/common/preferences/preference-schema';
+import { GrammarsReader } from './grammars-reader';
+import { isENOENT } from '../../../common/errors';
+import { PluginUriFactory } from './plugin-uri-factory';
+import { ILogger } from '@theia/core';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/common/color';
-import { CSSIcon } from '@theia/core/lib/common/markdown-rendering/icon-utilities';
-import { PluginUriFactory } from './plugin-uri-factory';
-import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
-import { ILogger } from '@theia/core';
-
-const colorIdPattern = '^\\w+[.\\w+]*$';
-const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
-
-/** Maps the view container locations used by VS Code extensions to the Theia shell locations. */
-const VIEW_CONTAINER_LOCATION_ALIASES: Record<string, string> = {
-    activitybar: 'left',
-    panel: 'bottom',
-    secondarySidebar: 'right',
-    auxiliarybar: 'right'
-};
-
-function getFileExtension(filePath: string): string {
-    const index = filePath.lastIndexOf('.');
-    return index === -1 ? '' : filePath.substring(index + 1);
-}
-
-/**
- * Mirrors VS Code's `ConfigurationRegistry.getDefaultValue(type)`: plugins expect typed-but-defaultless properties to read as a type-based default, not `undefined`.
- */
-function deriveDefaultForType(type: JsonType | JsonType[] | undefined): JSONValue {
-    const t = Array.isArray(type) ? type[0] : type;
-    switch (t) {
-        case 'boolean': return false;
-        case 'integer':
-        case 'number': return 0;
-        case 'string': return '';
-        case 'array': return [];
-        case 'object': return {};
-        default: return null;
-    }
-}
+import {
+    extractPluginViewsIds as extractPluginViewsIdsShared,
+    getScope as getScopeShared,
+    normalizeContributions,
+    readColors as readColorsShared,
+    readCommand as readCommandShared,
+    readConfiguration as readConfigurationShared,
+    readCustomEditor as readCustomEditorShared,
+    readDebugger as readDebuggerShared,
+    readIcons as readIconsShared,
+    readIconThemes as readIconThemesShared,
+    readKeybinding as readKeybindingShared,
+    readLanguage as readLanguageShared,
+    readMenu as readMenuShared,
+    readSnippets as readSnippetsShared,
+    readSubmenu as readSubmenuShared,
+    readTaskDefinition as readTaskDefinitionShared,
+    readTerminals as readTerminalsShared,
+    readThemes as readThemesShared,
+    readTranslation as readTranslationShared,
+    readView as readViewShared,
+    readViewContainer as readViewContainerShared,
+    readViewWelcome as readViewWelcomeShared,
+    toSchema as toSchemaShared,
+    transformIconUrl as transformIconUrlShared,
+} from '@theia/plugin-utils/lib/normalize-contributions';
+import type {
+    IConfigurationNode,
+    NormalizeContributionsContext,
+} from '@theia/plugin-utils/lib/contribution-types';
+import {
+    buildLifecycle,
+    buildModelForTheia as buildModelForTheiaShared,
+    getPluginRootFileUrl as getPluginRootFileUrlShared,
+    toPluginUrl as toPluginUrlShared
+} from '@theia/plugin-utils/lib/plugin-model';
 
 type PluginPackageWithContributes = PluginPackage & { contributes: PluginPackageContribution };
-
-type ScopeString = 'machine-overridable' | 'window' | 'resource' | 'language-overridable' | 'application' | 'machine';
-
-type EditPresentationTypes = 'multilineText' | 'singleLineText';
-export interface IConfigurationPropertySchema extends IJSONSchema {
-
-    scope?: ScopeString;
-
-    /**
-     * When `false` this property is excluded from the registry. Default is to include.
-     */
-    included?: boolean;
-
-    /**
-     * List of tags associated to the property.
-     *  - A tag can be used for filtering
-     *  - Use `experimental` tag for marking the setting as experimental.
-     *  - Use `onExP` tag for marking that the default of the setting can be changed by running experiments.
-     */
-    tags?: string[];
-
-    /**
-     * When specified, controls the presentation format of string settings.
-     * Otherwise, the presentation format defaults to `singleline`.
-     */
-    editPresentation?: EditPresentationTypes;
-
-    /**
-     * When specified, gives an order number for the setting
-     * within the settings editor. Otherwise, the setting is placed at the end.
-     */
-    order?: number;
-
-}
-
-export interface IExtensionInfo {
-    id: string;
-    displayName?: string;
-}
-
-export interface IConfigurationNode {
-    title?: string;
-    description?: string;
-    properties?: Record<string, IConfigurationPropertySchema>;
-    scope?: ScopeString;
-}
 
 @injectable()
 export abstract class AbstractPluginScanner implements PluginScanner {
@@ -184,34 +126,17 @@ export abstract class AbstractPluginScanner implements PluginScanner {
 
     getModel(plugin: PluginPackage): PluginModel {
         const publisher = plugin.publisher ?? PluginIdentifiers.UNPUBLISHED;
-        const result: PluginModel = {
-            packagePath: plugin.packagePath,
-            packageUri: this.pluginUriFactory.createUri(plugin).toString(),
-            // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
-            id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
-            name: plugin.name,
+        const result = buildModelForTheiaShared({
+            ...plugin,
             publisher,
-            version: plugin.version,
-            displayName: plugin.displayName,
-            description: plugin.description,
-            l10n: plugin.l10n,
-            engine: {
-                type: this._apiType,
-                version: plugin.engines[this._apiType]
-            },
-            entryPoint: this.getEntryPoint(plugin),
-            licenseUrl: this.getLicenseUrl(plugin),
-            readmeUrl: this.getReadmeUrl(plugin)
-        };
-        this.applyTrustExtraction(plugin, result);
-        return result;
-    }
+            packageUri: this.pluginUriFactory.createUri(plugin).toString(),
+        });
 
-    protected applyTrustExtraction(plugin: PluginPackage, result: PluginModel): void {
-        const untrustedWorkspacesSupport = plugin.capabilities?.untrustedWorkspaces?.supported;
-        if (untrustedWorkspacesSupport !== undefined) {
-            result.untrustedWorkspacesSupport = untrustedWorkspacesSupport;
-        }
+        result.engine.type = this._apiType;
+        result.engine.version = plugin.engines[this._apiType] ?? '*';
+        result.entryPoint = this.getEntryPoint(plugin);
+
+        return result;
     }
 
     protected getReadmeUrl(plugin: PluginPackage): string | undefined {
@@ -223,32 +148,16 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     }
 
     protected getPluginRootFileUrl(plugin: PluginPackage, names: string[]): string | undefined {
-        const nameSet = new Set(names.map(n => n.toLowerCase()));
-        try {
-            const dir = readdirSync(plugin.packagePath, { withFileTypes: true });
-            for (const dirent of dir) {
-                if (dirent.isFile() && nameSet.has(dirent.name.toLowerCase())) {
-                    return PluginPackage.toPluginUrl(plugin, dirent.name);
-                }
-            }
-        } catch {
-            return undefined;
-        }
+        return getPluginRootFileUrlShared(plugin, names);
     }
 
     protected abstract getEntryPoint(plugin: PluginPackage): PluginEntryPoint;
 
     getLifecycle(plugin: PluginPackage): PluginLifecycle {
-        const result: PluginLifecycle = {
-            startMethod: 'start',
-            stopMethod: 'stop',
-            frontendModuleName: buildFrontendModuleName(plugin),
-        };
-
+        const result = buildLifecycle(plugin, 'theiaPlugin');
         if (this._backendInitPath) {
             result.backendInitPath = path.join(__dirname, this._backendInitPath);
         }
-
         return result;
     }
 
@@ -299,279 +208,57 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return result;
     }
 
-    static getScope(monacoScope: string | undefined): { scope: PreferenceScope | undefined, overridable: boolean } {
-        switch (monacoScope) {
-            case 'machine-overridable':
-            case 'window':
-            case 'resource':
-                return { scope: PreferenceScope.Folder, overridable: false };
-            case 'language-overridable':
-                return { scope: PreferenceScope.Folder, overridable: true };
-            case 'application':
-            case 'machine':
-                return { scope: PreferenceScope.User, overridable: false };
-        }
-        return { scope: undefined, overridable: false };
+    static getScope(monacoScope: string | undefined): { scope: PreferenceScope | undefined; overridable: boolean } {
+        return getScopeShared(monacoScope);
     }
 
     protected override async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
-        try {
-            if (rawPlugin.contributes.configuration) {
-                const configurations = Array.isArray(rawPlugin.contributes.configuration) ? rawPlugin.contributes.configuration : [rawPlugin.contributes.configuration];
-                const hasMultipleConfigs = configurations.length > 1;
-                contributions.configuration = [];
-                for (const c of configurations) {
-                    const config = this.readConfiguration(c, rawPlugin.packagePath);
-                    if (config) {
-                        Object.values(config.properties).forEach(property => {
-                            if (hasMultipleConfigs) {
-                                // If there are multiple configuration contributions, we need to distinguish them by their title in the settings UI.
-                                // They are placed directly under the plugin's name in the settings UI.
-                                property.owner = rawPlugin.displayName;
-                                property.group = config.title;
-                            } else {
-                                // If there's only one configuration contribution, we display the title in the settings UI.
-                                property.owner = config.title;
-                            }
-                        });
-                        contributions.configuration.push(config);
-                    }
-                }
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'configuration'.`, rawPlugin.contributes.configuration, err);
-        }
+        const ctx: NormalizeContributionsContext<PluginPackage> = {
+            ...this.contributionCtx(rawPlugin),
+            readConfiguration: this.readConfiguration.bind(this),
+            readCustomEditors: this.readCustomEditors.bind(this),
+            readViews: this.readViews.bind(this),
+            readKeybinding: this.readKeybinding.bind(this),
+            readDebuggers: this.readDebuggers.bind(this),
+            readSubmenus: (submenus, plugin) => this.readSubmenus(submenus, plugin),
+            readViewsContainers: (containers, plugin) => this.readViewsContainers(containers, plugin),
+            readViewsWelcome: (welcome, views) => this.readViewsWelcome(welcome, views),
+            readCommand: (command, plugin) => this.readCommand(command, plugin),
+            readMenus: menus => this.readMenus(menus),
+            readTaskDefinition: (pluginName, definition) => this.readTaskDefinition(pluginName, definition as PluginTaskDefinitionContribution),
+            readSnippets: plugin => this.readSnippets(plugin),
+            readThemes: plugin => this.readThemes(plugin),
+            readIcons: plugin => this.readIcons(plugin),
+            readIconThemes: plugin => this.readIconThemes(plugin),
+            readColors: plugin => this.readColors(plugin),
+            readTerminals: plugin => this.readTerminals(plugin),
+            readLocalizations: plugin => this.readLocalizations(plugin),
+            readLanguages: (languages, plugin) => this.readLanguages(languages, plugin),
+        };
+        return normalizeContributions(ctx, contributions);
+    }
 
-        const configurationDefaults = rawPlugin.contributes.configurationDefaults;
-        contributions.configurationDefaults = isObject(configurationDefaults) ? configurationDefaults : undefined;
-
-        try {
-            if (rawPlugin.contributes.submenus) {
-                contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus, rawPlugin);
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes.submenus, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.customEditors) {
-                const customEditors = this.readCustomEditors(rawPlugin.contributes.customEditors);
-                contributions.customEditors = customEditors;
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes.customEditors, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.viewsContainers) {
-                const viewsContainers = rawPlugin.contributes.viewsContainers;
-                contributions.viewsContainers = {};
-
-                for (const location of Object.keys(viewsContainers)) {
-                    const containers = this.readViewsContainers(viewsContainers[location], rawPlugin);
-                    const loc = VIEW_CONTAINER_LOCATION_ALIASES[location] ?? location;
-                    if (contributions.viewsContainers[loc]) {
-                        contributions.viewsContainers[loc] = contributions.viewsContainers[loc].concat(containers);
-                    } else {
-                        contributions.viewsContainers[loc] = containers;
-                    }
-                }
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes.viewsContainers, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.views) {
-                contributions.views = {};
-
-                for (const location of Object.keys(rawPlugin.contributes.views)) {
-                    const views = this.readViews(rawPlugin.contributes.views[location]);
-                    contributions.views[location] = views;
-                }
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes.views, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.viewsWelcome) {
-                contributions.viewsWelcome = this.readViewsWelcome(rawPlugin.contributes!.viewsWelcome, rawPlugin.contributes.views);
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes.viewsWelcome, err);
-        }
-
-        try {
-            const pluginCommands = rawPlugin.contributes.commands;
-            if (pluginCommands) {
-                const commands = Array.isArray(pluginCommands) ? pluginCommands : [pluginCommands];
-                contributions.commands = commands.map(command => this.readCommand(command, rawPlugin));
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'commands'.`, rawPlugin.contributes!.commands, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.menus) {
-                contributions.menus = {};
-
-                for (const location of Object.keys(rawPlugin.contributes.menus)) {
-                    const menus = this.readMenus(rawPlugin.contributes.menus[location]);
-                    contributions.menus[location] = menus;
-                }
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes.menus, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.keybindings) {
-                const rawKeybindings = Array.isArray(rawPlugin.contributes.keybindings) ? rawPlugin.contributes.keybindings : [rawPlugin.contributes.keybindings];
-                contributions.keybindings = rawKeybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes.keybindings, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.debuggers) {
-                const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers);
-                contributions.debuggers = debuggers;
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes.debuggers, err);
-        }
-
-        try {
-            if (rawPlugin.contributes.taskDefinitions) {
-                const definitions = rawPlugin.contributes.taskDefinitions!;
-                contributions.taskDefinitions = definitions.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
-            }
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes.taskDefinitions, err);
-        }
-
-        try {
-            contributions.problemMatchers = rawPlugin.contributes.problemMatchers;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes.problemMatchers, err);
-        }
-
-        try {
-            contributions.problemPatterns = rawPlugin.contributes.problemPatterns;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes.problemPatterns, err);
-        }
-
-        try {
-            contributions.resourceLabelFormatters = rawPlugin.contributes.resourceLabelFormatters;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes.resourceLabelFormatters, err);
-        }
-
-        try {
-            contributions.authentication = rawPlugin.contributes.authentication;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'authentication'.`, rawPlugin.contributes.authentication, err);
-        }
-
-        try {
-            contributions.notebooks = rawPlugin.contributes.notebooks;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.notebooks, err);
-        }
-
-        try {
-            contributions.notebookRenderer = rawPlugin.contributes.notebookRenderer;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebook-renderer'.`, rawPlugin.contributes.notebookRenderer, err);
-        }
-
-        try {
-            contributions.notebookPreload = rawPlugin.contributes.notebookPreload;
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebooks-preload'.`, rawPlugin.contributes.notebookPreload, err);
-        }
-
-        try {
-            contributions.snippets = this.readSnippets(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);
-        }
-
-        try {
-            contributions.themes = this.readThemes(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
-        }
-
-        try {
-            contributions.icons = this.readIcons(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'icons'.`, rawPlugin.contributes.icons, err);
-        }
-
-        try {
-            contributions.iconThemes = this.readIconThemes(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'iconThemes'.`, rawPlugin.contributes.iconThemes, err);
-        }
-
-        try {
-            contributions.colors = this.readColors(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'colors'.`, rawPlugin.contributes.colors, err);
-        }
-
-        try {
-            contributions.terminalProfiles = this.readTerminals(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'terminals'.`, rawPlugin.contributes.terminal, err);
-        }
-
-        try {
-            contributions.localizations = this.readLocalizations(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, err);
-        }
-
-        const [languagesResult, grammarsResult] = await Promise.allSettled([
-            rawPlugin.contributes.languages ? this.readLanguages(rawPlugin.contributes.languages, rawPlugin) : undefined,
-            rawPlugin.contributes.grammars ? this.grammarsReader.readGrammars(rawPlugin.contributes.grammars, rawPlugin.packagePath) : undefined
-        ]);
-
-        if (rawPlugin.contributes.languages) {
-            if (languagesResult.status === 'fulfilled') {
-                contributions.languages = languagesResult.value;
-            } else {
-                this.logger.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes.languages, languagesResult.reason);
-            }
-        }
-
-        if (rawPlugin.contributes.grammars) {
-            if (grammarsResult.status === 'fulfilled') {
-                contributions.grammars = grammarsResult.value;
-            } else {
-                this.logger.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes.grammars, grammarsResult.reason);
-            }
-        }
-
-        return contributions;
+    protected contributionCtx(pck: PluginPackage): NormalizeContributionsContext<PluginPackage> {
+        return {
+            plugin: pck,
+            resolveUrl: relativePath => this.toPluginUrl(pck, relativePath),
+            resolveUri: (_plugin, relativePath) => this.pluginUriFactory.createUri(pck, relativePath).toString(),
+            onError: (type, err, detail) => this.logger.error(`Could not read '${pck.name}' contribution '${type}'.`, detail, err),
+            onWarn: msg => this.logger.warn(msg),
+            readJsonFile: filePath => this.readJson(filePath),
+            readGrammars: (grammars, pluginPath) => this.grammarsReader.readGrammars(grammars as PluginPackageGrammarsContribution[], pluginPath),
+        };
     }
 
     protected readTerminals(pck: PluginPackage): TerminalProfile[] | undefined {
-        if (!pck?.contributes?.terminal?.profiles) {
-            return undefined;
-        }
-        return pck.contributes.terminal.profiles.filter(profile => profile.id && profile.title);
+        return readTerminalsShared(pck);
     }
 
     protected readLocalizations(pck: PluginPackage): Localization[] | undefined {
-        if (!pck.contributes || !pck.contributes.localizations) {
+        if (!pck.contributes?.localizations) {
             return undefined;
         }
-        return pck.contributes.localizations.map(e => this.readLocalization(e, pck.packagePath));
+        return pck.contributes.localizations.map(entry => this.readLocalization(entry, pck.packagePath));
     }
 
     protected readLocalization({ languageId, languageName, localizedLanguageName, translations }: PluginPackageLocalization, pluginPath: string): Localization {
@@ -579,202 +266,138 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             languageId,
             languageName,
             localizedLanguageName,
-            translations: []
+            translations: translations?.map(entry => this.readTranslation(entry, pluginPath)) ?? []
         };
-        local.translations = translations.map(e => this.readTranslation(e, pluginPath));
         return local;
     }
 
     protected readTranslation(packageTranslation: PluginPackageTranslation, pluginPath: string): Translation {
-        const translation: Translation = {
-            id: packageTranslation.id,
-            path: packageTranslation.path
-        };
-        return translation;
+        return readTranslationShared(packageTranslation, pluginPath) as Translation;
     }
 
-    protected readCommand({ command, title, shortTitle, original, category, icon, enablement }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
-        const { themeIcon, iconUrl } = this.transformIconUrl(pck, icon) ?? {};
-        return { command, title, shortTitle, originalTitle: original, category, iconUrl, themeIcon, enablement };
+    protected readCommand(command: PluginPackageCommand, pck: PluginPackage): PluginCommand {
+        return readCommandShared(this.contributionCtx(pck), command, pck);
     }
 
     protected transformIconUrl(plugin: PluginPackage, original?: IconUrl): { iconUrl?: IconUrl; themeIcon?: string } | undefined {
-        if (original) {
-            if (typeof original === 'string') {
-                if (original.startsWith('$(')) {
-                    return { themeIcon: original };
-                } else {
-                    return { iconUrl: this.toPluginUrl(plugin, original) };
-                }
-            } else {
-                return {
-                    iconUrl: {
-                        light: this.toPluginUrl(plugin, original.light),
-                        dark: this.toPluginUrl(plugin, original.dark)
-                    }
-                };
-            }
-        }
+        return transformIconUrlShared(this.contributionCtx(plugin), plugin, original);
     }
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return PluginPackage.toPluginUrl(pck, relativePath);
+        return toPluginUrlShared(pck, relativePath);
     }
 
     protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
-        if (!pck.contributes || !pck.contributes.colors) {
-            return undefined;
-        }
-        const result: ColorDefinition[] = [];
-        for (const contribution of pck.contributes.colors) {
-            if (typeof contribution.id !== 'string' || contribution.id.length === 0) {
-                this.logger.error("'configuration.colors.id' must be defined and can not be empty");
-                continue;
-            }
-            if (!contribution.id.match(colorIdPattern)) {
-                this.logger.error("'configuration.colors.id' must follow the word[.word]*");
-                continue;
-            }
-            if (typeof contribution.description !== 'string' || contribution.id.length === 0) {
-                this.logger.error("'configuration.colors.description' must be defined and can not be empty");
-                continue;
-            }
-            const defaults = contribution.defaults;
-            if (!defaults || typeof defaults !== 'object' || typeof defaults.light !== 'string' || typeof defaults.dark !== 'string' || typeof defaults.highContrast !== 'string') {
-                this.logger.error("'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
-                continue;
-            }
-            result.push({
-                id: contribution.id,
-                description: contribution.description,
-                defaults: {
-                    light: defaults.light,
-                    dark: defaults.dark,
-                    hc: defaults.highContrast
-                }
-            });
-        }
-        return result;
+        return readColorsShared(this.contributionCtx(pck), pck) as ColorDefinition[] | undefined;
     }
 
-    protected readThemes(pck: PluginPackage): ThemeContribution[] | undefined {
-        if (!pck.contributes || !pck.contributes.themes) {
-            return undefined;
-        }
-        const result: ThemeContribution[] = [];
-        for (const contribution of pck.contributes.themes) {
-            if (contribution.path) {
-                result.push({
-                    id: contribution.id,
-                    uri: this.pluginUriFactory.createUri(pck, contribution.path).toString(),
-                    description: contribution.description,
-                    label: contribution.label,
-                    uiTheme: contribution.uiTheme
-                });
-            }
-        }
-        return result;
+    protected readThemes(pck: PluginPackage): ReturnType<typeof readThemesShared> {
+        return readThemesShared(this.contributionCtx(pck), pck);
     }
 
-    protected readIconThemes(pck: PluginPackage): IconThemeContribution[] | undefined {
-        if (!pck.contributes || !pck.contributes.iconThemes) {
-            return undefined;
-        }
-        const result: IconThemeContribution[] = [];
-        for (const contribution of pck.contributes.iconThemes) {
-            if (typeof contribution.id !== 'string') {
-                this.logger.error('Expected string in `contributes.iconThemes.id`. Provided value:', contribution.id);
-                continue;
-            }
-            if (typeof contribution.path !== 'string') {
-                this.logger.error('Expected string in `contributes.iconThemes.path`. Provided value:', contribution.path);
-                continue;
-            }
-            result.push({
-                id: contribution.id,
-                uri: this.pluginUriFactory.createUri(pck, contribution.path).toString(),
-                description: contribution.description,
-                label: contribution.label,
-                uiTheme: contribution.uiTheme
-            });
-        }
-        return result;
+    protected readIconThemes(pck: PluginPackage): ReturnType<typeof readIconThemesShared> {
+        return readIconThemesShared(this.contributionCtx(pck), pck);
     }
 
-    protected readIcons(pck: PluginPackage): IconContribution[] | undefined {
-        if (!pck.contributes || !pck.contributes.icons) {
-            return undefined;
-        }
-        const result: IconContribution[] = [];
-        const iconEntries = <PluginIconContribution>(<unknown>pck.contributes.icons);
-        for (const id in iconEntries) {
-            if (pck.contributes.icons.hasOwnProperty(id)) {
-                if (!id.match(iconIdPattern)) {
-                    this.logger.error("'configuration.icons' keys represent the icon id and can only contain letter, digits and minuses. " +
-                        'They need to consist of at least two segments in the form `component-iconname`.', 'extension: ', pck.name, 'icon id: ', id);
-                    return;
-                }
-                const iconContribution = iconEntries[id];
-                if (typeof iconContribution.description !== 'string' || iconContribution.description['length'] === 0) {
-                    this.logger.error('configuration.icons.description must be defined and can not be empty, ', 'extension: ', pck.name, 'icon id: ', id);
-                    return;
-                }
-
-                const defaultIcon = iconContribution.default;
-                if (typeof defaultIcon === 'string') {
-                    result.push({
-                        id,
-                        extensionId: pck.publisher + '.' + pck.name,
-                        description: iconContribution.description,
-                        defaults: { id: defaultIcon }
-                    });
-                } else if (typeof defaultIcon === 'object' && typeof defaultIcon.fontPath === 'string' && typeof defaultIcon.fontCharacter === 'string') {
-                    const format = getFileExtension(defaultIcon.fontPath);
-                    if (['woff', 'woff2', 'ttf'].indexOf(format) === -1) {
-                        this.logger.warn("Expected `contributes.icons.default.fontPath` to have file extension 'woff', woff2' or 'ttf', is '{0}'.", format);
-                        return;
-                    }
-
-                    const iconFontLocation = this.pluginUriFactory.createUri(pck, defaultIcon.fontPath).toString();
-                    result.push({
-                        id,
-                        extensionId: pck.publisher + '.' + pck.name,
-                        description: iconContribution.description,
-                        defaults: {
-                            fontCharacter: defaultIcon.fontCharacter,
-                            location: iconFontLocation
-                        }
-                    });
-                } else {
-                    this.logger.error("'configuration.icons.default' must be either a reference to the id of an other theme icon (string) or a icon definition (object) with ",
-                        'properties `fontPath` and `fontCharacter`.');
-                }
-            }
-        }
-        return result;
+    protected readIcons(pck: PluginPackage): ReturnType<typeof readIconsShared> {
+        return readIconsShared(this.contributionCtx(pck), pck);
     }
 
-    protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {
-        if (!pck.contributes || !pck.contributes.snippets) {
-            return undefined;
-        }
-        const result: SnippetContribution[] = [];
-        for (const contribution of pck.contributes.snippets) {
-            if (contribution.path) {
-                result.push({
-                    language: contribution.language,
-                    source: pck.displayName || pck.name,
-                    uri: this.pluginUriFactory.createUri(pck, contribution.path).toString()
-                });
-            }
-        }
-        return result;
+    protected readSnippets(pck: PluginPackage): ReturnType<typeof readSnippetsShared> {
+        return readSnippetsShared(this.contributionCtx(pck), pck);
+    }
+
+    protected readConfiguration(rawConfiguration: IConfigurationNode, pluginPath: string): PreferenceSchema | undefined {
+        return readConfigurationShared(rawConfiguration, pluginPath) as PreferenceSchema | undefined;
+    }
+
+    protected readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
+        return readKeybindingShared(rawKeybinding);
+    }
+
+    protected readCustomEditors(rawCustomEditors: PluginPackageCustomEditor[]): CustomEditor[] {
+        return rawCustomEditors.map(rawCustomEditor => this.readCustomEditor(rawCustomEditor));
+    }
+
+    protected readCustomEditor(rawCustomEditor: PluginPackageCustomEditor): CustomEditor {
+        return readCustomEditorShared(rawCustomEditor) as CustomEditor;
+    }
+
+    protected readViewsContainers(rawViewsContainers: readonly PluginPackageViewContainer[], pck: PluginPackage): ViewContainer[] {
+        return rawViewsContainers
+            .map(rawViewContainer => this.readViewContainer(rawViewContainer, pck))
+            .filter((container): container is ViewContainer => container !== undefined);
+    }
+
+    protected readViewContainer(rawViewContainer: PluginPackageViewContainer, pck: PluginPackage): ViewContainer | undefined {
+        return readViewContainerShared(this.contributionCtx(pck), rawViewContainer, pck) as ViewContainer | undefined;
+    }
+
+    protected readViews(rawViews: PluginPackageView[]): View[] {
+        return rawViews.map(rawView => this.readView(rawView));
+    }
+
+    protected readView(rawView: PluginPackageView): View {
+        return readViewShared(rawView);
+    }
+
+    protected readViewsWelcome(rawViewsWelcome: readonly PluginPackageViewWelcome[], rowViews: { [location: string]: readonly PluginPackageView[]; } | undefined): ViewWelcome[] {
+        return rawViewsWelcome.map(rawViewWelcome => this.readViewWelcome(rawViewWelcome, this.extractPluginViewsIds(rowViews)));
+    }
+
+    protected readViewWelcome(rawViewWelcome: PluginPackageViewWelcome, pluginViewsIds: string[]): ViewWelcome {
+        return readViewWelcomeShared(rawViewWelcome, pluginViewsIds);
+    }
+
+    protected extractPluginViewsIds(views: { [location: string]: readonly PluginPackageView[] } | undefined): string[] {
+        return extractPluginViewsIdsShared(views);
+    }
+
+    protected readMenus(rawMenus: readonly PluginPackageMenu[]): Menu[] {
+        return rawMenus.map(rawMenu => this.readMenu(rawMenu));
+    }
+
+    protected readMenu(rawMenu: PluginPackageMenu): Menu {
+        return readMenuShared(rawMenu);
+    }
+
+    protected async readLanguages(rawLanguages: readonly PluginPackageLanguageContribution[], plugin: PluginPackage): Promise<Awaited<ReturnType<typeof readLanguageShared>>[]> {
+        return Promise.all(rawLanguages.map(language => this.readLanguage(language, plugin)));
+    }
+
+    protected readSubmenus(rawSubmenus: readonly PluginPackageSubmenu[], plugin: PluginPackage): Submenu[] {
+        return rawSubmenus.map(submenu => this.readSubmenu(submenu, plugin));
+    }
+
+    protected readSubmenu(rawSubmenu: PluginPackageSubmenu, plugin: PluginPackage): Submenu {
+        return readSubmenuShared(this.contributionCtx(plugin), rawSubmenu, plugin);
+    }
+
+    protected async readLanguage(rawLang: PluginPackageLanguageContribution, plugin: PluginPackage): Promise<Awaited<ReturnType<typeof readLanguageShared>>> {
+        return readLanguageShared(this.contributionCtx(plugin), rawLang, plugin);
+    }
+
+    protected readDebuggers(rawDebuggers: PluginPackageDebuggersContribution[]): DebuggerContribution[] {
+        return rawDebuggers.map(rawDebugger => this.readDebugger(rawDebugger));
+    }
+
+    protected readDebugger(rawDebugger: PluginPackageDebuggersContribution): DebuggerContribution {
+        return readDebuggerShared(rawDebugger) as DebuggerContribution;
+    }
+
+    protected readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
+        return readTaskDefinitionShared(pluginName, definitionContribution) as TaskDefinition;
+    }
+
+    protected toSchema(definition: PluginTaskDefinitionContribution): IJSONSchema {
+        return toSchemaShared(definition) as IJSONSchema;
     }
 
     protected async readJson<T>(filePath: string): Promise<T | undefined> {
         const content = await this.readFile(filePath);
         return content ? jsoncparser.parse(content, undefined, { disallowComments: false }) : undefined;
     }
+
     protected async readFile(filePath: string): Promise<string> {
         try {
             const content = await fs.readFile(filePath, { encoding: 'utf8' });
@@ -786,327 +409,4 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             return '';
         }
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private readConfiguration(rawConfiguration: IConfigurationNode, pluginPath: string): PreferenceSchema | undefined {
-        const { scope, overridable } = TheiaPluginScanner.getScope(rawConfiguration.scope);
-        const schema: PreferenceSchema = {
-            scope,
-            defaultOverridable: overridable,
-            title: rawConfiguration.title,
-            properties: {}
-        };
-
-        if (rawConfiguration.properties) {
-            for (const [key, property] of Object.entries(rawConfiguration.properties)) {
-                const scopeInfo = TheiaPluginScanner.getScope(property.scope);
-                const schemaProperty: PreferenceDataProperty = {
-                    ...property,
-                    scope: scopeInfo.scope,
-                    overridable: scopeInfo.overridable,
-                    default: property.default !== undefined ? property.default : deriveDefaultForType(property.type)
-                };
-
-                schema.properties[key] = schemaProperty;
-            }
-        }
-        return schema;
-    }
-
-    private readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
-        return {
-            keybinding: rawKeybinding.key,
-            command: rawKeybinding.command,
-            when: rawKeybinding.when,
-            mac: rawKeybinding.mac,
-            linux: rawKeybinding.linux,
-            win: rawKeybinding.win,
-            args: rawKeybinding.args
-        };
-    }
-
-    private readCustomEditors(rawCustomEditors: PluginPackageCustomEditor[]): CustomEditor[] {
-        return rawCustomEditors.map(rawCustomEditor => this.readCustomEditor(rawCustomEditor));
-    }
-
-    private readCustomEditor(rawCustomEditor: PluginPackageCustomEditor): CustomEditor {
-        return {
-            viewType: rawCustomEditor.viewType,
-            displayName: rawCustomEditor.displayName,
-            selector: rawCustomEditor.selector || [],
-            priority: rawCustomEditor.priority || CustomEditorPriority.default
-        };
-    }
-
-    private readViewsContainers(rawViewsContainers: PluginPackageViewContainer[], pck: PluginPackage): ViewContainer[] {
-        return rawViewsContainers.map(rawViewContainer => this.readViewContainer(rawViewContainer, pck));
-    }
-
-    private readViewContainer(rawViewContainer: PluginPackageViewContainer, pck: PluginPackage): ViewContainer {
-        const themeIcon = rawViewContainer.icon.startsWith('$(') ? rawViewContainer.icon : undefined;
-        const iconUrl = this.toPluginUrl(pck, rawViewContainer.icon);
-        return {
-            id: rawViewContainer.id,
-            title: rawViewContainer.title,
-            iconUrl,
-            themeIcon,
-            when: rawViewContainer.when,
-        };
-    }
-
-    private readViews(rawViews: PluginPackageView[]): View[] {
-        return rawViews.map(rawView => this.readView(rawView));
-    }
-
-    private readView(rawView: PluginPackageView): View {
-        const result: View = {
-            id: rawView.id,
-            name: rawView.name,
-            when: rawView.when,
-            type: rawView.type
-        };
-
-        return result;
-    }
-
-    private readViewsWelcome(rawViewsWelcome: PluginPackageViewWelcome[], rowViews: { [location: string]: PluginPackageView[]; } | undefined): ViewWelcome[] {
-        return rawViewsWelcome.map(rawViewWelcome => this.readViewWelcome(rawViewWelcome, this.extractPluginViewsIds(rowViews)));
-    }
-
-    private readViewWelcome(rawViewWelcome: PluginPackageViewWelcome, pluginViewsIds: string[]): ViewWelcome {
-        const result: ViewWelcome = {
-            view: rawViewWelcome.view,
-            content: rawViewWelcome.contents,
-            when: rawViewWelcome.when,
-            enablement: rawViewWelcome.enablement,
-            // if the plugin contributes Welcome view to its own view - it will be ordered first
-            order: pluginViewsIds.findIndex(v => v === rawViewWelcome.view) > -1 ? 0 : 1
-        };
-
-        return result;
-    }
-
-    private extractPluginViewsIds(views: { [location: string]: PluginPackageView[] } | undefined): string[] {
-        const pluginViewsIds: string[] = [];
-        if (views) {
-            for (const location of Object.keys(views)) {
-                const viewsIds = views[location].map(view => view.id);
-                pluginViewsIds.push(...viewsIds);
-            };
-        }
-        return pluginViewsIds;
-    }
-
-    private readMenus(rawMenus: PluginPackageMenu[]): Menu[] {
-        return rawMenus.map(rawMenu => this.readMenu(rawMenu));
-    }
-
-    private readMenu(rawMenu: PluginPackageMenu): Menu {
-        const result: Menu = {
-            command: rawMenu.command,
-            submenu: rawMenu.submenu,
-            alt: rawMenu.alt,
-            group: rawMenu.group,
-            when: rawMenu.when
-        };
-        return result;
-    }
-
-    private async readLanguages(rawLanguages: PluginPackageLanguageContribution[], plugin: PluginPackage): Promise<LanguageContribution[]> {
-        return Promise.all(rawLanguages.map(language => this.readLanguage(language, plugin)));
-    }
-
-    private readSubmenus(rawSubmenus: PluginPackageSubmenu[], plugin: PluginPackage): Submenu[] {
-        return rawSubmenus.map(submenu => this.readSubmenu(submenu, plugin));
-    }
-
-    private readSubmenu(rawSubmenu: PluginPackageSubmenu, plugin: PluginPackage): Submenu {
-        const icon = this.transformIconUrl(plugin, rawSubmenu.icon);
-        return {
-            icon: icon?.iconUrl ?? icon?.themeIcon,
-            id: rawSubmenu.id,
-            label: rawSubmenu.label
-        };
-
-    }
-
-    private async readLanguage(rawLang: PluginPackageLanguageContribution, plugin: PluginPackage): Promise<LanguageContribution> {
-        // TODO: add validation to all parameters
-        const icon = this.transformIconUrl(plugin, rawLang.icon);
-        const result: LanguageContribution = {
-            id: rawLang.id,
-            aliases: rawLang.aliases,
-            extensions: rawLang.extensions,
-            filenamePatterns: rawLang.filenamePatterns,
-            filenames: rawLang.filenames,
-            firstLine: rawLang.firstLine,
-            mimetypes: rawLang.mimetypes,
-            icon: icon?.iconUrl ?? icon?.themeIcon
-        };
-        if (rawLang.configuration) {
-            const rawConfiguration = await this.readJson<PluginPackageLanguageContributionConfiguration>(path.resolve(plugin.packagePath, rawLang.configuration));
-            if (rawConfiguration) {
-                const configuration: LanguageConfiguration = {
-                    brackets: rawConfiguration.brackets,
-                    comments: rawConfiguration.comments,
-                    folding: rawConfiguration.folding,
-                    wordPattern: rawConfiguration.wordPattern,
-                    autoClosingPairs: this.extractValidAutoClosingPairs(rawLang.id, rawConfiguration),
-                    indentationRules: rawConfiguration.indentationRules,
-                    surroundingPairs: this.extractValidSurroundingPairs(rawLang.id, rawConfiguration),
-                    onEnterRules: rawConfiguration.onEnterRules,
-                };
-                result.configuration = configuration;
-            }
-        }
-        return result;
-
-    }
-
-    private readDebuggers(rawDebuggers: PluginPackageDebuggersContribution[]): DebuggerContribution[] {
-        return rawDebuggers.map(rawDebug => this.readDebugger(rawDebug));
-    }
-
-    private readDebugger(rawDebugger: PluginPackageDebuggersContribution): DebuggerContribution {
-        const result: DebuggerContribution = {
-            type: rawDebugger.type,
-            label: rawDebugger.label,
-            languages: rawDebugger.languages,
-            enableBreakpointsFor: rawDebugger.enableBreakpointsFor,
-            variables: rawDebugger.variables,
-            adapterExecutableCommand: rawDebugger.adapterExecutableCommand,
-            configurationSnippets: rawDebugger.configurationSnippets,
-            win: rawDebugger.win,
-            winx86: rawDebugger.winx86,
-            windows: rawDebugger.windows,
-            osx: rawDebugger.osx,
-            linux: rawDebugger.linux,
-            program: rawDebugger.program,
-            args: rawDebugger.args,
-            runtime: rawDebugger.runtime,
-            runtimeArgs: rawDebugger.runtimeArgs,
-            configurationAttributes: rawDebugger.configurationAttributes
-        };
-
-        return result;
-    }
-
-    private readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
-        const propertyKeys = definitionContribution.properties ? Object.keys(definitionContribution.properties) : [];
-        const schema = this.toSchema(definitionContribution);
-        return {
-            taskType: definitionContribution.type,
-            source: pluginName,
-            properties: {
-                required: definitionContribution.required || [],
-                all: propertyKeys,
-                schema
-            }
-        };
-    }
-
-    protected toSchema(definition: PluginTaskDefinitionContribution): IJSONSchema {
-        const reconciliation: IJSONSchema = { ...definition, type: 'object' };
-        const schema = deepClone(reconciliation);
-        if (schema.properties === undefined) {
-            schema.properties = Object.create(null);
-        }
-        schema.type = 'object';
-        schema.properties!.type = { type: 'string', const: definition.type };
-        return schema;
-    }
-
-    private extractValidAutoClosingPairs(langId: string, configuration: PluginPackageLanguageContributionConfiguration): AutoClosingPairConditional[] | undefined {
-        const source = configuration.autoClosingPairs;
-        if (typeof source === 'undefined') {
-            return undefined;
-        }
-        if (!Array.isArray(source)) {
-            this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs\` to be an array.`);
-            return undefined;
-        }
-
-        let result: AutoClosingPairConditional[] | undefined = undefined;
-        for (let i = 0, len = source.length; i < len; i++) {
-            const pair = source[i];
-            if (Array.isArray(pair)) {
-                if (!isCharacterPair(pair)) {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
-                    continue;
-                }
-                result = result || [];
-                result.push({ open: pair[0], close: pair[1] });
-            } else {
-                if (!isObject(pair)) {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
-                    continue;
-                }
-                if (typeof pair.open !== 'string') {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].open\` to be a string.`);
-                    continue;
-                }
-                if (typeof pair.close !== 'string') {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].close\` to be a string.`);
-                    continue;
-                }
-                if (typeof pair.notIn !== 'undefined') {
-                    if (!isStringArray(pair.notIn)) {
-                        this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].notIn\` to be a string array.`);
-                        continue;
-                    }
-                }
-                result = result || [];
-                result.push({ open: pair.open, close: pair.close, notIn: pair.notIn });
-            }
-        }
-        return result;
-    }
-
-    private extractValidSurroundingPairs(langId: string, configuration: PluginPackageLanguageContributionConfiguration): AutoClosingPair[] | undefined {
-        const source = configuration.surroundingPairs;
-        if (typeof source === 'undefined') {
-            return undefined;
-        }
-        if (!Array.isArray(source)) {
-            this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs\` to be an array.`);
-            return undefined;
-        }
-
-        let result: AutoClosingPair[] | undefined = undefined;
-        for (let i = 0, len = source.length; i < len; i++) {
-            const pair = source[i];
-            if (Array.isArray(pair)) {
-                if (!isCharacterPair(pair)) {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
-                    continue;
-                }
-                result = result || [];
-                result.push({ open: pair[0], close: pair[1] });
-            } else {
-                if (!isObject(pair)) {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
-                    continue;
-                }
-                if (typeof pair.open !== 'string') {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].open\` to be a string.`);
-                    continue;
-                }
-                if (typeof pair.close !== 'string') {
-                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].close\` to be a string.`);
-                    continue;
-                }
-                result = result || [];
-                result.push({ open: pair.open, close: pair.close });
-            }
-        }
-        return result;
-    }
-
-}
-
-function isCharacterPair(something: CharacterPair): boolean {
-    return (
-        isStringArray(something)
-        && something.length === 2
-    );
 }

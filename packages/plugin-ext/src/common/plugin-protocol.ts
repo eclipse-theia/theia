@@ -23,11 +23,84 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
-import { PluginIdentifiers } from './plugin-identifiers';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { PreferenceSchema } from '@theia/core';
+import { PluginIdentifiers } from './plugin-identifiers';
+import {
+    getPluginId,
+    toPluginUrl as toPluginUrlFromUtils
+} from '@theia/plugin-utils/lib/plugin-model';
+import {
+    PLUGIN_HOST_BACKEND,
+    PluginEntryPoint,
+    PluginLifecycle,
+    PluginManifest,
+    PluginMetadata,
+    PluginModel,
+    PluginPackageCapabilities,
+    PluginType,
+} from '@theia/plugin-utils/lib/manifest-types';
+import {
+    AutoClosingPair,
+    AutoClosingPairConditional,
+    CustomEditorPriority,
+    CustomEditorSelector,
+    EnterAction,
+    FoldingMarkers,
+    FoldingRules,
+    type IconUrl,
+    IndentationRules,
+    type JSONObject,
+    OnEnterRule,
+    PluginColorContribution,
+    PluginIconContribution,
+    PluginIconThemeContribution,
+    PluginJsonValidationContribution,
+    PluginManifestContribution,
+    PluginNotebookRendererContribution,
+    PluginPackageAuthenticationProvider,
+    PluginPackageCommand,
+    PluginPackageCustomEditor,
+    PluginPackageDebuggersContribution,
+    PluginPackageGrammarsContribution,
+    PluginPackageKeybinding,
+    PluginPackageLanguageContribution,
+    PluginPackageLanguageContributionConfiguration,
+    PluginPackageLanguageModelToolContribution,
+    PluginPackageLocalization,
+    PluginPackageMcpServerDefinitionProviderContribution,
+    PluginPackageMenu,
+    PluginPackageNotebook,
+    PluginPackageNotebookPreload,
+    PluginPackageSnippetsContribution,
+    PluginPackageSubmenu,
+    PluginPackageTerminal,
+    PluginPackageTerminalProfile,
+    PluginPackageTranslation,
+    PluginPackageView,
+    PluginPackageViewContainer,
+    PluginPackageViewWelcome,
+    PluginTaskDefinitionContribution,
+    PluginThemeContribution,
+    PluginUiTheme,
+    PluginViewType,
+    PlatformSpecificAdapterContribution,
+    RegExpOptions,
+    ScopeMap,
+} from '@theia/plugin-utils/lib/contribution-types';
 
 export { PluginIdentifiers };
+export { getPluginId };
+export { toPluginUrlFromUtils as toPluginUrl };
+export {
+    PLUGIN_HOST_BACKEND,
+    PluginEntryPoint,
+    PluginLifecycle,
+    PluginManifest,
+    PluginModel,
+    PluginPackageCapabilities,
+    PluginMetadata,
+    PluginType
+};
 export const hostedServicePath = '/services/hostedPlugin';
 
 /**
@@ -36,331 +109,78 @@ export const hostedServicePath = '/services/hostedPlugin';
 export type PluginEngine = string;
 
 /**
- * This interface describes a package.json object.
+ * Loaded plugin package with stricter fields used by `@theia/plugin-ext`.
  */
-export interface PluginPackage {
-    name: string;
+export interface PluginPackage extends PluginManifest {
     // The publisher is not guaranteed to be defined for unpublished plugins. https://github.com/microsoft/vscode-vsce/commit/a38657ece04c20e4fbde15d5ac1ed39ca51cb856
     publisher: string | undefined;
-    version: string;
     engines: {
         [type in PluginEngine]: string;
     };
-    theiaPlugin?: {
-        frontend?: string;
-        backend?: string;
-        /* Requires the `@theia/plugin-ext-headless` extension. */
-        headless?: string;
-    };
-    main?: string;
-    browser?: string;
     displayName: string;
     description: string;
     contributes?: PluginPackageContribution;
-    packagePath: string;
-    activationEvents?: string[];
-    extensionDependencies?: string[];
-    extensionPack?: string[];
-    l10n?: string;
-    icon?: string;
-    type?: 'module' | 'commonjs';
-    extensionKind?: Array<'ui' | 'workspace'>;
-    capabilities?: {
-        untrustedWorkspaces?: {
-            supported: boolean | 'limited';
-            description?: string;
-            restrictedConfigurations?: string[];
-        };
-    };
 }
 export namespace PluginPackage {
-    export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
-        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
-    }
+    export const toPluginUrl = toPluginUrlFromUtils;
 }
 
+export {
+    AutoClosingPair,
+    AutoClosingPairConditional,
+    CustomEditorPriority,
+    CustomEditorSelector,
+    EnterAction,
+    FoldingMarkers,
+    FoldingRules,
+    IndentationRules,
+    OnEnterRule,
+    PluginColorContribution,
+    PluginIconContribution,
+    PluginIconThemeContribution,
+    PluginJsonValidationContribution,
+    PluginManifestContribution,
+    PluginNotebookRendererContribution,
+    PluginPackageAuthenticationProvider,
+    PluginPackageCommand,
+    PluginPackageCustomEditor,
+    PluginPackageDebuggersContribution,
+    PluginPackageGrammarsContribution,
+    PluginPackageKeybinding,
+    PluginPackageLanguageContribution,
+    PluginPackageLanguageContributionConfiguration,
+    PluginPackageLanguageModelToolContribution,
+    PluginPackageLocalization,
+    PluginPackageMcpServerDefinitionProviderContribution,
+    PluginPackageMenu,
+    PluginPackageNotebook,
+    PluginPackageNotebookPreload,
+    PluginPackageSnippetsContribution,
+    PluginPackageSubmenu,
+    PluginPackageTerminal,
+    PluginPackageTerminalProfile,
+    PluginPackageTranslation,
+    PluginPackageView,
+    PluginPackageViewContainer,
+    PluginPackageViewWelcome,
+    PluginTaskDefinitionContribution,
+    PluginThemeContribution,
+    PluginUiTheme,
+    PluginViewType,
+    PlatformSpecificAdapterContribution,
+    RegExpOptions,
+    ScopeMap,
+    type IconUrl,
+    type JSONObject,
+};
+
 /**
- * This interface describes a package.json contribution section object.
+ * Strict `contributes` typing for scanned plugin packages.
  */
-export interface PluginPackageContribution {
-    authentication?: PluginPackageAuthenticationProvider[];
-    configuration?: JSONObject | JSONObject[];
-    configurationDefaults?: JSONObject;
-    languages?: PluginPackageLanguageContribution[];
-    grammars?: PluginPackageGrammarsContribution[];
-    customEditors?: PluginPackageCustomEditor[];
-    viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
-    views?: { [location: string]: PluginPackageView[] };
-    viewsWelcome?: PluginPackageViewWelcome[];
-    commands?: PluginPackageCommand | PluginPackageCommand[];
-    menus?: { [location: string]: PluginPackageMenu[] };
-    submenus?: PluginPackageSubmenu[];
-    keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
-    debuggers?: PluginPackageDebuggersContribution[];
-    snippets?: PluginPackageSnippetsContribution[];
-    themes?: PluginThemeContribution[];
-    iconThemes?: PluginIconThemeContribution[];
-    icons?: PluginIconContribution[];
-    colors?: PluginColorContribution[];
-    taskDefinitions?: PluginTaskDefinitionContribution[];
+export interface PluginPackageContribution extends PluginManifestContribution {
     problemMatchers?: PluginProblemMatcherContribution[];
     problemPatterns?: PluginProblemPatternContribution[];
-    jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
-    localizations?: PluginPackageLocalization[];
-    terminal?: PluginPackageTerminal;
-    notebooks?: PluginPackageNotebook[];
-    notebookRenderer?: PluginNotebookRendererContribution[];
-    notebookPreload?: PluginPackageNotebookPreload[];
-    mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
-    languageModelTools?: PluginPackageLanguageModelToolContribution[];
-}
-
-export interface PluginPackageNotebook {
-    type: string;
-    displayName: string;
-    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
-    priority?: string;
-}
-
-export interface PluginNotebookRendererContribution {
-    readonly id: string;
-    readonly displayName: string;
-    readonly mimeTypes: string[];
-    readonly entrypoint: string | { readonly extends: string; readonly path: string };
-    readonly requiresMessaging?: 'always' | 'optional' | 'never'
-}
-
-export interface PluginPackageNotebookPreload {
-    type: string;
-    entrypoint: string;
-}
-
-export interface PluginPackageMcpServerDefinitionProviderContribution {
-    id: string;
-    label: string;
-    description?: string;
-}
-
-export interface PluginPackageLanguageModelToolContribution {
-    name: string;
-    modelDescription?: string;
-    userDescription?: string;
-    inputSchema?: object;
-    tags?: string[];
-}
-
-export interface PluginPackageAuthenticationProvider {
-    id: string;
-    label: string;
-}
-
-export interface PluginPackageTerminalProfile {
-    title: string;
-    id: string;
-    icon?: string;
-}
-
-export interface PluginPackageTerminal {
-    profiles: PluginPackageTerminalProfile[];
-}
-
-export interface PluginPackageLocalization {
-    languageId: string;
-    languageName?: string;
-    localizedLanguageName?: string;
-    translations: PluginPackageTranslation[];
-    minimalTranslations?: { [key: string]: string };
-}
-
-export interface PluginPackageTranslation {
-    id: string;
-    path: string;
-}
-
-export interface PluginPackageCustomEditor {
-    viewType: string;
-    displayName: string;
-    selector?: CustomEditorSelector[];
-    priority?: CustomEditorPriority;
-}
-
-export interface CustomEditorSelector {
-    readonly filenamePattern?: string;
-}
-
-export enum CustomEditorPriority {
-    default = 'default',
-    builtin = 'builtin',
-    option = 'option',
-}
-
-export interface PluginPackageViewContainer {
-    id: string;
-    title: string;
-    icon: string;
-    when?: string;
-}
-
-export enum PluginViewType {
-    Tree = 'tree',
-    Webview = 'webview'
-}
-
-export interface PluginPackageView {
-    id: string;
-    name: string;
-    when?: string;
-    type?: string;
-}
-
-export interface PluginPackageViewWelcome {
-    view: string;
-    contents: string;
-    when?: string;
-    enablement?: string;
-}
-
-export interface PluginPackageCommand {
-    command: string;
-    title: string;
-    shortTitle?: string;
-    original?: string;
-    category?: string;
-    icon?: string | { light: string; dark: string; };
-    enablement?: string;
-}
-
-export interface PluginPackageMenu {
-    command?: string;
-    submenu?: string;
-    alt?: string;
-    group?: string;
-    when?: string;
-}
-
-export interface PluginPackageSubmenu {
-    id: string;
-    label: string;
-    icon: IconUrl;
-}
-
-export interface PluginPackageKeybinding {
-    key?: string;
-    command: string;
-    when?: string;
-    mac?: string;
-    linux?: string;
-    win?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args?: any;
-}
-
-export interface PluginPackageGrammarsContribution {
-    language?: string;
-    scopeName: string;
-    path: string;
-    embeddedLanguages?: ScopeMap;
-    tokenTypes?: ScopeMap;
-    injectTo?: string[];
-}
-
-export interface ScopeMap {
-    [scopeName: string]: string;
-}
-
-export interface PluginPackageSnippetsContribution {
-    language?: string;
-    path?: string;
-}
-
-export interface PluginColorContribution {
-    id?: string;
-    description?: string;
-    defaults?: { light?: string, dark?: string, highContrast?: string };
-}
-
-export type PluginUiTheme = 'vs' | 'vs-dark' | 'hc-black';
-
-export interface PluginThemeContribution {
-    id?: string;
-    label?: string;
-    description?: string;
-    path?: string;
-    uiTheme?: PluginUiTheme;
-}
-
-export interface PluginIconThemeContribution {
-    id?: string;
-    label?: string;
-    description?: string;
-    path?: string;
-    uiTheme?: PluginUiTheme;
-}
-
-export interface PluginIconContribution {
-    [id: string]: {
-        description: string;
-        default: { fontPath: string; fontCharacter: string } | string;
-    };
-}
-
-export interface PlatformSpecificAdapterContribution {
-    program?: string;
-    args?: string[];
-    runtime?: string;
-    runtimeArgs?: string[];
-}
-
-/**
- * This interface describes a package.json debuggers contribution section object.
- */
-export interface PluginPackageDebuggersContribution extends PlatformSpecificAdapterContribution {
-    type: string;
-    label?: string;
-    languages?: string[];
-    enableBreakpointsFor?: { languageIds: string[] };
-    configurationAttributes: { [request: string]: IJSONSchema };
-    configurationSnippets: IJSONSchemaSnippet[];
-    variables?: ScopeMap;
-    adapterExecutableCommand?: string;
-    win?: PlatformSpecificAdapterContribution;
-    winx86?: PlatformSpecificAdapterContribution;
-    windows?: PlatformSpecificAdapterContribution;
-    osx?: PlatformSpecificAdapterContribution;
-    linux?: PlatformSpecificAdapterContribution;
-}
-
-/**
- * This interface describes a package.json languages contribution section object.
- */
-export interface PluginPackageLanguageContribution {
-    id: string;
-    extensions?: string[];
-    filenames?: string[];
-    filenamePatterns?: string[];
-    firstLine?: string;
-    aliases?: string[];
-    mimetypes?: string[];
-    configuration?: string;
-    icon?: IconUrl;
-}
-
-export interface PluginPackageLanguageContributionConfiguration {
-    comments?: CommentRule;
-    brackets?: CharacterPair[];
-    autoClosingPairs?: (CharacterPair | AutoClosingPairConditional)[];
-    surroundingPairs?: (CharacterPair | AutoClosingPair)[];
-    wordPattern?: string;
-    indentationRules?: IndentationRules;
-    folding?: FoldingRules;
-    onEnterRules?: OnEnterRule[];
-}
-
-export interface PluginTaskDefinitionContribution {
-    type: string;
-    required: string[];
-    properties?: IJSONSchema['properties'];
 }
 
 export interface PluginProblemMatcherContribution extends ProblemMatcherContribution {
@@ -369,11 +189,6 @@ export interface PluginProblemMatcherContribution extends ProblemMatcherContribu
 
 export interface PluginProblemPatternContribution extends ProblemPatternContribution {
     name: string;
-}
-
-export interface PluginJsonValidationContribution {
-    fileMatch: string | string[];
-    url: string;
 }
 
 export const PluginScanner = Symbol('PluginScanner');
@@ -485,14 +300,6 @@ export enum PluginDeployerEntryType {
     HEADLESS // Deployed in the Theia Node server outside the context of a frontend/backend connection
 }
 
-/**
- * Whether a plugin installed by a user or system.
- */
-export enum PluginType {
-    System,
-    User
-};
-
 export interface UnresolvedPluginEntry {
     id: string;
     type?: PluginType;
@@ -576,40 +383,6 @@ export interface PluginDeployerDirectoryHandlerContext {
 
     pluginEntry(): PluginDeployerEntry;
 
-}
-
-/**
- * This interface describes a plugin model object, which is populated from package.json.
- */
-export interface PluginModel {
-    id: string;
-    name: string;
-    publisher: string;
-    version: string;
-    displayName: string;
-    description: string;
-    engine: {
-        type: PluginEngine;
-        version: string;
-    };
-    entryPoint: PluginEntryPoint;
-    packageUri: string;
-    /**
-     * @deprecated since 1.1.0 - because it lead to problems with getting a relative path
-     * needed by Icon Themes to correctly load Fonts, use packageUri instead.
-     */
-    packagePath: string;
-    iconUrl?: string;
-    l10n?: string;
-    readmeUrl?: string;
-    licenseUrl?: string;
-    untrustedWorkspacesSupport?: boolean | 'limited';
-}
-
-export interface PluginEntryPoint {
-    frontend?: string;
-    backend?: string;
-    headless?: string;
 }
 
 /**
@@ -766,11 +539,6 @@ export interface LanguageContribution {
     icon?: IconUrl;
 }
 
-export interface RegExpOptions {
-    pattern: string;
-    flags?: string;
-}
-
 export interface LanguageConfiguration {
     brackets?: CharacterPair[];
     indentationRules?: IndentationRules;
@@ -803,44 +571,6 @@ export interface DebuggerContribution extends PlatformSpecificAdapterContributio
     windows?: PlatformSpecificAdapterContribution;
     osx?: PlatformSpecificAdapterContribution;
     linux?: PlatformSpecificAdapterContribution;
-}
-
-export interface IndentationRules {
-    increaseIndentPattern: string | RegExpOptions;
-    decreaseIndentPattern: string | RegExpOptions;
-    unIndentedLinePattern?: string | RegExpOptions;
-    indentNextLinePattern?: string | RegExpOptions;
-}
-export interface AutoClosingPair {
-    close: string;
-    open: string;
-}
-
-export interface AutoClosingPairConditional extends AutoClosingPair {
-    notIn?: string[];
-}
-
-export interface FoldingMarkers {
-    start: string | RegExpOptions;
-    end: string | RegExpOptions;
-}
-
-export interface FoldingRules {
-    offSide?: boolean;
-    markers?: FoldingMarkers;
-}
-
-export interface OnEnterRule {
-    beforeText: string | RegExpOptions;
-    afterText?: string | RegExpOptions;
-    previousLineText?: string | RegExpOptions;
-    action: EnterAction;
-}
-
-export interface EnterAction {
-    indent: 'none' | 'indent' | 'outdent' | 'indentOutdent';
-    appendText?: string;
-    removeText?: number;
 }
 
 /**
@@ -896,8 +626,6 @@ export interface PluginCommand {
     enablement?: string;
 }
 
-export type IconUrl = string | { light: string; dark: string; };
-
 /**
  * Menu contribution
  */
@@ -930,26 +658,6 @@ export interface Keybinding {
 }
 
 /**
- * This interface describes a plugin lifecycle object.
- */
-export interface PluginLifecycle {
-    startMethod: string;
-    stopMethod: string;
-    /**
-     * Frontend module name, frontend plugin should expose this name.
-     */
-    frontendModuleName?: string;
-    /**
-     * Path to the script which should do some initialization before frontend plugin is loaded.
-     */
-    frontendInitPath?: string;
-    /**
-     * Path to the script which should do some initialization before backend plugin is loaded.
-     */
-    backendInitPath?: string;
-}
-
-/**
  * The export function of initialization module of backend plugin.
  */
 export interface BackendInitializationFn {
@@ -968,25 +676,9 @@ export interface ExtensionContext {
     subscriptions: Disposable[];
 }
 
-export interface PluginMetadata {
-    host: string;
-    model: PluginModel;
-    lifecycle: PluginLifecycle;
-    isUnderDevelopment?: boolean;
-    outOfSync: boolean;
-}
-
 export const MetadataProcessor = Symbol('MetadataProcessor');
 export interface MetadataProcessor {
     process(pluginMetadata: PluginMetadata): void;
-}
-
-export function getPluginId(plugin: PluginPackage | PluginModel): string {
-    return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
-}
-
-export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): string {
-    return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
 export const HostedPluginClient = Symbol('HostedPluginClient');
@@ -1076,8 +768,6 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
     onMessage(targetHost: string, message: Uint8Array): Promise<void>;
 
 }
-
-export const PLUGIN_HOST_BACKEND = 'main';
 
 export interface WorkspaceStorageKind {
     workspace?: string | undefined;

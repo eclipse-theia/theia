@@ -17,7 +17,7 @@
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import type { RecursivePartial, URI } from '@theia/core';
+import type { URI } from '@theia/core';
 import { Deferred, firstTrue } from '@theia/core/lib/common/promise-util';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
@@ -25,6 +25,9 @@ import {
 } from '@theia/plugin-ext';
 import { PluginCliContribution } from '@theia/plugin-ext/lib/main/node/plugin-cli-contribution';
 import { TMP_DIR_PREFIX } from './plugin-vscode-utils';
+
+/** Fields read while resolving a VS Code extension directory */
+type PluginPackageResolveInput = Partial<Pick<PluginPackage, 'name' | 'version' | 'publisher' | 'engines'>>;
 
 @injectable()
 export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHandler {
@@ -92,7 +95,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     protected resolvePackage(plugin: PluginDeployerEntry, options?: {
         pluginPath: string
-        pck?: RecursivePartial<PluginPackage>
+        pck?: PluginPackageResolveInput
     }): boolean {
         const { pluginPath, pck } = options || {
             pluginPath: plugin.path(),

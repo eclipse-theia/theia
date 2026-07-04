@@ -16,8 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { PluginPackageGrammarsContribution, GrammarsContribution } from '../../../common';
-import * as path from 'path';
-import * as fs from '@theia/core/shared/fs-extra';
+import { readGrammarFromDisk } from '@theia/plugin-utils/lib/read-grammars';
 
 @injectable()
 export class GrammarsReader {
@@ -35,23 +34,6 @@ export class GrammarsReader {
     }
 
     private async readGrammar(rawGrammar: PluginPackageGrammarsContribution, pluginPath: string): Promise<GrammarsContribution | undefined> {
-        // TODO: validate inputs
-        let grammar: string | object;
-
-        if (rawGrammar.path.endsWith('json')) {
-            grammar = await fs.readJSON(path.resolve(pluginPath, rawGrammar.path));
-        } else {
-            grammar = await fs.readFile(path.resolve(pluginPath, rawGrammar.path), 'utf8');
-        }
-        return {
-            language: rawGrammar.language,
-            scope: rawGrammar.scopeName,
-            format: rawGrammar.path.endsWith('json') ? 'json' : 'plist',
-            grammar: grammar,
-            grammarLocation: rawGrammar.path,
-            injectTo: rawGrammar.injectTo,
-            embeddedLanguages: rawGrammar.embeddedLanguages,
-            tokenTypes: rawGrammar.tokenTypes
-        };
+        return readGrammarFromDisk(rawGrammar, pluginPath);
     }
 }

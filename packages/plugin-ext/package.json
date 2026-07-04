@@ -24,6 +24,7 @@
     "@theia/notebook": "1.73.0",
     "@theia/output": "1.73.0",
     "@theia/plugin": "1.73.0",
+    "@theia/plugin-utils": "1.73.0",
     "@theia/preferences": "1.73.0",
     "@theia/scm": "1.73.0",
     "@theia/search-in-workspace": "1.73.0",
