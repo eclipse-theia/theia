@@ -94,6 +94,13 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
                 sameSite: 'strict',
                 path: '/'
             });
+            // The static handlers would answer a revalidation of an unchanged page with a 304,
+            // and reverse proxies commonly drop Set-Cookie from 304 replies or answer the
+            // revalidation from their own cache. The browser would then keep the stale token
+            // and every WebSocket handshake would be rejected, with no way to recover short of
+            // a cache-bypassing hard reload. Force a full 200 so the cookie reaches the browser.
+            delete req.headers['if-none-match'];
+            delete req.headers['if-modified-since'];
         }
         next();
     }
