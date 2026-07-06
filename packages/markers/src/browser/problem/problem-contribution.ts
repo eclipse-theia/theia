@@ -46,6 +46,19 @@ export namespace ProblemsMenu {
     export const PROBLEMS = [...PROBLEMS_CONTEXT_MENU, '2_problems'];
 }
 
+export interface SerializedProblemMarker {
+    resource: string;
+    owner: string;
+    code?: string | number;
+    severity?: number;
+    message: string;
+    source?: string;
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+}
+
 export namespace ProblemsCommands {
     export const COLLAPSE_ALL: Command = {
         id: 'problems.collapse.all'
@@ -78,7 +91,7 @@ export namespace ProblemsCommands {
         id: 'problems.export',
         category: 'Problems',
         label: 'Export',
-        iconClass: codicon('arrow-circle-up', true)
+        iconClass: codicon('arrow-circle-up')
     }, 'theia/markers/export', nls.getDefaultKey('Problems'));
     export const CLEAR_ALL = Command.toLocalizedCommand({
         id: 'problems.clear.all',
@@ -337,10 +350,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     protected copy(selections: ProblemSelection | ProblemSelection[]): void {
         const selectionsArray = Array.isArray(selections) ? selections : [selections];
         const serializedProblems = selectionsArray.map(selection => this.serializeMarker(selection.marker as ProblemMarker));
-        const output = selectionsArray.length === 1
-            ? JSON.stringify(serializedProblems[0], undefined, '\t')
-            : JSON.stringify(serializedProblems, undefined, '\t');
-        this.addToClipboard(output);
+        this.addToClipboard(JSON.stringify(serializedProblems, undefined, '\t'));
     }
 
     protected copyMessage(selections: ProblemSelection | ProblemSelection[]): void {
@@ -352,7 +362,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         this.addToClipboard(messages.join('\n'));
     }
 
-    protected serializeMarker(marker: ProblemMarker): object {
+    protected serializeMarker(marker: ProblemMarker): SerializedProblemMarker {
         return {
             resource: marker.uri,
             owner: marker.owner,
@@ -378,43 +388,15 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     protected collectSelectedLinesInOrder(widget: ProblemWidget, node: TreeNode, selectedSet: Set<TreeNode>, lines: string[]): void {
         if (selectedSet.has(node)) {
             if (MarkerInfoNode.is(node)) {
-                lines.push(this.formatMarkerInfoNode(widget, node));
+                lines.push(widget.formatMarkerFileNodeAsText(node));
             } else if (MarkerNode.is(node)) {
-                lines.push(this.formatMarkerNode(node));
+                lines.push(widget.formatMarkerNodeAsText(node));
             }
         }
         if (CompositeTreeNode.is(node) && node.children) {
             for (const child of node.children) {
                 this.collectSelectedLinesInOrder(widget, child, selectedSet, lines);
             }
-        }
-    }
-
-    protected formatMarkerInfoNode(widget: ProblemWidget, node: MarkerInfoNode): string {
-        const name = widget.toNodeName(node);
-        const description = widget.toNodeDescription(node);
-        return description ? `${name} ${description}` : name;
-    }
-
-    protected formatMarkerNode(node: MarkerNode): string {
-        const marker = node.marker as ProblemMarker;
-        const severity = this.getSeverityLabel(marker.data.severity);
-        const line = marker.data.range.start.line + 1;
-        const column = marker.data.range.start.character + 1;
-        const location = nls.localizeByDefault('Ln {0}, Col {1}', line, column);
-        const source = marker.data.source ? `${marker.data.source}` : '';
-        const code = marker.data.code ? `(${marker.data.code})` : '';
-        const sourceCode = [source, code].filter(s => s).join(' ');
-        const suffix = sourceCode ? ` ${sourceCode}` : '';
-        return `${severity}: ${marker.data.message}${suffix} [${location}]`;
-    }
-
-    protected getSeverityLabel(severity: number | undefined): string {
-        switch (severity) {
-            case 1: return 'error';
-            case 2: return 'warning';
-            case 3: return 'info';
-            default: return 'hint';
         }
     }
 
@@ -432,9 +414,9 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
 
         const filePath = await this.fileDialogService.showSaveDialog({
-            title: 'Export Problems',
-            filters: { 'JSON Files': ['json'] },
-            saveLabel: 'Export'
+            title: nls.localize('theia/markers/exportProblems', 'Export Problems'),
+            filters: { [nls.localize('theia/markers/jsonFiles', 'JSON Files')]: ['json'] },
+            saveLabel: nls.localize('theia/markers/export', 'Export')
         });
 
         if (!filePath) {

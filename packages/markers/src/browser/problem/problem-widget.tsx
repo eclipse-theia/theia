@@ -31,6 +31,17 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export const PROBLEMS_WIDGET_ID = 'problems';
 
+interface MarkerNodeFormatData {
+    severityClass: string;
+    severityLabel: string;
+    message: string;
+    line: number;
+    column: number;
+    location: string;
+    source: string;
+    code: string;
+}
+
 @injectable()
 export class ProblemWidget extends TreeWidget {
 
@@ -175,37 +186,45 @@ export class ProblemWidget extends TreeWidget {
         return <ProblemMarkerRemoveButton model={this.model} node={node} />;
     }
 
-    override toNodeName(node: TreeNode): string {
-        return super.toNodeName(node);
-    }
-
-    override toNodeDescription(node: TreeNode): string {
-        return super.toNodeDescription(node);
+    protected getMarkerNodeFormatData(marker: ProblemMarker): MarkerNodeFormatData {
+        const line = marker.data.range.start.line + 1;
+        const column = marker.data.range.start.character + 1;
+        const location = nls.localizeByDefault('Ln {0}, Col {1}', line, column);
+        const severityClass = marker.data.severity ? this.getSeverityClass(marker.data.severity) : '';
+        const severityLabel = marker.data.severity ? this.getSeverityLabel(marker.data.severity) : '';
+        const source = marker.data.source ? `${marker.data.source}` : '';
+        const code = marker.data.code ? `(${marker.data.code})` : '';
+        return {
+            severityClass,
+            severityLabel,
+            message: marker.data.message,
+            line,
+            column,
+            location,
+            source,
+            code,
+        };
     }
 
     protected decorateMarkerNode(node: MarkerNode): React.ReactNode {
         if (ProblemMarker.is(node.marker)) {
-            let severityClass: string = '';
             const problemMarker = node.marker;
-            if (problemMarker.data.severity) {
-                severityClass = this.getSeverityClass(problemMarker.data.severity);
-            }
-            const location = nls.localizeByDefault('Ln {0}, Col {1}', problemMarker.data.range.start.line + 1, problemMarker.data.range.start.character + 1);
+            const data = this.getMarkerNodeFormatData(problemMarker);
             return <div
                 className='markerNode'
-                title={`${problemMarker.data.message} (${problemMarker.data.range.start.line + 1}, ${problemMarker.data.range.start.character + 1})`}>
+                title={`${data.message} (${data.line}, ${data.column})`}>
                 <div>
-                    <i className={`${severityClass} ${TREE_NODE_INFO_CLASS}`}></i>
+                    <i className={`${data.severityClass} ${TREE_NODE_INFO_CLASS}`}></i>
                 </div>
-                <div className='message'>{problemMarker.data.message}
-                    {(!!problemMarker.data.source || !!problemMarker.data.code) &&
+                <div className='message'>{data.message}
+                    {(!!data.source || !!data.code) &&
                         <span className={'owner ' + TREE_NODE_INFO_CLASS}>
-                            {problemMarker.data.source || ''}
-                            {problemMarker.data.code ? `(${problemMarker.data.code})` : ''}
+                            {data.source || ''}
+                            {data.code || ''}
                         </span>
                     }
                     <span className={'position ' + TREE_NODE_INFO_CLASS}>
-                        {`[${location}]`}
+                        {`[${data.location}]`}
                     </span>
                 </div>
             </div>;
@@ -213,13 +232,36 @@ export class ProblemWidget extends TreeWidget {
         return '';
     }
 
+    formatMarkerNodeAsText(node: MarkerNode): string {
+        const marker = node.marker as ProblemMarker;
+        const data = this.getMarkerNodeFormatData(marker);
+        const sourceCode = [data.source, data.code].filter(s => s).join(' ');
+        const suffix = sourceCode ? ` ${sourceCode}` : '';
+        return `${data.severityLabel}: ${data.message}${suffix} [${data.location}]`;
+    }
+
+    protected getSeverityLabel(severity: DiagnosticSeverity): string {
+        switch (severity) {
+            case DiagnosticSeverity.Error: return nls.localizeByDefault('Error');
+            case DiagnosticSeverity.Warning: return nls.localizeByDefault('Warning');
+            case DiagnosticSeverity.Information: return nls.localizeByDefault('Info');
+            default: return nls.localizeByDefault('Hint');
+        }
+    }
+
     protected getSeverityClass(severity: DiagnosticSeverity): string {
         switch (severity) {
-            case 1: return `${codicon('error')} error`;
-            case 2: return `${codicon('warning')} warning`;
-            case 3: return `${codicon('info')} information`;
+            case DiagnosticSeverity.Error: return `${codicon('error')} error`;
+            case DiagnosticSeverity.Warning: return `${codicon('warning')} warning`;
+            case DiagnosticSeverity.Information: return `${codicon('info')} information`;
             default: return `${codicon('thumbsup')} hint`;
         }
+    }
+
+    formatMarkerFileNodeAsText(node: MarkerInfoNode): string {
+        const name = this.toNodeName(node);
+        const description = this.toNodeDescription(node);
+        return description ? `${name} ${description}` : name;
     }
 
     protected decorateMarkerFileNode(node: MarkerInfoNode): React.ReactNode {
