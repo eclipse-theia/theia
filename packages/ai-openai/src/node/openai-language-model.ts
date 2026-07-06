@@ -90,6 +90,7 @@ export class OpenAiModel implements LanguageModel {
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
      * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
+     * @param serverSideCompactionSupport whether this model supports server-side compaction (only available via the Response API)
      * @param serverSideCompactionEnabledByDefault resolved default enablement of server-side compaction (global preference folded with the per-provider override)
      */
     constructor(
@@ -110,12 +111,9 @@ export class OpenAiModel implements LanguageModel {
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
         public maxInputTokens?: number,
+        public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false
     ) { }
-
-    get serverSideCompactionSupport(): boolean {
-        return this.useResponseApi;
-    }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {

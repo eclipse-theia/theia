@@ -54,7 +54,7 @@ function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, us
         () => 'test-key', () => undefined,
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, serverSideCompactionEnabledByDefault
+        'developer', 3, useResponseApi, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault
     );
 }
 

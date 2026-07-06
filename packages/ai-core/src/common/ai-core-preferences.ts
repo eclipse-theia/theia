@@ -250,6 +250,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
     [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
+    [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: boolean | undefined;
 }
 
 export interface RequestSetting {

@@ -31,7 +31,7 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings(), createTools(), applyCompactionParams(), and computeServerSideCompactionSupport() methods. */
+/** Test helper that exposes the otherwise protected getSettings(), createTools(), and applyCompactionParams() methods. */
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
@@ -41,9 +41,6 @@ class TestableAnthropicModel extends AnthropicModel {
     }
     public callApplyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
         return this.applyCompactionParams(params, request);
-    }
-    public callComputeServerSideCompactionSupport(): boolean {
-        return this.computeServerSideCompactionSupport();
     }
 }
 
@@ -843,10 +840,10 @@ describe('AnthropicModel', () => {
             return undefined;
         }
 
-        function createCompactionModel(serverSideCompactionEnabledByDefault: boolean): TestableAnthropicModel {
+        function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, serverSideCompactionSupport: boolean = true): TestableAnthropicModel {
             return new TestableAnthropicModel(
                 'test-id', 'claude-opus-4-6', { status: 'ready' }, true, false, () => 'test-key', undefined,
-                DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, serverSideCompactionEnabledByDefault
+                DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, serverSideCompactionSupport, serverSideCompactionEnabledByDefault
             );
         }
 
@@ -938,11 +935,8 @@ describe('AnthropicModel', () => {
                 expect(forcedOff.betas).to.equal(undefined);
             });
 
-            it('leaves params unchanged when the model is incapable (e.g. claude-haiku-4-5), regardless of activation', () => {
-                const incapableModel = new TestableAnthropicModel(
-                    'test-id', 'claude-haiku-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined,
-                    DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, true
-                );
+            it('leaves params unchanged when the model does not support server-side compaction, regardless of activation', () => {
+                const incapableModel = createCompactionModel(true, false);
                 const params = incapableModel.callApplyCompactionParams(baseParams(), {
                     messages: [],
                     compaction: { enabled: true }
@@ -960,48 +954,6 @@ describe('AnthropicModel', () => {
 
                 expect(beta.betas).to.equal(undefined);
                 expect(beta.context_management).to.equal(undefined);
-            });
-        });
-
-        describe('computeServerSideCompactionSupport', () => {
-            function capabilityFor(modelId: string): boolean {
-                return new TestableAnthropicModel(
-                    'test-id', modelId, { status: 'ready' }, true, false, () => 'test-key', undefined
-                ).callComputeServerSideCompactionSupport();
-            }
-
-            it('returns true for claude-opus-4-6', () => {
-                expect(capabilityFor('claude-opus-4-6')).to.equal(true);
-            });
-            it('returns true for claude-sonnet-4-6', () => {
-                expect(capabilityFor('claude-sonnet-4-6')).to.equal(true);
-            });
-            it('returns true for claude-opus-4-7 (newer minor version)', () => {
-                expect(capabilityFor('claude-opus-4-7')).to.equal(true);
-            });
-            it('returns false for claude-haiku-4-5 (haiku variant)', () => {
-                expect(capabilityFor('claude-haiku-4-5')).to.equal(false);
-            });
-            it('returns false for claude-opus-4-5 (older minor version)', () => {
-                expect(capabilityFor('claude-opus-4-5')).to.equal(false);
-            });
-            it('returns false for claude-sonnet-4-5 (older minor version, sonnet variant)', () => {
-                expect(capabilityFor('claude-sonnet-4-5')).to.equal(false);
-            });
-            it('returns true for claude-opus-5-0 (newer major version)', () => {
-                expect(capabilityFor('claude-opus-5-0')).to.equal(true);
-            });
-            it('returns false for claude-3-opus-20240229 (old date-style id)', () => {
-                expect(capabilityFor('claude-3-opus-20240229')).to.equal(false);
-            });
-            it('returns false for claude-sonnet-4-20250514 (4.0 with a date suffix, not minor 20250514)', () => {
-                expect(capabilityFor('claude-sonnet-4-20250514')).to.equal(false);
-            });
-            it('returns true for claude-opus-4-6-20250101 (4.6 with a date suffix)', () => {
-                expect(capabilityFor('claude-opus-4-6-20250101')).to.equal(true);
-            });
-            it('returns false for an unrecognized model id', () => {
-                expect(capabilityFor('gpt-4o')).to.equal(false);
             });
         });
     });

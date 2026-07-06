@@ -329,27 +329,9 @@ export class AnthropicModel implements LanguageModel {
         public supportsXHighEffort?: boolean,
         public maxInputTokens?: number,
         public serverTools?: ServerToolDescriptor[],
+        public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false
     ) { }
-
-    get serverSideCompactionSupport(): boolean {
-        return this.computeServerSideCompactionSupport();
-    }
-
-    /**
-     * Server-side compaction (`compact_20260112`) is available on Claude Opus and Sonnet 4.6 and later.
-     * Heuristic over the model id; override for custom endpoints with different support.
-     */
-    protected computeServerSideCompactionSupport(): boolean {
-        const match = /(opus|sonnet)-(\d+)-(\d+)/.exec(this.model);
-        if (!match) {
-            return false;
-        }
-        const major = Number(match[2]);
-        // A 4+ digit "minor" is a date suffix on a `.0` model id (e.g. claude-sonnet-4-20250514), not a minor version.
-        const minor = Number(match[3]) >= 1000 ? 0 : Number(match[3]);
-        return major > 4 || (major === 4 && minor >= 6);
-    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {
