@@ -27,10 +27,12 @@ import { expect } from 'chai';
 import { Emitter } from '@theia/core';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import {
+    ChatChangeEvent,
     ChatModel,
     ChatRequestModel,
     ChatService,
-    ChatSession
+    ChatSession,
+    ChatSessionStatus
 } from '@theia/ai-chat';
 import {
     AgentNotificationKind,
@@ -43,7 +45,7 @@ disableJSDOM();
 
 interface FakeRequest {
     agentId?: string;
-    response: { isWaitingForInput: boolean; agentId?: string };
+    response: { agentId?: string };
 }
 
 interface NotificationCall {
@@ -54,16 +56,22 @@ interface NotificationCall {
 
 class FakeChatModel {
     readonly id = 'test-model';
-    protected readonly emitter = new Emitter<void>();
+    protected readonly emitter = new Emitter<ChatChangeEvent>();
     readonly onDidChange = this.emitter.event;
+    status: ChatSessionStatus = 'idle';
     requests: FakeRequest[] = [];
 
     getRequests(): ChatRequestModel[] {
         return this.requests as unknown as ChatRequestModel[];
     }
 
-    fireChange(): void {
-        this.emitter.fire();
+    setStatus(status: ChatSessionStatus): void {
+        this.status = status;
+        this.emitter.fire({ kind: 'statusChanged', status });
+    }
+
+    fireResponseChanged(): void {
+        this.emitter.fire({ kind: 'responseChanged' });
     }
 }
 
@@ -128,12 +136,12 @@ describe('ChatInputNeededNotificationContribution', () => {
         contribution.onStart();
     });
 
-    it('fires a notification on the false → true transition', () => {
+    it('fires a notification on the transition into a waiting status', () => {
         chatModel.requests = [{
             agentId: 'agent-a',
-            response: { isWaitingForInput: true }
+            response: {}
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingInput');
 
         expect(notifications).to.have.lengthOf(1);
         expect(notifications[0].agentId).to.equal('agent-a');
@@ -141,14 +149,24 @@ describe('ChatInputNeededNotificationContribution', () => {
         expect(notifications[0].options?.sessionTitle).to.equal(session.title);
     });
 
-    it('does not re-fire on repeated changes while still waiting', () => {
+    it('fires a notification when a tool approval is needed', () => {
         chatModel.requests = [{
             agentId: 'agent-a',
-            response: { isWaitingForInput: true }
+            response: {}
         }];
-        chatModel.fireChange();
-        chatModel.fireChange();
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingApproval');
+
+        expect(notifications).to.have.lengthOf(1);
+        expect(notifications[0].kind).to.equal(AGENT_NOTIFICATION_KIND_INPUT_NEEDED);
+    });
+
+    it('does not re-fire when switching between waiting statuses', () => {
+        chatModel.requests = [{
+            agentId: 'agent-a',
+            response: {}
+        }];
+        chatModel.setStatus('awaitingApproval');
+        chatModel.setStatus('awaitingInput');
 
         expect(notifications).to.have.lengthOf(1);
     });
@@ -156,42 +174,48 @@ describe('ChatInputNeededNotificationContribution', () => {
     it('fires again after the waiting state cleared and then started again', () => {
         chatModel.requests = [{
             agentId: 'agent-a',
-            response: { isWaitingForInput: true }
+            response: {}
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingInput');
 
-        // Clear the waiting state — e.g. confirmation was answered.
-        chatModel.requests = [{
-            agentId: 'agent-a',
-            response: { isWaitingForInput: false }
-        }];
-        chatModel.fireChange();
+        // The waiting state clears — e.g. the question was answered.
+        chatModel.setStatus('running');
 
-        // A new waiting-for-input request appears.
-        chatModel.requests = [{
-            agentId: 'agent-a',
-            response: { isWaitingForInput: true }
-        }];
-        chatModel.fireChange();
+        // The agent asks for a tool approval next.
+        chatModel.setStatus('awaitingApproval');
 
         expect(notifications).to.have.lengthOf(2);
     });
 
-    it('does not fire when nothing is waiting for input', () => {
+    it('does not fire for statuses that do not require user action', () => {
         chatModel.requests = [{
             agentId: 'agent-a',
-            response: { isWaitingForInput: false }
+            response: {}
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('running');
+        chatModel.setStatus('awaitingToolCall');
+        chatModel.setStatus('idle');
+        chatModel.setStatus('failed');
+
+        expect(notifications).to.have.lengthOf(0);
+    });
+
+    it('ignores model changes that are not status changes', () => {
+        chatModel.requests = [{
+            agentId: 'agent-a',
+            response: {}
+        }];
+        chatModel.status = 'awaitingInput';
+        chatModel.fireResponseChanged();
 
         expect(notifications).to.have.lengthOf(0);
     });
 
     it('falls back to the response.agentId when the request has no agentId', () => {
         chatModel.requests = [{
-            response: { isWaitingForInput: true, agentId: 'response-agent' }
+            response: { agentId: 'response-agent' }
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingInput');
 
         expect(notifications).to.have.lengthOf(1);
         expect(notifications[0].agentId).to.equal('response-agent');
@@ -199,9 +223,9 @@ describe('ChatInputNeededNotificationContribution', () => {
 
     it('does not fire when no agent id is available on the waiting request', () => {
         chatModel.requests = [{
-            response: { isWaitingForInput: true }
+            response: {}
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingInput');
 
         expect(notifications).to.have.lengthOf(0);
     });
@@ -214,9 +238,9 @@ describe('ChatInputNeededNotificationContribution', () => {
 
         chatModel.requests = [{
             agentId: 'agent-a',
-            response: { isWaitingForInput: true }
+            response: {}
         }];
-        chatModel.fireChange();
+        chatModel.setStatus('awaitingInput');
 
         expect(notifications).to.have.lengthOf(1);
     });

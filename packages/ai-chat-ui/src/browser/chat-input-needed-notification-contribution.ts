@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatService, ChatSession } from '@theia/ai-chat';
+import { ChatChangeEvent, ChatService, ChatSession, ChatSessionStatus } from '@theia/ai-chat';
 import { DisposableCollection } from '@theia/core';
 import { ApplicationShell, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '@theia/ai-core';
@@ -23,17 +23,18 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { isChatSessionFocused } from './chat-session-focus';
 
 interface SessionWaitingState {
-    /** Whether any request in the session was waiting for input at the last observed change. */
+    /** Whether the session status required user action at the last observed status change. */
     waiting: boolean;
     listener: DisposableCollection;
 }
 
 /**
- * Fires an agent notification when a chat session starts waiting for user input (e.g. a tool
- * confirmation or an agent question). Watches all sessions, not just the active one, so that a
- * background session requesting input still reaches the user. The agent completion notification
- * (handled in the chat input widget) and this input-needed notification share the same delivery
- * channel and user preference via {@link AgentNotificationService}.
+ * Fires an agent notification when a chat session starts waiting for user action (a tool
+ * approval or another input, as reported by the session's {@link ChatSessionStatus}). Watches
+ * all sessions, not just the active one, so that a background session requesting input still
+ * reaches the user. The agent completion notification (handled in the chat input widget) and
+ * this input-needed notification share the same delivery channel and user preference via
+ * {@link AgentNotificationService}.
  */
 @injectable()
 export class ChatInputNeededNotificationContribution implements FrontendApplicationContribution {
@@ -68,20 +69,26 @@ export class ChatInputNeededNotificationContribution implements FrontendApplicat
             return;
         }
         const state: SessionWaitingState = {
-            waiting: session.model.getRequests().some(request => request.response.isWaitingForInput),
+            waiting: ChatSessionStatus.requiresUserAction(session.model.status),
             listener: new DisposableCollection()
         };
         this.states.set(session.id, state);
-        session.model.onDidChange(() => this.handleSessionChanged(session, state), undefined, state.listener);
+        session.model.onDidChange(event => {
+            if (ChatChangeEvent.isStatusChangedEvent(event)) {
+                this.handleStatusChanged(session, state, event.status);
+            }
+        }, undefined, state.listener);
     }
 
-    protected handleSessionChanged(session: ChatSession, state: SessionWaitingState): void {
-        const waitingRequest = session.model.getRequests().find(request => request.response.isWaitingForInput);
-        const nowWaiting = waitingRequest !== undefined;
-        // Only notify on the transition into waiting, so repeated model changes while still
-        // waiting do not produce duplicate notifications.
+    protected handleStatusChanged(session: ChatSession, state: SessionWaitingState, status: ChatSessionStatus): void {
+        const nowWaiting = ChatSessionStatus.requiresUserAction(status);
+        // Only notify on the transition into waiting; the status only changes on actual
+        // transitions, so switching between the waiting states (e.g. approval, then a
+        // question) does not produce duplicate notifications.
         if (nowWaiting && !state.waiting) {
-            const agentId = waitingRequest.agentId ?? waitingRequest.response.agentId;
+            // The session status is derived from the last request, so that is the waiting one.
+            const waitingRequest = session.model.getRequests().at(-1);
+            const agentId = waitingRequest?.agentId ?? waitingRequest?.response.agentId;
             if (agentId) {
                 this.notificationService.showNotification(agentId, AGENT_NOTIFICATION_KIND_INPUT_NEEDED, {
                     shouldSuppress: () => isChatSessionFocused(this.shell, this.chatService, session.id),

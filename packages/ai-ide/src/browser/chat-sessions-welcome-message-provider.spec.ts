@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Emitter } from '@theia/core';
-import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
 import { ChatSessionsWelcomeMessageProvider, SectionedSessions, computeVisibleSessionSlots } from './chat-sessions-welcome-message-provider';
@@ -254,9 +254,8 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             lastInteraction?: Date;
             pinnedAgentId?: string;
             location?: ChatAgentLocation;
-            lastRequest?: { isComplete: boolean; isError: boolean };
+            status?: ChatSessionStatus;
         }): ChatSession {
-            const requests = opts?.lastRequest ? [{ response: opts.lastRequest }] : [];
             return {
                 id,
                 title,
@@ -265,7 +264,8 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
                 pinnedAgent: opts?.pinnedAgentId ? { id: opts.pinnedAgentId } : undefined,
                 model: {
                     location: opts?.location ?? ChatAgentLocation.Panel,
-                    getRequests: () => requests
+                    status: opts?.status ?? 'idle',
+                    getRequests: () => []
                 }
             } as unknown as ChatSession;
         }
@@ -304,11 +304,11 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             expect(sections.restored.map(s => s.sessionId)).to.deep.equal(['b']);
         });
 
-        it('flags an active session whose last request completed with an error', () => {
+        it('flags an active session whose status is failed', () => {
             const sections = getSections([
-                makeSession('ok', 'Ok', { lastRequest: { isComplete: true, isError: false } }),
-                makeSession('err', 'Err', { lastRequest: { isComplete: true, isError: true } }),
-                makeSession('running', 'Running', { lastRequest: { isComplete: false, isError: false } })
+                makeSession('ok', 'Ok', { status: 'idle' }),
+                makeSession('err', 'Err', { status: 'failed' }),
+                makeSession('running', 'Running', { status: 'running' })
             ], []);
             const byId = new Map(sections.active.map(s => [s.sessionId, s.hasError]));
             expect(byId.get('ok')).to.equal(false);

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import {
-    ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata
+    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus
 } from '@theia/ai-chat';
 import { DisposableCollection, Event } from '@theia/core';
 import { buttonKeyboardProps, codicon, HoverService, isActivationKey } from '@theia/core/lib/browser';
@@ -119,11 +119,10 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
 
         const attach = (s: ChatSession) => {
             const recompute = () => {
-                const requests = s.model.getRequests();
-                setIsWorking(requests.some(ChatRequestModel.isInProgress));
-                setIsWaitingForInput(requests.some(r => r.response.isWaitingForInput));
-                const lastReq = requests.at(-1);
-                setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
+                const status = s.model.status;
+                setIsWorking(ChatSessionStatus.isInProgress(status));
+                setIsWaitingForInput(ChatSessionStatus.requiresUserAction(status));
+                setHasError(status === 'failed');
             };
             recompute();
             s.model.onDidChange(recompute, undefined, trash);
@@ -159,13 +158,13 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         // once the session is actually opened.
         const loadedSession = chatService.getSession(session.sessionId);
         const tooltip = loadedSession
-            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput)
+            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread)
             : buildRestoredSessionTooltip(session, chatAgentService);
         // The tooltip may hold a markdown render result; dispose it once the hover is torn down
         // (or right away if we no longer intend to show it).
         if (!hoverActiveRef.current) { tooltip.dispose(); return; }
         hoverService.requestHover({ content: tooltip.element, target, position: 'left', onHide: () => tooltip.dispose() });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread]);
 
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []);
 
@@ -188,7 +187,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         }
     }, [onClick]);
 
-    // A session waiting for input is still "in progress" (ChatRequestModel.isInProgress is true),
+    // A session waiting for input or approval is still working (its request is in progress),
     // so the waiting state takes precedence over the generic working spinner: it signals that the
     // user, not the agent, needs to act.
     const showWorking = isWorking && !isWaitingForInput;

@@ -16,7 +16,7 @@
 
 import {
     ChatAgentService, ChatRequestModel, ChatResponseContent, ChatSession, ChatSessionMetadata,
-    ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
+    ChatSessionStatus, ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
 } from '@theia/ai-chat';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
@@ -89,27 +89,29 @@ function addDefinitionEntry(definitionList: HTMLDListElement, term: string, deta
 export function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
     agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean, isRunning: boolean, hasError: boolean, isWaitingForInput: boolean
+    isUnread: boolean
 ): SessionTooltip {
     const toDispose = new DisposableCollection();
     const requests = session.model.getRequests();
     const lastRequest = requests.at(-1);
+    const status = session.model.status;
 
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
-    // A session waiting for input is also "running", so check it first to give it precedence.
-    if (isWaitingForInput) {
+    // Waiting on the user takes precedence over the generic running badge: it signals that the
+    // user, not the agent, needs to act.
+    if (ChatSessionStatus.requiresUserAction(status)) {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-attention-tooltip';
         badge.textContent = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
         container.appendChild(badge);
-    } else if (isRunning) {
+    } else if (ChatSessionStatus.isInProgress(status)) {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-running-tooltip';
         badge.textContent = nls.localizeByDefault('Running');
         container.appendChild(badge);
-    } else if (hasError) {
+    } else if (status === 'failed') {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-error-tooltip';
         badge.textContent = nls.localizeByDefault('Error');
@@ -123,7 +125,7 @@ export function buildSessionTooltip(
 
     if (lastRequest) {
         const lastResponse = lastRequest.response;
-        const errorText = hasError ? getResponseErrorMessage(lastResponse) : undefined;
+        const errorText = status === 'failed' ? getResponseErrorMessage(lastResponse) : undefined;
 
         if (errorText) {
             const label = document.createElement('div');
