@@ -41,7 +41,7 @@ function createModel(modelId: string, reasoningSupport?: ReasoningSupport): Test
         () => 'test-key', () => undefined,
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, false, undefined, reasoningSupport
+        'developer', 3, undefined, false, undefined, reasoningSupport
     );
 }
 

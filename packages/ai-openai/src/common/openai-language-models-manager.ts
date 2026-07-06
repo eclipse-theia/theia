@@ -35,6 +35,8 @@ export interface OpenAiModelDescription {
     deployment?: string;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Timeout value in millisseconds for request responses. Defaults to 3600000 (1h). */
+    timeout?: number;
     /** Use the newer OpenAI Response API instead of the Chat Completion API. Default is `false`. */
     useResponseApi?: boolean;
     /** Indicate whether the streaming API shall be used. Defaults from the model id when unset. */

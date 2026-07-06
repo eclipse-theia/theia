@@ -88,6 +88,7 @@ export class OpenAiModel implements LanguageModel {
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
+     * @param timeout The maximum amount of time (in milliseconds) to wait for a request response. Defaults to 3600000 (1h).
      * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
      */
     constructor(
@@ -104,6 +105,7 @@ export class OpenAiModel implements LanguageModel {
         public responseApiUtils: OpenAiResponseApiUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
+        public timeout: number = 3600000,
         public useResponseApi: boolean = false,
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
@@ -239,12 +241,12 @@ export class OpenAiModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
         const key = apiKey ?? 'no-key';
 
-        const proxyFetch = createProxyFetch(this.proxy);
+        const proxyFetch = createProxyFetch(this.proxy, this.timeout);
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch, timeout: this.timeout });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch, timeout: this.timeout });
         }
     }
 
