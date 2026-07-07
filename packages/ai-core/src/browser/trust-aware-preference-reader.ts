@@ -48,15 +48,6 @@ export class TrustAwarePreferenceReader {
      */
     protected trusted = false;
 
-    /**
-     * The current, cached workspace-trust flag. Reflects the same fail-closed default as reads:
-     * `false` until the initial trust state has resolved. Prefer awaiting {@link ready} before
-     * relying on this for a deterministic value.
-     */
-    get isTrusted(): boolean {
-        return this.trusted;
-    }
-
     protected readonly _ready = new Deferred<void>();
 
     /**
