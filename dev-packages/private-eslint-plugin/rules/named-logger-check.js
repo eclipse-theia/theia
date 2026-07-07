@@ -37,7 +37,8 @@ module.exports = {
         }
     },
     create(context) {
-        const filename = context.getFilename();
+        const filename = context.getFilename().replace(/\\/g, '/');
+
         if (filename.includes('/electron-main/')) {
             return {};
         }
