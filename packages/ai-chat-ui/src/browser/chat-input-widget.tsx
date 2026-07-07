@@ -23,14 +23,13 @@ import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request
 import {
     GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability,
     FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSettings, ReasoningSupport,
-    PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, AGENT_NOTIFICATION_KIND_COMPLETED, ServerToolDescriptor
+    PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, ServerToolDescriptor
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AgentNotificationService, FrontendVariableService, AIActivationService, AgentNotificationOptions } from '@theia/ai-core/lib/browser';
+import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
-import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -75,7 +74,6 @@ import {
     getUsageColorClass
 } from './chat-token-usage-indicator-util';
 import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
-import { isChatSessionFocused } from './chat-session-focus';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections,
     serverToolSelections?: Record<string, string[]>) => Promise<void>;
@@ -124,9 +122,6 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
 
-    @inject(AgentNotificationService)
-    protected readonly agentNotificationService: AgentNotificationService;
-
     @inject(ChangeSetDecoratorService)
     protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
 
@@ -167,9 +162,6 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
-
-    @inject(ApplicationShell)
-    protected readonly applicationShell: ApplicationShell;
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
@@ -1311,43 +1303,6 @@ export class AIChatInputWidget extends ReactWidget {
         });
     }
 
-    protected async handleAgentCompletion(request: ChatRequestModel): Promise<void> {
-        try {
-            const agentId = request.agentId;
-            const sessionId = request.session.id;
-
-            if (agentId && sessionId) {
-                // Get the session title for display in the notification
-                const session = this.chatService.getSession(sessionId);
-                const sessionTitle = session?.title;
-
-                const options: AgentNotificationOptions = {
-                    shouldSuppress: () => this.isChatSessionFocused(sessionId),
-                    onActivate: () => this.focusChatSession(sessionId),
-                    sessionTitle,
-                };
-                await this.agentNotificationService.showNotification(agentId, AGENT_NOTIFICATION_KIND_COMPLETED, options);
-            }
-        } catch (error) {
-            this.logger.error('Failed to handle agent completion notification:', error);
-        }
-    }
-
-    /**
-     * Check if the specific chat session is currently focused.
-     * Returns true only if the chat widget is focused AND viewing the same session.
-     */
-    protected isChatSessionFocused(sessionId: string): boolean {
-        return isChatSessionFocused(this.applicationShell, this.chatService, sessionId);
-    }
-
-    /**
-     * Focus the chat session by setting it as active with focus.
-     */
-    protected focusChatSession(sessionId: string): void {
-        this.chatService.setActiveSession(sessionId, { focus: true });
-    }
-
     protected getResourceUri(): URI {
         return new URI(`ai-chat:/input.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
     }
@@ -1381,7 +1336,6 @@ export class AIChatInputWidget extends ReactWidget {
                 onOpenContextElement={this.openContextElement.bind(this)}
                 context={this.getContext()}
                 fileValidationState={this.fileValidationState}
-                onAgentCompletion={this.handleAgentCompletion.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -1730,7 +1684,6 @@ interface ChatInputProperties {
     onDeleteContextElement: (index: number) => void;
     onEscape: () => void;
     onOpenContextElement: OpenContextElement;
-    onAgentCompletion: (request: ChatRequestModel) => void;
     context?: readonly AIVariableResolutionRequest[];
     fileValidationState: Map<string, FileValidationResult>;
     isEnabled?: boolean;
@@ -2008,15 +1961,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     onDeleteChangeSet,
                     onDeleteChangeSetElement
                 ));
-            }
-            if (event.kind === 'addRequest') {
-                // Listen for when this request's response becomes complete
-                const responseListener = event.request.response.onDidChange(() => {
-                    if (event.request.response.isComplete) {
-                        props.onAgentCompletion(event.request);
-                        responseListener.dispose(); // Clean up the listener once notification is sent
-                    }
-                });
             }
         });
         return () => {

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,27 +17,31 @@
 import { ChatChangeEvent, ChatService, ChatSession, ChatSessionStatus } from '@theia/ai-chat';
 import { DisposableCollection } from '@theia/core';
 import { ApplicationShell, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '@theia/ai-core';
+import { AgentNotificationKind, AGENT_NOTIFICATION_KIND_COMPLETED, AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '@theia/ai-core';
 import { AgentNotificationService } from '@theia/ai-core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { isChatSessionFocused } from './chat-session-focus';
 
-interface SessionWaitingState {
+interface SessionNotificationState {
     /** Whether the session status required user action at the last observed status change. */
     waiting: boolean;
+    /** Whether a request was in progress at the last observed status change. */
+    inProgress: boolean;
     listener: DisposableCollection;
 }
 
 /**
- * Fires an agent notification when a chat session starts waiting for user action (a tool
- * approval or another input, as reported by the session's {@link ChatSessionStatus}). Watches
- * all sessions, not just the active one, so that a background session requesting input still
- * reaches the user. The agent completion notification (handled in the chat input widget) and
- * this input-needed notification share the same delivery channel and user preference via
- * {@link AgentNotificationService}.
+ * Fires agent notifications on chat session status transitions: when a session starts waiting
+ * for user action (a tool approval or another input) and when a session finishes its request
+ * (successfully or with an error). Watches all sessions, not just the active one, so that
+ * background sessions still reach the user.
+ *
+ * Delegated sessions (created by the agent delegation tool on behalf of a parent session) are
+ * excluded: their interactions bubble into the parent session's UI, so they must not produce
+ * their own notifications.
  */
 @injectable()
-export class ChatInputNeededNotificationContribution implements FrontendApplicationContribution {
+export class ChatSessionNotificationContribution implements FrontendApplicationContribution {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
@@ -48,7 +52,7 @@ export class ChatInputNeededNotificationContribution implements FrontendApplicat
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    protected readonly states = new Map<string, SessionWaitingState>();
+    protected readonly states = new Map<string, SessionNotificationState>();
 
     onStart(): void {
         this.chatService.getSessions().forEach(session => this.watchSession(session));
@@ -68,8 +72,9 @@ export class ChatInputNeededNotificationContribution implements FrontendApplicat
         if (this.states.has(session.id)) {
             return;
         }
-        const state: SessionWaitingState = {
+        const state: SessionNotificationState = {
             waiting: ChatSessionStatus.requiresUserAction(session.model.status),
+            inProgress: ChatSessionStatus.isInProgress(session.model.status),
             listener: new DisposableCollection()
         };
         this.states.set(session.id, state);
@@ -80,24 +85,44 @@ export class ChatInputNeededNotificationContribution implements FrontendApplicat
         }, undefined, state.listener);
     }
 
-    protected handleStatusChanged(session: ChatSession, state: SessionWaitingState, status: ChatSessionStatus): void {
+    protected handleStatusChanged(session: ChatSession, state: SessionNotificationState, status: ChatSessionStatus): void {
         const nowWaiting = ChatSessionStatus.requiresUserAction(status);
-        // Only notify on the transition into waiting; the status only changes on actual
-        // transitions, so switching between the waiting states (e.g. approval, then a
-        // question) does not produce duplicate notifications.
-        if (nowWaiting && !state.waiting) {
-            // The session status is derived from the last request, so that is the waiting one.
-            const waitingRequest = session.model.getRequests().at(-1);
-            const agentId = waitingRequest?.agentId ?? waitingRequest?.response.agentId;
-            if (agentId) {
-                this.notificationService.showNotification(agentId, AGENT_NOTIFICATION_KIND_INPUT_NEEDED, {
-                    shouldSuppress: () => isChatSessionFocused(this.shell, this.chatService, session.id),
-                    onActivate: () => this.chatService.setActiveSession(session.id, { focus: true }),
-                    sessionTitle: session.title
-                });
-            }
-        }
+        const nowInProgress = ChatSessionStatus.isInProgress(status);
+        // The status only changes on actual transitions, so switching between the waiting
+        // states (e.g. approval, then a question) does not produce duplicate notifications.
+        const startedWaiting = nowWaiting && !state.waiting;
+        const completed = !nowInProgress && state.inProgress;
         state.waiting = nowWaiting;
+        state.inProgress = nowInProgress;
+
+        // Checked per event rather than in watchSession: the delegation tool assigns
+        // rootSessionId only after the session-created event has already fired.
+        if (this.isDelegatedSession(session)) {
+            return;
+        }
+
+        if (startedWaiting) {
+            this.notify(session, AGENT_NOTIFICATION_KIND_INPUT_NEEDED);
+        } else if (completed) {
+            this.notify(session, AGENT_NOTIFICATION_KIND_COMPLETED);
+        }
+    }
+
+    protected isDelegatedSession(session: ChatSession): boolean {
+        return session.model.rootSessionId !== undefined;
+    }
+
+    protected notify(session: ChatSession, kind: AgentNotificationKind): void {
+        // The session status is derived from the last request, so that is the one to report.
+        const lastRequest = session.model.getRequests().at(-1);
+        const agentId = lastRequest?.agentId ?? lastRequest?.response.agentId;
+        if (agentId) {
+            this.notificationService.showNotification(agentId, kind, {
+                shouldSuppress: () => isChatSessionFocused(this.shell, this.chatService, session.id),
+                onActivate: () => this.chatService.setActiveSession(session.id, { focus: true }),
+                sessionTitle: session.title
+            });
+        }
     }
 
     protected unwatchSession(sessionId: string): void {
