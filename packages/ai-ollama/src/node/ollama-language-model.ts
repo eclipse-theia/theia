@@ -451,6 +451,9 @@ export class OllamaModel implements LanguageModel {
             result.thinking = message.thinking;
         } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
             result.images = [message.image.base64data];
+        } else if (LanguageModelMessage.isCompactionMessage(message)) {
+            // Ollama has no server-side compaction; the opaque marker carries no representable content and is dropped.
+            return undefined;
         } else {
             console.log(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
             return undefined;

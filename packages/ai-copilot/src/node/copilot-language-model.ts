@@ -184,7 +184,7 @@ export class CopilotLanguageModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
-        const converted = messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        const converted = messages.filter(m => m.type !== 'thinking' && m.type !== 'compaction').map(m => this.toOpenAIMessage(m));
         return this.mergeConsecutiveAssistantMessages(converted);
     }
 

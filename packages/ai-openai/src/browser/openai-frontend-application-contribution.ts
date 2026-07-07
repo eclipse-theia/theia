@@ -16,10 +16,10 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ReasoningSupport } from '@theia/ai-core';
+import { ReasoningSupport, resolveCompactionDefault, ServerSideCompactionSetting } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
 @injectable()
@@ -62,6 +62,10 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
+                    this.updateAllModels();
+                } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF) {
+                    this.updateAllModels();
+                } else if (event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION) {
                     this.updateAllModels();
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
@@ -106,6 +110,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming &&
                 model.useResponseApi === newModel.useResponseApi &&
+                model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
                 reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -126,13 +131,17 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         return {
             id: id,
             model: modelId,
             apiKey: true,
             apiVersion: true,
             maxRetries: maxRetries,
-            useResponseApi: useResponseApi
+            useResponseApi: useResponseApi,
+            serverSideCompactionEnabledByDefault
         };
     }
 
@@ -140,6 +149,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         preferences: Partial<OpenAiModelDescription>[]
     ): OpenAiModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -158,7 +170,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     enableStreaming: pref.enableStreaming,
                     maxRetries: pref.maxRetries ?? maxRetries,
                     useResponseApi: pref.useResponseApi ?? false,
-                    reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined
+                    reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined,
+                    serverSideCompactionEnabledByDefault
                 }
             ];
         }, []);

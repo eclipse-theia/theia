@@ -15,9 +15,13 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
 import {
-    isServerToolCallResponsePart, isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
+    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
+    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
+} from './anthropic-language-model';
+import {
+    CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
+    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -27,13 +31,16 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings()/createTools() methods. */
+/** Test helper that exposes the otherwise protected getSettings(), createTools(), and applyCompactionParams() methods. */
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
     }
     public callCreateTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         return this.createTools(request);
+    }
+    public callApplyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        return this.applyCompactionParams(params, request);
     }
 }
 
@@ -801,6 +808,153 @@ describe('AnthropicModel', () => {
 
             const allBlocks = (capturedParams?.messages ?? []).flatMap(m => Array.isArray(m.content) ? m.content : []);
             expect(allBlocks.some(b => b.type === 'server_tool_use')).to.be.false;
+        });
+    });
+
+    describe('server-side compaction', () => {
+
+        function textMessage(text: string, actor: 'user' | 'ai' = 'user'): LanguageModelMessage {
+            return { actor, type: 'text', text, query: text } as unknown as LanguageModelMessage;
+        }
+
+        function compactionMessage(provider: string): CompactionMessage {
+            return {
+                actor: 'ai',
+                type: 'compaction',
+                provider,
+                data: { content: 'summary of earlier turns', encrypted_content: 'opaque-blob' },
+                summary: 'summary of earlier turns'
+            };
+        }
+
+        function findCompactionBlock(messages: Anthropic.Messages.MessageParam[]): { type: string; content: unknown; encrypted_content: unknown } | undefined {
+            for (const message of messages) {
+                if (Array.isArray(message.content)) {
+                    for (const block of message.content) {
+                        if ((block as { type?: string }).type === 'compaction') {
+                            return block as unknown as { type: string; content: unknown; encrypted_content: unknown };
+                        }
+                    }
+                }
+            }
+            return undefined;
+        }
+
+        function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, serverSideCompactionSupport: boolean = true): TestableAnthropicModel {
+            return new TestableAnthropicModel(
+                'test-id', 'claude-opus-4-6', { status: 'ready' }, true, false, () => 'test-key', undefined,
+                DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, serverSideCompactionSupport, serverSideCompactionEnabledByDefault
+            );
+        }
+
+        describe('transformToAnthropicParams', () => {
+            it('emits a compaction block for an anthropic compaction message when compaction is enabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                const compactionBlock = findCompactionBlock(result);
+                expect(compactionBlock, 'compaction block present').to.not.equal(undefined);
+                expect(compactionBlock!.content).to.equal('summary of earlier turns');
+                expect(compactionBlock!.encrypted_content).to.equal('opaque-blob');
+
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('omits the compaction block when compaction is disabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, false);
+
+                expect(findCompactionBlock(result), 'no compaction block').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('skips a foreign-provider compaction message even when compaction is enabled', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('openai-responses'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                expect(findCompactionBlock(result), 'no compaction block for foreign provider').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+        });
+
+        describe('applyCompactionParams', () => {
+            function baseParams(): Anthropic.MessageCreateParams {
+                return { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] };
+            }
+
+            it('adds the beta flag and context_management when compaction is enabled by default (capable model)', () => {
+                // claude-opus-4-6 is capable; serverSideCompactionEnabledByDefault=true, no session override.
+                const model = createCompactionModel(true);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.betas).to.deep.equal(['compact-2026-01-12']);
+                expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+            });
+
+            it('leaves params unchanged when compaction is disabled by default', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('session enables compaction over a false default (capable model)', () => {
+                const model = createCompactionModel(false);
+
+                const enabled = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(enabled.betas).to.deep.equal(['compact-2026-01-12']);
+            });
+
+            it('session disables compaction over a true default', () => {
+                const model = createCompactionModel(true);
+
+                // compaction.enabled=false wins even when serverSideCompactionEnabledByDefault is true
+                const forcedOff = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: false }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(forcedOff.betas).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when the model does not support server-side compaction, regardless of activation', () => {
+                const incapableModel = createCompactionModel(true, false);
+                const params = incapableModel.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when no compaction request settings are provided and default is false', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyCompactionParams(baseParams(), { messages: [] });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
         });
     });
 });

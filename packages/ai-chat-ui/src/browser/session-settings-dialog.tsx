@@ -81,6 +81,66 @@ const ConfirmationTimeoutSection: React.FC<ConfirmationTimeoutSectionProps> = ({
     </div>
 );
 
+type CompactionOverride = boolean | undefined;
+
+interface ServerSideCompactionSectionProps {
+    compactionOverride: CompactionOverride;
+    onCompactionOverrideChange: (value: CompactionOverride) => void;
+}
+
+const ServerSideCompactionSection: React.FC<ServerSideCompactionSectionProps> = ({
+    compactionOverride,
+    onCompactionOverrideChange
+}) => {
+    const selectValue = compactionOverride === true ? 'enabled' : compactionOverride === false ? 'disabled' : 'default';
+
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+        const v = e.target.value;
+        if (v === 'enabled') {
+            onCompactionOverrideChange(true);
+        } else if (v === 'disabled') {
+            onCompactionOverrideChange(false);
+        } else {
+            onCompactionOverrideChange(undefined);
+        }
+    };
+
+    return (
+        <div className="session-settings-server-side-compaction">
+            <div className="session-settings-section-header">
+                {nls.localize('theia/ai/session-settings-dialog/compactionHeader', 'Server-Side Compaction')}
+            </div>
+            <div className="session-settings-section-note">
+                {nls.localize(
+                    'theia/ai/session-settings-dialog/compactionNote',
+                    'Overrides the global and per-provider compaction setting for this session. ' +
+                    'Applies only to providers that support server-side compaction.'
+                )}
+            </div>
+            <div className="session-settings-select-container">
+                <label htmlFor="compaction-override">
+                    {nls.localize('theia/ai/session-settings-dialog/compactionLabel', 'Compaction:')}
+                </label>
+                <select
+                    id="compaction-override"
+                    value={selectValue}
+                    onChange={handleChange}
+                >
+                    <option value="default">
+                        {nls.localizeByDefault('Default')}
+                    </option>
+                    <option value="enabled">
+                        {nls.localizeByDefault('Enabled')}
+                    </option>
+                    <option value="disabled">
+                        {nls.localizeByDefault('Disabled')}
+                    </option>
+                </select>
+            </div>
+        </div>
+    );
+};
+
 interface AdvancedSettingsSectionProps {
     sectionHeader: string;
 }
@@ -105,17 +165,21 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => (
 interface DialogContentProps {
     confirmationTimeoutEnabled: boolean;
     confirmationTimeoutSeconds: number;
+    compactionOverride: CompactionOverride;
     errorMessage: string;
     onConfirmationTimeoutEnabledChange: (enabled: boolean) => void;
     onConfirmationTimeoutSecondsChange: (seconds: number) => void;
+    onCompactionOverrideChange: (value: CompactionOverride) => void;
 }
 
 const DialogContent: React.FC<DialogContentProps> = ({
     confirmationTimeoutEnabled,
     confirmationTimeoutSeconds,
+    compactionOverride,
     errorMessage,
     onConfirmationTimeoutEnabledChange,
-    onConfirmationTimeoutSecondsChange
+    onConfirmationTimeoutSecondsChange,
+    onCompactionOverrideChange
 }) => (
     <div className="session-settings-container">
         <ConfirmationTimeoutSection
@@ -123,6 +187,10 @@ const DialogContent: React.FC<DialogContentProps> = ({
             timeoutSeconds={confirmationTimeoutSeconds}
             onEnabledChange={onConfirmationTimeoutEnabledChange}
             onTimeoutChange={onConfirmationTimeoutSecondsChange}
+        />
+        <ServerSideCompactionSection
+            compactionOverride={compactionOverride}
+            onCompactionOverrideChange={onCompactionOverrideChange}
         />
         <AdvancedSettingsSection
             sectionHeader={nls.localize('theia/ai/session-settings-dialog/advancedSettings', 'Advanced Settings (JSON)')}
@@ -139,6 +207,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected confirmationTimeoutEnabled: boolean;
     protected confirmationTimeoutSeconds: number;
+
+    protected compactionOverride: boolean | undefined;
 
     protected preservedReasoning: CommonChatSessionSettings['reasoning'];
 
@@ -160,6 +230,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
         // Reasoning is edited in the chat input; preserve it across this dialog.
         this.preservedReasoning = this.settings.commonSettings?.reasoning;
+
+        // Read the per-session compaction override (undefined = use global/per-provider setting).
+        this.compactionOverride = this.settings.commonSettings?.compaction?.enabled;
 
         // Extract confirmation timeout settings from commonSettings
         const savedTimeout = this.settings.commonSettings?.confirmationTimeout;
@@ -214,9 +287,11 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
             <DialogContent
                 confirmationTimeoutEnabled={this.confirmationTimeoutEnabled}
                 confirmationTimeoutSeconds={this.confirmationTimeoutSeconds}
+                compactionOverride={this.compactionOverride}
                 errorMessage={this.errorMessage}
                 onConfirmationTimeoutEnabledChange={this.handleConfirmationTimeoutEnabledChange}
                 onConfirmationTimeoutSecondsChange={this.handleConfirmationTimeoutSecondsChange}
+                onCompactionOverrideChange={this.handleCompactionOverrideChange}
             />
         );
     }
@@ -328,6 +403,13 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         this.attachEditorContainer();
     };
 
+    protected handleCompactionOverrideChange = (value: boolean | undefined): void => {
+        this.compactionOverride = value;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
     protected updateSettingsFromCommonSettings(): void {
         const commonSettings: CommonChatSessionSettings = {};
         if (this.preservedReasoning) {
@@ -335,6 +417,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         }
         if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
             commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;
+        }
+        if (this.compactionOverride !== undefined) {
+            commonSettings.compaction = { enabled: this.compactionOverride };
         }
         this.settings.commonSettings = Object.keys(commonSettings).length > 0 ? commonSettings : undefined;
     }

@@ -19,7 +19,9 @@ import { Emitter, Event } from '@theia/core';
 import { ChatModel, ChatRequestModel, ResponseTokenUsage } from '@theia/ai-chat';
 import {
     buildBarTooltip,
+    computeCumulativeTokenUsage,
     computeSessionTokenUsage,
+    countCompactions,
     decideTokenUsageWarning,
     formatTokenCount,
     getUsageColorClass,
@@ -29,11 +31,16 @@ import {
 const THRESHOLD = 100;
 const CONTEXT_WINDOW = 200;
 
-function createMockRequest(tokenUsage?: ResponseTokenUsage, isComplete = true): Partial<ChatRequestModel> {
+function createMockRequest(tokenUsage?: ResponseTokenUsage, isComplete = true, contentKinds?: string[]): Partial<ChatRequestModel> {
     return {
         response: {
             tokenUsage,
-            isComplete
+            isComplete,
+            response: {
+                content: (contentKinds ?? []).map(kind => ({ kind })),
+                asString: () => '',
+                asDisplayString: () => ''
+            }
         } as ChatRequestModel['response']
     };
 }
@@ -249,6 +256,97 @@ describe('ChatTokenUsageIndicator', () => {
             );
             // The fallback (200k) should appear in the total line.
             expect(tooltip!.value).to.contain('200.0k');
+        });
+
+        it('includes cumulative usage line when model has token usage', () => {
+            const model = createMockChatModel([
+                createMockRequest({ inputTokens: 50, outputTokens: 50 }),
+                createMockRequest({ inputTokens: 30, outputTokens: 20 })
+            ]);
+            const usage = { inputTokens: 30, outputTokens: 20 };
+            const tooltip = buildBarTooltip(usage, 50, THRESHOLD, CONTEXT_WINDOW, model);
+            expect(tooltip).to.not.equal(undefined);
+            expect(tooltip!.value).to.contain('Cumulative:');
+        });
+
+        it('includes compaction line when model has a compaction content part', () => {
+            const model = createMockChatModel([
+                createMockRequest({ inputTokens: 50, outputTokens: 50 }, true, ['compaction'])
+            ]);
+            const usage = { inputTokens: 50, outputTokens: 50 };
+            const tooltip = buildBarTooltip(usage, 100, THRESHOLD, CONTEXT_WINDOW, model);
+            expect(tooltip).to.not.equal(undefined);
+            expect(tooltip!.value).to.contain('Compacted');
+        });
+    });
+
+    describe('computeCumulativeTokenUsage', () => {
+        it('returns 0 for an undefined model', () => {
+            expect(computeCumulativeTokenUsage(undefined)).to.equal(0);
+        });
+
+        it('returns 0 for a model with no requests', () => {
+            const model = createMockChatModel([]);
+            expect(computeCumulativeTokenUsage(model)).to.equal(0);
+        });
+
+        it('sums cumulative usage across all responses', () => {
+            const model = createMockChatModel([
+                createMockRequest({ inputTokens: 100, outputTokens: 50 }),
+                createMockRequest({ inputTokens: 200, outputTokens: 60, cacheReadInputTokens: 10 })
+            ]);
+            expect(computeCumulativeTokenUsage(model)).to.equal(420);
+        });
+
+        it('includes cache creation and read tokens in the cumulative total', () => {
+            const model = createMockChatModel([
+                createMockRequest({ inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 20, cacheReadInputTokens: 30 }),
+                createMockRequest({ inputTokens: 200, outputTokens: 60 })
+            ]);
+            expect(computeCumulativeTokenUsage(model)).to.equal(460);
+        });
+
+        it('skips requests with no token usage', () => {
+            const model = createMockChatModel([
+                createMockRequest(undefined),
+                createMockRequest({ inputTokens: 100, outputTokens: 50 })
+            ]);
+            expect(computeCumulativeTokenUsage(model)).to.equal(150);
+        });
+    });
+
+    describe('countCompactions', () => {
+        it('returns 0 for an undefined model', () => {
+            expect(countCompactions(undefined)).to.equal(0);
+        });
+
+        it('returns 0 for a model with no requests', () => {
+            const model = createMockChatModel([]);
+            expect(countCompactions(model)).to.equal(0);
+        });
+
+        it('counts compaction markers across the session', () => {
+            const model = createMockChatModel([
+                createMockRequest(undefined, true, ['text', 'compaction']),
+                createMockRequest(undefined, true, ['text']),
+                createMockRequest(undefined, true, ['compaction', 'text'])
+            ]);
+            expect(countCompactions(model)).to.equal(2);
+        });
+
+        it('returns 0 when no compaction markers are present', () => {
+            const model = createMockChatModel([
+                createMockRequest(undefined, true, ['text']),
+                createMockRequest(undefined, true, ['toolCall'])
+            ]);
+            expect(countCompactions(model)).to.equal(0);
+        });
+
+        it('counts multiple compaction markers within a single response', () => {
+            const model = createMockChatModel([
+                createMockRequest(undefined, true, ['compaction', 'compaction', 'text'])
+            ]);
+            expect(countCompactions(model)).to.equal(2);
         });
     });
 

@@ -195,6 +195,13 @@ export class OpenAiResponseApiUtils {
                             yield {
                                 content: event.delta
                             };
+                        } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
+                            yield {
+                                compaction: {
+                                    provider: 'openai-responses',
+                                    data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                                }
+                            };
                         } else if (event.type === 'response.completed') {
                             if (event.response?.usage) {
                                 usageYielded = true;
@@ -256,8 +263,29 @@ export class OpenAiResponseApiUtils {
         const nonSystemMessages = processed.filter(m => m.actor !== 'system');
         const input: ResponseInputItem[] = [];
 
-        for (const message of nonSystemMessages) {
-            if (LanguageModelMessage.isTextMessage(message)) {
+        // Server-side compaction replay: the latest openai-responses compaction marker carries the (encrypted) context for
+        // everything before it. Drop that prefix and replay the marker as a compaction input item; earlier markers are subsumed.
+        let sliceStart = 0;
+        for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
+            const candidate = nonSystemMessages[i];
+            if (LanguageModelMessage.isCompactionMessage(candidate) && candidate.provider === 'openai-responses') {
+                const data = candidate.data as { encrypted_content: string; id?: string };
+                input.push({
+                    type: 'compaction',
+                    encrypted_content: data.encrypted_content,
+                    id: data.id
+                });
+                sliceStart = i + 1;
+                break;
+            }
+        }
+
+        for (const message of nonSystemMessages.slice(sliceStart)) {
+            if (LanguageModelMessage.isCompactionMessage(message)) {
+                // Skip any remaining compaction marker (foreign provider, or a non-final openai-responses one):
+                // it is not the prefix-drop item, so it carries no input for this provider.
+                continue;
+            } else if (LanguageModelMessage.isTextMessage(message)) {
                 if (message.actor === 'ai') {
                     // Assistant messages use ResponseOutputMessage format
                     input.push({
@@ -552,6 +580,13 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.done':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
+                } else if (event.item?.type === 'compaction') {
+                    this.handleIncoming({
+                        compaction: {
+                            provider: 'openai-responses',
+                            data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                        }
+                    });
                 } else if (event.item?.type === 'tool_search_output') {
                     this.handleToolSearchOutput(event.item);
                 }
