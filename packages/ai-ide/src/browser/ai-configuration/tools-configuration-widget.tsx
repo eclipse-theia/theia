@@ -375,7 +375,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected handleRemoveAllowlistPattern(pattern: string): void {
-        this.shellCommandPermissionService.removeAllowlistPattern(pattern);
+        this.shellCommandPermissionService.removeAllowlistPattern(pattern)
+            .catch(error => console.error('Failed to remove allowlist pattern:', error));
     }
 
     protected handleAddDenylistPattern(): void {
@@ -389,12 +390,13 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected handleRemoveDenylistPattern(pattern: string): void {
-        this.shellCommandPermissionService.removeDenylistPattern(pattern);
+        this.shellCommandPermissionService.removeDenylistPattern(pattern)
+            .catch(error => console.error('Failed to remove denylist pattern:', error));
     }
 
     protected handleAddPatternToList(
         inputRef: React.RefObject<HTMLInputElement | null>,
-        addFn: (pattern: string) => void,
+        addFn: (pattern: string) => Promise<void>,
         getFn: () => string[],
         setPatterns: (patterns: string[]) => void,
         setError: (error: string | undefined) => void
@@ -410,7 +412,11 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         }
 
         try {
-            addFn(trimmed);
+            // Validation throws synchronously; a failed write rejects the returned promise.
+            addFn(trimmed).catch(error => {
+                setError(error instanceof Error ? error.message : 'Failed to save pattern');
+                this.update();
+            });
             input.value = '';
             setError(undefined);
             setPatterns(getFn());

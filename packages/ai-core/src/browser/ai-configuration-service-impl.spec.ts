@@ -205,9 +205,10 @@ describe('AiConfigurationServiceImpl', () => {
             expect(changes).to.have.lengthOf(1);
             expect(changes[0].preferenceName).to.equal(undefined);
             expect(changes[0].affects()).to.equal(true);
-            // A trust transition affects every trust-gated key.
+            // A trust transition affects every trust-gated (ai-features.*) key, but not unrelated ones.
             expect(changes[0].affectsPreference(KEY)).to.equal(true);
             expect(changes[0].affectsPreference('ai-features.anythingElse')).to.equal(true);
+            expect(changes[0].affectsPreference('editor.fontSize')).to.equal(false);
         });
     });
 

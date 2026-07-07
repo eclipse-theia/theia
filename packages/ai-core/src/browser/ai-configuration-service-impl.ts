@@ -17,6 +17,7 @@
 import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { AiConfigurationChange, AiConfigurationInspection, AiConfigurationService } from '../common/ai-configuration-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
@@ -41,14 +42,14 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
     protected readonly onDidChangeEmitter = new Emitter<AiConfigurationChange>();
     readonly onDidChange: Event<AiConfigurationChange> = this.onDidChangeEmitter.event;
 
-    protected _ready: Promise<void>;
+    protected readonly _ready = new Deferred<void>();
     get ready(): Promise<void> {
-        return this._ready;
+        return this._ready.promise;
     }
 
     @postConstruct()
     protected init(): void {
-        this._ready = Promise.all([this.preferenceService.ready, this.trustAwareReader.ready]).then(() => undefined);
+        this._ready.resolve(Promise.all([this.preferenceService.ready, this.trustAwareReader.ready]).then(() => undefined));
         this.toDispose.push(this.onDidChangeEmitter);
         this.toDispose.push(
             this.preferenceService.onPreferenceChanged(change => {
@@ -68,7 +69,7 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
             this.trustAwareReader.onDidChangeTrust(() => this.onDidChangeEmitter.fire({
                 preferenceName: undefined,
                 affects: () => true,
-                affectsPreference: () => true
+                affectsPreference: preferenceName => preferenceName.startsWith(AI_PREFERENCE_PREFIX)
             }))
         );
     }
