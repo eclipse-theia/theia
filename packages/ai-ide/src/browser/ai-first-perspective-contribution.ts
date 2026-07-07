@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
+import { nls } from '@theia/core';
 import { PerspectiveContribution, PerspectiveService } from '@theia/core/lib/browser/perspective-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 
@@ -28,7 +29,7 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
     registerPerspectives(service: PerspectiveService): void {
         service.registerPerspective({
             id: 'ai-first',
-            label: 'AI First',
+            label: nls.localize('theia/ai-ide/perspective/aiFirst', 'AI First'),
             viewPlacements: new Map<string, ApplicationShell.Area>([
                 [CHAT_VIEW_WIDGET_ID, 'main'],
                 [EXPLORER_VIEW_CONTAINER_ID, 'right'],

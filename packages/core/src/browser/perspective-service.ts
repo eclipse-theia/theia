@@ -46,7 +46,7 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
     static readonly SWITCH_PERSPECTIVE_COMMAND = {
         id: 'perspective.switch',
         category: nls.localizeByDefault('View'),
-        label: 'Switch Perspective'
+        label: nls.localize('theia/core/perspective/switchPerspective', 'Switch Perspective')
     };
 
     @inject(ApplicationShell)
@@ -61,13 +61,23 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService | undefined;
 
+    static readonly DEFAULT_PERSPECTIVE_ID = 'theia-ide';
+
     protected readonly perspectives = new Map<string, PerspectiveDescriptor>();
     protected activePerspectiveId: string | undefined;
+    protected readonly savedLayouts = new Map<string, ApplicationShell.LayoutData>();
 
     protected readonly onDidChangePerspectiveEmitter = new Emitter<string>();
     readonly onDidChangePerspective: Event<string> = this.onDidChangePerspectiveEmitter.event;
 
     initialize(): void {
+        this.registerPerspective({
+            id: PerspectiveService.DEFAULT_PERSPECTIVE_ID,
+            label: nls.localize('theia/core/perspective/theiaIde', 'Theia IDE'),
+            viewPlacements: new Map()
+        });
+        this.activePerspectiveId = PerspectiveService.DEFAULT_PERSPECTIVE_ID;
+
         if (this.contributions) {
             for (const contribution of this.contributions.getContributions()) {
                 contribution.registerPerspectives(this);
@@ -80,6 +90,10 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
     }
 
     async switchPerspective(id: string): Promise<void> {
+        if (id === this.activePerspectiveId) {
+            return;
+        }
+
         const descriptor = this.perspectives.get(id);
         if (!descriptor) {
             return;
@@ -90,29 +104,38 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
             oldPerspective.onDeactivate(this.shell);
         }
 
-        this.activePerspectiveId = id;
-
-        for (const [viewId, area] of descriptor.viewPlacements) {
-            try {
-                const widget = await this.widgetManager.getOrCreateWidget(viewId);
-                const currentTabBar = this.shell.getTabBarFor(widget);
-                if (currentTabBar) {
-                    const currentArea = this.shell.getAreaFor(widget);
-                    if (currentArea === area) {
-                        continue;
-                    }
-                }
-                await this.shell.addWidget(widget, { area });
-            } catch {
-                // Widget factory may not be registered — skip silently
-            }
+        if (this.activePerspectiveId) {
+            this.savedLayouts.set(this.activePerspectiveId, this.shell.getLayoutData());
         }
 
-        for (const [viewId] of descriptor.viewPlacements) {
-            try {
-                await this.shell.activateWidget(viewId);
-            } catch {
-                // Ignore activation errors
+        this.activePerspectiveId = id;
+
+        const savedLayout = this.savedLayouts.get(id);
+        if (savedLayout) {
+            await this.shell.setLayoutData(savedLayout);
+        } else {
+            for (const [viewId, area] of descriptor.viewPlacements) {
+                try {
+                    const widget = await this.widgetManager.getOrCreateWidget(viewId);
+                    const currentTabBar = this.shell.getTabBarFor(widget);
+                    if (currentTabBar) {
+                        const currentArea = this.shell.getAreaFor(widget);
+                        if (currentArea === area) {
+                            continue;
+                        }
+                    }
+                    await this.shell.addWidget(widget, { area });
+                } catch {
+                    // Widget factory may not be registered — skip silently
+                }
+            }
+
+            for (const [viewId] of descriptor.viewPlacements) {
+                try {
+                    await this.shell.activateWidget(viewId);
+                } catch {
+                    // Ignore activation errors
+                }
             }
         }
 
@@ -161,7 +184,7 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
         }));
 
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select a perspective'
+            placeholder: nls.localize('theia/core/perspective/selectPerspective', 'Select a perspective')
         });
 
         if (selected?.id) {
