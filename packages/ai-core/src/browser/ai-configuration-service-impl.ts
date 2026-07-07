@@ -95,33 +95,25 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
 
     /**
      * Derives the trust-aware {@link AiConfigurationInspection.sourceScope} and effective `value`
-     * from a raw {@link PreferenceInspection}. When untrusted, folder and workspace scope values
-     * are ignored *and cleared from the result*, so the whole inspection (not just
-     * `value`/`sourceScope`) is consistent with {@link get}.
+     * from a raw {@link PreferenceInspection}. The workspace-trust rule is applied once, via
+     * {@link TrustAwarePreferenceReader.suppressUntrusted} (the single owner of that rule): when
+     * untrusted, folder and workspace scope values are cleared, so the scope walk below naturally
+     * resolves to the user/default scope and the whole inspection stays consistent with {@link get}.
      *
      * Note: `value` reflects the narrowest defined scope, matching `PreferenceService.inspect`. For
      * object-valued preferences this can differ from {@link get}, which deep-merges across scopes.
      */
     protected enrichInspection<T extends JSONValue>(inspection: PreferenceInspection<T>): AiConfigurationInspection<T> {
-        if (!this.trustAwareReader.isTrusted) {
-            // Untrusted: only user/default apply; drop the suppressed workspace/folder values.
-            return {
-                ...inspection,
-                workspaceValue: undefined,
-                workspaceFolderValue: undefined,
-                sourceScope: inspection.globalValue !== undefined ? PreferenceScope.User : undefined,
-                value: inspection.globalValue ?? inspection.defaultValue
-            };
+        const suppressed = this.trustAwareReader.suppressUntrusted(inspection);
+        if (suppressed.workspaceFolderValue !== undefined) {
+            return { ...suppressed, sourceScope: PreferenceScope.Folder, value: suppressed.workspaceFolderValue };
         }
-        if (inspection.workspaceFolderValue !== undefined) {
-            return { ...inspection, sourceScope: PreferenceScope.Folder, value: inspection.workspaceFolderValue };
+        if (suppressed.workspaceValue !== undefined) {
+            return { ...suppressed, sourceScope: PreferenceScope.Workspace, value: suppressed.workspaceValue };
         }
-        if (inspection.workspaceValue !== undefined) {
-            return { ...inspection, sourceScope: PreferenceScope.Workspace, value: inspection.workspaceValue };
+        if (suppressed.globalValue !== undefined) {
+            return { ...suppressed, sourceScope: PreferenceScope.User, value: suppressed.globalValue };
         }
-        if (inspection.globalValue !== undefined) {
-            return { ...inspection, sourceScope: PreferenceScope.User, value: inspection.globalValue };
-        }
-        return { ...inspection, sourceScope: undefined, value: inspection.defaultValue };
+        return { ...suppressed, sourceScope: undefined, value: suppressed.defaultValue };
     }
 }

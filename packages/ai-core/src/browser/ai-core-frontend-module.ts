@@ -198,6 +198,7 @@ export default new ContainerModule(bind => {
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
 
+    // Internal implementation detail of AiConfigurationService; consumers inject AiConfigurationService.
     bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(AiConfigurationServiceImpl).toSelf().inSingletonScope();
