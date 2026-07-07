@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessageService, nls, Progress } from '@theia/core';
+import { MessageService, nls, Progress, ILogger } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { MCP_OAUTH_CALLBACK_PATH, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
 import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
 
@@ -32,6 +32,9 @@ export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDeleg
 
     @inject(MCPFrontendNotificationService)
     protected readonly mcpNotificationService: MCPFrontendNotificationService;
+
+    @inject(ILogger) @named('ai-mcp:MCPOAuthFrontendDelegateClientImpl')
+    protected readonly logger: ILogger;
 
     /** The currently visible browser sign-in notification, if any. */
     protected pendingBrowserPrompt?: Progress;
@@ -68,13 +71,13 @@ export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDeleg
                 }
             });
         }).catch(error => {
-            console.error('Failed to drive the MCP OAuth browser sign-in toast', error);
+            this.logger.error('Failed to drive the MCP OAuth browser sign-in toast', error);
         });
     }
 
     async getCallbackUrl(): Promise<string> {
         const callbackUrl = new Endpoint({ path: MCP_OAUTH_CALLBACK_PATH }).getRestUrl().toString();
-        console.debug(`Computed MCP OAuth callback URL: ${callbackUrl}`);
+        this.logger.debug(`Computed MCP OAuth callback URL: ${callbackUrl}`);
         return callbackUrl;
     }
 }

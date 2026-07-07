@@ -35,11 +35,12 @@ export class CustomTask extends Task {
 
     constructor(
         @inject(TaskManager) taskManager: TaskManager,
-        @inject(ILogger) @named('task') logger: ILogger,
+        @inject(ILogger) @named('task:CustomTask')
+        protected override readonly logger: ILogger,
         @inject(TaskCustomOptions) protected override readonly options: TaskCustomOptions
     ) {
         super(taskManager, logger, options);
-        this.logger.info(`Created new custom task, id: ${this.id}, context: ${this.context}`);
+        this.logger.debug(`Created new custom task, id: ${this.id}, context: ${this.context}`);
     }
 
     kill(): Promise<void> {

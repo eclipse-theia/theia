@@ -190,7 +190,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         try {
             await this.openView({ activate: false });
         } catch (error) {
-            console.error('Failed to initialize AI Chat view in default layout', error);
+            this.logger.error('Failed to initialize AI Chat view in default layout', error);
         }
     }
 

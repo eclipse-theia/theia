@@ -88,7 +88,7 @@ export class SampleCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:SampleCommandContribution')
     protected readonly logger: ILogger;
 
     registerCommands(commands: CommandRegistry): void {
@@ -97,7 +97,7 @@ export class SampleCommandContribution implements CommandContribution {
                 const pick = this.quickInputService.createQuickPick();
                 pick.items = [{ label: '1' }, { label: '2' }, { label: '3' }];
                 pick.onDidAccept(() => {
-                    this.logger.debug(`accepted: ${pick.selectedItems[0]?.label}`);
+                    this.logger.info(`accepted: ${pick.selectedItems[0]?.label}`);
                     pick.hide();
                 });
                 pick.show();

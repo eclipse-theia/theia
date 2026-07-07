@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
 import { ToolRequest } from './language-model';
-import { ContributionProvider, Emitter, Event } from '@theia/core';
+import { ContributionProvider, Emitter, Event, ILogger } from '@theia/core';
 
 export const ToolInvocationRegistry = Symbol('ToolInvocationRegistry');
 
@@ -99,6 +99,9 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
     @named(ToolProvider)
     private providers: ContributionProvider<ToolProvider>;
 
+    @inject(ILogger) @named('ai-core:ToolInvocationRegistryImpl')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     init(): void {
         this.providers.getContributions().forEach(provider => {
@@ -135,7 +138,7 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
 
     registerTool(tool: ToolRequest): void {
         if (this.tools.has(tool.id)) {
-            console.warn(`Function with id ${tool.id} is already registered.`);
+            this.logger.warn(`Function with id ${tool.id} is already registered.`);
         } else {
             this.tools.set(tool.id, tool);
             this.onDidChangeEmitter.fire();

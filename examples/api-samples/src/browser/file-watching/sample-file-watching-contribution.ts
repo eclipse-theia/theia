@@ -21,7 +21,7 @@ import {
 import { ILogger } from '@theia/core/lib/common/logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution } from '@theia/core';
+import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution, ILogger } from '@theia/core';
 import { FileWatchingPreferencesSchema } from '../../common/preference-schema';
 
 export function bindSampleFileWatching(bind: interfaces.Bind): void {
@@ -56,7 +56,7 @@ class SampleFileWatchingContribution implements FrontendApplicationContribution 
     @inject(FileWatchingPreferences)
     protected readonly fileWatchingPreferences: FileWatchingPreferences;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:SampleFileWatchingContribution')
     protected readonly logger: ILogger;
 
     @postConstruct()

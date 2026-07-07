@@ -16,12 +16,13 @@
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -48,6 +49,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -76,7 +80,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
         if (model) {
             if (!(model instanceof AnthropicModel)) {
-                console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
+                this.logger.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
                 return;
             }
             await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
@@ -173,7 +177,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             return await fetchPromise;
         } catch (error) {
             this.modelInfoCache.delete(cacheKey);
-            console.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
+            this.logger.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
                 error instanceof Error ? error.message : error);
             return undefined;
         }

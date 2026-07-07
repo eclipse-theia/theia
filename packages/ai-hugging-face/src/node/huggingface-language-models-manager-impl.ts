@@ -16,9 +16,10 @@
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { HuggingFaceModel } from './huggingface-language-model';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguageModelsManager {
@@ -28,6 +29,9 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(ILogger) @named('ai-hugging-face:HuggingFaceLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.HUGGINGFACE_API_KEY;
@@ -47,7 +51,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
 
             if (model) {
                 if (!(model instanceof HuggingFaceModel)) {
-                    console.warn(`Hugging Face: model ${modelDescription.id} is not a Hugging Face model`);
+                    this.logger.warn(`Hugging Face: model ${modelDescription.id} is not a Hugging Face model`);
                     continue;
                 }
                 await this.languageModelRegistry.patchLanguageModel<HuggingFaceModel>(modelDescription.id, { status, proxy: proxyUrl });

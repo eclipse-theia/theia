@@ -37,8 +37,8 @@ interface ToolApprovalResult {
 @injectable()
 export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
-    @inject(ILogger) @named('ClaudeCode')
-    private logger: ILogger;
+    @inject(ILogger) @named('ai-claude-code:ClaudeCodeServiceImpl')
+    protected readonly logger: ILogger;
 
     private client: ClaudeCodeClient;
     private abortControllers = new Map<string, AbortController>();

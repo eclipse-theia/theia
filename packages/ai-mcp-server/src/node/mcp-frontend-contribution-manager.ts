@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer, RegisteredTool, RegisteredPrompt, RegisteredResource } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
@@ -27,7 +27,7 @@ import { z } from 'zod';
 @injectable()
 export class MCPFrontendContributionManager {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-mcp-server:MCPFrontendContributionManager')
     protected readonly logger: ILogger;
 
     // Frontend delegates are set dynamically when connections are established

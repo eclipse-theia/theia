@@ -16,11 +16,12 @@
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningSupport } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 interface ResolvedModelMetadata {
     maxInputTokens?: number;
@@ -39,6 +40,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     @inject(OpenAiResponseApiUtils)
     protected readonly responseApiUtils: OpenAiResponseApiUtils;
+
+    @inject(ILogger) @named('ai-openai:OpenAiLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
@@ -95,7 +99,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
-                    console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
+                    this.logger.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
                 await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {

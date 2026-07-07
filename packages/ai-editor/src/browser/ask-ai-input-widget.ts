@@ -17,8 +17,8 @@
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
 import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
-import { generateUuid, URI } from '@theia/core';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { generateUuid, URI, ILogger } from '@theia/core';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 
 export const AskAIInputConfiguration = Symbol('AskAIInputConfiguration');
 export interface AskAIInputConfiguration extends AIChatInputConfiguration { }
@@ -41,6 +41,9 @@ export class AskAIInputWidget extends AIChatInputWidget {
 
     @inject(AskAIInputArgs) @optional()
     protected readonly args: AskAIInputArgs | undefined;
+
+    @inject(ILogger) @named('ai-editor:AskAIInputWidget')
+    protected readonly logger: ILogger;
 
     @inject(AskAIInputConfiguration) @optional()
     protected override readonly configuration: AskAIInputConfiguration | undefined;
@@ -122,7 +125,7 @@ export class AskAIInputWidget extends AIChatInputWidget {
             const agent = this.resolveAgentFromParsedRequest(parsedRequest);
             this.updateAgentState(agent);
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine receiving agent:', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);

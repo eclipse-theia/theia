@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { AbstractTextToModelParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 import { AIVariableContext, LanguageModelRequirement } from '@theia/ai-core';
 import {
@@ -30,6 +30,7 @@ import {
     MessageService,
     generateUuid,
     nls,
+    ILogger
 } from '@theia/core';
 
 import { commandTemplate } from './command-prompt-template';
@@ -47,6 +48,9 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     protected commandRegistry: CommandRegistry;
     @inject(MessageService)
     protected messageService: MessageService;
+
+    @inject(ILogger) @named('ai-ide:CommandChatAgent')
+    protected readonly logger: ILogger;
 
     id: string = 'Command';
     name = 'Command';

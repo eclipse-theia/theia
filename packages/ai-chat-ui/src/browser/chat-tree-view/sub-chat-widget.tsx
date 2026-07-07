@@ -18,7 +18,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ProgressMessage } from '../chat-progress-message';
 import { ChatViewTreeWidget, ResponseNode } from './chat-view-tree-widget';
 import * as React from '@theia/core/shared/react';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponseContent } from '@theia/ai-chat';
@@ -36,6 +36,9 @@ export class SubChatWidget {
 
     @inject(ContributionProvider) @named(ChatNodeToolbarActionContribution)
     protected readonly chatNodeToolbarActionContributions: ContributionProvider<ChatNodeToolbarActionContribution>;
+
+    @inject(ILogger) @named('ai-chat-ui:SubChatWidget')
+    protected readonly logger: ILogger;
 
     @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer;
 
@@ -80,7 +83,7 @@ export class SubChatWidget {
             },
             [-1, undefined])[1];
         if (!renderer) {
-            console.error('No renderer found for content', content);
+            this.logger.error('No renderer found for content', content);
             return <div>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/noRenderer', 'Error: No renderer found')}</div>;
         }
         return renderer.render(content, node);

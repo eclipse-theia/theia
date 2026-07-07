@@ -15,9 +15,9 @@
 // *****************************************************************************
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
-import { CancellationToken, Disposable, OS, PreferenceService, URI, Path } from '@theia/core';
+import { CancellationToken, Disposable, OS, PreferenceService, URI, Path, ILogger } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
@@ -59,6 +59,9 @@ export class WorkspaceFunctionScope {
 
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(ILogger) @named('ai-ide:WorkspaceFunctionScope')
+    protected readonly logger: ILogger;
 
     private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
@@ -116,7 +119,7 @@ export class WorkspaceFunctionScope {
         for (const root of sortedRoots) {
             const basename = root.resource.path.base;
             if (mapping.has(basename)) {
-                console.debug(
+                this.logger.debug(
                     `Multiple workspace roots share the basename '${basename}'. ` +
                     `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
                     `'${root.resource.toString()}' can still be accessed but may require full paths.`
@@ -1108,6 +1111,9 @@ export class FileDiagnosticProvider implements ToolProvider {
     @inject(MonacoTextModelService)
     protected readonly modelService: MonacoTextModelService;
 
+    @inject(ILogger) @named('ai-ide:FileDiagnosticProvider')
+    protected readonly logger: ILogger;
+
     getTool(): ToolRequest {
         return {
             id: FileDiagnosticProvider.ID,
@@ -1212,7 +1218,7 @@ export class FileDiagnosticProvider implements ToolProvider {
             if (err.message === 'Operation cancelled by user') {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
-            console.warn('Error when fetching markers for', uri.toString(), err);
+            this.logger.warn('Error when fetching markers for', uri.toString(), err);
             return JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error when fetching for problems for ' + uri.toString() });
         } finally {
             toDispose.forEach(disposable => disposable.dispose());

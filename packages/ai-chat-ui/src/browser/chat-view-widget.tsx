@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
+import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI, ILogger } from '@theia/core';
 import {
     ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings,
     formatProviderError, formattedProviderErrorToShortString, isActiveSessionChangedEvent, MutableChatModel
@@ -65,6 +65,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
     protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
+
+    @inject(ILogger) @named('ai-chat-ui:ChatViewWidget')
+    protected readonly logger: ILogger;
 
     protected chatSession: ChatSession;
 
@@ -189,7 +192,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
                 } else {
-                    console.warn(`Session with ${event.sessionId} not found.`);
+                    this.logger.warn(`Session with ${event.sessionId} not found.`);
                 }
             }),
             // The chat view needs to handle the submission of the edit request

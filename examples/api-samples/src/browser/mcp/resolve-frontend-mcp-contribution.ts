@@ -29,7 +29,7 @@ export class ResolveMcpFrontendContribution
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:ResolveMcpFrontendContribution')
     protected readonly logger: ILogger;
 
     async onStart(): Promise<void> {
@@ -37,7 +37,7 @@ export class ResolveMcpFrontendContribution
             name: 'github',
             serverUrl: 'https://api.githubcopilot.com/mcp/',
             resolve: async serverDescription => {
-                this.logger.debug('Resolving GitHub MCP server description');
+                this.logger.info('Resolving GitHub MCP server description');
 
                 // Prompt user for authentication token
                 const authToken = await this.quickInputService.input({

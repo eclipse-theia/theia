@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { TaskConfiguration } from '../common/task-protocol';
 import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';
+import { ILogger } from '@theia/core/lib/common';
 
 export const TaskContribution = Symbol('TaskContribution');
 
@@ -93,6 +94,9 @@ export interface WillResolveTaskProvider extends WaitUntilEvent {
 @injectable()
 export class TaskResolverRegistry {
 
+    @inject(ILogger) @named('task:TaskResolverRegistry')
+    protected readonly logger: ILogger;
+
     protected readonly onWillProvideTaskResolverEmitter = new Emitter<WillResolveTaskProvider>();
     /**
      * Emit when the registry provides a registered resolver. i.e. when the {@link TaskResolverRegistry#getResolver}
@@ -132,7 +136,7 @@ export class TaskResolverRegistry {
 
     registerTaskResolver(type: string, resolver: TaskResolver): Disposable {
         if (this.taskResolvers.has(type)) {
-            console.warn(`Overriding task resolver for ${type}`);
+            this.logger.warn(`Overriding task resolver for ${type}`);
         }
         this.taskResolvers.set(type, resolver);
         return {
@@ -177,7 +181,7 @@ export class TaskResolverRegistry {
      */
     registerExecutionResolver(type: string, resolver: TaskResolver): Disposable {
         if (this.executionResolvers.has(type)) {
-            console.warn(`Overriding execution resolver for ${type}`);
+            this.logger.warn(`Overriding execution resolver for ${type}`);
         }
         this.executionResolvers.set(type, resolver);
         return {

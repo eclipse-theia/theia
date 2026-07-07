@@ -305,7 +305,7 @@ export class AIChatInputWidget extends ReactWidget {
                 });
                 this.savedReasoning = { level };
             } catch (error) {
-                console.error('Failed to persist reasoning selection:', error);
+                this.logger.error('Failed to persist reasoning selection:', error);
             }
         }
 
@@ -373,7 +373,7 @@ export class AIChatInputWidget extends ReactWidget {
                             break;
                         }
                     } catch (error) {
-                        console.warn('Failed to resolve language model for reasoning support:', error);
+                        this.logger.warn('Failed to resolve language model for reasoning support:', error);
                     }
                 }
             }
@@ -719,7 +719,7 @@ export class AIChatInputWidget extends ReactWidget {
 
             this.update();
         } catch (error) {
-            console.error('Failed to save capability selections to settings:', error);
+            this.logger.error('Failed to save capability selections to settings:', error);
         }
     }
 
@@ -1108,15 +1108,15 @@ export class AIChatInputWidget extends ReactWidget {
         const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
         if (selected === summarizeAction) {
             this.commandService.executeCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id).catch(error => {
-                console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
             this.commandService.executeCommand(AI_CHAT_HOME.id).catch(error => {
-                console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
             this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
             });
         }
     }

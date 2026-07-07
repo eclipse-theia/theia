@@ -25,7 +25,7 @@ import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
 import { ChatSessionItem } from './chat-session-item';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
+import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService, ILogger } from '@theia/core';
 import { ApplicationShell, buttonKeyboardProps, HoverService, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
@@ -149,6 +149,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
+    @inject(ILogger) @named('ai-ide:ChatSessionsWelcomeMessageProvider')
+    protected readonly logger: ILogger;
+
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
@@ -240,7 +243,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
             this._persistedSessions = Object.values(index)
                 .toSorted((a, b) => b.saveDate - a.saveDate);
         } catch (error) {
-            console.error('Failed to load persisted sessions:', error);
+            this.logger.error('Failed to load persisted sessions:', error);
             this._persistedSessions = [];
         } finally {
             // Fire once after the load settles; the data was stale until now anyway.

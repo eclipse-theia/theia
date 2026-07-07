@@ -684,8 +684,10 @@ export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
 
 @injectable()
 export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
-    @inject(ILogger)
-    protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-core:DefaultLanguageModelRegistryImpl')
+    protected readonly logger: ILogger;
+
     @inject(ContributionProvider) @named(LanguageModelProvider)
     protected readonly languageModelContributions: ContributionProvider<LanguageModelProvider>;
 
@@ -716,7 +718,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     addLanguageModels(models: LanguageModel[]): void {
         models.forEach(model => {
             if (this.languageModels.find(lm => lm.id === model.id)) {
-                console.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
+                this.logger.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
                 return;
             }
             this.languageModels.push(model);
@@ -741,7 +743,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
                 this.languageModels.splice(index, 1);
                 this.changeEmitter.fire({ models: this.languageModels });
             } else {
-                console.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
+                this.logger.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
             }
         });
     }

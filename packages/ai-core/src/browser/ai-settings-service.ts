@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
@@ -22,7 +22,7 @@ import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-core:AISettingsServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(PreferenceService) protected preferenceService: PreferenceService;

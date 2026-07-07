@@ -22,7 +22,7 @@
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
@@ -182,8 +182,8 @@ export class ChatServiceImpl implements ChatService {
     @inject(AIVariableService)
     protected variableService: AIVariableService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-chat:ChatServiceImpl')
+    protected readonly logger: ILogger;
 
     @inject(ChatSessionStore) @optional()
     protected sessionStore: ChatSessionStore | undefined;

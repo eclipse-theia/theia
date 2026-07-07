@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
+import { ILogger } from '@theia/core/lib/common';
 
 /**
  * Manages navigation state for a single chat input widget.
@@ -94,6 +95,9 @@ export class ChatInputHistoryService {
     @inject(StorageService)
     protected readonly storageService: StorageService;
 
+    @inject(ILogger) @named('ai-chat-ui:ChatInputHistoryService')
+    protected readonly logger: ILogger;
+
     protected history: string[] = [];
 
     async init(): Promise<void> {
@@ -132,7 +136,7 @@ export class ChatInputHistoryService {
         try {
             await this.storageService.setData(CHAT_PROMPT_HISTORY_STORAGE_KEY, { prompts: this.history });
         } catch (error) {
-            console.warn('Failed to persist chat prompt history:', error);
+            this.logger.warn('Failed to persist chat prompt history:', error);
         }
     }
 }
