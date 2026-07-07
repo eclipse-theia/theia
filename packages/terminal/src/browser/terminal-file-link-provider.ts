@@ -84,6 +84,14 @@ export class FileLinkProvider implements TerminalLinkProvider {
         if (!path) {
             return;
         }
+        // A '//'-leading match is a URL authority, not a local file: the path regex excludes ':'
+        // but not '/', so a printed URL matches from its '//host/path' remainder. Such a path
+        // cannot form a file URI (no authority component) and is already linkified by the URL link
+        // provider, so skip it rather than let `withPath` throw. The Windows path regex splits the
+        // leading '//' into a single slash during extraction, so the raw match is checked too.
+        if (match.startsWith('//') || path.startsWith('//')) {
+            return;
+        }
         const pathObj = new Path(path);
         return pathObj.isAbsolute ? cwd.withPath(path) : cwd.resolve(path);
     }

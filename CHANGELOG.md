@@ -6,6 +6,7 @@
 
 ## 1.74.0 - tbd
 
+- [terminal] fixed the file link provider logging a `UriError` when a printed URL (e.g. `https://example.com/path`) was matched as a local file candidate; such `//host/path` candidates are now skipped and left to the URL link provider [#17767](https://github.com/eclipse-theia/theia/pull/17767)
 - [ai-anthropic, ai-chat, ai-chat-ui, ai-core, ai-openai] added provider-native server-side compaction for chat sessions, modeled as a model capability (`LanguageModelMetaData.serverSideCompactionSupport`) plus layered activation: a global preference (`ai-features.chat.serverSideCompaction`, default on), a per-provider override, and a per-session override (in the session settings dialog) that wins over both. Honored by the Anthropic Messages API (beta) and the OpenAI Responses API; the compaction marker is persisted in the session, replayed on subsequent requests, surfaced as an inline chat marker, and reflected in the token-usage tooltip (cumulative usage and a "compacted Nx" count). Providers/models without the capability ignore it [#17636](https://github.com/eclipse-theia/theia/issues/17636)
 
 ## 1.73.0 - 6/25/2026
