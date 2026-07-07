@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -88,15 +88,12 @@ export class ChatSessionNotificationContribution implements FrontendApplicationC
     protected handleStatusChanged(session: ChatSession, state: SessionNotificationState, status: ChatSessionStatus): void {
         const nowWaiting = ChatSessionStatus.requiresUserAction(status);
         const nowInProgress = ChatSessionStatus.isInProgress(status);
-        // The status only changes on actual transitions, so switching between the waiting
-        // states (e.g. approval, then a question) does not produce duplicate notifications.
         const startedWaiting = nowWaiting && !state.waiting;
         const completed = !nowInProgress && state.inProgress;
         state.waiting = nowWaiting;
         state.inProgress = nowInProgress;
 
-        // Checked per event rather than in watchSession: the delegation tool assigns
-        // rootSessionId only after the session-created event has already fired.
+        // We do not want to notify for delegated sessions
         if (this.isDelegatedSession(session)) {
             return;
         }
