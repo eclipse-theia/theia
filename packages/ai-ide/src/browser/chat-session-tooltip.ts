@@ -101,7 +101,12 @@ export function buildSessionTooltip(
 
     // Waiting on the user takes precedence over the generic running badge: it signals that the
     // user, not the agent, needs to act.
-    if (ChatSessionStatus.requiresUserAction(status)) {
+    if (status === 'awaitingApproval') {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/requiresApproval', 'Requires your approval');
+        container.appendChild(badge);
+    } else if (status === 'awaitingInput') {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-attention-tooltip';
         badge.textContent = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
