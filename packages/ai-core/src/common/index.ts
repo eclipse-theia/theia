@@ -31,6 +31,7 @@ export * from './protocol';
 export * from './today-variable-contribution';
 export * from './variable-service';
 export * from './settings-service';
+export * from './ai-configuration-service';
 export * from './language-model-service';
 export * from './token-usage-service';
 export * from './ai-variable-resource';

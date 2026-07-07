@@ -23,6 +23,7 @@ export * from './ai-core-frontend-application-contribution';
 export * from './ai-core-frontend-module';
 export * from '../common/ai-core-preferences';
 export * from './ai-settings-service';
+export * from './ai-configuration-service-impl';
 export * from './ai-view-contribution';
 export * from './frontend-language-model-registry';
 export * from './frontend-language-model-alias-registry';
