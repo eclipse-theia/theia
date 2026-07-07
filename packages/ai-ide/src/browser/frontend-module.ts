@@ -125,6 +125,8 @@ import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
 import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
+import { PerspectiveContribution } from '@theia/core/lib/browser/perspective-service';
+import { AIFirstPerspectiveContribution } from './ai-first-perspective-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -350,4 +352,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
+
+    bind(AIFirstPerspectiveContribution).toSelf().inSingletonScope();
+    bind(PerspectiveContribution).toService(AIFirstPerspectiveContribution);
 });

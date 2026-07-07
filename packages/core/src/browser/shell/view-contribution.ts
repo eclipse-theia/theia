@@ -25,6 +25,7 @@ import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-menus';
 import { ApplicationShell } from './application-shell';
 import { QuickViewService } from '../quick-input';
+import { PerspectiveService } from '../perspective-service';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
@@ -60,6 +61,9 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
 
     @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
+
+    @inject(PerspectiveService) @optional()
+    protected readonly perspectiveService: PerspectiveService;
 
     readonly toggleCommand?: Command;
 
@@ -102,8 +106,10 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         const area = shell.getAreaFor(widget);
         if (!tabBar) {
             // The widget is not attached yet, so add it to the shell
+            const perspectiveArea = this.perspectiveService?.getAreaForView(this.options.viewContainerId || this.viewId);
             const widgetArgs: OpenViewArguments = {
                 ...this.defaultViewOptions,
+                ...perspectiveArea ? { area: perspectiveArea } : {},
                 ...args
             };
             await shell.addWidget(widget, widgetArgs);
