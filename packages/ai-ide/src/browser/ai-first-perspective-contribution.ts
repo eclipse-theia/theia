@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core';
-import { PerspectiveContribution, PerspectiveService } from '@theia/core/lib/browser/perspective-service';
+import { PerspectiveContribution, PerspectiveChromeOptions, PerspectiveService } from '@theia/core/lib/browser/perspective-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 
 const CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
@@ -27,6 +27,11 @@ const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 export class AIFirstPerspectiveContribution implements PerspectiveContribution {
 
     registerPerspectives(service: PerspectiveService): void {
+        const chromeOptions: PerspectiveChromeOptions = {
+            hideMenuBar: true,
+            hideStatusBar: true,
+            collapseAreas: ['left', 'bottom']
+        };
         service.registerPerspective({
             id: 'ai-first',
             label: nls.localize('theia/ai-ide/perspective/aiFirst', 'AI First'),
@@ -34,7 +39,8 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
                 [CHAT_VIEW_WIDGET_ID, 'main'],
                 [EXPLORER_VIEW_CONTAINER_ID, 'right'],
                 [SCM_VIEW_CONTAINER_ID, 'right']
-            ])
+            ]),
+            chromeOptions
         });
     }
 }

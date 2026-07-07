@@ -23,12 +23,26 @@ import { CommandContribution, CommandRegistry } from '../common/command';
 import { Emitter, Event } from '../common/event';
 import { QuickInputService, QuickPickItem } from '../common/quick-pick-service';
 import { nls } from '../common/nls';
+import { CorePreferences } from '../common/core-preferences';
+import { PreferenceService } from '../common/preferences';
+import { StatusBarImpl } from './status-bar/status-bar';
+
+export interface PerspectiveChromeOptions {
+    /** Hide the top menu bar. Default: false. */
+    hideMenuBar?: boolean;
+    /** Hide the status bar. Default: false. */
+    hideStatusBar?: boolean;
+    /** Areas to collapse on first activation. User can re-expand freely. */
+    collapseAreas?: ('left' | 'right' | 'bottom')[];
+}
 
 export interface PerspectiveDescriptor {
     id: string;
     label: string;
     /** Widget/view-container ID → target shell area */
     viewPlacements: Map<string, ApplicationShell.Area>;
+    /** Chrome control options for this perspective */
+    chromeOptions?: PerspectiveChromeOptions;
     /** Called when perspective is activated */
     onActivate?(shell: ApplicationShell): void;
     /** Called when switching away */
@@ -61,6 +75,15 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService | undefined;
 
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(StatusBarImpl)
+    protected readonly statusBar: StatusBarImpl;
+
     static readonly DEFAULT_PERSPECTIVE_ID = 'theia-ide';
 
     protected readonly perspectives = new Map<string, PerspectiveDescriptor>();
@@ -83,6 +106,16 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
                 contribution.registerPerspectives(this);
             }
         }
+
+        this.corePreferences.onPreferenceChanged(pref => {
+            if (pref.preferenceName === 'window.menuBarVisibility'
+                || pref.preferenceName === 'workbench.statusBar.visible') {
+                const active = this.getActivePerspective();
+                if (active) {
+                    this.applyChrome(active);
+                }
+            }
+        });
     }
 
     registerPerspective(descriptor: PerspectiveDescriptor): void {
@@ -137,13 +170,35 @@ export class PerspectiveService implements FrontendApplicationContribution, Comm
                     // Ignore activation errors
                 }
             }
+
+            if (descriptor.chromeOptions?.collapseAreas) {
+                for (const area of descriptor.chromeOptions.collapseAreas) {
+                    await this.shell.collapsePanel(area);
+                }
+            }
         }
 
         if (descriptor.onActivate) {
             descriptor.onActivate(this.shell);
         }
 
+        this.applyChrome(descriptor);
+
         this.onDidChangePerspectiveEmitter.fire(id);
+    }
+
+    protected applyChrome(descriptor: PerspectiveDescriptor): void {
+        const perspectiveHidesMenu = descriptor.chromeOptions?.hideMenuBar ?? false;
+        const prefHidesMenu = ['compact', 'hidden'].includes(
+            this.corePreferences['window.menuBarVisibility']
+        );
+        this.shell.topPanel.setHidden(perspectiveHidesMenu || prefHidesMenu);
+
+        const perspectiveHidesStatus = descriptor.chromeOptions?.hideStatusBar ?? false;
+        const prefHidesStatus = !this.preferenceService.get<boolean>(
+            'workbench.statusBar.visible', true
+        );
+        this.statusBar.setHidden(perspectiveHidesStatus || prefHidesStatus);
     }
 
     getActivePerspective(): PerspectiveDescriptor | undefined {
