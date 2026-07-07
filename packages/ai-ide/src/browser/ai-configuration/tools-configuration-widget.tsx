@@ -17,8 +17,8 @@
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { nls, PreferenceService } from '@theia/core';
+import { AiConfigurationService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { nls } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import {
@@ -47,8 +47,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AiConfigurationService)
+    protected readonly aiConfigurationService: AiConfigurationService;
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
@@ -74,18 +74,18 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
         this.loadData().then(() => this.update());
         this.toDispose.pushAll([
-            this.preferenceService.onPreferenceChanged(async e => {
-                if (e.preferenceName === TOOL_CONFIRMATION_PREFERENCE
-                    || e.preferenceName === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
+            this.aiConfigurationService.onDidChange(async e => {
+                if (e.affectsPreference(TOOL_CONFIRMATION_PREFERENCE)
+                    || e.affectsPreference(DEFAULT_TOOL_CONFIRMATION_PREFERENCE)) {
                     this.defaultState = await this.loadDefaultConfirmation();
                     this.toolConfirmationModes = await this.loadToolConfigurationModes();
                     this.update();
                 }
-                if (e.preferenceName === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
+                if (e.affectsPreference(SHELL_COMMAND_ALLOWLIST_PREFERENCE)) {
                     this.allowlistPatterns = this.shellCommandPermissionService.getAllowlistPatterns();
                     this.update();
                 }
-                if (e.preferenceName === SHELL_COMMAND_DENYLIST_PREFERENCE) {
+                if (e.affectsPreference(SHELL_COMMAND_DENYLIST_PREFERENCE)) {
                     this.denylistPatterns = this.shellCommandPermissionService.getDenylistPatterns();
                     this.update();
                 }
@@ -98,6 +98,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected async loadData(): Promise<void> {
+        await this.aiConfigurationService.ready;
         await this.loadItems();
         this.defaultState = await this.loadDefaultConfirmation();
         this.toolConfirmationModes = await this.loadToolConfigurationModes();

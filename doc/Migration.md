@@ -110,7 +110,7 @@ Custom agents are no longer stored in a single `customAgents.yml` per scope. Eac
 **End-user-facing:**
 
 - When an existing `customAgents.yml` is found, Theia asks before migrating it to the new layout: a notification offers **Migrate** or **Don't Show Again**. Nothing is written until you choose **Migrate**, which avoids unexpected file changes (for example in a workspace under version control). Declining is safe: legacy `customAgents.yml` files keep being loaded so agents continue to work, and you are asked again next session until you either migrate or dismiss the prompt for good with **Don't Show Again** (remembered in local storage, not a setting). After a successful migration the `customAgents.yml` is renamed to `customAgents.yml.bak` (never deleted); restoring it is a matter of renaming the `.bak` back by hand. The migration can also be triggered at any time from the command palette via `AI: Re-run custom-agent migration`.
-- Prompts stored as a YAML *folded* block scalar (`prompt: >-`) keep their markdown heading structure: the folded scalar would otherwise merge each heading into the following paragraph (e.g. `## Task Your task is ...`), so migration and runtime loading preserve the original line breaks instead. If an earlier Theia version already migrated such an agent with merged headings, the generated `agent.md` is corrected automatically on the next migration, but only when you have not edited it since (the corrected content is rewritten from `customAgents.yml.bak`; user-modified files are left untouched).
+- Prompts stored as a YAML _folded_ block scalar (`prompt: >-`) keep their markdown heading structure: the folded scalar would otherwise merge each heading into the following paragraph (e.g. `## Task Your task is ...`), so migration and runtime loading preserve the original line breaks instead. If an earlier Theia version already migrated such an agent with merged headings, the generated `agent.md` is corrected automatically on the next migration, but only when you have not edited it since (the corrected content is rewritten from `customAgents.yml.bak`; user-modified files are left untouched).
 - The default prompt-override file created by "Edit prompt" changed from `<agent-name>_prompt.prompttemplate` to `prompt.prompttemplate` inside the agent folder. Existing sibling `<agent-name>_prompt*.prompttemplate` files are moved into the agent folder during migration.
 
 **Adopter-facing:**
@@ -129,6 +129,15 @@ Custom agents are now scanned from both the `.agents/` and `.prompts/` folders o
 **Adopter-facing:**
 
 - `PromptFragmentCustomizationProperties` gained an optional `agentDirectoryPaths` field carrying the absolute parent directories scanned for custom agents. The `.agents`/`.prompts` parents are exported as `CUSTOM_AGENT_WORKSPACE_DIRECTORIES`.
+
+#### `AiConfigurationService` for reading/writing AI preferences
+
+A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `PreferenceService` for `ai-features.*` preferences and is the intended extension point for reading/writing AI configuration.
+
+**Adopter-facing:**
+
+- Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
+- **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
 
 ### v1.70.0
 

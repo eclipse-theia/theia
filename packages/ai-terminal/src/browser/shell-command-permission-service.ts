@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/common';
+import { AiConfigurationService } from '@theia/ai-core';
 import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
 import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
@@ -41,8 +41,8 @@ export interface CommandAnalysis {
 @injectable()
 export class ShellCommandPermissionService {
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AiConfigurationService)
+    protected readonly aiConfigurationService: AiConfigurationService;
 
     @inject(ShellCommandAnalyzer)
     protected readonly shellCommandAnalyzer: ShellCommandAnalyzer;
@@ -147,7 +147,7 @@ export class ShellCommandPermissionService {
     }
 
     getAllowlistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []);
+        return this.aiConfigurationService.get<string[]>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []) ?? [];
     }
 
     /**
@@ -164,7 +164,7 @@ export class ShellCommandPermissionService {
     }
 
     getDenylistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_DENYLIST_PREFERENCE, []);
+        return this.aiConfigurationService.get<string[]>(SHELL_COMMAND_DENYLIST_PREFERENCE, []) ?? [];
     }
 
     /**
@@ -204,7 +204,7 @@ export class ShellCommandPermissionService {
         const currentPatterns = getCurrentPatterns();
         const newPatterns = validated.filter(p => !currentPatterns.includes(p));
         if (newPatterns.length > 0) {
-            this.preferenceService.updateValue(
+            this.aiConfigurationService.update(
                 preferenceKey,
                 [...currentPatterns, ...newPatterns]
             );
@@ -215,7 +215,7 @@ export class ShellCommandPermissionService {
         const currentPatterns = getCurrentPatterns();
         const filtered = currentPatterns.filter(p => p !== pattern);
         if (filtered.length !== currentPatterns.length) {
-            this.preferenceService.updateValue(
+            this.aiConfigurationService.update(
                 preferenceKey,
                 filtered
             );
