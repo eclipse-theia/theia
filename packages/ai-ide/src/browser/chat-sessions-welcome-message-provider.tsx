@@ -329,18 +329,14 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         const activeIds = new Set(activeRaw.map(s => s.id));
         const active: ChatSessionMetadata[] = activeRaw
             .toSorted((a, b) => (b.lastInteraction?.getTime() ?? 0) - (a.lastInteraction?.getTime() ?? 0))
-            .map(session => {
-                const lastReq = session.model.getRequests().at(-1);
-                const hasError = lastReq?.response.isComplete === true && lastReq?.response.isError === true;
-                return {
-                    sessionId: session.id,
-                    title: session.title!,
-                    saveDate: session.lastInteraction?.getTime() ?? Date.now(),
-                    location: session.model.location,
-                    pinnedAgentId: session.pinnedAgent?.id,
-                    hasError
-                };
-            });
+            .map(session => ({
+                sessionId: session.id,
+                title: session.title!,
+                saveDate: session.lastInteraction?.getTime() ?? Date.now(),
+                location: session.model.location,
+                pinnedAgentId: session.pinnedAgent?.id,
+                hasError: session.model.status === 'failed'
+            }));
         const restored = this._persistedSessions.filter(metadata => !activeIds.has(metadata.sessionId));
         return { active, restored };
     }

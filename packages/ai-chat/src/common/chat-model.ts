@@ -82,7 +82,8 @@ export type ChatChangeEvent =
     | ChatEditSubmitEvent
     | ChatResponseChangedEvent
     | ChatChangeHierarchyBranchEvent
-    | ChatInteractionNeededEvent;
+    | ChatInteractionNeededEvent
+    | ChatSessionStatusChangedEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -144,12 +145,20 @@ export interface ChatInteractionNeededEvent {
     contentPart: InteractiveContent & ChatResponseContent;
 }
 
+export interface ChatSessionStatusChangedEvent {
+    kind: 'statusChanged';
+    status: ChatSessionStatus;
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
     }
     export function isInteractionNeededEvent(event: ChatChangeEvent): event is ChatInteractionNeededEvent {
         return event.kind === 'interactionNeeded';
+    }
+    export function isStatusChangedEvent(event: ChatChangeEvent): event is ChatSessionStatusChangedEvent {
+        return event.kind === 'statusChanged';
     }
 }
 
@@ -247,6 +256,69 @@ export interface ChatSessionSettings {
     [key: string]: unknown;
 }
 
+/**
+ * Aggregated, observable status of a chat session, derived from the state of the session's last request.
+ */
+export type ChatSessionStatus =
+    /** No request is in progress. The last request, if any, completed successfully or was canceled. */
+    | 'idle'
+    /** A request is in progress. */
+    | 'running'
+    /** A tool call requires user confirmation before it can be executed. */
+    | 'awaitingApproval'
+    /** An approved or confirmation-free tool call is still executing. */
+    | 'awaitingToolCall'
+    /** The agent is waiting for user input, e.g. an answer to a structured question. */
+    | 'awaitingInput'
+    /** The last request ended in an error. */
+    | 'failed';
+
+export namespace ChatSessionStatus {
+    /**
+     * Whether a request is in progress in this status, including the states waiting on the user or a tool.
+     */
+    export function isInProgress(status: ChatSessionStatus): boolean {
+        return status !== 'idle' && status !== 'failed';
+    }
+
+    /**
+     * Whether the session is blocked on the user, i.e. a tool approval or another input is required to proceed.
+     */
+    export function requiresUserAction(status: ChatSessionStatus): boolean {
+        return status === 'awaitingApproval' || status === 'awaitingInput';
+    }
+
+    /**
+     * Derives the session status from the state of the given request (usually the session's last request).
+     */
+    export function fromRequest(request: ChatRequestModel | undefined): ChatSessionStatus {
+        if (!request) {
+            return 'idle';
+        }
+        const response = request.response;
+        if (response.isError) {
+            return 'failed';
+        }
+        if (!ChatRequestModel.isInProgress(request)) {
+            return 'idle';
+        }
+        const content = response.response.content;
+        if (content.some(part => ToolCallChatResponseContent.is(part) && part.isAwaitingUserConfirmation)) {
+            return 'awaitingApproval';
+        }
+        // Unresolved non-tool-call interactive parts are structured questions (tool calls are
+        // "unresolved" while merely executing). The waiting-for-input flag additionally covers
+        // inputs without a dedicated content part, e.g. the user-interaction tool's wizard.
+        if (response.isWaitingForInput || content.some(part => !ToolCallChatResponseContent.is(part) && InteractiveContent.is(part) && !part.isResolved)) {
+            return 'awaitingInput';
+        }
+        if (content.some(part => ToolCallChatResponseContent.is(part) && !part.finished)) {
+            return 'awaitingToolCall';
+        }
+        return 'running';
+    }
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
@@ -255,6 +327,11 @@ export interface ChatModel {
     readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
+    /**
+     * Aggregated status of this session, derived from the state of its last request.
+     * Changes are announced via {@link onDidChange} with a {@link ChatSessionStatusChangedEvent}.
+     */
+    readonly status: ChatSessionStatus;
     /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
     rootSessionId?: string;
     getRequests(): ChatRequestModel[];
@@ -591,6 +668,11 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     confirmed: Promise<boolean>;
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
+    /**
+     * Whether the tool call is currently awaiting the user's confirmation decision, i.e.
+     * {@link requestUserConfirmation} was called and the user has neither confirmed nor denied it yet.
+     */
+    readonly isAwaitingUserConfirmation: boolean;
     whenFinished: Promise<void>;
     /**
      * Provider-specific metadata about the tool call that the language model needs back on
@@ -1051,6 +1133,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _changeSet: ChatTreeChangeSet;
     protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
+    protected _status: ChatSessionStatus = 'idle';
     rootSessionId?: string;
 
     get location(): ChatAgentLocation {
@@ -1082,7 +1165,14 @@ export class MutableChatModel implements ChatModel, Disposable {
                     branch: event.branch,
                 });
             }),
+            // Re-derive the aggregated session status whenever anything in the model changes.
+            this.onDidChange(event => {
+                if (!ChatChangeEvent.isStatusChangedEvent(event)) {
+                    this.updateStatus();
+                }
+            }),
         ]);
+        this._status = this.computeStatus();
     }
 
     /**
@@ -1158,6 +1248,22 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     get suggestions(): readonly ChatSuggestion[] {
         return this._suggestions;
+    }
+
+    get status(): ChatSessionStatus {
+        return this._status;
+    }
+
+    protected computeStatus(): ChatSessionStatus {
+        return ChatSessionStatus.fromRequest(this.getRequests().at(-1));
+    }
+
+    protected updateStatus(): void {
+        const status = this.computeStatus();
+        if (status !== this._status) {
+            this._status = status;
+            this._onDidChangeEmitter.fire({ kind: 'statusChanged', status });
+        }
     }
 
     get context(): ChatContextManager {
@@ -2442,6 +2548,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _confirmationTimeout?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
+    protected _isAwaitingUserConfirmation = false;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2519,6 +2626,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._needsUserConfirmation;
     }
 
+    get isAwaitingUserConfirmation(): boolean {
+        return this._isAwaitingUserConfirmation && !this.finished;
+    }
+
     get whenFinished(): Promise<void> {
         return this._whenFinished;
     }
@@ -2553,12 +2664,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
      * Confirm the tool execution
      */
     confirm(): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationResolver) {
             this._confirmationResolver(true);
         }
     }
 
     deny(reason?: string): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationResolver) {
             this._finished = true;
             this._result = { denied: true, reason };
@@ -2568,6 +2681,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     requestUserConfirmation(): void {
+        this._isAwaitingUserConfirmation = true;
         if (this._needsUserConfirmationResolver) {
             this._needsUserConfirmationResolver();
             this._needsUserConfirmationResolver = undefined;
@@ -2580,6 +2694,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     cancelConfirmation(reason?: unknown): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
         }
