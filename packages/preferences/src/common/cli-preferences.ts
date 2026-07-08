@@ -19,4 +19,5 @@ export const CliPreferencesPath = '/services/cli-preferences';
 
 export interface CliPreferences {
     getPreferences(): Promise<[string, unknown][]>;
+    getSessionPreferences(): Promise<[string, unknown][]>;
 }

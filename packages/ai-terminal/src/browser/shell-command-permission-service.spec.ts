@@ -18,12 +18,12 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ShellCommandPermissionService } from './shell-command-permission-service';
 import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
-import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { AiConfigurationService } from '@theia/ai-core';
 import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
 describe('ShellCommandPermissionService', () => {
     let service: ShellCommandPermissionService;
-    let preferenceServiceMock: sinon.SinonStubbedInstance<PreferenceService>;
+    let aiConfigurationServiceMock: sinon.SinonStubbedInstance<AiConfigurationService>;
     let storedPatterns: string[];
     let storedDenylistPatterns: string[];
 
@@ -31,7 +31,7 @@ describe('ShellCommandPermissionService', () => {
         storedPatterns = [];
         storedDenylistPatterns = [];
 
-        preferenceServiceMock = {
+        aiConfigurationServiceMock = {
             get: sinon.stub().callsFake((key: string, defaultValue: string[]) => {
                 if (key === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
                     return storedPatterns;
@@ -41,7 +41,7 @@ describe('ShellCommandPermissionService', () => {
                 }
                 return defaultValue;
             }),
-            updateValue: sinon.stub().callsFake((key: string, value: string[]) => {
+            update: sinon.stub().callsFake((key: string, value: string[]) => {
                 if (key === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
                     storedPatterns = value;
                 } else if (key === SHELL_COMMAND_DENYLIST_PREFERENCE) {
@@ -49,10 +49,10 @@ describe('ShellCommandPermissionService', () => {
                 }
                 return Promise.resolve();
             })
-        } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
+        } as unknown as sinon.SinonStubbedInstance<AiConfigurationService>;
 
         service = new ShellCommandPermissionService();
-        (service as unknown as { preferenceService: PreferenceService }).preferenceService = preferenceServiceMock;
+        (service as unknown as { aiConfigurationService: AiConfigurationService }).aiConfigurationService = aiConfigurationServiceMock;
         (service as unknown as { shellCommandAnalyzer: ShellCommandAnalyzer }).shellCommandAnalyzer = new DefaultShellCommandAnalyzer();
     });
 
@@ -91,7 +91,7 @@ describe('ShellCommandPermissionService', () => {
             it('does not add duplicate pattern', () => {
                 storedPatterns = ['git log'];
                 service.addAllowlistPatterns('git log');
-                expect(preferenceServiceMock.updateValue.called).to.be.false;
+                expect(aiConfigurationServiceMock.update.called).to.be.false;
             });
         });
 
@@ -412,7 +412,7 @@ describe('ShellCommandPermissionService', () => {
         it('adds multiple patterns in a single update', () => {
             service.addAllowlistPatterns('find *', 'head *');
             expect(storedPatterns).to.deep.equal(['find *', 'head *']);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
         });
 
         it('skips patterns already in the allowlist', () => {
@@ -424,7 +424,7 @@ describe('ShellCommandPermissionService', () => {
         it('does not call updateValue when all patterns already exist', () => {
             storedPatterns = ['find *', 'head *'];
             service.addAllowlistPatterns('find *', 'head *');
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
 
         it('validates all patterns before adding', () => {
@@ -439,7 +439,7 @@ describe('ShellCommandPermissionService', () => {
 
         it('handles no arguments without calling updateValue', () => {
             service.addAllowlistPatterns();
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
     });
 
@@ -447,14 +447,14 @@ describe('ShellCommandPermissionService', () => {
         it('removes existing pattern', () => {
             storedPatterns = ['git log', 'npm test'];
             service.removeAllowlistPattern('git log');
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPatterns).to.deep.equal(['npm test']);
         });
 
         it('does not call updateValue when pattern does not exist', () => {
             storedPatterns = ['git log'];
             service.removeAllowlistPattern('npm test');
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
     });
 
@@ -528,7 +528,7 @@ describe('ShellCommandPermissionService', () => {
             it('adds multiple patterns in a single update', () => {
                 service.addDenylistPatterns('git push *', 'rm -rf /');
                 expect(storedDenylistPatterns).to.deep.equal(['git push *', 'rm -rf /']);
-                expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+                expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             });
 
             it('skips patterns already in the denylist', () => {
@@ -540,7 +540,7 @@ describe('ShellCommandPermissionService', () => {
             it('does not call updateValue when all patterns already exist', () => {
                 storedDenylistPatterns = ['git push *', 'rm -rf /'];
                 service.addDenylistPatterns('git push *', 'rm -rf /');
-                expect(preferenceServiceMock.updateValue.called).to.be.false;
+                expect(aiConfigurationServiceMock.update.called).to.be.false;
             });
 
             it('validates all patterns before adding', () => {
@@ -555,7 +555,7 @@ describe('ShellCommandPermissionService', () => {
 
             it('handles no arguments without calling updateValue', () => {
                 service.addDenylistPatterns();
-                expect(preferenceServiceMock.updateValue.called).to.be.false;
+                expect(aiConfigurationServiceMock.update.called).to.be.false;
             });
         });
 

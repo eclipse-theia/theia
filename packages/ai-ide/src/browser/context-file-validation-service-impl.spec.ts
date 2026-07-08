@@ -28,7 +28,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ContextFileValidationService, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 disableJSDOM();
@@ -113,11 +113,11 @@ describe('ContextFileValidationService', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue({
+        container.bind(AiConfigurationService).toConstantValue({
             get: <T>(_name: string, fallback?: T) => fallback,
             ready: Promise.resolve(),
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader);
+        } as unknown as AiConfigurationService);
         container.bind(EnvVariablesServer).toConstantValue({
             getHomeDirUri: async () => 'file:///home/user',
             getExecPath: async () => '',

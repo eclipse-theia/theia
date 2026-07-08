@@ -13,8 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken, Disposable, OS, PreferenceService, URI, Path, ILogger } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
@@ -54,8 +53,8 @@ export class WorkspaceFunctionScope {
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
 
-    @inject(TrustAwarePreferenceReader)
-    protected readonly trustAwarePreferences: TrustAwarePreferenceReader;
+    @inject(AiConfigurationService)
+    protected readonly aiConfiguration: AiConfigurationService;
 
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
@@ -382,15 +381,15 @@ export class WorkspaceFunctionScope {
 
     /**
      * Resolves the configured external allow-list to URIs. Reads via the
-     * trust-aware preference reader so workspace-scoped overrides are dropped
-     * when the workspace is untrusted. Awaits the reader's `ready` promise so
-     * that the trust state is resolved before the first preference read.
+     * trust-aware {@link AiConfigurationService} so workspace-scoped overrides are
+     * dropped when the workspace is untrusted. Awaits the service's `ready` promise
+     * so that the trust state is resolved before the first preference read.
      * Non-string entries, blanks, and entries that don't parse to a `file://`
      * URI are filtered out; URIs are returned in normalized form.
      */
     async getAllowedExternalUris(resourceUri?: string): Promise<URI[]> {
-        await this.trustAwarePreferences.ready;
-        const raw = this.trustAwarePreferences.get<string[]>(ALLOWED_EXTERNAL_PATHS_PREF, [], resourceUri) ?? [];
+        await this.aiConfiguration.ready;
+        const raw = this.aiConfiguration.get<string[]>(ALLOWED_EXTERNAL_PATHS_PREF, [], resourceUri) ?? [];
         const result: URI[] = [];
         for (const entry of raw) {
             if (typeof entry !== 'string') {

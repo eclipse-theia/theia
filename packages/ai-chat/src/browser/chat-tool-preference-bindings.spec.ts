@@ -23,9 +23,7 @@ import {
     TOOL_CONFIRMATION_PREFERENCE,
     ToolConfirmationMode
 } from '../common/chat-tool-preferences';
-import { ToolRequest } from '@theia/ai-core';
-import { PreferenceService } from '@theia/core/lib/common/preferences';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
 
 interface InspectResult<T> {
     defaultValue?: T;
@@ -35,8 +33,7 @@ interface InspectResult<T> {
 
 describe('ToolConfirmationManager', () => {
     let manager: ToolConfirmationManager;
-    let preferenceServiceMock: sinon.SinonStubbedInstance<PreferenceService>;
-    let trustAwareReaderMock: sinon.SinonStubbedInstance<TrustAwarePreferenceReader>;
+    let aiConfigurationServiceMock: sinon.SinonStubbedInstance<AiConfigurationService>;
     let storedPerToolPreferences: { [toolId: string]: ToolConfirmationMode };
     let storedDefaultMode: ToolConfirmationMode | undefined;
     let trusted: boolean;
@@ -58,27 +55,9 @@ describe('ToolConfirmationManager', () => {
         perToolInspectResult = undefined;
         defaultInspectResult = undefined;
 
-        preferenceServiceMock = {
-            updateValue: sinon.stub().callsFake((key: string, value: unknown) => {
-                if (key === TOOL_CONFIRMATION_PREFERENCE) {
-                    storedPerToolPreferences = value as { [toolId: string]: ToolConfirmationMode };
-                } else if (key === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
-                    storedDefaultMode = value as ToolConfirmationMode;
-                }
-                return Promise.resolve();
-            }),
-            inspect: sinon.stub().callsFake((name: string) => {
-                if (name === TOOL_CONFIRMATION_PREFERENCE) {
-                    return perToolInspectResult;
-                }
-                if (name === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
-                    return defaultInspectResult;
-                }
-                return undefined;
-            })
-        } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
-
-        trustAwareReaderMock = {
+        // The manager talks only to AiConfigurationService. `get` mirrors the trust-aware read
+        // semantics, `update` the smart write, and `inspect` exposes schema defaults.
+        aiConfigurationServiceMock = {
             get: sinon.stub().callsFake(<T>(name: string, fallback?: T): T | undefined => {
                 if (name === TOOL_CONFIRMATION_PREFERENCE) {
                     if (trusted) {
@@ -95,13 +74,29 @@ describe('ToolConfirmationManager', () => {
                     return ((value as unknown as T) ?? fallback);
                 }
                 return fallback;
+            }),
+            update: sinon.stub().callsFake((key: string, value: unknown) => {
+                if (key === TOOL_CONFIRMATION_PREFERENCE) {
+                    storedPerToolPreferences = value as { [toolId: string]: ToolConfirmationMode };
+                } else if (key === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
+                    storedDefaultMode = value as ToolConfirmationMode;
+                }
+                return Promise.resolve();
+            }),
+            inspect: sinon.stub().callsFake((name: string) => {
+                if (name === TOOL_CONFIRMATION_PREFERENCE) {
+                    return perToolInspectResult;
+                }
+                if (name === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
+                    return defaultInspectResult;
+                }
+                return undefined;
             })
-        } as unknown as sinon.SinonStubbedInstance<TrustAwarePreferenceReader>;
+        } as unknown as sinon.SinonStubbedInstance<AiConfigurationService>;
 
         const container = new Container();
         container.bind(ToolConfirmationManager).toSelf().inSingletonScope();
-        container.bind(PreferenceService).toConstantValue(preferenceServiceMock as unknown as PreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReaderMock as unknown as TrustAwarePreferenceReader);
+        container.bind(AiConfigurationService).toConstantValue(aiConfigurationServiceMock as unknown as AiConfigurationService);
         manager = container.get(ToolConfirmationManager);
     });
 
@@ -124,9 +119,9 @@ describe('ToolConfirmationManager', () => {
     describe('setDefaultConfirmationMode', () => {
         it('persists the new default through the preference service', () => {
             manager.setDefaultConfirmationMode(ToolConfirmationMode.ALWAYS_ALLOW);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
-            expect(preferenceServiceMock.updateValue.firstCall.args[0]).to.equal(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
-            expect(preferenceServiceMock.updateValue.firstCall.args[1]).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.firstCall.args[0]).to.equal(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
+            expect(aiConfigurationServiceMock.update.firstCall.args[1]).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
             expect(storedDefaultMode).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
         });
     });
@@ -223,31 +218,31 @@ describe('ToolConfirmationManager', () => {
     describe('setConfirmationMode', () => {
         it('persists ALWAYS_ALLOW for a regular tool when default is CONFIRM', () => {
             manager.setConfirmationMode('regularTool', ToolConfirmationMode.ALWAYS_ALLOW);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['regularTool']).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
         });
 
         it('persists ALWAYS_ALLOW for confirmAlwaysAllow tools', () => {
             const toolRequest = createToolRequest('dangerousTool', true);
             manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['dangerousTool']).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
         });
 
         it('does not persist when mode matches the global default', () => {
             storedDefaultMode = ToolConfirmationMode.ALWAYS_ALLOW;
             manager.setConfirmationMode('regularTool', ToolConfirmationMode.ALWAYS_ALLOW);
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
 
         it('does not persist CONFIRM for a regular tool when default is CONFIRM', () => {
             manager.setConfirmationMode('regularTool', ToolConfirmationMode.CONFIRM);
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
 
         it('persists DISABLED when default is CONFIRM', () => {
             manager.setConfirmationMode('regularTool', ToolConfirmationMode.DISABLED);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['regularTool']).to.equal(ToolConfirmationMode.DISABLED);
         });
 
@@ -256,7 +251,7 @@ describe('ToolConfirmationManager', () => {
                 defaultValue: { 'myTool': ToolConfirmationMode.DISABLED }
             };
             manager.setConfirmationMode('myTool', ToolConfirmationMode.DISABLED);
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
 
         it('removes an existing entry when mode matches the tool-specific schema default', () => {
@@ -265,14 +260,14 @@ describe('ToolConfirmationManager', () => {
             };
             storedPerToolPreferences['myTool'] = ToolConfirmationMode.ALWAYS_ALLOW;
             manager.setConfirmationMode('myTool', ToolConfirmationMode.DISABLED);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['myTool']).to.be.undefined;
         });
 
         it('does not persist CONFIRM for confirmAlwaysAllow tools (matches effective default)', () => {
             const toolRequest = createToolRequest('dangerousTool', true);
             manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.CONFIRM, toolRequest);
-            expect(preferenceServiceMock.updateValue.called).to.be.false;
+            expect(aiConfigurationServiceMock.update.called).to.be.false;
         });
 
         it('persists ALWAYS_ALLOW for a confirmAlwaysAllow tool when global default is ALWAYS_ALLOW', () => {
@@ -281,7 +276,7 @@ describe('ToolConfirmationManager', () => {
             storedDefaultMode = ToolConfirmationMode.ALWAYS_ALLOW;
             const toolRequest = createToolRequest('dangerousTool', true);
             manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['dangerousTool']).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
         });
 
@@ -289,13 +284,13 @@ describe('ToolConfirmationManager', () => {
             const toolRequest = createToolRequest('dangerousTool', true);
             storedPerToolPreferences['dangerousTool'] = ToolConfirmationMode.ALWAYS_ALLOW;
             manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.CONFIRM, toolRequest);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['dangerousTool']).to.be.undefined;
         });
 
         it('persists DISABLED for any tool when default is CONFIRM', () => {
             manager.setConfirmationMode('anyTool', ToolConfirmationMode.DISABLED);
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['anyTool']).to.equal(ToolConfirmationMode.DISABLED);
         });
     });
@@ -362,9 +357,9 @@ describe('ToolConfirmationManager', () => {
 
             manager.resetAllConfirmationModeSettings();
 
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
-            expect(preferenceServiceMock.updateValue.firstCall.args[0]).to.equal(TOOL_CONFIRMATION_PREFERENCE);
-            expect(preferenceServiceMock.updateValue.firstCall.args[1]).to.deep.equal({});
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.firstCall.args[0]).to.equal(TOOL_CONFIRMATION_PREFERENCE);
+            expect(aiConfigurationServiceMock.update.firstCall.args[1]).to.deep.equal({});
         });
 
         it('does not modify the default-confirmation preference', () => {
@@ -386,7 +381,7 @@ describe('ToolConfirmationManager', () => {
 
             manager.setConfirmationMode('shellExecute', ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
 
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['shellExecute']).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
 
             mode = manager.getConfirmationMode('shellExecute', 'chat-1', toolRequest);
@@ -398,7 +393,7 @@ describe('ToolConfirmationManager', () => {
 
             manager.setConfirmationMode('shellExecute', ToolConfirmationMode.DISABLED, toolRequest);
 
-            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(aiConfigurationServiceMock.update.calledOnce).to.be.true;
             expect(storedPerToolPreferences['shellExecute']).to.equal(ToolConfirmationMode.DISABLED);
 
             const mode = manager.getConfirmationMode('shellExecute', 'chat-1', toolRequest);
