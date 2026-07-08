@@ -277,9 +277,20 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected override async afterLoadContributions(toDisconnect: DisposableCollection): Promise<void> {
-        await this.viewRegistry.initWidgets();
-        // remove restored plugin widgets which were not registered by contributions
-        this.viewRegistry.removeStaleWidgets();
+        // Defer view initialization until the layout has been restored: initWidgets/removeStaleWidgets
+        // must not run while the ShellLayoutRestorer still holds restored plugin view widgets, otherwise
+        // removeStaleWidgets can dispose a restored view container mid-restore and abort the whole
+        // layout restoration (see https://github.com/eclipse-theia/theia/issues/17770).
+        // Deliberately not awaited: startPlugins runs after this hook and may register file system
+        // providers the layout restoration depends on (see beforeLoadContributions).
+        this.appState.reachedState('initialized_layout').then(async () => {
+            if (toDisconnect.disposed) {
+                return;
+            }
+            await this.viewRegistry.initWidgets();
+            // remove restored plugin widgets which were not registered by contributions
+            this.viewRegistry.removeStaleWidgets();
+        });
         this.workspaceTrustService.refreshRestrictedModeIndicator();
     }
 
