@@ -48,7 +48,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         }
         try {
             await server.stop();
-            console.log(`MCP server "${serverName}" stopped.`);
+            this.logger.info(`MCP server "${serverName}" stopped.`);
         } finally {
             this.notifyClients();
         }

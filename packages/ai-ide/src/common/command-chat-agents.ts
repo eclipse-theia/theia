@@ -50,7 +50,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     protected messageService: MessageService;
 
     @inject(ILogger) @named('ai-ide:CommandChatAgent')
-    protected readonly logger: ILogger;
+    protected override readonly logger: ILogger;
 
     id: string = 'Command';
     name = 'Command';
@@ -107,7 +107,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         if (parsedCommand.type === 'theia-command') {
             const theiaCommand = this.commandRegistry.getCommand(parsedCommand.commandId);
             if (theiaCommand === undefined) {
-                console.error(`No Theia Command with id ${parsedCommand.commandId}`);
+                this.logger.error(`No Theia Command with id ${parsedCommand.commandId}`);
                 request.cancel();
             }
             const args = parsedCommand.arguments !== undefined &&

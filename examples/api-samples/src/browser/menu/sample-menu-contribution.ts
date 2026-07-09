@@ -97,7 +97,7 @@ export class SampleCommandContribution implements CommandContribution {
                 const pick = this.quickInputService.createQuickPick();
                 pick.items = [{ label: '1' }, { label: '2' }, { label: '3' }];
                 pick.onDidAccept(() => {
-                    this.logger.info(`accepted: ${pick.selectedItems[0]?.label}`);
+                    this.logger.debug(`accepted: ${pick.selectedItems[0]?.label}`);
                     pick.hide();
                 });
                 pick.show();

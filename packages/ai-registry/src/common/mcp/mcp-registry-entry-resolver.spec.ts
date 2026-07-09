@@ -18,9 +18,16 @@ import { expect } from 'chai';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
 import { RegistryMCPServer } from './mcp-registry-types';
+import { ILogger } from '@theia/core';
 
 function createResolver(toolName: string = 'theia-ide'): MCPRegistryEntryResolver {
     const resolver = new MCPRegistryEntryResolverImpl();
+    (resolver as unknown as { logger: ILogger }).logger = {
+        warn: (...args: unknown[]) => console.warn(...args),
+        error: (...args: unknown[]) => console.error(...args),
+        info: (...args: unknown[]) => console.info(...args),
+        debug: (...args: unknown[]) => console.debug(...args)
+    } as unknown as ILogger;
     const configuration: AIRegistryConfiguration = Object.assign(new AIRegistryConfiguration(), {
         getToolName(): string {
             return toolName;

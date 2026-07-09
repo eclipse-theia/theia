@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
+import { CancellationTokenSource, ILogger } from '@theia/core';
 import {
     SuggestFileContent,
     WriteFileContent,
@@ -103,6 +103,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         } as ChangeSetFileElement);
 
         // Register mocks in the container
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);

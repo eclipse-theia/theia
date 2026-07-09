@@ -28,8 +28,7 @@ import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataSto
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
-import { ILogger } from '@theia/core/lib/common/logger';
-import { URI, Emitter } from '@theia/core';
+import { URI, Emitter, ILogger } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
 import {
@@ -154,7 +153,7 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(WorkspaceMetadataStorageService).toConstantValue(mockMetadataStorageService as unknown as WorkspaceMetadataStorageService);
         container.bind(StorageService).toConstantValue(mockStorageService);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
-        container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
+        container.bind(ILogger).toConstantValue(mockLogger);
 
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 

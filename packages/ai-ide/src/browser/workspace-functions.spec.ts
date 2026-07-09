@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource, OS, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, OS, PreferenceService, ILogger } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
@@ -164,6 +164,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         } as unknown as MonacoTextModelService;
 
         // Register mocks in the container
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -289,6 +290,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
             getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -407,6 +409,7 @@ describe('FileContentFunction handler', () => {
             getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -772,6 +775,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
             get: <T>(_path: string, defaultValue: T) => defaultValue
         };
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -855,6 +859,7 @@ describe('FindFilesByPattern.findFiles', () => {
 
         fileSearchService = makeFileSearchService(async () => searchResults);
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -992,6 +997,7 @@ describe('WorkspaceFunctionScope gitignore caching', () => {
                 (path === 'ai-features.workspaceFunctions.considerGitIgnore' ? (true as unknown as T) : defaultValue)
         };
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1061,6 +1067,7 @@ describe('GetWorkspaceFileList resolves the target directory once', () => {
 
         const mockPreferenceService = { get: <T>(_path: string, def: T) => def };
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1124,6 +1131,7 @@ describe('GetWorkspaceDirectoryStructure preserves empty folders', () => {
                 (path === 'ai-features.workspaceFunctions.userExcludes' ? (['node_modules'] as unknown as T) : def)
         };
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1195,6 +1203,7 @@ describe('FileContentFunction external paths', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1363,6 +1372,7 @@ describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external pa
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1453,6 +1463,7 @@ describe('FindFilesByPattern with searchRoot', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1548,6 +1559,7 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1714,6 +1726,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
 
     beforeEach(() => {
         container = new Container();
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
     });
 
     describe('getRootMapping', () => {
@@ -2068,6 +2081,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
+            container2.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
             container2.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceB);
             container2.bind(FileService).toConstantValue({} as FileService);
             container2.bind(PreferenceService).toConstantValue({ get: () => false });

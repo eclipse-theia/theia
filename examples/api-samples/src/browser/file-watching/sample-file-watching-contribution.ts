@@ -18,7 +18,6 @@ import { postConstruct, injectable, inject, interfaces, named } from '@theia/cor
 import {
     FrontendApplicationContribution, LabelProvider,
 } from '@theia/core/lib/browser';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution, ILogger } from '@theia/core';

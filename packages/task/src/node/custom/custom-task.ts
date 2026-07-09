@@ -40,7 +40,7 @@ export class CustomTask extends Task {
         @inject(TaskCustomOptions) protected override readonly options: TaskCustomOptions
     ) {
         super(taskManager, logger, options);
-        this.logger.debug(`Created new custom task, id: ${this.id}, context: ${this.context}`);
+        this.logger.info(`Created new custom task, id: ${this.id}, context: ${this.context}`);
     }
 
     kill(): Promise<void> {

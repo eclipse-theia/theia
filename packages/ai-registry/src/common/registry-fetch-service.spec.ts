@@ -21,6 +21,8 @@ import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class FakeRequestService implements RequestService {
     public lastUrl: string | undefined;
@@ -86,6 +88,7 @@ describe('RegistryFetchService', () => {
         const container = new Container();
         container.bind(BackendRequestService).toConstantValue(requestService);
         container.bind(AIRegistryConfiguration).toConstantValue(config);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
         container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
         container.bind(SkillRegistryEntryResolverImpl).toSelf().inSingletonScope();
@@ -98,7 +101,7 @@ describe('RegistryFetchService', () => {
     it('fetches the per-tool JSON from <baseUrl>/tools/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
@@ -119,7 +122,7 @@ describe('RegistryFetchService', () => {
     it('fetches the aggregate registry from <baseUrl>/all.json for the default "all" tool', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('all', 'https://example.test/api/v1/');
-        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
 
@@ -129,7 +132,7 @@ describe('RegistryFetchService', () => {
     it('fetches and resolves skill entries from the same per-tool JSON', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         const skills = await service.getSkillEntries();
 
@@ -146,7 +149,8 @@ describe('RegistryFetchService', () => {
 
     it('shares a single HTTP request between MCP and skill slices', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getSkillEntries();
@@ -156,7 +160,8 @@ describe('RegistryFetchService', () => {
 
     it('serves cached entries on a second call without issuing a new request', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries();
@@ -166,7 +171,8 @@ describe('RegistryFetchService', () => {
 
     it('refetches when forceRefresh is true', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries(true);
@@ -176,7 +182,8 @@ describe('RegistryFetchService', () => {
 
     it('throws a descriptive error when the server returns a non-success status', async () => {
         const request = new FakeRequestService('', 404);
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
 
         let caught: Error | undefined;
         try {

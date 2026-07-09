@@ -37,7 +37,7 @@ export class ResolveMcpFrontendContribution
             name: 'github',
             serverUrl: 'https://api.githubcopilot.com/mcp/',
             resolve: async serverDescription => {
-                this.logger.info('Resolving GitHub MCP server description');
+                this.logger.debug('Resolving GitHub MCP server description');
 
                 // Prompt user for authentication token
                 const authToken = await this.quickInputService.input({

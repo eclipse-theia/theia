@@ -31,6 +31,8 @@ import { URI } from '@theia/core/lib/common/uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -71,6 +73,8 @@ describe('UserInteractionTool', () => {
 
     beforeEach(() => {
         container = new Container();
+
+        container.bind(ILogger).toConstantValue(new MockLogger());
 
         mockWorkspaceScope = {
             resolveRelativePath: sinon.stub().callsFake((path: string) => workspaceRoot.resolve(path)),

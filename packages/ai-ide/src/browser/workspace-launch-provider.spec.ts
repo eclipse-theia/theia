@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { PreferenceService } from '@theia/core';
+import { PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { Container } from '@theia/core/shared/inversify';
 import {
@@ -74,6 +74,7 @@ describe('Launch Management Tool Providers', () => {
 
     beforeEach(() => {
         container = new Container();
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
 
         const mockWorkspaceService = {
             tryGetRoots: () => [
@@ -380,6 +381,7 @@ describe('Launch Management Tool Providers', () => {
     describe('Multi-root disambiguation', () => {
         it('should report ambiguity when same config name exists in multiple roots', async () => {
             const multiRootContainer = new Container();
+            multiRootContainer.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
 
             const multiRootWorkspaceService = {
                 tryGetRoots: () => [

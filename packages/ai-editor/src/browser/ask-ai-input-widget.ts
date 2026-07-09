@@ -43,7 +43,7 @@ export class AskAIInputWidget extends AIChatInputWidget {
     protected readonly args: AskAIInputArgs | undefined;
 
     @inject(ILogger) @named('ai-editor:AskAIInputWidget')
-    protected readonly logger: ILogger;
+    protected override readonly logger: ILogger;
 
     @inject(AskAIInputConfiguration) @optional()
     protected override readonly configuration: AskAIInputConfiguration | undefined;

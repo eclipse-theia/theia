@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
@@ -60,6 +60,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         // Create a new container for each test
         container = new Container();
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
 
         // Mock dependencies
         mockTaskService = {
@@ -344,6 +345,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         } as unknown as TaskService;
 
         const multiRootContainer = new Container();
+        multiRootContainer.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         const multiRootWorkspaceService = {
             tryGetRoots: () => [
                 { resource: new URI('file:///home/user/frontend') },
@@ -391,6 +393,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         } as unknown as TaskService;
 
         const multiRootContainer = new Container();
+        multiRootContainer.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
         const multiRootWorkspaceService = {
             tryGetRoots: () => [
                 { resource: new URI('file:///home/user/frontend') },

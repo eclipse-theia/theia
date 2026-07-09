@@ -16,7 +16,7 @@
 
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '@theia/ai-core';
 import { ILogger, MaybePromise, nls, QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 const TERMINAL_COMMAND_BLOCK: AIVariable = {
@@ -50,7 +50,7 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-terminal:AiTerminalCommandBlockVariableContribution')
     protected readonly logger: ILogger;
 
     /** Fallback line count when command history is unavailable. 50 is a heuristic. */

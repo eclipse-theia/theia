@@ -21,7 +21,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { URI, PreferenceService } from '@theia/core';
+import { URI, PreferenceService, ILogger } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -68,6 +68,7 @@ describe('ContextFileValidationService', () => {
 
     beforeEach(async () => {
         container = new Container();
+        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
 
         // Mock WorkspaceService
         mockWorkspaceService = {
