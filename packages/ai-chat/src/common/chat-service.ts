@@ -224,6 +224,14 @@ export class ChatServiceImpl implements ChatService {
     }
 
     async deleteSession(sessionId: string): Promise<void> {
+        // Delete children (sessions whose rootSessionId points to this session) first
+        const childIds = this._sessions
+            .filter(s => s.rootSessionId === sessionId)
+            .map(s => s.id);
+        for (const childId of childIds) {
+            await this.deleteSession(childId);
+        }
+
         const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
 
         // If session is in memory, remove it
@@ -459,7 +467,7 @@ export class ChatServiceImpl implements ChatService {
         const lastRequest = session.model.getRequests().at(-1);
         const hasError = lastRequest?.response.isComplete === true && lastRequest?.response.isError === true;
         return this.sessionStore.storeSessions(
-            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id, lastInteraction: session.lastInteraction?.getTime(), hasError }
+            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id, lastInteraction: session.lastInteraction?.getTime(), hasError, rootSessionId: session.rootSessionId }
         ).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
         });
@@ -517,8 +525,10 @@ export class ChatServiceImpl implements ChatService {
             lastInteraction: new Date(serialized.saveDate),
             model,
             isActive: false,
-            pinnedAgent
+            pinnedAgent,
+            rootSessionId: serialized.rootSessionId
         };
+        session.model.rootSessionId = serialized.rootSessionId;
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
         this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });

@@ -124,8 +124,6 @@ export class AgentDelegationTool implements ToolProvider {
             let newSession;
             let childModelDisposable: Disposable | undefined;
             try {
-                // FIXME: this creates a new conversation visible in the UI (Panel), which we don't want
-                // It is not possible to start a session without specifying a location (default=Panel)
                 const chatService = this.getChatService();
 
                 // Store the current active session to restore it after delegation
@@ -222,12 +220,8 @@ export class AgentDelegationTool implements ToolProvider {
                         .filter((text): text is string => text !== undefined && text !== '')
                         .join('\n\n');
 
-                    // Clean up the session and parent-child link after completion
+                    // Clean up the parent-child link after completion (event bubbling is no longer needed)
                     childModelDisposable?.dispose();
-                    const chatService = this.getChatService();
-                    chatService.deleteSession(newSession.id).catch(error => {
-                        this.logger.error('Failed to delete delegated session', error);
-                    });
 
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;

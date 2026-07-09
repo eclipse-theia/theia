@@ -40,6 +40,13 @@ export interface SectionedSessions {
     restored: ChatSessionMetadata[];
 }
 
+/** A session row with its optional children. */
+export interface SessionRow {
+    session: ChatSessionMetadata;
+    isRestored: boolean;
+    children: ChatSessionMetadata[];
+}
+
 export interface VisibleSessionSlots {
     activeCount: number;
     restoredCount: number;
@@ -69,19 +76,31 @@ export function computeVisibleSessionSlots(activeTotal: number, restoredTotal: n
 }
 
 interface SessionsListProps {
-    sections: SectionedSessions;
+    rows: SessionRow[];
     /** Total cap on items shown on the home view; overflow surfaces via the Browse all link. */
     maxSessions: number;
-    renderItem: (session: ChatSessionMetadata, isRestored: boolean) => React.ReactNode;
+    renderRow: (row: SessionRow) => React.ReactNode;
     onBrowseAll: () => void;
 }
 
-function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: SessionsListProps): React.ReactElement {
-    const total = sections.active.length + sections.restored.length;
-    const { activeCount, restoredCount } = computeVisibleSessionSlots(sections.active.length, sections.restored.length, maxSessions);
-    const activeVisible = sections.active.slice(0, activeCount);
-    const restoredVisible = sections.restored.slice(0, restoredCount);
-    const hiddenCount = total - activeVisible.length - restoredVisible.length;
+function SessionsList({ rows, maxSessions, renderRow, onBrowseAll }: SessionsListProps): React.ReactElement {
+    // Children are rendered inline by their parent row, so only top-level rows appear in the
+    // sections. A child whose root session is not in the list falls back to top-level (orphan).
+    const topLevelRows = rows.filter(row => {
+        if (!row.session.rootSessionId) {
+            return true;
+        }
+        const rootId = row.session.rootSessionId;
+        return !rows.some(r => r.session.sessionId === rootId);
+    });
+
+    const activeRows = topLevelRows.filter(row => !row.isRestored);
+    const restoredRows = topLevelRows.filter(row => row.isRestored);
+
+    const { activeCount, restoredCount } = computeVisibleSessionSlots(activeRows.length, restoredRows.length, maxSessions);
+    const activeVisible = activeRows.slice(0, activeCount);
+    const restoredVisible = restoredRows.slice(0, restoredCount);
+    const hiddenCount = topLevelRows.length - activeVisible.length - restoredVisible.length;
 
     return (
         <div className="theia-WelcomeMessage-SessionsList">
@@ -90,7 +109,7 @@ function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: Sessio
                     <div className="theia-WelcomeMessage-SessionsHeader">
                         {nls.localizeByDefault('Active')}
                     </div>
-                    {activeVisible.map(s => renderItem(s, false))}
+                    {activeVisible.map(row => renderRow(row))}
                 </div>
             )}
             {restoredVisible.length > 0 && (
@@ -98,7 +117,7 @@ function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: Sessio
                     <div className="theia-WelcomeMessage-SessionsHeader">
                         {nls.localize('theia/ai/ide/sectionRestored', 'Restored')}
                     </div>
-                    {restoredVisible.map(s => renderItem(s, true))}
+                    {restoredVisible.map(row => renderRow(row))}
                 </div>
             )}
             {hiddenCount > 0 && (
@@ -168,6 +187,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     /** Persisted sessions index sorted newest first. May include duplicates of active sessions. */
     protected _persistedSessions: ChatSessionMetadata[] = [];
+
+    /** Expanded root session IDs (default collapsed). */
+    protected expandedRoots = new Set<string>();
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
     readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
@@ -335,7 +357,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                 saveDate: session.lastInteraction?.getTime() ?? Date.now(),
                 location: session.model.location,
                 pinnedAgentId: session.pinnedAgent?.id,
-                hasError: session.model.status === 'failed'
+                hasError: session.model.status === 'failed',
+                rootSessionId: session.rootSessionId
             }));
         const restored = this._persistedSessions.filter(metadata => !activeIds.has(metadata.sessionId));
         return { active, restored };
@@ -356,13 +379,32 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
         const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
+        // Group sessions by rootSessionId
+        const allSessions = [...sections.active, ...sections.restored];
+        const activeIds = new Set(sections.active.map(s => s.sessionId));
+        const childMap = new Map<string, ChatSessionMetadata[]>();
+
+        for (const session of allSessions) {
+            if (session.rootSessionId) {
+                const children = childMap.get(session.rootSessionId) ?? [];
+                children.push(session);
+                childMap.set(session.rootSessionId, children);
+            }
+        }
+
+        const rows: SessionRow[] = allSessions.map(session => ({
+            session,
+            isRestored: !activeIds.has(session.sessionId),
+            children: childMap.get(session.sessionId) ?? []
+        }));
+
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
                 <div className="theia-WelcomeMessage-SessionsSection">
                     <SessionsList
-                        sections={sections}
+                        rows={rows}
                         maxSessions={maxSessions}
-                        renderItem={this.renderSessionItem}
+                        renderRow={this.renderSessionRow}
                         onBrowseAll={this.handleBrowseAllChats}
                     />
                 </div>
@@ -370,27 +412,67 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected renderSessionItem = (session: ChatSessionMetadata, isRestored: boolean): React.ReactNode => {
+    protected toggleExpand = (sessionId: string): void => {
+        this.expandedRoots = new Set(this.expandedRoots);
+        if (this.expandedRoots.has(sessionId)) {
+            this.expandedRoots.delete(sessionId);
+        } else {
+            this.expandedRoots.add(sessionId);
+        }
+        this.onStateChangedEmitter.fire();
+    };
+
+    protected renderSessionRow = (row: SessionRow): React.ReactNode => {
         const actions = this.chatSessionItemActionContributions
             .getContributions()
-            .flatMap(c => c.getActions(session))
-            .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
+            .flatMap(c => c.getActions(row.session))
+            .filter(action => this.commandRegistry.isEnabled(action.commandId, row.session))
             .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+        const hasChildren = row.children.length > 0;
+        const isExpanded = hasChildren && this.expandedRoots.has(row.session.sessionId);
+
         return (
-            <ChatSessionItem
-                key={session.sessionId}
-                session={session}
-                isRestored={isRestored}
-                chatService={this.chatService}
-                chatAgentService={this.chatAgentService}
-                hoverService={this.hoverService}
-                markdownRenderer={this.markdownRenderer}
-                unreadState={this}
-                onClick={() => this.handleSessionItemClick(session.sessionId)}
-                actions={actions}
-                onAction={this.handleSessionItemAction}
-                formatTimeAgo={date => formatTimeAgo(date)}
-            />
+            <React.Fragment key={row.session.sessionId}>
+                <ChatSessionItem
+                    session={row.session}
+                    isRestored={row.isRestored}
+                    chatService={this.chatService}
+                    chatAgentService={this.chatAgentService}
+                    hoverService={this.hoverService}
+                    markdownRenderer={this.markdownRenderer}
+                    unreadState={this}
+                    onClick={() => this.handleSessionItemClick(row.session.sessionId)}
+                    actions={hasChildren ? [] : actions}
+                    onAction={this.handleSessionItemAction}
+                    formatTimeAgo={date => formatTimeAgo(date)}
+                    children={hasChildren ? row.children : undefined}
+                    isExpanded={isExpanded}
+                    onToggleExpand={hasChildren ? () => this.toggleExpand(row.session.sessionId) : undefined}
+                />
+                {isExpanded && row.children.map(child => (
+                    <ChatSessionItem
+                        key={child.sessionId}
+                        session={child}
+                        isRestored={child.rootSessionId ? !new Set(this.getSections().active.map(s => s.sessionId)).has(child.sessionId) : false}
+                        chatService={this.chatService}
+                        chatAgentService={this.chatAgentService}
+                        hoverService={this.hoverService}
+                        markdownRenderer={this.markdownRenderer}
+                        unreadState={this}
+                        onClick={() => this.handleSessionItemClick(child.sessionId)}
+                        actions={this.chatSessionItemActionContributions
+                            .getContributions()
+                            .flatMap(c => c.getActions(child))
+                            .filter(action => this.commandRegistry.isEnabled(action.commandId, child))
+                            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))}
+                        onAction={this.handleSessionItemAction}
+                        formatTimeAgo={date => formatTimeAgo(date)}
+                        isChild={true}
+                        depth={1}
+                    />
+                ))}
+            </React.Fragment>
         );
     };
 

@@ -448,7 +448,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async askForChatSession(): Promise<QuickPickItem | undefined> {
         const getItems = async (): Promise<(QuickPickItem | QuickPickSeparator)[]> => {
             const activeSessions = this.chatService.getSessions()
-                .filter(session => session.title)
+                .filter(session => session.title && !session.rootSessionId)
                 .map(session => ({
                     isActive: true as const,
                     id: session.id,
@@ -475,7 +475,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 const persistedIndex = await this.chatService.getPersistedSessions();
                 const activeIds = new Set(activeSessions.map(s => s.id));
                 persistedSessions = Object.values(persistedIndex)
-                    .filter(metadata => !activeIds.has(metadata.sessionId))
+                    .filter(metadata => !activeIds.has(metadata.sessionId) && !metadata.rootSessionId)
                     .map(metadata => {
                         const agent = metadata.pinnedAgentId ? this.chatAgentService.getAgent(metadata.pinnedAgentId) : undefined;
                         return {

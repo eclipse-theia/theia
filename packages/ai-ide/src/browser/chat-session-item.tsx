@@ -45,6 +45,16 @@ export interface ChatSessionItemProps {
     actions?: ChatSessionItemAction[];
     /** Invoked when an action is triggered, with the action and this item's session. */
     onAction?: (action: ChatSessionItemAction, session: ChatSessionMetadata) => void;
+    /** Child sessions to render nested under this session. */
+    children?: ChatSessionMetadata[];
+    /** Whether this item is a child of a parent session. */
+    isChild?: boolean;
+    /** Depth level for indentation. */
+    depth?: number;
+    /** Whether the parent session is expanded. */
+    isExpanded?: boolean;
+    /** Called when the user toggles the expand/collapse state. */
+    onToggleExpand?: () => void;
 }
 
 /** Subscribes the component to the unread flag for one session. */
@@ -92,7 +102,8 @@ export interface ChatSessionItemComponentProps extends ChatSessionItemProps {
 }
 
 export function ChatSessionItem(props: ChatSessionItemComponentProps): React.ReactElement {
-    const { session, isRestored, chatService, chatAgentService, hoverService, markdownRenderer, unreadState, onClick, actions, onAction, formatTimeAgo } = props;
+    const { session, isRestored, chatService, chatAgentService, hoverService, markdownRenderer, unreadState, onClick, actions, onAction, formatTimeAgo, children: childSessions, isChild, depth, isExpanded, onToggleExpand } = props;
+    const currentDepth = depth ?? 0;
 
     // eslint-disable-next-line no-null/no-null
     const itemRef = React.useRef<HTMLDivElement | null>(null);
@@ -196,6 +207,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         : nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
     const itemClasses = [
         'theia-chat-session-item',
+        isChild && 'theia-chat-session-item-child',
         isWaitingForInput && 'theia-chat-session-item-attention',
         showWorking && 'theia-chat-session-item-working',
         hasError && !isWorking && 'theia-chat-session-item-error',
@@ -208,17 +220,43 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
             ? `${codicon('loading')} theia-animation-spin`
             : agentIcon;
 
+    const hasChildren = childSessions && childSessions.length > 0;
+
     return (
         <div ref={itemRef}
             className={itemClasses}
             role="button"
             tabIndex={0}
+            style={{ '--tree-indent': `${currentDepth * 12}px` } as React.CSSProperties}
             onClick={onClick}
             onKeyDown={handleKeyDown}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onMouseOver={handleMouseOver}>
             <div className="theia-chat-session-item-icon-col">
+                {hasChildren ? (
+                    <span className="theia-chat-session-item-expand-icon"
+                        onClick={e => {
+                            e.stopPropagation();
+                            onToggleExpand?.();
+                        }}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onToggleExpand?.();
+                            }
+                        }}
+                        onMouseDown={e => e.preventDefault()}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? nls.localizeByDefault('Collapse') : nls.localizeByDefault('Expand')}>
+                        <span className={`codicon ${isExpanded ? 'codicon-chevron-down' : 'codicon-chevron-right'}`} />
+                    </span>
+                ) : (
+                    <span className="theia-chat-session-item-expand-icon theia-chat-session-item-expand-placeholder" aria-hidden="true" />
+                )}
                 {isRestored ? (
                     <span className={`${codicon('archive')} theia-chat-session-item-archive-icon`}
                         title={nls.localize('theia/ai/ide/restoredSession', 'Restored session')} />
