@@ -64,7 +64,8 @@ import {
     CHANNEL_UPDATE_RECENT_WORKSPACES
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, nls, URI } from '../common';
+import { FileUri } from '../node';
 import { createDisposableListener } from './event-utils';
 
 @injectable()
@@ -281,32 +282,33 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 const pkgData = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
                 main = pkgData.main;
             }
-            const items: JumpListItem[] = workspaces.map(workspace => {
-                const uri = new URI(workspace);
-                const wspath = uri.path.fsPath();
-                const item: JumpListItem = {
-                    type: 'task',
-                    title: `${wspath}`.substring(0, 255),
-                    description: `${wspath}`.substring(0, 255),
-                    program: process.execPath,
-                    args: isDev ? `${path.resolve(process.cwd(), main)} ${wspath}` : wspath,
-                    iconPath: process.execPath,
-                    iconIndex: 0
-                };
-                return item;
-            });
+            const items: JumpListItem[] = workspaces
+                .filter(w => new URI(w).scheme === 'file')
+                .map(workspace => {
+                    const uri = new URI(workspace);
+                    const wspathPretty = uri.path.fsPath();
+                    const wspath = FileUri.fsPath(uri);
+                    const item: JumpListItem = {
+                        type: 'task',
+                        title: wspathPretty.substring(0, 255),
+                        description: wspathPretty.substring(0, 255),
+                        program: process.execPath,
+                        args: isDev ? `"${path.resolve(process.cwd(), main)}" "${wspath}"` : `"${wspath}"`,
+                        iconPath: process.execPath,
+                        iconIndex: 0
+                    };
+                    return item;
+                });
 
             const jumpList: JumpListCategory[] = [{
                 type: 'custom',
-                name: 'Recent Workspaces',
+                name: nls.localizeByDefault('Recent Workspaces'),
                 items
             }];
 
             const result = app.setJumpList(jumpList);
 
-            if (result === 'ok') {
-                console.debug('Jump List updated.');
-            } else {
+            if (result !== 'ok') {
                 console.warn(`Could not set Jump List with recent workspaces (result = "${result}")`);
             }
         });
