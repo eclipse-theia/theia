@@ -302,7 +302,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
             const jumpList: JumpListCategory[] = [{
                 type: 'custom',
-                name: nls.localizeByDefault('Recent Workspaces'),
+                name: nls.localize('theia/core/jumpListName', 'Recent Workspaces'),
                 items
             }];
 
