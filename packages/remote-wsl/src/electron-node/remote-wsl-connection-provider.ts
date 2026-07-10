@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteWslConnectionProvider, WslDistribution, WslConnectionOptions, WslConnectionResult } from '../electron-common/remote-wsl-connection-provider';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { exec } from 'child_process';
-import { MessageService, generateUuid } from '@theia/core';
+import { MessageService, generateUuid, ILogger } from '@theia/core';
 import { RemoteWslConnection } from './remote-wsl-connection';
 
 @injectable()
@@ -33,6 +33,9 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(ILogger) @named('remote-wsl:RemoteWslConnectionProviderImpl')
+    protected readonly logger: ILogger;
 
     dispose(): void {
     }
@@ -54,7 +57,7 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
             exec('wsl.exe --list --verbose --all', (error, stdout, stderr) => {
                 if (error) {
                     const errorMessage = `Error executing wsl.exe: ${error} \n ${stderr}`;
-                    console.error(errorMessage);
+                    this.logger.error(errorMessage);
                     reject(errorMessage);
                     return;
                 }

@@ -19,6 +19,7 @@ import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
     StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget,
+    CompositeTreeNode, ExpandableTreeNode,
 } from '@theia/core/lib/browser';
 import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -643,7 +644,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 });
                 return _pendingResolution;
             },
-            show: webview.show
+            show: (preserveFocus: boolean) => {
+                this.openView(viewId, preserveFocus ? { reveal: true } : { activate: true });
+            }
         };
 
         const toDispose = this.onNewResolverRegistered(resolver => {
@@ -1053,9 +1056,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         if (view?.[1]?.type === PluginViewType.Webview) {
             return this.createWebviewWidget(viewId, webviewId);
         }
-        const provider = this.viewDataProviders.get(viewId);
-        if (!view || !provider) {
+        if (!view) {
             return undefined;
+        }
+        const provider = this.viewDataProviders.get(viewId);
+        if (!provider) {
+            return this.getViewWelcomes(viewId).length > 0
+                ? this.createViewWelcomeWidget(viewId)
+                : undefined;
         }
         const [, viewInfo] = view;
         const state = this.viewDataState.get(viewId);
@@ -1066,6 +1074,25 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         } else {
             this.viewDataState.delete(viewId);
         }
+        return widget;
+    }
+
+    protected async createViewWelcomeWidget(viewId: string): Promise<TreeViewWidget> {
+        const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
+        if (!widget.model.root) {
+            const root: CompositeTreeNode & ExpandableTreeNode = {
+                id: '',
+                parent: undefined,
+                name: '',
+                visible: false,
+                expanded: true,
+                children: []
+            };
+            widget.model.root = root;
+        }
+        // An undefined `model.proxy` keeps `shouldShowWelcomeView()` true, so the welcome content
+        // renders instead of an empty node list.
+        widget.handleViewWelcomeContentChange(this.getViewWelcomes(viewId));
         return widget;
     }
 

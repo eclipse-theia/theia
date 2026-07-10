@@ -18,11 +18,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken, Command, Disposable, Emitter, Event, URI } from '@theia/core';
+import { CancellationToken, Command, Disposable, Emitter, Event, URI, ILogger } from '@theia/core';
 import { CellStatusbarAlignment } from '../../common';
 import { ThemeColor } from '@theia/core/lib/common/theme';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export interface NotebookCellStatusBarItem {
@@ -50,6 +50,9 @@ export interface NotebookCellStatusBarItemProvider {
 
 @injectable()
 export class NotebookCellStatusBarService implements Disposable {
+
+    @inject(ILogger) @named('notebook:NotebookCellStatusBarService')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeProvidersEmitter = new Emitter<void>();
     readonly onDidChangeProviders: Event<void> = this.onDidChangeProvidersEmitter.event;
@@ -81,7 +84,7 @@ export class NotebookCellStatusBarService implements Disposable {
             try {
                 return await p.provideCellStatusBarItems(notebookUri, cellIndex, token) ?? { items: [] };
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
                 return { items: [] };
             }
         }));

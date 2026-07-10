@@ -343,6 +343,11 @@ export interface DocumentHighlightProvider {
     provideDocumentHighlights(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): DocumentHighlight[] | undefined;
 }
 
+export interface MultiDocumentHighlightDto {
+    uri: UriComponents;
+    highlights: DocumentHighlight[];
+}
+
 export interface FormattingOptions {
     tabSize: number;
     insertSpaces: boolean;

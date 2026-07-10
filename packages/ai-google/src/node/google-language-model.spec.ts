@@ -85,4 +85,10 @@ describe('GoogleModel reasoning translation', () => {
             expect(result.thinkingConfig).to.equal(undefined);
         });
     });
+
+    describe('vendor', () => {
+        it('exposes the google vendor (used to key server tool selections and the capabilities UI)', () => {
+            expect(createModel('gemini-3-pro').vendor).to.equal('google');
+        });
+    });
 });

@@ -96,9 +96,9 @@ abstract class AbstractToolbarMenuWrapper {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
         const className = `${icon} ${ACTION_ITEM}`;
-        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
+        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={className}
+                <div id={this.id} className={className}
                     title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(widget, e)}
                 />
@@ -108,7 +108,7 @@ abstract class AbstractToolbarMenuWrapper {
             </div>;
         } else {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={className}
+                <div id={this.id} className={className}
                     title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(widget, e)}
                 />
@@ -308,7 +308,7 @@ abstract class AbstractMenuNodeAsToolbarItemWrapper<T extends MenuNode> {
     }
 
     isVisible<K>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<K>, context: K | undefined, ...args: unknown[]): boolean {
-        return this.menuNode!.isVisible(this.effectiveMenuPath, contextMatcher, context, args);
+        return this.menuNode!.isVisible(this.effectiveMenuPath, contextMatcher, context, ...args);
     }
 }
 
@@ -321,7 +321,7 @@ class ToolbarItemAsSubmenuWrapper extends AbstractMenuNodeAsToolbarItemWrapper<C
         return this.menuNode.contextKeyOverlays;
     }
     isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, context, args);
+        return this.menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, context, ...args);
     }
     get children(): MenuNode[] {
         return this.menuNode.children;
@@ -340,7 +340,7 @@ class ToolbarItemAsCommandMenuWrapper extends AbstractMenuNodeAsToolbarItemWrapp
         return this.menuNode.isToggled(this.effectiveMenuPath, ...args);
     }
     run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
-        return this.menuNode.run(this.effectiveMenuPath, args);
+        return this.menuNode.run(this.effectiveMenuPath, ...args);
     }
 
     override get label(): string {

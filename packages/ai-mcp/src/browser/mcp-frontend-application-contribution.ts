@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager } from '../common';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common';
 import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
-import { MCPFrontendService } from '../common/mcp-server-manager';
+import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceService, PreferenceUtils } from '@theia/core';
+import { MessageService, PreferenceService, PreferenceUtils, Progress, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     WorkspaceTrustService,
@@ -28,7 +28,7 @@ import {
     WorkspaceRestriction
 } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { filterValidValues, MCPServersPreference } from '../common/mcp-servers-preference';
+import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator';
 
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {
@@ -45,21 +45,47 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     @inject(WorkspaceTrustService)
     protected workspaceTrustService: WorkspaceTrustService;
 
+    @inject(ILogger) @named('ai-mcp:McpFrontendApplicationContribution')
+    protected readonly logger: ILogger;
+
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
+
+    @inject(MessageService)
+    protected messageService: MessageService;
+
+    @inject(MCPOAuthFrontendDelegate)
+    protected oauthFrontendDelegate: MCPOAuthFrontendDelegate;
+
+    @inject(MCPFrontendNotificationService)
+    protected mcpNotificationService: MCPFrontendNotificationService;
 
     protected prevServers: Map<string, MCPServerDescription> = new Map();
 
     protected blockedUntrustedServers: Set<string> = new Set();
 
+    protected serverChangeQueue: Promise<void> = Promise.resolve();
+
+    /** Pending OAuth sign-in prompts, keyed by server name. */
+    protected readonly pendingSignInPrompts = new Map<string, Progress>();
+
     onStart(): void {
+        // Preflight the backend→frontend RPC channel for OAuth callbacks so a wiring failure surfaces
+        // at startup rather than at the first OAuth flow. Failures are logged but not propagated.
+        this.oauthFrontendDelegate.getCallbackUrl().catch(error =>
+            console.warn('MCP OAuth duplex-channel preflight failed; OAuth callbacks may not work until reconnect.', error));
+
+        this.mcpNotificationService.onDidUpdateMCPServers(() => {
+            this.dismissSettledSignInPrompts().catch(error => console.error('Failed to dismiss settled MCP OAuth sign-in prompts', error));
+        });
+
         this.preferenceService.ready.then(async () => {
             const servers = filterValidValues(this.preferenceService.get(
                 MCP_SERVERS_PREF,
                 {}
             ));
             this.prevServers = this.convertToMap(servers);
-            this.syncServers(this.prevServers);
+            await this.syncServers(this.prevServers);
 
             // Set up workspace roots tracking
             await this.updateWorkspaceRoots(false);
@@ -71,7 +97,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.preferenceService.onPreferenceChanged(async event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    await this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                    this.enqueueServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
                 }
                 if (event.preferenceName === MCP_USE_WORKSPACE_AS_ROOT_PREF) {
                     await this.updateWorkspaceRoots(true);
@@ -86,11 +112,10 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                         await this.stopAllServers();
                     }
                 } catch (error) {
-                    console.error('Failed to handle workspace trust change for MCP servers', error);
+                    this.logger.error('Failed to handle workspace trust change for MCP servers', error);
                 }
             });
         });
-        this.frontendMCPService.registerToolsForAllStartedServers();
     }
 
     protected async updateWorkspaceRoots(restart: boolean): Promise<void> {
@@ -130,7 +155,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         for (const name of this.blockedUntrustedServers) {
             const serverDesc = this.prevServers.get(name);
             if (serverDesc && serverDesc.autostart && !startedServers.includes(name)) {
-                await this.frontendMCPService.startServer(name);
+                await this.attemptSilentStartOrPromptForOAuth(name, serverDesc);
             }
         }
         this.blockedUntrustedServers.clear();
@@ -138,14 +163,24 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     }
 
     protected async stopAllServers(): Promise<void> {
-        const startedServers = await this.frontendMCPService.getStartedServers();
-        for (const name of startedServers) {
-            await this.frontendMCPService.stopServer(name);
+        // Walk active servers (not just running ones) so a server in `Starting`, `Connecting`, or
+        // `AuthenticationRequired` at the moment trust is lost is also interrupted.
+        // Use `Promise.allSettled` so one hanging server's stop does not prevent the others from
+        // being stopped during the untrusted-workspace transition.
+        const activeServers = await this.frontendMCPService.getActiveServers();
+        const results = await Promise.allSettled(activeServers.map(name => this.frontendMCPService.stopServer(name)));
+        results.forEach((result, index) => {
+            const name = activeServers[index];
+            if (result.status === 'rejected') {
+                console.error(`Failed to stop MCP server "${name}" on workspace-trust loss`, result.reason);
+                // Skip blocked-set bookkeeping for servers we could not actually stop.
+                return;
+            }
             const serverDesc = this.prevServers.get(name);
             if (serverDesc?.autostart) {
                 this.blockedUntrustedServers.add(name);
             }
-        }
+        });
         this.updateBlockedServersStatusBar();
     }
 
@@ -158,7 +193,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             return [];
         }
         return [{
-            label: nls.localize('theia/ai-mcp/blockedServersLabel', 'MCP Servers (autostart blocked)'),
+            label: nls.localize('theia/ai/mcp/blockedServersLabel', 'MCP Servers (autostart blocked)'),
             details: Array.from(this.blockedUntrustedServers)
         }];
     }
@@ -176,12 +211,85 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                         this.blockedUntrustedServers.add(name);
                         continue;
                     }
-                    await this.frontendMCPService.startServer(name);
+                    await this.attemptSilentStartOrPromptForOAuth(name, serverDesc);
                 }
             }
         }
 
         this.updateBlockedServersStatusBar();
+    }
+
+    /**
+     * Autostart path for a single server. For non-OAuth servers, just calls `startServer`. For OAuth
+     * servers, either skips the silent start when no usable credentials exist (and prompts the user)
+     * or attempts the silent start; if the silent start lands in `AuthenticationRequired`, prompts
+     * the user via a notification with a Sign In action.
+     */
+    protected async attemptSilentStartOrPromptForOAuth(name: string, serverDesc: MCPServerDescription): Promise<void> {
+        const isOAuthServer = isRemoteMCPServerDescription(serverDesc) && !!serverDesc.oauth;
+        if (isOAuthServer && !await this.frontendMCPService.hasStoredOAuthCredentials(name)) {
+            // No usable stored credentials — skip the silent attempt and prompt directly.
+            this.promptForOAuthSignIn(name);
+            return;
+        }
+        await this.frontendMCPService.startServer(name);
+        if (isOAuthServer) {
+            const description = await this.frontendMCPService.getServerDescription(name);
+            if (description?.status === MCPServerStatus.AuthenticationRequired) {
+                this.promptForOAuthSignIn(name);
+            }
+        }
+    }
+
+    /**
+     * Prompts the user to authorize the given MCP server via a non-modal notification with a 'Sign In'
+     * action. Dismissed automatically once the start attempt concludes, see {@link dismissSettledSignInPrompts}.
+     */
+    protected promptForOAuthSignIn(serverName: string): void {
+        this.pendingSignInPrompts.get(serverName)?.cancel();
+        const signInAction = nls.localizeByDefault('Sign In');
+        this.messageService.showProgress({
+            text: nls.localize('theia/ai/mcp/oauth/notification/signInPrompt',
+                'MCP server "{0}" requires authorization to start.', serverName),
+            actions: [signInAction],
+            options: { cancelable: true }
+        }).then(progress => {
+            this.pendingSignInPrompts.set(serverName, progress);
+            return progress.result.then(action => {
+                if (this.pendingSignInPrompts.get(serverName) === progress) {
+                    this.pendingSignInPrompts.delete(serverName);
+                }
+                if (action !== signInAction) {
+                    return undefined;
+                }
+                return this.frontendMCPService.startServerInteractive(serverName);
+            });
+        }).catch(error => {
+            console.error(`Failed to drive OAuth sign-in prompt for MCP server "${serverName}"`, error);
+        });
+    }
+
+    /** Dismisses sign-in prompts whose server was removed or whose start attempt has concluded. */
+    protected async dismissSettledSignInPrompts(): Promise<void> {
+        for (const [name, prompt] of Array.from(this.pendingSignInPrompts.entries())) {
+            const description = await this.frontendMCPService.getServerDescription(name);
+            const status = description?.status;
+            if (!description || status === MCPServerStatus.Connected || status === MCPServerStatus.Running || status === MCPServerStatus.Errored) {
+                this.pendingSignInPrompts.delete(name);
+                prompt.cancel();
+            }
+        }
+    }
+
+    protected enqueueServerChanges(newServers: MCPServersPreference): void {
+        this.serverChangeQueue = this.serverChangeQueue
+            .then(() => this.handleServerChanges(newServers))
+            .catch(error => {
+                // Catch here (instead of propagating) so a single failed change does not poison the queue.
+                console.error('Failed to handle MCP server preference changes', error);
+                this.messageService.warn(nls.localize('theia/ai/mcp/warn/serverPreferenceChangeFailed',
+                    'Failed to apply MCP server preference changes: {0}', error instanceof Error ? error.message : String(error)));
+            });
     }
 
     protected async handleServerChanges(newServers: MCPServersPreference): Promise<void> {
@@ -190,8 +298,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
         for (const [name] of oldServers) {
             if (!updatedServers.has(name)) {
-                await this.frontendMCPService.stopServer(name);
-                this.manager.removeServer(name);
+                await this.manager.removeServer(name);
                 this.blockedUntrustedServers.delete(name);
             }
         }
@@ -207,30 +314,24 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             } catch (e) {
                 // In some cases the deepEqual function throws an error, so we fall back to assuming that there is a difference
                 // This seems to happen in cases where the objects are structured differently, e.g. whole sub-objects are missing
-                console.debug('Failed to compare MCP server descriptions, assuming a difference', e);
+                this.logger.debug('Failed to compare MCP server descriptions, assuming a difference', e);
                 diff = true;
             }
             if (diff) {
-                this.manager.addOrUpdateServer(description);
+                await this.manager.addOrUpdateServer(description);
             }
         }
 
         this.prevServers = updatedServers;
-        this.autoStartServers(updatedServers).catch(error => {
-            console.error('Failed to auto-start MCP servers after preference change', error);
-        });
+        await this.autoStartServers(updatedServers);
     }
 
-    protected syncServers(servers: Map<string, MCPServerDescription>): void {
-
+    protected async syncServers(servers: Map<string, MCPServerDescription>): Promise<void> {
+        // Initial sync only: `prevServers` is assigned to the same map immediately before this call, so a
+        // remove-pass would compare the map against itself and never iterate. Server removals on subsequent
+        // preference changes are handled by `handleServerChanges`, which holds onto the previous map.
         for (const [, description] of servers) {
-            this.manager.addOrUpdateServer(description);
-        }
-
-        for (const [name] of this.prevServers) {
-            if (!servers.has(name)) {
-                this.manager.removeServer(name);
-            }
+            await this.manager.addOrUpdateServer(description);
         }
     }
 
@@ -243,19 +344,21 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
-                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     serverUrl,
                     ...(serverAuthToken && { serverAuthToken }),
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
                     ...(headers && { headers }),
+                    ...(oauth && { oauth }),
                     autostart: autostart ?? true,
                     ...(registryMetadata && { registryMetadata }),
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
-                const { command, args, env, autostart } = description;
+                const { command, args, env, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     command,
@@ -263,6 +366,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(env && { env }),
                     autostart: autostart ?? true,
                     ...(registryMetadata && { registryMetadata }),
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             }
 

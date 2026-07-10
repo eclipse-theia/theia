@@ -56,6 +56,9 @@ export function setRootLogger(aLogger: ILogger): void {
 export type Log = (message: any, ...params: any[]) => void;
 export type Loggable = (log: Log) => void;
 
+/** Shared no-op {@link Log} returned for a disabled level so that callers neither block nor emit. */
+const nullLogger: Log = () => { };
+
 export const LoggerFactory = Symbol('LoggerFactory');
 export type LoggerFactory = (name: string) => ILogger;
 
@@ -304,6 +307,9 @@ export class Logger implements ILogger {
     }
     log(logLevel: number, arg2: any | Loggable, ...params: any[]): Promise<void> {
         return this.getLog(logLevel).then(log => {
+            if (log === nullLogger) {
+                return;
+            }
             if (typeof arg2 === 'function') {
                 const loggable = arg2;
                 loggable(log);
@@ -313,12 +319,15 @@ export class Logger implements ILogger {
         });
     }
     protected getLog(logLevel: number): Promise<Log> {
-        return this.ifEnabled(logLevel).then(() =>
-            this.created.then(() =>
+        return this.isEnabled(logLevel).then(enabled => {
+            if (!enabled) {
+                return nullLogger;
+            }
+            return this.created.then(() =>
                 (message: any, ...params: any[]) =>
                     this.server.log(this.name, logLevel, this.format(message), params.map(p => this.format(p)))
-            )
-        );
+            );
+        });
     }
     protected format(value: any): any {
         switch (typeof value) {

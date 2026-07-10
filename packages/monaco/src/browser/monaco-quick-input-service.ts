@@ -306,8 +306,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 inputActiveOptionBackground: this.asCssVariable('inputOption.activeBackground')
             },
             pickerGroup: {
-                pickerGroupBorder: this.asCssVariable('pickerGroup.Border'),
-                pickerGroupForeground: this.asCssVariable('pickerGroupForeground')
+                pickerGroupBorder: this.asCssVariable('pickerGroup.border'),
+                pickerGroupForeground: this.asCssVariable('pickerGroup.foreground')
             },
             widget: {
                 quickInputBackground: this.asCssVariable('quickInput.background'),
@@ -321,38 +321,38 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 listInactiveFocusForeground: this.asCssVariable('quickInputList.focusForeground'),
                 listInactiveSelectionIconForeground: this.asCssVariable('quickInputList.focusIconForeground'),
                 listInactiveFocusBackground: this.asCssVariable('quickInputList.focusBackground'),
-                listFocusOutline: this.asCssVariable('activeContrastBorder'),
-                listInactiveFocusOutline: this.asCssVariable('activeContrastBorder'),
+                listFocusOutline: this.asCssVariable('contrastActiveBorder'),
+                listInactiveFocusOutline: this.asCssVariable('contrastActiveBorder'),
 
                 listFocusBackground: this.asCssVariable('list.focusBackground'),
                 listFocusForeground: this.asCssVariable('list.focusForeground'),
                 listActiveSelectionBackground: this.asCssVariable('list.activeSelectionBackground'),
-                listActiveSelectionForeground: this.asCssVariable('list.ActiveSelectionForeground'),
-                listActiveSelectionIconForeground: this.asCssVariable('list.ActiveSelectionIconForeground'),
-                listFocusAndSelectionOutline: this.asCssVariable('list.FocusAndSelectionOutline'),
-                listFocusAndSelectionBackground: this.asCssVariable('list.ActiveSelectionBackground'),
-                listFocusAndSelectionForeground: this.asCssVariable('list.ActiveSelectionForeground'),
-                listInactiveSelectionBackground: this.asCssVariable('list.InactiveSelectionBackground'),
-                listInactiveSelectionForeground: this.asCssVariable('list.InactiveSelectionForeground'),
-                listHoverBackground: this.asCssVariable('list.HoverBackground'),
-                listHoverForeground: this.asCssVariable('list.HoverForeground'),
-                listDropOverBackground: this.asCssVariable('list.DropOverBackground'),
-                listDropBetweenBackground: this.asCssVariable('list.DropBetweenBackground'),
-                listSelectionOutline: this.asCssVariable('activeContrastBorder'),
-                listHoverOutline: this.asCssVariable('activeContrastBorder'),
+                listActiveSelectionForeground: this.asCssVariable('list.activeSelectionForeground'),
+                listActiveSelectionIconForeground: this.asCssVariable('list.activeSelectionIconForeground'),
+                listFocusAndSelectionOutline: this.asCssVariable('list.focusAndSelectionOutline'),
+                listFocusAndSelectionBackground: this.asCssVariable('list.activeSelectionBackground'),
+                listFocusAndSelectionForeground: this.asCssVariable('list.activeSelectionForeground'),
+                listInactiveSelectionBackground: this.asCssVariable('list.inactiveSelectionBackground'),
+                listInactiveSelectionForeground: this.asCssVariable('list.inactiveSelectionForeground'),
+                listHoverBackground: this.asCssVariable('list.hoverBackground'),
+                listHoverForeground: this.asCssVariable('list.hoverForeground'),
+                listDropOverBackground: this.asCssVariable('list.dropBackground'),
+                listDropBetweenBackground: this.asCssVariable('list.dropBetweenBackground'),
+                listSelectionOutline: this.asCssVariable('contrastActiveBorder'),
+                listHoverOutline: this.asCssVariable('contrastActiveBorder'),
                 treeIndentGuidesStroke: this.asCssVariable('tree.indentGuidesStroke'),
                 treeInactiveIndentGuidesStroke: this.asCssVariable('tree.inactiveIndentGuidesStroke'),
-                treeStickyScrollBackground: this.asCssVariable('tree.StickyScrollBackground'),
-                treeStickyScrollBorder: this.asCssVariable('tree.tickyScrollBorde'),
-                treeStickyScrollShadow: this.asCssVariable('tree.StickyScrollShadow'),
+                treeStickyScrollBackground: undefined,
+                treeStickyScrollBorder: undefined,
+                treeStickyScrollShadow: this.asCssVariable('scrollbar.shadow'),
                 tableColumnsBorder: this.asCssVariable('tree.tableColumnsBorder'),
                 tableOddRowsBackgroundColor: this.asCssVariable('tree.tableOddRowsBackground'),
 
             },
             inputBox: {
-                inputForeground: this.asCssVariable('inputForeground'),
-                inputBackground: this.asCssVariable('inputBackground'),
-                inputBorder: this.asCssVariable('inputBorder'),
+                inputForeground: this.asCssVariable('input.foreground'),
+                inputBackground: this.asCssVariable('input.background'),
+                inputBorder: this.asCssVariable('input.border'),
                 inputValidationInfoBackground: this.asCssVariable('inputValidation.infoBackground'),
                 inputValidationInfoForeground: this.asCssVariable('inputValidation.infoForeground'),
                 inputValidationInfoBorder: this.asCssVariable('inputValidation.infoBorder'),
@@ -373,7 +373,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 buttonBackground: this.asCssVariable('button.background'),
                 buttonHoverBackground: this.asCssVariable('button.hoverBackground'),
                 buttonBorder: this.asCssVariable('contrastBorder'),
-                buttonSeparator: this.asCssVariable('button.Separator'),
+                buttonSeparator: this.asCssVariable('button.separator'),
                 buttonSecondaryForeground: this.asCssVariable('button.secondaryForeground'),
                 buttonSecondaryBackground: this.asCssVariable('button.secondaryBackground'),
                 buttonSecondaryHoverBackground: this.asCssVariable('button.secondaryHoverBackground'),
@@ -478,6 +478,10 @@ export class MonacoQuickInputService implements QuickInputService {
 
                 if (options.activeItem) {
                     wrapped.activeItems = [options.activeItem];
+                }
+
+                if (options.value) {
+                    wrapped.value = options.value;
                 }
 
                 wrapped.onDidChangeValue((filter: string) => {

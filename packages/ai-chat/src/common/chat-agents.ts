@@ -27,7 +27,9 @@ import {
     CapabilityAwareContext,
     GenericCapabilitySelections,
     getTextOfResponse,
+    isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
+    isServerToolCallResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
@@ -43,6 +45,7 @@ import {
     PromptService,
     ResolvedPromptFragment,
     PromptVariantSet,
+    ServerToolCall,
     TextMessage,
     ToolCall,
     ToolRequest,
@@ -63,12 +66,14 @@ import {
     ChatRequestModel,
     ChatResponseContent,
     CommonChatSessionSettings,
+    CompactionChatResponseContentImpl,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
     ToolCallArgumentsDeltaContent,
+    ServerToolCallChatResponseContentImpl,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
     ResponseTokenUsage,
@@ -86,6 +91,13 @@ export interface SystemMessageDescription {
     text: string;
     /** All functions references in the system message. */
     functionDescriptions?: Map<string, ToolRequest>;
+    /**
+     * Ids of functions referenced in the system message that were marked as
+     * deferred (`~{?functionId}`). Providers that support deferred tool
+     * loading can use this to set the appropriate flag on the tool definition
+     * and include the tool search tool in the request.
+     */
+    deferredFunctionIds?: Set<string>;
     /** The prompt variant ID used */
     promptVariantId?: string;
     /** Whether the prompt variant is customized */
@@ -100,6 +112,7 @@ export namespace SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions,
+            deferredFunctionIds: resolvedPrompt.deferredFunctionIds,
             promptVariantId,
             isPromptVariantCustomized
         };
@@ -256,10 +269,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
+            const deferredSet = new Set<string>();
+            request.message.deferredToolIds?.forEach(id => deferredSet.add(id));
+            systemMessageDescription?.deferredFunctionIds?.forEach(id => deferredSet.add(id));
+            const deferredToolIds = deferredSet.size > 0 ? Array.from(deferredSet) : undefined;
             const languageModelResponse = await this.sendLlmRequest(
                 request,
                 messages,
                 tools,
+                deferredToolIds,
                 languageModel,
                 systemMessageDescription?.promptVariantId,
                 systemMessageDescription?.isPromptVariantCustomized
@@ -349,6 +367,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
         const resolvedTexts: string[] = [];
         let combinedFunctions = systemMessage.functionDescriptions;
+        const combinedDeferred = new Set<string>(systemMessage.deferredFunctionIds ?? []);
 
         for (const resolvedFragment of resolvedResults) {
             if (resolvedFragment && resolvedFragment.text.trim()) {
@@ -363,6 +382,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
                         }
                     }
                 }
+                // Merge deferred function ids
+                if (resolvedFragment.deferredFunctionIds && resolvedFragment.deferredFunctionIds.size > 0) {
+                    for (const id of resolvedFragment.deferredFunctionIds) {
+                        combinedDeferred.add(id);
+                    }
+                }
             }
         }
 
@@ -375,7 +400,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return {
             ...systemMessage,
             text: combinedText,
-            functionDescriptions: combinedFunctions
+            functionDescriptions: combinedFunctions,
+            deferredFunctionIds: combinedDeferred.size > 0 ? combinedDeferred : undefined
         };
     }
 
@@ -497,6 +523,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ToolRequest[],
+        deferredToolIds: string[] | undefined,
         languageModel: LanguageModel,
         promptVariantId?: string,
         isPromptVariantCustomized?: boolean
@@ -506,13 +533,23 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const settings = { ...agentSettings, ...providerSettings };
         const dedupedTools = this.deduplicateTools(toolRequests);
         const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
+        // Only apply server tool selections stored for the actually selected model's vendor, and only
+        // those ids the model actually declares. This keeps selections provider-specific (e.g. an Anthropic
+        // selection is never sent to a Gemini model).
+        const vendor = languageModel.vendor;
+        const enabledServerTools = vendor
+            ? (request.request.serverToolSelections?.[vendor] ?? []).filter(id => languageModel.serverTools?.some(tool => tool.id === id))
+            : [];
         return this.languageModelService.sendRequest(
             languageModel,
             {
                 messages,
                 tools,
+                deferredToolIds,
+                serverTools: enabledServerTools.length > 0 ? enabledServerTools : undefined,
                 settings,
                 reasoning: commonSettings?.reasoning,
+                compaction: commonSettings?.compaction,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
@@ -617,10 +654,30 @@ export class ToolCallChatResponseContentFactory {
     }
 }
 
+/**
+ * Factory for creating ServerToolCallChatResponseContent instances (provider-executed server tools).
+ */
+@injectable()
+export class ServerToolCallResponseContentFactory {
+    create(serverToolCall: ServerToolCall): ChatResponseContent {
+        return new ServerToolCallChatResponseContentImpl(
+            serverToolCall.id,
+            serverToolCall.name,
+            serverToolCall.arguments,
+            serverToolCall.finished,
+            serverToolCall.result,
+            serverToolCall.data
+        );
+    }
+}
+
 @injectable()
 export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     @inject(ToolCallChatResponseContentFactory)
     protected toolCallResponseContentFactory: ToolCallChatResponseContentFactory;
+
+    @inject(ServerToolCallResponseContentFactory)
+    protected serverToolCallResponseContentFactory: ServerToolCallResponseContentFactory;
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
@@ -707,12 +764,27 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return toolCallContents;
             }
         }
+        if (isServerToolCallResponsePart(token)) {
+            const serverToolCalls = token.server_tool_calls;
+            if (serverToolCalls !== undefined) {
+                return serverToolCalls.map(serverToolCall =>
+                    this.createServerToolCallResponseContent(serverToolCall)
+                );
+            }
+        }
         if (isThinkingResponsePart(token)) {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
         if (isUsageResponsePart(token)) {
             request.response.setTokenUsage(this.mapUsageResponsePart(token));
             return [];
+        }
+        if (isCompactionResponsePart(token)) {
+            return new CompactionChatResponseContentImpl(
+                token.compaction.provider,
+                token.compaction.data,
+                token.compaction.summary
+            );
         }
         return this.defaultContentFactory.create('', request);
     }
@@ -728,5 +800,13 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
      */
     protected createToolCallResponseContent(toolCall: ToolCall): ChatResponseContent {
         return this.toolCallResponseContentFactory.create(toolCall);
+    }
+
+    /**
+     * Creates a ServerToolCallChatResponseContent from the provided server tool call data.
+     * Subclasses can override this to customize how provider-executed server tools are rendered.
+     */
+    protected createServerToolCallResponseContent(serverToolCall: ServerToolCall): ChatResponseContent {
+        return this.serverToolCallResponseContentFactory.create(serverToolCall);
     }
 }

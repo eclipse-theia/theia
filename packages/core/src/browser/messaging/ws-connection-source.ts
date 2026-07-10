@@ -208,12 +208,7 @@ export class WebSocketConnectionSource implements ConnectionSource {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
-            reconnectionAttempts: Infinity,
-            extraHeaders: {
-                // Socket.io strips the `origin` header
-                // We need to provide our own for validation
-                'fix-origin': window.location.origin
-            }
+            reconnectionAttempts: Infinity
         });
     }
 

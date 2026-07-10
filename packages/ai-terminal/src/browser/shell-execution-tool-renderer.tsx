@@ -78,7 +78,8 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
         const handleAllow = (patterns?: string[]) => {
             if (patterns && patterns.length > 0) {
                 try {
-                    this.shellCommandPermissionService.addAllowlistPatterns(...patterns);
+                    this.shellCommandPermissionService.addAllowlistPatterns(...patterns)
+                        .catch(err => console.warn('Failed to add allowlist patterns:', err));
                 } catch (err) {
                     console.warn('Failed to add allowlist patterns:', err);
                 }
@@ -88,7 +89,8 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
         const handleDeny = (options?: { patterns?: string[]; reason?: string }) => {
             if (options?.patterns && options.patterns.length > 0) {
                 try {
-                    this.shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+                    this.shellCommandPermissionService.addDenylistPatterns(...options.patterns)
+                        .catch(err => console.warn('Failed to add denylist patterns:', err));
                 } catch (err) {
                     console.warn('Failed to add denylist patterns:', err);
                 }
@@ -211,7 +213,8 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     const handleAllow = React.useCallback((patterns?: string[]) => {
         if (patterns && patterns.length > 0) {
             try {
-                shellCommandPermissionService.addAllowlistPatterns(...patterns);
+                shellCommandPermissionService.addAllowlistPatterns(...patterns)
+                    .catch(err => console.warn('Failed to add allowlist patterns:', err));
             } catch (err) {
                 console.warn('Failed to add allowlist patterns:', err);
             }
@@ -222,7 +225,8 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     const handleDeny = React.useCallback((options?: { patterns?: string[]; reason?: string }) => {
         if (options?.patterns && options.patterns.length > 0) {
             try {
-                shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+                shellCommandPermissionService.addDenylistPatterns(...options.patterns)
+                    .catch(err => console.warn('Failed to add denylist patterns:', err));
             } catch (err) {
                 console.warn('Failed to add denylist patterns:', err);
             }
@@ -819,7 +823,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
 
     const getStatusLabel = (): string => {
         if (confirmationState === 'rejected') {
-            return nls.localize('theia/ai-terminal/executionCanceled', 'Canceled');
+            return nls.localizeByDefault('Canceled');
         }
         return denialReason
             ? nls.localize('theia/ai-terminal/executionDeniedWithReason', 'Denied with reason')
@@ -896,7 +900,7 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                         <span className="shell-execution-tool duration">{formatDuration(canceledResult.duration)}</span>
                     )}
                     <span className="shell-execution-tool status-label canceled">
-                        {nls.localize('theia/ai-terminal/executionCanceled', 'Canceled')}
+                        {nls.localizeByDefault('Canceled')}
                     </span>
                 </span>
             </div>

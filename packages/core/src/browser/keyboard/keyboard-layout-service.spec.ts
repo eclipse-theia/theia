@@ -92,6 +92,34 @@ describe('keyboard layout service', function (): void {
         chai.expect(service.getKeyboardCharacter(indentLine.key!)).to.equal(')');
     });
 
+    it('does not let a dead key hijack a keybinding on Mac (#17677)', async () => {
+        // On macOS US Extended, Option+P is the "combining comma below" dead key whose display glyph
+        // is reported as ',' by native-keymap. Since KeyP is reported before Comma, without honoring the
+        // dead-key flags it would claim the ',' slot and resolve ctrlcmd+, to Cmd+Ctrl+Option+P.
+        const macUSExtended: NativeKeyboardLayout = {
+            info: { id: 'com.apple.keylayout.USExtended', lang: 'en' },
+            mapping: {
+                KeyP: {
+                    value: 'p', valueIsDeadKey: false,
+                    withShift: 'P', withShiftIsDeadKey: false,
+                    withAltGr: ',', withAltGrIsDeadKey: true,
+                    withShiftAltGr: '̦', withShiftAltGrIsDeadKey: true
+                },
+                Comma: {
+                    value: ',', valueIsDeadKey: false,
+                    withShift: '<', withShiftIsDeadKey: false,
+                    withAltGr: '≤', withAltGrIsDeadKey: false,
+                    withShiftAltGr: '¯', withShiftAltGrIsDeadKey: false
+                }
+            }
+        };
+        const service = await setup(macUSExtended, 'mac');
+
+        const openSettings = service.resolveKeyCode(KeyCode.createKeyCode('Comma+M1'));
+        chai.expect(openSettings.toString()).to.equal('meta+,');
+        chai.expect(service.getKeyboardCharacter(openSettings.key!)).to.equal(',');
+    });
+
     it('resolves correct key bindings with German Windows layout', async () => {
         const winGerman = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(winGerman, 'win');

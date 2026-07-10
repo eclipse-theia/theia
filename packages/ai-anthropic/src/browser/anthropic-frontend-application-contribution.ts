@@ -17,9 +17,10 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/anthropic-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF } from '../common/anthropic-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
+import { resolveCompactionDefault, ServerSideCompactionSetting } from '@theia/ai-core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -63,6 +64,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
                     this.updateAllModels();
+                } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF || event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION) {
+                    this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 }
@@ -101,6 +104,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 model.apiKey === newModel.apiKey &&
                 model.maxRetries === newModel.maxRetries &&
                 model.useCaching === newModel.useCaching &&
+                model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
                 model.enableStreaming === newModel.enableStreaming));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -120,6 +124,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
 
         return {
             id: id,
@@ -127,12 +134,16 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             apiKey: true,
             enableStreaming: true,
             useCaching: true,
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            serverSideCompactionEnabledByDefault
         };
     }
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -146,7 +157,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     enableStreaming: pref.enableStreaming ?? true,
                     useCaching: pref.useCaching ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    serverSideCompactionEnabledByDefault
                 }
             ];
         }, []);

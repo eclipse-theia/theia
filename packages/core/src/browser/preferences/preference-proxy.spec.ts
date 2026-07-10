@@ -162,6 +162,14 @@ describe('Preference Proxy', () => {
                 expect(Object.keys(proxy).join()).to.equal(['my.pref'].join());
             });
 
+            it('supports object introspection through Symbol.toStringTag', async () => {
+                const { proxy, promisedSchema } = getProxy();
+                if (promisedSchema) {
+                    await promisedSchema;
+                }
+                expect(Object.prototype.toString.call(proxy)).to.equal('[object Object]');
+            });
+
             it('it should provide access in deep style but not flat', async () => {
                 const { proxy, promisedSchema } = getProxy(undefined, { style: 'deep' });
                 if (promisedSchema) {

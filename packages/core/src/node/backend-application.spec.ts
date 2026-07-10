@@ -19,16 +19,17 @@ import * as sinon from 'sinon';
 import { Container, ContainerModule, injectable, preDestroy } from 'inversify';
 import { bindContributionProvider, ILogger, Stopwatch } from '../common';
 import { Deferred } from '../common/promise-util';
-import { MockLogger } from '../common/test/mock-logger';
 import { NodeStopwatch } from './performance/node-stopwatch';
 import { ProcessUtils } from './process-utils';
 import {
     BackendApplication,
     BackendApplicationCliContribution,
     BackendApplicationContribution,
+    EarlyExpressMiddleware,
     RootContainer
 } from './backend-application';
 import { CliContribution } from './cli';
+import { MockLogger } from '../common/test/mock-logger';
 
 /**
  * Test subclass that exposes the protected `gracefulShutdown` for direct testing.
@@ -82,12 +83,12 @@ describe('BackendApplication', () => {
         const container = new Container();
 
         container.bind(RootContainer).toConstantValue(container);
-
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(Stopwatch).to(NodeStopwatch).inSingletonScope();
         container.bind(ProcessUtils).toSelf().inSingletonScope();
         container.bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
         container.bind(CliContribution).toService(BackendApplicationCliContribution);
+        container.bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
         bindContributionProvider(container, BackendApplicationContribution);
 
         container.bind(TestBackendApplication).toSelf().inSingletonScope();
@@ -242,7 +243,8 @@ describe('BackendApplication', () => {
             container.bind(BackendApplicationContribution).toConstantValue({
                 onStop: () => { secondRan = true; }
             });
-            const errorStub = sandbox.stub(console, 'error');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const errorStub = sandbox.stub(mockLogger, 'error');
 
             const app = container.get(TestBackendApplication);
             await app.invokeGracefulShutdown();

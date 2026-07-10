@@ -22,7 +22,8 @@ import {
     ParsedCapability,
     GenericCapabilitySelections,
     matchFunctionsRegEx,
-    matchVariablesRegEx
+    matchVariablesRegEx,
+    parseFunctionReference
 } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat';
 
@@ -121,7 +122,7 @@ export class ChatCapabilitiesServiceImpl implements ChatCapabilitiesService {
         // Extract all functions using the standard regex
         const functionMatches = matchFunctionsRegEx(template);
         for (const match of functionMatches) {
-            functions.push(match[1]);
+            functions.push(parseFunctionReference(match[1]).id);
         }
 
         // Extract all variables using the standard regex

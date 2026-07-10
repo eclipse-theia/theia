@@ -20,7 +20,7 @@ import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVar
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
-import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, stripFrontMatter } from './prompt-service-util';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
 export interface CommandPromptFragmentMetadata {
@@ -124,8 +124,43 @@ export interface ResolvedPromptFragment {
     /** All functions referenced in the prompt fragment */
     functionDescriptions?: Map<string, ToolRequest>;
 
+    /**
+     * Ids of functions referenced in the prompt fragment that were marked as
+     * deferred (`~{?functionId}`). Deferred tools should not be loaded into
+     * the model's context upfront. Providers that support deferred tool
+     * loading (e.g. Anthropic, OpenAI) may use this information to set the
+     * appropriate flag on the tool definition and include the tool search
+     * tool in the request.
+     */
+    deferredFunctionIds?: Set<string>;
+
     /** All variables resolved in the prompt fragment */
     variables?: ResolvedAIVariable[];
+}
+
+/**
+ * One alternative prompt template available for a custom agent. Variants are loaded from
+ * `<scope>/agents/<id>/*.prompttemplate` files (one variant per file; id = filename stem).
+ */
+export interface CustomAgentPromptVariant {
+    id: string;
+    template: string;
+}
+
+export namespace CustomAgentPromptVariant {
+    export function equals(a: CustomAgentPromptVariant, b: CustomAgentPromptVariant): boolean {
+        return a.id === b.id && a.template === b.template;
+    }
+
+    export function arrayEquals(a?: readonly CustomAgentPromptVariant[], b?: readonly CustomAgentPromptVariant[]): boolean {
+        const aArr = a ?? [];
+        const bArr = b ?? [];
+        if (aArr.length !== bArr.length) { return false; }
+        for (let i = 0; i < aArr.length; i++) {
+            if (!equals(aArr[i], bArr[i])) { return false; }
+        }
+        return true;
+    }
 }
 
 /**
@@ -141,7 +176,7 @@ export interface CustomAgentDescription {
     /** Description of the agent's purpose and capabilities */
     description: string;
 
-    /** The prompt text for this agent */
+    /** The prompt text for this agent (the default variant body) */
     prompt: string;
 
     /** The default large language model to use with this agent */
@@ -149,6 +184,12 @@ export interface CustomAgentDescription {
 
     /** Whether this agent should appear in the chat UI (defaults to true if not specified) */
     showInChat?: boolean;
+
+    /**
+     * Optional additional prompt variants for this agent. Loaded from sibling
+     * `.prompttemplate` files in the same `<scope>/agents/<id>/` folder.
+     */
+    promptVariants?: CustomAgentPromptVariant[];
 }
 
 export namespace CustomAgentDescription {
@@ -182,11 +223,28 @@ export namespace CustomAgentDescription {
     }
 
     /**
-     * Compares two CustomAgentDescription objects for equality
+     * Compares two CustomAgentDescription objects for equality (including prompt variants).
      */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM && a.showInChat === b.showInChat;
+        return a.id === b.id
+            && a.name === b.name
+            && a.description === b.description
+            && a.prompt === b.prompt
+            && a.defaultLLM === b.defaultLLM
+            && a.showInChat === b.showInChat
+            && CustomAgentPromptVariant.arrayEquals(a.promptVariants, b.promptVariants);
     }
+}
+
+/**
+ * A discoverable custom-agent location within a single prompt-templates scope. `kind` distinguishes
+ * the per-agent `agents/` directory from the legacy `customAgents.yml` file; consumers should
+ * branch on it rather than inspecting the URI's basename.
+ */
+export interface CustomAgentsLocation {
+    uri: URI;
+    exists: boolean;
+    kind: 'agents-dir' | 'legacy-yaml';
 }
 
 /**
@@ -309,12 +367,56 @@ export interface PromptFragmentCustomizationService {
     getCustomAgents(): Promise<CustomAgentDescription[]>;
 
     /**
-     * Gets the locations of custom agent configuration files
-     * @returns Array of URIs and existence status
+     * Gets the locations of custom agent configuration files. Each scope contributes both an
+     * `agents/` directory entry and a legacy `customAgents.yml` entry, discriminated by
+     * {@link CustomAgentsLocation.kind}.
+     * @returns Array of locations with their kind and existence status
      */
-    getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
+    getCustomAgentsLocations(): Promise<CustomAgentsLocation[]>;
 
     /**
+     * Creates a per-agent file at `<parentDirectory>/agents/<agent.id>/agent.md` from the given
+     * description, then opens it. Replaces a previously existing `agent.md` for the same id.
+     *
+     * @param parentDirectory The prompt-templates scope (e.g. workspace `.prompts/` or the global templates dir)
+     * @param agent The agent description to serialize
+     * @returns The URI of the created file
+     */
+    createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI>;
+
+    /**
+     * Returns `true` if migration would write anything: a scope still holds a legacy
+     * `customAgents.yml`, or a previously migrated scope has `agent.md` files that can be corrected
+     * (e.g. headings that were folded by an earlier migration). Read-only; performs no writes and is
+     * intended for deciding whether to prompt the user before migrating.
+     */
+    hasPendingCustomAgentMigration(): Promise<boolean>;
+
+    /**
+     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout and
+     * corrects already-migrated `agent.md` files whose headings were folded by an earlier migration.
+     * The user's original content is never deleted: on success (or on partial failure when no backup
+     * exists yet) the YAML is renamed to `customAgents.yml.bak`; if a `.bak` already exists it is not
+     * overwritten and the YAML is left in place. Corrections only overwrite `agent.md` files the user
+     * has not edited since migration.
+     * Idempotent — rerunning never overwrites an already up-to-date agent file.
+     */
+    migrateCustomAgentsYaml(): Promise<Array<{
+        scope: URI;
+        yamlURI: URI;
+        migrated: number;
+        alreadyPresent: number;
+        failed: number;
+        yamlBackedUp: boolean;
+        promptOverridesMigrated: number;
+        corrected: number;
+    }>>;
+
+    /**
+     * @deprecated Use {@link createCustomAgentFile} to author agents in the new
+     * `<scope>/agents/<id>/agent.md` layout. Kept so legacy callers continue to work
+     * until they are migrated.
+     *
      * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
      *
      * @param uri The URI of the customAgents.yml file to open or create
@@ -779,12 +881,16 @@ export class PromptServiceImpl implements PromptService {
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
         const functionMatches = matchFunctionsRegEx(resolvedTemplate);
         const functionMap = new Map<string, ToolRequest>();
+        const deferredFunctionIds = new Set<string>();
         const functionReplacements = functionMatches.map(match => {
             const completeText = match[0];
-            const functionId = match[1];
+            const { id: functionId, deferred } = parseFunctionReference(match[1]);
             const toolRequest = this.toolInvocationRegistry?.getFunction(functionId);
             if (toolRequest) {
                 functionMap.set(toolRequest.id, toolRequest);
+                if (deferred) {
+                    deferredFunctionIds.add(toolRequest.id);
+                }
             }
             return {
                 placeholder: completeText,
@@ -798,6 +904,7 @@ export class PromptServiceImpl implements PromptService {
             id: systemOrFragmentId,
             text: resolvedTemplate,
             functionDescriptions: functionMap.size > 0 ? functionMap : undefined,
+            deferredFunctionIds: deferredFunctionIds.size > 0 ? deferredFunctionIds : undefined,
             variables: variableAndArgResolutions.resolvedVariables
         };
     }

@@ -26,22 +26,37 @@ import {
     ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, unreachable } from '@theia/core';
+import { CancellationToken, nls, unreachable } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
     FunctionTool,
+    Tool,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCall,
     ResponseInputItem,
-    ResponseStreamEvent
+    ResponseStreamEvent,
+    ResponseToolSearchCall,
+    ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
 import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
+
+/**
+ * User-facing name under which the provider's built-in deferred-tool search is surfaced in the chat UI.
+ * Matches the native Response API tool type (`tool_search`), which OpenAI executes on its own infrastructure.
+ */
+export const OPENAI_TOOL_SEARCH = 'tool_search';
+
+function openAiToolSearchFoundText(found: number): string {
+    return found === 1
+        ? nls.localize('theia/ai/openai/toolSearch/foundOne', 'Found 1 tool.')
+        : nls.localize('theia/ai/openai/toolSearch/found', 'Found {0} tools.', found);
+}
 
 interface ToolCall {
     id: string;
@@ -83,7 +98,7 @@ export class OpenAiResponseApiUtils {
         }
 
         const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
-        const tools = this.convertToolsForResponseApi(request.tools);
+        const tools = this.convertToolsForResponseApi(request.tools, request.deferredToolIds);
 
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
@@ -134,12 +149,13 @@ export class OpenAiResponseApiUtils {
     /**
      * Converts ToolRequest objects to the format expected by the Response API.
      */
-    convertToolsForResponseApi(tools?: ToolRequest[]): FunctionTool[] | undefined {
+    convertToolsForResponseApi(tools?: ToolRequest[], deferredToolIds?: string[]): Tool[] | undefined {
         if (!tools || tools.length === 0) {
             return undefined;
         }
 
-        const converted = tools.map(tool => ({
+        const deferred = new Set(deferredToolIds ?? []);
+        const converted: Tool[] = tools.map(tool => ({
             type: 'function' as const,
             name: tool.name,
             description: tool.description || '',
@@ -147,9 +163,13 @@ export class OpenAiResponseApiUtils {
             // and additional properties must be disallowed.
             // https://platform.openai.com/docs/guides/function-calling#strict-mode
             parameters: this.recursiveStrictToolCallParameters(tool.parameters),
-            strict: true
+            strict: true,
+            defer_loading: deferred.has(tool.id) ? true : undefined
         }));
-        console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.name));
+        if (deferred.size > 0) {
+            converted.push({ type: 'tool_search', execution: 'server' });
+        }
+        console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
     }
 
@@ -174,6 +194,13 @@ export class OpenAiResponseApiUtils {
                         if (event.type === 'response.output_text.delta') {
                             yield {
                                 content: event.delta
+                            };
+                        } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
+                            yield {
+                                compaction: {
+                                    provider: 'openai-responses',
+                                    data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                                }
                             };
                         } else if (event.type === 'response.completed') {
                             if (event.response?.usage) {
@@ -236,8 +263,29 @@ export class OpenAiResponseApiUtils {
         const nonSystemMessages = processed.filter(m => m.actor !== 'system');
         const input: ResponseInputItem[] = [];
 
-        for (const message of nonSystemMessages) {
-            if (LanguageModelMessage.isTextMessage(message)) {
+        // Server-side compaction replay: the latest openai-responses compaction marker carries the (encrypted) context for
+        // everything before it. Drop that prefix and replay the marker as a compaction input item; earlier markers are subsumed.
+        let sliceStart = 0;
+        for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
+            const candidate = nonSystemMessages[i];
+            if (LanguageModelMessage.isCompactionMessage(candidate) && candidate.provider === 'openai-responses') {
+                const data = candidate.data as { encrypted_content: string; id?: string };
+                input.push({
+                    type: 'compaction',
+                    encrypted_content: data.encrypted_content,
+                    id: data.id
+                });
+                sliceStart = i + 1;
+                break;
+            }
+        }
+
+        for (const message of nonSystemMessages.slice(sliceStart)) {
+            if (LanguageModelMessage.isCompactionMessage(message)) {
+                // Skip any remaining compaction marker (foreign provider, or a non-final openai-responses one):
+                // it is not the prefix-drop item, so it carries no input for this provider.
+                continue;
+            } else if (LanguageModelMessage.isTextMessage(message)) {
                 if (message.actor === 'ai') {
                     // Assistant messages use ResponseOutputMessage format
                     input.push({
@@ -290,6 +338,9 @@ export class OpenAiResponseApiUtils {
                 });
             } else if (LanguageModelMessage.isThinkingMessage(message)) {
                 // Pass
+            } else if (LanguageModelMessage.isServerToolUseMessage(message)) {
+                // 'server_tool_use' replay messages can appear when switching providers within a
+                // session; OpenAI has no equivalent, so they are skipped.
             } else {
                 unreachable(message);
             }
@@ -319,9 +370,11 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Current iteration state
     protected currentInput: ResponseInputItem[];
     protected currentToolCalls = new Map<string, ToolCall>();
+    // Id under which the current deferred-tool search is surfaced, so the running and finished parts merge in the UI.
+    protected toolSearchCallId: string | undefined;
     protected iteration = 0;
     protected readonly maxIterations: number;
-    protected readonly tools: FunctionTool[] | undefined;
+    protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
     protected currentResponseText = '';
 
@@ -341,7 +394,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
         this.instructions = instructions;
         this.currentInput = input;
-        this.tools = utils.convertToolsForResponseApi(request.tools);
+        this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds);
         this.maxIterations = runnerOptions.maxChatCompletions || 100;
 
         // Start the first iteration
@@ -456,6 +509,20 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             this.handleIncoming({ content: this.currentResponseText });
         }
 
+        // Surface any deferred-tool search OpenAI executed while producing this response (see handleToolSearchOutput).
+        const toolSearchOutputs = response.output?.filter((item): item is ResponseToolSearchOutputItem => item.type === 'tool_search_output') || [];
+        for (const output of toolSearchOutputs) {
+            const found = output.tools?.length ?? 0;
+            this.handleIncoming({
+                server_tool_calls: [{
+                    id: output.call_id ?? output.id,
+                    name: OPENAI_TOOL_SEARCH,
+                    finished: true,
+                    result: { content: [{ type: 'text', text: openAiToolSearchFoundText(found) }] }
+                }]
+            });
+        }
+
         // Find function calls in the response
         const functionCalls = response.output?.filter((item): item is ResponseFunctionToolCall => item.type === 'function_call') || [];
 
@@ -497,6 +564,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.added':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallAdded(event.item);
+                } else if (event.item?.type === 'tool_search_call') {
+                    this.handleToolSearchCall(event.item);
                 }
                 break;
 
@@ -511,6 +580,15 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.done':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
+                } else if (event.item?.type === 'compaction') {
+                    this.handleIncoming({
+                        compaction: {
+                            provider: 'openai-responses',
+                            data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                        }
+                    });
+                } else if (event.item?.type === 'tool_search_output') {
+                    this.handleToolSearchOutput(event.item);
                 }
                 break;
 
@@ -602,6 +680,36 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             toolCall.name = event.name || toolCall.name;
             toolCall.arguments = event.arguments || toolCall.arguments;
         }
+    }
+
+    /**
+     * The deferred-tool search runs on OpenAI's infrastructure and is reported as `tool_search_call` /
+     * `tool_search_output` output items. Surface it as a server tool call so the chat UI shows the search
+     * running and, once finished, how many tools were loaded. It is never executed by a client handler.
+     */
+    protected handleToolSearchCall(item: ResponseToolSearchCall): void {
+        this.toolSearchCallId = item.call_id ?? item.id;
+        this.handleIncoming({
+            server_tool_calls: [{
+                id: this.toolSearchCallId,
+                name: OPENAI_TOOL_SEARCH,
+                arguments: typeof item.arguments === 'string' ? item.arguments : JSON.stringify(item.arguments ?? ''),
+                finished: false
+            }]
+        });
+    }
+
+    protected handleToolSearchOutput(item: ResponseToolSearchOutputItem): void {
+        const found = item.tools?.length ?? 0;
+        this.handleIncoming({
+            server_tool_calls: [{
+                id: this.toolSearchCallId ?? item.call_id ?? item.id,
+                name: OPENAI_TOOL_SEARCH,
+                finished: true,
+                result: { content: [{ type: 'text', text: openAiToolSearchFoundText(found) }] }
+            }]
+        });
+        this.toolSearchCallId = undefined;
     }
 
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {

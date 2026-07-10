@@ -18,6 +18,7 @@ import { MessageService, nls, PreferenceService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPServerEditor } from './mcp-server-editor';
@@ -32,6 +33,10 @@ const ID_PARAM = 'id';
  * minimal: the install configuration, version, display name and content hash are all
  * read from the configured AI registry by id. This guarantees the user installs exactly
  * what the registry currently publishes and keeps install links short and stable.
+ *
+ * Opening such a link brings the IDE window to the foreground, reveals the AI registry
+ * (Extensions) view with the `serverId` searched so the entry is in focus, and then opens
+ * the install dialog for that entry.
  *
  * Lives in `@theia/ai-mcp` so products without the registry package still receive the
  * URL - but installation only succeeds when an `MCPRegistryUiBridge` is bound and the
@@ -50,6 +55,9 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -71,6 +79,7 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     async open(uri: URI): Promise<object | undefined> {
         const serverId = this.extractServerId(uri);
+        this.windowService.focus();
         if (!serverId) {
             this.messageService.error(nls.localize(
                 'theia/ai-mcp/installUri/missingId',
@@ -98,6 +107,7 @@ export class InstallMcpUriHandler implements OpenHandler {
             ));
             return undefined;
         }
+        await this.registryBridge.openRegistry(serverId);
         if (this.isAlreadyInstalled(entry.localName) && !await this.confirmOverwrite(entry.localName)) {
             return undefined;
         }
@@ -105,6 +115,7 @@ export class InstallMcpUriHandler implements OpenHandler {
             name: entry.localName,
             autostart: true,
             requireAuthToken: 'serverAuthToken' in entry.config,
+            requireOAuth: 'oauth' in entry.config,
             // Bridge already resolved this id, so trust is always "verified" here.
             trust: { status: 'verified', serverId } satisfies MCPServerInstallTrust
         });

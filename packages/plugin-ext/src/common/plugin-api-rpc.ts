@@ -46,6 +46,7 @@ import {
     InlineValue,
     InlineValueContext,
     DocumentHighlight,
+    MultiDocumentHighlightDto,
     FormattingOptions,
     ChainedCacheId,
     Definition,
@@ -129,6 +130,7 @@ import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
 import { ArgumentProcessor } from './commands';
 import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
+import { LanguageModelToolsMain, LanguageModelToolsExt } from './lm-tool-protocol';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -1824,6 +1826,8 @@ export interface LanguagesExt {
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
     $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
+    $provideMultiDocumentHighlights(handle: number, resource: UriComponents, position: Position, otherResources: UriComponents[], token: CancellationToken):
+        Promise<MultiDocumentHighlightDto[] | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
         options: FormattingOptions, token: CancellationToken): Promise<TextEdit[] | undefined>;
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range,
@@ -1919,6 +1923,7 @@ export interface LanguagesMain {
     $registerInlineValuesProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $emitInlineValuesEvent(eventHandle: number, event?: any): void;
     $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerMultiDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[], documentation?: CodeActionProviderDocumentation): void;
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
@@ -2476,7 +2481,8 @@ export const PLUGIN_RPC_CONTEXT = {
     LOCALIZATION_MAIN: createProxyIdentifier<LocalizationMain>('LocalizationMain'),
     TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
     URI_MAIN: createProxyIdentifier<UriMain>('UriMain'),
-    MCP_SERVER_DEFINITION_REGISTRY_MAIN: createProxyIdentifier<McpServerDefinitionRegistryMain>('McpServerDefinitionRegistryMain')
+    MCP_SERVER_DEFINITION_REGISTRY_MAIN: createProxyIdentifier<McpServerDefinitionRegistryMain>('McpServerDefinitionRegistryMain'),
+    LM_TOOLS_MAIN: createProxyIdentifier<LanguageModelToolsMain>('LanguageModelToolsMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2521,7 +2527,8 @@ export const MAIN_RPC_CONTEXT = {
     TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
     TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
     URI_EXT: createProxyIdentifier<UriExt>('UriExt'),
-    MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt')
+    MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt'),
+    LM_TOOLS_EXT: createProxyIdentifier<LanguageModelToolsExt>('LanguageModelToolsExt')
 };
 
 export interface TasksExt {

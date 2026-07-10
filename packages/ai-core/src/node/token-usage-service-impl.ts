@@ -14,12 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { TokenUsage, TokenUsageParams, TokenUsageService } from '../common/token-usage-service';
 import { TokenUsageServiceClient } from '../common/protocol';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class TokenUsageServiceImpl implements TokenUsageService {
+
+    @inject(ILogger) @named('ai-core:TokenUsageServiceImpl')
+    protected readonly logger: ILogger;
+
     private client: TokenUsageServiceClient | undefined;
 
     /**
@@ -68,7 +73,7 @@ export class TokenUsageServiceImpl implements TokenUsageService {
             logMessage += `; RequestId: ${params.requestId}`;
         }
 
-        console.debug(logMessage);
+        this.logger.debug(logMessage);
         // For now we just store in memory
         // In the future, this could be persisted to disk, a database, or sent to a service
         return Promise.resolve();

@@ -24,7 +24,7 @@ import {
     QuestionResponseContentImpl,
     ThinkingChatResponseContentImpl,
 } from '@theia/ai-chat';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { AI_CHAT_HOME, AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
 import { CommandService, ILogger, nls, SelectionService } from '@theia/core';
@@ -141,7 +141,7 @@ Use the collective context to understand the user's current workspace state and 
 export const CLAUDE_CHAT_AGENT_ID = 'ClaudeCode';
 
 const localCommands = {
-    'clear': AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
+    'clear': AI_CHAT_HOME,
     'config': OPEN_CLAUDE_CODE_CONFIG,
     'memory': OPEN_CLAUDE_CODE_MEMORY,
     'resume': AI_CHAT_SHOW_CHATS_COMMAND,

@@ -79,7 +79,9 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
-import { ChatSessionCardActionContribution, DefaultChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
+import { ChatBannerProvider } from '@theia/ai-chat-ui/lib/browser/chat-banner-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
@@ -87,7 +89,7 @@ import { TaskContextSummaryVariableContribution } from './task-background-summar
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
@@ -194,9 +196,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
-    bindContributionProvider(bind, ChatSessionCardActionContribution);
-    bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
-    bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
+    bind(ChatBannerProvider).to(AiAllowAllModeChatBanner).inSingletonScope();
+    bindRootContributionProvider(bind, ChatSessionItemActionContribution);
+    bind(DefaultChatSessionItemActionContribution).toSelf().inSingletonScope();
+    bind(ChatSessionItemActionContribution).toService(DefaultChatSessionItemActionContribution);
     bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);

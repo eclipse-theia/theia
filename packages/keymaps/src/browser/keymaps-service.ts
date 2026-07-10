@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { KeybindingRegistry, KeybindingScope, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
 import { Keybinding, RawKeybinding } from '@theia/core/lib/common/keybinding';
@@ -28,6 +28,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { MonacoJSONCEditor } from '@theia/preferences/lib/browser/monaco-jsonc-editor';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class KeymapsService {
@@ -49,6 +50,9 @@ export class KeymapsService {
 
     @inject(MonacoJSONCEditor)
     protected readonly jsoncEditor: MonacoJSONCEditor;
+
+    @inject(ILogger) @named('keymaps:KeymapsService')
+    protected readonly logger: ILogger;
 
     protected readonly changeKeymapEmitter = new Emitter<void>();
     readonly onDidChangeKeymaps = this.changeKeymapEmitter.event;
@@ -101,7 +105,7 @@ export class KeymapsService {
             }
             this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
         } catch (e) {
-            console.error(`Failed to load keymaps from '${model.uri}'.`, e);
+            this.logger.error(`Failed to load keymaps from '${model.uri}'.`, e);
         }
     }
 
@@ -207,7 +211,7 @@ export class KeymapsService {
         } catch (e) {
             const message = `Failed to update a keymap in '${model.uri}'.`;
             this.messageService.error(`${message} Please check if it is corrupted.`);
-            console.error(`${message}`, e);
+            this.logger.error(`${message}`, e);
         }
     }
 

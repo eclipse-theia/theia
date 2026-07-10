@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import {
     TaskConfiguration,
     TaskCustomization,
@@ -32,6 +32,7 @@ import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { ILogger } from '@theia/core';
 
 export interface TaskConfigurationClient {
     /**
@@ -83,6 +84,9 @@ export class TaskConfigurations implements Disposable {
     @inject(TaskSourceResolver)
     protected readonly taskSourceResolver: TaskSourceResolver;
 
+    @inject(ILogger) @named('task:TaskConfigurations')
+    protected readonly logger: ILogger;
+
     constructor() {
         this.toDispose.push(Disposable.create(() => {
             this.tasksMap.clear();
@@ -102,7 +106,7 @@ export class TaskConfigurations implements Disposable {
                         this.client.taskConfigurationChanged(this.getTaskLabels());
                     }
                 } catch (err) {
-                    console.error(err);
+                    this.logger.error(err);
                 }
             })
         );
@@ -319,14 +323,14 @@ export class TaskConfigurations implements Disposable {
         try {
             await this.taskConfigurationManager.openConfiguration(scope);
         } catch (e) {
-            console.error(`Error occurred while opening 'tasks.json' in ${this.taskSourceResolver.resolve(task)}.`, e);
+            this.logger.error(`Error occurred while opening 'tasks.json' in ${this.taskSourceResolver.resolve(task)}.`, e);
         }
     }
 
     private getTaskCustomizationTemplate(task: TaskConfiguration): TaskCustomization | undefined {
         const definition = this.getTaskDefinition(task);
         if (!definition) {
-            console.error('Detected / Contributed tasks should have a task definition.');
+            this.logger.error('Detected / Contributed tasks should have a task definition.');
             return;
         }
         const customization: TaskCustomization = { type: task.type, runOptions: task.runOptions };

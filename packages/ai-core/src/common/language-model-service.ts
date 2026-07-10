@@ -77,7 +77,7 @@ export class LanguageModelServiceImpl implements LanguageModelService {
             if (message.type === 'thinking' && languageModelRequest.clientSettings?.keepThinking === false) {
                 return false;
             }
-            if ((message.type === 'tool_result' || message.type === 'tool_use') &&
+            if ((message.type === 'tool_result' || message.type === 'tool_use' || message.type === 'server_tool_use') &&
                 languageModelRequest.clientSettings?.keepToolCalls === false) {
                 return false;
             }

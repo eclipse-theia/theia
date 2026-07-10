@@ -32,6 +32,10 @@ class TestableAnthropicManager extends AnthropicLanguageModelsManagerImpl {
         return this.deriveSupportsXHighEffort(info);
     }
 
+    public callDeriveServerSideCompactionSupport(desc: AnthropicModelDescription): boolean {
+        return this.deriveServerSideCompactionSupport(desc);
+    }
+
     public callFetchModelInfo(
         desc: AnthropicModelDescription,
         apiKey: string | undefined,
@@ -64,6 +68,7 @@ function description(model: string, url?: string): AnthropicModelDescription {
         enableStreaming: true,
         useCaching: true,
         maxRetries: 3,
+        serverSideCompactionEnabledByDefault: false,
         url
     };
 }
@@ -156,6 +161,46 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
             } as Partial<ModelInfo>);
             expect(manager.callDeriveSupportsXHighEffort(supported)).to.equal(true);
             expect(manager.callDeriveSupportsXHighEffort(unsupported)).to.equal(false);
+        });
+    });
+
+    describe('deriveServerSideCompactionSupport', () => {
+        function capabilityFor(modelId: string): boolean {
+            return manager.callDeriveServerSideCompactionSupport(description(modelId));
+        }
+
+        it('returns true for claude-opus-4-6', () => {
+            expect(capabilityFor('claude-opus-4-6')).to.equal(true);
+        });
+        it('returns true for claude-sonnet-4-6', () => {
+            expect(capabilityFor('claude-sonnet-4-6')).to.equal(true);
+        });
+        it('returns true for claude-opus-4-7 (newer minor version)', () => {
+            expect(capabilityFor('claude-opus-4-7')).to.equal(true);
+        });
+        it('returns false for claude-haiku-4-5 (haiku variant)', () => {
+            expect(capabilityFor('claude-haiku-4-5')).to.equal(false);
+        });
+        it('returns false for claude-opus-4-5 (older minor version)', () => {
+            expect(capabilityFor('claude-opus-4-5')).to.equal(false);
+        });
+        it('returns false for claude-sonnet-4-5 (older minor version, sonnet variant)', () => {
+            expect(capabilityFor('claude-sonnet-4-5')).to.equal(false);
+        });
+        it('returns true for claude-opus-5-0 (newer major version)', () => {
+            expect(capabilityFor('claude-opus-5-0')).to.equal(true);
+        });
+        it('returns false for claude-3-opus-20240229 (old date-style id)', () => {
+            expect(capabilityFor('claude-3-opus-20240229')).to.equal(false);
+        });
+        it('returns false for claude-sonnet-4-20250514 (4.0 with a date suffix, not minor 20250514)', () => {
+            expect(capabilityFor('claude-sonnet-4-20250514')).to.equal(false);
+        });
+        it('returns true for claude-opus-4-6-20250101 (4.6 with a date suffix)', () => {
+            expect(capabilityFor('claude-opus-4-6-20250101')).to.equal(true);
+        });
+        it('returns false for an unrecognized model id', () => {
+            expect(capabilityFor('gpt-4o')).to.equal(false);
         });
     });
 });

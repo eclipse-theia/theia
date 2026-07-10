@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { nls, ILogger } from '@theia/core';
 import { ACTION_ITEM, codicon, ConfirmDialog, Dialog, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { Autorun, ObservableUtils } from '@theia/core/lib/common/observable';
 import { EditorDecoration, Range } from '@theia/editor/lib/browser';
@@ -28,6 +28,9 @@ import { MergeRange } from '../../model/merge-range';
 
 @injectable()
 export class MergeEditorResultPane extends MergeEditorPane {
+
+    @inject(ILogger) @named('scm:MergeEditorResultPane')
+    protected readonly logger: ILogger;
 
     @inject(NavigationLocationService)
     protected readonly navigationLocationService: NavigationLocationService;
@@ -79,7 +82,7 @@ export class MergeEditorResultPane extends MergeEditorPane {
                 await ObservableUtils.waitForState(model.isUpToDateObservable);
                 this.mergeEditor.goToFirstMergeRange(mergeRange => !model.isMergeRangeHandled(mergeRange));
             }
-        }).catch(e => console.error(e));
+        }).catch(e => this.logger.error(e));
     }
 
     protected override getToolbarItems(): MergeEditorPaneToolbarItem[] {

@@ -22,7 +22,7 @@ import { FrontendVariableService, AIVariablePasteResult, AIVariableCompletionCon
 import * as monaco from '@theia/monaco-editor-core';
 import { ILogger, nls, Path, URI } from '@theia/core';
 import { LabelProvider, LabelProviderContribution, open, OpenerService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable, ImageContextVariableRequest, ResolvedImageContextVariable } from '../common/image-context-variable';
@@ -44,7 +44,7 @@ export class ImageContextVariableContribution implements AIVariableContribution,
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-chat:ImageContextVariableContribution')
     protected readonly logger: ILogger;
 
     @inject(PendingImageRegistry)

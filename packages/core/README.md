@@ -85,30 +85,30 @@ export class SomeClass {
   - `@lumino/signaling` (from [`@lumino/signaling@^2.1.5`](https://www.npmjs.com/package/@lumino/signaling))
   - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.4`](https://www.npmjs.com/package/@lumino/virtualdom))
   - `@lumino/widgets` (from [`@lumino/widgets@2.7.5`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.5))
-  - `@theia/application-package` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.72.0`](https://www.npmjs.com/package/@theia/application-package/v/1.72.0))
-  - `@theia/request` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
-  - `@theia/request/lib/proxy` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
-  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.72.0`](https://www.npmjs.com/package/@theia/request/v/1.72.0))
+  - `@theia/application-package` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/application-package/lib/api` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.73.0`](https://www.npmjs.com/package/@theia/application-package/v/1.73.0))
+  - `@theia/request` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
+  - `@theia/request/lib/proxy` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
+  - `@theia/request/lib/node-request-service` (from [`@theia/request@1.73.0`](https://www.npmjs.com/package/@theia/request/v/1.73.0))
   - `fs-extra` (from [`fs-extra@^4.0.3`](https://www.npmjs.com/package/fs-extra))
   - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
   - `inversify` (from [`inversify@^6.2.2`](https://www.npmjs.com/package/inversify))
-  - `react-dom` (from [`react-dom@^18.3.1`](https://www.npmjs.com/package/react-dom))
-  - `react-dom/client` (from [`react-dom@^18.3.1`](https://www.npmjs.com/package/react-dom))
+  - `react-dom` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
+  - `react-dom/client` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
   - `react-virtuoso` (from [`react-virtuoso@^2.19.1`](https://www.npmjs.com/package/react-virtuoso))
   - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@3.17.5`](https://www.npmjs.com/package/vscode-languageserver-protocol/v/3.17.5))
   - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.5.6`](https://www.npmjs.com/package/@parcel/watcher))
-  - `dompurify` (from [`dompurify@^3.4.2`](https://www.npmjs.com/package/dompurify))
-  - `express` (from [`express@^4.22.1`](https://www.npmjs.com/package/express))
+  - `dompurify` (from [`dompurify@^3.4.7`](https://www.npmjs.com/package/dompurify))
+  - `express` (from [`express@^4.22.2`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
-  - `markdown-it` (from [`markdown-it@^14.1.1`](https://www.npmjs.com/package/markdown-it))
+  - `markdown-it` (from [`markdown-it@^14.2.0`](https://www.npmjs.com/package/markdown-it))
   - `markdown-it-anchor` (from [`markdown-it-anchor@^9.2.0`](https://www.npmjs.com/package/markdown-it-anchor))
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.0.0`](https://www.npmjs.com/package/markdown-it-emoji))
-  - `react` (from [`react@^18.3.1`](https://www.npmjs.com/package/react))
-  - `ws` (from [`ws@^8.20.0`](https://www.npmjs.com/package/ws))
+  - `react` (from [`react@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react))
+  - `ws` (from [`ws@^8.21.0`](https://www.npmjs.com/package/ws))
   - `yargs` (from [`yargs@^17.7.2`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
@@ -124,8 +124,11 @@ the log level of particular loggers, create a config file such as
 {
   "defaultLevel": "info",
   "levels": {
-    "terminal": "debug",
-    "task": "error"
+    "terminal*": "debug",
+    "task*": "error",
+    "ai-core*": "error",
+    "ai-core:DefaultPromptFragmentCustomizationService": "debug",
+    "*Token*": "warn"
   }
 }
 ```
@@ -135,6 +138,13 @@ contains the log level to use for loggers not specified in `levels`.  This file
 can then be specified using the `--log-config` option.  Theia will watch that
 file for changes, so it's possible to change log levels at runtime by
 modifying this file.
+
+**Wildcard Support and Precedence**
+
+In addition to exact logger names, you can configure log levels using wildcards (`*`) to target multiple loggers with a single rule (e.g., `ai-core*` or `*Token*`). When resolving the log level for a specific logger, the following precedence rules apply:
+
+- **Exact Match Priority:** An exact match to a logger name will always take the highest priority over any wildcard rules.
+- **Last One Wins:** If an exact match is not found, the system evaluates the wildcard rules. If multiple wildcard rules match a given logger, the *last* matching rule defined in the configuration file takes precedence.
 
 It's unfortunately currently not possible to query Theia for the list of
 existing loggers.  However, each log message specifies from which logger it
@@ -154,7 +164,7 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
     - e.g: `theia.app.com,some.other.domain:3000`
   - The port number is important if your application is not hosted on either `80` or `443`.
   - If possible, you should set this environment variable:
-    - When not set, Theia will allow any origin to access the WebSocket services.
+    - When not set, Theia will enforce same-origin access to the WebSocket services.
     - When set, Theia will only allow the origins defined in this environment variable.
 - `FRONTEND_CONNECTION_TIMEOUT`
   - The duration in milliseconds during which the backend keeps the connection contexts for the frontend to reconnect.

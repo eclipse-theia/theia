@@ -170,6 +170,18 @@ describe('ChatAgentServiceImpl', () => {
                 expect(agents[0].id).to.equal('agent3');
             });
 
+            it('includes hidden agents when includeHidden is true', async () => {
+                await initializeService({
+                    agent1: { showInChat: false },
+                    agent2: { showInChat: false }
+                });
+
+                const agents = chatAgentService.getAgents(true);
+
+                expect(agents).to.have.lengthOf(3);
+                expect(agents.map(a => a.id)).to.include.members(['agent1', 'agent2', 'agent3']);
+            });
+
             it('includes agents where showInChat preference is true', async () => {
                 await initializeService({
                     agent1: { showInChat: true },
@@ -555,6 +567,33 @@ describe('ChatAgentServiceImpl', () => {
 
                 expect(agents.map(a => a.id)).to.include('disabled-agent');
                 expect(agents.map(a => a.id)).to.include('mentioned-agent');
+            });
+        });
+
+        describe('getAgent with includeHidden parameter', () => {
+            it('should return agent when includeHidden is true', () => {
+                service = container.get(ChatAgentServiceImpl);
+
+                const agent = service.getAgent('mentioned-agent', true);
+
+                expect(agent).to.equal(mockMentionedAgent);
+            });
+
+            it('should return agent when includeHidden is false and agent is not hidden', () => {
+                service = container.get(ChatAgentServiceImpl);
+
+                const agent = service.getAgent('mentioned-agent', false);
+
+                expect(agent).to.equal(mockMentionedAgent);
+            });
+
+            it('should return undefined for disabled agent even when includeHidden is true', () => {
+                service = container.get(ChatAgentServiceImpl);
+                mockAgentService.disableAgent('disabled-agent');
+
+                const agent = service.getAgent('disabled-agent', true);
+
+                expect(agent).to.be.undefined;
             });
         });
 

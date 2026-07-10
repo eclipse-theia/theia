@@ -28,6 +28,7 @@ import { Deferred, timeoutReject } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ProcessUtils } from './process-utils';
+import { ILogger } from '../common/logger';
 
 /**
  * The path to the application project directory. This is the directory where the application code is located.
@@ -52,6 +53,16 @@ const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
 const DEFAULT_HOST = 'localhost';
 const DEFAULT_SSL = false;
 const DEFAULT_DNS_DEFAULT_RESULT_ORDER: DnsResultOrder = 'ipv4first';
+
+/**
+ * Shared registry for Express middleware that must run before static file handlers.
+ * Contributions push handlers during `initialize()`, and `BackendApplication`
+ * applies them at the start of `configure()`, before gzipped handlers and `express.static()`.
+ */
+@injectable()
+export class EarlyExpressMiddleware {
+    readonly handlers: express.Handler[] = [];
+}
 
 export const BackendApplicationServer = Symbol('BackendApplicationServer');
 /**
@@ -174,11 +185,17 @@ export class BackendApplication {
 
     protected readonly app: express.Application = express();
 
+    @inject(EarlyExpressMiddleware)
+    protected readonly earlyMiddleware: EarlyExpressMiddleware;
+
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
 
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
+
+    @inject(ILogger) @named('core:BackendApplication')
+    protected readonly logger: ILogger;
 
     @inject(RootContainer)
     protected readonly rootContainer: interfaces.Container;
@@ -201,7 +218,7 @@ export class BackendApplication {
         // Workaround for Electron not installing a handler to ignore SIGPIPE error
         // (https://github.com/electron/electron/issues/13254)
         process.on('SIGPIPE', () => {
-            console.error(new Error('Unexpected SIGPIPE'));
+            this.logger.error(new Error('Unexpected SIGPIPE'));
         });
 
         // Handles normal process termination.
@@ -221,7 +238,7 @@ export class BackendApplication {
                     await this.measureContribution(contribution, 'initialize',
                         () => contribution.initialize!());
                 } catch (error) {
-                    console.error('Could not initialize contribution', error);
+                    this.logger.error('Could not initialize contribution', error);
                 }
             }
         }));
@@ -239,6 +256,11 @@ export class BackendApplication {
 
     protected async configure(): Promise<void> {
         await this.initialize();
+
+        // Apply early middleware before static file handlers.
+        for (const handler of this.earlyMiddleware.handlers) {
+            this.app.use(handler);
+        }
 
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
@@ -258,11 +280,11 @@ export class BackendApplication {
                     await this.measureContribution(contribution, 'configure',
                         () => contribution.configure!(this.app));
                 } catch (error) {
-                    console.error('Could not configure contribution', error);
+                    this.logger.error('Could not configure contribution', error);
                 }
             }
         }));
-        console.info('configured all backend app contributions');
+        this.logger.info('configured all backend app contributions');
     }
 
     use(...handlers: express.Handler[]): void {
@@ -297,14 +319,14 @@ export class BackendApplication {
             try {
                 key = await fs.readFile(this.cliParams.certkey as string);
             } catch (err) {
-                console.error("Can't read certificate key");
+                this.logger.error("Can't read certificate key");
                 throw err;
             }
 
             try {
                 cert = await fs.readFile(this.cliParams.cert as string);
             } catch (err) {
-                console.error("Can't read certificate");
+                this.logger.error("Can't read certificate");
                 throw err;
             }
             server = https.createServer({ key, cert }, this.app);
@@ -323,7 +345,7 @@ export class BackendApplication {
             // address should be defined at this point
             const address = server.address()!;
             const url = typeof address === 'string' ? address : this.getHttpUrl(address, this.cliParams.ssl);
-            console.info(`Theia app listening on ${url}.`);
+            this.logger.info(`Theia app listening on ${url}.`);
             deferred.resolve(server);
         });
 
@@ -336,7 +358,7 @@ export class BackendApplication {
                     await this.measureContribution(contribution, 'onStart',
                         () => contribution.onStart!(server));
                 } catch (error) {
-                    console.error('Could not start contribution', error);
+                    this.logger.error('Could not start contribution', error);
                 }
             }
         }
@@ -415,7 +437,7 @@ export class BackendApplication {
                 try {
                     await contrib.onStop(this.app);
                 } catch (error) {
-                    console.error('Could not stop contribution', error);
+                    this.logger.error('Could not stop contribution', error);
                 }
             }
         }));
@@ -466,9 +488,9 @@ export class BackendApplication {
 
     protected handleUncaughtError(error: Error): void {
         if (error) {
-            console.error('Uncaught Exception: ', error.toString());
+            this.logger.error('Uncaught Exception: ', error.toString());
             if (error.stack) {
-                console.error(error.stack);
+                this.logger.error(error.stack);
             }
         }
     }

@@ -991,6 +991,15 @@ div:last-child>.theia-ChatNode {
   cursor: default;
 }
 
+.theia-tool-confirmation-intro {
+  margin: calc(var(--theia-ui-padding) * 2) 0;
+  line-height: var(--theia-content-line-height);
+}
+
+.theia-tool-confirmation-intro p {
+  margin: 0;
+}
+
 .theia-tool-confirmation-header {
   font-weight: bold;
   margin-bottom: 8px;
@@ -1163,6 +1172,18 @@ details.theia-tool-confirmation-args>summary::marker {
 .theia-toolCall-allowed .codicon-loading,
 .theia-toolCall-pending .codicon-loading {
   font-size: 1em;
+}
+
+/* Small badge marking provider-executed server tools; explained via tooltip on hover. Mirrors the prompt-variant badge style. */
+.theia-serverToolCall-badge {
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: normal;
+  color: var(--theia-badge-foreground);
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  white-space: nowrap;
+  user-select: none;
 }
 
 .theia-toolCall-pending {
@@ -1993,6 +2014,13 @@ details.theia-tool-confirmation-args>summary::marker {
   margin-bottom: -1px;
 }
 
+/* Warning icon shown before each provider server tool entry. */
+.theia-GenericCapabilities-ServerTool-Warning {
+  color: var(--theia-editorWarning-foreground);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
 /* Two-column capabilities panel layout */
 .theia-ChatInput-CapabilitiesPanel {
   display: flex;
@@ -2164,4 +2192,23 @@ details.theia-tool-confirmation-args>summary::marker {
   height: 75%;
   border-radius: 50%;
   background: var(--theia-editor-background);
+}
+
+.theia-ChatCompactionMarker {
+  width: 100%;
+  margin: 6px 0;
+  padding: 4px 8px;
+  border-top: 1px solid var(--theia-editorWidget-border);
+  border-bottom: 1px solid var(--theia-editorWidget-border);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-ChatCompactionMarker summary {
+  cursor: pointer;
+}
+
+.theia-ChatCompactionMarker-summary {
+  margin-top: 4px;
+  white-space: pre-wrap;
 }

@@ -39,7 +39,7 @@ import {
     IdentifiableInlineCompletions,
     HoverWithId
 } from '../../common/plugin-api-rpc';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto,
@@ -80,12 +80,14 @@ import {
     EvaluatableExpressionProvider,
     InlineValue,
     InlineValueContext,
-    InlineValuesProvider
+    InlineValuesProvider,
+    MultiDocumentHighlightProvider
 } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -107,6 +109,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(FileUploadService)
     protected readonly fileUploadService: FileUploadService;
+
+    @inject(ILogger) @named('plugin-ext:LanguagesMainImpl')
+    protected readonly logger: ILogger;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -349,7 +354,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     protected createHoverProvider(handle: number): monaco.languages.HoverProvider {
         return {
-            provideHover: (model, position, token) => this.provideHover(handle, model, position, token)
+            provideHover: (model, position, token, context) =>
+                this.provideHover(handle, model, position, token, context as monaco.languages.HoverContext<HoverWithId> | undefined)
         };
     }
 
@@ -442,6 +448,45 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             }
 
             return undefined;
+        });
+    }
+
+    $registerMultiDocumentHighlightProvider(handle: number, _pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const multiDocumentHighlightProvider = this.createMultiDocumentHighlightProvider(handle, languageSelector);
+        this.register(handle,
+            StandaloneServices.get(ILanguageFeaturesService).multiDocumentHighlightProvider.register(languageSelector, multiDocumentHighlightProvider));
+    }
+
+    protected createMultiDocumentHighlightProvider(handle: number, selector: LanguageSelector): MultiDocumentHighlightProvider {
+        return {
+            selector,
+            provideMultiDocumentHighlights: (model, position, otherModels, token) =>
+                // @monaco-uplift: cast due to ITextModel enum incompatibility between internal and standalone API types
+                this.provideMultiDocumentHighlights(handle, model as unknown as monaco.editor.ITextModel, position,
+                    otherModels as unknown as monaco.editor.ITextModel[], token)
+        };
+    }
+
+    protected provideMultiDocumentHighlights(
+        handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
+        otherModels: monaco.editor.ITextModel[], token: monaco.CancellationToken
+    ): monaco.languages.ProviderResult<Map<monaco.Uri, monaco.languages.DocumentHighlight[]>> {
+        const otherResources = otherModels.map(m => m.uri);
+        return this.proxy.$provideMultiDocumentHighlights(handle, model.uri, position, otherResources, token).then(result => {
+            if (!result) {
+                return undefined;
+            }
+            const map = new Map<monaco.Uri, monaco.languages.DocumentHighlight[]>();
+            for (const entry of result) {
+                const uri = monaco.Uri.revive(entry.uri);
+                const highlights: monaco.languages.DocumentHighlight[] = entry.highlights.map(item => ({
+                    ...item,
+                    kind: item.kind ?? monaco.languages.DocumentHighlightKind.Text
+                }));
+                map.set(uri, highlights);
+            }
+            return map;
         });
     }
 
@@ -958,7 +1003,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
             };
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
             return undefined;
         }
     }

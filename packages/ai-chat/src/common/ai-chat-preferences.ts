@@ -62,11 +62,11 @@ export const aiChatPreferences: PreferenceSchema = {
         [WELCOME_SCREEN_SESSIONS_PREF]: {
             type: 'number',
             description: nls.localize('theia/ai/chat/welcomeScreenSessions/description',
-                'Number of rows of recent chat sessions to display on the welcome screen. The number of visible sessions depends ' +
-                'on the available width. Set to 0 to hide the recent chats section.'),
-            default: 3,
+                'Maximum number of chat sessions to show on the chat overview (home view). Active sessions are filled first; ' +
+                'overflow is accessible via the "Browse all chats..." link. Lower this if a higher editor zoom causes a scrollbar. ' +
+                'Set to 0 to hide the inline list entirely; sessions remain accessible via the "Browse all chats..." link.'),
+            default: 20,
             minimum: 0,
-            maximum: 6,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [SESSION_STORAGE_PREF]: {

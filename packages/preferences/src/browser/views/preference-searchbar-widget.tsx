@@ -34,7 +34,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
     protected readonly onFilterStringChangedEmitter = new Emitter<string>();
     readonly onFilterChanged = this.onFilterStringChangedEmitter.event;
 
-    protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
+    protected searchbarRef = React.createRef<HTMLInputElement>();
     protected resultsCount: number = 0;
 
     constructor(@unmanaged() options?: Widget.IOptions) {

@@ -68,7 +68,7 @@ import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export interface FileOperationParticipant {
@@ -304,6 +304,9 @@ export class FileService {
 
     @inject(FileSystemWatcherErrorHandler)
     protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
+
+    @inject(ILogger) @named('filesystem:FileService')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -581,7 +584,7 @@ export class FileService {
 
                         return await this.toFileStat(provider, childResource, childStat, entries.length, resolveMetadata, recurse);
                     } catch (error) {
-                        console.trace(error);
+                        this.logger.error(error);
 
                         return null; // can happen e.g. due to permission errors
                     }
@@ -590,7 +593,7 @@ export class FileService {
                 // make sure to get rid of null values that signal a failure to resolve a particular entry
                 fileStat.children = resolvedEntries.filter(e => !!e) as FileStat[];
             } catch (error) {
-                console.trace(error);
+                this.logger.error(error);
 
                 fileStat.children = []; // gracefully handle errors, we may not have permissions to read
             }
@@ -615,7 +618,7 @@ export class FileService {
             try {
                 return { stat: await this.doResolveFile(entry.resource, entry.options), success: true };
             } catch (error) {
-                console.trace(error);
+                this.logger.error(error);
 
                 return { stat: undefined, success: false };
             }
@@ -1439,8 +1442,7 @@ export class FileService {
     watch(resource: URI, options: WatchOptions = { recursive: false, excludes: [] }): Disposable {
         const resolvedOptions: WatchOptions = {
             ...options,
-            // always ignore temporary upload files
-            excludes: options.excludes.concat('**/theia_upload_*')
+            excludes: this.resolveWatcherExcludes(resource, options.excludes)
         };
 
         let watchDisposed = false;
@@ -1454,9 +1456,35 @@ export class FileService {
             } else {
                 watchDisposable = disposable;
             }
-        }, error => console.error(error));
+        }, error => this.logger.error(error));
 
         return Disposable.create(() => watchDisposable.dispose());
+    }
+
+    /**
+     * Resolve the effective exclude globs for a watcher: the caller-supplied `excludes`, the
+     * always-on temporary-upload exclude, and the user's `files.watcherExclude` preference.
+     *
+     * Applying `files.watcherExclude` here, for every watcher, rather than relying on individual
+     * callers, keeps the number of OS file watches (e.g. inotify watches on Linux) bounded even for
+     * watchers that request `excludes: []` - internal recursive watchers as well as plugin and
+     * language-server watchers created via `vscode.workspace.createFileSystemWatcher`. It also gives
+     * overlapping watchers a consistent set of excludes, so the watcher subsumption in `doWatch` can
+     * collapse them into a single OS watch instead of leaving duplicates that emit duplicate events.
+     */
+    protected resolveWatcherExcludes(resource: URI, excludes: string[]): string[] {
+        const resolved = new Set(excludes);
+        // always ignore temporary upload files
+        resolved.add('**/theia_upload_*');
+        const configured = this.preferences.get('files.watcherExclude', undefined, resource.toString());
+        if (configured) {
+            for (const pattern of Object.keys(configured)) {
+                if (configured[pattern]) {
+                    resolved.add(pattern);
+                }
+            }
+        }
+        return Array.from(resolved);
     }
 
     async doWatch(resource: URI, options: WatchOptions): Promise<Disposable> {
@@ -2030,7 +2058,7 @@ export class FileService {
                             timeout(participantsTimeout, cancellationTokenSource.token).then(() => cancellationTokenSource.dispose(), () => { /* no-op if cancelled */ })
                         ]);
                     } catch (err) {
-                        console.warn(err);
+                        this.logger.warn(err);
                     }
                 }
             },

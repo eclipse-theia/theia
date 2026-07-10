@@ -63,7 +63,7 @@ body.theia-no-open-workspace #theia-statusBar {
   padding-inline: var(--theia-ui-padding);
 }
 
-#theia-statusBar .area.left .element.has-background {
+#theia-statusBar .area.left .element.has-background:not(#session-preference-status) {
   margin-left: calc(-1 * var(--theia-ui-padding));
 }
 

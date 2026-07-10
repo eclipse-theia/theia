@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "Afficher les paramètres IA",
   "ai.executePlanWithCoder": "Exécuter le plan actuel avec Coder",
   "aiConfiguration:open": "Ouvrir la vue Configuration AI",
+  "aiConfiguration:openTools": "Configuration des outils Open AI",
   "aiHistory:clear": "Historique de l'IA : Effacer l'historique",
   "aiHistory:open": "Ouvrir l'historique AI",
   "aiHistory:sortChronologically": "Historique de l'IA : trier par ordre chronologique",
@@ -27,8 +28,8 @@
           "title": "Remplacements de fonctionnalités"
         },
         "completionNotification": {
-          "mdDescription": "Comportement de notification lorsque cet agent termine une tâche. Si ce paramètre n'est pas défini, le paramètre de notification global par défaut sera utilisé.\n- `os-notification` : afficher les notifications du système d'exploitation/système\n- `message` : afficher les notifications dans la barre d'état/zone de message\n- `blink` : faire clignoter ou mettre en surbrillance l'interface utilisateur\n- `off` : désactiver les notifications pour cet agent",
-          "title": "Notification d'achèvement"
+          "mdDescription": "Comportement des notifications lorsque cet agent nécessite votre attention, c'est-à-dire lorsqu'il a terminé une tâche ou sollicite votre intervention.                     Si ce paramètre n'est pas défini, le paramètre de notification global par défaut sera utilisé.\n                    - `os-notification` : afficher les notifications du système d’exploitation/du système\n                    - `message` : afficher les notifications dans la barre d’état/la zone de messages\n                    - `blink` : faire clignoter ou mettre en surbrillance l’interface utilisateur\n                    - `off` : désactiver les notifications pour cet agent",
+          "title": "Notification"
         },
         "enable": {
           "mdDescription": "Spécifie si l'agent doit être activé (vrai) ou désactivé (faux).",
@@ -59,6 +60,10 @@
         "selectedVariants": {
           "mdDescription": "Spécifie les variantes d'invite actuellement sélectionnées pour cet agent.",
           "title": "Variantes sélectionnées"
+        },
+        "serverToolSelections": {
+          "mdDescription": "Sélections utilisateur pour les outils serveur des fournisseurs, classées par fabricant de modèles. Chaque valeur contient les identifiants des outils serveur activés pour ce fabricant.",
+          "title": "Sélection des outils serveur"
         },
         "showInChat": {
           "mdDescription": "Spécifie si l'agent doit être affiché dans l'interface utilisateur du chat (vrai) ou masqué (faux).",
@@ -111,6 +116,7 @@
         "bypassModelRequirement": {
           "description": "Contourner la vérification des exigences du modèle linguistique. Activez cette option si vous utilisez des agents externes (par exemple, Claude Code) qui ne nécessitent pas les modèles linguistiques Theia."
         },
+        "category": "IA",
         "changeSetDefaultTitle": "Modifications suggérées",
         "changeSetFileDiffUriLabel": "Modifications apportées par l'IA : {0}",
         "chatAgentsVariable": {
@@ -135,6 +141,10 @@
         "confirmRevertSuggestion": "Le fichier {0} a été modifié depuis la création de cette suggestion. Êtes-vous certain de vouloir annuler la modification ?",
         "couldNotFindMatchingLM": "Impossible de trouver un modèle linguistique correspondant. Veuillez vérifier votre configuration !",
         "couldNotFindReadyLMforAgent": "Impossible de trouver un modèle linguistique prêt à l'emploi pour l'{0} de l'agent. Veuillez vérifier votre configuration !",
+        "customAgents": {
+          "migrationResult": "Migration des agents personnalisés : {0} migré, {1} a échoué, {2} le fichier legacy customAgents.yml a été sauvegardé dans .bak, {3} les remplacements d'invite ont été intégrés dans agent.md.",
+          "rerunMigration": "Relancer la migration de l'agent personnalisé"
+        },
         "defaultAgent": {
           "description": "Facultatif : <nom-agent> de l'agent de chat qui doit être invoqué, si aucun agent n'est explicitement mentionné avec @<nom-agent> dans la requête de l'utilisateur. Si aucun agent par défaut n'est configuré, les valeurs par défaut de Theia seront appliquées."
         },
@@ -215,7 +225,7 @@
           "label": "Chat IA"
         },
         "welcomeScreenSessions": {
-          "description": "Nombre de lignes de sessions de chat récentes à afficher sur l'écran d'accueil. Le nombre de sessions visibles dépend de la largeur disponible. Définissez cette valeur sur 0 pour masquer la section des chats récents."
+          "description": "Nombre maximal de sessions de chat à afficher dans l'aperçu du chat (page d'accueil). Les sessions actives s'affichent en premier ; les sessions supplémentaires sont accessibles via le lien « Parcourir toutes les discussions... ». Réduisez cette valeur si un zoom élevé de l'éditeur entraîne l'apparition d'une barre de défilement. Définissez cette valeur sur 0 pour masquer entièrement la liste intégrée ; les sessions restent accessibles via le lien « Parcourir toutes les discussions... »."
         }
       },
       "chat-ui": {
@@ -292,6 +302,16 @@
         "functionsDescription": "Fonctions intégrées fournies par les extensions d'{0}",
         "genericCapabilities": "Capacités génériques",
         "mcpFunctionsDescription": "Fonctions du protocole MCP (Model Context Protocol) à partir de serveurs connectés",
+        "mermaid-rendering": {
+          "copySource": "Copier la source",
+          "error": "Impossible d'afficher le diagramme Mermaid. Passez à la vue source pour consulter la définition.",
+          "rendering": "Affichage du schéma…",
+          "resetView": "Réinitialiser la vue",
+          "showDiagram": "Afficher le schéma",
+          "showSource": "Afficher le code source",
+          "title": "Diagramme Mermaid",
+          "wheelZoomHint": "{0} + Faire défiler"
+        },
         "noChatAgentsAvailable": "Aucun agent de chat disponible.",
         "noMatchingCapabilities": "Aucune correspondance trouvée",
         "openDiff": "Ouvrir Diff",
@@ -300,14 +320,12 @@
         "performThisTask": "Effectuez cette tâche.",
         "persistedSession": "Session persistante (cliquez pour restaurer)",
         "promptFragmentsDescription": "Fragments d'invite personnalisés à inclure dans la conversation",
-        "reasoning": {
-          "minimal": "Minimal"
-        },
         "removeChat": "Supprimer le chat",
         "requestNotFoundForRetry": "Demande introuvable, veuillez réessayer.",
         "responseFrom": "Réponse d'{0}",
         "saveCurrentSelectionsToSettings": "Enregistrer les paramètres de fonctionnalité",
         "searchCapabilities": "Fonctions de recherche",
+        "sectionRestored": "Restauré",
         "selectAgentQuickPickPlaceholder": "Sélectionnez un agent pour la nouvelle session.",
         "selectAllInCategory": "Sélectionner tout dans cette catégorie",
         "selectChat": "Sélectionner le chat",
@@ -318,6 +336,14 @@
         "selectTaskContextQuickPickPlaceholder": "Sélectionnez un contexte de tâche à joindre",
         "selectVariableArguments": "Sélectionner des arguments variables",
         "send": "Envoyer (Entrée)",
+        "server-toolcall-part-renderer": {
+          "indicator": "serveur",
+          "serverTooltip": "Exécuté sur les serveurs du fournisseur (et non localement). Les outils serveur sont automatiquement approuvés lorsqu'ils sont sélectionnés."
+        },
+        "serverToolWarning": "Cet outil est automatiquement approuvé lorsqu'il est sélectionné. Il peut être exécuté par le modèle à tout moment.",
+        "serverTools": "Outils serveur",
+        "serverToolsDescription": "Les outils serveur sont exécutés côté serveur par le LLM sur l'infrastructure du fournisseur.",
+        "serverToolsWarning": "Ces outils sont automatiquement approuvés lorsqu'ils sont sélectionnés. Ils peuvent être exécutés par le modèle à tout moment.",
         "sessionNotFoundForRetry": "Session introuvable, veuillez réessayer.",
         "skillsDescription": "Instructions réutilisables pouvant être ajoutées à la conversation.",
         "switchAgentMode": "Basculer en mode agent",
@@ -349,6 +375,7 @@
           "alwaysAllowConfirm": "Je comprends, activer l'approbation automatique",
           "alwaysAllowGenericWarning": "Cet outil nécessite une confirmation avant que l'approbation automatique puisse être activée. Une fois activée, toutes les invocations futures s'exécuteront sans confirmation. N'activez cette option que si vous faites confiance à cet outil et comprenez les risques potentiels.",
           "alwaysAllowTitle": "Activer l'approbation automatique pour « {0} » ?",
+          "approveLatest": "Valider la confirmation de l'outil le plus récent",
           "autoCancel": "Annulation automatique dans l'{0}",
           "canceled": "Exécution de l'outil annulée",
           "denied": "Exécution de l'outil refusée",
@@ -357,6 +384,7 @@
           "deny-reason-placeholder": "Entrez la raison du refus...",
           "deny-session": "Refuser pour ce chat",
           "deny-with-reason": "Refuser avec justification...",
+          "denyLatest": "Refuser la confirmation de l'outil le plus récent",
           "executionDenied": "Exécution de l'outil refusée",
           "header": "Confirmer l'exécution de l'outil"
         },
@@ -390,8 +418,6 @@
         },
         "currentDirectory": "répertoire actuel",
         "differentAgentRequestWarning": "La demande de chat précédente a été traitée par un autre agent. Claude Code ne voit pas ces autres messages.",
-        "directory": "Répertoire",
-        "domain": "Domaine",
         "edit": "Modifier l'{0}",
         "editAutomatically": "Modifier automatiquement",
         "editing": "Édition",
@@ -615,10 +641,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Actions",
           "addCustomAgent": "Ajouter un agent personnalisé",
           "availableCapabilities": "Capacités disponibles",
-          "completionNotificationDescriptionPrefix": "Sélectionnez la manière dont vous souhaitez être averti lorsque cet agent termine sa tâche. « Par défaut » utilise le ",
+          "completionNotificationDescriptionPrefix": "Sélectionnez la manière dont vous souhaitez être averti lorsque cet agent nécessite votre attention, c'est-à-dire lorsqu'il termine sa tâche ou sollicite votre intervention. L'option « Par défaut » utilise le ",
           "defaultNotificationDescription": "Utilise le paramètre global de notification IA.",
           "enableAgent": "Activer l'agent",
           "llmRequirements": "Exigences LLM",
@@ -687,7 +712,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "Méthode de notification par défaut utilisée lorsqu'un agent IA termine une tâche. Les agents individuels peuvent remplacer ce paramètre.\n- `os-notification` : afficher les notifications du système d'exploitation/système\n- `message` : afficher les notifications dans la barre d'état/zone de message\n- `blink` : faire clignoter ou mettre en surbrillance l'interface utilisateur\n- `off` : désactiver toutes les notifications",
+          "mdDescription": "Méthode de notification par défaut utilisée lorsqu'un agent IA a besoin de votre attention, c'est-à-dire lorsqu'il a terminé une tâche ou sollicite votre intervention. Les agents individuels peuvent remplacer ce paramètre.",
           "title": "Type de notification par défaut"
         },
         "discard": {
@@ -836,7 +861,7 @@
           "title": "Paramètres de demande personnalisés"
         },
         "skillDirectories": {
-          "description": "Répertoires supplémentaires contenant des définitions de compétences (fichiers SKILL.md). Les compétences fournissent des instructions réutilisables qui peuvent être référencées par les agents IA. Le répertoire .prompts/skills de votre espace de travail et le répertoire skills du dossier de configuration de votre produit sont toujours inclus."
+          "description": "Répertoires supplémentaires contenant les définitions de compétences (fichiers SKILL.md). Les compétences fournissent des instructions réutilisables auxquelles les agents IA peuvent se référer. Les répertoires .prompts/skills et .agents/skills de votre espace de travail, le répertoire .agents/skills de votre répertoire personnel, ainsi que le répertoire skills du dossier de configuration de votre produit sont toujours inclus."
         },
         "skillsVariable": {
           "description": "Renvoie la liste des compétences disponibles pouvant être utilisées par les agents IA."
@@ -947,10 +972,8 @@
         "agent-description": "Configurez les paramètres de l'agent IA, notamment l'activation, la sélection LLM, la personnalisation des modèles d'invite et la création d'agents personnalisés dans la [vue Configuration IA]({0}).",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Créer un nouveau fichier",
-            "openExistingFile": "Ouvrir un fichier existant",
-            "placeholder": "Choisissez où créer ou ouvrir un fichier d'agents personnalisés.",
-            "title": "Sélectionnez l'emplacement du fichier des agents personnalisés"
+            "placeholder": "Choisissez l'emplacement où créer le fichier agents/<id>/agent.md",
+            "title": "Sélectionnez l'emplacement du nouvel agent personnalisé"
           },
           "genericCapabilitiesSettings": "Capacités génériques",
           "genericCapabilityType": {
@@ -958,6 +981,15 @@
             "functions": "Fonctions",
             "mcpFunctions": "Fonctions MCP",
             "promptFragments": "Fragments d'invite"
+          },
+          "newAgent": {
+            "createFailed": "Impossible de créer l'agent personnalisé « {0} » : {1}",
+            "defaultDescription": "Agent personnalisé. Modifiez cette description dans le fichier agent.md.",
+            "defaultPrompt": "Vous êtes un agent serviable. Adaptez cette invite à vos besoins.",
+            "idInvalid": "N'utilisez que des lettres, des chiffres, des tirets, des traits de soulignement ou des points.",
+            "idPrompt": "Identifiant de l'agent (utilisé comme nom de dossier sous agents/)",
+            "idTitle": "Nouvel agent personnalisé",
+            "noLocation": "Impossible de créer un agent personnalisé : aucun emplacement pour les modèles d'invite n'est configuré. Définissez un dossier global ou propre à l'espace de travail pour les modèles d'invite, puis réessayez."
           },
           "noDescription": "Aucune description disponible",
           "resetAllCapabilities": "Réinitialiser toutes les fonctionnalités à leurs valeurs par défaut",
@@ -1136,9 +1168,10 @@
           "description": "Un agent de révision de PR alimenté par l'IA qui orchestre un workflow complet de révision de code : il récupère les informations de PR, explore la base de code, effectue une analyse structurée, guide l'utilisateur de manière interactive à travers les résultats à l'aide de visualiseurs de différences et, en option, crée une révision en attente sur GitHub."
         },
         "prompt-template-description": "Sélectionnez les variantes d'invite et personnalisez les modèles d'invite pour les agents IA dans la [vue Configuration IA]({0}).",
-        "recentChats": "Chats récents",
+        "restoredSession": "Session restaurée",
         "restrictedModeDetails": "Le chat IA, les suggestions en ligne, les actions de code et les modèles de prompt sont désactivés",
         "restrictedModeLabel": "Fonctionnalités IA (désactivées en mode restreint)",
+        "sectionRestored": "Restauré",
         "shellAllowlist": {
           "placeholder": "Par exemple, « git log » (exact) ou « git log * » (avec arguments)."
         },
@@ -1157,6 +1190,9 @@
           },
           "slashCommandsSectionHeader": "Commandes slash"
         },
+        "toolConfirmationInfo": {
+          "header": "Confirmation de l'outil"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "Je comprends, activer l'approbation automatique",
@@ -1168,6 +1204,19 @@
           },
           "default": {
             "label": "Mode de confirmation par défaut de l'outil :"
+          },
+          "recommendedDefaults": {
+            "apply": "Autoriser les outils par défaut",
+            "dialogConfirm": "Je comprends, autoriser",
+            "dialogTitle": "Autoriser les outils par défaut ?",
+            "message": "Les appels aux outils nécessitent actuellement une autorisation. Autoriser automatiquement tous les outils intégrés en une seule fois. Les outils nécessitant une confirmation supplémentaire (par exemple, l'exécution d'un shell), les outils MCP et tous les outils ajoutés ultérieurement demanderont toujours une autorisation avant de s'exécuter.",
+            "msg": {
+              "line1": "Cette option définit tous les outils intégrés actuellement enregistrés sur « Toujours autoriser ».",
+              "line2": "Les outils nécessitant une confirmation supplémentaire (tels que l'exécution d'un shell) demanderont toujours une confirmation avant de s'exécuter.",
+              "line3": "Les outils MCP sont des outils tiers et ne sont pas inclus. Vous pouvez les autoriser individuellement dans cette vue.",
+              "line4": "Les outils ajoutés ultérieurement seront toujours réglés par défaut sur « Confirmer » afin que vous puissiez les vérifier.",
+              "line5": "Vous pouvez modifier ces éléments ultérieurement dans cette vue."
+            }
           },
           "resetAll": "Tout réinitialiser",
           "resetAllConfirmDialog": {
@@ -1203,7 +1252,8 @@
         "variableConfiguration": {
           "selectVariable": "Veuillez sélectionner une variable.",
           "usedByAgents": "Utilisé par les agents"
-        }
+        },
+        "waitingForInput": "En attente de votre saisie"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1281,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "Serveurs MCP (démarrage automatique bloqué)",
         "error": {
           "allServersRunning": "Tous les serveurs MCP sont déjà en cours d'exécution.",
+          "authenticationRequired": "Le serveur MCP « {0} » nécessite une authentification. Redémarrez le serveur pour vous connecter.",
+          "getRedirectUrlFailed": "Une erreur s'est produite lors de la détermination de l'URL de redirection OAuth MCP.",
+          "noOAuthServersConfigured": "Aucun serveur MCP prenant en charge OAuth n'est configuré.",
           "noRunningServers": "Aucun serveur MCP n'est en cours d'exécution.",
           "noServersConfigured": "Aucun serveur MCP n'est configuré.",
-          "startFailed": "Une erreur s'est produite lors du démarrage du serveur MCP."
+          "oauthRequiresTrustedWorkspace": "Le démarrage des serveurs MCP compatibles OAuth nécessite un espace de travail de confiance.",
+          "signInFailed": "Une erreur s'est produite lors de la connexion au serveur MCP.",
+          "signOutFailed": "Une erreur s'est produite lors de la déconnexion du serveur MCP.",
+          "startFailed": "Une erreur s'est produite lors du démarrage du serveur MCP.",
+          "stopFailed": "Une erreur s'est produite lors de l'arrêt du serveur MCP."
+        },
+        "getRedirectUrl": {
+          "label": "MCP : Obtenir l'URL de redirection OAuth MCP"
         },
         "info": {
-          "serverStarted": "Le serveur MCP « {0} » a démarré avec succès. Outils enregistrés : {1}"
+          "oauthRedirectUrl": "URL de redirection OAuth MCP : {0}",
+          "serverSignedIn": "Connecté au serveur MCP « {0} ».",
+          "serverSignedOut": "Déconnexion du serveur MCP « {0} ».",
+          "serverStarted": "Le serveur MCP « {0} » a démarré avec succès. Outils enregistrés : {1}",
+          "signInCancelled": "La connexion au serveur MCP « {0} » a été annulée."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Effectuez la connexion MCP via OAuth dans votre navigateur. Si aucun onglet de connexion ne s'est ouvert, il se peut que votre navigateur ait bloqué la fenêtre contextuelle.",
+          "notification": {
+            "signInPrompt": "Le serveur MCP « {0} » nécessite une autorisation pour démarrer."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1324,61 @@
             "mdDescription": "Commande utilisée pour démarrer le serveur MCP, par exemple « uvx » ou « npx ».",
             "title": "Commande pour exécuter le serveur MCP"
           },
+          "deferLoading": {
+            "mdDescription": "S'ils sont activés, les outils fournis par ce serveur sont marqués comme différés dans le fragment d'invite généré `mcp_<server>_tools`. Les outils différés ne sont pas chargés d'emblée dans le contexte du modèle. Au lieu de cela, le modèle les découvre à la demande via le mécanisme de recherche d’outils intégré du fournisseur (Anthropic, OpenAI) lorsqu’il est pris en charge. Cela réduit considérablement la surcharge en jetons pour les serveurs qui exposent de nombreux outils.",
+            "title": "Report du chargement"
+          },
           "env": {
             "mdDescription": "Variables d'environnement facultatives à définir pour le serveur, telles qu'une clé API.",
             "title": "Variables d'environnement"
           },
           "headers": {
-            "mdDescription": "En-têtes supplémentaires facultatifs inclus dans chaque requête adressée au serveur.",
+            "mdDescription": "En-têtes supplémentaires facultatifs inclus dans chaque requête adressée au serveur. Les valeurs des en-têtes sont stockées dans les préférences sous forme de texte brut ; évitez d'utiliser les paramètres de l'espace de travail s'ils contiennent des valeurs sensibles.",
             "title": "En-têtes"
           },
-          "mdDescription": "Configurez les serveurs MCP soit localement avec des commandes, des arguments et éventuellement des variables d'environnement, soit à distance avec l'URL du serveur, le jeton d'authentification et éventuellement un nom d'en-tête d'authentification. Il est également possible de configurer le démarrage automatique (activé par défaut). Chaque serveur est identifié par une clé unique, telle que « brave-search » ou « filesystem ». Pour démarrer un serveur, utilisez la commande « MCP : Start MCP Server », qui vous permet de sélectionner le serveur souhaité. Pour arrêter un serveur, utilisez la commande « MCP : Stop MCP Server ». Veuillez noter que le démarrage automatique ne prendra effet qu'après un redémarrage. Vous devez démarrer un serveur manuellement la première fois.\nExemple de configuration :\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    « env » : {\n      « BRAVE_API_KEY » : « VOTRE_CLÉ_API »\n    },\n  },\n  « filesystem » : {\n    « command » : « npx »,\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/VOTRE_NOM_D'UTILISATEUR/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "Configurez les serveurs MCP soit en local à l'aide d'une commande, d'arguments et, éventuellement, de variables d'environnement, soit à distance à l'aide de l'URL du serveur, d'un jeton d'authentification, d'une configuration OAuth et, éventuellement, d'un nom d'en-tête d'authentification. Il est également possible de configurer le démarrage automatique (activé par défaut). Chaque serveur est identifié par une clé unique, telle que « brave-search » ou « filesystem ». Pour démarrer un serveur, utilisez la commande « MCP : Démarrer le serveur MCP », qui vous permet de sélectionner le serveur souhaité. Pour arrêter un serveur, utilisez la commande « MCP : Arrêter le serveur MCP ». Veuillez noter que le démarrage automatique ne prendra effet qu’après un redémarrage ; vous devez donc démarrer le serveur manuellement la première fois. Les serveurs installés à partir d’un registre IA comportent un bloc `registryMetadata` supplémentaire qui est géré automatiquement et n’est pas destiné à être modifié manuellement.\nExemple de configuration :\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"VOTRE_CLÉ_API\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/VOTRE_NOM_D'UTILISATEUR/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\" : {\n    \"serverUrl\" : \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\" : \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"VOTRE_URL_DU_SERVEUR_MCP_PROTÉGÉ_PAR_OAUTH\",\n    \"oauth\" : {\n      \"clientId\" : \"ID_CLIENT_FACULTATIF\",\n      \"scopes\" : [\"CHAMP D'APPLICATION_FACULTATIF\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "Remplacement facultatif de l'URL du serveur d'autorisation. Si elle est omise, Theia la récupère auprès du serveur MCP.",
+              "title": "Serveur d'autorisation"
+            },
+            "clientId": {
+              "mdDescription": "ID client OAuth statique facultatif. S'il est omis, Theia tente un enregistrement dynamique du client.",
+              "title": "Client ID"
+            },
+            "clientSecret": {
+              "mdDescription": "Clé secrète OAuth facultative pour les serveurs d’autorisation qui n’acceptent que les clients confidentiels préenregistrés (pas d’enregistrement dynamique des clients). Utilisée uniquement avec l’ID client. Elle est stockée dans les préférences sous forme de texte clair ; évitez de l’enregistrer dans les paramètres de l’espace de travail si cette clé est sensible.",
+              "title": "Client Secret"
+            },
+            "mdDescription": "Configuration OAuth 2.1 facultative pour les serveurs MCP distants nécessitant une autorisation. La présence de cet objet active OAuth pour le serveur ; supprimez-le pour désactiver OAuth. Theia utilise par défaut des clients publics avec PKCE ; ne configurez un secret client que pour les serveurs exigeant un client confidentiel préenregistré. Les modifications prennent effet après le redémarrage du serveur MCP.",
+            "resource": {
+              "mdDescription": "Remplacement facultatif de l'indicateur de ressource RFC 8707 pour ce serveur MCP.",
+              "title": "Ressource"
+            },
+            "scopes": {
+              "mdDescription": "Portées OAuth facultatives à demander si le serveur ne publie pas de portées.",
+              "title": "Portées"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "Hachage du contenu de l'autorisation du registre utilisée pour installer ce serveur.",
+              "title": "Hachage de la configuration du registre"
+            },
+            "mdDescription": "Métadonnées de provenance pour un serveur installé à partir d'un registre d'IA. Rédigées par `@theia/ai-registry` ; non modifiables par l'utilisateur.",
+            "serverId": {
+              "mdDescription": "Identifie l'entrée de registre IA à partir de laquelle ce serveur a été installé.",
+              "title": "Identifiant du serveur de registre"
+            },
+            "title": "Métadonnées du registre",
+            "version": {
+              "mdDescription": "Version enregistrée dans le registre au moment de l'installation.",
+              "title": "Version du registre"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "Le jeton d'authentification pour le serveur, si nécessaire. Il est utilisé pour s'authentifier auprès du serveur distant.",
+            "mdDescription": "Le jeton d'authentification pour le serveur, le cas échéant. Celui-ci est stocké dans les préférences sous forme de texte clair ; évitez de l'enregistrer dans les paramètres de l'espace de travail si ce jeton est sensible.",
             "title": "Jeton d'authentification"
           },
           "serverAuthTokenHeader": {
@@ -1276,20 +1391,37 @@
           },
           "title": "MCP Server Configuration"
         },
+        "signin": {
+          "label": "MCP : Se connecter au serveur MCP"
+        },
+        "signout": {
+          "label": "MCP : Se déconnecter du serveur MCP"
+        },
         "start": {
           "label": "MCP : Démarrer le serveur MCP"
         },
         "stop": {
           "label": "MCP : Arrêter le serveur MCP"
         },
+        "tool": {
+          "noTools": "Aucun outil disponible."
+        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Les racines définissent les limites dans lesquelles les serveurs peuvent fonctionner au sein du système de fichiers. Si cette option est activée, les dossiers de l'espace de travail seront utilisés comme racines, sinon les serveurs MCP auront accès à l'ensemble du système de fichiers. La modification de ce paramètre entraînera le redémarrage de tous les serveurs MCP en cours d'exécution afin d'appliquer la nouvelle configuration des racines.",
           "title": "Utiliser l'espace de travail en tant que racine"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "Échec de l'application des modifications apportées aux préférences du serveur MCP : {0}",
+          "signInNotCompleted": "La connexion au serveur MCP « {0} » n'a pas abouti."
         }
       },
       "mcpConfiguration": {
         "autostart": "Démarrage automatique",
-        "connectServer": "Connect",
+        "browseAIRegistry": "Parcourir le registre IA",
+        "browseAIRegistryTooltip": "Ouvrez la vue « Extensions » pour parcourir les entrées du registre de l'IA",
+        "command": {
+          "addServer": "Ajouter une configuration MCP locale..."
+        },
         "connectingServer": "Connexion...",
         "copiedAllList": "Tous les outils ont été copiés dans le presse-papiers (liste de tous les outils)",
         "copiedAllSingle": "Tous les outils ont été copiés dans le presse-papiers (fragment d'invite unique avec tous les outils).",
@@ -1298,6 +1430,7 @@
         "copyAllSingle": "Copier tout pour le chat (fragment d'invite unique avec tous les outils)",
         "copyForPrompt": "Outil de copie (pour le chat ou le modèle d'invite)",
         "copyForPromptTemplate": "Copier tout pour le modèle d'invite (fragment d'invite unique avec tous les outils)",
+        "deferLoading": "Différer le chargement des outils",
         "deleteServer": "Supprimer le serveur",
         "deleteServerDialogMsg": "Êtes-vous sûr de vouloir supprimer le serveur « {0} » ?",
         "deleteServerDialogTitle": "Supprimer le serveur MCP",
@@ -1312,11 +1445,23 @@
           "autostart": "Démarrage automatique",
           "commandPlaceholder": "Par exemple, npx ou uvx.",
           "commandRequired": "La commande est requise pour les serveurs locaux.",
+          "deferLoading": "Différer le chargement des outils (découvrir les outils à la demande via la recherche d'outils du fournisseur)",
           "envPlaceholder": "KEY=valeur (une par ligne)",
           "headersPlaceholder": "Nom-de-l'en-tête=valeur (un par ligne)",
           "localServer": "Local (Commande)",
           "nameExists": "Un serveur portant ce nom existe déjà.",
           "nameRequired": "Le nom du serveur est obligatoire.",
+          "oauthAuthorizationServerInvalid": "Le serveur d'autorisation OAuth doit être une URL http(s) valide",
+          "oauthAuthorizationServerPlaceholder": "URL facultative du serveur d'autorisation",
+          "oauthClientIdPlaceholder": "ID client statique facultatif",
+          "oauthClientSecretPlaceholder": "Uniquement pour les serveurs nécessitant un client confidentiel",
+          "oauthPublicClientDescription": "Theia utilise par défaut des clients OAuth publics avec PKCE. Ne fournissez un secret client que si le serveur exige un client confidentiel préenregistré.",
+          "oauthRedirectUrlDescription": "Les callbacks d'autorisation sont envoyés à cette URL. Si vous disposez d'un identifiant client statique, enregistrez-le en tant qu'URI de redirection auprès de votre fournisseur OAuth.",
+          "oauthResourceInvalid": "La ressource OAuth doit être une URL http(s) valide",
+          "oauthResourcePlaceholder": "URI de ressource facultative",
+          "oauthScopesPlaceholder": "Portées séparées par des espaces",
+          "oauthSharedCredentialsDescription": "Les sessions OAuth enregistrées sont partagées entre les espaces de travail qui utilisent le même nom de serveur et la même URL (ou ressource).",
+          "remoteOAuthServer": "À distance (OAuth)",
           "remoteServer": "À distance (URL)",
           "saveChanges": "Enregistrer les modifications",
           "serverName": "Nom du serveur",
@@ -1325,11 +1470,28 @@
           "serverUrlPlaceholder": "Par exemple, https://mcp.example.com",
           "serverUrlRequired": "L'URL du serveur est requise pour les serveurs distants."
         },
+        "fromRegistryLink": "Extrait du registre",
         "headers": "En-têtes",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Serveur d'autorisation",
+        "oauthClientId": "ID client OAuth",
+        "oauthClientSecret": "Clé secrète du client OAuth",
+        "oauthRedirectUrl": "URL de redirection",
+        "oauthResource": "Ressource OAuth",
+        "oauthScopes": "Portées OAuth",
+        "openInRegistry": "Ouvrir dans le registre AI : {0}",
         "saveServerError": "Échec de l'enregistrement de la configuration du serveur MCP : {0}",
         "serverAuthToken": "Jeton d'authentification",
         "serverAuthTokenHeader": "Nom de l'en-tête d'authentification",
         "serverUrl": "URL du serveur",
+        "signInServerFailed": "Échec de la connexion au serveur MCP « {0} ».",
+        "signInServerNotCompleted": "La connexion au serveur MCP « {0} » n'a pas abouti.",
+        "signInServerSucceeded": "Connecté au serveur MCP « {0} ».",
+        "signOutServerDialogMsg": "Êtes-vous sûr de vouloir vous déconnecter du serveur « {0} » ? Cette opération supprime les jetons OAuth enregistrés pour ce serveur.",
+        "signOutServerDialogTitle": "Se déconnecter du serveur MCP",
+        "signOutServerFailed": "Échec de la déconnexion du serveur MCP « {0} ».",
+        "startServerFailed": "Échec du démarrage du serveur MCP « {0} ».",
+        "stopServerFailed": "Impossible d'arrêter le serveur MCP « {0} ».",
         "tools": "Outils : "
       },
       "openai": {
@@ -1480,7 +1642,6 @@
         "outputTokens": "Jetons de sortie",
         "readCachedInputTokens": "Jetons d'entrée lus à partir du cache",
         "readCachedInputTokensTooltip": "Suivi en plus du « jeton d'entrée ». Généralement beaucoup moins coûteux que sans mise en cache. Ne compte généralement pas dans les limites de débit.",
-        "total": "Total",
         "totalTokensTooltip": "« Jetons d'entrée » + « Jetons de sortie »"
       },
       "vercelai": {
@@ -1535,7 +1696,7 @@
           "title": "Considérez .gitignore"
         },
         "createSkillAgent": {
-          "description": "Assistant IA pour la création de nouvelles compétences. Les compétences fournissent des instructions réutilisables et des connaissances spécialisées aux agents IA. Cet agent vous aide à créer des compétences bien structurées dans le répertoire .prompts/skills avec un frontmatter YAML et un contenu markdown appropriés."
+          "description": "Un assistant IA permettant de créer de nouvelles compétences. Les compétences fournissent des instructions réutilisables et des connaissances métier aux agents IA. Cet assistant vous aide à créer des compétences bien structurées dans le répertoire .agents/skills ou .prompts/skills, avec un frontmatter YAML et un contenu Markdown appropriés. Cette fonctionnalité en est encore à un stade précoce et est susceptible d'évoluer."
         },
         "excludedPattern": {
           "description": "Liste des modèles (glob ou regex) pour les fichiers/dossiers à exclure.",
@@ -1561,11 +1722,11 @@
       "fileChangeSetTitle": "Modifications proposées"
     },
     "ai-chat-ui": {
+      "browseAllChats": "Parcourir toutes les discussions...",
       "confirm": "Confirmer",
       "deleteChat": "Supprimer le chat",
+      "home": "Accueil",
       "initiate-session-task-context": "Contexte de la tâche : lancer une session",
-      "navigate-back": "Revenir en arrière",
-      "navigate-forward": "Naviguer vers l'avant",
       "noOutput": "Pas de sortie",
       "open-current-session-summary": "Ouvrir le résumé de la session actuelle",
       "open-settings-tooltip": "Ouvrir les paramètres AI...",
@@ -1573,7 +1734,6 @@
       "scroll-lock": "Verrouiller le défilement",
       "scroll-unlock": "Déverrouiller le défilement",
       "session-settings": "Définir les paramètres de session",
-      "showChats": "Afficher les chats...",
       "summarize-current-session": "Résumer la session actuelle"
     },
     "ai-claude-code": {
@@ -1584,6 +1744,9 @@
       "agentCompletionMessage": "L'agent « {0} » a terminé sa tâche.",
       "agentCompletionMessageWithSession": "L'agent « {0} » a terminé sa tâche dans « {1} ».",
       "agentCompletionTitle": "Agent « {0} » Tâche terminée",
+      "agentInputNeededMessage": "L'agent « {0} » a besoin de votre contribution.",
+      "agentInputNeededMessageWithSession": "L'agent « {0} » a besoin de votre contribution dans « {1} ».",
+      "agentInputNeededTitle": "L'agent « {0} » a besoin de votre avis",
       "aiDisabledInRestrictedMode": "Les fonctionnalités d'IA ne sont pas disponibles dans les espaces de travail non approuvés.",
       "preferences": {
         "linuxEnvHint": "Sous Linux, assurez-vous que la variable est définie dans `~/.profile` (et pas seulement dans `~/.bashrc`) si vous lancez l'application à partir d'un raccourci sur le bureau. Consultez la [documentation](https://theia-ide.org/docs/user_ai/#setting-api-keys) pour plus de détails.",
@@ -1623,7 +1786,6 @@
       "todoTool": {
         "noTasks": "Aucune tâche"
       },
-      "userInteractionCanceled": "Annulé",
       "userInteractionCommentPlaceholder": "Ajoutez un commentaire pour cette étape...",
       "userInteractionEmpty": "Vide",
       "userInteractionFinishStep": "Terminer",
@@ -1633,11 +1795,78 @@
       "userInteractionPreparing": "Préparation de l'interaction avec l'utilisateur...",
       "userInteractionPreparingSteps": "Préparation : {0} (étapes de {1})",
       "userInteractionPreparingTitle": "Préparation : {0}",
-      "userInteractionStepLabel": "Étape {0} de {1}",
       "userInteractionWorkingCopy": "Copie de travail"
     },
     "ai-mcp": {
-      "blockedServersLabel": "Serveurs MCP (démarrage automatique bloqué)"
+      "installDialog": {
+        "authTokenPlaceholder": "Requis par ce serveur pour établir la connexion",
+        "authTokenRequired": "Un jeton d'authentification est nécessaire pour installer ce serveur.",
+        "oauthClientIdPlaceholder": "Requis par ce serveur pour établir la connexion",
+        "oauthClientSecretPlaceholder": "Requis par ce serveur pour établir la connexion",
+        "oauthCredentialsRequired": "Un identifiant client OAuth et un secret client sont nécessaires pour installer ce serveur.",
+        "oauthDescription": "Ce serveur utilise OAuth avec un client confidentiel préenregistré. Indiquez l'ID client et la clé secrète fournis par votre fournisseur OAuth.",
+        "title": "Installer MCP Server",
+        "trust": {
+          "unknown": "Aucun registre d'IA n'est configuré : la fiabilité ne peut pas être vérifiée.",
+          "unverified": "Ce serveur ne figure pas dans votre registre AI ({0}). Installez-le à vos propres risques.",
+          "verified": "Approuvé par votre registre d'IA ({0})."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "Un serveur MCP nommé « {0} » est déjà configuré. Si vous continuez, l'entrée existante sera écrasée par la configuration issue du registre.",
+          "title": "Serveur MCP déjà installé"
+        },
+        "missingId": "Le lien d'installation ne comporte pas le paramètre « id » requis.",
+        "noRegistry": "Impossible d'installer le serveur MCP « {0} » : aucun registre AI n'est configuré dans ce produit.",
+        "success": "Installation du serveur MCP « {0} » à partir du registre AI.",
+        "unknownId": "Le serveur MCP « {0} » ne figure pas dans votre registre IA."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Correction de la configuration",
+        "link": "Lien vers le registre",
+        "unlink": "Supprimer le lien",
+        "updateTooltip": "Mise à jour de {0} vers {1}"
+      },
+      "skill": {
+        "action": {
+          "fix": "Compétence « Correction »",
+          "link": "Lien vers le registre",
+          "unlink": "Supprimer le lien"
+        },
+        "fixed": "Restauration de la compétence « {0} ».",
+        "githubToken": {
+          "mdDescription": "Jeton d'accès personnel GitHub facultatif utilisé lors du téléchargement de compétences depuis GitHub. Un jeton permet d'augmenter la limite de débit de GitHub de 60 à 5 000 requêtes par heure. **Remarque :** si vous utilisez cette option, le jeton est stocké en clair sur la machine exécutant Theia. Privilégiez la variable d'environnement `GITHUB_TOKEN` pour le fournir de manière sécurisée."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "Installez la compétence « {0} » en téléchargeant ses fichiers depuis {1}?",
+            "title": "Installer la compétence"
+          },
+          "fetchFailed": "Impossible de charger le registre IA pour installer la compétence « {0} ».",
+          "missingId": "Le lien d'installation ne comporte pas le paramètre « id » requis.",
+          "success": "Installation de la compétence « {0} » à partir du registre IA.",
+          "unknownId": "La compétence « {0} » ne figure pas dans votre registre d'IA."
+        },
+        "installed": "Compétence installée : « {0} ».",
+        "linked": "Compétence associée : « {0} ».",
+        "uninstalled": "Compétence « {0} » désinstallée.",
+        "unlinked": "Compétence non associée « {0} ».",
+        "updated": "Mise à jour de la compétence « {0} ».",
+        "warning": {
+          "fix": "Les fichiers de cette compétence diffèrent de ceux du registre. Cliquez sur « Corriger la compétence » pour les restaurer.",
+          "linkStale": "Cette compétence a été installée à partir du registre, mais celui-ci ne la répertorie plus. Cliquez sur « Supprimer le lien » pour supprimer le lien du registre tout en conservant les fichiers, ou sur « Désinstaller » pour supprimer la compétence.",
+          "notInRegistry": "Ne figure pas dans le registre"
+        },
+        "watcherStopped": "La surveillance des modifications dans le dossier « skills » a été interrompue. Les compétences installées ne s'actualiseront peut-être plus automatiquement. Actualisez la fenêtre pour reprendre la mise à jour."
+      },
+      "warning": {
+        "fixConfig": "La configuration de ce serveur diffère de celle du registre. Cliquez sur « Corriger la configuration » pour la restaurer.",
+        "linkStale": "Ce serveur a été installé à partir du registre, mais celui-ci ne le répertorie plus. Si vous êtes certain de vouloir le conserver et qu'il fonctionne toujours correctement, cliquez sur « Déconnecter » pour supprimer le lien du registre. Sinon, cliquez sur « Désinstaller » pour supprimer le serveur.",
+        "notInRegistry": "Ne figure pas dans le registre"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "Je comprends, autoriser tout",
@@ -1659,7 +1888,6 @@
       "configurePermissions": "Configurer les autorisations des commandes shell",
       "confirmExecution": "Confirmer la commande Shell",
       "denialReason": "Raison",
-      "executionCanceled": "Annulé",
       "executionDenied": "Refusé",
       "executionDeniedWithReason": "Refusé avec justification",
       "partialOutput": "Sortie partielle",
@@ -2159,7 +2387,6 @@
       "openByDefault": "Ouvrir l'aperçu par défaut à la place de l'éditeur."
     },
     "property-view": {
-      "directory": "Répertoire",
       "lastModified": "Dernière modification",
       "noProperties": "Aucune propriété disponible.",
       "properties": "Propriétés",
@@ -2222,7 +2449,6 @@
       "dirtyDiff": {
         "close": "Fermer Modifier Aperçu"
       },
-      "history": "Historique",
       "justNow": "à l'instant",
       "mergeEditor": {
         "resetConfirmationTitle": "Voulez-vous vraiment réinitialiser le résultat de la fusion dans cet éditeur ?"
@@ -2371,16 +2597,22 @@
       "errorFetching": "Erreur lors de la récupération des extensions.",
       "errorFetchingConfigurationHint": "Cela peut être dû à des problèmes de configuration réseau.",
       "failedInstallingVSIX": "Échec de l'installation d'{0} à partir de VSIX.",
+      "filter": {
+        "showBuiltin": "Afficher les éléments intégrés",
+        "showInstalled": "Afficher les éléments installés",
+        "showRecommended": "Afficher les recommandations"
+      },
       "invalidVSIX": "Le fichier sélectionné n'est pas un plugin « *.vsix » valide.",
       "license": "Licence : {0}",
       "onlyShowVerifiedExtensionsDescription": "Cela permet à l'{0}e de n'afficher que les extensions vérifiées.",
       "onlyShowVerifiedExtensionsTitle": "Afficher uniquement les extensions vérifiées",
       "recommendedExtensions": "Liste des noms des extensions recommandées pour une utilisation dans cet espace de travail.",
       "restrictedModeInstallWarning": "L'extension « {0} » peut être désactivée si elle ne prend pas en charge l'exécution en mode restreint. Faites confiance à cet espace de travail pour vous assurer que l'extension fonctionne comme prévu.",
-      "searchPlaceholder": "Rechercher des extensions dans l'{0}",
+      "searchPlaceholder": "Rechercher dans le registre VSX ouvert",
       "showInstalled": "Afficher les extensions installées",
       "showRecommendedExtensions": "Contrôle l'affichage des notifications pour les recommandations d'extensions.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "Aucune autre version n'est disponible.",
         "update-version-uninstall-error": "Erreur lors de la suppression de l'extension : {0}.",
         "update-version-version-error": "Échec de l'installation de la version {0} de {1}."
       }

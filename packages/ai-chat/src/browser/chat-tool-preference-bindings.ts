@@ -16,26 +16,29 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
-    PreferenceService,
-} from '@theia/core/lib/common/preferences';
-import {
     ToolConfirmationMode,
     TOOL_CONFIRMATION_PREFERENCE,
     DEFAULT_TOOL_CONFIRMATION_PREFERENCE
 } from '../common/chat-tool-preferences';
-import { ToolRequest } from '@theia/ai-core';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
+
+/**
+ * The loop-invariant inputs to {@link ToolConfirmationManager.computeEffectiveDefaultForTool}:
+ * the product-shipped per-tool schema defaults and the effective global default. Reading these
+ * once lets bulk operations avoid re-inspecting the preference schema per tool.
+ */
+interface ToolConfirmationDefaults {
+    perToolDefaults?: { [toolId: string]: ToolConfirmationMode };
+    globalDefault: ToolConfirmationMode;
+}
 
 /**
  * Utility class to manage tool confirmation settings
  */
 @injectable()
 export class ToolConfirmationManager {
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
-    @inject(TrustAwarePreferenceReader)
-    protected readonly trustAwareReader: TrustAwarePreferenceReader;
+    @inject(AiConfigurationService)
+    protected readonly aiConfigurationService: AiConfigurationService;
 
     // In-memory session overrides (not persisted), per chat
     protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
@@ -47,7 +50,7 @@ export class ToolConfirmationManager {
      * the default to a more permissive value.
      */
     getDefaultConfirmationMode(): ToolConfirmationMode {
-        const value = this.trustAwareReader.get<ToolConfirmationMode>(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
+        const value = this.aiConfigurationService.get<ToolConfirmationMode>(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
         return value ?? this.getDefaultPreferenceSchemaDefault();
     }
 
@@ -58,7 +61,7 @@ export class ToolConfirmationManager {
      * `await` completion and react to errors (e.g. show a notification on failure).
      */
     setDefaultConfirmationMode(mode: ToolConfirmationMode): Promise<void> {
-        return this.preferenceService.updateValue(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, mode);
+        return this.aiConfigurationService.update(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, mode);
     }
 
     /**
@@ -77,7 +80,7 @@ export class ToolConfirmationManager {
         if (chatMap && chatMap.has(toolId)) {
             return chatMap.get(toolId)!;
         }
-        const toolConfirmation = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+        const toolConfirmation = this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
         if (toolId in toolConfirmation) {
@@ -99,19 +102,53 @@ export class ToolConfirmationManager {
      * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
     setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): Promise<void> {
-        const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+        const current = this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
         const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest);
         if (mode === effectiveDefault) {
             if (toolId in current) {
                 const { [toolId]: _, ...rest } = current;
-                return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
+                return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, rest);
             }
             return Promise.resolve();
         }
         const updated = { ...current, [toolId]: mode };
-        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+        return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, updated);
+    }
+
+    /**
+     * Apply multiple per-tool confirmation modes with a single preference write.
+     *
+     * Preserves the same "remove entry if it matches the effective default" behavior as
+     * {@link setConfirmationMode}. Use this for bulk operations to avoid one preference
+     * round-trip per tool.
+     */
+    setConfirmationModes(updates: Iterable<{ toolId: string; mode: ToolConfirmationMode; toolRequest?: ToolRequest }>): Promise<void> {
+        const current = this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
+        const next: Record<string, ToolConfirmationMode> = { ...current };
+        // Read the loop-invariant schema/global defaults once, not once per tool.
+        const defaults = this.readConfirmationDefaults();
+        let changed = false;
+        for (const { toolId, mode, toolRequest } of updates) {
+            const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest, defaults);
+            if (mode === effectiveDefault) {
+                if (toolId in next) {
+                    delete next[toolId];
+                    changed = true;
+                }
+            } else if (next[toolId] !== mode) {
+                next[toolId] = mode;
+                changed = true;
+            }
+        }
+        // Avoid a redundant preference write (and the change event it fires) when nothing changed.
+        if (!changed) {
+            return Promise.resolve();
+        }
+        return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, next);
     }
 
     /**
@@ -141,32 +178,39 @@ export class ToolConfirmationManager {
      * Get all tool confirmation settings
      */
     getAllConfirmationSettings(): { [toolId: string]: ToolConfirmationMode } {
-        return this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+        return this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
     }
 
     resetAllConfirmationModeSettings(): Promise<void> {
-        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
+        return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, {});
     }
 
     /**
-     * Compute the effective default for a given tool, taking the schema-level default,
-     * any product-shipped per-tool default, and the confirmAlwaysAllow flag into account.
+     * Read the loop-invariant inputs for {@link computeEffectiveDefaultForTool}: the product-shipped
+     * per-tool schema defaults and the effective global default.
      */
-    protected computeEffectiveDefaultForTool(toolId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
-        const perToolDefaults = this.preferenceService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
+    protected readConfirmationDefaults(): ToolConfirmationDefaults {
+        const perToolDefaults = this.aiConfigurationService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
             | { [toolId: string]: ToolConfirmationMode }
             | undefined;
-        const perToolDefault = perToolDefaults?.[toolId];
+        return { perToolDefaults, globalDefault: this.getDefaultConfirmationMode() };
+    }
+
+    protected computeEffectiveDefaultForTool(
+        toolId: string,
+        toolRequest?: ToolRequest,
+        defaults: ToolConfirmationDefaults = this.readConfirmationDefaults()
+    ): ToolConfirmationMode {
+        const perToolDefault = defaults.perToolDefaults?.[toolId];
         if (perToolDefault) {
             return perToolDefault;
         }
-        const globalDefault = this.getDefaultConfirmationMode();
-        if (toolRequest?.confirmAlwaysAllow && globalDefault === ToolConfirmationMode.ALWAYS_ALLOW) {
+        if (toolRequest?.confirmAlwaysAllow && defaults.globalDefault === ToolConfirmationMode.ALWAYS_ALLOW) {
             return ToolConfirmationMode.CONFIRM;
         }
-        return globalDefault;
+        return defaults.globalDefault;
     }
 
     /**
@@ -174,7 +218,7 @@ export class ToolConfirmationManager {
      * Falls back to CONFIRM if the preference service has not registered the schema yet.
      */
     protected getDefaultPreferenceSchemaDefault(): ToolConfirmationMode {
-        const schemaDefault = this.preferenceService.inspect(DEFAULT_TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
+        const schemaDefault = this.aiConfigurationService.inspect(DEFAULT_TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
             | ToolConfirmationMode
             | undefined;
         return schemaDefault ?? ToolConfirmationMode.CONFIRM;

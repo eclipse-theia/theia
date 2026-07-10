@@ -17,3 +17,4 @@
 export { OVSXClientProvider, OVSXUrlResolver } from './ovsx-client-provider';
 export { VSXEnvironment } from './vsx-environment';
 export { VSXExtensionUri } from './vsx-extension-uri';
+export { VSXRegistryService, VSX_REGISTRY_SERVICE_PATH } from './vsx-registry-service';

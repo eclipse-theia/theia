@@ -29,8 +29,7 @@ import {
     WorkspaceFunctionScope,
     FindFilesByPattern
 } from './workspace-functions';
-import { ToolInvocationContext } from '@theia/ai-core';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -78,11 +77,11 @@ const makeRipgrepLikeSearchService = (filesByRoot: Record<string, string[]>) =>
         });
     });
 
-const makeTrustAwareReader = (overrides: { [pref: string]: unknown } = {}): TrustAwarePreferenceReader => ({
+const makeTrustAwareReader = (overrides: { [pref: string]: unknown } = {}): AiConfigurationService => ({
     get: <T>(name: string, fallback?: T) => (name in overrides ? overrides[name] as T : fallback),
     ready: Promise.resolve(),
     onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-} as unknown as TrustAwarePreferenceReader);
+} as unknown as AiConfigurationService);
 
 const makeEnvVariablesServer = (homeDirUri: string = 'file:///home/test'): EnvVariablesServer => ({
     getHomeDirUri: async () => homeDirUri,
@@ -171,7 +170,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(ProblemManager).toConstantValue(mockProblemManager);
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(FileSearchService).toConstantValue(makeFileSearchService());
         container.bind(WorkspaceFunctionScope).toSelf();
@@ -294,7 +293,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -412,7 +411,7 @@ describe('FileContentFunction handler', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -776,7 +775,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(FileSearchService).toConstantValue(makeFileSearchService());
         container.bind(WorkspaceFunctionScope).toSelf();
@@ -852,14 +851,14 @@ describe('FindFilesByPattern.findFiles', () => {
                 (name === 'ai-features.workspaceFunctions.allowedExternalPaths' ? (allowedExternal as unknown as T) : fallback),
             ready: Promise.resolve(),
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader;
+        } as unknown as AiConfigurationService;
 
         fileSearchService = makeFileSearchService(async () => searchResults);
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(FileSearchService).toConstantValue(fileSearchService);
         container.bind(WorkspaceFunctionScope).toSelf();
@@ -996,7 +995,7 @@ describe('WorkspaceFunctionScope gitignore caching', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
 
@@ -1065,7 +1064,7 @@ describe('GetWorkspaceFileList resolves the target directory once', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceFileList).toSelf();
@@ -1128,7 +1127,7 @@ describe('GetWorkspaceDirectoryStructure preserves empty folders', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceDirectoryStructure).toSelf();
@@ -1194,13 +1193,13 @@ describe('FileContentFunction external paths', () => {
             get: <T>(_name: string, fallback?: T) => (trustedScopeOnly ? fallback : (allowedPaths as unknown as T)),
             ready: Promise.resolve(),
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader;
+        } as unknown as AiConfigurationService;
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -1362,12 +1361,12 @@ describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external pa
             get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
             ready: Promise.resolve(),
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader;
+        } as unknown as AiConfigurationService;
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceFileList).toSelf();
@@ -1452,12 +1451,12 @@ describe('FindFilesByPattern with searchRoot', () => {
             get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
             ready: Promise.resolve(),
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader;
+        } as unknown as AiConfigurationService;
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(FileSearchService).toConstantValue(makeRipgrepLikeSearchService(FILES_BY_ROOT));
         container.bind(WorkspaceFunctionScope).toSelf();
@@ -1547,13 +1546,13 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
             get: <T>(name: string, fallback?: T) => trustAwareGet<T>(name, fallback),
             get ready(): Promise<void> { return trustReady; },
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
-        } as unknown as TrustAwarePreferenceReader;
+        } as unknown as AiConfigurationService;
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -1617,9 +1616,9 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
         expect(parsed.error).to.include('not allowed');
     });
 
-    // Item 7 — getAllowedExternalUris must await TrustAwarePreferenceReader.ready
+    // Item 7 — getAllowedExternalUris must await AiConfigurationService.ready
     // so that preference reads see the resolved trust state.
-    it('awaits TrustAwarePreferenceReader.ready before reading the allow-list', async () => {
+    it('awaits AiConfigurationService.ready before reading the allow-list', async () => {
         let preferenceVisible = false;
         let resolveReady: () => void = () => { /* noop */ };
         trustReady = new Promise<void>(r => { resolveReady = r; });
@@ -1727,7 +1726,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1750,7 +1749,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1774,7 +1773,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1797,7 +1796,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1819,7 +1818,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1840,7 +1839,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1859,7 +1858,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -1881,7 +1880,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             return container.get(WorkspaceFunctionScope);
@@ -2053,7 +2052,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceA);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             const scopeA = container.get(WorkspaceFunctionScope);
@@ -2072,7 +2071,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container2.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceB);
             container2.bind(FileService).toConstantValue({} as FileService);
             container2.bind(PreferenceService).toConstantValue({ get: () => false });
-            container2.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container2.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container2.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container2.bind(WorkspaceFunctionScope).toSelf();
             const scopeB = container2.get(WorkspaceFunctionScope);
@@ -2100,7 +2099,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -2127,7 +2126,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -2151,7 +2150,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);
@@ -2175,7 +2174,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
-            container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             container.bind(WorkspaceFunctionScope).toSelf();
             workspaceScope = container.get(WorkspaceFunctionScope);

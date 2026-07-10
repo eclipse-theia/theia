@@ -27,18 +27,20 @@ import { URI } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangeType, WatchOptions } from '@theia/filesystem/lib/common/files';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common/filesystem-preferences';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export class MainFileSystemEventService implements MainFileSystemEventServiceShape {
 
     private readonly toDispose = new DisposableCollection();
     private readonly watches = new Map<number, Disposable>();
+    /** Ancestor-of-workspace roots already skipped, to avoid logging on every re-registration. */
+    private readonly skippedWatchRoots = new Set<string>();
 
     constructor(
         rpc: RPCProtocol,
         container: interfaces.Container,
         private readonly fileService = container.get(FileService),
-        private readonly preferences = container.get<FileSystemPreferences>(FileSystemPreferences)
+        private readonly workspaceService = container.get(WorkspaceService)
     ) {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
 
@@ -84,26 +86,54 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
             throw new Error(`There is already a watch request for the key ${session}`);
         }
         const uri = URI.fromComponents(resource);
-        // Plugin-created watchers (`vscode.workspace.createFileSystemWatcher`) arrive here with an
-        // empty `excludes` list. Language servers frequently request recursive watches rooted at
-        // absolute paths outside the workspace (e.g. JDT-LS's per-project globs), so apply the
-        // user's `files.watcherExclude` here to keep the number of OS file watches bounded.
-        const watch = this.fileService.watch(uri, { ...options, excludes: this.getExcludes(uri, options.excludes) });
+        if (this.shouldSkipWatch(uri, options)) {
+            // Register a no-op disposable so the session is tracked and `$unwatch` still works.
+            this.watches.set(session, Disposable.NULL);
+            return;
+        }
+        // Plugin/language-server watchers (`vscode.workspace.createFileSystemWatcher`) arrive here
+        // with an empty `excludes` list; `FileService.watch` applies `files.watcherExclude` centrally
+        // for all watchers, so they stay bounded without merging the excludes here.
+        const watch = this.fileService.watch(uri, options);
         this.toDispose.push(watch);
         this.watches.set(session, watch);
     }
 
-    protected getExcludes(uri: URI, requested: string[] = []): string[] {
-        const configured = this.preferences.get('files.watcherExclude', undefined, uri.toString());
-        const excludes = new Set(requested);
-        if (configured) {
-            for (const pattern of Object.keys(configured)) {
-                if (configured[pattern]) {
-                    excludes.add(pattern);
-                }
-            }
+    /**
+     * Whether a plugin-requested watch should not be registered at all.
+     *
+     * Theia's backend ignores the `recursive` flag and always watches recursively. A NON-recursive
+     * watch rooted at a strict ancestor of a workspace root - e.g. a language server (such as
+     * `redhat.java` / JDT-LS) watching the PARENT of the workspace folder via
+     * `RelativePattern(parentDir, folderName)` purely to detect deletion of the folder itself -
+     * would therefore be turned into a recursive crawl of every sibling subtree under that parent,
+     * i.e. thousands of inodes the workspace does not own, which can exhaust the OS file-watch
+     * budget. `files.watcherExclude` cannot bound it because the root is outside the workspace, so
+     * the only effective mitigation is to not register the watch.
+     *
+     * Explicit recursive requests are honored as-is, and watches on or inside a workspace root are
+     * left untouched.
+     */
+    protected shouldSkipWatch(uri: URI, options: WatchOptions): boolean {
+        if (options.recursive) {
+            return false;
         }
-        return Array.from(excludes);
+        const roots = this.workspaceService.tryGetRoots();
+        // A folder that is itself a workspace root must always be watched, even if it also happens to
+        // be a (strict) ancestor of another root in a multi-root workspace where one root is nested
+        // inside another. Only watches rooted strictly above every root are dropped.
+        const isWorkspaceRoot = roots.some(root => uri.isEqual(root.resource));
+        const isAncestorOfWorkspace = !isWorkspaceRoot && roots.some(root => uri.isEqualOrParent(root.resource));
+        if (isAncestorOfWorkspace) {
+            const key = uri.toString();
+            if (!this.skippedWatchRoots.has(key)) {
+                this.skippedWatchRoots.add(key);
+                console.warn('[MainFileSystemEventService] skipping non-recursive watch rooted at an ancestor of the '
+                    + `workspace (the backend would recursively crawl sibling trees): ${key}`);
+            }
+            return true;
+        }
+        return false;
     }
 
     $unwatch(session: number): void {

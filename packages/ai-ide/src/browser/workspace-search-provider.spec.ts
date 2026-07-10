@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { ToolInvocationContext } from '@theia/ai-core';
@@ -98,6 +99,106 @@ describe('Workspace Search Provider Cancellation Tests', () => {
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('should normalize a string fileExtensions argument into an include array without hanging', async () => {
+        let capturedOptions: SearchInWorkspaceOptions | undefined;
+        // Rebind the search service so it records the options and immediately completes the search.
+        container.rebind(SearchInWorkspaceService).toConstantValue({
+            searchWithCallback: async (
+                query: string,
+                rootUris: string[],
+                callbacks: SearchInWorkspaceCallbacks,
+                options: SearchInWorkspaceOptions
+            ) => {
+                capturedOptions = options;
+                callbacks.onDone?.(1);
+                return 1;
+            },
+            cancel: () => { }
+        } as unknown as SearchInWorkspaceService);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+        // The model may emit fileExtensions as a bare string instead of an array.
+        const result = await handler(
+            JSON.stringify({ query: 'deleteSession', useRegExp: false, fileExtensions: 'spec.ts' }),
+            mockCtx
+        );
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.error).to.equal(undefined);
+        expect(capturedOptions?.include).to.deep.equal(['**/*.spec.ts']);
+    });
+
+    it('should time out instead of hanging when the search never reports completion', async () => {
+        // Reproduces the original hang: the backend returns a search id but onDone is never called,
+        // and previously the search could also never report an id at all.
+        container.rebind(SearchInWorkspaceService).toConstantValue({
+            searchWithCallback: () => new Promise<number>(() => { /* never resolves: no id, no onDone */ }),
+            cancel: () => { }
+        } as unknown as SearchInWorkspaceService);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+
+        const clock = sinon.useFakeTimers();
+        try {
+            const resultPromise = handler(
+                JSON.stringify({ query: 'deleteSession', useRegExp: false }),
+                mockCtx
+            );
+            await clock.tickAsync(30000);
+            const jsonResponse = JSON.parse(await resultPromise as string);
+            expect(jsonResponse.error).to.equal('Search timed out after 30 seconds');
+        } finally {
+            clock.restore();
+        }
+    });
+
+    it('should return an error (not hang) when search setup fails', async () => {
+        // An empty workspace makes determineSearchRoots throw; the error must surface as a result.
+        container.rebind(WorkspaceFunctionScope).toConstantValue({
+            getRootMapping: () => new Map()
+        } as unknown as WorkspaceFunctionScope);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+        const result = await handler(
+            JSON.stringify({ query: 'deleteSession', useRegExp: false }),
+            mockCtx
+        );
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.error).to.equal('No workspace has been opened yet');
+    });
+
+    it('should accept an array fileExtensions argument', async () => {
+        let capturedOptions: SearchInWorkspaceOptions | undefined;
+        container.rebind(SearchInWorkspaceService).toConstantValue({
+            searchWithCallback: async (
+                query: string,
+                rootUris: string[],
+                callbacks: SearchInWorkspaceCallbacks,
+                options: SearchInWorkspaceOptions
+            ) => {
+                capturedOptions = options;
+                callbacks.onDone?.(1);
+                return 1;
+            },
+            cancel: () => { }
+        } as unknown as SearchInWorkspaceService);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+        const result = await handler(
+            JSON.stringify({ query: 'deleteSession', useRegExp: false, fileExtensions: ['ts', 'js'] }),
+            mockCtx
+        );
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.error).to.equal(undefined);
+        expect(capturedOptions?.include).to.deep.equal(['**/*.ts', '**/*.js']);
     });
 
 });

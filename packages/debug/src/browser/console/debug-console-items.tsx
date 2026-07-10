@@ -281,7 +281,7 @@ export class DebugVariable extends ExpressionContainer {
         }
     }
     protected valueRef: HTMLSpanElement | undefined;
-    protected setValueRef = (valueRef: HTMLSpanElement | null) => this.valueRef = valueRef || undefined;
+    protected setValueRef = (valueRef: HTMLSpanElement | null): void => { this.valueRef = valueRef || undefined; };
 
     get supportCopyAsExpression(): boolean {
         return !!this.nameRef && document.queryCommandSupported('copy');
@@ -294,7 +294,7 @@ export class DebugVariable extends ExpressionContainer {
         }
     }
     protected nameRef: HTMLSpanElement | undefined;
-    protected setNameRef = (nameRef: HTMLSpanElement | null) => this.nameRef = nameRef || undefined;
+    protected setNameRef = (nameRef: HTMLSpanElement | null): void => { this.nameRef = nameRef || undefined; };
 
     async open(): Promise<void> {
         if (!this.supportSetVariable || this.readOnly) {

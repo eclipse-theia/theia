@@ -30,7 +30,7 @@ import {
 } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -143,6 +143,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ILogger) @named('ai-chat-ui:ChatViewTreeWidget')
+    protected readonly logger: ILogger;
 
     protected chatResponseFocusKey: ContextKey<boolean>;
 
@@ -719,8 +722,10 @@ export class ChatViewTreeWidget extends TreeWidget {
                         widget = this.inputWidgetFactory({
                             node: editableNode,
                             initialValue: editableNode.request.message.request.text,
-                            onQuery: async query => {
-                                editableNode.request.submitEdit({ text: query });
+                            onQuery: async (query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections) => {
+                                // Carry the edit widget's current selections so an edited+resent request honors
+                                // the capabilities (e.g. enabled server tools) the user picked while editing.
+                                editableNode.request.submitEdit({ text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections });
                             },
                             branch: editableNode.branch
                         });
@@ -782,7 +787,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             },
             [-1, undefined])[1];
         if (!renderer) {
-            console.error('No renderer found for content', content);
+            this.logger.error('No renderer found for content', content);
             return <div>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/noRenderer', 'Error: No renderer found')}</div>;
         }
         return renderer.render(content, node);

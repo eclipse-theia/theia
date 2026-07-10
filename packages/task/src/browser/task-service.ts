@@ -26,7 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidgetFactoryOptions, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
@@ -121,7 +121,7 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskServer)
     protected readonly taskServer: TaskServer;
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:TaskService')
     protected readonly logger: ILogger;
 
     @inject(WidgetManager)
@@ -338,7 +338,7 @@ export class TaskService implements TaskConfigurationClient {
             } else if (event.signal !== undefined) {
                 this.messageService.info(nls.localize('theia/task/taskTerminatedBySignal', "Task '{0}' was terminated by signal {1}.", taskIdentifier, event.signal));
             } else {
-                console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
+                this.logger.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
         });
     }
@@ -588,7 +588,7 @@ export class TaskService implements TaskConfigurationClient {
             return this.runCompoundTask(token, task, runTaskOption);
         } else {
             return this.runTask(task, runTaskOption).catch(error => {
-                console.error('Error at launching task', error);
+                this.logger.error('Error at launching task', error);
                 return undefined;
             });
         }
@@ -606,12 +606,12 @@ export class TaskService implements TaskConfigurationClient {
             const rootNode = new TaskNode(task, [], []);
             this.detectDirectedAcyclicGraph(task, rootNode, tasks);
         } catch (error) {
-            console.error(`Error at launching task '${task.label}'`, error);
+            this.logger.error(`Error at launching task '${task.label}'`, error);
             this.messageService.error(error.message);
             return undefined;
         }
         return this.runTasksGraph(task, tasks, option).catch(error => {
-            console.error(`Error at launching task '${task.label}'`, error);
+            this.logger.error(`Error at launching task '${task.label}'`, error);
             return undefined;
         });
     }
@@ -759,9 +759,9 @@ export class TaskService implements TaskConfigurationClient {
         if (!(await this.requestWorkspaceTrust())) {
             return;
         }
-        console.debug('entering runTask');
+        this.logger.debug('entering runTask');
         const releaseLock = await this.taskStartingLock.acquire();
-        console.debug('got lock');
+        this.logger.debug('got lock');
 
         try {
             // resolve problemMatchers
@@ -779,11 +779,11 @@ export class TaskService implements TaskConfigurationClient {
                 const taskConfig = taskInfo.config;
                 return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
             });
-            console.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
+            this.logger.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
 
             if (matchedRunningTaskInfo) { // the task is active
                 releaseLock();
-                console.debug('released lock');
+                this.logger.debug('released lock');
                 const taskName = this.taskNameResolver.resolve(task);
                 const terminalId = matchedRunningTaskInfo.terminalId;
                 if (terminalId) {
@@ -805,10 +805,10 @@ export class TaskService implements TaskConfigurationClient {
                     return this.restartTask(matchedRunningTaskInfo, option);
                 }
             } else { // run task as the task is not active
-                console.debug('task about to start');
+                this.logger.debug('task about to start');
                 const taskInfo = await this.doRunTask(task, option);
                 releaseLock();
-                console.debug('release lock 2');
+                this.logger.debug('release lock 2');
                 return taskInfo;
             }
         } catch (e) {
@@ -911,7 +911,7 @@ export class TaskService implements TaskConfigurationClient {
         return this.runTasksGraph(task, tasks, {
             customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
         }).catch(error => {
-            console.log(error.message);
+            this.logger.info(error.message);
             return undefined;
         });
     }
@@ -1083,7 +1083,7 @@ export class TaskService implements TaskConfigurationClient {
         const selectedText: string = this.editorManager.currentEditor.editor.document.getText(selectedRange).trimRight() + '\n';
         let terminal = this.terminalService.lastUsedTerminal;
         if (!terminal || terminal.kind !== 'user' || (await terminal.hasChildProcesses())) {
-            terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: new Date().toString() });
+            terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: nextTerminalCreationToken() });
             await terminal.start();
             this.terminalService.open(terminal);
         }
@@ -1109,7 +1109,7 @@ export class TaskService implements TaskConfigurationClient {
         const { taskId } = taskInfo;
         // Create / find a terminal widget to display an execution output of a task that was launched as a command inside a shell.
         const widget = await this.taskTerminalWidgetManager.open({
-            created: new Date().toString(),
+            created: nextTerminalCreationToken(),
             id: this.getTerminalWidgetId(terminalId),
             title: nls.localizeByDefault('Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
             destroyTermOnClose: true,

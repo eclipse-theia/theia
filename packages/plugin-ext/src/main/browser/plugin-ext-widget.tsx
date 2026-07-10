@@ -86,7 +86,7 @@ export class PluginWidget extends ReactWidget {
         </div>;
     }
 
-    private renderPlugin(plugin: PluginMetadata): JSX.Element {
+    private renderPlugin(plugin: PluginMetadata): React.JSX.Element {
         const unversionedId = PluginIdentifiers.componentsToUnversionedId(plugin.model);
         const isRestrictedByTrust = this.pluginService.disabledByTrust.has(unversionedId);
         return <div key={plugin.model.name} className={this.createPluginClassName(plugin, isRestrictedByTrust)}>

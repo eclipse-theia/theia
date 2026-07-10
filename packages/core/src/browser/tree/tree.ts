@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from '../../common/event';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
 import { timeout } from '../../common/promise-util';
 import { isObject, Mutable } from '../../common';
 import { AccessibilityInformation } from '../../common/accessibility';
+import { ILogger } from '../../common/logger';
 
 export const Tree = Symbol('Tree');
 
@@ -78,6 +79,17 @@ export interface Tree extends Disposable {
     readonly onDidUpdate: Event<TreeNode[]>;
 
     markAsChecked(node: TreeNode, checked: boolean): void;
+
+    /**
+     * Remove the given node and all of its descendants from the tree's internal
+     * id-to-node index. Safe to call on already-detached subtrees.
+     *
+     * Callers that mutate the tree structure directly via
+     * {@link CompositeTreeNode.removeChild} should invoke this (or pass the tree
+     * to `removeChild`) to keep {@link getNode} and {@link validateNode} from
+     * returning orphaned nodes.
+     */
+    removeNode(node: TreeNode | undefined): void;
 }
 
 export interface TreeViewItemCheckboxInfo {
@@ -215,7 +227,17 @@ export namespace CompositeTreeNode {
         return parent;
     }
 
-    export function removeChild(parent: CompositeTreeNode, child: TreeNode): void {
+    /**
+     * Detach the given `child` from the `parent`.
+     *
+     * After this call, the child's `parent`, `previousSibling`, and
+     * `nextSibling` references are cleared, symmetric with `setParent`. If a
+     * `tree` is provided, the child and its descendants are also purged from
+     * the tree's id-to-node index so that {@link Tree.getNode} no longer
+     * returns the detached subtree. Otherwise the index entries persist and
+     * the caller is responsible for cleanup (e.g., via `tree.removeNode`).
+     */
+    export function removeChild(parent: CompositeTreeNode, child: TreeNode, tree?: Tree): void {
         const children = parent.children as TreeNode[];
         const index = children.findIndex(value => value.id === child.id);
         if (index === -1) {
@@ -229,6 +251,8 @@ export namespace CompositeTreeNode {
         if (nextSibling) {
             Object.assign(nextSibling, { previousSibling });
         }
+        Object.assign(child, { parent: undefined, previousSibling: undefined, nextSibling: undefined });
+        tree?.removeNode(child);
     }
 
     export function setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
@@ -249,6 +273,9 @@ export namespace CompositeTreeNode {
  */
 @injectable()
 export class TreeImpl implements Tree {
+
+    @inject(ILogger) @named('core:TreeImpl')
+    protected readonly logger: ILogger;
 
     protected _root: TreeNode | undefined;
     protected readonly onChangedEmitter = new Emitter<void>();
@@ -344,7 +371,7 @@ export class TreeImpl implements Tree {
     protected async setChildren(parent: CompositeTreeNode, children: TreeNode[]): Promise<CompositeTreeNode | undefined> {
         const root = this.getRootNode(parent);
         if (this.nodes[root.id] && this.nodes[root.id] !== root) {
-            console.error(`Child node '${parent.id}' does not belong to this '${root.id}' tree.`);
+            this.logger.error(`Child node '${parent.id}' does not belong to this '${root.id}' tree.`);
             return undefined;
         }
         this.removeNode(parent);
@@ -354,7 +381,7 @@ export class TreeImpl implements Tree {
         return parent;
     }
 
-    protected removeNode(node: TreeNode | undefined): void {
+    removeNode(node: TreeNode | undefined): void {
         if (CompositeTreeNode.is(node)) {
             node.children.forEach(child => this.removeNode(child));
         }

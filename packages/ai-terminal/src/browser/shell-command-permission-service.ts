@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/common';
+import { AiConfigurationService } from '@theia/ai-core';
 import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
 import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
@@ -41,8 +41,8 @@ export interface CommandAnalysis {
 @injectable()
 export class ShellCommandPermissionService {
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AiConfigurationService)
+    protected readonly aiConfigurationService: AiConfigurationService;
 
     @inject(ShellCommandAnalyzer)
     protected readonly shellCommandAnalyzer: ShellCommandAnalyzer;
@@ -147,36 +147,42 @@ export class ShellCommandPermissionService {
     }
 
     getAllowlistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []);
+        return this.aiConfigurationService.get<string[]>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []) ?? [];
     }
 
     /**
      * Adds one or more patterns to the allowlist in a single update.
      * Rejects empty or whitespace-only patterns, "*" alone, and invalid wildcard positions.
      * Trims patterns before adding and avoids duplicates.
+     *
+     * Throws synchronously if any pattern is invalid. The returned promise resolves once the
+     * preference write completes and rejects if the write fails.
      */
-    addAllowlistPatterns(...patterns: string[]): void {
-        this.addPatternsToList(patterns, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
+    addAllowlistPatterns(...patterns: string[]): Promise<void> {
+        return this.addPatternsToList(patterns, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
     }
 
-    removeAllowlistPattern(pattern: string): void {
-        this.removePatternFromList(pattern, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
+    removeAllowlistPattern(pattern: string): Promise<void> {
+        return this.removePatternFromList(pattern, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
     }
 
     getDenylistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_DENYLIST_PREFERENCE, []);
+        return this.aiConfigurationService.get<string[]>(SHELL_COMMAND_DENYLIST_PREFERENCE, []) ?? [];
     }
 
     /**
      * Adds one or more patterns to the denylist in a single update.
      * Uses the same validation as allowlist patterns.
+     *
+     * Throws synchronously if any pattern is invalid. The returned promise resolves once the
+     * preference write completes and rejects if the write fails.
      */
-    addDenylistPatterns(...patterns: string[]): void {
-        this.addPatternsToList(patterns, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
+    addDenylistPatterns(...patterns: string[]): Promise<void> {
+        return this.addPatternsToList(patterns, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
     }
 
-    removeDenylistPattern(pattern: string): void {
-        this.removePatternFromList(pattern, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
+    removeDenylistPattern(pattern: string): Promise<void> {
+        return this.removePatternFromList(pattern, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
     }
 
     /**
@@ -199,26 +205,28 @@ export class ShellCommandPermissionService {
         return trimmed;
     }
 
-    protected addPatternsToList(patterns: string[], preferenceKey: string, getCurrentPatterns: () => string[]): void {
+    protected addPatternsToList(patterns: string[], preferenceKey: string, getCurrentPatterns: () => string[]): Promise<void> {
         const validated = patterns.map(p => this.validatePattern(p));
         const currentPatterns = getCurrentPatterns();
         const newPatterns = validated.filter(p => !currentPatterns.includes(p));
         if (newPatterns.length > 0) {
-            this.preferenceService.updateValue(
+            return this.aiConfigurationService.update(
                 preferenceKey,
                 [...currentPatterns, ...newPatterns]
             );
         }
+        return Promise.resolve();
     }
 
-    protected removePatternFromList(pattern: string, preferenceKey: string, getCurrentPatterns: () => string[]): void {
+    protected removePatternFromList(pattern: string, preferenceKey: string, getCurrentPatterns: () => string[]): Promise<void> {
         const currentPatterns = getCurrentPatterns();
         const filtered = currentPatterns.filter(p => p !== pattern);
         if (filtered.length !== currentPatterns.length) {
-            this.preferenceService.updateValue(
+            return this.aiConfigurationService.update(
                 preferenceKey,
                 filtered
             );
         }
+        return Promise.resolve();
     }
 }

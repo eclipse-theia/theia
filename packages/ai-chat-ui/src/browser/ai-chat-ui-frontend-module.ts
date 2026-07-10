@@ -16,13 +16,13 @@
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
+import '../../src/browser/style/mermaid-rendering.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
-import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
@@ -30,12 +30,15 @@ import {
     CodePartRenderer,
     CodePartRendererAction,
     CommandPartRenderer,
+    CompactionPartRenderer,
     CopyToClipboardButtonAction,
     ErrorPartRenderer,
     HorizontalLayoutPartRenderer,
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
+    MermaidPartRenderer,
     ToolCallPartRenderer,
+    ServerToolCallPartRenderer,
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
@@ -55,6 +58,8 @@ import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { bindChatViewPreferences } from './chat-view-preferences';
 import { ChatViewWidget } from './chat-view-widget';
+import { ChatBannerProvider } from './chat-banner-provider';
+import { ChatBannerWidget } from './chat-banner-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
@@ -70,11 +75,11 @@ import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
+import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
+import { ChatSessionNotificationContribution } from './chat-session-notification-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);
-
-    bind(AIChatNavigationService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, AIChatContribution);
     bind(FrontendApplicationContribution).toService(AIChatContribution);
@@ -110,8 +115,17 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
     bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
 
+    bind(ToolConfirmationKeybindingContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ToolConfirmationKeybindingContribution);
+    bind(KeybindingContribution).toService(ToolConfirmationKeybindingContribution);
+
+    bind(ChatSessionNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatSessionNotificationContribution);
+
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
+    bindRootContributionProvider(bind, ChatBannerProvider);
+    bind(ChatBannerWidget).toSelf();
 
     bindChatViewWidget(bind);
 
@@ -169,11 +183,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
+    bind(MermaidPartRenderer).toSelf().inSingletonScope();
+    bind(ChatResponsePartRenderer).toService(MermaidPartRenderer);
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(ServerToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(CompactionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();

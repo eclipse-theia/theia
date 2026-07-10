@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider, CustomAgentPromptVariant } from '@theia/ai-core/lib/common';
 import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -26,6 +26,7 @@ import {
     ChatRequestParserImpl,
     ChatService,
     ToolCallChatResponseContentFactory,
+    ServerToolCallResponseContentFactory,
     PinChatAgent,
     ChatServiceFactory,
     ChatAgentServiceFactory
@@ -60,6 +61,7 @@ import { DefaultPendingImageRegistry, PendingImageRegistry } from './pending-ima
 import { AgentDelegationTool } from './agent-delegation-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
+import { PendingToolConfirmationTracker } from './pending-tool-confirmation-tracker';
 import { ChatSessionStore } from '../common/chat-session-store';
 import { ChatSessionStoreImpl } from './chat-session-store-impl';
 import {
@@ -127,15 +129,17 @@ export default new ContainerModule(bind => {
     // Tool confirmation preferences
     bindChatToolPreferences(bind);
     bind(ToolConfirmationManager).toSelf().inSingletonScope();
+    bind(PendingToolConfirmationTracker).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
-    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined]>(
-        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string, showInChat?: boolean) => {
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined, CustomAgentPromptVariant[] | undefined]>(
+        ctx => (id, name, description, prompt, defaultLLM, showInChat, promptVariants) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
             agent.description = description;
             agent.prompt = prompt;
+            agent.promptVariants = promptVariants;
             agent.languageModelRequirements = [{
                 purpose: 'chat',
                 identifier: defaultLLM,
@@ -155,7 +159,9 @@ export default new ContainerModule(bind => {
 
             return agent;
         });
-    bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
+    bind(AICustomAgentsFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AICustomAgentsFrontendApplicationContribution);
+    bind(CommandContribution).toService(AICustomAgentsFrontendApplicationContribution);
 
     bind(ContextVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ContextVariableLabelProvider);
@@ -174,6 +180,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
     bindRootContributionProvider(bind, ChangeSetDecorator);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
+    bind(ServerToolCallResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();
