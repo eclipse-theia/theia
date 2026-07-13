@@ -258,11 +258,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         </>;
     }
 
-    protected nextNotSeparator(direction: 'forwards' | 'backwards'): number {
+    protected nextNotSeparator(direction: 'forwards' | 'backwards', startFrom?: number): number {
         const { options } = this.props;
         const step = direction === 'forwards' ? 1 : -1;
         const length = this.props.options.length;
-        let selected = this.state.selected;
+        let selected = startFrom ?? this.state.selected;
         let count = 0;
         do {
             selected = (selected + step) % length;
@@ -280,14 +280,14 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             return;
         }
         if (ev.key === 'ArrowUp') {
-            const selected = this.nextNotSeparator('backwards');
+            const selected = this.nextNotSeparator('backwards', this.state.hover);
             this.setState({
                 selected,
                 hover: selected
             });
         } else if (ev.key === 'ArrowDown') {
             if (this.state.dimensions) {
-                const selected = this.nextNotSeparator('forwards');
+                const selected = this.nextNotSeparator('forwards', this.state.hover);
                 this.setState({
                     selected,
                     hover: selected
