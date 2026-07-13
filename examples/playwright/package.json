@@ -43,7 +43,7 @@
     "allure-playwright": "^2.15.1",
     "cross-env": "^7.0.3",
     "rimraf": "^5.0.10",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.3"
   },
   "publishConfig": {
     "access": "public"

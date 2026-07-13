@@ -13,11 +13,10 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "importHelpers": true,
-    "downlevelIteration": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": false,
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "target": "ES2023",
     "jsx": "react",
     "lib": [
