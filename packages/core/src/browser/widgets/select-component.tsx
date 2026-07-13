@@ -91,7 +91,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         return selected;
     }
 
-    override componentDidUpdate(prevProps: SelectComponentProps): void {
+    override componentDidUpdate(prevProps: SelectComponentProps, prevState: SelectComponentState): void {
+        if (prevState.selected !== this.state.selected && this.state.dimensions) {
+            const el = this.dropdownRef?.current?.querySelector(`[data-option-index="${this.state.selected}"]`);
+            el?.scrollIntoView({ block: 'nearest' });
+        }
         if (prevProps.defaultValue !== this.props.defaultValue || prevProps.options !== this.props.options) {
             const selected = this.getInitialSelectedIndex(this.props);
             this.setState({
@@ -404,6 +408,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         return (
             <div
                 key={index}
+                data-option-index={index}
                 className={`theia-select-component-option${index === selected ? ' selected' : ''}`}
                 onMouseOver={() => {
                     this.setState({
