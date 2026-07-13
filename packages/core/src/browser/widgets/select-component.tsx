@@ -93,8 +93,17 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     override componentDidUpdate(prevProps: SelectComponentProps, prevState: SelectComponentState): void {
         if (prevState.selected !== this.state.selected && this.state.dimensions) {
-            const el = this.dropdownRef?.current?.querySelector(`[data-option-index="${this.state.selected}"]`);
-            el?.scrollIntoView({ block: 'nearest' });
+            const container = this.dropdownRef?.current;
+            const el = container?.querySelector(`[data-option-index="${this.state.selected}"]`) as HTMLElement | undefined;
+            if (container && el) {
+                const elBottom = el.offsetTop + el.offsetHeight;
+                const containerBottom = container.scrollTop + container.clientHeight;
+                if (elBottom > containerBottom) {
+                    container.scrollTop = elBottom - container.clientHeight;
+                } else if (el.offsetTop < container.scrollTop) {
+                    container.scrollTop = el.offsetTop;
+                }
+            }
         }
         if (prevProps.defaultValue !== this.props.defaultValue || prevProps.options !== this.props.options) {
             const selected = this.getInitialSelectedIndex(this.props);
