@@ -680,7 +680,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
-            isEnabled: () => this.shell.getWidgets('bottom').length > 0,
             execute: () => {
                 if (this.shell.isExpanded('bottom')) {
                     this.shell.collapsePanel('bottom');
