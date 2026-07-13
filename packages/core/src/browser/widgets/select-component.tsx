@@ -93,15 +93,15 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     override componentDidUpdate(prevProps: SelectComponentProps, prevState: SelectComponentState): void {
         if (prevState.selected !== this.state.selected && this.state.dimensions) {
-            const container = this.dropdownRef?.current;
-            const el = container?.querySelector(`[data-option-index="${this.state.selected}"]`) as HTMLElement | undefined;
-            if (container && el) {
-                const elBottom = el.offsetTop + el.offsetHeight;
-                const containerBottom = container.scrollTop + container.clientHeight;
-                if (elBottom > containerBottom) {
-                    container.scrollTop = elBottom - container.clientHeight;
-                } else if (el.offsetTop < container.scrollTop) {
-                    container.scrollTop = el.offsetTop;
+            const dropdownContainer = this.dropdownRef?.current;
+            const selectedOption = dropdownContainer?.querySelector(`[data-option-index="${this.state.selected}"]`) as HTMLElement | undefined;
+            if (dropdownContainer && selectedOption) {
+                const optionBottom = selectedOption.offsetTop + selectedOption.offsetHeight;
+                const visibleBottom = dropdownContainer.scrollTop + dropdownContainer.clientHeight;
+                if (optionBottom > visibleBottom) {
+                    dropdownContainer.scrollTop = optionBottom - dropdownContainer.clientHeight;
+                } else if (selectedOption.offsetTop < dropdownContainer.scrollTop) {
+                    dropdownContainer.scrollTop = selectedOption.offsetTop;
                 }
             }
         }
