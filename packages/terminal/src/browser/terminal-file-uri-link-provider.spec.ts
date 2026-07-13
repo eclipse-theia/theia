@@ -38,6 +38,7 @@ const expect = chai.expect;
 class TestFileUriLinkProvider extends FileUriLinkProvider {
     readonly loggedErrors: string[] = [];
     readonly opened: string[] = [];
+    readonly openedOptions: unknown[] = [];
 
     constructor(existingFiles: string[]) {
         super();
@@ -56,7 +57,11 @@ class TestFileUriLinkProvider extends FileUriLinkProvider {
         const opener: OpenHandler = {
             id: 'test',
             canHandle: () => 1,
-            open: async (uri: URI) => { this.opened.push(uri.toString()); return undefined; }
+            open: async (uri: URI, options?: unknown) => {
+                this.opened.push(uri.toString());
+                this.openedOptions.push(options);
+                return undefined;
+            }
         };
         (this as unknown as { openerService: OpenerService }).openerService = {
             getOpener: async () => opener,
@@ -116,5 +121,39 @@ describe('FileUriLinkProvider', () => {
         const links = await provider.provideLinks(`the file is ${uri}.`, terminal);
         expect(links).to.have.lengthOf(1);
         expect(links[0].length).to.equal(uri.length);
+    });
+
+    it('should open at the given line and column for a file://…:line:column suffix', async () => {
+        const uri = 'file:///home/user/project/file.ts';
+        const provider = new TestFileUriLinkProvider([uri]);
+        const match = `${uri}:10:5`;
+        const links = await provider.provideLinks(`error at ${match}`, terminal);
+        expect(links).to.have.lengthOf(1);
+        // The whole `file://…:10:5` is clickable, but the URI drops the position suffix.
+        expect(links[0].length).to.equal(match.length);
+        await links[0].handle();
+        expect(provider.opened).to.deep.equal([new URI(uri).toString()]);
+        // one-based `10:5` becomes a zero-based editor position.
+        expect(provider.openedOptions).to.deep.equal([{ selection: { start: { line: 9, character: 4 } } }]);
+    });
+
+    it('should open at the given line with a file://…:line suffix (no column)', async () => {
+        const uri = 'file:///home/user/project/file.ts';
+        const provider = new TestFileUriLinkProvider([uri]);
+        const links = await provider.provideLinks(`${uri}:42`, terminal);
+        expect(links).to.have.lengthOf(1);
+        await links[0].handle();
+        expect(provider.opened).to.deep.equal([new URI(uri).toString()]);
+        expect(provider.openedOptions).to.deep.equal([{ selection: { start: { line: 41, character: 0 } } }]);
+    });
+
+    it('should keep the Windows drive colon and still apply a trailing position', async () => {
+        const uri = 'file:///C:/Users/dev/file.ts';
+        const provider = new TestFileUriLinkProvider([new URI(uri).toString()]);
+        const links = await provider.provideLinks(`${uri}:7:3`, terminal);
+        expect(links).to.have.lengthOf(1);
+        await links[0].handle();
+        expect(provider.opened).to.deep.equal([new URI(uri).toString()]);
+        expect(provider.openedOptions).to.deep.equal([{ selection: { start: { line: 6, character: 2 } } }]);
     });
 });
