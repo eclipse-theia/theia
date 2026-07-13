@@ -15,51 +15,47 @@
 // *****************************************************************************
 
 import { ILogger } from '@theia/core';
-import { OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/editor/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { AbstractFileOpeningLinkProvider } from './terminal-file-opening-link-provider';
 import { TerminalWidget } from './base/terminal-widget';
-import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
+import { TerminalLink } from './terminal-link-provider';
 
 /**
  * Linkifies `file://` URLs printed in the terminal and opens the referenced local file in the editor.
  *
- * `UrlLinkProvider` only matches `http(s)`, and `FileLinkProvider`'s path regex excludes `:`, so a
- * printed `file://` URL survives there only as a scheme-less remainder that its guard skips. A `file:`
- * URL carries its authority in the string itself, so it is parsed as a whole rather than reconstructed
- * from a path against the terminal's cwd.
+ * A dedicated provider is needed because `UrlLinkProvider` only matches `http(s)` and
+ * `FileLinkProvider`'s path regex excludes `:`, so neither recognizes the `file:` scheme.
  */
 @injectable()
-export class FileUriLinkProvider implements TerminalLinkProvider {
+export class FileUriLinkProvider extends AbstractFileOpeningLinkProvider {
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(FileService) protected readonly fileService: FileService;
     @inject(ILogger) @named('terminal:FileUriLinkProvider')
     protected readonly logger: ILogger;
 
-    // 'file://' followed by an optional third slash (empty authority) and the authority/path remainder,
-    // stopping at whitespace and characters that commonly delimit a URL in prose.
+    // The optional third slash denotes an empty authority (`file:///path`); the match runs to the first
+    // whitespace or character that commonly delimits a URL in prose.
     protected readonly fileUriRegExp = /file:\/\/\/?[^\s'"`<>()[\]]+/g;
 
     async provideLinks(line: string, terminal: TerminalWidget): Promise<TerminalLink[]> {
-        const links: TerminalLink[] = [];
+        // Collect all matches synchronously before awaiting: the `g`-flag regex is instance-shared, so
+        // yielding mid-iteration would let a concurrent call corrupt its `lastIndex`.
+        const candidates: Array<{ match: string, startIndex: number }> = [];
         this.fileUriRegExp.lastIndex = 0;
         let regExpResult: RegExpExecArray | null;
         while (regExpResult = this.fileUriRegExp.exec(line)) {
-            const match = this.trimTrailingPunctuation(regExpResult[0]);
+            candidates.push({ match: this.trimTrailingPunctuation(regExpResult[0]), startIndex: regExpResult.index });
+        }
+        const links = await Promise.all(candidates.map(async ({ match, startIndex }) => {
             const { fileUri, position } = this.splitPosition(match);
             const uri = this.toURI(fileUri);
             if (uri && await this.isValidFileURI(uri)) {
-                links.push({
-                    startIndex: regExpResult.index,
-                    length: match.length,
-                    handle: () => this.open(uri, position)
-                });
+                return { startIndex, length: match.length, handle: () => this.openURI(uri, position) };
             }
-        }
-        return links;
+            return undefined;
+        }));
+        return links.filter((link): link is TerminalLink => link !== undefined);
     }
 
     /**
@@ -72,8 +68,8 @@ export class FileUriLinkProvider implements TerminalLinkProvider {
         if (!positionMatch) {
             return { fileUri: match };
         }
-        const line = parseInt(positionMatch[1], 10) - 1;
-        const character = positionMatch[2] !== undefined ? parseInt(positionMatch[2], 10) - 1 : 0;
+        const line = Math.max(0, parseInt(positionMatch[1], 10) - 1);
+        const character = positionMatch[2] !== undefined ? Math.max(0, parseInt(positionMatch[2], 10) - 1) : 0;
         return {
             fileUri: match.slice(0, positionMatch.index),
             position: { line, character }
@@ -86,24 +82,6 @@ export class FileUriLinkProvider implements TerminalLinkProvider {
             return uri.scheme === 'file' ? uri : undefined;
         } catch {
             return undefined;
-        }
-    }
-
-    protected async isValidFileURI(uri: URI): Promise<boolean> {
-        try {
-            const stat = await this.fileService.resolve(uri);
-            return !stat.isDirectory;
-        } catch { }
-        return false;
-    }
-
-    protected async open(uri: URI, position?: Position): Promise<void> {
-        const options = position ? { selection: { start: position } } : {};
-        try {
-            const opener = await this.openerService.getOpener(uri, options);
-            await opener.open(uri, options);
-        } catch (err) {
-            this.logger.error('Cannot open link ' + uri, err);
         }
     }
 

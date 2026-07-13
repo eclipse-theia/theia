@@ -40,15 +40,19 @@ class TestFileUriLinkProvider extends FileUriLinkProvider {
     readonly opened: string[] = [];
     readonly openedOptions: unknown[] = [];
 
-    constructor(existingFiles: string[]) {
+    constructor(existingFiles: string[], directories: string[] = []) {
         super();
-        const existing = new Set(existingFiles);
+        const files = new Set(existingFiles);
+        const dirs = new Set(directories.map(uri => new URI(uri).toString()));
         (this as unknown as { logger: ILogger }).logger = {
             error: (message: unknown) => { this.loggedErrors.push(String(message)); }
         } as unknown as ILogger;
         (this as unknown as { fileService: FileService }).fileService = {
             resolve: async (uri: URI) => {
-                if (existing.has(uri.toString())) {
+                if (dirs.has(uri.toString())) {
+                    return { isDirectory: true };
+                }
+                if (files.has(uri.toString())) {
                     return { isDirectory: false };
                 }
                 throw new Error('does not exist');
@@ -155,5 +159,45 @@ describe('FileUriLinkProvider', () => {
         await links[0].handle();
         expect(provider.opened).to.deep.equal([new URI(uri).toString()]);
         expect(provider.openedOptions).to.deep.equal([{ selection: { start: { line: 6, character: 2 } } }]);
+    });
+
+    it('should clamp a zero line/column to the first position', async () => {
+        const uri = 'file:///home/user/project/file.ts';
+        const provider = new TestFileUriLinkProvider([uri]);
+        const links = await provider.provideLinks(`${uri}:0`, terminal);
+        expect(links).to.have.lengthOf(1);
+        await links[0].handle();
+        expect(provider.openedOptions).to.deep.equal([{ selection: { start: { line: 0, character: 0 } } }]);
+    });
+
+    it('should not produce a link for a file:// URL that resolves to a directory', async () => {
+        const uri = 'file:///home/user/project';
+        const provider = new TestFileUriLinkProvider([], [uri]);
+        const links = await provider.provideLinks(`open ${uri} now`, terminal);
+        expect(links).to.deep.equal([]);
+        expect(provider.loggedErrors).to.deep.equal([]);
+    });
+
+    it('should linkify every file:// URL on a line at the correct offsets', async () => {
+        const a = 'file:///home/user/a.ts';
+        const b = 'file:///home/user/b.ts';
+        const provider = new TestFileUriLinkProvider([a, b]);
+        const line = `first ${a} then ${b}`;
+        const links = await provider.provideLinks(line, terminal);
+        expect(links).to.have.lengthOf(2);
+        expect(links.map(link => link.startIndex)).to.deep.equal([line.indexOf(a), line.indexOf(b)]);
+        expect(links.map(link => line.substr(link.startIndex, link.length))).to.deep.equal([a, b]);
+    });
+
+    it('should not leak regex state across concurrent invocations', async () => {
+        const a = 'file:///home/user/a.ts';
+        const b = 'file:///home/user/b.ts';
+        const provider = new TestFileUriLinkProvider([a, b]);
+        const [linksA, linksB] = await Promise.all([
+            provider.provideLinks(`x ${a}`, terminal),
+            provider.provideLinks(b, terminal)
+        ]);
+        expect(linksA.map(link => link.length)).to.deep.equal([a.length]);
+        expect(linksB.map(link => link.length)).to.deep.equal([b.length]);
     });
 });
