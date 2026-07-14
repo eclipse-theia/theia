@@ -16,10 +16,14 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ReasoningSupport, resolveCompactionDefault, ServerSideCompactionSetting } from '@theia/ai-core';
+import { ReasoningSupport, resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, USE_RESPONSE_API_PREF
+} from '../common/openai-preferences';
+import {
+    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
+} from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
 @injectable()
@@ -65,7 +69,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     this.updateAllModels();
                 } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF) {
                     this.updateAllModels();
-                } else if (event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION) {
+                } else if (event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
+                    event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
+                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
                     this.updateAllModels();
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
@@ -111,6 +117,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.enableStreaming === newModel.enableStreaming &&
                 model.useResponseApi === newModel.useResponseApi &&
                 model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
+                model.serverSideCompactionTokenThresholdByDefault === newModel.serverSideCompactionTokenThresholdByDefault &&
                 reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -134,6 +141,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
+        const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
+        const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
+        const serverSideCompactionTokenThresholdByDefault = resolveCompactionTokenThresholdDefault(globalThreshold, providerThreshold);
         return {
             id: id,
             model: modelId,
@@ -141,7 +151,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             apiVersion: true,
             maxRetries: maxRetries,
             useResponseApi: useResponseApi,
-            serverSideCompactionEnabledByDefault
+            serverSideCompactionEnabledByDefault,
+            serverSideCompactionTokenThresholdByDefault
         };
     }
 
@@ -152,6 +163,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
+        const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
+        const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
+        const serverSideCompactionTokenThresholdByDefault = resolveCompactionTokenThresholdDefault(globalThreshold, providerThreshold);
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -171,7 +185,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     maxRetries: pref.maxRetries ?? maxRetries,
                     useResponseApi: pref.useResponseApi ?? false,
                     reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined,
-                    serverSideCompactionEnabledByDefault
+                    serverSideCompactionEnabledByDefault,
+                    serverSideCompactionTokenThresholdByDefault
                 }
             ];
         }, []);

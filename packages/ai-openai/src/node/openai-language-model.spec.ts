@@ -48,13 +48,18 @@ function createModel(modelId: string, reasoningSupport?: ReasoningSupport): Test
     );
 }
 
-function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, useResponseApi: boolean = true): TestableOpenAiModel {
+function createCompactionModel(
+    serverSideCompactionEnabledByDefault: boolean,
+    useResponseApi: boolean = true,
+    serverSideCompactionTokenThresholdByDefault?: number
+): TestableOpenAiModel {
     return new TestableOpenAiModel(
         'test-id', 'gpt-5', { status: 'ready' }, true,
         () => 'test-key', () => undefined,
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault
+        'developer', 3, useResponseApi, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+        serverSideCompactionTokenThresholdByDefault
     );
 }
 
@@ -146,6 +151,18 @@ describe('OpenAiModel server-side compaction (Response API)', () => {
         const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
         expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
         expect(result.stream).to.equal(true);
+    });
+
+    it('adds the model default token threshold', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [] });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 200_000 }]);
+    });
+
+    it('uses the session token threshold over the model default', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { tokenThreshold: 300_000 } });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 300_000 }]);
     });
 
     it('leaves settings unchanged when model default is off and request has no compaction setting', () => {

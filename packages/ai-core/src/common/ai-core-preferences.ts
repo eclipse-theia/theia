@@ -35,6 +35,7 @@ export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
 export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
 export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION = 'ai-features.chat.serverSideCompaction';
+export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD = 'ai-features.chat.serverSideCompactionTokenThreshold';
 
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
@@ -49,6 +50,14 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                 'sessions continue past the context limit. Each provider offers its own override, and individual chat sessions ' +
                 'can override this in their session settings. Models without support ignore it.'),
             default: true,
+        },
+        [PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            type: 'integer',
+            minimum: 1,
+            description: nls.localize('theia/ai/core/serverSideCompactionTokenThreshold/description',
+                'Default input-token threshold at which provider-native server-side compaction should run. Providers and individual chat sessions ' +
+                'can override this value. When unset, the provider chooses its default threshold.'),
         },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,
@@ -251,6 +260,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
     [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
     [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: boolean | undefined;
+    [PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD]: number | undefined;
 }
 
 export interface RequestSetting {

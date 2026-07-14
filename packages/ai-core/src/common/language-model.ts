@@ -327,6 +327,8 @@ export namespace ToolRequest {
 export interface CompactionSettings {
     /** Explicit enablement for this session; when set it wins over the model's default. `undefined` means "no explicit choice". */
     enabled?: boolean;
+    /** Input-token threshold for this session; when set it wins over the model's default. `undefined` preserves the provider default. */
+    tokenThreshold?: number;
 }
 
 /** Per-provider override for server-side compaction; combined with the global preference by {@link resolveCompactionDefault}. */
@@ -346,6 +348,20 @@ export function resolveCompactionDefault(globalEnabled: boolean, perProviderOver
         return false;
     }
     return globalEnabled;
+}
+
+export function resolveCompactionTokenThresholdDefault(
+    globalThreshold: number | undefined,
+    perProviderThreshold: number | undefined
+): number | undefined {
+    return perProviderThreshold ?? globalThreshold;
+}
+
+export function resolveCompactionTokenThreshold(
+    thresholdByDefault: number | undefined,
+    compaction: CompactionSettings | undefined
+): number | undefined {
+    return compaction?.tokenThreshold ?? thresholdByDefault;
 }
 
 /**

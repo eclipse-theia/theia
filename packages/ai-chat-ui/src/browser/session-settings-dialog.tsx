@@ -85,12 +85,16 @@ type CompactionOverride = boolean | undefined;
 
 interface ServerSideCompactionSectionProps {
     compactionOverride: CompactionOverride;
+    compactionTokenThreshold: number | undefined;
     onCompactionOverrideChange: (value: CompactionOverride) => void;
+    onCompactionTokenThresholdChange: (value: number | undefined) => void;
 }
 
 const ServerSideCompactionSection: React.FC<ServerSideCompactionSectionProps> = ({
     compactionOverride,
-    onCompactionOverrideChange
+    compactionTokenThreshold,
+    onCompactionOverrideChange,
+    onCompactionTokenThresholdChange
 }) => {
     const selectValue = compactionOverride === true ? 'enabled' : compactionOverride === false ? 'disabled' : 'default';
 
@@ -137,6 +141,23 @@ const ServerSideCompactionSection: React.FC<ServerSideCompactionSectionProps> = 
                     </option>
                 </select>
             </div>
+            <div className="session-settings-compaction-threshold-container">
+                <label htmlFor="compaction-token-threshold">
+                    {nls.localize('theia/ai/session-settings-dialog/compactionTokenThreshold', 'Token threshold:')}
+                </label>
+                <input
+                    type="number"
+                    id="compaction-token-threshold"
+                    min={1}
+                    step={1}
+                    value={compactionTokenThreshold ?? ''}
+                    placeholder={nls.localizeByDefault('Default')}
+                    onChange={e => {
+                        const value = Number(e.target.value);
+                        onCompactionTokenThresholdChange(Number.isInteger(value) && value > 0 ? value : undefined);
+                    }}
+                />
+            </div>
         </div>
     );
 };
@@ -166,20 +187,24 @@ interface DialogContentProps {
     confirmationTimeoutEnabled: boolean;
     confirmationTimeoutSeconds: number;
     compactionOverride: CompactionOverride;
+    compactionTokenThreshold: number | undefined;
     errorMessage: string;
     onConfirmationTimeoutEnabledChange: (enabled: boolean) => void;
     onConfirmationTimeoutSecondsChange: (seconds: number) => void;
     onCompactionOverrideChange: (value: CompactionOverride) => void;
+    onCompactionTokenThresholdChange: (value: number | undefined) => void;
 }
 
 const DialogContent: React.FC<DialogContentProps> = ({
     confirmationTimeoutEnabled,
     confirmationTimeoutSeconds,
     compactionOverride,
+    compactionTokenThreshold,
     errorMessage,
     onConfirmationTimeoutEnabledChange,
     onConfirmationTimeoutSecondsChange,
-    onCompactionOverrideChange
+    onCompactionOverrideChange,
+    onCompactionTokenThresholdChange
 }) => (
     <div className="session-settings-container">
         <ConfirmationTimeoutSection
@@ -190,7 +215,9 @@ const DialogContent: React.FC<DialogContentProps> = ({
         />
         <ServerSideCompactionSection
             compactionOverride={compactionOverride}
+            compactionTokenThreshold={compactionTokenThreshold}
             onCompactionOverrideChange={onCompactionOverrideChange}
+            onCompactionTokenThresholdChange={onCompactionTokenThresholdChange}
         />
         <AdvancedSettingsSection
             sectionHeader={nls.localize('theia/ai/session-settings-dialog/advancedSettings', 'Advanced Settings (JSON)')}
@@ -209,6 +236,7 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     protected confirmationTimeoutSeconds: number;
 
     protected compactionOverride: boolean | undefined;
+    protected compactionTokenThreshold: number | undefined;
 
     protected preservedReasoning: CommonChatSessionSettings['reasoning'];
 
@@ -238,6 +266,7 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
         // Read the per-session compaction override (undefined = use global/per-provider setting).
         this.compactionOverride = this.settings.commonSettings?.compaction?.enabled;
+        this.compactionTokenThreshold = this.settings.commonSettings?.compaction?.tokenThreshold;
 
         // Extract confirmation timeout settings from commonSettings
         const savedTimeout = this.settings.commonSettings?.confirmationTimeout;
@@ -293,10 +322,12 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
                 confirmationTimeoutEnabled={this.confirmationTimeoutEnabled}
                 confirmationTimeoutSeconds={this.confirmationTimeoutSeconds}
                 compactionOverride={this.compactionOverride}
+                compactionTokenThreshold={this.compactionTokenThreshold}
                 errorMessage={this.errorMessage}
                 onConfirmationTimeoutEnabledChange={this.handleConfirmationTimeoutEnabledChange}
                 onConfirmationTimeoutSecondsChange={this.handleConfirmationTimeoutSecondsChange}
                 onCompactionOverrideChange={this.handleCompactionOverrideChange}
+                onCompactionTokenThresholdChange={this.handleCompactionTokenThresholdChange}
             />
         );
     }
@@ -415,6 +446,13 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         this.attachEditorContainer();
     };
 
+    protected handleCompactionTokenThresholdChange = (value: number | undefined): void => {
+        this.compactionTokenThreshold = value;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
     protected updateSettingsFromCommonSettings(): void {
         const commonSettings: CommonChatSessionSettings = {};
         if (this.preservedReasoning) {
@@ -426,8 +464,11 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
             commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;
         }
-        if (this.compactionOverride !== undefined) {
-            commonSettings.compaction = { enabled: this.compactionOverride };
+        if (this.compactionOverride !== undefined || this.compactionTokenThreshold !== undefined) {
+            commonSettings.compaction = {
+                enabled: this.compactionOverride,
+                tokenThreshold: this.compactionTokenThreshold
+            };
         }
         this.settings.commonSettings = Object.keys(commonSettings).length > 0 ? commonSettings : undefined;
     }

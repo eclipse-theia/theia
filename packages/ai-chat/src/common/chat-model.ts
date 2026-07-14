@@ -249,7 +249,7 @@ export interface CommonChatSessionSettings {
     reasoning?: ReasoningSettings;
     /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
     confirmationTimeout?: number;
-    /** Per-session server-side compaction settings; `compaction.enabled`, when set, wins over the per-provider and global settings. */
+    /** Per-session server-side compaction settings; set values win over the per-provider and global settings. */
     compaction?: CompactionSettings;
 }
 
