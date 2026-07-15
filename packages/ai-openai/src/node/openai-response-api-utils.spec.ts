@@ -28,6 +28,39 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
 }
 
 describe('OpenAiResponseApiUtils', () => {
+    it('passes tool parameters through unchanged in non-strict mode', () => {
+        const utils = new OpenAiResponseApiUtils();
+        const parameters = {
+            type: 'object' as const,
+            properties: {
+                metadata: {
+                    type: 'object' as const,
+                    additionalProperties: { type: 'string' }
+                }
+            }
+        };
+
+        const converted = utils.convertToolsForResponseApi([{
+            id: 'lookup',
+            name: 'lookup',
+            parameters,
+            handler: async () => 'result'
+        }]);
+
+        expect(converted).to.have.lengthOf(1);
+        const convertedTool = converted?.[0];
+        expect(convertedTool).to.include({
+            type: 'function',
+            name: 'lookup',
+            parameters,
+            strict: false
+        });
+        if (convertedTool?.type !== 'function') {
+            throw new Error('Expected a function tool');
+        }
+        expect(convertedTool.parameters).to.equal(parameters);
+    });
+
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
         const utils = new OpenAiResponseApiUtils();
         const streams = [
