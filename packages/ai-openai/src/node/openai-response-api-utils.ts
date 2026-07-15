@@ -23,7 +23,6 @@ import {
     TextMessage,
     ToolInvocationContext,
     ToolRequest,
-    ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
@@ -44,7 +43,6 @@ import type {
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
-import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
 
 /**
  * User-facing name under which the provider's built-in deferred-tool search is surfaced in the chat UI.
@@ -162,11 +160,11 @@ export class OpenAiResponseApiUtils {
             type: 'function' as const,
             name: tool.name,
             description: tool.description || '',
-            // The Response API is very strict re: JSON schema: all properties must be listed as required,
-            // and additional properties must be disallowed.
-            // https://platform.openai.com/docs/guides/function-calling#strict-mode
-            parameters: this.recursiveStrictToolCallParameters(tool.parameters),
-            strict: true,
+            // Tool schemas are passed through as-is (non-strict). Strict mode (`strict: true`) is opt-in and
+            // only supports a JSON-schema subset (all properties required, `additionalProperties: false`
+            // everywhere), which cannot express the open-ended maps common in MCP tool schemas.
+            parameters: tool.parameters as unknown as FunctionTool['parameters'],
+            strict: false,
             defer_loading: deferred.has(tool.id) ? true : undefined
         }));
         if (deferred.size > 0) {
@@ -174,10 +172,6 @@ export class OpenAiResponseApiUtils {
         }
         this.logger.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
-    }
-
-    recursiveStrictToolCallParameters(schema: ToolRequestParameters): FunctionTool['parameters'] {
-        return recursiveStrictJSONSchema(schema) as FunctionTool['parameters'];
     }
 
     protected createSimpleResponseApiStreamIterator(
@@ -888,51 +882,4 @@ export function processSystemMessages(
         return updated;
     }
     return messages;
-}
-
-export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSchemaDefinition {
-    if (typeof schema === 'boolean') { return schema; }
-    let result: JSONSchema | undefined = undefined;
-    if (schema.properties) {
-        result ??= { ...schema };
-        result.additionalProperties = false;
-        result.required = Object.keys(schema.properties);
-        result.properties = Object.fromEntries(Object.entries(schema.properties).map(([key, props]) => [key, recursiveStrictJSONSchema(props)]));
-    }
-    if (schema.items) {
-        result ??= { ...schema };
-        result.items = Array.isArray(schema.items)
-            ? schema.items.map(recursiveStrictJSONSchema)
-            : recursiveStrictJSONSchema(schema.items);
-    }
-    if (schema.oneOf) {
-        result ??= { ...schema };
-        result.oneOf = schema.oneOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.anyOf) {
-        result ??= { ...schema };
-        result.anyOf = schema.anyOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.allOf) {
-        result ??= { ...schema };
-        result.allOf = schema.allOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.if) {
-        result ??= { ...schema };
-        result.if = recursiveStrictJSONSchema(schema.if);
-    }
-    if (schema.then) {
-        result ??= { ...schema };
-        result.then = recursiveStrictJSONSchema(schema.then);
-    }
-    if (schema.else) {
-        result ??= { ...schema };
-        result.else = recursiveStrictJSONSchema(schema.else);
-    }
-    if (schema.not) {
-        result ??= { ...schema };
-        result.not = recursiveStrictJSONSchema(schema.not);
-    }
-
-    return result ?? schema;
 }

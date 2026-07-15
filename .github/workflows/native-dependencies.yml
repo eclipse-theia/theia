@@ -28,10 +28,10 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       # Update the node version here after every Electron upgrade
-      - name: Use Node.js v22.20.0
+      - name: Use Node.js v24.15.0
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: "22.20.0"
+          node-version: "24.15.0"
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.13

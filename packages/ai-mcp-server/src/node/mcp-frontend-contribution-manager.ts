@@ -17,6 +17,7 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer, RegisteredTool, RegisteredPrompt, RegisteredResource } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { AnySchema } from '@modelcontextprotocol/sdk/server/zod-compat.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
 import { z } from 'zod';
@@ -159,14 +160,17 @@ export class MCPFrontendContributionManager {
         try {
             const tools = await delegate.listTools(this.serverId);
             for (const tool of tools) {
+                // Cast bridges two zod installs: ai-mcp-server uses zod@4 (for `fromJSONSchema`), while the MCP SDK
+                // resolves `zod/v4/core` through the hoisted zod@3.25 pinned by the Vercel AI SDK peer-deps.
+                // Both produce structurally equivalent v4 schemas; TypeScript just sees them as distinct types.
+                const inputSchema = z.fromJSONSchema(tool.inputSchema as Parameters<typeof z.fromJSONSchema>[0]) as unknown as AnySchema;
                 const registeredTool = this.mcpServer.registerTool(
                     `${tool.name}_${delegateId}`,
                     {
                         description: tool.description ?? '',
-                        // Cast needed: SDK's Tool.inputSchema type is looser than what z.fromJSONSchema expects
-                        inputSchema: z.fromJSONSchema(tool.inputSchema as Parameters<typeof z.fromJSONSchema>[0])
+                        inputSchema
                     },
-                    async args => {
+                    async (args: Record<string, unknown>) => {
                         try {
                             const result = await delegate.callTool(
                                 this.serverId!,
@@ -175,7 +179,7 @@ export class MCPFrontendContributionManager {
                             );
                             return {
                                 content: [{
-                                    type: 'text',
+                                    type: 'text' as const,
                                     text: typeof result === 'string' ? result : JSON.stringify(result)
                                 }]
                             };

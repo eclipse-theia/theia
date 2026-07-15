@@ -50,7 +50,6 @@
     "@theia/ai-registry": "1.73.0",
     "@theia/ai-scanoss": "1.73.0",
     "@theia/ai-terminal": "1.73.0",
-    "@theia/ai-vercel-ai": "1.73.0",
     "@theia/api-provider-sample": "1.73.0",
     "@theia/api-samples": "1.73.0",
     "@theia/bulk-edit": "1.73.0",
@@ -119,6 +118,6 @@
   },
   "devDependencies": {
     "@theia/cli": "1.73.0",
-    "electron": "39.8.7"
+    "electron": "42.3.0"
   }
 }

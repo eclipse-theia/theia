@@ -489,6 +489,10 @@ By default, this will generate the code coverage for the tests in an HTML
 format, which can be easily viewed with your browser (Chrome/Firefox/Edge/Safari
 etc.) by opening `packages/<package name>/coverage/index.html`.
 
+## Updating dependencies and the lockfile
+
+When you add, remove, or upgrade dependencies, the regenerated `package-lock.json` needs care so that `npm ci` keeps working on every Node version used in CI (currently Node 22 and Node 24). See [Lockfile maintenance](lockfile-maintenance.md) for the required workflow before committing lockfile changes.
+
 ## Building on Windows
 
 - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
