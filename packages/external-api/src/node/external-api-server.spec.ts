@@ -58,7 +58,10 @@ describe('ExternalApiServer', () => {
         (server as unknown as Record<string, unknown>)['responseWriter'] = new ExternalApiResponseWriter();
         (server as unknown as Record<string, unknown>)['routerFactory'] = ExternalApiTestSupport.createRouterFactory();
         const documentBuilder = new OpenApiDocumentBuilderImpl();
-        (documentBuilder as unknown as Record<string, unknown>)['applicationPackage'] = { pck: { version: '1.2.3' } };
+        (documentBuilder as unknown as Record<string, unknown>)['applicationPackage'] = {
+            pck: { version: '1.2.3' },
+            props: { frontend: { config: { applicationName: 'My IDE' } } }
+        };
         (server as unknown as Record<string, unknown>)['documentBuilder'] = documentBuilder;
         return server;
     }

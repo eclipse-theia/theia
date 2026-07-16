@@ -54,15 +54,18 @@ describe('OpenApiDocumentBuilder', () => {
 
     function build(sources: OpenApiDocumentSource[], tokenConfigured: boolean = false, includeProtected: boolean = true): OpenApiDocument {
         const builder = new OpenApiDocumentBuilderImpl();
-        (builder as unknown as Record<string, unknown>)['applicationPackage'] = { pck: { version: '1.2.3' } };
+        (builder as unknown as Record<string, unknown>)['applicationPackage'] = {
+            pck: { version: '1.2.3' },
+            props: { frontend: { config: { applicationName: 'My IDE' } } }
+        };
         builder.update(sources, tokenConfigured);
         return builder.build(includeProtected);
     }
 
-    it('builds an empty document without sources', () => {
+    it('builds an empty document titled after the application', () => {
         const document = build([]);
         expect(document.openapi).to.equal('3.1.0');
-        expect(document.info.title).to.equal('Theia External API');
+        expect(document.info.title).to.equal('My IDE External API');
         expect(document.info.version).to.equal('1.2.3');
         expect(document.paths).to.deep.equal({});
         expect(document.components).to.equal(undefined);

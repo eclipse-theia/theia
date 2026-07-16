@@ -136,9 +136,14 @@ export class OpenApiDocumentBuilderImpl implements OpenApiDocumentBuilder {
 
     protected info(): OpenApiDocument['info'] {
         return {
-            title: 'Theia External API',
+            title: `${this.applicationName} External API`,
             version: this.applicationPackage.pck.version ?? '0.0.0'
         };
+    }
+
+    /** The configured application name, defaulting to 'Eclipse Theia', see `FrontendApplicationConfig`. */
+    protected get applicationName(): string {
+        return this.applicationPackage.props.frontend.config.applicationName;
     }
 
     /** Returns the operations object of the route's full path, creating it if necessary. */
