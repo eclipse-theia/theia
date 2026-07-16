@@ -275,6 +275,11 @@ export type ChatSessionStatus =
 
 export namespace ChatSessionStatus {
     /**
+     * All {@link ChatSessionStatus} values, e.g. for schema declarations.
+     */
+    export const VALUES: readonly ChatSessionStatus[] = ['idle', 'running', 'awaitingApproval', 'awaitingToolCall', 'awaitingInput', 'failed'];
+
+    /**
      * Whether a request is in progress in this status, including the states waiting on the user or a tool.
      */
     export function isInProgress(status: ChatSessionStatus): boolean {
