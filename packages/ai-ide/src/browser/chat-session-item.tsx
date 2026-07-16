@@ -45,6 +45,21 @@ export interface ChatSessionItemProps {
     actions?: ChatSessionItemAction[];
     /** Invoked when an action is triggered, with the action and this item's session. */
     onAction?: (action: ChatSessionItemAction, session: ChatSessionMetadata) => void;
+    /**
+     * Whether this session has child sessions. The children themselves are rendered separately by
+     * the parent list; this only drives the expand/collapse toggle.
+     */
+    hasChildSessions?: boolean;
+    /** Whether this item is a child of a parent session. */
+    isChildSession?: boolean;
+    /** Depth level for indentation. */
+    depth?: number;
+    /** Whether the parent session is expanded. */
+    isExpanded?: boolean;
+    /** Whether any descendant session needs user action; shows a warning badge on this row. */
+    descendantNeedsAttention?: boolean;
+    /** Called when the user toggles the expand/collapse state. */
+    onToggleExpand?: () => void;
 }
 
 /** Subscribes the component to the unread flag for one session. */
@@ -92,7 +107,12 @@ export interface ChatSessionItemComponentProps extends ChatSessionItemProps {
 }
 
 export function ChatSessionItem(props: ChatSessionItemComponentProps): React.ReactElement {
-    const { session, isRestored, chatService, chatAgentService, hoverService, markdownRenderer, unreadState, onClick, actions, onAction, formatTimeAgo } = props;
+    const {
+        session, isRestored, chatService, chatAgentService, hoverService, markdownRenderer, unreadState,
+        onClick, actions, onAction, formatTimeAgo, hasChildSessions, isChildSession, depth, isExpanded,
+        descendantNeedsAttention, onToggleExpand
+    } = props;
+    const currentDepth = depth ?? 0;
 
     // eslint-disable-next-line no-null/no-null
     const itemRef = React.useRef<HTMLDivElement | null>(null);
@@ -155,13 +175,13 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         // once the session is actually opened.
         const loadedSession = chatService.getSession(session.sessionId);
         const tooltip = loadedSession
-            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread)
-            : buildRestoredSessionTooltip(session, chatAgentService);
+            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, descendantNeedsAttention)
+            : buildRestoredSessionTooltip(session, chatAgentService, descendantNeedsAttention);
         // The tooltip may hold a markdown render result; dispose it once the hover is torn down
         // (or right away if we no longer intend to show it).
         if (!hoverActiveRef.current) { tooltip.dispose(); return; }
         hoverService.requestHover({ content: tooltip.element, target, position: 'left', onHide: () => tooltip.dispose() });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, descendantNeedsAttention]);
 
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []);
 
@@ -188,14 +208,20 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
     // so the waiting state takes precedence over the generic working spinner: it signals that the
     // user, not the agent, needs to act.
     const isWorking = status !== undefined && ChatSessionStatus.isInProgress(status);
-    const isWaitingForInput = status !== undefined && ChatSessionStatus.requiresUserAction(status);
+    const ownWaitingForInput = status !== undefined && ChatSessionStatus.requiresUserAction(status);
+    // A row whose (possibly nested) delegated child needs action shows the same bell + dot as a row
+    // that needs action itself, so the signal is consistent and stands out even when collapsed.
+    const isWaitingForInput = ownWaitingForInput || descendantNeedsAttention === true;
     const showWorking = isWorking && !isWaitingForInput;
-    const showUnread = hasUnread && !isWorking && !hasError;
-    const attentionLabel = status === 'awaitingApproval'
-        ? nls.localize('theia/ai/ide/requiresApproval', 'Requires your approval')
-        : nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
+    const showUnread = hasUnread && !isWorking && !hasError && !isWaitingForInput;
+    const attentionLabel = ownWaitingForInput
+        ? (status === 'awaitingApproval'
+            ? nls.localize('theia/ai/ide/requiresApproval', 'Requires your approval')
+            : nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input'))
+        : nls.localize('theia/ai/ide/childInteractionNeeded', 'A delegated session needs your attention');
     const itemClasses = [
         'theia-chat-session-item',
+        isChildSession && 'theia-chat-session-item-child',
         isWaitingForInput && 'theia-chat-session-item-attention',
         showWorking && 'theia-chat-session-item-working',
         hasError && !isWorking && 'theia-chat-session-item-error',
@@ -213,26 +239,55 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
             className={itemClasses}
             role="button"
             tabIndex={0}
+            style={{ '--tree-indent': `${currentDepth * 12}px` } as React.CSSProperties}
             onClick={onClick}
             onKeyDown={handleKeyDown}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onMouseOver={handleMouseOver}>
             <div className="theia-chat-session-item-icon-col">
-                {isRestored ? (
-                    <span className={`${codicon('archive')} theia-chat-session-item-archive-icon`}
-                        title={nls.localize('theia/ai/ide/restoredSession', 'Restored session')} />
+                {hasChildSessions ? (
+                    <span className="theia-chat-session-item-expand-icon"
+                        onClick={e => {
+                            e.stopPropagation();
+                            onToggleExpand?.();
+                        }}
+                        onKeyDown={e => {
+                            if (isActivationKey(e)) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onToggleExpand?.();
+                            }
+                        }}
+                        onMouseDown={e => e.preventDefault()}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded
+                            ? nls.localize('theia/ai/ide/collapseSession', 'Collapse {0}', title)
+                            : nls.localize('theia/ai/ide/expandSession', 'Expand {0}', title)}>
+                        <span className={`codicon ${isExpanded ? 'codicon-chevron-down' : 'codicon-chevron-right'}`} />
+                    </span>
                 ) : (
-                    <span className={`theia-chat-session-item-agent-icon ${iconClass}`} />
+                    <span className="theia-chat-session-item-expand-icon theia-chat-session-item-expand-placeholder" aria-hidden="true" />
                 )}
-                {showUnread && (
-                    <span className="theia-chat-session-item-unread-dot"
-                        aria-label={nls.localize('theia/ai/ide/tooltip/unread', 'Unread')} />
-                )}
-                {isWaitingForInput && (
-                    <span className="theia-chat-session-item-attention-dot"
-                        aria-label={attentionLabel} />
-                )}
+                <span className="theia-chat-session-item-status-icon">
+                    {isRestored && !isWaitingForInput ? (
+                        <span className={`${codicon('archive')} theia-chat-session-item-archive-icon`}
+                            title={nls.localize('theia/ai/ide/restoredSession', 'Restored session')} />
+                    ) : (
+                        <span className={`theia-chat-session-item-agent-icon ${iconClass}`}
+                            title={isWaitingForInput ? attentionLabel : undefined} />
+                    )}
+                    {showUnread && (
+                        <span className="theia-chat-session-item-unread-dot"
+                            aria-label={nls.localize('theia/ai/ide/tooltip/unread', 'Unread')} />
+                    )}
+                    {isWaitingForInput && (
+                        <span className="theia-chat-session-item-attention-dot"
+                            aria-label={attentionLabel} />
+                    )}
+                </span>
             </div>
             <div className="theia-chat-session-item-content">
                 <div className="theia-chat-session-item-title-line">

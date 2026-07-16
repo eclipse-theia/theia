@@ -334,6 +334,8 @@ export interface ChatModel {
     readonly status: ChatSessionStatus;
     /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
     rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. Undefined for top-level sessions. */
+    parentSessionId?: string;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -1135,6 +1137,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _location: ChatAgentLocation;
     protected _status: ChatSessionStatus = 'idle';
     rootSessionId?: string;
+    parentSessionId?: string;
 
     get location(): ChatAgentLocation {
         return this._location;
