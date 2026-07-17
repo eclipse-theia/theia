@@ -83,7 +83,8 @@ export type ChatChangeEvent =
     | ChatResponseChangedEvent
     | ChatChangeHierarchyBranchEvent
     | ChatInteractionNeededEvent
-    | ChatSessionStatusChangedEvent;
+    | ChatSessionStatusChangedEvent
+    | ChatSettingsChangedEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -148,6 +149,11 @@ export interface ChatInteractionNeededEvent {
 export interface ChatSessionStatusChangedEvent {
     kind: 'statusChanged';
     status: ChatSessionStatus;
+}
+
+export interface ChatSettingsChangedEvent {
+    kind: 'settingsChanged';
+    settings: ChatSessionSettings;
 }
 
 export namespace ChatChangeEvent {
@@ -233,6 +239,12 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
 }
 
 export interface CommonChatSessionSettings {
+    /**
+     * Language model (or alias) id to use for this session only, overriding the agent's default.
+     * New sessions start without an override and use the agent's configured model. Cleared to
+     * revert to the default.
+     */
+    modelId?: string;
     /** Reasoning configuration for this session; applied to reasoning-capable models. */
     reasoning?: ReasoningSettings;
     /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
@@ -1112,6 +1124,10 @@ export interface ChatResponseModel {
      * Indicates whether the prompt variant was customized/edited
      */
     readonly isPromptVariantEdited?: boolean;
+    /**
+     * The identifier of the language model that produced this response, if recorded.
+     */
+    readonly languageModel?: string;
     readonly tokenUsage?: ResponseTokenUsage;
     toSerializable(): SerializableChatResponseData;
 }
@@ -1209,6 +1225,12 @@ export class MutableChatModel implements ChatModel, Disposable {
             }, this, this.toDispose);
         }
 
+        // Restore per-session settings (e.g. the per-session model override) so the chat input can
+        // reflect the previous selection.
+        if (data.settings) {
+            this._settings = data.settings;
+        }
+
         // Restore the hierarchy structure with all alternatives
         this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>(data.hierarchy, requestMap);
 
@@ -1276,6 +1298,9 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
+        // Emit a change so listeners (e.g. session auto-save) persist selector-only or dialog-only
+        // settings updates that are not accompanied by another model change.
+        this._onDidChangeEmitter.fire({ kind: 'settingsChanged', settings });
     }
 
     addChildModel(child: MutableChatModel): Disposable {
@@ -1347,7 +1372,8 @@ export class MutableChatModel implements ChatModel, Disposable {
             location: this.location,
             hierarchy,
             requests: serializedRequests,
-            responses: serializedResponses
+            responses: serializedResponses,
+            settings: this._settings
         };
     }
 
@@ -3273,6 +3299,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _cancellationToken: CancellationTokenSource;
     protected _promptVariantId?: string;
     protected _isPromptVariantEdited?: boolean;
+    protected _languageModel?: string;
     protected _tokenUsage?: ResponseTokenUsage;
     protected _tokenUsageEntries: ResponseTokenUsage[] = [];
 
@@ -3318,6 +3345,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._progressMessages = [];
         this._promptVariantId = data.promptVariantId;
         this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+        this._languageModel = data.languageModel;
         this._tokenUsage = data.tokenUsage;
 
         if (data.errorMessage) {
@@ -3398,6 +3426,10 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._isPromptVariantEdited ?? false;
     }
 
+    get languageModel(): string | undefined {
+        return this._languageModel;
+    }
+
     get tokenUsage(): ResponseTokenUsage | undefined {
         return this._tokenUsage;
     }
@@ -3419,6 +3451,12 @@ export class MutableChatResponseModel implements ChatResponseModel {
     setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
         this._promptVariantId = variantId;
         this._isPromptVariantEdited = isEdited;
+        this._onDidChangeEmitter.fire();
+    }
+
+    /** Records the identifier of the language model that produced this response. */
+    setLanguageModel(languageModel: string | undefined): void {
+        this._languageModel = languageModel;
         this._onDidChangeEmitter.fire();
     }
 
@@ -3499,6 +3537,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
             errorMessage: this.errorObject?.message,
             promptVariantId: this._promptVariantId,
             isPromptVariantEdited: this._isPromptVariantEdited,
+            languageModel: this._languageModel,
             tokenUsage: this._tokenUsage,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();

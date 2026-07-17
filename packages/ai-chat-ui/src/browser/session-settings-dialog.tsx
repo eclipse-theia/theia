@@ -212,6 +212,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected preservedReasoning: CommonChatSessionSettings['reasoning'];
 
+    protected preservedModelId: CommonChatSessionSettings['modelId'];
+
     protected contentRoot: Root;
     protected editorContainerNode: HTMLDivElement;
 
@@ -230,6 +232,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
         // Reasoning is edited in the chat input; preserve it across this dialog.
         this.preservedReasoning = this.settings.commonSettings?.reasoning;
+
+        // The per-session model override is edited in the chat input; preserve it across this dialog.
+        this.preservedModelId = this.settings.commonSettings?.modelId;
 
         // Read the per-session compaction override (undefined = use global/per-provider setting).
         this.compactionOverride = this.settings.commonSettings?.compaction?.enabled;
@@ -414,6 +419,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         const commonSettings: CommonChatSessionSettings = {};
         if (this.preservedReasoning) {
             commonSettings.reasoning = this.preservedReasoning;
+        }
+        if (this.preservedModelId) {
+            commonSettings.modelId = this.preservedModelId;
         }
         if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
             commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;

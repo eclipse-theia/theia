@@ -65,6 +65,7 @@ import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-re
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 import { PromptVariantBadge } from './prompt-variant-badge';
+import { ModelBadge } from './model-badge';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -494,6 +495,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         const promptVariantId = isResponseNode(node) ? node.response.promptVariantId : undefined;
         const isPromptVariantEdited = isResponseNode(node) ? !!node.response.isPromptVariantEdited : false;
+        const languageModel = isResponseNode(node) ? node.response.languageModel : undefined;
 
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
@@ -532,6 +534,12 @@ export class ChatViewTreeWidget extends TreeWidget {
                     <PromptVariantBadge
                         variantId={promptVariantId}
                         isEdited={isPromptVariantEdited}
+                        hoverService={this.hoverService}
+                    />
+                )}
+                {languageModel && (
+                    <ModelBadge
+                        modelId={languageModel}
                         hoverService={this.hoverService}
                     />
                 )}
