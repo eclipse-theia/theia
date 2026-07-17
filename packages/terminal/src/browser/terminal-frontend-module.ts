@@ -43,6 +43,7 @@ import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/qui
 import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider';
 import { UrlLinkProvider } from './terminal-url-link-provider';
 import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider, LocalFileLinkProvider } from './terminal-file-link-provider';
+import { FileUriLinkProvider } from './terminal-file-uri-link-provider';
 import {
     ContributedTerminalProfileStore, DefaultProfileStore, DefaultTerminalProfileService,
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
@@ -120,6 +121,8 @@ export default new ContainerModule(bind => {
     // default terminal link provider
     bind(UrlLinkProvider).toSelf().inSingletonScope();
     bind(TerminalLinkProvider).toService(UrlLinkProvider);
+    bind(FileUriLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(FileUriLinkProvider);
     bind(FileLinkProvider).toSelf().inSingletonScope();
     bind(TerminalLinkProvider).toService(FileLinkProvider);
     bind(FileDiffPreLinkProvider).toSelf().inSingletonScope();

@@ -15,22 +15,19 @@
 // *****************************************************************************
 
 import { OS, Path, QuickInputService, ILogger } from '@theia/core';
-import { OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/editor/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { AbstractFileOpeningLinkProvider } from './terminal-file-opening-link-provider';
 import { TerminalWidget } from './base/terminal-widget';
-import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
+import { TerminalLink } from './terminal-link-provider';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 @injectable()
-export class FileLinkProvider implements TerminalLinkProvider {
+export class FileLinkProvider extends AbstractFileOpeningLinkProvider {
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
-    @inject(FileService) protected fileService: FileService;
     @inject(FileSearchService) protected searchService: FileSearchService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(ILogger) @named('terminal:FileLinkProvider')
@@ -68,14 +65,6 @@ export class FileLinkProvider implements TerminalLinkProvider {
         } catch (err) {
             this.logger.error('Error validating ' + match, err);
         }
-        return false;
-    }
-
-    protected async isValidFileURI(uri: URI): Promise<boolean> {
-        try {
-            const stat = await this.fileService.resolve(uri);
-            return !stat.isDirectory;
-        } catch { }
         return false;
     }
 
@@ -118,20 +107,6 @@ export class FileLinkProvider implements TerminalLinkProvider {
         }
         const position = await this.extractPosition(match);
         return this.openURI(toOpen, position);
-    }
-
-    async openURI(toOpen: URI, position: Position): Promise<void> {
-        let options = {};
-        if (position) {
-            options = { selection: { start: position } };
-        }
-
-        try {
-            const opener = await this.openerService.getOpener(toOpen, options);
-            opener.open(toOpen, options);
-        } catch (err) {
-            this.logger.error('Cannot open link ' + toOpen, err);
-        }
     }
 
     protected async extractPosition(link: string): Promise<Position> {
