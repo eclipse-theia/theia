@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import {
+    DefaultLanguageModelRegistryImpl,
     isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
     isModelMatching,
@@ -171,6 +172,48 @@ describe('isToolCallContent', () => {
         expect(isToolCallContent(value)).to.be.false;
     });
 
+});
+
+describe('DefaultLanguageModelRegistryImpl', () => {
+    function createRegistry(): DefaultLanguageModelRegistryImpl {
+        const registry = new DefaultLanguageModelRegistryImpl();
+        // No DI container in this unit test, so resolve the internal `initialized` gate manually.
+        (registry as unknown as { markInitialized: () => void }).markInitialized();
+        return registry;
+    }
+
+    function model(id: string): LanguageModel {
+        return { id, status: { status: 'ready' } } as LanguageModel;
+    }
+
+    it('getLanguageModels returns a fresh array so consumers can detect changes by reference', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a')]);
+
+        const first = await registry.getLanguageModels();
+        expect(first).to.have.length(1);
+
+        registry.addLanguageModels([model('b')]);
+        const second = await registry.getLanguageModels();
+
+        // A new snapshot must be a different array reference (React memoization relies on this).
+        expect(second).to.not.equal(first);
+        // The earlier snapshot must not be mutated in place by later registry changes.
+        expect(first.map(m => m.id)).to.deep.equal(['a']);
+        expect(second.map(m => m.id)).to.deep.equal(['a', 'b']);
+    });
+
+    it('reflects removals in a fresh snapshot without mutating an earlier one', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a'), model('b')]);
+        const before = await registry.getLanguageModels();
+
+        registry.removeLanguageModels(['a']);
+        const after = await registry.getLanguageModels();
+
+        expect(before.map(m => m.id)).to.deep.equal(['a', 'b']);
+        expect(after.map(m => m.id)).to.deep.equal(['b']);
+    });
 });
 
 describe('compaction contract', () => {

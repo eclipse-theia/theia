@@ -726,7 +726,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     async getLanguageModels(): Promise<LanguageModel[]> {
         await this.initialized;
-        return this.languageModels;
+        // Return a fresh array (not the internal, mutated-in-place list) so consumers relying on
+        // reference equality - e.g. React memoization in the chat model selector - detect changes.
+        return [...this.languageModels];
     }
 
     async getLanguageModel(id: string): Promise<LanguageModel | undefined> {
