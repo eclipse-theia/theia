@@ -26,8 +26,7 @@ import {
     LanguageModelStatus,
     ReasoningSupport,
     resolveServerSideCompaction,
-    isToolCallContent,
-    ToolCallResult
+    formatToolCallContentForModel
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -43,17 +42,7 @@ import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response
 import { openAiReasoningFor } from './openai-reasoning';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
-function formatToolCallContent(result: ToolCallResult): string {
-    if (isToolCallContent(result)) {
-        return result.content.map(c => {
-            if (c.type === 'text') { return c.text; }
-            if (c.type === 'html') { return c.html; }
-            if (c.type === 'error') { return c.data; }
-            return JSON.stringify(c);
-        }).join('\n');
-    }
-    return JSON.stringify(result);
-}
+
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
@@ -361,7 +350,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: typeof message.content === 'string' ? message.content : formatToolCallContent(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {

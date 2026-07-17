@@ -17,8 +17,41 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MessageService, nls, ILogger } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
+import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult, isToolCallHtmlAppResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
+
+/**
+ * Maps a single MCP call content item to a {@link ToolCallContentResult}.
+ * Exported for testability.
+ */
+export function mapCallContent(callContent: Record<string, unknown>): ToolCallContentResult {
+    const type = callContent.type as string | undefined;
+    switch (type) {
+        case 'image':
+            return { type: 'image', base64data: callContent.data as string, mimeType: callContent.mimeType as string };
+        case 'text': {
+            const text = callContent.text as string;
+            if (text.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(text);
+                    if (isToolCallHtmlAppResult(parsed)) {
+                        return { type: 'html', html: parsed.html, title: parsed.title };
+                    }
+                } catch { /* not JSON, fall through */ }
+            }
+            return { type: 'text', text };
+        }
+        case 'resource': {
+            return { type: 'text', text: JSON.stringify((callContent as { resource: unknown }).resource) };
+        }
+        default: {
+            if ('html' in callContent && typeof callContent.html === 'string') {
+                return { type: 'html', html: callContent.html, title: callContent.title as string | undefined };
+            }
+            return { type: 'text', text: JSON.stringify(callContent) };
+        }
+    }
+}
 
 @injectable()
 export class MCPFrontendServiceImpl implements MCPFrontendService {
@@ -204,33 +237,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                         const textContent = result.content.find(callContent => callContent.type === 'text') as TextContent | undefined;
                         return { content: [{ type: 'error', data: textContent?.text ?? 'Unknown Error' }] };
                     }
-                    const content = result.content.map<ToolCallContentResult>(callContent => {
-                        switch (callContent.type) {
-                            case 'image':
-                                return { type: 'image', base64data: callContent.data, mimeType: callContent.mimeType };
-                            case 'text': {
-                                const text = callContent.text;
-                                if (text.startsWith('{')) {
-                                    try {
-                                        const parsed = JSON.parse(text);
-                                        if (parsed && parsed.type === 'html' && typeof parsed.html === 'string') {
-                                            return { type: 'html', html: parsed.html, title: parsed.title };
-                                        }
-                                    } catch { /* not JSON, fall through */ }
-                                }
-                                return { type: 'text', text };
-                            }
-                            case 'resource': {
-                                return { type: 'text', text: JSON.stringify(callContent.resource) };
-                            }
-                            default: {
-                                if ('html' in callContent && typeof (callContent as { html: unknown }).html === 'string') {
-                                    return { type: 'html', html: (callContent as { html: string }).html, title: (callContent as { title?: string }).title };
-                                }
-                                return { type: 'text', text: JSON.stringify(callContent) };
-                            }
-                        }
-                    });
+                    const content = result.content.map<ToolCallContentResult>(callContent => mapCallContent(callContent as Record<string, unknown>));
                     return { content };
                 } catch (error) {
                     this.logger.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);

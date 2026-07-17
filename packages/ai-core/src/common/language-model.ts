@@ -545,6 +545,26 @@ export const createToolCallError = (message: string, errorKind?: ToolCallErrorKi
     content: [errorKind ? { type: 'error', data: message, errorKind } : { type: 'error', data: message }]
 });
 
+/**
+ * Serializes a {@link ToolCallResult} to a string suitable for sending back to the model.
+ *
+ * HTML app results are replaced with a compact placeholder so that large bundled HTML
+ * (e.g. Plotly charts) does not blow the model's context window. The full HTML is still
+ * available in the structured result for rendering in the UI (e.g. via McpAppFrame).
+ */
+export function formatToolCallContentForModel(result: ToolCallResult): string {
+    if (isToolCallContent(result)) {
+        return result.content.map(c => {
+            if (c.type === 'text') { return c.text; }
+            if (c.type === 'html') { return `[interactive app displayed to the user${c.title ? ': ' + c.title : ''}]`; }
+            if (c.type === 'error') { return c.data; }
+            return JSON.stringify(c);
+        }).join('\n');
+    }
+    if (typeof result === 'string') { return result; }
+    return JSON.stringify(result);
+}
+
 export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
     id?: string;

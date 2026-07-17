@@ -15,41 +15,53 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { buildSrcDoc } from './mcp-app-frame';
 
 /**
- * Tests for the srcDoc injection logic used by McpAppFrame.
- * We test the pure logic without requiring a DOM/React rendering environment.
+ * Tests for the buildSrcDoc logic used by McpAppFrame.
+ * Exercises the real exported function rather than a hand-copied reimplementation.
  */
-describe('McpAppFrame srcDoc injection', () => {
+describe('McpAppFrame buildSrcDoc', () => {
 
-    const RESIZE_SCRIPT = `<script>
-new ResizeObserver(() => {
-    window.parent.postMessage({ type: 'mcp-app-resize', height: document.documentElement.scrollHeight }, '*');
-}).observe(document.documentElement);
-</script>`;
-
-    function buildSrcDoc(html: string): string {
-        return html.includes('</body>')
-            ? html.replace('</body>', `${RESIZE_SCRIPT}</body>`)
-            : `${html}${RESIZE_SCRIPT}`;
-    }
-
-    it('injects resize script before </body> when present', () => {
-        const html = '<html><body><p>Hello</p></body></html>';
+    it('injects CSP and resize script into a full HTML document', () => {
+        const html = '<html><head></head><body><p>Hello</p></body></html>';
         const result = buildSrcDoc(html);
+        expect(result).to.contain('Content-Security-Policy');
         expect(result).to.contain('mcp-app-resize');
         expect(result).to.contain('<p>Hello</p>');
+        expect(result.indexOf('Content-Security-Policy')).to.be.lessThan(result.indexOf('</head>'));
         expect(result.indexOf('ResizeObserver')).to.be.lessThan(result.indexOf('</body>'));
+    });
+
+    it('injects CSP into <head> when present', () => {
+        const html = '<html><head><title>App</title></head><body></body></html>';
+        const result = buildSrcDoc(html);
+        expect(result).to.contain('<head><meta http-equiv="Content-Security-Policy"');
+    });
+
+    it('wraps CSP in a <head> when html tag exists but no <head>', () => {
+        const html = '<html><body><div>content</div></body></html>';
+        const result = buildSrcDoc(html);
+        expect(result).to.contain('<head><meta http-equiv="Content-Security-Policy"');
+        expect(result).to.contain('</head>');
+    });
+
+    it('prepends CSP when no <html> or <head> tags', () => {
+        const html = '<div>Simple content</div>';
+        const result = buildSrcDoc(html);
+        expect(result).to.match(/^<meta http-equiv="Content-Security-Policy"/);
+        expect(result).to.contain('<div>Simple content</div>');
     });
 
     it('appends resize script when no </body> tag', () => {
         const html = '<div>Simple content</div>';
         const result = buildSrcDoc(html);
-        expect(result).to.equal(`<div>Simple content</div>${RESIZE_SCRIPT}`);
+        expect(result).to.contain('mcp-app-resize');
+        expect(result).to.match(/ResizeObserver[\s\S]*<\/script>$/);
     });
 
     it('preserves original html content', () => {
-        const html = '<html><body><h1>Title</h1><p>Content</p></body></html>';
+        const html = '<html><head></head><body><h1>Title</h1><p>Content</p></body></html>';
         const result = buildSrcDoc(html);
         expect(result).to.contain('<h1>Title</h1>');
         expect(result).to.contain('<p>Content</p>');
@@ -57,6 +69,12 @@ new ResizeObserver(() => {
 
     it('handles empty html', () => {
         const result = buildSrcDoc('');
-        expect(result).to.equal(RESIZE_SCRIPT);
+        expect(result).to.contain('Content-Security-Policy');
+        expect(result).to.contain('mcp-app-resize');
+    });
+
+    it('CSP blocks connect-src', () => {
+        const result = buildSrcDoc('<html><head></head><body></body></html>');
+        expect(result).to.contain("connect-src 'none'");
     });
 });
