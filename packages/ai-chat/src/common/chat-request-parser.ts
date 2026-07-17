@@ -63,12 +63,15 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
 }
 @injectable()
 export class ChatRequestParserImpl implements ChatRequestParser {
+
+    @inject(PromptService) @optional()
+    protected readonly promptService?: PromptService;
+
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
         @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry,
         @inject(ILogger) private readonly logger: ILogger,
-        @inject(PromptService) @optional() private readonly promptService?: PromptService
     ) { }
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
@@ -301,10 +304,15 @@ export class ChatRequestParserImpl implements ChatRequestParser {
 
         const nextCommandOffset = this.findNextCommandOffset(message, commandEnd);
         const argsEnd = nextCommandOffset ?? message.length;
-        const args = message.slice(commandEnd, argsEnd).trim();
+        const rawArgs = message.slice(commandEnd, argsEnd);
+        const args = rawArgs.trim();
         if (args) {
             commandArgs = args;
-            commandEnd = argsEnd;
+            // Advance the consumed range only up to the end of the trimmed argument, not up to the
+            // next command. This keeps the whitespace between the argument and a following command
+            // out of this part's range, so parseParts emits it as a separator text part. Otherwise
+            // the two resolved prompt fragments would run into each other with no space between them.
+            commandEnd = argsEnd - (rawArgs.length - rawArgs.trimEnd().length);
         }
 
         const commandRange = offsetRange(offset, offset + commandEnd);
@@ -318,6 +326,10 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         let match = nextCommandReg.exec(message);
         while (match) {
             const commandName = match[1];
+            // Deliberate behavior difference: without a PromptService we cannot tell commands from
+            // path-like arguments, so any `/word` token is treated as a command boundary. With a
+            // PromptService we only break on known command names and keep unknown `/word` tokens
+            // (e.g. `/tmp`, `/path/to/file`) as part of the current command's arguments.
             if (!this.promptService || this.isKnownCommand(commandName)) {
                 return match.index + match[0].indexOf(chatSubcommandLeader);
             }

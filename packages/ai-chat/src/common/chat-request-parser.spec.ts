@@ -294,6 +294,23 @@ describe('ChatRequestParserImpl', () => {
         expect(secondCommand.variableArg).to.equal('skill-two');
     });
 
+    it('inserts a separator between two argument-taking commands', async () => {
+        const req: ChatRequest = {
+            text: '/summarize foo /hello bar'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        expect(result.parts.length).to.equal(3);
+        const firstCommand = result.parts[0] as ParsedChatRequestVariablePart;
+        const separator = result.parts[1] as ParsedChatRequestTextPart;
+        const secondCommand = result.parts[2] as ParsedChatRequestVariablePart;
+        expect(firstCommand.variableArg).to.equal('summarize|foo');
+        expect(separator.kind).to.equal('text');
+        expect(separator.text).to.equal(' ');
+        expect(secondCommand.variableArg).to.equal('hello|bar');
+    });
+
     it('keeps path-like slash arguments as command arguments', async () => {
         const req: ChatRequest = {
             text: '/explain /path/to/file'
@@ -314,7 +331,8 @@ describe('ChatRequestParserImpl', () => {
                 { id: 'command-skill-two', template: '', isCommand: true, commandName: 'skill-two' },
             ]
         } as unknown as PromptService;
-        const parserWithPromptService = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger, promptService);
+        const parserWithPromptService = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger);
+        (parserWithPromptService as unknown as { promptService: PromptService }).promptService = promptService;
         const context: ChatContext = { variables: [] };
 
         const multipleCommands = await parserWithPromptService.parseChatRequest({ text: '/skill-one /skill-two' }, ChatAgentLocation.Panel, context);
