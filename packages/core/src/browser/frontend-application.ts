@@ -237,8 +237,12 @@ export class FrontendApplication {
     protected async createDefaultLayout(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.initializeLayout) {
-                await this.measureContribution(contribution, 'initializeLayout',
-                    () => contribution.initializeLayout!(this));
+                try {
+                    await this.measureContribution(contribution, 'initializeLayout',
+                        () => contribution.initializeLayout!(this));
+                } catch (error) {
+                    this.logger.error('Could not initialize the layout of contribution', error);
+                }
             }
         }
     }
@@ -246,8 +250,12 @@ export class FrontendApplication {
     protected async fireOnDidInitializeLayout(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onDidInitializeLayout) {
-                await this.measureContribution(contribution, 'onDidInitializeLayout',
-                    () => contribution.onDidInitializeLayout!(this));
+                try {
+                    await this.measureContribution(contribution, 'onDidInitializeLayout',
+                        () => contribution.onDidInitializeLayout!(this));
+                } catch (error) {
+                    this.logger.error('Could not notify contribution of layout initialization', error);
+                }
             }
         }
     }
