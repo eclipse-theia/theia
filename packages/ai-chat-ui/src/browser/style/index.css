@@ -96,11 +96,13 @@ div:last-child>.theia-ChatNode {
   font-weight: 600;
 }
 
-.theia-PromptVariantBadge {
+/* Prompt variant and model badges share a subtle look; only an edited variant is emphasized. */
+.theia-PromptVariantBadge,
+.theia-ModelBadge {
   padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
   font-size: var(--theia-ui-font-size0);
-  color: var(--theia-badge-foreground);
-  background-color: var(--theia-badge-background);
+  color: var(--theia-descriptionForeground);
+  background-color: var(--theia-editor-inactiveSelectionBackground);
   border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   white-space: nowrap;
   user-select: none;
@@ -673,10 +675,14 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-left {
   order: -1;
   gap: calc(var(--theia-ui-padding) / 3);
+  /* Let the group shrink so the model selector can give way to the right group. */
+  min-width: 0;
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: calc(var(--theia-ui-padding) * 4 / 3);
+  /* Keep the token usage and send/stop button fully visible. */
+  flex-shrink: 0;
 }
 
 .theia-ChatInputOptions .option {
@@ -687,6 +693,8 @@ div:last-child>.theia-ChatNode {
   justify-content: space-between;
   align-items: center;
   gap: calc(var(--theia-ui-padding) / 3);
+  /* Keep icon buttons at their natural size so icon and label never overlap. */
+  flex-shrink: 0;
   box-sizing: border-box;
   user-select: none;
   background-repeat: no-repeat;
@@ -758,6 +766,67 @@ div:last-child>.theia-ChatNode {
 
 .theia-ChatInput-ModeSelector.disabled,
 .theia-ChatInput-ReasoningSelector.disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Wrapper span is the flex item in the options row, so it (not the inner select) carries the shrink
+   behaviour; otherwise the inner nowrap label keeps it at full width. Sizes to content (so "Default"
+   sits snug to the chevron) up to max-width, then shrinks and ellipsizes the label for long names. */
+.theia-ChatInput-ModelSelector-container {
+  display: flex;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 200px;
+}
+
+/* Per-session model selector: shares the compact selector styling. */
+.theia-ChatInput-ModelSelector.theia-select-component {
+  min-width: 0;
+  width: 100%;
+  min-height: unset;
+  overflow: hidden;
+  height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid transparent;
+  box-sizing: border-box;
+  background: var(--theia-editor-background);
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-content-font-size);
+  border-radius: calc(var(--theia-ui-padding) * 5 / 6);
+  outline: none;
+}
+
+.theia-ChatInput-ModelSelector .theia-select-component-chevron {
+  font-size: var(--theia-ui-font-size1);
+  margin-left: calc(var(--theia-ui-padding) / 3);
+  /* Keep the arrow visible even when the label is fully ellipsized. */
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-ModelSelector.theia-select-component:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ModelSelector.theia-select-component:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+/* Indicate an active per-session model override with accent-colored text rather than a focus-like border. */
+.theia-ChatInput-ModelSelector.session-override .theia-select-component-label {
+  color: var(--theia-textLink-foreground);
+}
+
+/* The shown model is unavailable (a disabled selection): flag it at a glance without opening the
+   dropdown. Keyed off the displayed option, so navigating to a valid model clears it. */
+.theia-ChatInput-ModelSelector.theia-select-component-selection-disabled .theia-select-component-label {
+  color: var(--theia-errorForeground);
+  text-decoration: line-through;
+}
+
+.theia-ChatInput-ModelSelector.disabled {
   opacity: var(--theia-mod-disabled-opacity);
   cursor: default;
   pointer-events: none;
