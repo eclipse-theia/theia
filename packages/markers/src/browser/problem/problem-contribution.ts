@@ -32,7 +32,6 @@ import { MenuPath, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ProblemSelection } from './problem-selection';
 import { nls } from '@theia/core/lib/common/nls';
@@ -108,7 +107,6 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(FileService) protected readonly fileService: FileService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(MessageService) protected readonly messageService: MessageService;
 
@@ -290,7 +288,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     override registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            command: ProblemsCommands.COPY.id,
+            command: ProblemsCommands.COPY_AS_TEXT.id,
             keybinding: 'ctrlcmd+c',
             when: 'problemsFocus'
         });
@@ -407,7 +405,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             return;
         }
 
-        const markerNodes = this.collectMarkerNodes(selectedNodes);
+        const markerNodes = this.collectMarkerNodes(selectedNodes, new Set<MarkerNode>());
 
         if (markerNodes.length === 0) {
             return;
@@ -416,7 +414,8 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const filePath = await this.fileDialogService.showSaveDialog({
             title: nls.localize('theia/markers/exportProblems', 'Export Problems'),
             filters: { [nls.localize('theia/markers/jsonFiles', 'JSON Files')]: ['json'] },
-            saveLabel: nls.localize('theia/markers/export', 'Export')
+            saveLabel: nls.localize('theia/markers/export', 'Export'),
+            inputValue: nls.localizeByDefault('Problem').toLowerCase()
         });
 
         if (!filePath) {
@@ -434,28 +433,15 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
     }
 
-    protected collectMarkerNodes(nodes: readonly TreeNode[]): MarkerNode[] {
-        const seen = new Set<MarkerNode>();
+    protected collectMarkerNodes(nodes: readonly TreeNode[], seen: Set<MarkerNode>): MarkerNode[] {
         for (const node of nodes) {
             if (MarkerNode.is(node)) {
                 seen.add(node);
             } else if (CompositeTreeNode.is(node)) {
-                this.collectMarkerNodesRecursive(node, seen);
+                this.collectMarkerNodes(node.children, seen);
             }
         }
         return Array.from(seen);
-    }
-
-    protected collectMarkerNodesRecursive(node: CompositeTreeNode, seen: Set<MarkerNode>): void {
-        if (node.children) {
-            for (const child of node.children) {
-                if (MarkerNode.is(child)) {
-                    seen.add(child);
-                } else if (CompositeTreeNode.is(child)) {
-                    this.collectMarkerNodesRecursive(child, seen);
-                }
-            }
-        }
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (problems: ProblemWidget) => T): T | false {
