@@ -16,7 +16,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as url from 'url';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { json } from 'body-parser';
 import { Application, Router } from '@theia/core/shared/express';
@@ -50,7 +49,7 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
         app.use(json());
         app.use(FileDownloadEndpoint.PATH, router);
         app.get('/file', (request, response) => {
-            const uri = url.parse(request.url).query;
+            const uri = new URL(request.url, 'http://localhost').search.slice(1);
             if (!uri) {
                 response.status(400).send('invalid uri');
                 return;

@@ -28,6 +28,7 @@ interface ResolvedModelMetadata {
     developerMessageSettings: DeveloperMessageSettings;
     enableStreaming: boolean;
     supportsStructuredOutput: boolean;
+    serverSideCompactionSupport: boolean;
 }
 
 @injectable()
@@ -111,7 +112,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     useResponseApi: modelDescription.useResponseApi ?? false,
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
-                    maxInputTokens: metadata.maxInputTokens
+                    maxInputTokens: metadata.maxInputTokens,
+                    serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -132,7 +135,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.useResponseApi ?? false,
                         proxyUrl,
                         metadata.reasoningSupport,
-                        metadata.maxInputTokens
+                        metadata.maxInputTokens,
+                        metadata.serverSideCompactionSupport,
+                        modelDescription.serverSideCompactionEnabledByDefault ?? false
                     )
                 ]);
             }
@@ -152,7 +157,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             reasoningSupport: description.reasoningSupport ?? defaults.reasoningSupport,
             developerMessageSettings: description.developerMessageSettings ?? defaults.developerMessageSettings ?? 'developer',
             enableStreaming: description.enableStreaming ?? defaults.supportsStreaming ?? true,
-            supportsStructuredOutput: description.supportsStructuredOutput ?? defaults.supportsStructuredOutput ?? true
+            supportsStructuredOutput: description.supportsStructuredOutput ?? defaults.supportsStructuredOutput ?? true,
+            // Server-side compaction is only available via the Response API.
+            serverSideCompactionSupport: description.useResponseApi ?? false
         };
     }
 

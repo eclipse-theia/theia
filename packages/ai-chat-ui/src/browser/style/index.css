@@ -2193,3 +2193,22 @@ details.theia-tool-confirmation-args>summary::marker {
   border-radius: 50%;
   background: var(--theia-editor-background);
 }
+
+.theia-ChatCompactionMarker {
+  width: 100%;
+  margin: 6px 0;
+  padding: 4px 8px;
+  border-top: 1px solid var(--theia-editorWidget-border);
+  border-bottom: 1px solid var(--theia-editorWidget-border);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-ChatCompactionMarker summary {
+  cursor: pointer;
+}
+
+.theia-ChatCompactionMarker-summary {
+  margin-top: 4px;
+  white-space: pre-wrap;
+}

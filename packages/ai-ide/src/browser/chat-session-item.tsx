@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import {
-    ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata
+    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus
 } from '@theia/ai-chat';
 import { DisposableCollection, Event } from '@theia/core';
 import { buttonKeyboardProps, codicon, HoverService, isActivationKey } from '@theia/core/lib/browser';
@@ -99,8 +99,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
     const hoverActiveRef = React.useRef(false);
 
     const timeAgo = useTimeAgo(session.saveDate, formatTimeAgo);
-    const [isWorking, setIsWorking] = React.useState(false);
-    const [isWaitingForInput, setIsWaitingForInput] = React.useState(false);
+    const [status, setStatus] = React.useState<ChatSessionStatus>();
     const [hasError, setHasError] = React.useState(session.hasError === true);
     const hasUnread = useUnreadMessages(session.sessionId, unreadState);
 
@@ -119,11 +118,8 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
 
         const attach = (s: ChatSession) => {
             const recompute = () => {
-                const requests = s.model.getRequests();
-                setIsWorking(requests.some(ChatRequestModel.isInProgress));
-                setIsWaitingForInput(requests.some(r => r.response.isWaitingForInput));
-                const lastReq = requests.at(-1);
-                setHasError(lastReq?.response.isComplete === true && lastReq?.response.isError === true);
+                setStatus(s.model.status);
+                setHasError(s.model.status === 'failed');
             };
             recompute();
             s.model.onDidChange(recompute, undefined, trash);
@@ -159,13 +155,13 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         // once the session is actually opened.
         const loadedSession = chatService.getSession(session.sessionId);
         const tooltip = loadedSession
-            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput)
+            ? buildSessionTooltip(loadedSession, session, chatAgentService, markdownRenderer, hasUnread)
             : buildRestoredSessionTooltip(session, chatAgentService);
         // The tooltip may hold a markdown render result; dispose it once the hover is torn down
         // (or right away if we no longer intend to show it).
         if (!hoverActiveRef.current) { tooltip.dispose(); return; }
         hoverService.requestHover({ content: tooltip.element, target, position: 'left', onHide: () => tooltip.dispose() });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread, isWorking, hasError, isWaitingForInput]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread]);
 
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []);
 
@@ -188,12 +184,16 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
         }
     }, [onClick]);
 
-    // A session waiting for input is still "in progress" (ChatRequestModel.isInProgress is true),
+    // A session waiting for input or approval is still working (its request is in progress),
     // so the waiting state takes precedence over the generic working spinner: it signals that the
     // user, not the agent, needs to act.
+    const isWorking = status !== undefined && ChatSessionStatus.isInProgress(status);
+    const isWaitingForInput = status !== undefined && ChatSessionStatus.requiresUserAction(status);
     const showWorking = isWorking && !isWaitingForInput;
     const showUnread = hasUnread && !isWorking && !hasError;
-    const waitingForInputLabel = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
+    const attentionLabel = status === 'awaitingApproval'
+        ? nls.localize('theia/ai/ide/requiresApproval', 'Requires your approval')
+        : nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
     const itemClasses = [
         'theia-chat-session-item',
         isWaitingForInput && 'theia-chat-session-item-attention',
@@ -231,7 +231,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
                 )}
                 {isWaitingForInput && (
                     <span className="theia-chat-session-item-attention-dot"
-                        aria-label={waitingForInputLabel} />
+                        aria-label={attentionLabel} />
                 )}
             </div>
             <div className="theia-chat-session-item-content">

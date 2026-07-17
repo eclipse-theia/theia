@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
+export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.openAiOfficial.serverSideCompaction';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
@@ -52,12 +53,24 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             default: false,
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/useResponseApi/mdDescription',
-                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models.\
-\
-This setting only applies to official OpenAI models - custom providers must configure this individually.\
-\
-Note that for the response API, tool call definitions must satisfy Open AI\'s [strict schema definition](https://platform.openai.com/docs/guides/function-calling#strict-mode).\
-Best effort is made to convert non-conformant schemas, but errors are still possible.')
+                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. ' +
+                'This setting only applies to official OpenAI models - custom providers must configure this individually.')
+        },
+        [SERVER_SIDE_COMPACTION_PREF]: {
+            type: 'string',
+            enum: ['default', 'enabled', 'disabled'],
+            enumDescriptions: [
+                nls.localize('theia/ai/openai/compaction/default', 'Follow the global chat server-side compaction setting.'),
+                nls.localize('theia/ai/openai/compaction/enabled', 'Always request server-side compaction for official OpenAI models.'),
+                nls.localize('theia/ai/openai/compaction/disabled', 'Never request server-side compaction for official OpenAI models.')
+            ],
+            default: 'default',
+            markdownDescription: nls.localize('theia/ai/openai/compaction/description',
+                'Override provider-native server-side compaction for official OpenAI models. This applies to the OpenAI Response API only; ' +
+                'the Chat Completions API ignores it. "default" follows the global chat setting ({0}). When effectively ' +
+                'enabled, the Response API is asked to summarize older turns once the conversation grows past the provider\'s threshold.',
+                `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',

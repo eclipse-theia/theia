@@ -255,6 +255,10 @@ export interface PreferenceInspection<T = JSONValue> {
      */
     workspaceFolderValue: T | undefined,
     /**
+     * Value in session scope (in-memory, set via `--session-preference`).
+     */
+    sessionValue?: T | undefined,
+    /**
      * The value that is active, i.e. the value set in the lowest scope available.
      */
     value: T | undefined;
@@ -453,9 +457,35 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
         const provider = this.getProvider(resolvedScope);
         if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
+            await this.evictSessionOverride(preferenceName, resolvedScope);
             return;
         }
         throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
+    }
+
+    /**
+     * When a preference is written to a persistent scope, drop any in-memory session
+     * override (set via `--session-preference`) for the same key so that the explicit
+     * change takes effect for the remainder of the session. Without this, the session
+     * scope would keep shadowing the user's change because it has higher precedence.
+     *
+     * Note: this fires for any write to a persistent scope, including programmatic
+     * writes from extensions. Extensions that race with startup CLI overrides will
+     * therefore clear them. This is intentional: a programmatic write is "explicit"
+     * from the preference system's point of view, but consumers should be aware.
+     *
+     * Session preferences are global (no per-resource scoping), so `resourceUri` is
+     * not threaded through.
+     */
+    protected async evictSessionOverride(preferenceName: string, writtenScope: PreferenceScope): Promise<void> {
+        if (writtenScope === PreferenceScope.Session || writtenScope === PreferenceScope.Default) {
+            return;
+        }
+        const sessionProvider = this.getProvider(PreferenceScope.Session);
+        if (sessionProvider && sessionProvider.get(preferenceName) !== undefined) {
+            // Passing `undefined` clears the value in the session provider.
+            await sessionProvider.setPreference(preferenceName, undefined as unknown as JSONValue);
+        }
     }
 
     getBoolean(preferenceName: string): boolean | undefined;
@@ -499,10 +529,11 @@ export class PreferenceServiceImpl implements PreferenceService {
         const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri, forceLanguageOverride);
         const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri, forceLanguageOverride);
         const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri, forceLanguageOverride);
+        const sessionValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Session, resourceUri, forceLanguageOverride);
 
-        const valueApplied = workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
+        const valueApplied = sessionValue ?? workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
 
-        return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, value: valueApplied };
+        return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, sessionValue, value: valueApplied };
     }
 
     inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
@@ -526,6 +557,8 @@ export class PreferenceServiceImpl implements PreferenceService {
                 return inspection.workspaceValue;
             case PreferenceScope.Folder:
                 return inspection.workspaceFolderValue;
+            case PreferenceScope.Session:
+                return inspection.sessionValue;
         }
         unreachable(scope, 'Not all PreferenceScope enum variants handled.');
     }
@@ -551,9 +584,10 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
 
         // Scopes in ascending order of scope breadth.
-        const allScopes = [...this.schemaService.validScopes].reverse();
-        // Get rid of Default scope. We can't set anything there.
-        allScopes.pop();
+        const allScopes = [...this.schemaService.validScopes].reverse()
+            // Default is read-only, and Session is populated only by `--session-preference`,
+            // so neither is a valid target for a regular user edit.
+            .filter(scope => scope !== PreferenceScope.Default && scope !== PreferenceScope.Session);
 
         const isScopeDefined = (scope: PreferenceScope) => this.getScopedValueFromInspection(inspection, scope) !== undefined;
 

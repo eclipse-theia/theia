@@ -23,7 +23,6 @@ import {
     TextMessage,
     ToolInvocationContext,
     ToolRequest,
-    ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, nls, unreachable } from '@theia/core';
@@ -44,7 +43,6 @@ import type {
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
-import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
 
 /**
  * User-facing name under which the provider's built-in deferred-tool search is surfaced in the chat UI.
@@ -159,11 +157,11 @@ export class OpenAiResponseApiUtils {
             type: 'function' as const,
             name: tool.name,
             description: tool.description || '',
-            // The Response API is very strict re: JSON schema: all properties must be listed as required,
-            // and additional properties must be disallowed.
-            // https://platform.openai.com/docs/guides/function-calling#strict-mode
-            parameters: this.recursiveStrictToolCallParameters(tool.parameters),
-            strict: true,
+            // Tool schemas are passed through as-is (non-strict). Strict mode (`strict: true`) is opt-in and
+            // only supports a JSON-schema subset (all properties required, `additionalProperties: false`
+            // everywhere), which cannot express the open-ended maps common in MCP tool schemas.
+            parameters: tool.parameters as unknown as FunctionTool['parameters'],
+            strict: false,
             defer_loading: deferred.has(tool.id) ? true : undefined
         }));
         if (deferred.size > 0) {
@@ -171,10 +169,6 @@ export class OpenAiResponseApiUtils {
         }
         console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
-    }
-
-    recursiveStrictToolCallParameters(schema: ToolRequestParameters): FunctionTool['parameters'] {
-        return recursiveStrictJSONSchema(schema) as FunctionTool['parameters'];
     }
 
     protected createSimpleResponseApiStreamIterator(
@@ -194,6 +188,13 @@ export class OpenAiResponseApiUtils {
                         if (event.type === 'response.output_text.delta') {
                             yield {
                                 content: event.delta
+                            };
+                        } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
+                            yield {
+                                compaction: {
+                                    provider: 'openai-responses',
+                                    data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                                }
                             };
                         } else if (event.type === 'response.completed') {
                             if (event.response?.usage) {
@@ -256,8 +257,29 @@ export class OpenAiResponseApiUtils {
         const nonSystemMessages = processed.filter(m => m.actor !== 'system');
         const input: ResponseInputItem[] = [];
 
-        for (const message of nonSystemMessages) {
-            if (LanguageModelMessage.isTextMessage(message)) {
+        // Server-side compaction replay: the latest openai-responses compaction marker carries the (encrypted) context for
+        // everything before it. Drop that prefix and replay the marker as a compaction input item; earlier markers are subsumed.
+        let sliceStart = 0;
+        for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
+            const candidate = nonSystemMessages[i];
+            if (LanguageModelMessage.isCompactionMessage(candidate) && candidate.provider === 'openai-responses') {
+                const data = candidate.data as { encrypted_content: string; id?: string };
+                input.push({
+                    type: 'compaction',
+                    encrypted_content: data.encrypted_content,
+                    id: data.id
+                });
+                sliceStart = i + 1;
+                break;
+            }
+        }
+
+        for (const message of nonSystemMessages.slice(sliceStart)) {
+            if (LanguageModelMessage.isCompactionMessage(message)) {
+                // Skip any remaining compaction marker (foreign provider, or a non-final openai-responses one):
+                // it is not the prefix-drop item, so it carries no input for this provider.
+                continue;
+            } else if (LanguageModelMessage.isTextMessage(message)) {
                 if (message.actor === 'ai') {
                     // Assistant messages use ResponseOutputMessage format
                     input.push({
@@ -552,6 +574,13 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             case 'response.output_item.done':
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
+                } else if (event.item?.type === 'compaction') {
+                    this.handleIncoming({
+                        compaction: {
+                            provider: 'openai-responses',
+                            data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
+                        }
+                    });
                 } else if (event.item?.type === 'tool_search_output') {
                     this.handleToolSearchOutput(event.item);
                 }
@@ -847,51 +876,4 @@ export function processSystemMessages(
         return updated;
     }
     return messages;
-}
-
-export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSchemaDefinition {
-    if (typeof schema === 'boolean') { return schema; }
-    let result: JSONSchema | undefined = undefined;
-    if (schema.properties) {
-        result ??= { ...schema };
-        result.additionalProperties = false;
-        result.required = Object.keys(schema.properties);
-        result.properties = Object.fromEntries(Object.entries(schema.properties).map(([key, props]) => [key, recursiveStrictJSONSchema(props)]));
-    }
-    if (schema.items) {
-        result ??= { ...schema };
-        result.items = Array.isArray(schema.items)
-            ? schema.items.map(recursiveStrictJSONSchema)
-            : recursiveStrictJSONSchema(schema.items);
-    }
-    if (schema.oneOf) {
-        result ??= { ...schema };
-        result.oneOf = schema.oneOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.anyOf) {
-        result ??= { ...schema };
-        result.anyOf = schema.anyOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.allOf) {
-        result ??= { ...schema };
-        result.allOf = schema.allOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.if) {
-        result ??= { ...schema };
-        result.if = recursiveStrictJSONSchema(schema.if);
-    }
-    if (schema.then) {
-        result ??= { ...schema };
-        result.then = recursiveStrictJSONSchema(schema.then);
-    }
-    if (schema.else) {
-        result ??= { ...schema };
-        result.else = recursiveStrictJSONSchema(schema.else);
-    }
-    if (schema.not) {
-        result ??= { ...schema };
-        result.not = recursiveStrictJSONSchema(schema.not);
-    }
-
-    return result ?? schema;
 }

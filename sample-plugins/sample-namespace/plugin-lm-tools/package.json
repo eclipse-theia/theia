@@ -10,13 +10,13 @@
     "url": "https://github.com/eclipse-theia/theia.git"
   },
   "engines": {
-    "vscode": "^1.99.0"
+    "vscode": "^1.125.0"
   },
   "activationEvents": [
     "onStartupFinished"
   ],
   "devDependencies": {
-    "@types/vscode": "^1.99.0"
+    "@types/vscode": "^1.125.0"
   },
   "scripts": {
     "build": "vsce package --no-dependencies"

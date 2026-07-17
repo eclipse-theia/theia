@@ -34,11 +34,22 @@ export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
 export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
+export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION = 'ai-features.chat.serverSideCompaction';
 
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     properties: {
+        [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            type: 'boolean',
+            description: nls.localize('theia/ai/core/serverSideCompaction/description',
+                'Enable provider-native server-side compaction by default for chat requests. When on, models that support it ' +
+                'may automatically summarize older turns once the conversation grows past their own threshold, letting long ' +
+                'sessions continue past the context limit. Each provider offers its own override, and individual chat sessions ' +
+                'can override this in their session settings. Models without support ignore it.'),
+            default: true,
+        },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,
             description: nls.localize('theia/ai/core/promptTemplates/description',
@@ -239,6 +250,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
     [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
+    [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: boolean | undefined;
 }
 
 export interface RequestSetting {

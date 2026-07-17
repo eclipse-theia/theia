@@ -262,6 +262,7 @@ describe('Preference Service', () => {
                 globalValue,
                 workspaceValue,
                 workspaceFolderValue,
+                sessionValue: undefined,
                 value,
             };
             const inspection = preferences.inspect(TAB_SIZE, DUMMY_URI);
@@ -374,6 +375,7 @@ describe('Preference Service', () => {
                 globalValue: undefined,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                sessionValue: undefined,
                 value: 4,
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
@@ -397,6 +399,7 @@ describe('Preference Service', () => {
                 globalValue: 2,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                sessionValue: undefined,
                 value: 2
             };
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
@@ -422,6 +425,7 @@ describe('Preference Service', () => {
                 globalValue: undefined,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                sessionValue: undefined,
                 value: 4
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
@@ -534,6 +538,74 @@ describe('Preference Service', () => {
             assert.strictEqual(false, preferences.get('[go].editor.insertSpaces'));
             assert.strictEqual(false, preferences.get('editor.formatOnSave'));
             assert.strictEqual(true, preferences.get('[go].editor.formatOnSave'));
+        });
+    });
+
+    describe('session-scope overrides', () => {
+        function getSessionProvider(): PreferenceProvider {
+            return testContainer.getNamed<PreferenceProvider>(PreferenceProvider, PreferenceScope.Session);
+        }
+
+        beforeEach(() => {
+            prefSchema.addSchema({
+                scope: PreferenceScope.Folder,
+                properties: {
+                    'test.session': { type: 'number' }
+                }
+            });
+        });
+
+        it('takes precedence over the user scope', async () => {
+            getProvider(PreferenceScope.User).setPreference('test.session', 1);
+            await prefService.set('test.session', 99, PreferenceScope.Session);
+            expect(prefService.get('test.session')).equals(99);
+        });
+
+        it('is dropped when the same key is written to a persistent scope', async () => {
+            const sessionProvider = getSessionProvider();
+            getProvider(PreferenceScope.User).setPreference('test.session', 1);
+            await prefService.set('test.session', 99, PreferenceScope.Session);
+            expect(prefService.get('test.session')).equals(99);
+
+            // An explicit user edit must win over the session override and clear it.
+            await prefService.set('test.session', 2, PreferenceScope.User);
+            expect(sessionProvider.get('test.session')).to.equal(undefined);
+            expect(prefService.get('test.session')).equals(2);
+        });
+
+        it('is reported via inspect().sessionValue', async () => {
+            await prefService.set('test.session', 42, PreferenceScope.Session);
+            expect(prefService.inspect('test.session')?.sessionValue).equals(42);
+        });
+
+        it('emits a Session-scope change event when evicted by a persistent write', async () => {
+            // Status bar listeners rely on this: an eviction must surface as an
+            // onPreferenceChanged event whose `scope` is Session, otherwise the
+            // status bar would never clear after the override is dropped.
+            await prefService.set('test.session', 99, PreferenceScope.Session);
+
+            const sessionScopeEvents: PreferenceScope[] = [];
+            const listener = prefService.onPreferenceChanged(e => {
+                if (e.preferenceName === 'test.session') {
+                    sessionScopeEvents.push(e.scope);
+                }
+            });
+            try {
+                await prefService.set('test.session', 2, PreferenceScope.User);
+            } finally {
+                listener.dispose();
+            }
+
+            expect(sessionScopeEvents).to.include(PreferenceScope.Session);
+        });
+
+        it('is left alone when writing to the Session scope itself', async () => {
+            const sessionProvider = getSessionProvider();
+            await prefService.set('test.session', 7, PreferenceScope.Session);
+            expect(sessionProvider.get('test.session')).to.equal(7);
+            // A second write to Session must not trigger eviction of itself.
+            await prefService.set('test.session', 8, PreferenceScope.Session);
+            expect(sessionProvider.get('test.session')).to.equal(8);
         });
     });
 

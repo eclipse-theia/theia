@@ -35,16 +35,16 @@ import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugCompound } from '@theia/debug/lib/common/debug-compound';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
-const makeTrustAwareReader = (): TrustAwarePreferenceReader => ({
+const makeTrustAwareReader = (): AiConfigurationService => ({
     get: <T>(_name: string, fallback?: T) => fallback,
     ready: Promise.resolve(),
     onDidChangeTrust: () => ({ dispose: () => { } })
-} as unknown as TrustAwarePreferenceReader);
+} as unknown as AiConfigurationService);
 
 const makeEnvVariablesServer = (): EnvVariablesServer => ({
     getHomeDirUri: async () => 'file:///home/test',
@@ -88,7 +88,7 @@ describe('Launch Management Tool Providers', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue({} as FileService);
         container.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
-        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
         container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
 
@@ -396,7 +396,7 @@ describe('Launch Management Tool Providers', () => {
             multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
             multiRootContainer.bind(FileService).toConstantValue({} as FileService);
             multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
-            multiRootContainer.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+            multiRootContainer.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
             multiRootContainer.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
             multiRootContainer.bind(WorkspaceFunctionScope).toSelf();
 

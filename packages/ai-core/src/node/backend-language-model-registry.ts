@@ -64,6 +64,7 @@ export class BackendLanguageModelRegistryImpl extends DefaultLanguageModelRegist
             maxOutputTokens: model.maxOutputTokens,
             reasoningSupport: model.reasoningSupport,
             serverTools: model.serverTools,
+            serverSideCompactionSupport: model.serverSideCompactionSupport,
         };
     }
 }

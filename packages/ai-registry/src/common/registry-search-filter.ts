@@ -18,6 +18,13 @@ import { injectable } from '@theia/core/shared/inversify';
 
 const SEGMENT_SEPARATOR = /[\p{P}\s]+/u;
 
+/**
+ * Reverse-DNS labels that host third-party owners rather than identifying one (e.g. the `github`
+ * in `io.github.<owner>`). They are dropped along with the leading TLD so the owner label becomes
+ * the meaningful part, while a query like `git` still can't match every `io.github.*` entry.
+ */
+const HOSTING_NAMESPACES = new Set(['github', 'gitlab', 'gitee', 'bitbucket']);
+
 export interface RegistrySearchEntry {
     name: string;
     identifier: string;
@@ -45,7 +52,7 @@ export interface RegistrySearchEntry {
 export class RegistrySearchFilter {
 
     matches(entry: RegistrySearchEntry, query: string): boolean {
-        const terms = this.tokenize(query);
+        const terms = this.tokenize(this.reduceQuery(query));
         if (terms.length === 0) {
             return true;
         }
@@ -63,16 +70,44 @@ export class RegistrySearchFilter {
      * Reduces a registry identifier to its human-meaningful part for search matching.
      *
      * Registry identifiers are reverse-DNS ids with a path, e.g. `com.asana/mcp` or
-     * `io.github.anthropics/algorithmic-art`. The leading domain labels (`com`, `io`, `github`, ...)
-     * are shared boilerplate that would otherwise let a query like `git` match every `io.github.*`
-     * entry. This keeps only the last domain label plus the path: `asana mcp`, `anthropics algorithmic-art`.
+     * `io.github.anthropics/algorithmic-art`. The leading TLD (`com`, `io`, ...) and any hosting
+     * namespace (`github` in `io.github.<owner>`) are shared boilerplate that would otherwise let a
+     * query like `git` match every `io.github.*` entry, so they are dropped. The remaining owner
+     * labels plus the path are kept: `asana mcp`, `anthropics algorithmic-art`, `cloudflare mcp mcp`.
      *
      * Plain strings without a domain or path are returned unchanged.
      */
     meaningfulIdentifier(identifier: string): string {
         const [domain, ...rest] = identifier.split('/');
-        const lastLabel = domain.split('.').pop() || domain;
-        return [lastLabel, ...rest].join(' ');
+        return [...this.meaningfulDomainLabels(domain), ...rest].join(' ');
+    }
+
+    /**
+     * Drops the boilerplate leading labels of a reverse-DNS domain, keeping the owner label(s).
+     * A single-label string (no reverse-DNS structure) is returned as-is.
+     */
+    protected meaningfulDomainLabels(domain: string): string[] {
+        const labels = domain.split('.');
+        if (labels.length <= 1) {
+            return labels;
+        }
+        labels.shift(); // drop the leading TLD label (io, com, app, ai, ...)
+        // Drop a hosting namespace like `github` in `io.github.<owner>`, but only when an owner
+        // label still follows it - otherwise the owner itself would be discarded (e.g. `com.gitlab`).
+        if (labels.length > 1 && HOSTING_NAMESPACES.has(labels[0].toLowerCase())) {
+            labels.shift();
+        }
+        return labels;
+    }
+
+    /**
+     * Reduces a query shaped like a registry id (reverse-DNS domain with a `/` path) the same way
+     * entry identifiers are reduced, so the full id - e.g. copied from the registry website or set
+     * by the "From registry" link - finds the server instead of being rejected by the stripped
+     * boilerplate labels it would otherwise require as terms. Plain-text queries are left untouched.
+     */
+    protected reduceQuery(query: string): string {
+        return query.includes('/') ? this.meaningfulIdentifier(query) : query;
     }
 
     protected tokenize(text: string): string[] {
