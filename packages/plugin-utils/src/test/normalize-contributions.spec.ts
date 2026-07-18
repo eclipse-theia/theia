@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority } from '../contribution-types';
+import { CustomEditorPriority, type GrammarsContribution } from '../contribution-types';
 import { PreferenceScope } from '../protocol-shims';
 import {
     deriveDefaultForType,
@@ -45,7 +45,7 @@ import {
     readViewsWelcome,
     toSchema,
     transformIconUrl
-} from '../normalize-contributions';
+} from '../node/normalize-contributions';
 import { createNormalizeCtx, manifest } from './test-helpers';
 import type { PluginManifest } from '../manifest-types';
 
@@ -99,7 +99,7 @@ describe('normalize-contributions', () => {
         it('resolves file icons and codicons', () => {
             const ctx = createNormalizeCtx();
             expect(transformIconUrl(ctx, ctx.plugin, './media/icon.png')).to.deep.equal({
-                iconUrl: 'hostedPlugin/acme_test_ext/.%2Fmedia%2Ficon.png'
+                iconUrl: 'hostedPlugin/acme_test_ext/media/icon.png'
             });
             expect(transformIconUrl(ctx, ctx.plugin, '$(zap)')).to.deep.equal({ themeIcon: '$(zap)' });
             expect(transformIconUrl(ctx, ctx.plugin, {
@@ -107,8 +107,8 @@ describe('normalize-contributions', () => {
                 dark: './dark.png'
             })).to.deep.equal({
                 iconUrl: {
-                    light: 'hostedPlugin/acme_test_ext/.%2Flight.png',
-                    dark: 'hostedPlugin/acme_test_ext/.%2Fdark.png'
+                    light: 'hostedPlugin/acme_test_ext/light.png',
+                    dark: 'hostedPlugin/acme_test_ext/dark.png'
                 }
             });
 
@@ -124,6 +124,21 @@ describe('normalize-contributions', () => {
                 originalTitle: 'Original',
                 themeIcon: '$(play)'
             });
+        });
+
+        it('honors ctx.transformIconUrl from readCommand / readSubmenu', () => {
+            const ctx = createNormalizeCtx();
+            ctx.transformIconUrl = () => ({ themeIcon: '$(custom)' });
+            expect(readCommand(ctx, {
+                command: 'sample.run',
+                title: 'Run',
+                icon: '$(play)'
+            }, ctx.plugin).themeIcon).to.equal('$(custom)');
+            expect(readSubmenus(ctx, [{
+                id: 'sample.submenu',
+                label: 'Sample',
+                icon: './icon.png'
+            }], ctx.plugin)[0].icon).to.equal('$(custom)');
         });
     });
 
@@ -242,7 +257,9 @@ describe('normalize-contributions', () => {
             expect(readDebuggers([{
                 type: 'node',
                 label: 'Node Debug',
-                program: './out/debug.js'
+                program: './out/debug.js',
+                configurationAttributes: {},
+                configurationSnippets: []
             }])).to.deep.equal([{
                 type: 'node',
                 label: 'Node Debug',
@@ -251,7 +268,7 @@ describe('normalize-contributions', () => {
                 enableBreakpointsFor: undefined,
                 variables: undefined,
                 adapterExecutableCommand: undefined,
-                configurationSnippets: undefined,
+                configurationSnippets: [],
                 win: undefined,
                 winx86: undefined,
                 windows: undefined,
@@ -260,7 +277,7 @@ describe('normalize-contributions', () => {
                 args: undefined,
                 runtime: undefined,
                 runtimeArgs: undefined,
-                configurationAttributes: undefined
+                configurationAttributes: {}
             }]);
         });
     });
@@ -281,19 +298,19 @@ describe('normalize-contributions', () => {
             expect(readThemes(ctx, plugin)).to.deep.equal([{
                 id: 'dark',
                 label: 'Dark',
-                uri: 'hostedPlugin/acme_themes/.%2Fthemes%2Fdark.json',
+                uri: 'hostedPlugin/acme_themes/themes/dark.json',
                 description: undefined,
                 uiTheme: undefined
             }]);
             expect(readSnippets(ctx, plugin)).to.deep.equal([{
                 language: 'typescript',
                 source: 'Test Extension',
-                uri: 'hostedPlugin/acme_themes/.%2Fsnippets%2Fts.json'
+                uri: 'hostedPlugin/acme_themes/snippets/ts.json'
             }]);
             expect(readIconThemes(ctx, plugin)).to.deep.equal([{
                 id: 'set',
                 label: 'Set',
-                uri: 'hostedPlugin/acme_themes/.%2Ficons%2Ftheme.json',
+                uri: 'hostedPlugin/acme_themes/icons/theme.json',
                 description: undefined,
                 uiTheme: undefined
             }]);
@@ -389,7 +406,7 @@ describe('normalize-contributions', () => {
                     description: 'Font icon',
                     defaults: {
                         fontCharacter: '\\E001',
-                        location: 'hostedPlugin/acme_icons/.%2Fmedia%2Ficon.woff2'
+                        location: 'hostedPlugin/acme_icons/media/icon.woff2'
                     }
                 }
             ]);
@@ -428,6 +445,7 @@ describe('normalize-contributions', () => {
                 languageId: 'de',
                 languageName: 'German',
                 localizedLanguageName: undefined,
+                minimalTranslations: undefined,
                 translations: [{ id: 'package', path: './package.nls.de.json' }]
             }]);
         });
@@ -461,6 +479,18 @@ describe('normalize-contributions', () => {
                 required: [],
                 properties: { script: { type: 'string' } }
             }).properties!.type).to.deep.equal({ type: 'string', const: 'npm' });
+        });
+
+        it('honors ctx.toSchema from readTaskDefinition', () => {
+            const customSchema = { type: 'object' as const, properties: { custom: { type: 'boolean' as const } } };
+            const definition = readTaskDefinition('sample.tasks', {
+                type: 'npm',
+                required: [],
+                properties: {}
+            }, {
+                toSchema: () => customSchema
+            });
+            expect(definition.properties.schema).to.equal(customSchema);
         });
     });
 
@@ -503,7 +533,13 @@ describe('normalize-contributions', () => {
         });
 
         it('runs the orchestrator for shell layout, passthrough, and async contribution kinds', async () => {
-            const readGrammars = async () => [{ scopeName: 'source.sample', path: './grammar.json' }];
+            const readGrammars = async (): Promise<GrammarsContribution[]> => [{
+                language: 'sample-lang',
+                scope: 'source.sample',
+                format: 'json',
+                grammar: { scopeName: 'source.sample' },
+                grammarLocation: './grammar.json'
+            }];
             const ctx = createNormalizeCtx({
                 name: 'orchestrator',
                 displayName: 'Orchestrator Extension',
@@ -590,7 +626,7 @@ describe('normalize-contributions', () => {
                 left: [{
                     id: 'sample.container',
                     title: 'Sample',
-                    iconUrl: 'hostedPlugin/acme_orchestrator/.%2Fmedia%2Ficon.png',
+                    iconUrl: 'hostedPlugin/acme_orchestrator/media/icon.png',
                     themeIcon: undefined,
                     when: undefined
                 }],
@@ -660,12 +696,12 @@ describe('normalize-contributions', () => {
             expect(contributions.snippets).to.deep.equal([{
                 language: 'typescript',
                 source: 'Orchestrator Extension',
-                uri: 'hostedPlugin/acme_orchestrator/.%2Fsnippets%2Fts.json'
+                uri: 'hostedPlugin/acme_orchestrator/snippets/ts.json'
             }]);
             expect(contributions.themes).to.deep.equal([{
                 id: 'dark',
                 label: 'Dark',
-                uri: 'hostedPlugin/acme_orchestrator/.%2Fthemes%2Fdark.json',
+                uri: 'hostedPlugin/acme_orchestrator/themes/dark.json',
                 description: undefined,
                 uiTheme: undefined
             }]);
@@ -677,7 +713,7 @@ describe('normalize-contributions', () => {
             expect(contributions.iconThemes).to.deep.equal([{
                 id: 'sample-icons',
                 label: 'Icons',
-                uri: 'hostedPlugin/acme_orchestrator/.%2Ficons%2Ftheme.json',
+                uri: 'hostedPlugin/acme_orchestrator/icons/theme.json',
                 description: undefined,
                 uiTheme: undefined
             }]);
@@ -692,6 +728,7 @@ describe('normalize-contributions', () => {
                 languageId: 'de',
                 languageName: 'German',
                 localizedLanguageName: undefined,
+                minimalTranslations: undefined,
                 translations: [{ id: 'package', path: './package.nls.de.json' }]
             }]);
             expect(contributions.languages).to.deep.equal([{
@@ -704,7 +741,13 @@ describe('normalize-contributions', () => {
                 mimetypes: undefined,
                 icon: undefined
             }]);
-            expect(contributions.grammars).to.deep.equal([{ scopeName: 'source.sample', path: './grammar.json' }]);
+            expect(contributions.grammars).to.deep.equal([{
+                language: 'sample-lang',
+                scope: 'source.sample',
+                format: 'json',
+                grammar: { scopeName: 'source.sample' },
+                grammarLocation: './grammar.json'
+            }]);
         });
 
         it('merges aliased view container locations and reports async reader failures', async () => {

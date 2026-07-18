@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/plugin-utils` extension provides shared utilities for plugin manifest normalization used by the application build and plugin hosting.
+The `@theia/plugin-utils` package provides shared utilities for plugin manifest normalization used by the application build and plugin hosting.
 
 ## Additional Information
 

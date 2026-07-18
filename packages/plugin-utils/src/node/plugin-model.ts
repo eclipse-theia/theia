@@ -14,22 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const PLUGINS_BASE_PATH = 'hostedPlugin';
+import { readdirSync } from 'fs';
+import { toPluginUrl, type PluginIdentifierSource } from '../plugin-model';
 
-export const UNPUBLISHED = '<unpublished>';
-
-export const DEFAULT_PLUGINS_DIR = 'plugins';
-
-export const LIST_JSON = 'list.json';
-
-export const VSCODE_BUILTIN_NAME_PREFIX = '@theia/vscode-builtin-';
-
-export const VSCODE_FRONTEND_INIT = 'plugin-vscode-init-fe.js';
-
-export const THEIA_PLUGIN_START_METHOD = 'start';
-export const THEIA_PLUGIN_STOP_METHOD = 'stop';
-
-export const VSCODE_EXTENSION_ACTIVATE = 'activate';
-export const VSCODE_EXTENSION_DEACTIVATE = 'deactivate';
-
-export const PLUGIN_COPY_IGNORE = /[/\\](\.git|node_modules)([/\\]|$)/;
+export function getPluginRootFileUrl(manifest: PluginIdentifierSource & { packagePath: string }, names: string[]): string | undefined {
+    const nameSet = new Set(names.map(n => n.toLowerCase()));
+    try {
+        const dir = readdirSync(manifest.packagePath, { withFileTypes: true });
+        for (const dirent of dir) {
+            if (dirent.isFile() && nameSet.has(dirent.name.toLowerCase())) {
+                return toPluginUrl(manifest, dirent.name);
+            }
+        }
+    } catch {
+        return undefined;
+    }
+    return undefined;
+}

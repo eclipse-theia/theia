@@ -11,9 +11,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": [
-    "theia-plugin"
-  ],
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",

@@ -14,31 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from './constants';
-import type { PluginManifest } from './manifest-types';
-import { updateActivationEvents } from './plugin-activation-events';
-
-export interface PrepareLoadedManifestOptions {
-    /** @default true */
-    updateActivationEvents?: boolean;
-}
+import * as path from 'path';
+import * as fs from 'fs-extra';
+import type { PluginManifest } from '../manifest-types';
+import { prepareLoadedManifest, type PrepareLoadedManifestOptions } from '../plugin-manifest';
 
 type LoadedManifest = Pick<PluginManifest, 'name' | 'publisher' | 'contributes' | 'activationEvents'>;
 
-export function stripVscodeBuiltinNamePrefix(manifest: Pick<PluginManifest, 'name'>): void {
-    if (manifest?.name?.startsWith(VSCODE_BUILTIN_NAME_PREFIX)) {
-        manifest.name = manifest.name.substring(VSCODE_BUILTIN_NAME_PREFIX.length);
-    }
-}
-
-export function prepareLoadedManifest<T extends LoadedManifest>(
-    manifest: T,
+export async function loadManifest<T extends LoadedManifest = PluginManifest>(
+    pluginPath: string,
     options?: PrepareLoadedManifestOptions
-): T {
-    stripVscodeBuiltinNamePrefix(manifest);
-    manifest.publisher ??= UNPUBLISHED;
-    if (options?.updateActivationEvents !== false) {
-        updateActivationEvents(manifest);
-    }
-    return manifest;
+): Promise<T> {
+    const manifest = await fs.readJson(path.join(pluginPath, 'package.json')) as T;
+    return prepareLoadedManifest(manifest, options);
 }

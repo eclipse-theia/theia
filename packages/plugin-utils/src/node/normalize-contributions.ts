@@ -19,7 +19,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
-import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from './local-utils';
+import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../utils';
 import {
     ICON_NAME_SEGMENT,
     type ColorDefinition,
@@ -30,14 +30,17 @@ import {
     type PreferenceSchema,
     PreferenceScope,
     type TaskDefinition,
-} from './protocol-shims';
+} from '../protocol-shims';
 import {
     CustomEditorPriority,
     type AutoClosingPair,
     type AutoClosingPairConditional,
     type CharacterPair,
+    type CommentRule,
+    type FoldingRules,
     type IconUrl,
     type IConfigurationNode,
+    type IndentationRules,
     type NormalizeContributionsContext,
     type NormalizedCommand,
     type NormalizedCustomEditor,
@@ -54,6 +57,7 @@ import {
     type NormalizedTranslation,
     type NormalizedViewContainer,
     type NormalizedViewWelcome,
+    type PluginUiTheme,
     type RawCommand,
     type RawCustomEditor,
     type RawDebugger,
@@ -68,8 +72,12 @@ import {
     type RawViewContainer,
     type RawViewWelcome,
     type ViewsByLocation,
-} from './contribution-types';
-import { rawContributes, type PluginManifest } from './manifest-types';
+} from '../contribution-types';
+import { rawContributes, type PluginManifest } from '../manifest-types';
+
+function isPluginUiTheme(value: unknown): value is PluginUiTheme {
+    return value === 'vs' || value === 'vs-dark' || value === 'hc-black';
+}
 
 export const colorIdPattern = '^\\w+[.\\w+]*$';
 export const iconIdPattern = `^${ICON_NAME_SEGMENT}(-${ICON_NAME_SEGMENT})+$`;
@@ -167,7 +175,7 @@ export async function normalizeContributions<TContrib extends object>(
     const readMenusFn = ctx.readMenus ?? readMenus;
     const readKeybindingFn = ctx.readKeybinding ?? readKeybinding;
     const readDebuggersFn = ctx.readDebuggers ?? readDebuggers;
-    const readTaskDefinitionFn = ctx.readTaskDefinition ?? readTaskDefinition;
+    const readTaskDefinitionFn = ctx.readTaskDefinition ?? ((pluginName, definition) => readTaskDefinition(pluginName, definition, ctx));
     const readSnippetsFn = ctx.readSnippets ?? (plugin => readSnippets(ctx, plugin));
     const readThemesFn = ctx.readThemes ?? (plugin => readThemes(ctx, plugin));
     const readIconsFn = ctx.readIcons ?? (plugin => readIcons(ctx, plugin));
@@ -200,6 +208,14 @@ export async function normalizeContributions<TContrib extends object>(
     } catch (err) {
         ctx.onError('configuration', err, contributes.configuration);
     }
+
+    output.problemMatchers = contributes.problemMatchers;
+    output.problemPatterns = contributes.problemPatterns;
+    output.resourceLabelFormatters = contributes.resourceLabelFormatters;
+    output.authentication = contributes.authentication;
+    output.notebooks = contributes.notebooks;
+    output.notebookRenderer = contributes.notebookRenderer;
+    output.notebookPreload = contributes.notebookPreload;
 
     const configurationDefaults = contributes.configurationDefaults;
     output.configurationDefaults = isObject(configurationDefaults) ? configurationDefaults : undefined;
@@ -310,48 +326,6 @@ export async function normalizeContributions<TContrib extends object>(
     }
 
     try {
-        output.problemMatchers = contributes.problemMatchers;
-    } catch (err) {
-        ctx.onError('problemMatchers', err, contributes.problemMatchers);
-    }
-
-    try {
-        output.problemPatterns = contributes.problemPatterns;
-    } catch (err) {
-        ctx.onError('problemPatterns', err, contributes.problemPatterns);
-    }
-
-    try {
-        output.resourceLabelFormatters = contributes.resourceLabelFormatters;
-    } catch (err) {
-        ctx.onError('resourceLabelFormatters', err, contributes.resourceLabelFormatters);
-    }
-
-    try {
-        output.authentication = contributes.authentication;
-    } catch (err) {
-        ctx.onError('authentication', err, contributes.authentication);
-    }
-
-    try {
-        output.notebooks = contributes.notebooks;
-    } catch (err) {
-        ctx.onError('notebooks', err, contributes.notebooks);
-    }
-
-    try {
-        output.notebookRenderer = contributes.notebookRenderer;
-    } catch (err) {
-        ctx.onError('notebook-renderer', err, contributes.notebookRenderer);
-    }
-
-    try {
-        output.notebookPreload = contributes.notebookPreload;
-    } catch (err) {
-        ctx.onError('notebooks-preload', err, contributes.notebookPreload);
-    }
-
-    try {
         output.snippets = readSnippetsFn(rawPlugin);
     } catch (err) {
         ctx.onError('snippets', err, contributes.snippets);
@@ -440,13 +414,14 @@ export function readLocalizations(pck: PluginManifest): NormalizedLocalization[]
 }
 
 export function readLocalization(
-    { languageId, languageName, localizedLanguageName, translations }: RawLocalization,
+    { languageId, languageName, localizedLanguageName, translations, minimalTranslations }: RawLocalization,
     pluginPath: string
 ): NormalizedLocalization {
     const local: NormalizedLocalization = {
         languageId,
         languageName,
         localizedLanguageName,
+        minimalTranslations,
         translations: []
     };
     if (Array.isArray(translations)) {
@@ -463,7 +438,9 @@ export function readTranslation(packageTranslation: RawTranslation, _pluginPath:
 }
 
 export function readCommand(ctx: NormalizeContributionsContext, command: RawCommand, pck: PluginManifest): NormalizedCommand {
-    const { themeIcon, iconUrl } = transformIconUrl(ctx, pck, command.icon) ?? {};
+    const { themeIcon, iconUrl } = (ctx.transformIconUrl
+        ? ctx.transformIconUrl(pck, command.icon)
+        : transformIconUrl(ctx, pck, command.icon)) ?? {};
     return {
         command: command.command,
         title: command.title,
@@ -477,8 +454,8 @@ export function readCommand(ctx: NormalizeContributionsContext, command: RawComm
 }
 
 export function transformIconUrl(
-    ctx: NormalizeContributionsContext,
-    plugin: PluginManifest,
+    ctx: Pick<NormalizeContributionsContext, 'resolveUrl'>,
+    _plugin: PluginManifest,
     original?: IconUrl
 ): { iconUrl?: IconUrl; themeIcon?: string } | undefined {
     if (original) {
@@ -554,7 +531,7 @@ export function readThemes(ctx: NormalizeContributionsContext, pck: PluginManife
                 uri: ctx.resolveUri(pck, contribution.path),
                 description: typeof contribution.description === 'string' ? contribution.description : undefined,
                 label: typeof contribution.label === 'string' ? contribution.label : undefined,
-                uiTheme: typeof contribution.uiTheme === 'string' ? contribution.uiTheme : undefined,
+                uiTheme: isPluginUiTheme(contribution.uiTheme) ? contribution.uiTheme : undefined,
             });
         }
     }
@@ -584,7 +561,7 @@ export function readIconThemes(ctx: NormalizeContributionsContext, pck: PluginMa
             uri: ctx.resolveUri(pck, contribution.path),
             description: typeof contribution.description === 'string' ? contribution.description : undefined,
             label: typeof contribution.label === 'string' ? contribution.label : undefined,
-            uiTheme: typeof contribution.uiTheme === 'string' ? contribution.uiTheme : undefined,
+            uiTheme: isPluginUiTheme(contribution.uiTheme) ? contribution.uiTheme : undefined,
         });
     }
     return result;
@@ -813,7 +790,9 @@ export function readSubmenus(ctx: NormalizeContributionsContext, rawSubmenus: re
 }
 
 export function readSubmenu(ctx: NormalizeContributionsContext, rawSubmenu: RawSubmenu, plugin: PluginManifest): NormalizedSubmenu {
-    const icon = transformIconUrl(ctx, plugin, rawSubmenu.icon);
+    const icon = ctx.transformIconUrl
+        ? ctx.transformIconUrl(plugin, rawSubmenu.icon)
+        : transformIconUrl(ctx, plugin, rawSubmenu.icon);
     return {
         icon: icon?.iconUrl ?? icon?.themeIcon,
         id: rawSubmenu.id,
@@ -822,7 +801,9 @@ export function readSubmenu(ctx: NormalizeContributionsContext, rawSubmenu: RawS
 }
 
 export async function readLanguage(ctx: NormalizeContributionsContext, rawLang: RawLanguage, plugin: PluginManifest): Promise<NormalizedLanguage> {
-    const icon = transformIconUrl(ctx, plugin, rawLang.icon);
+    const icon = ctx.transformIconUrl
+        ? ctx.transformIconUrl(plugin, rawLang.icon)
+        : transformIconUrl(ctx, plugin, rawLang.icon);
     const result: NormalizedLanguage = {
         id: rawLang.id,
         aliases: rawLang.aliases,
@@ -840,13 +821,13 @@ export async function readLanguage(ctx: NormalizeContributionsContext, rawLang: 
                 brackets: Array.isArray(rawConfiguration.brackets)
                     ? rawConfiguration.brackets.filter(isCharacterPair)
                     : undefined,
-                comments: rawConfiguration.comments,
-                folding: rawConfiguration.folding,
+                comments: rawConfiguration.comments as CommentRule | undefined,
+                folding: rawConfiguration.folding as FoldingRules | undefined,
                 wordPattern: typeof rawConfiguration.wordPattern === 'string' ? rawConfiguration.wordPattern : undefined,
                 autoClosingPairs: extractValidAutoClosingPairs(ctx, rawLang.id, rawConfiguration),
-                indentationRules: rawConfiguration.indentationRules,
+                indentationRules: rawConfiguration.indentationRules as IndentationRules | undefined,
                 surroundingPairs: extractValidSurroundingPairs(ctx, rawLang.id, rawConfiguration),
-                onEnterRules: Array.isArray(rawConfiguration.onEnterRules) ? rawConfiguration.onEnterRules : undefined,
+                onEnterRules: Array.isArray(rawConfiguration.onEnterRules) ? rawConfiguration.onEnterRules as NormalizedLanguageConfiguration['onEnterRules'] : undefined,
             };
             result.configuration = configuration;
         }
@@ -880,11 +861,15 @@ export function readDebugger(rawDebugger: RawDebugger): RawDebugger {
     };
 }
 
-export function readTaskDefinition(pluginName: string, definitionContribution: RawTaskDefinition): TaskDefinition {
+export function readTaskDefinition(
+    pluginName: string,
+    definitionContribution: RawTaskDefinition,
+    ctx?: Pick<NormalizeContributionsContext, 'toSchema'>
+): TaskDefinition {
     const propertyKeys = definitionContribution.properties && isObject(definitionContribution.properties)
         ? Object.keys(definitionContribution.properties)
         : [];
-    const schema = toSchema(definitionContribution);
+    const schema = (ctx?.toSchema ?? toSchema)(definitionContribution);
     return {
         taskType: definitionContribution.type,
         source: pluginName,

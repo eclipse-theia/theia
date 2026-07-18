@@ -38,8 +38,26 @@ export function isColorDefaults(value: unknown): value is { light: string; dark:
         && typeof value.highContrast === 'string';
 }
 
-export function isENOENT(error: unknown): boolean {
-    return typeof error === 'object' && error !== undefined && (error as NodeJS.ErrnoException).code === 'ENOENT';
+interface Errno {
+    readonly code: string;
+    readonly errno: number;
+}
+
+const ENOENT = 'ENOENT' as const;
+
+type ErrnoException = Error & Errno;
+
+function isErrnoException(arg: unknown): arg is ErrnoException {
+    return arg instanceof Error
+        && isObject(arg)
+        && typeof arg.code === 'string'
+        && typeof arg.errno === 'number';
+}
+
+export function isENOENT(
+    arg: unknown
+): arg is ErrnoException & Readonly<{ code: typeof ENOENT }> {
+    return isErrnoException(arg) && arg.code === ENOENT;
 }
 
 export function deepClone<T>(obj: T): T {

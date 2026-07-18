@@ -14,11 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * Browser-only build step: copy plugins into `lib/frontend/hostedPlugin/`, normalize each
- * `package.json` for the static host, and write `list.json` for the frontend plugin loader.
- */
-
 import { realpath } from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -34,93 +29,51 @@ import {
 import { stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/plugin-manifest';
 import { updateActivationEvents } from '@theia/plugin-utils/lib/plugin-activation-events';
 import {
+    applyTrustExtraction,
     buildLifecycle,
     buildModel,
     getPluginId,
     pickEngineType,
     toPluginUrl
 } from '@theia/plugin-utils/lib/plugin-model';
-import { normalizeContributions } from '@theia/plugin-utils/lib/normalize-contributions';
-import { readGrammarFromDisk, type GrammarsContribution } from '@theia/plugin-utils/lib/read-grammars';
-import { localizePackage, loadPackageTranslations } from '@theia/plugin-utils/lib/package-nls';
-import type { PluginPackageGrammarsContribution } from '@theia/plugin-utils/lib/contribution-types';
+import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
+import { normalizeContributions } from '@theia/plugin-utils/lib/node/normalize-contributions';
+import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
+import { localizePackage, loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
+import { deepClone } from '@theia/plugin-utils/lib/utils';
+import type {
+    NormalizedPluginContribution,
+} from '@theia/plugin-utils/lib/contribution-types';
 
 import {
     PLUGIN_HOST_BACKEND,
     PluginType,
-    rawContributes,
+    type DeployedPlugin,
     type PluginEntryPoint,
     type PluginManifest,
-    type PluginMetadata,
     type PluginModel,
 } from '@theia/plugin-utils/lib/manifest-types';
-
-/** `package.json` read from disk during browser-only build prepare. */
-export interface BrowserOnlyManifest extends PluginManifest {
-    extensionDependencies?: string[];
-    extensionPack?: string[];
-}
-
-/** Static contributions written to `list.json` (loose shape for serialized output). */
-export interface BrowserOnlyPluginContribution {
-    activationEvents?: string[];
-    authentication?: unknown[];
-    configuration?: unknown[];
-    configurationDefaults?: Record<string, unknown>;
-    languages?: unknown[];
-    grammars?: unknown[];
-    customEditors?: unknown[];
-    viewsContainers?: Record<string, unknown[]>;
-    views?: Record<string, unknown[]>;
-    viewsWelcome?: unknown[];
-    commands?: unknown[];
-    menus?: Record<string, unknown[]>;
-    submenus?: unknown[];
-    keybindings?: unknown[];
-    debuggers?: unknown[];
-    snippets?: unknown[];
-    themes?: unknown[];
-    iconThemes?: unknown[];
-    icons?: unknown[];
-    colors?: unknown[];
-    taskDefinitions?: unknown[];
-    problemMatchers?: unknown[];
-    problemPatterns?: unknown[];
-    resourceLabelFormatters?: unknown[];
-    localizations?: unknown[];
-    terminalProfiles?: unknown[];
-    notebooks?: unknown[];
-    notebookRenderer?: unknown[];
-    notebookPreload?: unknown[];
-    [key: string]: unknown;
-}
-
-/** One entry in `lib/frontend/hostedPlugin/list.json`. */
-export interface BrowserOnlyDeployedPlugin {
-    type: PluginType;
-    metadata: PluginMetadata;
-    contributes?: BrowserOnlyPluginContribution;
-}
 
 export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationPackage): Promise<void> {
     const hostedPluginDir = applicationPackage.lib('frontend', PLUGINS_BASE_PATH);
     await fs.remove(hostedPluginDir);
-
-    const pluginsDir = await resolvePluginsSourcePath(applicationPackage.projectPath);
-
-    if (!(await fs.pathExists(pluginsDir))) {
-        return;
-    }
-
     await fs.ensureDir(hostedPluginDir);
 
-    const names = await fs.readdir(pluginsDir);
-    const deployedPlugins: BrowserOnlyDeployedPlugin[] = [];
+    const theiaPluginsDir = applicationPackage.pck.theiaPluginsDir;
+    const pluginsDir = path.resolve(
+        applicationPackage.projectPath,
+        typeof theiaPluginsDir === 'string' ? theiaPluginsDir : DEFAULT_PLUGINS_DIR
+    );
 
-    for (const name of names) {
-        const entry = await processPlugin(path.join(pluginsDir, name), hostedPluginDir);
-        if (entry) {
-            deployedPlugins.push(entry);
+    const deployedPlugins: DeployedPlugin[] = [];
+
+    if (await fs.pathExists(pluginsDir)) {
+        const names = await fs.readdir(pluginsDir);
+        for (const name of names) {
+            const entry = await processPlugin(path.join(pluginsDir, name), hostedPluginDir);
+            if (entry) {
+                deployedPlugins.push(entry);
+            }
         }
     }
 
@@ -128,34 +81,51 @@ export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationP
     console.log(`browser-only: prepared ${deployedPlugins.length} plugins`);
 }
 
-async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): Promise<BrowserOnlyDeployedPlugin | undefined> {
+async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): Promise<DeployedPlugin | undefined> {
     const packageRoot = resolvePluginRoot(pluginSourceDir);
-    if (!packageRoot) { return undefined; }
+    if (!packageRoot) {
+        return undefined;
+    }
 
-    let manifest: BrowserOnlyManifest;
-    let resolvedPath: string;
+    let buildTimePackageRoot: string;
+    let rawManifest: PluginManifest;
     try {
-        resolvedPath = await realpath(packageRoot);
-        manifest = await loadManifestForBrowserOnly(resolvedPath);
+        buildTimePackageRoot = await realpath(packageRoot);
+        rawManifest = await fs.readJson(path.join(buildTimePackageRoot, 'package.json')) as PluginManifest;
+        stripVscodeBuiltinNamePrefix(rawManifest);
     } catch (err) {
         console.warn(`browser-only: skip plugin at ${pluginSourceDir}`, err);
         return undefined;
     }
 
-    if (!shouldIncludePluginInBrowserOnlyBuild(manifest)) {
+    if (!shouldIncludePluginInBrowserOnlyBuild(rawManifest)) {
         return undefined;
     }
 
-    const buildTimePackageRoot = manifest.packagePath;
+    let normalized = deepClone(rawManifest);
+    normalized.packagePath = buildTimePackageRoot;
+    let contributes = await normalizeManifestForBrowserOnly(normalized);
 
-    const engineType = pickEngineType(manifest);
-    const model = buildModel(manifest, engineType, { uiKind: 'web' });
-    const lifecycle = buildLifecycle(manifest, engineType);
+    delete normalized.contributes;
 
-    const pluginId = getPluginId(manifest);
+    const translations = await loadPackageTranslations(buildTimePackageRoot);
+    if (translations.default && Object.keys(translations.default).length > 0) {
+        const resolve = (_: string, defaultVal: string): string => defaultVal;
+        normalized = localizePackage(normalized, translations, resolve);
+        contributes = localizePackage(contributes, translations, resolve);
+    }
+
+    const engineType = pickEngineType(normalized);
+    const model = buildModel(normalized, engineType, { uiKind: 'web' });
+    model.licenseUrl = getPluginRootFileUrl(normalized, ['license', 'license.txt', 'license.md']);
+    model.readmeUrl = getPluginRootFileUrl(normalized, ['readme.md', 'readme.txt', 'readme']);
+    applyTrustExtraction(normalized, model);
+    const lifecycle = buildLifecycle(normalized, engineType);
+
+    const pluginId = getPluginId(normalized);
     const dst = path.join(hostedPluginDir, pluginId);
 
-    await fs.copy(resolvedPath, dst, {
+    await fs.copy(buildTimePackageRoot, dst, {
         overwrite: true,
         dereference: true,
         filter: (src: string) => !PLUGIN_COPY_IGNORE.test(src)
@@ -163,11 +133,13 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
 
     resolveHostedEntryPoint(model.entryPoint, dst);
     rewriteModelPathsForHostedStatic(model, buildTimePackageRoot, pluginId);
-    finalizeHostedManifest(manifest, pluginId, model.entryPoint);
 
-    await fs.writeJson(path.join(dst, 'package.json'), manifest, { spaces: 2 });
+    // Raw VS Code-style package.json for worker rawModel (contributes stay unnormalized).
+    const diskManifest = deepClone(rawManifest);
+    prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
+    await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
 
-    const entry: BrowserOnlyDeployedPlugin = {
+    return {
         type: PluginType.System,
         metadata: {
             host: PLUGIN_HOST_BACKEND,
@@ -175,131 +147,105 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
             lifecycle,
             outOfSync: false
         },
-        contributes: manifest.contributes as BrowserOnlyPluginContribution | undefined
+        ...(Object.keys(contributes).length > 0 ? { contributes } : {})
     };
-
-    return entry;
 }
 
 function resolvePluginRoot(dir: string): string | undefined {
     const direct = path.join(dir, 'package.json');
-    if (fs.pathExistsSync(direct)) { return dir; }
+    if (fs.pathExistsSync(direct)) {
+        return dir;
+    }
     const inExtension = path.join(dir, 'extension', 'package.json');
-    if (fs.pathExistsSync(inExtension)) { return path.join(dir, 'extension'); }
+    if (fs.pathExistsSync(inExtension)) {
+        return path.join(dir, 'extension');
+    }
     const inPackage = path.join(dir, 'package', 'package.json');
-    if (fs.pathExistsSync(inPackage)) { return path.join(dir, 'package'); }
+    if (fs.pathExistsSync(inPackage)) {
+        return path.join(dir, 'package');
+    }
     return undefined;
 }
 
-function hasContributes(pkg: BrowserOnlyManifest): boolean {
+function hasContributes(pkg: PluginManifest): boolean {
     const c = pkg.contributes;
     return !!(c && typeof c === 'object' && Object.keys(c).length > 0);
 }
 
-function shouldIncludePluginInBrowserOnlyBuild(manifest: BrowserOnlyManifest): boolean {
-    if (!manifest?.name) { return false; }
+function shouldIncludePluginInBrowserOnlyBuild(manifest: PluginManifest): boolean {
+    if (!manifest.name) {
+        return false;
+    }
     return !!manifest.theiaPlugin?.frontend || !!manifest.browser || hasContributes(manifest);
 }
 
-function normalizePluginPackageForBrowserOnly(manifest: BrowserOnlyManifest): void {
+/** Drop Node/Electron-only entry fields shared by list.json and on-disk package.json. */
+function stripNonFrontendHostFields(manifest: PluginManifest): void {
     manifest.publisher ??= UNPUBLISHED;
+    delete manifest.main;
+    if (manifest.theiaPlugin) {
+        delete manifest.theiaPlugin.backend;
+        delete manifest.theiaPlugin.headless;
+    }
+}
+
+function normalizePluginPackageForBrowserOnly(manifest: PluginManifest): void {
+    stripNonFrontendHostFields(manifest);
 
     if (!manifest.engines) {
         manifest.engines = { theiaPlugin: '*' };
     }
 
     if (!manifest.theiaPlugin && manifest.browser) {
-        manifest.theiaPlugin = { frontend: manifest.browser as string };
-    }
-
-    if (manifest.theiaPlugin) {
-        delete manifest.theiaPlugin.backend;
-        delete manifest.theiaPlugin.headless;
-    }
-
-    if (manifest.main) {
-        delete manifest.main;
+        manifest.theiaPlugin = { frontend: manifest.browser };
     }
 }
 
-async function normalizeManifestForBrowserOnly(manifest: BrowserOnlyManifest): Promise<void> {
+async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promise<NormalizedPluginContribution> {
     normalizePluginPackageForBrowserOnly(manifest);
     updateActivationEvents(manifest);
 
-    const contributes = rawContributes(manifest) as Record<string, unknown>;
-    manifest.contributes = await normalizeContributions({
+    const contributes: NormalizedPluginContribution = {};
+    const onError = (type: string, err: unknown, detail?: unknown): void => {
+        console.warn(`browser-only: [${manifest.name}] contribution '${type}'`, detail, err);
+    };
+    const onWarn = (msg: string): void => {
+        console.warn(`browser-only: [${manifest.name}] ${msg}`);
+    };
+    await normalizeContributions({
         plugin: manifest,
         resolveUrl: relative => toPluginUrl(manifest, relative),
-        resolveUri: (pck, relative) => toPluginUrl(pck as BrowserOnlyManifest, relative),
+        resolveUri: (pck, relative) => toPluginUrl(pck, relative),
         readGrammars: async (grammars, pluginPath) => {
-            const rawGrammars = grammars as PluginPackageGrammarsContribution[];
-            const result: GrammarsContribution[] = [];
-            for (const rawGrammar of rawGrammars) {
-                const grammar = await readGrammarFromDisk(rawGrammar, pluginPath);
+            const result = [];
+            for (const rawGrammar of grammars) {
+                const grammar = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
                 if (grammar) {
                     result.push(grammar);
                 }
             }
             return result;
         },
-        onError: (type, err, detail) => console.warn(`browser-only: [${manifest.name}] contribution '${type}'`, detail, err),
-        onWarn: msg => console.warn(`browser-only: [${manifest.name}] ${msg}`),
+        onError,
+        onWarn,
     }, contributes);
 
     if (manifest.activationEvents?.length) {
         contributes.activationEvents = [...manifest.activationEvents];
     }
-}
 
-async function resolvePluginsSourcePath(projectPath: string): Promise<string> {
-    const pkgPath = path.join(projectPath, 'package.json');
-    if (await fs.pathExists(pkgPath)) {
-        const pkg = await fs.readJson(pkgPath) as { theiaPluginsDir?: string };
-        if (typeof pkg.theiaPluginsDir === 'string') {
-            return path.resolve(projectPath, pkg.theiaPluginsDir);
-        }
-    }
-    return path.resolve(projectPath, DEFAULT_PLUGINS_DIR);
-}
-
-/** Replaces `%key%` placeholders using `package.nls.json` (default bundle only). */
-async function localizeBrowserOnlyManifest(manifest: BrowserOnlyManifest, pluginRoot: string): Promise<void> {
-    const translations = await loadPackageTranslations(pluginRoot);
-    if (!translations.default || Object.keys(translations.default).length === 0) {
-        return;
-    }
-    const localized = localizePackage(manifest, translations, (_, defaultVal) => defaultVal) as BrowserOnlyManifest;
-    const m = manifest as unknown as Record<string, unknown>;
-    for (const key of Object.keys(m)) {
-        delete m[key];
-    }
-    Object.assign(manifest, localized);
-}
-
-async function loadManifestForBrowserOnly(pluginPath: string): Promise<BrowserOnlyManifest> {
-    const manifest = await fs.readJson(path.join(pluginPath, 'package.json')) as BrowserOnlyManifest;
-    stripVscodeBuiltinNamePrefix(manifest);
-
-    const root = path.resolve(pluginPath);
-    manifest.packagePath = root;
-
-    await normalizeManifestForBrowserOnly(manifest);
-    await localizeBrowserOnlyManifest(manifest, root);
-
-    return manifest;
+    return contributes;
 }
 
 /**
- * `list.json` is the deployment manifest (entryPoint, lifecycle, normalized contributes).
- * `hostedPlugin/<id>/package.json` is the on-disk extension descriptor for worker `rawModel`
- * and static HTTP serving — not a second source of truth for loading.
- *
- * - Model URLs in `list.json` use `hostedPlugin/...` (static asset paths).
- * - `contributes.*.uri` in both artifacts use the same `hostedPlugin/...` encoding.
- * - VS Code manifest fields (`icon`, `browser`, …) stay relative to the extension root;
- *   the loader resolves them via `metadata.model` (`iconUrl`, `entryPoint`), not raw `icon`.
+ * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia).
+ * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for worker `rawModel`:
+ * name-prefix strip, `main` removed, entry paths synced, and `packagePath`/`packageUri` set to the
+ * static hosted root (needed so relative assets resolve via `toPluginUrl`).
  */
-function finalizeHostedManifest(manifest: BrowserOnlyManifest, pluginId: string, entryPoint: PluginEntryPoint): void {
+function prepareHostedPackageJson(manifest: PluginManifest, pluginId: string, entryPoint: PluginEntryPoint): void {
+    stripNonFrontendHostFields(manifest);
+
     const packageRoot = `${PLUGINS_BASE_PATH}/${pluginId}/`;
     manifest.packagePath = packageRoot;
     manifest.packageUri = packageRoot;

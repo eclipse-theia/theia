@@ -214,6 +214,8 @@ export interface PluginPackageGrammarsContribution {
     embeddedLanguages?: ScopeMap;
     tokenTypes?: ScopeMap;
     injectTo?: string[];
+    balancedBracketScopes?: string[];
+    unbalancedBracketScopes?: string[];
 }
 
 export interface ScopeMap {
@@ -268,8 +270,8 @@ export interface PluginPackageDebuggersContribution extends PlatformSpecificAdap
     label?: string;
     languages?: string[];
     enableBreakpointsFor?: { languageIds: string[] };
-    configurationAttributes: { [request: string]: IJSONSchema };
-    configurationSnippets: IJSONSchemaSnippet[];
+    configurationAttributes?: { [request: string]: IJSONSchema };
+    configurationSnippets?: IJSONSchemaSnippet[];
     variables?: ScopeMap;
     adapterExecutableCommand?: string;
     win?: PlatformSpecificAdapterContribution;
@@ -400,7 +402,7 @@ export interface NormalizeContributionsContext<TPlugin extends PluginManifest = 
     onError(type: string, err: unknown, detail?: unknown): void;
     onWarn(msg: string): void;
     readJsonFile?(filePath: string): Promise<unknown | undefined>;
-    readGrammars?(grammars: readonly unknown[], pluginPath: string): Promise<unknown[] | undefined>;
+    readGrammars?(grammars: readonly PluginPackageGrammarsContribution[], pluginPath: string): Promise<GrammarsContribution[] | undefined>;
     readConfiguration?(rawConfiguration: IConfigurationNode, pluginPath: string): PreferenceSchema | undefined;
     readSubmenus?(submenus: readonly RawSubmenu[], plugin: TPlugin): NormalizedSubmenu[];
     readCustomEditors?(customEditors: readonly RawCustomEditor[]): NormalizedCustomEditor[];
@@ -420,9 +422,26 @@ export interface NormalizeContributionsContext<TPlugin extends PluginManifest = 
     readTerminals?(plugin: TPlugin): NormalizedTerminalProfile[] | undefined;
     readLocalizations?(plugin: TPlugin): NormalizedLocalization[] | undefined;
     readLanguages?(languages: readonly RawLanguage[], plugin: TPlugin): Promise<NormalizedLanguage[] | undefined>;
+    transformIconUrl?(plugin: TPlugin, original?: IconUrl): { iconUrl?: IconUrl; themeIcon?: string } | undefined;
+    toSchema?(definition: RawTaskDefinition): IJSONSchema;
 }
 
 export type RawCommand = PluginPackageCommand;
+export type RawKeybinding = PluginPackageKeybinding;
+export type RawSubmenu = PluginPackageSubmenu;
+export type RawViewContainer = PluginPackageViewContainer;
+export type RawView = PluginPackageView;
+export type RawViewWelcome = PluginPackageViewWelcome;
+export type RawMenu = PluginPackageMenu;
+export type RawTranslation = PluginPackageTranslation;
+export type RawLocalization = PluginPackageLocalization;
+export type RawCustomEditor = PluginPackageCustomEditor;
+export type RawLanguage = PluginPackageLanguageContribution;
+export type RawDebugger = PluginPackageDebuggersContribution;
+export type RawTaskDefinition = PluginTaskDefinitionContribution;
+export type RawSnippet = PluginPackageSnippetsContribution;
+export type RawTheme = PluginThemeContribution;
+export type RawIconTheme = PluginIconThemeContribution;
 
 export interface NormalizedCommand {
     command: string;
@@ -435,8 +454,6 @@ export interface NormalizedCommand {
     enablement?: string;
 }
 
-export type RawKeybinding = PluginPackageKeybinding;
-
 export interface NormalizedKeybinding {
     keybinding?: string;
     command: string;
@@ -447,15 +464,11 @@ export interface NormalizedKeybinding {
     args?: unknown;
 }
 
-export type RawSubmenu = PluginPackageSubmenu;
-
 export interface NormalizedSubmenu {
     id: string;
     label: string;
     icon?: IconUrl | string;
 }
-
-export type RawViewContainer = PluginPackageViewContainer;
 
 export interface NormalizedViewContainer {
     id: string;
@@ -464,10 +477,6 @@ export interface NormalizedViewContainer {
     themeIcon?: string;
     when?: string;
 }
-
-export type RawView = PluginPackageView;
-
-export type RawViewWelcome = PluginPackageViewWelcome;
 
 export interface NormalizedViewWelcome {
     view: string;
@@ -479,29 +488,11 @@ export interface NormalizedViewWelcome {
 
 export type ViewsByLocation = Record<string, readonly RawView[]>;
 
-export interface RawCustomEditor {
-    viewType: string;
-    displayName: string;
-    selector?: unknown;
-    priority?: string;
-}
-
 export interface NormalizedCustomEditor {
     viewType: string;
     displayName: string;
-    selector: unknown;
+    selector: CustomEditorSelector[];
     priority: CustomEditorPriority;
-}
-
-export type RawMenu = PluginPackageMenu;
-
-export type RawTranslation = PluginPackageTranslation;
-
-export interface RawLocalization {
-    languageId: string;
-    languageName?: string;
-    localizedLanguageName?: string;
-    translations?: readonly RawTranslation[];
 }
 
 export interface NormalizedLocalization {
@@ -509,24 +500,24 @@ export interface NormalizedLocalization {
     languageName?: string;
     localizedLanguageName?: string;
     translations: NormalizedTranslation[];
+    minimalTranslations?: { [key: string]: string };
 }
 
 export interface NormalizedTranslation {
     id: string;
     path: string;
+    cachedContents?: { [scope: string]: { [key: string]: string } };
 }
-
-export type RawLanguage = PluginPackageLanguageContribution;
 
 export interface NormalizedLanguageConfiguration {
     brackets?: CharacterPair[];
-    comments?: unknown;
-    folding?: unknown;
-    wordPattern?: string;
-    autoClosingPairs?: AutoClosingPairConditional[];
-    indentationRules?: unknown;
+    indentationRules?: IndentationRules;
     surroundingPairs?: AutoClosingPair[];
-    onEnterRules?: unknown[];
+    autoClosingPairs?: AutoClosingPairConditional[];
+    comments?: CommentRule;
+    folding?: FoldingRules;
+    wordPattern?: string | RegExpOptions;
+    onEnterRules?: OnEnterRule[];
 }
 
 export interface NormalizedLanguage {
@@ -537,37 +528,9 @@ export interface NormalizedLanguage {
     filenames?: string[];
     firstLine?: string;
     mimetypes?: string[];
-    icon?: IconUrl | string;
+    icon?: IconUrl;
     configuration?: NormalizedLanguageConfiguration;
 }
-
-export interface RawTaskDefinition {
-    type: string;
-    required: string[];
-    properties?: Record<string, unknown>;
-}
-
-export interface RawDebugger {
-    type: string;
-    label?: string;
-    languages?: string[];
-    enableBreakpointsFor?: unknown;
-    variables?: unknown;
-    adapterExecutableCommand?: string;
-    configurationSnippets?: unknown;
-    win?: unknown;
-    winx86?: unknown;
-    windows?: unknown;
-    osx?: unknown;
-    linux?: unknown;
-    program?: string;
-    args?: unknown;
-    runtime?: string;
-    runtimeArgs?: unknown;
-    configurationAttributes?: unknown;
-}
-
-export type RawSnippet = PluginPackageSnippetsContribution;
 
 export interface NormalizedSnippet {
     language?: string;
@@ -575,34 +538,80 @@ export interface NormalizedSnippet {
     uri: string;
 }
 
-export type RawTheme = PluginThemeContribution;
-
 export interface NormalizedTheme {
     id?: string;
     uri: string;
     description?: string;
     label?: string;
-    uiTheme?: string;
+    uiTheme?: PluginUiTheme;
 }
-
-export type RawIconTheme = PluginIconThemeContribution;
 
 export interface NormalizedIconTheme {
     id: string;
     uri: string;
     description?: string;
     label?: string;
-    uiTheme?: string;
+    uiTheme?: PluginUiTheme;
 }
 
 export interface NormalizedIcon {
     id: string;
     extensionId: string;
-    description: string;
+    description: string | undefined;
     defaults: { id: string } | { fontCharacter: string; location: string };
 }
 
 export interface NormalizedTerminalProfile {
     id: string;
     title: string;
+    icon?: string;
+}
+
+/** Normalized grammar contribution with inlined grammar file content. */
+export interface GrammarsContribution {
+    language?: string;
+    scope: string;
+    format: 'json' | 'plist';
+    grammar: string | object;
+    grammarLocation: string;
+    injectTo?: string[];
+    embeddedLanguages?: ScopeMap;
+    tokenTypes?: ScopeMap;
+    balancedBracketScopes?: string[];
+    unbalancedBracketScopes?: string[];
+}
+
+/**
+ * Output of {@link normalizeContributions}, plus optional `activationEvents`
+ */
+export interface NormalizedPluginContribution {
+    activationEvents?: string[];
+    authentication?: PluginPackageAuthenticationProvider[];
+    configuration?: PreferenceSchema[];
+    configurationDefaults?: JSONObject;
+    languages?: NormalizedLanguage[];
+    grammars?: GrammarsContribution[];
+    customEditors?: NormalizedCustomEditor[];
+    viewsContainers?: { [location: string]: NormalizedViewContainer[] };
+    views?: { [location: string]: PluginPackageView[] };
+    viewsWelcome?: NormalizedViewWelcome[];
+    commands?: NormalizedCommand[];
+    menus?: { [location: string]: PluginPackageMenu[] };
+    submenus?: NormalizedSubmenu[];
+    keybindings?: NormalizedKeybinding[];
+    debuggers?: PluginPackageDebuggersContribution[];
+    snippets?: NormalizedSnippet[];
+    themes?: NormalizedTheme[];
+    iconThemes?: NormalizedIconTheme[];
+    icons?: NormalizedIcon[];
+    colors?: ColorDefinition[];
+    taskDefinitions?: TaskDefinition[];
+    problemMatchers?: unknown;
+    problemPatterns?: unknown;
+    resourceLabelFormatters?: unknown;
+    localizations?: NormalizedLocalization[];
+    terminalProfiles?: NormalizedTerminalProfile[];
+    notebooks?: PluginPackageNotebook[];
+    notebookRenderer?: PluginNotebookRendererContribution[];
+    notebookPreload?: PluginPackageNotebookPreload[];
 }

@@ -32,10 +32,8 @@ import {
     PluginModel,
     PluginPackage,
     PluginPackageCommand,
-    PluginPackageContribution,
     PluginPackageCustomEditor,
     PluginPackageDebuggersContribution,
-    PluginPackageGrammarsContribution,
     PluginPackageKeybinding,
     PluginPackageLanguageContribution,
     PluginPackageLocalization,
@@ -59,14 +57,13 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
 import { GrammarsReader } from './grammars-reader';
-import { isENOENT } from '../../../common/errors';
+import { isENOENT } from '@theia/plugin-utils/lib/utils';
 import { PluginUriFactory } from './plugin-uri-factory';
 import { ILogger } from '@theia/core';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
-import { ColorDefinition } from '@theia/core/lib/common/color';
 import {
     extractPluginViewsIds as extractPluginViewsIdsShared,
     getScope as getScopeShared,
@@ -80,6 +77,8 @@ import {
     readIconThemes as readIconThemesShared,
     readKeybinding as readKeybindingShared,
     readLanguage as readLanguageShared,
+    readLocalization as readLocalizationShared,
+    readLocalizations as readLocalizationsShared,
     readMenu as readMenuShared,
     readSnippets as readSnippetsShared,
     readSubmenu as readSubmenuShared,
@@ -92,19 +91,19 @@ import {
     readViewWelcome as readViewWelcomeShared,
     toSchema as toSchemaShared,
     transformIconUrl as transformIconUrlShared,
-} from '@theia/plugin-utils/lib/normalize-contributions';
+} from '@theia/plugin-utils/lib/node/normalize-contributions';
 import type {
     IConfigurationNode,
     NormalizeContributionsContext,
 } from '@theia/plugin-utils/lib/contribution-types';
 import {
+    applyTrustExtraction as applyTrustExtractionShared,
+    buildEntryPointForTheia as buildEntryPointForTheiaShared,
     buildLifecycle,
     buildModelForTheia as buildModelForTheiaShared,
-    getPluginRootFileUrl as getPluginRootFileUrlShared,
     toPluginUrl as toPluginUrlShared
 } from '@theia/plugin-utils/lib/plugin-model';
-
-type PluginPackageWithContributes = PluginPackage & { contributes: PluginPackageContribution };
+import { getPluginRootFileUrl as getPluginRootFileUrlShared } from '@theia/plugin-utils/lib/node/plugin-model';
 
 @injectable()
 export abstract class AbstractPluginScanner implements PluginScanner {
@@ -135,8 +134,14 @@ export abstract class AbstractPluginScanner implements PluginScanner {
         result.engine.type = this._apiType;
         result.engine.version = plugin.engines[this._apiType] ?? '*';
         result.entryPoint = this.getEntryPoint(plugin);
-
+        result.licenseUrl = this.getLicenseUrl(plugin);
+        result.readmeUrl = this.getReadmeUrl(plugin);
+        this.applyTrustExtraction(plugin, result);
         return result;
+    }
+
+    protected applyTrustExtraction(plugin: PluginPackage, result: PluginModel): void {
+        applyTrustExtractionShared(plugin, result);
     }
 
     protected getReadmeUrl(plugin: PluginPackage): string | undefined {
@@ -179,10 +184,10 @@ export abstract class AbstractPluginScanner implements PluginScanner {
             return contributions;
         }
 
-        return this.readContributions(rawPlugin as PluginPackageWithContributes, contributions);
+        return this.readContributions(rawPlugin, contributions);
     }
 
-    protected async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
+    protected async readContributions(rawPlugin: PluginPackage, contributions: PluginContribution): Promise<PluginContribution> {
         return contributions;
     }
 
@@ -198,21 +203,14 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     protected readonly logger: ILogger;
 
     protected getEntryPoint(plugin: PluginPackage): PluginEntryPoint {
-        const result: PluginEntryPoint = {
-            frontend: plugin.theiaPlugin!.frontend,
-            backend: plugin.theiaPlugin!.backend
-        };
-        if (plugin.theiaPlugin?.headless) {
-            result.headless = plugin.theiaPlugin.headless;
-        }
-        return result;
+        return buildEntryPointForTheiaShared(plugin);
     }
 
     static getScope(monacoScope: string | undefined): { scope: PreferenceScope | undefined; overridable: boolean } {
         return getScopeShared(monacoScope);
     }
 
-    protected override async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
+    protected override async readContributions(rawPlugin: PluginPackage, contributions: PluginContribution): Promise<PluginContribution> {
         const ctx: NormalizeContributionsContext<PluginPackage> = {
             ...this.contributionCtx(rawPlugin),
             readConfiguration: this.readConfiguration.bind(this),
@@ -225,7 +223,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             readViewsWelcome: (welcome, views) => this.readViewsWelcome(welcome, views),
             readCommand: (command, plugin) => this.readCommand(command, plugin),
             readMenus: menus => this.readMenus(menus),
-            readTaskDefinition: (pluginName, definition) => this.readTaskDefinition(pluginName, definition as PluginTaskDefinitionContribution),
+            readTaskDefinition: (pluginName, definition) => this.readTaskDefinition(pluginName, definition),
             readSnippets: plugin => this.readSnippets(plugin),
             readThemes: plugin => this.readThemes(plugin),
             readIcons: plugin => this.readIcons(plugin),
@@ -239,15 +237,22 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected contributionCtx(pck: PluginPackage): NormalizeContributionsContext<PluginPackage> {
-        return {
+        const ctx: NormalizeContributionsContext<PluginPackage> = {
             plugin: pck,
             resolveUrl: relativePath => this.toPluginUrl(pck, relativePath),
             resolveUri: (_plugin, relativePath) => this.pluginUriFactory.createUri(pck, relativePath).toString(),
             onError: (type, err, detail) => this.logger.error(`Could not read '${pck.name}' contribution '${type}'.`, detail, err),
             onWarn: msg => this.logger.warn(msg),
             readJsonFile: filePath => this.readJson(filePath),
-            readGrammars: (grammars, pluginPath) => this.grammarsReader.readGrammars(grammars as PluginPackageGrammarsContribution[], pluginPath),
+            transformIconUrl: (plugin, original) => this.transformIconUrl(plugin, original),
+            toSchema: definition => this.toSchema(definition),
         };
+        ctx.readGrammars = (grammars, pluginPath) => this.grammarsReader.readGrammars(
+            grammars,
+            pluginPath,
+            ctx
+        );
+        return ctx;
     }
 
     protected readTerminals(pck: PluginPackage): TerminalProfile[] | undefined {
@@ -255,24 +260,15 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readLocalizations(pck: PluginPackage): Localization[] | undefined {
-        if (!pck.contributes?.localizations) {
-            return undefined;
-        }
-        return pck.contributes.localizations.map(entry => this.readLocalization(entry, pck.packagePath));
+        return readLocalizationsShared(pck);
     }
 
-    protected readLocalization({ languageId, languageName, localizedLanguageName, translations }: PluginPackageLocalization, pluginPath: string): Localization {
-        const local: Localization = {
-            languageId,
-            languageName,
-            localizedLanguageName,
-            translations: translations?.map(entry => this.readTranslation(entry, pluginPath)) ?? []
-        };
-        return local;
+    protected readLocalization(entry: PluginPackageLocalization, pluginPath: string): Localization {
+        return readLocalizationShared(entry, pluginPath);
     }
 
     protected readTranslation(packageTranslation: PluginPackageTranslation, pluginPath: string): Translation {
-        return readTranslationShared(packageTranslation, pluginPath) as Translation;
+        return readTranslationShared(packageTranslation, pluginPath);
     }
 
     protected readCommand(command: PluginPackageCommand, pck: PluginPackage): PluginCommand {
@@ -287,8 +283,8 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return toPluginUrlShared(pck, relativePath);
     }
 
-    protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
-        return readColorsShared(this.contributionCtx(pck), pck) as ColorDefinition[] | undefined;
+    protected readColors(pck: PluginPackage): ReturnType<typeof readColorsShared> {
+        return readColorsShared(this.contributionCtx(pck), pck);
     }
 
     protected readThemes(pck: PluginPackage): ReturnType<typeof readThemesShared> {
@@ -308,7 +304,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readConfiguration(rawConfiguration: IConfigurationNode, pluginPath: string): PreferenceSchema | undefined {
-        return readConfigurationShared(rawConfiguration, pluginPath) as PreferenceSchema | undefined;
+        return readConfigurationShared(rawConfiguration, pluginPath);
     }
 
     protected readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
@@ -320,7 +316,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readCustomEditor(rawCustomEditor: PluginPackageCustomEditor): CustomEditor {
-        return readCustomEditorShared(rawCustomEditor) as CustomEditor;
+        return readCustomEditorShared(rawCustomEditor);
     }
 
     protected readViewsContainers(rawViewsContainers: readonly PluginPackageViewContainer[], pck: PluginPackage): ViewContainer[] {
@@ -330,7 +326,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readViewContainer(rawViewContainer: PluginPackageViewContainer, pck: PluginPackage): ViewContainer | undefined {
-        return readViewContainerShared(this.contributionCtx(pck), rawViewContainer, pck) as ViewContainer | undefined;
+        return readViewContainerShared(this.contributionCtx(pck), rawViewContainer, pck);
     }
 
     protected readViews(rawViews: PluginPackageView[]): View[] {
@@ -382,15 +378,17 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readDebugger(rawDebugger: PluginPackageDebuggersContribution): DebuggerContribution {
-        return readDebuggerShared(rawDebugger) as DebuggerContribution;
+        return readDebuggerShared(rawDebugger);
     }
 
     protected readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
-        return readTaskDefinitionShared(pluginName, definitionContribution) as TaskDefinition;
+        return readTaskDefinitionShared(pluginName, definitionContribution, {
+            toSchema: definition => this.toSchema(definition)
+        });
     }
 
     protected toSchema(definition: PluginTaskDefinitionContribution): IJSONSchema {
-        return toSchemaShared(definition) as IJSONSchema;
+        return toSchemaShared(definition);
     }
 
     protected async readJson<T>(filePath: string): Promise<T | undefined> {

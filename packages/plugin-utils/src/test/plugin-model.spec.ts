@@ -35,10 +35,10 @@ import {
     buildModelForTheia,
     buildModelForVsCode,
     getPluginId,
-    getPluginRootFileUrl,
     pickEngineType,
     toPluginUrl
 } from '../plugin-model';
+import { getPluginRootFileUrl } from '../node/plugin-model';
 import { manifest } from './test-helpers';
 
 describe('plugin-model', () => {
@@ -54,9 +54,23 @@ describe('plugin-model', () => {
     });
 
     describe('toPluginUrl', () => {
-        it('encodes relative paths as a single hostedPlugin segment', () => {
+        it('encodes each path segment and keeps separators for static hosting', () => {
             const url = toPluginUrl({ publisher: 'vscode', name: 'theme-monokai' }, './themes/monokai-color-theme.json');
-            expect(url).to.equal('hostedPlugin/vscode_theme_monokai/.%2Fthemes%2Fmonokai-color-theme.json');
+            expect(url).to.equal('hostedPlugin/vscode_theme_monokai/themes/monokai-color-theme.json');
+        });
+
+        it('encodes special characters inside a segment', () => {
+            expect(toPluginUrl({ publisher: 'acme', name: 'ext' }, 'media/my icon.png'))
+                .to.equal('hostedPlugin/acme_ext/media/my%20icon.png');
+            expect(toPluginUrl({ publisher: 'acme', name: 'ext' }, '$(folder)'))
+                .to.equal('hostedPlugin/acme_ext/%24(folder)');
+        });
+
+        it('resolves .. within the plugin root and ignores leading ..', () => {
+            expect(toPluginUrl({ publisher: 'acme', name: 'ext' }, 'themes/../icons/a.png'))
+                .to.equal('hostedPlugin/acme_ext/icons/a.png');
+            expect(toPluginUrl({ publisher: 'acme', name: 'ext' }, '../secret.json'))
+                .to.equal('hostedPlugin/acme_ext/secret.json');
         });
     });
 
@@ -201,7 +215,7 @@ describe('plugin-model', () => {
                 engines: { vscode: '^1.90.0' }
             }), { uiKind: 'web' });
             expect(model.engine).to.deep.equal({ type: 'vscode', version: '^1.90.0' });
-            expect(model.iconUrl).to.equal('hostedPlugin/acme_icon_ext/.%2Fmedia%2Ficon.png');
+            expect(model.iconUrl).to.equal('hostedPlugin/acme_icon_ext/media/icon.png');
             expect(model.entryPoint.frontend).to.equal('./browser.js');
         });
 

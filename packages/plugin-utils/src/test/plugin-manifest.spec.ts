@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from '../constants';
-import { prepareLoadedManifest, loadManifest, stripVscodeBuiltinNamePrefix } from '../plugin-manifest';
+import { prepareLoadedManifest, stripVscodeBuiltinNamePrefix } from '../plugin-manifest';
+import { loadManifest } from '../node/plugin-manifest';
 import type { PluginManifest } from '../manifest-types';
 import * as fs from 'fs-extra';
 import * as os from 'os';

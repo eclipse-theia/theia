@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './local-utils';
-import type { PluginManifestContribution } from './contribution-types';
+import { isObject } from './utils';
+import type { NormalizedPluginContribution, PluginManifestContribution } from './contribution-types';
 
 export const PLUGIN_HOST_BACKEND = 'main' as const;
 
@@ -113,4 +113,14 @@ export interface PluginMetadata {
     outOfSync: boolean;
     /** Set when the plugin is loaded from a development workspace (e.g. plugin-dev). */
     isUnderDevelopment?: boolean;
+}
+
+/**
+ * Deployed plugin descriptor (runtime + browser-only `list.json`).
+ */
+export interface DeployedPlugin<TContributes = NormalizedPluginContribution> {
+    /** Defaults to {@link PluginType.System}. */
+    type?: PluginType;
+    metadata: PluginMetadata;
+    contributes?: TContributes;
 }

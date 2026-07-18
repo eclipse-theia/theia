@@ -35,11 +35,16 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     }
 
     override getModel(plugin: PluginPackage): PluginModel {
-        return buildModelForVsCode({
+        const result = buildModelForVsCode({
             ...plugin,
             publisher: plugin.publisher ?? PluginIdentifiers.UNPUBLISHED,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
         }, { uiKind: uiKind === UIKind.Web ? 'web' : 'desktop' });
+        // Master parity: route through overridable hooks (readme/license/trust).
+        result.licenseUrl = this.getLicenseUrl(plugin);
+        result.readmeUrl = this.getReadmeUrl(plugin);
+        this.applyTrustExtraction(plugin, result);
+        return result;
     }
 
     /**

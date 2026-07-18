@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { readGrammarFromDisk, isValidGrammarContribution } from '../read-grammars';
+import { readGrammarFromDisk, getGrammarContributionValidationError } from '../node/read-grammars';
 
 describe('readGrammarFromDisk', () => {
 
@@ -49,8 +49,25 @@ describe('readGrammarFromDisk', () => {
             grammarLocation: './sample.tmLanguage.json',
             injectTo: undefined,
             embeddedLanguages: undefined,
-            tokenTypes: undefined
+            tokenTypes: undefined,
+            balancedBracketScopes: undefined,
+            unbalancedBracketScopes: undefined
         });
+    });
+
+    it('passes through balanced and unbalanced bracket scopes', async () => {
+        await fs.writeJson(path.join(pluginRoot, 'sample.tmLanguage.json'), { scopeName: 'source.sample' });
+
+        const grammar = await readGrammarFromDisk({
+            language: 'sample',
+            scopeName: 'source.sample',
+            path: './sample.tmLanguage.json',
+            balancedBracketScopes: ['*'],
+            unbalancedBracketScopes: ['meta.template.expression']
+        }, pluginRoot);
+
+        expect(grammar!.balancedBracketScopes).to.deep.equal(['*']);
+        expect(grammar!.unbalancedBracketScopes).to.deep.equal(['meta.template.expression']);
     });
 
     it('reads plist grammar files as text', async () => {
@@ -66,30 +83,46 @@ describe('readGrammarFromDisk', () => {
         expect(grammar!.grammar).to.equal(plist);
     });
 
-    it('returns undefined for invalid manifest fields', async () => {
+    it('returns undefined for invalid manifest fields and reports via onError', async () => {
         await fs.writeJson(path.join(pluginRoot, 'sample.tmLanguage.json'), { scopeName: 'source.sample' });
+        const errors: Array<{ type: string; err: unknown }> = [];
+        const onError = (type: string, err: unknown): void => { errors.push({ type, err }); };
 
         expect(await readGrammarFromDisk({
             scopeName: '',
             path: './sample.tmLanguage.json'
-        }, pluginRoot)).to.equal(undefined);
+        }, pluginRoot, { onError })).to.equal(undefined);
 
         expect(await readGrammarFromDisk({
             scopeName: 'source.sample',
             path: ''
-        }, pluginRoot)).to.equal(undefined);
+        }, pluginRoot, { onError })).to.equal(undefined);
 
         expect(await readGrammarFromDisk({
             scopeName: 'source.sample',
             path: './sample.tmLanguage.json',
             injectTo: 'text.html.basic' as unknown as string[]
-        }, pluginRoot)).to.equal(undefined);
+        }, pluginRoot, { onError })).to.equal(undefined);
+
+        expect(errors).to.have.length(3);
+        expect(errors.every(e => e.type === 'grammars')).to.equal(true);
+        expect(String(errors[0].err)).to.contain('scopeName');
+        expect(String(errors[1].err)).to.contain('path');
+        expect(String(errors[2].err)).to.contain('injectTo');
     });
 
-    it('rejects grammar paths outside the plugin directory', async () => {
-        expect(isValidGrammarContribution({
+    it('rejects grammar paths outside the plugin directory with onError', async () => {
+        expect(getGrammarContributionValidationError({
             scopeName: 'source.sample',
             path: '../outside.tmLanguage.json'
-        }, pluginRoot)).to.equal(false);
+        }, pluginRoot)).to.contain('escapes the plugin directory');
+
+        const errors: unknown[] = [];
+        expect(await readGrammarFromDisk({
+            scopeName: 'source.sample',
+            path: '../outside.tmLanguage.json'
+        }, pluginRoot, { onError: (_type, err) => errors.push(err) })).to.equal(undefined);
+
+        expect(String(errors[0])).to.contain('escapes the plugin directory');
     });
 });

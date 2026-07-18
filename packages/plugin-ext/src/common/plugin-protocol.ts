@@ -17,9 +17,8 @@ import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
-import { CharacterPair, CommentRule, PluginAPIFactory, Plugin, ThemeIcon } from './plugin-api-rpc';
+import { PluginAPIFactory, Plugin } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
-import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
@@ -38,6 +37,7 @@ import {
     PluginModel,
     PluginPackageCapabilities,
     PluginType,
+    DeployedPlugin as DeployedPluginBase,
 } from '@theia/plugin-utils/lib/manifest-types';
 import {
     AutoClosingPair,
@@ -47,9 +47,7 @@ import {
     EnterAction,
     FoldingMarkers,
     FoldingRules,
-    type IconUrl,
     IndentationRules,
-    type JSONObject,
     OnEnterRule,
     PluginColorContribution,
     PluginIconContribution,
@@ -86,6 +84,25 @@ import {
     PlatformSpecificAdapterContribution,
     RegExpOptions,
     ScopeMap,
+    type GrammarsContribution,
+    type IconUrl,
+    type JSONObject,
+    type NormalizedCommand,
+    type NormalizedCustomEditor,
+    type NormalizedIcon,
+    type NormalizedIconTheme,
+    type NormalizedKeybinding,
+    type NormalizedLanguage,
+    type NormalizedLanguageConfiguration,
+    type NormalizedLocalization,
+    type NormalizedPluginContribution,
+    type NormalizedSnippet,
+    type NormalizedSubmenu,
+    type NormalizedTerminalProfile,
+    type NormalizedTheme,
+    type NormalizedTranslation,
+    type NormalizedViewContainer,
+    type NormalizedViewWelcome,
 } from '@theia/plugin-utils/lib/contribution-types';
 
 export { PluginIdentifiers };
@@ -133,6 +150,7 @@ export {
     EnterAction,
     FoldingMarkers,
     FoldingRules,
+    type GrammarsContribution,
     IndentationRules,
     OnEnterRule,
     PluginColorContribution,
@@ -386,121 +404,47 @@ export interface PluginDeployerDirectoryHandlerContext {
 }
 
 /**
- * This interface describes some static plugin contributions.
+ * Static plugin contributions after normalization.
+ * Narrows shim/`unknown` fields from {@link NormalizedPluginContribution} to core/task types.
  */
-export interface PluginContribution {
-    activationEvents?: string[];
-    authentication?: AuthenticationProviderInformation[];
+export type PluginContribution = Omit<NormalizedPluginContribution,
+    'configuration' | 'colors' | 'taskDefinitions' | 'problemMatchers' | 'problemPatterns' | 'resourceLabelFormatters'
+> & {
     configuration?: PreferenceSchema[];
-    configurationDefaults?: JSONObject;
-    languages?: LanguageContribution[];
-    grammars?: GrammarsContribution[];
-    customEditors?: CustomEditor[];
-    viewsContainers?: { [location: string]: ViewContainer[] };
-    views?: { [location: string]: View[] };
-    viewsWelcome?: ViewWelcome[];
-    commands?: PluginCommand[];
-    menus?: { [location: string]: Menu[] };
-    submenus?: Submenu[];
-    keybindings?: Keybinding[];
-    debuggers?: DebuggerContribution[];
-    snippets?: SnippetContribution[];
-    themes?: ThemeContribution[];
-    iconThemes?: IconThemeContribution[];
-    icons?: IconContribution[];
     colors?: ColorDefinition[];
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
-    localizations?: Localization[];
-    terminalProfiles?: TerminalProfile[];
-    notebooks?: NotebookContribution[];
-    notebookRenderer?: NotebookRendererContribution[];
-    notebookPreload?: notebookPreloadContribution[];
-}
-export interface NotebookContribution {
-    type: string;
-    displayName: string;
-    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
-    priority?: string;
-}
+};
 
-export interface NotebookRendererContribution {
-    readonly id: string;
-    readonly displayName: string;
-    readonly mimeTypes: string[];
-    readonly entrypoint: string | { readonly extends: string; readonly path: string };
-    readonly requiresMessaging?: 'always' | 'optional' | 'never'
-}
+export type NotebookContribution = PluginPackageNotebook;
 
-export interface notebookPreloadContribution {
-    type: string;
-    entrypoint: string;
-}
+export type NotebookRendererContribution = PluginNotebookRendererContribution;
 
-export interface AuthenticationProviderInformation {
-    id: string;
-    label: string;
-}
+export type notebookPreloadContribution = PluginPackageNotebookPreload;
 
-export interface TerminalProfile {
-    title: string,
-    id: string,
-    icon?: string
-}
+export type AuthenticationProviderInformation = PluginPackageAuthenticationProvider;
 
-export interface Localization {
-    languageId: string;
-    languageName?: string;
-    localizedLanguageName?: string;
-    translations: Translation[];
-    minimalTranslations?: { [key: string]: string };
-}
+export type TerminalProfile = NormalizedTerminalProfile;
 
-export interface Translation {
-    id: string;
-    path: string;
-    cachedContents?: { [scope: string]: { [key: string]: string } };
-}
+export type Localization = NormalizedLocalization;
 
-export interface SnippetContribution {
-    uri: string
-    source: string
-    language?: string
-}
+export type Translation = NormalizedTranslation;
 
-export type UiTheme = 'vs' | 'vs-dark' | 'hc-black';
+export type SnippetContribution = NormalizedSnippet;
 
-export interface ThemeContribution {
-    id?: string;
-    label?: string;
-    description?: string;
-    uri: string;
-    uiTheme?: UiTheme;
-}
+export type UiTheme = PluginUiTheme;
 
-export interface IconThemeContribution {
-    id: string;
-    label?: string;
-    description?: string;
-    uri: string;
-    uiTheme?: UiTheme;
-}
+export type ThemeContribution = NormalizedTheme;
 
-export interface IconDefinition {
-    fontCharacter: string;
-    location: string;
-}
+export type IconThemeContribution = NormalizedIconTheme;
 
-export type IconDefaults = ThemeIcon | IconDefinition;
+export type IconDefinition = Extract<NormalizedIcon['defaults'], { fontCharacter: string }>;
 
-export interface IconContribution {
-    id: string;
-    extensionId: string;
-    description: string | undefined;
-    defaults: IconDefaults;
-}
+export type IconDefaults = NormalizedIcon['defaults'];
+
+export type IconContribution = NormalizedIcon;
 
 export namespace IconContribution {
     export function isIconDefinition(defaults: IconDefaults): defaults is IconDefinition {
@@ -508,154 +452,48 @@ export namespace IconContribution {
     }
 }
 
-export interface GrammarsContribution {
-    format: 'json' | 'plist';
-    language?: string;
-    scope: string;
-    grammar?: string | object;
-    grammarLocation?: string;
-    embeddedLanguages?: ScopeMap;
-    tokenTypes?: ScopeMap;
-    injectTo?: string[];
-    balancedBracketScopes?: string[];
-    unbalancedBracketScopes?: string[];
-}
-
 /**
  * The language contribution
  */
-export interface LanguageContribution {
-    id: string;
-    extensions?: string[];
-    filenames?: string[];
-    filenamePatterns?: string[];
-    firstLine?: string;
-    aliases?: string[];
-    mimetypes?: string[];
-    configuration?: LanguageConfiguration;
-    /**
-     * @internal
-     */
-    icon?: IconUrl;
-}
+export type LanguageContribution = NormalizedLanguage;
 
-export interface LanguageConfiguration {
-    brackets?: CharacterPair[];
-    indentationRules?: IndentationRules;
-    surroundingPairs?: AutoClosingPair[];
-    autoClosingPairs?: AutoClosingPairConditional[];
-    comments?: CommentRule;
-    folding?: FoldingRules;
-    wordPattern?: string | RegExpOptions;
-    onEnterRules?: OnEnterRule[];
-}
+export type LanguageConfiguration = NormalizedLanguageConfiguration;
 
-/**
- * This interface describes a package.json debuggers contribution section object.
- */
-export interface DebuggerContribution extends PlatformSpecificAdapterContribution {
-    type: string,
-    label?: string,
-    languages?: string[],
-    enableBreakpointsFor?: {
-        languageIds: string[]
-    },
-    configurationAttributes?: {
-        [request: string]: IJSONSchema
-    },
-    configurationSnippets?: IJSONSchemaSnippet[],
-    variables?: ScopeMap,
-    adapterExecutableCommand?: string
-    win?: PlatformSpecificAdapterContribution;
-    winx86?: PlatformSpecificAdapterContribution;
-    windows?: PlatformSpecificAdapterContribution;
-    osx?: PlatformSpecificAdapterContribution;
-    linux?: PlatformSpecificAdapterContribution;
-}
+export type DebuggerContribution = PluginPackageDebuggersContribution;
 
 /**
  * Custom Editors contribution
  */
-export interface CustomEditor {
-    viewType: string;
-    displayName: string;
-    selector: CustomEditorSelector[];
-    priority: CustomEditorPriority;
-}
+export type CustomEditor = NormalizedCustomEditor;
 
 /**
  * Views Containers contribution
  */
-export interface ViewContainer {
-    id: string;
-    title: string;
-    iconUrl: string;
-    themeIcon?: string;
-    when?: string;
-}
+export type ViewContainer = NormalizedViewContainer;
 
 /**
  * View contribution
  */
-export interface View {
-    id: string;
-    name: string;
-    when?: string;
-    type?: string;
-}
+export type View = PluginPackageView;
 
 /**
  * View Welcome contribution
  */
-export interface ViewWelcome {
-    view: string;
-    content: string;
-    when?: string;
-    enablement?: string;
-    order: number;
-}
+export type ViewWelcome = NormalizedViewWelcome;
 
-export interface PluginCommand {
-    command: string;
-    title: string;
-    shortTitle?: string;
-    originalTitle?: string;
-    category?: string;
-    iconUrl?: IconUrl;
-    themeIcon?: string;
-    enablement?: string;
-}
+export type PluginCommand = NormalizedCommand;
 
 /**
  * Menu contribution
  */
-export interface Menu {
-    command?: string;
-    submenu?: string
-    alt?: string;
-    group?: string;
-    when?: string;
-}
+export type Menu = PluginPackageMenu;
 
-export interface Submenu {
-    id: string;
-    label: string;
-    icon?: IconUrl;
-}
+export type Submenu = NormalizedSubmenu;
 
 /**
  * Keybinding contribution
  */
-export interface Keybinding {
-    keybinding?: string;
-    command: string;
-    when?: string;
-    mac?: string;
-    linux?: string;
-    win?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args?: any;
-}
+export type Keybinding = NormalizedKeybinding;
 
 /**
  * The export function of initialization module of backend plugin.
@@ -741,14 +579,7 @@ export interface PluginDeployerHandler {
 
 }
 
-export interface DeployedPlugin {
-    /**
-     * defaults to system
-     */
-    type?: PluginType;
-    metadata: PluginMetadata;
-    contributes?: PluginContribution;
-}
+export type DeployedPlugin = DeployedPluginBase<PluginContribution>;
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends RpcServer<HostedPluginClient> {

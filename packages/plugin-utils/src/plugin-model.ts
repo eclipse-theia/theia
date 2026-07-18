@@ -14,8 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { readdirSync } from 'fs';
-import { pathToFileURL } from 'url';
 import {
     PLUGINS_BASE_PATH,
     THEIA_PLUGIN_START_METHOD,
@@ -47,8 +45,27 @@ export function getPluginId(plugin: PluginIdentifierSource): string {
     return `${plugin.publisher ?? UNPUBLISHED}_${plugin.name}`.replace(/\W/g, '_');
 }
 
+/**
+ * Builds a static-friendly plugin asset URL: `hostedPlugin/<id>/<segments...>`.
+ * Path separators stay literal `/`; each segment is `encodeURIComponent`'d so plain
+ * static file servers (browser-only) resolve assets without needing Express `:path(*)` decoding.
+ * `.` is dropped and `..` is resolved within the plugin root (leading `..` is ignored).
+ */
 export function toPluginUrl(pck: PluginIdentifierSource, relativePath: string): string {
-    return `${PLUGINS_BASE_PATH}/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
+    const segments: string[] = [];
+    for (const segment of relativePath.replace(/\\/g, '/').split('/')) {
+        if (!segment || segment === '.') {
+            continue;
+        }
+        if (segment === '..') {
+            // Drop parent segment when present; ignore leading `..` so URLs never contain
+            // literal `..` (encodeURIComponent does not encode dots).
+            segments.pop();
+            continue;
+        }
+        segments.push(encodeURIComponent(segment));
+    }
+    return `${PLUGINS_BASE_PATH}/${getPluginId(pck)}/${segments.join('/')}`;
 }
 
 /**
@@ -74,19 +91,13 @@ export function applyTrustExtraction(
     }
 }
 
-export function getPluginRootFileUrl(manifest: PluginIdentifierSource & { packagePath: string }, names: string[]): string | undefined {
-    const nameSet = new Set(names.map(n => n.toLowerCase()));
-    try {
-        const dir = readdirSync(manifest.packagePath, { withFileTypes: true });
-        for (const dirent of dir) {
-            if (dirent.isFile() && nameSet.has(dirent.name.toLowerCase())) {
-                return toPluginUrl(manifest, dirent.name);
-            }
-        }
-    } catch {
-        return undefined;
+/** Minimal `pathToFileURL(...).href` without importing Node's `url` (keeps this module worker-safe). */
+function pathToFileUrlHref(absolutePath: string): string {
+    const normalized = absolutePath.replace(/\\/g, '/');
+    if (/^[a-zA-Z]:\//.test(normalized)) {
+        return `file:///${normalized}`;
     }
-    return undefined;
+    return `file://${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
 }
 
 export function buildEntryPointForTheia(manifest: PluginManifest): PluginEntryPoint {
@@ -119,8 +130,9 @@ export function buildEntryPointForVsCode(manifest: PluginManifest, options?: VsC
 
 export function buildModelForTheia(manifest: PluginManifest): PluginModel {
     const publisher = manifest.publisher ?? UNPUBLISHED;
-    const packageUri = manifest.packageUri ?? pathToFileURL(manifest.packagePath).href;
-    const result: PluginModel = {
+    const packageUri = manifest.packageUri ?? pathToFileUrlHref(manifest.packagePath);
+
+    return {
         packagePath: manifest.packagePath,
         packageUri,
         id: `${publisher.toLowerCase()}.${manifest.name.toLowerCase()}`,
@@ -135,17 +147,13 @@ export function buildModelForTheia(manifest: PluginManifest): PluginModel {
             version: manifest.engines?.theiaPlugin ?? '*'
         },
         entryPoint: buildEntryPointForTheia(manifest),
-        licenseUrl: getPluginRootFileUrl(manifest, ['license', 'license.txt', 'license.md']),
-        readmeUrl: getPluginRootFileUrl(manifest, ['readme.md', 'readme.txt', 'readme'])
     };
-    applyTrustExtraction(manifest, result);
-    return result;
 }
 
 export function buildModelForVsCode(manifest: PluginManifest, options?: VsCodeBuildOptions): PluginModel {
     const publisher = manifest.publisher ?? UNPUBLISHED;
-    const packageUri = manifest.packageUri ?? pathToFileURL(manifest.packagePath).href;
-    const result: PluginModel = {
+    const packageUri = manifest.packageUri ?? pathToFileUrlHref(manifest.packagePath);
+    return {
         packagePath: manifest.packagePath,
         packageUri,
         id: `${publisher.toLowerCase()}.${manifest.name.toLowerCase()}`,
@@ -161,11 +169,7 @@ export function buildModelForVsCode(manifest: PluginManifest, options?: VsCodeBu
         },
         entryPoint: buildEntryPointForVsCode(manifest, options),
         iconUrl: manifest.icon ? toPluginUrl(manifest, manifest.icon) : undefined,
-        readmeUrl: getPluginRootFileUrl(manifest, ['readme.md', 'readme.txt', 'readme']),
-        licenseUrl: getPluginRootFileUrl(manifest, ['license', 'license.txt', 'license.md'])
     };
-    applyTrustExtraction(manifest, result);
-    return result;
 }
 
 export function buildModel(manifest: PluginManifest, engineType: 'theiaPlugin' | 'vscode', options?: VsCodeBuildOptions): PluginModel {

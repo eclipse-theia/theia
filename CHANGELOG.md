@@ -12,6 +12,8 @@
 - [ai-chat-ui] replaced scroll-direction heuristics in `ChatViewTreeWidget` with Virtuoso's `atBottomStateChange` for reliable auto-scroll during streaming [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [ai-vercel-ai] deprecated `@theia/ai-vercel-ai` package [#TBD](https://github.com/eclipse-theia/theia/pull/TBD)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0 (Node 24, Chromium 148) [#17586](https://github.com/eclipse-theia/theia/pull/17586)
+- [plugin-utils] added `@theia/plugin-utils` for shared plugin manifest utilities; browser-only builds prepare plugins into `hostedPlugin/` with `list.json` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 
 <a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
 
@@ -19,6 +21,8 @@
 - [ai-vercel-ai] deprecated the `@theia/ai-vercel-ai` experimental extension and stopped publishing it on npm. Please use the dedicated `@theia/ai-openai` and `@theia/ai-anthropic` providers instead, which cover the same models with first-class support. [#TBD](https://github.com/eclipse-theia/theia/pull/TBD)
 - [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0. Downstream Electron applications must update their `electron` devDependency to `42.3.0`. Electron 42 bundles Node 24 (up from Node 22), which may affect native modules or Node APIs used by downstream applications. See the Electron breaking changes for [40.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-400), [41.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-410), and [42.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-420). [#17586](https://github.com/eclipse-theia/theia/pull/17586)
+- [plugin-ext] rejected grammar paths outside the plugin directory [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] encoded `toPluginUrl` path segments separately for static hosting [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 
 ## 1.73.0 - 6/25/2026
 

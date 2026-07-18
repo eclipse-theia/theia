@@ -18,7 +18,8 @@ import { expect } from 'chai';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { coerceLocalizations, localizePackage, localizeWithResolver, loadPackageTranslations } from '../package-nls';
+import { coerceLocalizations, localizePackage, localizeWithResolver } from '../package-nls';
+import { loadPackageTranslations } from '../node/package-nls';
 
 describe('package-nls', () => {
 

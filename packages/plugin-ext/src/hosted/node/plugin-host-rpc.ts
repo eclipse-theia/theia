@@ -35,7 +35,7 @@ import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
 import { ClipboardExt } from '../../plugin/clipboard-ext';
-import { loadManifest } from '@theia/plugin-utils/lib/plugin-manifest';
+import { loadManifest } from '@theia/plugin-utils/lib/node/plugin-manifest';
 import { KeyValueStorageProxy } from '../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';

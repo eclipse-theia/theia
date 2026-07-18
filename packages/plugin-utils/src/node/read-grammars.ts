@@ -16,56 +16,60 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import { isObject } from './local-utils';
-import type { PluginPackageGrammarsContribution, ScopeMap } from './contribution-types';
+import { isObject } from '../utils';
+import type {
+    GrammarsContribution,
+    NormalizeContributionsContext,
+    PluginPackageGrammarsContribution,
+} from '../contribution-types';
 
-/** Normalized grammar contribution with inlined grammar file content. */
-export interface GrammarsContribution {
-    language?: string;
-    scope: string;
-    format: 'json' | 'plist';
-    grammar: string | object;
-    grammarLocation: string;
-    injectTo?: string[];
-    embeddedLanguages?: ScopeMap;
-    tokenTypes?: ScopeMap;
-}
+export type { GrammarsContribution } from '../contribution-types';
 
-/** Mirrors VS Code `validateGrammarExtensionPoint` manifest checks (without language registry lookup). */
-export function isValidGrammarContribution(rawGrammar: PluginPackageGrammarsContribution, pluginPath: string): boolean {
+/**
+ * Returns a validation error message, or `undefined` if the contribution is valid.
+ * Mirrors VS Code `validateGrammarExtensionPoint` manifest checks (without language registry lookup),
+ * plus a path-containment guard against escaping the plugin directory.
+ */
+export function getGrammarContributionValidationError(
+    rawGrammar: PluginPackageGrammarsContribution,
+    pluginPath: string
+): string | undefined {
     if (typeof rawGrammar.scopeName !== 'string' || rawGrammar.scopeName.length === 0) {
-        return false;
+        return `Invalid grammar contribution: 'scopeName' must be a non-empty string (path: ${String(rawGrammar.path)}).`;
     }
     if (typeof rawGrammar.path !== 'string' || rawGrammar.path.length === 0) {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': 'path' must be a non-empty string.`;
     }
     if (rawGrammar.language !== undefined && typeof rawGrammar.language !== 'string') {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': 'language' must be a string when set.`;
     }
     if (rawGrammar.injectTo !== undefined
         && (!Array.isArray(rawGrammar.injectTo) || rawGrammar.injectTo.some(scope => typeof scope !== 'string'))) {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': 'injectTo' must be a string array when set.`;
     }
     if (rawGrammar.embeddedLanguages !== undefined && !isObject(rawGrammar.embeddedLanguages)) {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': 'embeddedLanguages' must be an object when set.`;
     }
     if (rawGrammar.tokenTypes !== undefined && !isObject(rawGrammar.tokenTypes)) {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': 'tokenTypes' must be an object when set.`;
     }
     const resolvedPluginPath = path.resolve(pluginPath);
     const grammarPath = path.resolve(resolvedPluginPath, rawGrammar.path);
     const relativePath = path.relative(resolvedPluginPath, grammarPath);
     if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-        return false;
+        return `Invalid grammar contribution '${rawGrammar.scopeName}': path '${rawGrammar.path}' escapes the plugin directory.`;
     }
-    return true;
+    return undefined;
 }
 
 export async function readGrammarFromDisk(
     rawGrammar: PluginPackageGrammarsContribution,
-    pluginPath: string
+    pluginPath: string,
+    log?: Pick<NormalizeContributionsContext, 'onError'>
 ): Promise<GrammarsContribution | undefined> {
-    if (!isValidGrammarContribution(rawGrammar, pluginPath)) {
+    const validationError = getGrammarContributionValidationError(rawGrammar, pluginPath);
+    if (validationError) {
+        log?.onError('grammars', validationError);
         return undefined;
     }
 
@@ -86,6 +90,8 @@ export async function readGrammarFromDisk(
         grammarLocation: rawGrammar.path,
         injectTo: rawGrammar.injectTo,
         embeddedLanguages: rawGrammar.embeddedLanguages,
-        tokenTypes: rawGrammar.tokenTypes
+        tokenTypes: rawGrammar.tokenTypes,
+        balancedBracketScopes: rawGrammar.balancedBracketScopes,
+        unbalancedBracketScopes: rawGrammar.unbalancedBracketScopes
     };
 }

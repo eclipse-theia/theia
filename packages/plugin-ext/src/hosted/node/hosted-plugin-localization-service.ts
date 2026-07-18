@@ -25,7 +25,7 @@ import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { Disposable, DisposableCollection, MaybePromise, nls, Path, URI, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
-import { localizePackage, loadPackageTranslations } from '@theia/plugin-utils/lib/package-nls';
+import { localizePackage, loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
 
 export interface VSCodeNlsConfig {
     locale: string

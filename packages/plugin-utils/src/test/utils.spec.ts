@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { deepClone, isObject, isStringArray } from '../local-utils';
+import { rejects } from 'assert';
+import { promises as fs } from 'fs';
+import { deepClone, isENOENT, isObject, isStringArray } from '../utils';
 
-describe('local-utils', () => {
+describe('utils', () => {
 
     describe('isObject', () => {
         it('returns true for plain objects', () => {
@@ -46,6 +48,22 @@ describe('local-utils', () => {
         it('returns false for mixed or non-array values', () => {
             expect(isStringArray(['a', 1])).to.equal(false);
             expect(isStringArray('a')).to.equal(false);
+        });
+    });
+
+    describe('isENOENT', () => {
+        it('detects fs ENOENT errors', async () => {
+            await rejects(fs.readFile('definitely-missing-' + Date.now()), reason => isENOENT(reason));
+        });
+
+        it('returns false for plain errors and null', () => {
+            expect(isENOENT(new Error('I am not ENOENT'))).to.equal(false);
+            // eslint-disable-next-line no-null/no-null
+            expect(isENOENT(null)).to.equal(false);
+        });
+
+        it('returns false for other errno codes', async () => {
+            await rejects(fs.readdir(__filename), reason => !isENOENT(reason));
         });
     });
 

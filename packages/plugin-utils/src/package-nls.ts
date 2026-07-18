@@ -14,15 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * Localization for package.json contribution strings (%key% placeholders).
- * Used by the backend when serving deployed plugins and by browser-only build prepare
- * so the frontend receives already-localized data.
- */
-
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import { isObject, isENOENT } from './local-utils';
+import { isObject } from './utils';
 
 export interface PackageTranslation {
     translation?: Record<string, string>;
@@ -100,30 +92,4 @@ export function localizePackage<T>(
         }
         return undefined;
     });
-}
-
-/**
- * Reads `package.nls.json` and optionally `package.nls.<locale>.json` from a plugin directory.
- * Returns `{}` when no default bundle exists.
- */
-export async function loadPackageTranslations(pluginPath: string, locale?: string): Promise<PackageTranslation> {
-    const defaultPath = path.join(pluginPath, 'package.nls.json');
-    try {
-        const defaultValue = coerceLocalizations(await fs.readJson(defaultPath));
-        if (locale) {
-            const localizedPath = path.join(pluginPath, `package.nls.${locale}.json`);
-            if (await fs.pathExists(localizedPath)) {
-                return {
-                    translation: coerceLocalizations(await fs.readJson(localizedPath)),
-                    default: defaultValue
-                };
-            }
-        }
-        return { default: defaultValue };
-    } catch (error) {
-        if (isENOENT(error)) {
-            return {};
-        }
-        throw error;
-    }
 }
