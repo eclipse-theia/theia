@@ -14,19 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
+import { TabBar, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
-import { Disposable, DisposableCollection, Emitter, SelectionService, UNTITLED_SCHEME } from '@theia/core/lib/common';
+import { Event, SelectionService, UNTITLED_SCHEME } from '@theia/core/lib/common';
+import { PreviewTabWidget, PreviewTabSupport } from './preview-tab-widget';
 
-const PREVIEW_TITLE_CLASS = 'theia-editor-preview-title-unpinned';
-export class EditorPreviewWidget extends EditorWidget {
-    protected _isPreview = false;
+export class EditorPreviewWidget extends EditorWidget implements PreviewTabWidget {
 
-    protected readonly onDidChangePreviewStateEmitter = new Emitter<void>();
-    readonly onDidChangePreviewState = this.onDidChangePreviewStateEmitter.event;
+    protected readonly previewSupport: PreviewTabSupport;
 
     get isPreview(): boolean {
-        return this._isPreview;
+        return this.previewSupport.isPreview;
+    }
+
+    get onDidChangePreviewState(): Event<void> {
+        return this.previewSupport.onDidChangePreviewState;
     }
 
     constructor(
@@ -34,50 +36,30 @@ export class EditorPreviewWidget extends EditorWidget {
         selectionService: SelectionService
     ) {
         super(editor, selectionService);
-        this.toDispose.push(this.onDidChangePreviewStateEmitter);
+        this.previewSupport = new PreviewTabSupport({
+            title: this.title,
+            saveable: this.saveable,
+            toDispose: this.toDispose,
+            onConvertToNonPreview: () => this.tabBarTracker.reset()
+        });
     }
 
     initializePreview(): void {
-        const oneTimeListeners = new DisposableCollection();
-        this._isPreview = true;
-        this.title.className += ` ${PREVIEW_TITLE_CLASS}`;
-        const oneTimeDirtyChangeListener = this.saveable.onDirtyChanged(() => {
-            this.convertToNonPreview();
-            oneTimeListeners.dispose();
-        });
-        oneTimeListeners.push(oneTimeDirtyChangeListener);
-        const oneTimeTitleChangeHandler = () => {
-            if (this.title.className.includes(PINNED_CLASS)) {
-                this.convertToNonPreview();
-                oneTimeListeners.dispose();
-            }
-        };
-        this.title.changed.connect(oneTimeTitleChangeHandler);
-        oneTimeListeners.push(Disposable.create(() => this.title.changed.disconnect(oneTimeTitleChangeHandler)));
-        this.toDispose.push(oneTimeListeners);
+        this.previewSupport.initializePreview();
     }
 
     convertToNonPreview(): void {
-        if (this._isPreview) {
-            this._isPreview = false;
-            this.currentTabbar = undefined;
-            this.title.className = this.title.className.replace(PREVIEW_TITLE_CLASS, '');
-            this.onDidChangePreviewStateEmitter.fire();
-            this.onDidChangePreviewStateEmitter.dispose();
-        }
+        this.previewSupport.convertToNonPreview();
     }
 
     protected override handleTabBarChange(oldTabBar?: TabBar<Widget> | undefined, newTabBar?: TabBar<Widget> | undefined): void {
         super.handleTabBarChange(oldTabBar, newTabBar);
-        if (this._isPreview) {
-            if (oldTabBar && newTabBar) { this.convertToNonPreview(); }
-        }
+        this.previewSupport.handleTabBarChange(oldTabBar, newTabBar);
     }
 
     override storeState(): { isPreview: boolean, editorState: object } | undefined {
         if (this.getResourceUri()?.scheme !== UNTITLED_SCHEME) {
-            const { _isPreview: isPreview } = this;
-            return { isPreview, editorState: this.editor.storeViewState() };
+            return { isPreview: this.isPreview, editorState: this.editor.storeViewState() };
         }
     }
 

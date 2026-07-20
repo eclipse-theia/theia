@@ -23,6 +23,9 @@ import { CustomEditorWidget } from './custom-editor-widget';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { DisposableCollection, Emitter, PreferenceService } from '@theia/core';
+import { EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { PreviewTabWidget } from '@theia/editor-preview/lib/browser/preview-tab-widget';
+import { ENABLE_PREVIEW_PREFERENCE } from '@theia/editor-preview/lib/common/editor-preview-preferences';
 import { match } from '@theia/core/lib/common/glob';
 import { Schemes } from '../../../common/uri-components';
 
@@ -102,10 +105,11 @@ export class CustomEditorOpener implements OpenHandler {
     }
 
     protected readonly pendingWidgetPromises = new Map<string, Promise<CustomEditorWidget>>();
-    protected async openCustomEditor(uri: URI, options?: WidgetOpenerOptions): Promise<CustomEditorWidget> {
+    protected async openCustomEditor(uri: URI, options?: EditorOpenerOptions): Promise<CustomEditorWidget> {
         let widget: CustomEditorWidget | undefined;
         let isNewWidget = false;
         const uriString = uri.toString();
+        const preview = this.isPreviewEnabled(options);
         let widgetPromise = this.pendingWidgetPromises.get(uriString);
         if (widgetPromise) {
             widget = await widgetPromise;
@@ -120,9 +124,16 @@ export class CustomEditorOpener implements OpenHandler {
                         w.viewType = this.editor.viewType;
                         w.resource = uri;
                         w.updateID();
+                        if (preview) {
+                            w.initializePreview();
+                        }
                         await this.editorRegistry.resolveWidget(w);
                         if (options?.widgetOptions) {
                             await this.shell.addWidget(w, options.widgetOptions);
+                            if (preview) {
+                                // Dispose the superseded preview as soon as the new preview tab attaches.
+                                PreviewTabWidget.disposeOtherPreviews(this.shell, w);
+                            }
                         }
                         return w;
                     } catch (e) {
@@ -134,6 +145,9 @@ export class CustomEditorOpener implements OpenHandler {
                 widget = await widgetPromise;
             }
         }
+        if (!isNewWidget && !preview && widget.isPreview) {
+            widget.convertToNonPreview();
+        }
         if (options?.mode === 'activate') {
             await this.shell.activateWidget(widget.id);
         } else if (options?.mode === 'reveal') {
@@ -143,6 +157,10 @@ export class CustomEditorOpener implements OpenHandler {
             this.onDidOpenCustomEditorEmitter.fire([widget, options]);
         }
         return widget;
+    }
+
+    protected isPreviewEnabled(options?: EditorOpenerOptions): boolean {
+        return !!options?.preview && !!this.preferenceService.get<boolean>(ENABLE_PREVIEW_PREFERENCE);
     }
 
     protected async openSideBySide(uri: URI, options?: WidgetOpenerOptions): Promise<Widget | undefined> {
