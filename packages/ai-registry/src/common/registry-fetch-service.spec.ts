@@ -101,7 +101,7 @@ describe('RegistryFetchService', () => {
     it('fetches the per-tool JSON from <baseUrl>/tools/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
@@ -122,7 +122,7 @@ describe('RegistryFetchService', () => {
     it('fetches the aggregate registry from <baseUrl>/all.json for the default "all" tool', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('all', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
 
@@ -132,7 +132,7 @@ describe('RegistryFetchService', () => {
     it('fetches and resolves skill entries from the same per-tool JSON', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const skills = await service.getSkillEntries();
 
@@ -150,7 +150,7 @@ describe('RegistryFetchService', () => {
     it('shares a single HTTP request between MCP and skill slices', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getSkillEntries();
@@ -161,7 +161,7 @@ describe('RegistryFetchService', () => {
     it('serves cached entries on a second call without issuing a new request', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries();
@@ -172,7 +172,7 @@ describe('RegistryFetchService', () => {
     it('refetches when forceRefresh is true', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries(true);
@@ -183,7 +183,7 @@ describe('RegistryFetchService', () => {
     it('throws a descriptive error when the server returns a non-success status', async () => {
         const request = new FakeRequestService('', 404);
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
-        const service = await buildContainer(request, config).getAsync<RegistryFetchService>(RegistryFetchService);
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         let caught: Error | undefined;
         try {

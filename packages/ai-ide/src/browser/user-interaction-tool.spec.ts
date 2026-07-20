@@ -74,7 +74,7 @@ describe('UserInteractionTool', () => {
     beforeEach(() => {
         container = new Container();
 
-        container.bind(ILogger).toConstantValue(new MockLogger());
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         mockWorkspaceScope = {
             resolveRelativePath: sinon.stub().callsFake((path: string) => workspaceRoot.resolve(path)),

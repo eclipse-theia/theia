@@ -39,6 +39,7 @@ import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const makeTrustAwareReader = (): AiConfigurationService => ({
     get: <T>(_name: string, fallback?: T) => fallback,
@@ -74,7 +75,7 @@ describe('Launch Management Tool Providers', () => {
 
     beforeEach(() => {
         container = new Container();
-        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         const mockWorkspaceService = {
             tryGetRoots: () => [
@@ -381,7 +382,7 @@ describe('Launch Management Tool Providers', () => {
     describe('Multi-root disambiguation', () => {
         it('should report ambiguity when same config name exists in multiple roots', async () => {
             const multiRootContainer = new Container();
-            multiRootContainer.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
+            multiRootContainer.bind(ILogger).to(MockLogger).inSingletonScope();
 
             const multiRootWorkspaceService = {
                 tryGetRoots: () => [

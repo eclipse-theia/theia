@@ -42,6 +42,7 @@ import { WorkspaceFunctionScope } from './workspace-functions';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -103,8 +104,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         } as ChangeSetFileElement);
 
         // Register mocks in the container
-        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
-        container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();

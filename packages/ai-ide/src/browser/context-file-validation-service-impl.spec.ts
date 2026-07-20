@@ -30,6 +30,7 @@ import { ContextFileValidationServiceImpl } from './context-file-validation-serv
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -68,8 +69,7 @@ describe('ContextFileValidationService', () => {
 
     beforeEach(async () => {
         container = new Container();
-        container.bind(ILogger).toConstantValue({ warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger);
-
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         // Mock WorkspaceService
         mockWorkspaceService = {
             tryGetRoots: () => [{
