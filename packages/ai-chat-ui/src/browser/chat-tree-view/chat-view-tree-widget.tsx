@@ -545,36 +545,38 @@ export class ChatViewTreeWidget extends TreeWidget {
                 )}
                 {inProgress && !waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
                     </span>}
                 {inProgress && waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
                     </span>}
-                <div className='theia-ChatNodeToolbar'>
-                    {!inProgress &&
-                        toolbarContributions.length > 0 &&
-                        toolbarContributions.map(action =>
-                            <span
-                                key={action.commandId}
-                                className={`theia-ChatNodeToolbarAction ${action.icon}`}
-                                title={action.tooltip}
-                                aria-label={action.tooltip}
-                                tabIndex={0}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    this.commandRegistry.executeCommand(action.commandId, node);
-                                }}
-                                onKeyDown={e => {
-                                    if (isEnterKey(e)) {
+                {!inProgress &&
+                    <div className='theia-ChatNodeToolbar'>
+                        {toolbarContributions.length > 0 &&
+                            toolbarContributions.map(action =>
+                                <span
+                                    key={action.commandId}
+                                    className={`theia-ChatNodeToolbarAction ${action.icon}`}
+                                    title={action.tooltip}
+                                    aria-label={action.tooltip}
+                                    tabIndex={0}
+                                    onClick={e => {
                                         e.stopPropagation();
                                         this.commandRegistry.executeCommand(action.commandId, node);
-                                    }
-                                }}
-                                role='button'
-                            ></span>
-                        )}
-                </div>
+                                    }}
+                                    onKeyDown={e => {
+                                        if (isEnterKey(e)) {
+                                            e.stopPropagation();
+                                            this.commandRegistry.executeCommand(action.commandId, node);
+                                        }
+                                    }}
+                                    role='button'
+                                ></span>
+                            )}
+                    </div>}
             </div>
         </React.Fragment>;
     }
