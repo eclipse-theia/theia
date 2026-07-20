@@ -46,46 +46,30 @@ div:last-child>.theia-ChatNode {
   font-size: 13px;
   font-weight: 600;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Keep the agent name for as long as possible: badges shrink first, the name only truncates as a
+     last resort (after the badges), and the status never shrinks. */
+  flex-shrink: 1;
 }
 
 .theia-ChatNodeHeader .theia-ChatContentInProgress {
-  color: var(--theia-disabledForeground);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  /* Always keep the live status visible and anchored to the right, whatever the name/badge length. */
+  margin-left: auto;
+  flex-shrink: 0;
   white-space: nowrap;
+  color: var(--theia-progressBar-background);
 }
 
 .theia-ChatNodeHeader .theia-ChatContentInProgress-Cancel {
   position: absolute;
   z-index: 999;
   right: 20px;
-}
-
-@keyframes dots {
-
-  0%,
-  20% {
-    content: "";
-  }
-
-  40% {
-    content: ".";
-  }
-
-  60% {
-    content: "..";
-  }
-
-  80%,
-  100% {
-    content: "...";
-  }
-}
-
-.theia-ChatNodeHeader .theia-ChatContentInProgress::after {
-  content: "";
-  animation: dots 1s steps(1, end) infinite;
-  display: inline-block;
-  width: 3ch;
-  text-align: left;
 }
 
 .theia-ChatNode .codicon {
@@ -112,6 +96,17 @@ div:last-child>.theia-ChatNode {
   color: var(--theia-editorWarning-foreground);
   background-color: var(--theia-inputValidation-warningBackground);
   border: 1px solid var(--theia-editorWarning-foreground);
+}
+
+/* In the crowded header the badges may be long; let both ellipsize together (with equal priority),
+   before the agent name and without pushing the live status out. The full text stays available via
+   each badge's hover tooltip. */
+.theia-ChatNodeHeader .theia-PromptVariantBadge,
+.theia-ChatNodeHeader .theia-ModelBadge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 100;
 }
 
 .theia-ChatNode .theia-ChatNodeToolbar {
