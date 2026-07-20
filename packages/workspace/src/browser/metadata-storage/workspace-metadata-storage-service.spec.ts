@@ -280,7 +280,7 @@ describe('WorkspaceMetadataStorageService', () => {
             const store = await service.getOrCreateStore('feature');
 
             expect(store).to.exist;
-            expect(logger.warn.calledOnce).to.be.true;
+            expect(logger.getLogs('warn').length).to.equal(1);
         });
 
         it('should create metadata root directory when saving index', async () => {
