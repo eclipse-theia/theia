@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { ILogger, MessageService, nls } from '@theia/core';
+import { ContributionProvider, ILogger, MessageService, nls } from '@theia/core';
+import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
 import { SECOND_INSTANCE_ARGS_PARAM, SecondInstanceArgv } from '@theia/core/lib/common/window';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
 
@@ -36,6 +37,9 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
 
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
+
+    @inject(ContributionProvider) @named(RemoteCliArgsContribution)
+    protected readonly remoteCliArgsContributions: ContributionProvider<RemoteCliArgsContribution>;
 
     registerRemoteCommands(): void {
         // no commands to register — this contribution only handles startup
@@ -84,6 +88,7 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
                 workspacePath,
                 devcontainerFile,
                 nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+                additionalArgs: await this.collectRemoteCliArgs(),
             });
 
             this.logger.info(`CLI: startup attach ready, proxy on port ${result.port}, workspace: ${result.workspacePath}`);
@@ -116,6 +121,23 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
             return { containerId, scanForDevJson: !SecondInstanceArgv.isNegated(forwarded, 'dev-json') };
         }
         return this.connectionProvider.getAttachContainerArgs();
+    }
+
+    /**
+     * Collects extra CLI arguments to pass to the container's remote backend from all
+     * {@link RemoteCliArgsContribution}s. This carries per-window options (e.g. forwarded
+     * `--session-preference` values) that the shared local backend cannot provide.
+     */
+    protected async collectRemoteCliArgs(): Promise<string[]> {
+        const args: string[] = [];
+        for (const contribution of this.remoteCliArgsContributions.getContributions()) {
+            try {
+                args.push(...await contribution.getRemoteCliArgs());
+            } catch (e) {
+                this.logger.warn('CLI: Failed to collect remote CLI args from a contribution:', e);
+            }
+        }
+        return args;
     }
 
     /**

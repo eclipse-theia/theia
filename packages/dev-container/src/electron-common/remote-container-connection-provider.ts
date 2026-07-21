@@ -64,6 +64,11 @@ export interface AttachContainerOptions {
     workspacePath: string;
     nodeDownloadTemplate?: string;
     devcontainerFile?: string;
+    /**
+     * Additional CLI arguments to pass to the container's remote backend, e.g. the
+     * `--session-preference` values forwarded to a second-instance window.
+     */
+    additionalArgs?: string[];
 }
 
 export interface AttachContainerArgs {

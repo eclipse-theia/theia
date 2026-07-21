@@ -65,10 +65,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
      * shell argument parsing intact.
      */
     enhanceArgs(_context: RemoteCliContext): string[] {
-        return this.sessionPreferences.map(([key, value]) => {
-            const encoded = Buffer.from(JSON.stringify(value), 'utf-8').toString('base64');
-            return `--session-preference=${key}=base64:${encoded}`;
-        });
+        return this.sessionPreferences.map(entry => CliPreferenceEntry.toArg('session-preference', entry));
     }
 
 }

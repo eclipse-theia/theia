@@ -38,6 +38,14 @@ class TestDevContainerStartupContribution extends DevContainerStartupContributio
         };
         return this.resolveAttachArgs();
     }
+
+    collect(contributionArgs: string[][]): Promise<string[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this as any).remoteCliArgsContributions = {
+            getContributions: () => contributionArgs.map(args => ({ getRemoteCliArgs: () => args }))
+        };
+        return this.collectRemoteCliArgs();
+    }
 }
 
 describe('DevContainerStartupContribution#resolveAttachArgs', () => {
@@ -85,5 +93,12 @@ describe('DevContainerStartupContribution#resolveAttachArgs', () => {
 
         expect(result).to.be.undefined;
         expect(contribution.backendCalls).to.equal(0);
+    });
+
+    describe('#collectRemoteCliArgs', () => {
+        it('flattens the args from every contribution', async () => {
+            const args = await contribution.collect([['--session-preference=a=base64:MQ=='], [], ['--x', '--y']]);
+            expect(args).to.deep.equal(['--session-preference=a=base64:MQ==', '--x', '--y']);
+        });
     });
 });

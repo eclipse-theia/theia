@@ -50,6 +50,17 @@ export namespace CliPreferenceEntry {
     }
 
     /**
+     * Formats a preference entry as a CLI argument of the form
+     * `--<optionName>=<key>=base64:<base64(JSON(value))>`, the inverse of {@link parse}.
+     *
+     * The value is base64-encoded so it survives shell/URL transport intact (e.g. when the
+     * argument is passed to a remote backend over an SSH command line).
+     */
+    export function toArg(optionName: string, [key, value]: [string, unknown]): string {
+        return `--${optionName}=${key}=base64:${encodeBase64(JSON.stringify(value))}`;
+    }
+
+    /**
      * Parses a list of `KEY=JSONVALUE` assignments, dropping any invalid entries.
      */
     export function parseAll(entries: readonly string[]): [string, unknown][] {
@@ -71,5 +82,18 @@ export namespace CliPreferenceEntry {
         const binary = atob(value);
         const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
         return new TextDecoder().decode(bytes);
+    }
+
+    function encodeBase64(value: string): string {
+        if (typeof Buffer !== 'undefined') {
+            return Buffer.from(value, 'utf-8').toString('base64');
+        }
+        // Browser fallback: encode as UTF-8 bytes before `btoa`, which only handles binary strings.
+        const bytes = new TextEncoder().encode(value);
+        let binary = '';
+        for (const byte of bytes) {
+            binary += String.fromCharCode(byte);
+        }
+        return btoa(binary);
     }
 }

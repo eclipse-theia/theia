@@ -318,7 +318,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             try {
                 report('Connecting to remote system...');
 
-                const result = await this.setupRemoteConnection(container, docker, config, options.nodeDownloadTemplate, report);
+                const result = await this.setupRemoteConnection(container, docker, config, options.nodeDownloadTemplate, report, options.additionalArgs);
                 remote = result.remote;
 
                 if (options.devcontainerFile) {
@@ -378,7 +378,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
      */
     protected async setupRemoteConnection(
         container: Docker.Container, docker: Docker, config: DevContainerConfiguration,
-        nodeDownloadTemplate: string | undefined, report: RemoteStatusReport
+        nodeDownloadTemplate: string | undefined, report: RemoteStatusReport, additionalArgs?: string[]
     ): Promise<{ localPort: number; remote: RemoteDockerContainerConnection }> {
         const remote = new RemoteDockerContainerConnection({
             id: generateUuid(),
@@ -395,7 +395,8 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
-                nodeDownloadTemplate
+                nodeDownloadTemplate,
+                additionalArgs
             });
         } catch (e) {
             remote.dispose();

@@ -55,4 +55,19 @@ describe('CliPreferenceEntry.parse', () => {
             expect(result).to.deep.equal([['a', 1], ['b', 'x']]);
         });
     });
+
+    describe('toArg', () => {
+        it('formats an entry as a base64-encoded CLI argument', () => {
+            // base64 of the JSON value `42`
+            expect(CliPreferenceEntry.toArg('session-preference', ['foo.num', 42])).to.equal('--session-preference=foo.num=base64:NDI=');
+        });
+
+        it('round-trips a value with shell-special characters through toArg + parse', () => {
+            const entry: [string, unknown] = ['foo.expr', '$HOME && "quoted"'];
+            const arg = CliPreferenceEntry.toArg('session-preference', entry);
+            // The value part of `--session-preference=<value>` must parse back to the original entry.
+            const value = arg.substring('--session-preference='.length);
+            expect(CliPreferenceEntry.parse(value)).to.deep.equal(entry);
+        });
+    });
 });
