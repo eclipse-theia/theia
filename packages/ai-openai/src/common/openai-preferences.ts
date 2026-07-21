@@ -78,7 +78,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             type: 'integer',
             minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
             markdownDescription: nls.localize('theia/ai/openai/compactionTokenThreshold/description',
-                'Override the global input-token threshold for server-side compaction for official OpenAI models. When unset, the global setting or provider default applies.'),
+                'Override the global input-token threshold for server-side compaction for official OpenAI models. When unset, the global setting or provider default applies. ' +
+                'If set, the value must be at least 50,000 tokens.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {

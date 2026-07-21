@@ -57,7 +57,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
             description: nls.localize('theia/ai/core/serverSideCompactionTokenThreshold/description',
                 'Default input-token threshold at which provider-native server-side compaction should run. Providers and individual chat sessions ' +
-                'can override this value. When unset, the provider chooses its default threshold.'),
+                'can override this value. When unset, the provider chooses its default threshold. If set, the value must be at least 50,000 tokens.'),
         },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,

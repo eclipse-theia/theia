@@ -69,7 +69,8 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             type: 'integer',
             minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
             markdownDescription: nls.localize('theia/ai/anthropic/compactionTokenThreshold/description',
-                'Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies.'),
+                'Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies. ' +
+                'If set, the value must be at least 50,000 tokens.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
