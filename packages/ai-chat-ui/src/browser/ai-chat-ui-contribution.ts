@@ -447,10 +447,34 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected async askForChatSession(): Promise<QuickPickItem | undefined> {
         const getItems = async (): Promise<(QuickPickItem | QuickPickSeparator)[]> => {
-            const activeSessions = this.chatService.getSessions()
+            const allActiveSessions = this.chatService.getSessions();
+
+            // Try to load persisted sessions, but don't fail if it doesn't work
+            interface PersistedSessionPickItem {
+                isActive: false;
+                isChild: boolean;
+                id: string;
+                title: string;
+                lastDate: number;
+                firstRequestText: undefined;
+                agentIconClass: string | undefined;
+                agentName: string | undefined;
+            }
+            let persistedIndex: Record<string, ChatSessionMetadata> = {};
+            try {
+                persistedIndex = await this.chatService.getPersistedSessions();
+            } catch (error) {
+                this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
+                // Continue with just active sessions
+            }
+
+            // Show every session here, including delegated child sessions, so all are reachable. Child
+            // sessions are flagged so the picker can mark them rather than nesting them like the home view.
+            const activeSessions = allActiveSessions
                 .filter(session => session.title)
                 .map(session => ({
                     isActive: true as const,
+                    isChild: !!session.rootSessionId,
                     id: session.id,
                     title: session.title!,
                     lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0,
@@ -460,42 +484,27 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 }))
                 .sort((a, b) => b.lastDate - a.lastDate);
 
-            // Try to load persisted sessions, but don't fail if it doesn't work
-            interface PersistedSessionPickItem {
-                isActive: false;
-                id: string;
-                title: string;
-                lastDate: number;
-                firstRequestText: undefined;
-                agentIconClass: string | undefined;
-                agentName: string | undefined;
-            }
-            let persistedSessions: PersistedSessionPickItem[] = [];
-            try {
-                const persistedIndex = await this.chatService.getPersistedSessions();
-                const activeIds = new Set(activeSessions.map(s => s.id));
-                persistedSessions = Object.values(persistedIndex)
-                    .filter(metadata => !activeIds.has(metadata.sessionId))
-                    .map(metadata => {
-                        const agent = metadata.pinnedAgentId ? this.chatAgentService.getAgent(metadata.pinnedAgentId) : undefined;
-                        return {
-                            isActive: false as const,
-                            id: metadata.sessionId,
-                            title: metadata.title,
-                            lastDate: metadata.saveDate,
-                            firstRequestText: undefined,
-                            agentIconClass: agent?.iconClass,
-                            agentName: agent?.name
-                        };
-                    })
-                    .sort((a, b) => b.lastDate - a.lastDate);
-            } catch (error) {
-                this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
-                // Continue with just active sessions
-            }
+            const activeIds = new Set(activeSessions.map(s => s.id));
+            const persistedSessions: PersistedSessionPickItem[] = Object.values(persistedIndex)
+                .filter(metadata => !activeIds.has(metadata.sessionId))
+                .map(metadata => {
+                    const agent = metadata.pinnedAgentId ? this.chatAgentService.getAgent(metadata.pinnedAgentId) : undefined;
+                    return {
+                        isActive: false as const,
+                        isChild: !!metadata.rootSessionId,
+                        id: metadata.sessionId,
+                        title: metadata.title,
+                        lastDate: metadata.saveDate,
+                        firstRequestText: undefined,
+                        agentIconClass: agent?.iconClass,
+                        agentName: agent?.name
+                    };
+                })
+                .sort((a, b) => b.lastDate - a.lastDate);
 
             interface SessionPickItem {
                 isActive: boolean;
+                isChild: boolean;
                 id: string;
                 title: string;
                 lastDate: number;
@@ -515,9 +524,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     icon = '$(archive) ';
                 }
                 const label = `${icon}${session.title}`;
-                // Mirror the home-view item subtitle: "@Agent · time ago"
+                // Mirror the home-view item subtitle: "@Agent · time ago". Child sessions are shown
+                // flat here (the home view nests them), so tag them as delegated to keep them distinct.
                 const timeAgo = formatTimeAgo(session.lastDate);
-                const description = session.agentName ? `@${session.agentName} · ${timeAgo}` : timeAgo;
+                const subtitle = session.agentName ? `@${session.agentName} · ${timeAgo}` : timeAgo;
+                const description = session.isChild
+                    ? `${subtitle} · ${nls.localize('theia/ai/chat-ui/delegatedSession', 'Delegated')}`
+                    : subtitle;
                 return {
                     label,
                     description,

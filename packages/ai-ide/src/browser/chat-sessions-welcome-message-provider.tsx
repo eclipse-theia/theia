@@ -17,7 +17,7 @@
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
-    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata
+    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus
 } from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
@@ -38,6 +38,22 @@ const RESTORED_MIN_RESERVATION = 5;
 export interface SectionedSessions {
     active: ChatSessionMetadata[];
     restored: ChatSessionMetadata[];
+}
+
+/** A session row with its optional child sessions. */
+export interface SessionRow {
+    session: ChatSessionMetadata;
+    isRestored: boolean;
+    childSessions: SessionRow[];
+}
+
+/**
+ * The id of a session's immediate parent for tree building. Falls back to the root session id for
+ * sessions persisted before immediate-parent tracking existed, so their hierarchy still renders
+ * (flat under the root, as before).
+ */
+function parentIdOf(session: ChatSessionMetadata): string | undefined {
+    return session.parentSessionId ?? session.rootSessionId;
 }
 
 export interface VisibleSessionSlots {
@@ -69,19 +85,31 @@ export function computeVisibleSessionSlots(activeTotal: number, restoredTotal: n
 }
 
 interface SessionsListProps {
-    sections: SectionedSessions;
+    rows: SessionRow[];
     /** Total cap on items shown on the home view; overflow surfaces via the Browse all link. */
     maxSessions: number;
-    renderItem: (session: ChatSessionMetadata, isRestored: boolean) => React.ReactNode;
+    renderRow: (row: SessionRow) => React.ReactNode;
     onBrowseAll: () => void;
 }
 
-function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: SessionsListProps): React.ReactElement {
-    const total = sections.active.length + sections.restored.length;
-    const { activeCount, restoredCount } = computeVisibleSessionSlots(sections.active.length, sections.restored.length, maxSessions);
-    const activeVisible = sections.active.slice(0, activeCount);
-    const restoredVisible = sections.restored.slice(0, restoredCount);
-    const hiddenCount = total - activeVisible.length - restoredVisible.length;
+function SessionsList({ rows, maxSessions, renderRow, onBrowseAll }: SessionsListProps): React.ReactElement {
+    // Children are rendered inline by their parent row, so only top-level rows appear in the
+    // sections. A child whose parent session is not in the list falls back to top-level (orphan).
+    const topLevelRows = rows.filter(row => {
+        const parentId = parentIdOf(row.session);
+        if (!parentId) {
+            return true;
+        }
+        return !rows.some(r => r.session.sessionId === parentId);
+    });
+
+    const activeRows = topLevelRows.filter(row => !row.isRestored);
+    const restoredRows = topLevelRows.filter(row => row.isRestored);
+
+    const { activeCount, restoredCount } = computeVisibleSessionSlots(activeRows.length, restoredRows.length, maxSessions);
+    const activeVisible = activeRows.slice(0, activeCount);
+    const restoredVisible = restoredRows.slice(0, restoredCount);
+    const hiddenCount = topLevelRows.length - activeVisible.length - restoredVisible.length;
 
     return (
         <div className="theia-WelcomeMessage-SessionsList">
@@ -90,7 +118,7 @@ function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: Sessio
                     <div className="theia-WelcomeMessage-SessionsHeader">
                         {nls.localizeByDefault('Active')}
                     </div>
-                    {activeVisible.map(s => renderItem(s, false))}
+                    {activeVisible.map(row => renderRow(row))}
                 </div>
             )}
             {restoredVisible.length > 0 && (
@@ -98,7 +126,7 @@ function SessionsList({ sections, maxSessions, renderItem, onBrowseAll }: Sessio
                     <div className="theia-WelcomeMessage-SessionsHeader">
                         {nls.localize('theia/ai/ide/sectionRestored', 'Restored')}
                     </div>
-                    {restoredVisible.map(s => renderItem(s, true))}
+                    {restoredVisible.map(row => renderRow(row))}
                 </div>
             )}
             {hiddenCount > 0 && (
@@ -154,7 +182,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected _inputEnabled = false;
 
-    private readonly unreadSessions = new Map<string, { unread: boolean; seenRequests: number; seenCompleted: number; listener: DisposableCollection }>();
+    private readonly unreadSessions = new Map<string, { unread: boolean; requiresAction: boolean; seenRequests: number; seenCompleted: number; listener: DisposableCollection }>();
     private readonly onUnreadChangedEmitter = new Emitter<string>();
     readonly onUnreadChanged: Event<string> = this.onUnreadChangedEmitter.event;
 
@@ -168,6 +196,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     /** Persisted sessions index sorted newest first. May include duplicates of active sessions. */
     protected _persistedSessions: ChatSessionMetadata[] = [];
+
+    /** Expanded root session IDs (default collapsed). */
+    protected expandedRoots = new Set<string>();
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
     readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
@@ -264,6 +295,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         const reqs = session.model.getRequests();
         const state = {
             unread: false,
+            requiresAction: ChatSessionStatus.requiresUserAction(session.model.status),
             seenRequests: reqs.length,
             seenCompleted: this.countCompleted(reqs),
             listener: new DisposableCollection()
@@ -271,6 +303,18 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         this.unreadSessions.set(session.id, state);
 
         session.model.onDidChange(() => {
+            const requiresAction = ChatSessionStatus.requiresUserAction(session.model.status);
+            // Only react to a change in whether this session needs user action (approval/input) - i.e. a
+            // transition into or out of that state - not to every model change while the state is stable.
+            if (requiresAction !== state.requiresAction) {
+                state.requiresAction = requiresAction;
+                // When a delegated child starts needing action, auto-expand its ancestors so the whole
+                // subtree is revealed naturally. Don't auto-collapse afterwards: leave that to the user.
+                if (requiresAction) {
+                    this.expandAncestors(session);
+                }
+                this.onStateChangedEmitter.fire();
+            }
             const current = session.model.getRequests();
             if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
                 // Only silently update the seen counts (instead of flashing the unread badge)
@@ -335,7 +379,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                 saveDate: session.lastInteraction?.getTime() ?? Date.now(),
                 location: session.model.location,
                 pinnedAgentId: session.pinnedAgent?.id,
-                hasError: session.model.status === 'failed'
+                hasError: session.model.status === 'failed',
+                rootSessionId: session.rootSessionId,
+                parentSessionId: session.parentSessionId
             }));
         const restored = this._persistedSessions.filter(metadata => !activeIds.has(metadata.sessionId));
         return { active, restored };
@@ -354,15 +400,40 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this.renderSessionsSection(sections);
     }
 
+    /**
+     * Builds one {@link SessionRow} per session (carrying its own restored flag), then nests each child
+     * row under its immediate parent's row to reconstruct the full (multi-level) delegation hierarchy.
+     * Two passes on purpose: the first creates a row for every session so the second can link each child
+     * to its parent. Sessions are ordered by recency, not parent-first, so a child may precede its parent
+     * here; linking in a single pass would miss parents not yet created.
+     */
+    protected buildRows(sections: SectionedSessions): SessionRow[] {
+        const allSessions = [...sections.active, ...sections.restored];
+        const activeIds = new Set(sections.active.map(s => s.sessionId));
+        const rowsById = new Map<string, SessionRow>();
+        for (const session of allSessions) {
+            rowsById.set(session.sessionId, { session, isRestored: !activeIds.has(session.sessionId), childSessions: [] });
+        }
+        for (const session of allSessions) {
+            const parentId = parentIdOf(session);
+            if (parentId) {
+                rowsById.get(parentId)?.childSessions.push(rowsById.get(session.sessionId)!);
+            }
+        }
+        return [...rowsById.values()];
+    }
+
     protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
         const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
+        const rows = this.buildRows(sections);
+
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
                 <div className="theia-WelcomeMessage-SessionsSection">
                     <SessionsList
-                        sections={sections}
+                        rows={rows}
                         maxSessions={maxSessions}
-                        renderItem={this.renderSessionItem}
+                        renderRow={this.renderSessionRow}
                         onBrowseAll={this.handleBrowseAllChats}
                     />
                 </div>
@@ -370,27 +441,95 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected renderSessionItem = (session: ChatSessionMetadata, isRestored: boolean): React.ReactNode => {
-        const actions = this.chatSessionItemActionContributions
+    protected toggleExpand = (sessionId: string): void => {
+        this.expandedRoots = new Set(this.expandedRoots);
+        if (this.expandedRoots.has(sessionId)) {
+            this.expandedRoots.delete(sessionId);
+        } else {
+            this.expandedRoots.add(sessionId);
+        }
+        this.onStateChangedEmitter.fire();
+    };
+
+    /** Whether a loaded session currently needs user action (approval or input). */
+    protected sessionRequiresAction(sessionId: string): boolean {
+        const session = this.chatService.getSession(sessionId);
+        return session !== undefined && ChatSessionStatus.requiresUserAction(session.model.status);
+    }
+
+    /** Whether any descendant (at any depth) of the given row currently needs user action. */
+    protected descendantRequiresAction(row: SessionRow): boolean {
+        return row.childSessions.some(child =>
+            this.sessionRequiresAction(child.session.sessionId) || this.descendantRequiresAction(child));
+    }
+
+    /**
+     * Expands every ancestor of the given session (walking the immediate-parent chain) so a deeply
+     * delegated session becomes visible. The caller is responsible for triggering a re-render.
+     */
+    protected expandAncestors(session: ChatSession): void {
+        // Resolve the next ancestor for a given session id. Prefer the loaded session, but fall back to
+        // the persisted index: an ancestor may not be loaded in memory (e.g. a child opened directly via
+        // "Browse all chats"). Without the fallback the walk stops at the first persisted-only ancestor,
+        // leaving the child hidden under a still-collapsed root.
+        const persistedById = new Map(this._persistedSessions.map(metadata => [metadata.sessionId, metadata]));
+        const parentIdFor = (id: string): string | undefined => {
+            const loaded = this.chatService.getSession(id);
+            if (loaded) {
+                return loaded.parentSessionId ?? loaded.rootSessionId;
+            }
+            const metadata = persistedById.get(id);
+            return metadata && parentIdOf(metadata);
+        };
+        const visited = new Set<string>();
+        let parentId = session.parentSessionId ?? session.rootSessionId;
+        while (parentId && !visited.has(parentId)) {
+            visited.add(parentId);
+            this.expandedRoots.add(parentId);
+            parentId = parentIdFor(parentId);
+        }
+    }
+
+    /** Collects the enabled session-item actions for a session, sorted by priority. */
+    protected getSessionActions(session: ChatSessionMetadata): ChatSessionItemAction[] {
+        return this.chatSessionItemActionContributions
             .getContributions()
             .flatMap(c => c.getActions(session))
             .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
             .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    }
+
+    protected renderSessionRow = (row: SessionRow): React.ReactNode => this.renderSessionRowAtDepth(row, 0);
+
+    /** Renders a session row and, when expanded, its child rows recursively so nested delegations show. */
+    protected renderSessionRowAtDepth(row: SessionRow, depth: number): React.ReactNode {
+        const hasChildSessions = row.childSessions.length > 0;
+        const isExpanded = hasChildSessions && this.expandedRoots.has(row.session.sessionId);
+        const descendantNeedsAttention = this.descendantRequiresAction(row);
+
         return (
-            <ChatSessionItem
-                key={session.sessionId}
-                session={session}
-                isRestored={isRestored}
-                chatService={this.chatService}
-                chatAgentService={this.chatAgentService}
-                hoverService={this.hoverService}
-                markdownRenderer={this.markdownRenderer}
-                unreadState={this}
-                onClick={() => this.handleSessionItemClick(session.sessionId)}
-                actions={actions}
-                onAction={this.handleSessionItemAction}
-                formatTimeAgo={date => formatTimeAgo(date)}
-            />
+            <React.Fragment key={row.session.sessionId}>
+                <ChatSessionItem
+                    session={row.session}
+                    isRestored={row.isRestored}
+                    chatService={this.chatService}
+                    chatAgentService={this.chatAgentService}
+                    hoverService={this.hoverService}
+                    markdownRenderer={this.markdownRenderer}
+                    unreadState={this}
+                    onClick={() => this.handleSessionItemClick(row.session.sessionId)}
+                    actions={this.getSessionActions(row.session)}
+                    onAction={this.handleSessionItemAction}
+                    formatTimeAgo={date => formatTimeAgo(date)}
+                    hasChildSessions={hasChildSessions}
+                    isChildSession={depth > 0}
+                    depth={depth}
+                    isExpanded={isExpanded}
+                    descendantNeedsAttention={descendantNeedsAttention}
+                    onToggleExpand={hasChildSessions ? () => this.toggleExpand(row.session.sessionId) : undefined}
+                />
+                {isExpanded && row.childSessions.map(child => this.renderSessionRowAtDepth(child, depth + 1))}
+            </React.Fragment>
         );
     };
 

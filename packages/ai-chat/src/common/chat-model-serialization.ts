@@ -201,6 +201,10 @@ export interface SerializedChatData {
     title?: string;
     model: SerializedChatModel;
     saveDate: number;
+    /** ID of the root session in the delegation chain. */
+    rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. */
+    parentSessionId?: string;
 }
 
 export interface SerializableChatsData {

@@ -89,7 +89,7 @@ function addDefinitionEntry(definitionList: HTMLDListElement, term: string, deta
 export function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
     agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean
+    isUnread: boolean, descendantNeedsAttention: boolean = false
 ): SessionTooltip {
     const toDispose = new DisposableCollection();
     const requests = session.model.getRequests();
@@ -110,6 +110,13 @@ export function buildSessionTooltip(
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-attention-tooltip';
         badge.textContent = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
+        container.appendChild(badge);
+    } else if (descendantNeedsAttention) {
+        // The session itself is not awaiting the user, but one of its delegated children is;
+        // surface that instead of the generic running badge so the reason is clear.
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/childInteractionNeeded', 'A delegated session needs your attention');
         container.appendChild(badge);
     } else if (ChatSessionStatus.isInProgress(status)) {
         const badge = document.createElement('div');
@@ -196,14 +203,20 @@ export function buildSessionTooltip(
  * shown on the home view). Avoids any restore I/O so hover does not promote the item to Active.
  */
 export function buildRestoredSessionTooltip(
-    metadata: ChatSessionMetadata, agentService: ChatAgentService
+    metadata: ChatSessionMetadata, agentService: ChatAgentService, descendantNeedsAttention: boolean = false
 ): SessionTooltip {
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
     const badge = document.createElement('div');
-    badge.className = 'theia-chat-session-badge-restored-tooltip';
-    badge.textContent = nls.localize('theia/ai/ide/restoredSession', 'Restored session');
+    if (descendantNeedsAttention) {
+        // A persisted parent whose delegated child needs the user; show that rather than "Restored".
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/childInteractionNeeded', 'A delegated session needs your attention');
+    } else {
+        badge.className = 'theia-chat-session-badge-restored-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/restoredSession', 'Restored session');
+    }
     container.appendChild(badge);
 
     const definitionList = document.createElement('dl');
