@@ -148,6 +148,10 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             await this.runOperation(() => this.doLoad());
         } catch (e) {
             console.error('Failed to load plugins:', e);
+            // Resolve the startup deferreds so that clients awaiting `willStart` or `didStart`,
+            // e.g. file system provider activations, do not hang forever on a failed load.
+            this.deferredWillStart.resolve();
+            this.deferredDidStart.resolve();
         }
     }), 50, { leading: true });
 
