@@ -15,7 +15,9 @@
 // *****************************************************************************
 import {
     createToolCallError,
+    formatToolCallContentForModel,
     ImageContent,
+    isToolCallContent,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequest,
@@ -54,6 +56,9 @@ interface ToolCallback {
 function toFunctionResponse(content: ToolCallResult): FunctionResponse['response'] {
     if (content === undefined) {
         return {};
+    }
+    if (isToolCallContent(content)) {
+        return { result: formatToolCallContentForModel(content) };
     }
     if (Array.isArray(content)) {
         return { result: content };

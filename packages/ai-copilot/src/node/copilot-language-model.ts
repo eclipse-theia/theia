@@ -16,6 +16,7 @@
 
 import {
     ImageContent,
+    formatToolCallContentForModel,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelParsedResponse,
@@ -33,6 +34,8 @@ import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streami
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
+
+
 
 /**
  * Language model implementation for GitHub Copilot.
@@ -242,7 +245,7 @@ export class CopilotLanguageModel implements LanguageModel {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
