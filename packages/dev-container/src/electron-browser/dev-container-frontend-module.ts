@@ -13,10 +13,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import '../../src/electron-browser/style/dev-container-attach-screen.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
 import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
+import { DevContainerAttachScreen } from './dev-container-attach-screen';
 import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
@@ -51,6 +53,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(DevContainerSuggestionContribution);
 
     bindRootContributionProvider(bind, RemoteCliArgsContribution);
+    bind(DevContainerAttachScreen).toSelf().inSingletonScope();
     bind(DevContainerStartupContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DevContainerStartupContribution);
 });

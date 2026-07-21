@@ -296,7 +296,11 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     async attachToContainer(options: AttachContainerOptions): Promise<ContainerConnectionResult> {
         const progress = await this.messageService.showProgress({ text: 'Attaching to container' });
         try {
-            const report: RemoteStatusReport = message => progress.report({ message });
+            const report: RemoteStatusReport = message => {
+                progress.report({ message });
+                // Mirror the status to the frontend so the CLI "attaching" screen can show live progress.
+                this.outputProvider?.onRemoteStatus?.(message);
+            };
             const docker = await this.createDockerConnection();
             const container = docker.getContainer(options.containerId);
 

@@ -36,7 +36,7 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
-import { DEFAULT_WINDOW_HASH, SECOND_INSTANCE_ARGS_PARAM, SecondInstanceArgv, WindowSearchParams } from '../common/window';
+import { ATTACH_PENDING_PARAM, DEFAULT_WINDOW_HASH, SECOND_INSTANCE_ARGS_PARAM, SecondInstanceArgv, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
@@ -76,6 +76,13 @@ export interface ElectronMainCommandOptions {
      * `--session-preference`) are carried to the newly created window rather than being dropped.
      */
     readonly argv?: string[];
+
+    /**
+     * Whether this launch requests attaching to a remote target (e.g. `--attach-container`). When
+     * set, an empty window is opened (instead of restoring the last workspace) and the frontend is
+     * told to show its "attaching" screen until the window reloads into the remote.
+     */
+    readonly attachRequested?: boolean;
 }
 
 /**
@@ -259,7 +266,8 @@ export class ElectronMainApplication {
                     this.handleMainCommand({
                         file: args.file,
                         cwd: process.cwd(),
-                        secondInstance: false
+                        secondInstance: false,
+                        attachRequested: this.isAttachRequested(argv)
                     });
                 },
             ).parse();
@@ -565,6 +573,13 @@ export class ElectronMainApplication {
         // there instead of being lost. Cold-start launches keep reading their args from the
         // shared backend and pass no params here.
         const params = this.getWindowSearchParams(options);
+        // A CLI attach opens an empty window rather than restoring the last workspace: the local
+        // workbench would only be discarded when the window reloads into the remote, so loading a
+        // real workspace behind the "attaching" screen wastes work and can trigger side effects.
+        if (options.attachRequested) {
+            await this.openDefaultWindow(params);
+            return;
+        }
         let workspacePath: string | undefined;
         if (options.file) {
             try {
@@ -587,13 +602,26 @@ export class ElectronMainApplication {
     /**
      * Builds the search parameters passed to a newly created window. For forwarded
      * (second-instance) launches this encodes the launch `argv` so that per-window CLI
-     * options can be re-applied in the renderer.
+     * options can be re-applied in the renderer; for CLI attach launches it flags the window so
+     * the frontend shows its "attaching" screen from the first paint.
      */
     protected getWindowSearchParams(options: ElectronMainCommandOptions): WindowSearchParams | undefined {
+        const params: WindowSearchParams = {};
         if (options.argv && options.argv.length > 0) {
-            return { [SECOND_INSTANCE_ARGS_PARAM]: SecondInstanceArgv.encode(options.argv) };
+            params[SECOND_INSTANCE_ARGS_PARAM] = SecondInstanceArgv.encode(options.argv);
         }
-        return undefined;
+        if (options.attachRequested) {
+            params[ATTACH_PENDING_PARAM] = '1';
+        }
+        return Object.keys(params).length > 0 ? params : undefined;
+    }
+
+    /**
+     * Whether the given launch `argv` requests attaching to a remote target on startup, currently
+     * a dev container via `--attach-container`.
+     */
+    protected isAttachRequested(argv: string[]): boolean {
+        return SecondInstanceArgv.getValue(argv, 'attach-container') !== undefined;
     }
 
     async openUrl(url: string): Promise<void> {
@@ -865,7 +893,8 @@ export class ElectronMainApplication {
                             file: args.file,
                             cwd: cwd,
                             secondInstance: true,
-                            argv
+                            argv,
+                            attachRequested: this.isAttachRequested(argv)
                         });
                     },
                 ).parse();

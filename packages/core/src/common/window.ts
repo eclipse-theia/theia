@@ -45,6 +45,14 @@ export interface WindowSearchParams {
 export const SECOND_INSTANCE_ARGS_PARAM = 'secondInstanceArgs';
 
 /**
+ * Query parameter set on a window that is being opened to attach to a remote target from the CLI
+ * (e.g. `--attach-container`). It lets the frontend show a dedicated "attaching" screen from the
+ * very first paint, instead of briefly exposing an interactive local workbench that is about to be
+ * replaced when the window reloads into the remote.
+ */
+export const ATTACH_PENDING_PARAM = 'attachPending';
+
+/**
  * Helpers for encoding a forwarded `argv` into a window search parameter and for reading
  * individual CLI options back out of it on the frontend. Kept dependency-free so it can run
  * in both the Electron main process (encoding) and the renderer (decoding/parsing).

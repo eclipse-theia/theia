@@ -14,9 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
 import { expect } from 'chai';
-import { AttachContainerArgs } from '../electron-common/remote-container-connection-provider';
+import { AttachContainerArgs, ContainerConnectionResult, RunningContainerInfo } from '../electron-common/remote-container-connection-provider';
 import { DevContainerStartupContribution } from './dev-container-startup-contribution';
+import type { AttachScreenErrorActions } from './dev-container-attach-screen';
+
+disableJSDOM();
 
 class TestDevContainerStartupContribution extends DevContainerStartupContribution {
 
@@ -49,6 +56,9 @@ class TestDevContainerStartupContribution extends DevContainerStartupContributio
 }
 
 describe('DevContainerStartupContribution#resolveAttachArgs', () => {
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
     let contribution: TestDevContainerStartupContribution;
 
@@ -100,5 +110,114 @@ describe('DevContainerStartupContribution#resolveAttachArgs', () => {
             const args = await contribution.collect([['--session-preference=a=base64:MQ=='], [], ['--x', '--y']]);
             expect(args).to.deep.equal(['--session-preference=a=base64:MQ==', '--x', '--y']);
         });
+    });
+});
+
+class AttachHarness extends DevContainerStartupContribution {
+    stages: string[] = [];
+    errors: Array<{ message: string, actions: AttachScreenErrorActions }> = [];
+    disposeCount = 0;
+    showCount = 0;
+    openRemoteCalls: string[] = [];
+    protected statusListener: ((message: string) => void) | undefined;
+
+    setup(opts: { containers?: RunningContainerInfo[], attachResult?: ContainerConnectionResult | Error, statusDuringAttach?: string }): void {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        (this as any).logger = { info: () => { }, warn: () => { }, error: () => { } };
+        (this as any).attachScreen = {
+            showAttaching: () => { this.showCount++; },
+            reportStage: (message: string) => this.stages.push(message),
+            reportError: (message: string, actions: AttachScreenErrorActions) => this.errors.push({ message, actions }),
+            dispose: () => { this.disposeCount++; }
+        };
+        (this as any).containerOutputProvider = {
+            onDidReportStatus: (cb: (message: string) => void) => {
+                this.statusListener = cb;
+                return { dispose: () => { this.statusListener = undefined; } };
+            }
+        };
+        (this as any).remotePreferences = {};
+        (this as any).remoteCliArgsContributions = { getContributions: () => [] };
+        (this as any).connectionProvider = {
+            listRunningContainers: async () => opts.containers ?? [],
+            getWorkspaceCandidates: async () => [],
+            scanForDevContainerConfig: async () => undefined,
+            attachToContainer: async () => {
+                if (opts.statusDuringAttach) {
+                    this.statusListener?.(opts.statusDuringAttach);
+                }
+                if (opts.attachResult instanceof Error) {
+                    throw opts.attachResult;
+                }
+                return opts.attachResult!;
+            }
+        };
+        /* eslint-enable @typescript-eslint/no-explicit-any */
+    }
+
+    protected override openRemote(port: string): void {
+        this.openRemoteCalls.push(port);
+    }
+
+    run(args: AttachContainerArgs): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (this as any).runStartupAttach(args);
+    }
+}
+
+describe('DevContainerStartupContribution#runStartupAttach', () => {
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    const runningB: RunningContainerInfo = { id: 'abc123def456', name: 'B', image: 'img', status: 'running', created: 0 };
+
+    it('reloads into the container on success without showing an error', async () => {
+        const harness = new AttachHarness();
+        harness.setup({ containers: [runningB], attachResult: { port: '9000', workspacePath: '/w', containerId: 'abc123def456' } });
+
+        await harness.run({ containerId: 'B', scanForDevJson: false });
+
+        expect(harness.openRemoteCalls).to.deep.equal(['9000']);
+        expect(harness.errors).to.have.lengthOf(0);
+        expect(harness.showCount).to.be.greaterThan(0);
+    });
+
+    it('forwards backend status messages to the attach screen', async () => {
+        const harness = new AttachHarness();
+        harness.setup({
+            containers: [runningB],
+            attachResult: { port: '9000', workspacePath: '/w', containerId: 'abc123def456' },
+            statusDuringAttach: 'Starting application on remote...'
+        });
+
+        await harness.run({ containerId: 'B', scanForDevJson: false });
+
+        expect(harness.stages).to.include('Starting application on remote...');
+    });
+
+    it('shows an error with retry/close when the container is not found, without reloading', async () => {
+        const harness = new AttachHarness();
+        harness.setup({ containers: [] });
+
+        await harness.run({ containerId: 'missing', scanForDevJson: false });
+
+        expect(harness.openRemoteCalls).to.have.lengthOf(0);
+        expect(harness.errors).to.have.lengthOf(1);
+        expect(harness.errors[0].message).to.match(/not found/i);
+    });
+
+    it('retry re-runs the attach; close dismisses the screen', async () => {
+        const harness = new AttachHarness();
+        harness.setup({ containers: [] });
+
+        await harness.run({ containerId: 'missing', scanForDevJson: false });
+        expect(harness.errors).to.have.lengthOf(1);
+
+        await harness.errors[0].actions.retry();
+        expect(harness.errors).to.have.lengthOf(2);
+
+        harness.errors[1].actions.close();
+        expect(harness.disposeCount).to.be.greaterThan(0);
     });
 });
