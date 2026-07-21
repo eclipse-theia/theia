@@ -36,7 +36,7 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
-import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
+import { DEFAULT_WINDOW_HASH, SECOND_INSTANCE_ARGS_PARAM, SecondInstanceArgv, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
@@ -69,6 +69,13 @@ export interface ElectronMainCommandOptions {
      * If the app is already running but user relaunches it, `secondInstance` is true.
      */
     readonly secondInstance: boolean;
+
+    /**
+     * The CLI arguments (without the binary/bin part) of a forwarded launch. Set for
+     * `second-instance` launches so that per-window CLI options (e.g. `--attach-container`,
+     * `--session-preference`) are carried to the newly created window rather than being dropped.
+     */
+    readonly argv?: string[];
 }
 
 /**
@@ -528,9 +535,9 @@ export class ElectronMainApplication {
         return electronWindow;
     }
 
-    protected async openWindowWithWorkspace(workspacePath: string): Promise<BrowserWindow> {
+    protected async openWindowWithWorkspace(workspacePath: string, params?: WindowSearchParams): Promise<BrowserWindow> {
         const options = await this.getLastWindowOptions();
-        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.reuseOrCreateWindow(options)]);
+        const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
         electronWindow.loadURL(uri.withFragment(encodeURI(workspacePath)).toString(true));
         return electronWindow;
     }
@@ -553,6 +560,11 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(options: ElectronMainCommandOptions): Promise<void> {
+        // Carry the forwarded CLI arguments of a second-instance launch to the new window so
+        // that per-window options (e.g. `--attach-container`, `--session-preference`) are applied
+        // there instead of being lost. Cold-start launches keep reading their args from the
+        // shared backend and pass no params here.
+        const params = this.getWindowSearchParams(options);
         let workspacePath: string | undefined;
         if (options.file) {
             try {
@@ -562,14 +574,26 @@ export class ElectronMainApplication {
             }
         }
         if (workspacePath !== undefined) {
-            await this.openWindowWithWorkspace(workspacePath);
+            await this.openWindowWithWorkspace(workspacePath, params);
         } else {
             if (options.secondInstance === false) {
-                await this.openWindowWithWorkspace(''); // restore previous workspace.
+                await this.openWindowWithWorkspace('', params); // restore previous workspace.
             } else if (options.file === undefined) {
-                await this.openDefaultWindow();
+                await this.openDefaultWindow(params);
             }
         }
+    }
+
+    /**
+     * Builds the search parameters passed to a newly created window. For forwarded
+     * (second-instance) launches this encodes the launch `argv` so that per-window CLI
+     * options can be re-applied in the renderer.
+     */
+    protected getWindowSearchParams(options: ElectronMainCommandOptions): WindowSearchParams | undefined {
+        if (options.argv && options.argv.length > 0) {
+            return { [SECOND_INSTANCE_ARGS_PARAM]: SecondInstanceArgv.encode(options.argv) };
+        }
+        return undefined;
     }
 
     async openUrl(url: string): Promise<void> {
@@ -830,7 +854,8 @@ export class ElectronMainApplication {
         if (originalArgv.includes('--open-url')) {
             this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
-            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), cwd)
+            const argv = this.processArgv.getProcessArgvWithoutBin(originalArgv);
+            createYargs(argv, cwd)
                 .help(false)
                 .command('$0 [file]', false,
                     cmd => cmd
@@ -839,7 +864,8 @@ export class ElectronMainApplication {
                         await this.handleMainCommand({
                             file: args.file,
                             cwd: cwd,
-                            secondInstance: true
+                            secondInstance: true,
+                            argv
                         });
                     },
                 ).parse();

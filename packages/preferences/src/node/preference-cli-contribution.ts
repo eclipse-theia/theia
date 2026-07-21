@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Argv } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { CliPreferences } from '../common/cli-preferences';
+import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 
 @injectable()
 export class PreferenceCliContribution implements CliContribution, CliPreferences, RemoteCliContribution {
@@ -48,23 +48,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
 
     protected parseInto(raw: unknown, target: [string, unknown][]): void {
         const entries: string[] = raw instanceof Array ? raw : [raw as string];
-        for (const entry of entries) {
-            const firstEqualIndex = entry.indexOf('=');
-            if (firstEqualIndex <= 0) {
-                console.warn(`Ignoring preference CLI argument "${entry}": expected KEY=JSONVALUE.`);
-                continue;
-            }
-            let rawValue = entry.substring(firstEqualIndex + 1);
-            if (rawValue.startsWith('base64:')) {
-                rawValue = Buffer.from(rawValue.substring('base64:'.length), 'base64').toString('utf-8');
-            }
-            try {
-                target.push([entry.substring(0, firstEqualIndex), JSON.parse(rawValue)]);
-            } catch (e) {
-                const reason = e instanceof Error ? e.message : String(e);
-                console.warn(`Ignoring preference CLI argument "${entry}": value is not valid JSON (${reason}).`);
-            }
-        }
+        target.push(...CliPreferenceEntry.parseAll(entries));
     }
 
     async getPreferences(): Promise<[string, unknown][]> {

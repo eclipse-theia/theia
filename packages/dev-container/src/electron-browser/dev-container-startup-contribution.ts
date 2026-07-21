@@ -16,9 +16,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { ILogger, MessageService, nls } from '@theia/core';
+import { SECOND_INSTANCE_ARGS_PARAM, SecondInstanceArgv } from '@theia/core/lib/common/window';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
 
 @injectable()
@@ -46,7 +47,7 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
 
     protected async handleStartupAttach(): Promise<void> {
         try {
-            const args = await this.connectionProvider.getAttachContainerArgs();
+            const args = await this.resolveAttachArgs();
             if (!args) {
                 return;
             }
@@ -95,5 +96,35 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
                 e instanceof Error ? e.message : String(e)
             ));
         }
+    }
+
+    /**
+     * Resolves the container to attach to on startup.
+     *
+     * A forwarded (second-instance) launch carries its CLI arguments in the window URL. For such
+     * windows those arguments are the only source, because the shared backend still reflects the
+     * original cold-start launch and cannot distinguish between windows. A cold-start window has no
+     * forwarded arguments and reads them from the backend instead.
+     */
+    protected async resolveAttachArgs(): Promise<AttachContainerArgs | undefined> {
+        const forwarded = this.getForwardedArgv();
+        if (forwarded !== undefined) {
+            const containerId = SecondInstanceArgv.getValue(forwarded, 'attach-container');
+            if (!containerId) {
+                return undefined;
+            }
+            return { containerId, scanForDevJson: !SecondInstanceArgv.isNegated(forwarded, 'dev-json') };
+        }
+        return this.connectionProvider.getAttachContainerArgs();
+    }
+
+    /**
+     * Returns the forwarded launch `argv` carried in the window URL, or `undefined` for a
+     * cold-start window (where the parameter is absent).
+     */
+    protected getForwardedArgv(): string[] | undefined {
+        const raw = new URLSearchParams(location.search).get(SECOND_INSTANCE_ARGS_PARAM);
+        // eslint-disable-next-line no-null/no-null
+        return raw === null ? undefined : SecondInstanceArgv.decode(raw);
     }
 }
