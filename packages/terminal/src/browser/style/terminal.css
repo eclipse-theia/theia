@@ -36,4 +36,43 @@
   left: 0 !important;
   right: 0 !important;
   width: 100% !important;
+  pointer-events: none;
+}
+
+.terminal-block-actions-button {
+  display: block;
+  margin-left: auto;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--theia-foreground);
+  padding: 2px 4px;
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+.terminal-block-actions-button:hover {
+  background: color-mix(in srgb, var(--theia-editorHoverWidget-background), transparent 20%);
+  border-radius: 2px;
+}
+
+.terminal-block-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.terminal-command-overlay {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.terminal-command-overlay.active {
+  background: color-mix(in srgb, var(--theia-editorHoverWidget-background), transparent 70%);
 }
