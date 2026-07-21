@@ -226,12 +226,24 @@ export class ChatServiceImpl implements ChatService {
     }
 
     async deleteSession(sessionId: string): Promise<void> {
-        // Delete children (sessions whose rootSessionId points to this session) first. Children may
-        // live only in memory, only in persisted storage (e.g. after a reload, not yet restored),
-        // or both, so collect ids from both sources to avoid orphaning persisted-only children.
+        await this.deleteSessionAndChildren(sessionId, new Set<string>());
+    }
+
+    protected async deleteSessionAndChildren(sessionId: string, visited: Set<string>): Promise<void> {
+        if (visited.has(sessionId)) {
+            return;
+        }
+        visited.add(sessionId);
+
+        // Delete children first. A child is any session whose immediate parent (parentSessionId) or root
+        // (rootSessionId) points to this session. Matching parentSessionId is what lets us cascade through
+        // intermediate levels: deleting B in A -> B -> C reaches C via its parentSessionId even though C's
+        // rootSessionId still points at A. Children may live only in memory, only in persisted storage
+        // (e.g. after a reload, not yet restored), or both, so collect ids from both sources. The visited
+        // set guards against cycles and re-deleting a child reachable from more than one ancestor.
         const childIds = new Set<string>();
         for (const s of this._sessions) {
-            if (s.rootSessionId === sessionId) {
+            if (s.parentSessionId === sessionId || s.rootSessionId === sessionId) {
                 childIds.add(s.id);
             }
         }
@@ -239,7 +251,7 @@ export class ChatServiceImpl implements ChatService {
             try {
                 const index = await this.sessionStore.getSessionIndex();
                 for (const metadata of Object.values(index)) {
-                    if (metadata.rootSessionId === sessionId) {
+                    if (metadata.parentSessionId === sessionId || metadata.rootSessionId === sessionId) {
                         childIds.add(metadata.sessionId);
                     }
                 }
@@ -248,7 +260,7 @@ export class ChatServiceImpl implements ChatService {
             }
         }
         for (const childId of childIds) {
-            await this.deleteSession(childId);
+            await this.deleteSessionAndChildren(childId, visited);
         }
 
         const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);

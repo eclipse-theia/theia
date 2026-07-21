@@ -304,6 +304,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
         session.model.onDidChange(() => {
             const requiresAction = ChatSessionStatus.requiresUserAction(session.model.status);
+            // Only react to a change in whether this session needs user action (approval/input) - i.e. a
+            // transition into or out of that state - not to every model change while the state is stable.
             if (requiresAction !== state.requiresAction) {
                 state.requiresAction = requiresAction;
                 // When a delegated child starts needing action, auto-expand its ancestors so the whole
@@ -398,16 +400,16 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this.renderSessionsSection(sections);
     }
 
-    protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
-        const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
-        // Build one row per session (carrying its own restored flag), then nest each child row under
-        // its immediate parent's row to reconstruct the full delegation hierarchy. Children keep their
-        // row so the restored flag and actions are computed once here rather than recomputed per child.
+    /**
+     * Builds one {@link SessionRow} per session (carrying its own restored flag), then nests each child
+     * row under its immediate parent's row to reconstruct the full (multi-level) delegation hierarchy.
+     * Two passes on purpose: the first creates a row for every session so the second can link each child
+     * to its parent. Sessions are ordered by recency, not parent-first, so a child may precede its parent
+     * here; linking in a single pass would miss parents not yet created.
+     */
+    protected buildRows(sections: SectionedSessions): SessionRow[] {
         const allSessions = [...sections.active, ...sections.restored];
         const activeIds = new Set(sections.active.map(s => s.sessionId));
-        // Two passes on purpose: the first pass creates a row for every session so the second pass can
-        // link each child to its parent. Sessions are ordered by recency, not parent-first, so a child
-        // may precede its parent here; linking in a single pass would miss parents not yet created.
         const rowsById = new Map<string, SessionRow>();
         for (const session of allSessions) {
             rowsById.set(session.sessionId, { session, isRestored: !activeIds.has(session.sessionId), childSessions: [] });
@@ -418,7 +420,12 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                 rowsById.get(parentId)?.childSessions.push(rowsById.get(session.sessionId)!);
             }
         }
-        const rows = [...rowsById.values()];
+        return [...rowsById.values()];
+    }
+
+    protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
+        const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
+        const rows = this.buildRows(sections);
 
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
@@ -461,13 +468,25 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
      * delegated session becomes visible. The caller is responsible for triggering a re-render.
      */
     protected expandAncestors(session: ChatSession): void {
+        // Resolve the next ancestor for a given session id. Prefer the loaded session, but fall back to
+        // the persisted index: an ancestor may not be loaded in memory (e.g. a child opened directly via
+        // "Browse all chats"). Without the fallback the walk stops at the first persisted-only ancestor,
+        // leaving the child hidden under a still-collapsed root.
+        const persistedById = new Map(this._persistedSessions.map(metadata => [metadata.sessionId, metadata]));
+        const parentIdFor = (id: string): string | undefined => {
+            const loaded = this.chatService.getSession(id);
+            if (loaded) {
+                return loaded.parentSessionId ?? loaded.rootSessionId;
+            }
+            const metadata = persistedById.get(id);
+            return metadata && parentIdOf(metadata);
+        };
         const visited = new Set<string>();
         let parentId = session.parentSessionId ?? session.rootSessionId;
         while (parentId && !visited.has(parentId)) {
             visited.add(parentId);
             this.expandedRoots.add(parentId);
-            const parent = this.chatService.getSession(parentId);
-            parentId = parent?.parentSessionId ?? parent?.rootSessionId;
+            parentId = parentIdFor(parentId);
         }
     }
 
