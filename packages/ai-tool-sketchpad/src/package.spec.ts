@@ -14,4 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './sketched-tool';
+/*
+ * This is a placeholder for tests that the extension package should implement
+ * but as yet does not.
+ * Please delete this file when a real test is implemented.
+ */
+
+describe('ai-tool-sketchpad package', () => {
+    it('placeholder to enable mocha', () => true);
+});
