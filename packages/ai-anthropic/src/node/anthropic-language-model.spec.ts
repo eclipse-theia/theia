@@ -19,9 +19,10 @@ import {
     ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
     mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
+import { AnthropicMemoryTool, MEMORY_TOOL_NAME, MEMORY_TOOL_TYPE } from './anthropic-memory-tool';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
-    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
+    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolRequest, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -31,7 +32,7 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings(), createTools(), and applyCompactionParams() methods. */
+/** Test helper that exposes the otherwise protected getSettings(), createTools(), applyBetaParams() and applyCompactionParams() methods. */
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
@@ -39,8 +40,8 @@ class TestableAnthropicModel extends AnthropicModel {
     public callCreateTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         return this.createTools(request);
     }
-    public callApplyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
-        return this.applyCompactionParams(params, request);
+    public callApplyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        return this.applyBetaParams(params, request);
     }
 }
 
@@ -886,7 +887,7 @@ describe('AnthropicModel', () => {
             });
         });
 
-        describe('applyCompactionParams', () => {
+        describe('applyBetaParams', () => {
             function baseParams(): Anthropic.MessageCreateParams {
                 return { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] };
             }
@@ -894,7 +895,7 @@ describe('AnthropicModel', () => {
             it('adds the beta flag and context_management when compaction is enabled by default (capable model)', () => {
                 // claude-opus-4-6 is capable; serverSideCompactionEnabledByDefault=true, no session override.
                 const model = createCompactionModel(true);
-                const params = model.callApplyCompactionParams(baseParams(), {
+                const params = model.callApplyBetaParams(baseParams(), {
                     messages: []
                 });
                 const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
@@ -905,7 +906,7 @@ describe('AnthropicModel', () => {
 
             it('leaves params unchanged when compaction is disabled by default', () => {
                 const model = createCompactionModel(false);
-                const params = model.callApplyCompactionParams(baseParams(), {
+                const params = model.callApplyBetaParams(baseParams(), {
                     messages: []
                 });
                 const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
@@ -917,7 +918,7 @@ describe('AnthropicModel', () => {
             it('session enables compaction over a false default (capable model)', () => {
                 const model = createCompactionModel(false);
 
-                const enabled = model.callApplyCompactionParams(baseParams(), {
+                const enabled = model.callApplyBetaParams(baseParams(), {
                     messages: [],
                     compaction: { enabled: true }
                 }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
@@ -928,7 +929,7 @@ describe('AnthropicModel', () => {
                 const model = createCompactionModel(true);
 
                 // compaction.enabled=false wins even when serverSideCompactionEnabledByDefault is true
-                const forcedOff = model.callApplyCompactionParams(baseParams(), {
+                const forcedOff = model.callApplyBetaParams(baseParams(), {
                     messages: [],
                     compaction: { enabled: false }
                 }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
@@ -937,7 +938,7 @@ describe('AnthropicModel', () => {
 
             it('leaves params unchanged when the model does not support server-side compaction, regardless of activation', () => {
                 const incapableModel = createCompactionModel(true, false);
-                const params = incapableModel.callApplyCompactionParams(baseParams(), {
+                const params = incapableModel.callApplyBetaParams(baseParams(), {
                     messages: [],
                     compaction: { enabled: true }
                 });
@@ -949,13 +950,248 @@ describe('AnthropicModel', () => {
 
             it('leaves params unchanged when no compaction request settings are provided and default is false', () => {
                 const model = createCompactionModel(false);
-                const params = model.callApplyCompactionParams(baseParams(), { messages: [] });
+                const params = model.callApplyBetaParams(baseParams(), { messages: [] });
                 const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
 
                 expect(beta.betas).to.equal(undefined);
                 expect(beta.context_management).to.equal(undefined);
             });
         });
+        });
+    });
+
+    describe('memory tool', () => {
+        class MemoryTestModel extends AnthropicModel {
+            public executedArgs: string[] = [];
+            public streamParams: Anthropic.MessageCreateParams[] = [];
+            public eventQueue: object[][] = [];
+
+            constructor(memoryToolFolder?: string, useCaching: boolean = false) {
+                super('test-id', 'claude-opus-4-6', { status: 'ready' }, true, useCaching,
+                    () => 'test-key', undefined, DEFAULT_MAX_TOKENS, 3,
+                    undefined, undefined, undefined, undefined, undefined, undefined, false, false, memoryToolFolder);
+            }
+
+            public callCreateTools(request: LanguageModelRequest): Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined {
+                return this.createTools(this.withMemoryTool(request)) as Array<Anthropic.Messages.Tool | Anthropic.Messages.MemoryTool20250818> | undefined;
+            }
+
+            public callApplyBetaParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+                return this.applyBetaParams(params, this.withMemoryTool(request));
+            }
+
+            protected override createMemoryTool(): AnthropicMemoryTool | undefined {
+                if (!this.memoryToolFolder) {
+                    return undefined;
+                }
+                const executedArgs = this.executedArgs;
+                return {
+                    execute: (args: string) => {
+                        executedArgs.push(args);
+                        return Promise.resolve('direct memory result');
+                    }
+                } as unknown as AnthropicMemoryTool;
+            }
+
+            protected override initializeAnthropic(): Anthropic {
+                const streamParams = this.streamParams;
+                const eventQueue = this.eventQueue;
+                const stream = (params: Anthropic.MessageCreateParams) => {
+                    streamParams.push(params);
+                    const events = eventQueue.shift() ?? [];
+                    async function* iterate(): AsyncGenerator<object> {
+                        for (const event of events) {
+                            yield event;
+                        }
+                    }
+                    const iter = iterate();
+                    (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                    (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                    return iter;
+                };
+                return {
+                    messages: { stream },
+                    beta: { messages: { stream } }
+                } as unknown as Anthropic;
+            }
+        }
+
+        const someTool: ToolRequest = {
+            id: 'other',
+            name: 'other',
+            description: 'some tool',
+            parameters: { type: 'object', properties: {} },
+            handler: async () => 'other result'
+        };
+
+        function memoryToolRequest(executedArgs: string[]): ToolRequest {
+            return {
+                id: MEMORY_TOOL_NAME,
+                name: MEMORY_TOOL_NAME,
+                description: 'memory tool',
+                parameters: { type: 'object', properties: {} },
+                handler: async args => {
+                    executedArgs.push(args);
+                    return 'memory result';
+                }
+            };
+        }
+
+        function memoryCallEventQueue(): object[][] {
+            return [
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 10, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu_1', name: 'memory' } },
+                    { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"command":"view","path":"/memories"}' } },
+                    { type: 'content_block_stop', index: 0 },
+                    { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                    { type: 'message_stop' }
+                ],
+                [
+                    { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 12, output_tokens: 0 } } },
+                    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'done' } },
+                    { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } },
+                    { type: 'message_stop' }
+                ]
+            ];
+        }
+
+        function chatRequest(tools?: ToolRequest[]): UserRequest {
+            return {
+                messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+                agentId: 'test',
+                sessionId: 'test-session',
+                requestId: 'test-req',
+                tools
+            };
+        }
+
+        async function drainRequest(model: MemoryTestModel, request: UserRequest): Promise<LanguageModelStreamResponsePart[]> {
+            const response = await model.request(request);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            return parts;
+        }
+
+        it('offers the native memory tool when activated even without request tools', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('offers the native memory tool in addition to request tools when activated', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools).to.have.lengthOf(2);
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME });
+            expect(tools![1].name).to.equal('other');
+        });
+
+        it('filters out conflicting request tools named like the memory tool', () => {
+            const tools = new MemoryTestModel('/tmp/memory').callCreateTools({ messages: [], tools: [memoryToolRequest([])] });
+            expect(tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+        });
+
+        it('does not offer the memory tool when it is not activated', () => {
+            const tools = new MemoryTestModel(undefined).callCreateTools({ messages: [], tools: [someTool] });
+            expect(tools?.some(tool => 'type' in tool && tool.type === MEMORY_TOOL_TYPE)).to.not.equal(true);
+        });
+
+        it('adds a cache control breakpoint to the memory tool when it is the last tool and caching is enabled', () => {
+            const tools = new MemoryTestModel('/tmp/memory', true).callCreateTools({ messages: [] });
+            expect(tools![0]).to.deep.equal({ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME, cache_control: { type: 'ephemeral' } });
+        });
+
+        it('applyBetaParams adds the memory beta header when the memory tool is activated', () => {
+            const params = new MemoryTestModel('/tmp/memory').callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [] }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.deep.equal(['context-management-2025-06-27']);
+            expect(beta.context_management).to.equal(undefined);
+        });
+
+        it('applyBetaParams leaves params unchanged when the memory tool is not activated', () => {
+            const params = new MemoryTestModel(undefined).callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [] }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.equal(undefined);
+            expect(beta.context_management).to.equal(undefined);
+        });
+
+        it('applyBetaParams combines compaction and memory betas when both are active', () => {
+            const params = new MemoryTestModel('/tmp/memory').callApplyBetaParams(
+                { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] },
+                { messages: [], compaction: { enabled: true } }
+            );
+            const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+            expect(beta.betas).to.deep.equal(['compact-2026-01-12', 'context-management-2025-06-27']);
+            expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+        });
+
+        it('executes memory tool calls directly and feeds the result back to the model', async () => {
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            const parts = await drainRequest(model, chatRequest());
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(model.streamParams).to.have.lengthOf(2);
+            expect(model.streamParams[0].tools).to.deep.equal([{ type: MEMORY_TOOL_TYPE, name: MEMORY_TOOL_NAME }]);
+            const followUpMessages = model.streamParams[1].messages;
+            expect(followUpMessages[followUpMessages.length - 1]).to.deep.equal({
+                role: 'user',
+                content: [{ type: 'tool_result', tool_use_id: 'tu_1', content: 'direct memory result' }]
+            });
+            const finishedToolCall = parts.find(part =>
+                'tool_calls' in part && part.tool_calls?.some(call => call.finished && call.result !== undefined));
+            expect(finishedToolCall, 'expected a finished memory tool call part').to.not.equal(undefined);
+        });
+
+        it('executes memory tool calls directly even when the request contains a conflicting memory tool', async () => {
+            const externalArgs: string[] = [];
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = memoryCallEventQueue();
+
+            await drainRequest(model, chatRequest([memoryToolRequest(externalArgs)]));
+
+            expect(model.executedArgs).to.deep.equal(['{"command":"view","path":"/memories"}']);
+            expect(externalArgs).to.deep.equal([]);
+        });
+
+        function textReplyEventQueue(): object[][] {
+            return [[
+                { type: 'message_start', message: { role: 'assistant', content: [], usage: { input_tokens: 1, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'hi' } },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+                { type: 'message_stop' }
+            ]];
+        }
+
+        it('appends session-scoped memory guidance to the system prompt when activated', async () => {
+            const model = new MemoryTestModel('/tmp/memory');
+            model.eventQueue = textReplyEventQueue();
+
+            await drainRequest(model, chatRequest());
+
+            const system = model.streamParams[0].system as Anthropic.Messages.TextBlockParam[];
+            const systemText = system.map(block => block.text).join('\n');
+            expect(systemText).to.contain('/memories/sessions/<short-task-name>-testsess.md');
+            expect(systemText).to.contain('multiple topic files');
+        });
+
+        it('does not append memory guidance when the tool is not activated', async () => {
+            const model = new MemoryTestModel(undefined);
+            model.eventQueue = textReplyEventQueue();
+
+            await drainRequest(model, chatRequest());
+
+            expect(model.streamParams[0].system).to.equal(undefined);
     });
 });
 
