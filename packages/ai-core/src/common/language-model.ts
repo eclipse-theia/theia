@@ -324,6 +324,9 @@ export namespace ToolRequest {
  * session's common settings to the request. Kept as an object so further parameters can be
  * added later.
  */
+// Anthropic requires at least 50,000 tokens, so use one conservative minimum for all compaction settings.
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM = 50_000;
+
 export interface CompactionSettings {
     /** Explicit enablement for this session; when set it wins over the model's default. `undefined` means "no explicit choice". */
     enabled?: boolean;

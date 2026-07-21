@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ChatSessionSettings, CommonChatSessionSettings } from '@theia/ai-chat';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core';
 import { InMemoryResources, URI, nls } from '@theia/core';
 import { AbstractDialog, Message } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
@@ -141,23 +142,27 @@ const ServerSideCompactionSection: React.FC<ServerSideCompactionSectionProps> = 
                     </option>
                 </select>
             </div>
-            <div className="session-settings-compaction-threshold-container">
-                <label htmlFor="compaction-token-threshold">
-                    {nls.localize('theia/ai/session-settings-dialog/compactionTokenThreshold', 'Token threshold:')}
-                </label>
-                <input
-                    type="number"
-                    id="compaction-token-threshold"
-                    min={1}
-                    step={1}
-                    value={compactionTokenThreshold ?? ''}
-                    placeholder={nls.localizeByDefault('Default')}
-                    onChange={e => {
-                        const value = Number(e.target.value);
-                        onCompactionTokenThresholdChange(Number.isInteger(value) && value > 0 ? value : undefined);
-                    }}
-                />
-            </div>
+            {compactionOverride !== false && (
+                <div className="session-settings-compaction-threshold-container">
+                    <label htmlFor="compaction-token-threshold">
+                        {nls.localize('theia/ai/session-settings-dialog/compactionTokenThreshold', 'Token threshold:')}
+                    </label>
+                    <input
+                        type="number"
+                        id="compaction-token-threshold"
+                        min={SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM}
+                        step={1}
+                        value={compactionTokenThreshold ?? ''}
+                        placeholder={nls.localizeByDefault('Default')}
+                        onChange={e => {
+                            const value = Number(e.target.value);
+                            onCompactionTokenThresholdChange(
+                                Number.isInteger(value) && value >= SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM ? value : undefined
+                            );
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
 };

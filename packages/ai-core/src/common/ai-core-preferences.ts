@@ -24,7 +24,7 @@ import {
     NOTIFICATION_TYPE_DESCRIPTIONS,
     NotificationType
 } from './notification-types';
-import { ReasoningSettings } from './language-model';
+import { ReasoningSettings, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from './language-model';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
@@ -54,7 +54,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD]: {
             title: AI_CORE_PREFERENCES_TITLE,
             type: 'integer',
-            minimum: 1,
+            minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
             description: nls.localize('theia/ai/core/serverSideCompactionTokenThreshold/description',
                 'Default input-token threshold at which provider-native server-side compaction should run. Providers and individual chat sessions ' +
                 'can override this value. When unset, the provider chooses its default threshold.'),

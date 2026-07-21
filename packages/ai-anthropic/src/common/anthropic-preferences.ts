@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
@@ -66,7 +67,7 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
         },
         [SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF]: {
             type: 'integer',
-            minimum: 1,
+            minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
             markdownDescription: nls.localize('theia/ai/anthropic/compactionTokenThreshold/description',
                 'Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies.'),
             title: AI_CORE_PREFERENCES_TITLE,
