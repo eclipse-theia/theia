@@ -26,7 +26,6 @@ import {
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable, FileDecoration, URI } from './types-impl';
 import { CancellationToken } from '@theia/core/lib/common';
-import { dirname } from 'path';
 import { PluginLogger } from './logger';
 
 /*---------------------------------------------------------------------------------------------
@@ -70,24 +69,12 @@ export class DecorationsExtImpl implements DecorationsExt {
                 return;
             }
 
-            // too many resources per event. pick one resource per folder, starting
-            // with parent folders
-            const mapped = array.map(uri => ({ uri, rank: (uri.path.match(/\//g) || []).length }));
-            const groups = groupBy(mapped, (a, b) => a.rank - b.rank);
-            const picked: URI[] = [];
-            outer: for (const uris of groups) {
-                let lastDirname: string | undefined;
-                for (const obj of uris) {
-                    const myDirname = dirname(obj.uri.path);
-                    if (lastDirname !== myDirname) {
-                        lastDirname = myDirname;
-                        if (picked.push(obj.uri) >= DecorationsExtImpl.maxEventSize) {
-                            break outer;
-                        }
-                    }
-                }
-            }
-            this.proxy.$onDidChange(handle, picked);
+            // too many resources per event: send a flush instead, so that the renderer
+            // drops cached data for this provider and re-fetches the decorations it
+            // displays on demand. Truncating the event (as upstream VS Code does by
+            // picking one resource per folder) loses decorations for the dropped
+            // resources, see https://github.com/eclipse-theia/theia/issues/17507
+            this.proxy.$onDidChange(handle, null);
         });
 
         return new Disposable(() => {
@@ -95,20 +82,6 @@ export class DecorationsExtImpl implements DecorationsExt {
             this.proxy.$unregisterDecorationProvider(handle);
             this.providersMap.delete(handle);
         });
-
-        function groupBy<T>(data: ReadonlyArray<T>, compareFn: (a: T, b: T) => number): T[][] {
-            const result: T[][] = [];
-            let currentGroup: T[] | undefined = undefined;
-            for (const element of data.slice(0).sort(compareFn)) {
-                if (!currentGroup || compareFn(currentGroup[0], element) !== 0) {
-                    currentGroup = [element];
-                    result.push(currentGroup);
-                } else {
-                    currentGroup.push(element);
-                }
-            }
-            return result;
-        }
     }
 
     async $provideDecorations(handle: number, requests: DecorationRequest[], token: CancellationToken): Promise<DecorationReply> {

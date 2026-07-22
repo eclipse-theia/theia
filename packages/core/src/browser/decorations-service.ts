@@ -27,7 +27,12 @@ import URI from '../common/uri';
 // some code copied and modified from https://github.com/microsoft/vscode/blob/1.52.1/src/vs/workbench/services/decorations/browser/decorationsService.ts#L24-L23
 
 export interface DecorationsProvider {
-    readonly onDidChange: Event<URI[]>;
+    /**
+     * Signals that decorations changed for the given resources. Firing `undefined` is a
+     * flush event: all previously provided decorations may have changed, cached data is
+     * dropped and re-fetched on demand.
+     */
+    readonly onDidChange: Event<URI[] | undefined>;
     provideDecorations(uri: URI, token: CancellationToken): Decoration | Promise<Decoration | undefined> | undefined;
 }
 
@@ -45,6 +50,14 @@ export interface ResourceDecorationChangeEvent {
 export const DecorationsService = Symbol('DecorationsService');
 export interface DecorationsService {
 
+    /**
+     * Fired when decorations changed. The payload maps the string representation of the
+     * affected resource URIs to their new decoration. Resources whose decoration was
+     * removed are not listed; an empty map signals that an unspecified set of decorations
+     * changed (e.g. a provider fired a flush event) - clients should re-query the
+     * decorations they display. Change notifications caused by asynchronously resolving
+     * decoration requests are batched: many resolutions result in a single event.
+     */
     readonly onDidChangeDecorations: Event<Map<string, Decoration>>;
 
     registerDecorationsProvider(provider: DecorationsProvider): Disposable;
@@ -56,36 +69,47 @@ class DecorationDataRequest {
     constructor(
         readonly source: CancellationTokenSource,
         readonly thenable: Promise<void>,
+        /** Value cached before this request started, to detect removals when it resolves. */
+        // eslint-disable-next-line no-null/no-null
+        readonly previous: Decoration | null | undefined,
     ) { }
 }
 
 class DecorationProviderWrapper {
 
-    readonly data: TernarySearchTree<URI, DecorationDataRequest | Decoration | undefined>;
-    readonly decorations: Map<string, Decoration> = new Map();
+    /**
+     * Cached provider results. Three states per resource: no entry means the resource was
+     * never fetched, a `null` entry means it was fetched and has no decoration, and a
+     * {@link DecorationDataRequest} entry means a fetch is in flight. Distinguishing
+     * "known to be undecorated" from "unknown" is what keeps on-demand queries from
+     * re-fetching undecorated resources over and over.
+     */
+    // eslint-disable-next-line no-null/no-null
+    readonly data: TernarySearchTree<URI, DecorationDataRequest | Decoration | null>;
     private readonly disposable: Disposable;
 
     constructor(
         readonly provider: DecorationsProvider,
-        readonly onDidChangeDecorationsEmitter: Emitter<Map<string, Decoration>>
+        /** Reports a changed decoration, or `undefined` when the decoration was removed. */
+        private readonly notifyDecorationChange: (uri: URI, decoration: Decoration | undefined) => void,
+        /** Reports that all decorations of this provider may have changed. */
+        private readonly notifyFlush: () => void
     ) {
 
-        this.data = TernarySearchTree.forUris<DecorationDataRequest | Decoration | undefined>(true);
+        // eslint-disable-next-line no-null/no-null
+        this.data = TernarySearchTree.forUris<DecorationDataRequest | Decoration | null>(true);
 
-        this.disposable = this.provider.onDidChange(async uris => {
-            this.decorations.clear();
+        this.disposable = this.provider.onDidChange(uris => {
             if (!uris) {
+                // flush event -> drop all data to be re-fetched on demand
                 this.data.clear();
+                this.notifyFlush();
             } else {
+                // selective changes -> re-fetch the given resources
                 for (const uri of uris) {
                     this.fetchData(uri);
-                    const decoration = await provider.provideDecorations(uri, CancellationToken.None);
-                    if (decoration) {
-                        this.decorations.set(uri.toString(), decoration);
-                    }
                 }
             }
-            this.onDidChangeDecorationsEmitter.fire(this.decorations);
         });
     }
 
@@ -95,7 +119,7 @@ class DecorationProviderWrapper {
     }
 
     knowsAbout(uri: URI): boolean {
-        return !!this.data.get(uri) || Boolean(this.data.findSuperstr(uri));
+        return this.data.get(uri) !== undefined || Boolean(this.data.findSuperstr(uri));
     }
 
     getOrRetrieve(uri: URI, includeChildren: boolean, callback: (data: Decoration, isChild: boolean) => void): void {
@@ -128,12 +152,14 @@ class DecorationProviderWrapper {
         }
     }
 
-    private fetchData(uri: URI): Decoration | undefined {
+    // eslint-disable-next-line no-null/no-null
+    private fetchData(uri: URI): Decoration | null | undefined {
 
-        // check for pending request and cancel it
-        const pendingRequest = this.data.get(uri);
-        if (pendingRequest instanceof DecorationDataRequest) {
-            pendingRequest.source.cancel();
+        // check for pending request and cancel it, keeping the last settled value
+        const existing = this.data.get(uri);
+        const previous = existing instanceof DecorationDataRequest ? existing.previous : existing;
+        if (existing instanceof DecorationDataRequest) {
+            existing.source.cancel();
             this.data.delete(uri);
         }
 
@@ -153,16 +179,26 @@ class DecorationProviderWrapper {
                 if (!(err instanceof Error && err.name === 'Canceled' && err.message === 'Canceled') && this.data.get(uri) === request) {
                     this.data.delete(uri);
                 }
-            }));
+            }), previous);
 
             this.data.set(uri, request);
             return undefined;
         }
     }
 
-    private keepItem(uri: URI, data: Decoration | undefined): Decoration | undefined {
-        const deco = data ? data : undefined;
-        this.data.set(uri, deco);
+    // eslint-disable-next-line no-null/no-null
+    private keepItem(uri: URI, data: Decoration | undefined): Decoration | null {
+        // eslint-disable-next-line no-null/no-null
+        const deco = data ? data : null;
+        const old = this.data.set(uri, deco);
+        const previous = old instanceof DecorationDataRequest ? old.previous : old;
+        if (deco || previous) {
+            // only notify when something actually changed: a decoration appeared or
+            // changed, or a previously known decoration was removed. Resources resolving
+            // to "no decoration" from an unknown or pending state stay silent so that
+            // on-demand queries of undecorated resources cause no render churn.
+            this.notifyDecorationChange(uri, deco ?? undefined);
+        }
         return deco;
     }
 }
@@ -173,23 +209,39 @@ export class DecorationsServiceImpl implements DecorationsService {
     private readonly data: DecorationProviderWrapper[] = [];
     private readonly onDidChangeDecorationsEmitter = new Emitter<Map<string, Decoration>>();
 
+    /**
+     * Accumulates decoration changes until the batched {@link onDidChangeDecorations}
+     * event fires. `undefined` values mark removed decorations.
+     */
+    private readonly pendingChanges = new Map<string, Decoration | undefined>();
+    private pendingFlush = false;
+    private fireSoonHandle: ReturnType<typeof setTimeout> | undefined;
+
     readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
 
     dispose(): void {
+        if (this.fireSoonHandle !== undefined) {
+            clearTimeout(this.fireSoonHandle);
+            this.fireSoonHandle = undefined;
+        }
         this.onDidChangeDecorationsEmitter.dispose();
     }
 
     registerDecorationsProvider(provider: DecorationsProvider): Disposable {
 
-        const wrapper = new DecorationProviderWrapper(provider, this.onDidChangeDecorationsEmitter);
+        const wrapper = new DecorationProviderWrapper(
+            provider,
+            (uri, decoration) => this.notifyDecorationChange(uri, decoration),
+            () => this.notifyFlush()
+        );
         this.data.push(wrapper);
 
         return Disposable.create(() => {
-            // fire event that says 'yes' for any resource
-            // known to this provider. then dispose and remove it.
+            // dispose and remove the provider, then signal that
+            // any of its previously provided decorations may be gone.
             this.data.splice(this.data.indexOf(wrapper), 1);
-            this.onDidChangeDecorationsEmitter.fire(new Map<string, Decoration>());
             wrapper.dispose();
+            this.notifyFlush();
         });
     }
 
@@ -205,5 +257,36 @@ export class DecorationsServiceImpl implements DecorationsService {
             });
         }
         return data;
+    }
+
+    protected notifyDecorationChange(uri: URI, decoration: Decoration | undefined): void {
+        this.pendingChanges.set(uri.toString(), decoration);
+        this.fireSoon();
+    }
+
+    protected notifyFlush(): void {
+        this.pendingFlush = true;
+        this.fireSoon();
+    }
+
+    protected fireSoon(): void {
+        if (this.fireSoonHandle === undefined) {
+            this.fireSoonHandle = setTimeout(() => this.fireChangeEvent(), 0);
+        }
+    }
+
+    protected fireChangeEvent(): void {
+        this.fireSoonHandle = undefined;
+        const event = new Map<string, Decoration>();
+        if (!this.pendingFlush) {
+            for (const [uri, decoration] of this.pendingChanges) {
+                if (decoration) {
+                    event.set(uri, decoration);
+                }
+            }
+        }
+        this.pendingFlush = false;
+        this.pendingChanges.clear();
+        this.onDidChangeDecorationsEmitter.fire(event);
     }
 }

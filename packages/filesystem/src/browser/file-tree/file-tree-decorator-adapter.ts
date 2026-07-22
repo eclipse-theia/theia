@@ -57,6 +57,19 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
                 const uri = this.getUriForNode(node);
                 if (uri) {
                     const stringified = uri.toString();
+                    if (!this.decorationsByUri.has(stringified)) {
+                        // Query the service for resources this decorator has not seen, so that
+                        // decorations dropped from change events (e.g. by the plugin-ext event
+                        // cap, see #17507) are fetched on demand. The service caches results,
+                        // including "no decoration": known resources resolve synchronously and
+                        // undecorated ones are not fetched again. Resolved fetches arrive as a
+                        // single batched change event handled in updateDecorations.
+                        const fetched = this.decorationsService.getDecoration(new URI(stringified), false);
+                        if (fetched.length) {
+                            this.decorationsByUri.set(stringified, this.toTheiaDecoration(fetched, false));
+                            this.propagateDecorationsByUri(new URI(stringified), fetched);
+                        }
+                    }
                     const ownDecoration = this.decorationsByUri.get(stringified);
                     const bubbledDecoration = this.parentDecorations.get(stringified);
                     const combined = this.mergeDecorations(ownDecoration, bubbledDecoration);
