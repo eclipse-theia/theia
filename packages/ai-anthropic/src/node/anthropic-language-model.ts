@@ -28,6 +28,7 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
     ServerToolCallResponsePart,
     ServerToolDescriptor,
@@ -330,7 +331,8 @@ export class AnthropicModel implements LanguageModel {
         public maxInputTokens?: number,
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
-        public serverSideCompactionEnabledByDefault: boolean = false
+        public serverSideCompactionEnabledByDefault: boolean = false,
+        public serverSideCompactionTokenThresholdByDefault?: number
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -354,8 +356,14 @@ export class AnthropicModel implements LanguageModel {
             return params;
         }
         const betaParams = params as T & Anthropic.Beta.Messages.MessageCreateParams;
+        const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
         betaParams.betas = ['compact-2026-01-12'];
-        betaParams.context_management = { edits: [{ type: 'compact_20260112' }] };
+        betaParams.context_management = {
+            edits: [{
+                type: 'compact_20260112',
+                ...(tokenThreshold !== undefined && { trigger: { type: 'input_tokens', value: tokenThreshold } })
+            }]
+        };
         return betaParams;
     }
 

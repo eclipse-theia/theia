@@ -1457,13 +1457,21 @@ details.theia-tool-confirmation-args>summary::marker {
   color: var(--theia-disabledForeground);
 }
 
-.session-settings-timeout-container input[type="number"] {
+.session-settings-timeout-container input[type="number"],
+.session-settings-compaction-threshold-container input[type="number"] {
   width: 100px;
   padding: 4px 8px;
   border: 1px solid var(--theia-input-border);
   border-radius: 4px;
   background-color: var(--theia-input-background);
   color: var(--theia-input-foreground);
+}
+
+.session-settings-compaction-threshold-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .session-settings-timeout-container input[type="number"]:disabled {

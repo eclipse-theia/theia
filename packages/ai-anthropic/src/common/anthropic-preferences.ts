@@ -15,12 +15,14 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideCompaction';
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.anthropic.serverSideCompactionTokenThreshold';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -61,6 +63,14 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
                 '({0}). When effectively enabled, the Anthropic Beta Messages API is used so the provider can summarize ' +
                 'older turns once the conversation grows past its threshold.',
                 `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF]: {
+            type: 'integer',
+            minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
+            markdownDescription: nls.localize('theia/ai/anthropic/compactionTokenThreshold/description',
+                'Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies. ' +
+                'If set, the value must be at least 50,000 tokens.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
