@@ -108,18 +108,23 @@ describe('BrowserConnectionTokenBackendContribution', () => {
         interface MockResponse {
             cookieCalls: CookieCall[];
             nextCalled: boolean;
+            requestHeaders: Record<string, string | undefined>;
         }
 
-        function callMiddleware(cookieValue?: string): MockResponse {
+        function callMiddleware(cookieValue?: string, conditionalHeaders = false): MockResponse {
             const contribution = createContribution();
-            const result: MockResponse = { cookieCalls: [], nextCalled: false };
-
             const req = {
                 headers: {} as Record<string, string | undefined>,
                 socket: { remoteAddress: '127.0.0.1' }
             };
+            const result: MockResponse = { cookieCalls: [], nextCalled: false, requestHeaders: req.headers };
+
             if (cookieValue !== undefined) {
                 req.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+            }
+            if (conditionalHeaders) {
+                req.headers['if-none-match'] = 'W/"etag"';
+                req.headers['if-modified-since'] = 'Thu, 01 Jan 2026 00:00:00 GMT';
             }
 
             const res = {
@@ -162,6 +167,28 @@ describe('BrowserConnectionTokenBackendContribution', () => {
             expect(result.nextCalled).to.be.true;
             expect(result.cookieCalls).to.have.length(1);
             expect(result.cookieCalls[0].value).to.equal(token.value);
+        });
+
+        it('should drop conditional request headers when re-issuing the cookie (stale token)', () => {
+            const result = callMiddleware('stale-token-from-old-server', true);
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should drop conditional request headers when issuing the cookie (no cookie)', () => {
+            const result = callMiddleware(undefined, true);
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should keep conditional request headers when the cookie is valid', () => {
+            const result = callMiddleware(token.value, true);
+            expect(result.cookieCalls).to.have.length(0);
+            expect(result.requestHeaders['if-none-match']).to.equal('W/"etag"');
+            expect(result.requestHeaders['if-modified-since']).to.equal('Thu, 01 Jan 2026 00:00:00 GMT');
         });
     });
 });
