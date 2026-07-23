@@ -106,6 +106,14 @@ export interface TheiaCoreAPI {
     useNativeElements: boolean;
 
     updateRecentWorkspaces(workspaceUris: string[], categoryName: string): void;
+
+    /**
+     * Redeems the CLI arguments of a *forwarded* launch that the main process stashed under the
+     * given one-shot `launchId` (see `LAUNCH_ID_PARAM`). Returns the `argv` and discards it, so a
+     * second redemption of the same id yields an empty array. The arguments travel over this
+     * authenticated IPC channel instead of the window URL, keeping them off an untrusted channel.
+     */
+    redeemLaunchArgs(launchId: string): Promise<string[]>;
 }
 
 declare global {
@@ -113,6 +121,8 @@ declare global {
         electronTheiaCore: TheiaCoreAPI
     }
 }
+
+export const CHANNEL_REDEEM_LAUNCH_ARGS = 'RedeemLaunchArgs';
 
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';
