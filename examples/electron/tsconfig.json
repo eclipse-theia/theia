@@ -81,6 +81,9 @@
       "path": "../../packages/ai-terminal"
     },
     {
+      "path": "../../packages/ai-tool-sketchpad"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
