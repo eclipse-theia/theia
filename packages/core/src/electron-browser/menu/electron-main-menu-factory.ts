@@ -91,6 +91,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     @inject(PreferenceService)
     protected preferencesService: PreferenceService;
 
+    /**
+     * The title bar style ('native' or 'custom'). Set by {@link ElectronMenuContribution}
+     * after querying the main process for the active style.
+     */
+    titleBarStyle?: string;
+
     setMenuBar = debounce(() => this.doSetMenuBar(), 100);
 
     @postConstruct()
@@ -140,13 +146,45 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
     doSetMenuBar(): void {
         const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
-        const shouldShowTop = !window.electronTheiaCore.isFullScreen() || preference === 'visible';
-        if (shouldShowTop) {
-            this.menu = this.createElectronMenuBar();
-            window.electronTheiaCore.setMenu(this.menu);
-            window.electronTheiaCore.setMenuBarVisible(true);
-        } else {
-            window.electronTheiaCore.setMenuBarVisible(false);
+        const isFullScreen = window.electronTheiaCore.isFullScreen();
+        const isCustomTitleBar = this.titleBarStyle === 'custom';
+
+        switch (preference) {
+            case 'visible':
+                this.menu = this.createElectronMenuBar();
+                window.electronTheiaCore.setMenu(this.menu);
+                window.electronTheiaCore.setMenuBarVisible(true);
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+                break;
+            case 'toggle':
+                if (isCustomTitleBar) {
+                    // With custom title bar, the Lumino menu bar handles toggle via Alt-key listener.
+                    // Do not set autoHideMenuBar on the native window to prevent it from appearing.
+                    window.electronTheiaCore.setMenuBarVisible(false);
+                    window.electronTheiaCore.setAutoHideMenuBar(false);
+                } else {
+                    // With native title bar, Electron's autoHideMenuBar handles Alt toggling.
+                    this.menu = this.createElectronMenuBar();
+                    window.electronTheiaCore.setMenu(this.menu);
+                    window.electronTheiaCore.setMenuBarVisible(false);
+                    window.electronTheiaCore.setAutoHideMenuBar(true);
+                }
+                break;
+            case 'hidden':
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+                break;
+            case 'compact':
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+                break;
+            case 'classic':
+            default:
+                this.menu = this.createElectronMenuBar();
+                window.electronTheiaCore.setMenu(this.menu);
+                window.electronTheiaCore.setMenuBarVisible(!isFullScreen);
+                window.electronTheiaCore.setAutoHideMenuBar(isFullScreen);
+                break;
         }
     }
 

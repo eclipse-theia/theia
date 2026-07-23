@@ -27,7 +27,8 @@ import {
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
-    CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW
+    CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -79,6 +80,7 @@ function convertMenu(menu: MenuDto[] | undefined, handlerMap: Map<number, () => 
 const api: TheiaCoreAPI = {
     WindowMetadata: { webcontentId: 'none' },
     setMenuBarVisible: (visible: boolean, windowName?: string) => ipcRenderer.send(CHANNEL_SET_MENU_BAR_VISIBLE, visible, windowName),
+    setAutoHideMenuBar: (enabled: boolean, windowName?: string) => ipcRenderer.send(CHANNEL_SET_AUTO_HIDE_MENU_BAR, enabled, windowName),
     setMenu: (menu: MenuDto[] | undefined) => {
         commandHandlers.delete(mainMenuId);
         const handlers = new Map<number, () => void>();

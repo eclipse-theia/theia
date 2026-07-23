@@ -92,10 +92,13 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'window.menuBarVisibility': {
             type: 'string',
-            enum: ['classic', 'visible', 'hidden', 'compact'],
+            enum: ['classic', 'visible', 'toggle', 'hidden', 'compact'],
             markdownEnumDescriptions: [
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
+                environment.electron.is()
+                    ? nls.localizeByDefault('Menu is hidden but can be displayed at the top of the window by executing the `Focus Application Menu` command.')
+                    : nls.localizeByDefault('Menu is hidden but can be displayed at the top of the window via the Alt key.'),
                 nls.localizeByDefault('Menu is always hidden.'),
                 environment.electron.is()
                     // we do not support the window.menuStyle setting yet, so we do not use the default string in this case yet
@@ -314,7 +317,7 @@ export interface CoreConfiguration {
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
     'window.tabbar.enhancedPreview': 'classic' | 'enhanced' | 'visual';
-    'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
+    'window.menuBarVisibility': 'classic' | 'visible' | 'toggle' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;
     'window.tabCloseIconPlacement': 'end' | 'start';
