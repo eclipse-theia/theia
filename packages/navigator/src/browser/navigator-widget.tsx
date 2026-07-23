@@ -26,6 +26,7 @@ import { FileNavigatorModel } from './navigator-model';
 import { isOSX, environment } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { NavigatorFileClipboard } from './navigator-file-clipboard';
 import { nls } from '@theia/core/lib/common/nls';
 import { AbstractNavigatorTreeWidget } from './abstract-navigator-tree-widget';
 
@@ -39,6 +40,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(NavigatorFileClipboard) protected readonly fileClipboard: NavigatorFileClipboard;
     @inject(MessageService) protected readonly messageService: MessageService;
 
     constructor(
@@ -125,7 +127,9 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     protected handleCopy(event: ClipboardEvent): void {
         const uris = this.model.selectedFileStatNodes.map(node => node.uri.toString());
         if (uris.length > 0 && event.clipboardData) {
-            event.clipboardData.setData('text/plain', uris.join('\n'));
+            const content = uris.join('\n');
+            event.clipboardData.setData('text/plain', content);
+            this.fileClipboard.set(content);
         }
         event.preventDefault();
     }

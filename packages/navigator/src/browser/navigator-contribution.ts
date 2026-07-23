@@ -64,6 +64,7 @@ import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-fro
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
+import { NavigatorFileClipboard } from './navigator-file-clipboard';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
@@ -126,6 +127,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
+
+    @inject(NavigatorFileClipboard)
+    protected readonly fileClipboard: NavigatorFileClipboard;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -380,14 +384,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     }
 
     /**
-     * Pastes files into the navigator using the async clipboard API. The default
+     * Pastes files into the navigator without a trusted paste event. The default
      * `CommonCommands.PASTE` handler relies on `document.execCommand('paste')`, which browsers
-     * block for programmatic invocations, e.g. from the menu.
+     * block for programmatic invocations, e.g. from the menu. Prefers the in-app file clipboard
+     * as reading the system clipboard may require a user permission prompt in browsers.
      */
     protected async pasteIntoNavigator(): Promise<void> {
         const widget = this.tryGetWidget();
         if (widget) {
-            const text = await this.clipboardService.readText();
+            const text = this.fileClipboard.get() ?? await this.clipboardService.readText();
             if (text) {
                 widget.pasteFiles(text);
             }

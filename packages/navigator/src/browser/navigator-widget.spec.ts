@@ -28,6 +28,7 @@ import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorModel } from './navigator-model';
+import { NavigatorFileClipboard } from './navigator-file-clipboard';
 
 disableJSDOM();
 
@@ -36,6 +37,7 @@ describe('FileNavigatorWidget', () => {
     const workspaceRoot = new URI('file:///workspace');
     let copiedSources: URI[];
     let selectedNodes: FileStatNode[];
+    let storedClipboardContents: string[];
     let infoMessages: string[];
     let widget: FileNavigatorWidget;
 
@@ -44,6 +46,7 @@ describe('FileNavigatorWidget', () => {
     function createWidget(root: URI = workspaceRoot): FileNavigatorWidget {
         copiedSources = [];
         selectedNodes = [];
+        storedClipboardContents = [];
         infoMessages = [];
         const model = {
             get selectedFileStatNodes(): FileStatNode[] {
@@ -60,12 +63,17 @@ describe('FileNavigatorWidget', () => {
             getWorkspaceRootUri: (uri: URI | undefined): URI | undefined =>
                 uri && root.isEqualOrParent(uri) ? root : undefined
         } as WorkspaceService;
+        const fileClipboard = {
+            set: (content: string): void => {
+                storedClipboardContents.push(content);
+            }
+        } as NavigatorFileClipboard;
         const messageService = {
             info: (message: string): void => {
                 infoMessages.push(message);
             }
         } as unknown as MessageService;
-        Object.assign(navigator, { workspaceService, messageService });
+        Object.assign(navigator, { workspaceService, fileClipboard, messageService });
         return navigator;
     }
 
@@ -150,6 +158,20 @@ describe('FileNavigatorWidget', () => {
             selectedNodes = [targetNode];
             expect(widget.pasteFiles('')).to.be.false;
             expect(infoMessages).to.have.lengthOf(0);
+        });
+    });
+
+    describe('handleCopy', () => {
+
+        it('should record copied URIs in the file clipboard', () => {
+            const sourceNode = { id: 'source', uri: new URI('file:///workspace/a.txt') } as FileStatNode;
+            selectedNodes = [sourceNode];
+            const clipboardEvent = {
+                clipboardData: { setData: () => undefined },
+                preventDefault: () => undefined
+            } as unknown as ClipboardEvent;
+            widget['handleCopy'](clipboardEvent);
+            expect(storedClipboardContents).to.deep.equal(['file:///workspace/a.txt']);
         });
     });
 });

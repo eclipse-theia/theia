@@ -39,6 +39,8 @@ describe('FileNavigatorContribution', () => {
     let navigatorWidget: FileNavigatorWidget | undefined;
     let currentWidget: Widget | undefined;
     let clipboardText: string;
+    let fileClipboardText: string | undefined;
+    let systemClipboardReads: number;
     let pastedTexts: string[];
     let selectedNodes: FileStatNode[];
 
@@ -58,6 +60,8 @@ describe('FileNavigatorContribution', () => {
 
     beforeEach(() => {
         clipboardText = '';
+        fileClipboardText = undefined;
+        systemClipboardReads = 0;
         pastedTexts = [];
         selectedNodes = [];
         navigatorWidget = createNavigatorWidgetStub();
@@ -79,7 +83,13 @@ describe('FileNavigatorContribution', () => {
                 }
             },
             clipboardService: {
-                readText: async (): Promise<string> => clipboardText
+                readText: async (): Promise<string> => {
+                    systemClipboardReads++;
+                    return clipboardText;
+                }
+            },
+            fileClipboard: {
+                get: (): string | undefined => fileClipboardText
             }
         });
     });
@@ -118,6 +128,21 @@ describe('FileNavigatorContribution', () => {
         it('should not paste anything for empty clipboard text', async () => {
             await contribution['pasteIntoNavigator']();
             expect(pastedTexts).to.have.lengthOf(0);
+        });
+
+        it('should prefer the file clipboard over the system clipboard', async () => {
+            fileClipboardText = 'file:///workspace/copied-in-app.txt';
+            clipboardText = 'file:///workspace/copied-outside.txt';
+            await contribution['pasteIntoNavigator']();
+            expect(pastedTexts).to.deep.equal(['file:///workspace/copied-in-app.txt']);
+            expect(systemClipboardReads).to.equal(0);
+        });
+
+        it('should fall back to the system clipboard if the file clipboard is empty', async () => {
+            clipboardText = 'file:///workspace/copied-outside.txt';
+            await contribution['pasteIntoNavigator']();
+            expect(pastedTexts).to.deep.equal(['file:///workspace/copied-outside.txt']);
+            expect(systemClipboardReads).to.equal(1);
         });
     });
 });
