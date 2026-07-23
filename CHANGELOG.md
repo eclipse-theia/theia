@@ -20,6 +20,10 @@
 - [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0. Downstream Electron applications must update their `electron` devDependency to `42.3.0`. Electron 42 bundles Node 24 (up from Node 22), which may affect native modules or Node APIs used by downstream applications. See the Electron breaking changes for [40.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-400), [41.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-410), and [42.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-420). [#17586](https://github.com/eclipse-theia/theia/pull/17586)
 
+<a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
+
+- [workspace] The `class WorkspaceService` has been split into `interface WorkspaceService` and `class WorkspaceServiceImpl`. Adopters who extend the WorkspaceService class need to extend WorkspaceServiceImpl from now on. Adopters who just inject WorkspaceService do not need to change anything. [#17123](https://github.com/eclipse-theia/theia/pull/17123)
+
 ## 1.73.0 - 6/25/2026
 
 - [ai] supported deferred tool loading via provider tool search [#17449](https://github.com/eclipse-theia/theia/pull/17449)

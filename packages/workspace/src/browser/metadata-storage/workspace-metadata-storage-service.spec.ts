@@ -29,7 +29,7 @@ import { URI } from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileContent, FileStat, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { WorkspaceService } from '../workspace-service';
+import { WorkspaceService, WorkspaceServiceImpl } from '../workspace-service';
 import { WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './workspace-metadata-storage-service';
 import { WorkspaceMetadataStoreImpl } from './workspace-metadata-store';
 import * as uuid from '@theia/core/lib/common/uuid';
@@ -66,7 +66,7 @@ describe('WorkspaceMetadataStorageService', () => {
         } as sinon.SinonStubbedInstance<FileService>;
 
         // Create workspace service with stubs
-        workspaceService = new WorkspaceService();
+        workspaceService = new WorkspaceServiceImpl();
         sinon.stub(workspaceService, 'tryGetRoots').returns([{
             resource: workspaceRootUri,
             isDirectory: true

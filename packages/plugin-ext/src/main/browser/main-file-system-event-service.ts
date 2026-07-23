@@ -40,7 +40,7 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
         rpc: RPCProtocol,
         container: interfaces.Container,
         private readonly fileService = container.get(FileService),
-        private readonly workspaceService = container.get(WorkspaceService)
+        private readonly workspaceService = container.get<WorkspaceService>(WorkspaceService)
     ) {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
 

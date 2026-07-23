@@ -238,6 +238,9 @@ export class ElectronMainApplication {
                     const startupMeasurement = this.stopwatch.start('electron-main-startup');
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
+                    if (isWindows && !!config.electron.appUserModelId) {
+                        app.setAppUserModelId(config.electron.appUserModelId);
+                    }
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
                     const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());

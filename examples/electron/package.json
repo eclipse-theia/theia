@@ -15,7 +15,8 @@
           "splashScreenOptions": {
             "content": "resources/theia-logo.svg",
             "height": 90
-          }
+          },
+          "appUserModelId": "EclipseTheia.ElectronExample"
         }
       }
     },
