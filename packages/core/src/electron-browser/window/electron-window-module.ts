@@ -33,6 +33,8 @@ import { ElectronUriHandlerContribution } from '../electron-uri-handler';
 import { bindRootContributionProvider } from '../../common';
 import { WindowTitleContribution } from '../../browser/window/window-title-service';
 import { WindowFocusService } from '../../browser/window/window-focus-service';
+import { WindowLaunchArgs } from '../../browser/window/window-launch-args';
+import { ElectronWindowLaunchArgs } from './electron-window-launch-args';
 import { WindowZoomStatusBarItem } from './window-zoom-status-bar-item';
 import '../../../src/electron-browser/style/window-zoom-action-bar.css';
 
@@ -47,6 +49,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(ElectronUriHandlerContribution);
     bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
     rebind(FrontendApplicationStateService).to(ElectronFrontendApplicationStateService).inSingletonScope();
+    // `browser-window-module` (which binds `WindowLaunchArgs`) is not loaded in Electron, since the
+    // `window` extension provides `electron-window-module` as its `frontendElectron` replacement.
+    // Bind here directly, mirroring how `WindowService` is bound in each of the two modules.
+    bind(WindowLaunchArgs).to(ElectronWindowLaunchArgs).inSingletonScope();
     bind(SecondaryWindowService).to(ElectronSecondaryWindowService).inSingletonScope();
     bind(ExternalAppOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(ExternalAppOpenHandler);

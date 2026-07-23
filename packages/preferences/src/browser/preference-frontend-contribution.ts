@@ -16,7 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { CliPreferences } from '../common/cli-preferences';
+import { LaunchArgv } from '@theia/core/lib/common/window';
+import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
+import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 @injectable()
@@ -27,23 +29,15 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(WindowLaunchArgs)
+    protected readonly launchArgs: WindowLaunchArgs;
+
     onStart(): void {
         this.applyCliPreferences();
     }
 
     protected async applyCliPreferences(): Promise<void> {
-        // Fetch both buckets in parallel; both are RPC hops to the same backend and
-        // can overlap with the preference service initialising its providers.
-        const [session, persistent] = await Promise.all([
-            this.CliPreferences.getSessionPreferences().catch(e => {
-                console.warn('Failed to fetch --session-preference values:', e);
-                return [] as [string, unknown][];
-            }),
-            this.CliPreferences.getPreferences().catch(e => {
-                console.warn('Failed to fetch --set-preference values:', e);
-                return [] as [string, unknown][];
-            })
-        ]);
+        const { session, persistent } = await this.resolveCliPreferences();
 
         // `preferenceService.set()` needs the target provider registered in the providers
         // map, which only happens once `initializeProviders()` has walked every scope and
@@ -64,6 +58,37 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         }
 
         await this.applyAll(persistent, PreferenceScope.User);
+    }
+
+    /**
+     * Resolves the CLI-provided preferences to apply to this window.
+     *
+     * A forwarded (second-instance) launch carries its CLI arguments, redeemed here from the trusted
+     * main process. For such windows those arguments are the only source, because the shared backend
+     * still reflects the original cold-start launch and cannot distinguish between windows. A
+     * cold-start window has no forwarded arguments and reads them from the backend instead.
+     */
+    protected async resolveCliPreferences(): Promise<{ session: [string, unknown][], persistent: [string, unknown][] }> {
+        const forwarded = await this.launchArgs.getLaunchArgs();
+        if (forwarded !== undefined) {
+            return {
+                session: CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'session-preference')),
+                persistent: CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'set-preference'))
+            };
+        }
+        // Fetch both buckets in parallel; both are RPC hops to the same backend and
+        // can overlap with the preference service initialising its providers.
+        const [session, persistent] = await Promise.all([
+            this.CliPreferences.getSessionPreferences().catch(e => {
+                console.warn('Failed to fetch --session-preference values:', e);
+                return [] as [string, unknown][];
+            }),
+            this.CliPreferences.getPreferences().catch(e => {
+                console.warn('Failed to fetch --set-preference values:', e);
+                return [] as [string, unknown][];
+            })
+        ]);
+        return { session, persistent };
     }
 
     /**

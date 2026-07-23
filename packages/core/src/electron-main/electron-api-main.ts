@@ -59,7 +59,8 @@ import {
     CHANNEL_OPEN_URL,
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
-    CHANNEL_UPDATE_RECENT_WORKSPACES
+    CHANNEL_UPDATE_RECENT_WORKSPACES,
+    CHANNEL_REDEEM_LAUNCH_ARGS
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
@@ -83,6 +84,9 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         ipcMain.on(CHANNEL_GET_SECURITY_TOKEN, event => {
             event.returnValue = this.electronSecurityToken.value;
         });
+
+        // one-shot redemption of a forwarded launch's CLI arguments, keyed by the launch id in the window URL
+        ipcMain.handle(CHANNEL_REDEEM_LAUNCH_ARGS, (event, launchId: string) => application.redeemLaunchArgs(launchId));
 
         ipcMain.handle(CHANNEL_ATTACH_SECURITY_TOKEN, (event, endpoint) => session.defaultSession.cookies.set({
             url: endpoint,

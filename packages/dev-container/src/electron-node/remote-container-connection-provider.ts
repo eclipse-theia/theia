@@ -296,7 +296,11 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     async attachToContainer(options: AttachContainerOptions): Promise<ContainerConnectionResult> {
         const progress = await this.messageService.showProgress({ text: 'Attaching to container' });
         try {
-            const report: RemoteStatusReport = message => progress.report({ message });
+            const report: RemoteStatusReport = message => {
+                progress.report({ message });
+                // Mirror the status to the frontend so the CLI "attaching" screen can show live progress.
+                this.outputProvider?.onRemoteStatus?.(message);
+            };
             const docker = await this.createDockerConnection();
             const container = docker.getContainer(options.containerId);
 
@@ -318,7 +322,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             try {
                 report('Connecting to remote system...');
 
-                const result = await this.setupRemoteConnection(container, docker, config, options.nodeDownloadTemplate, report);
+                const result = await this.setupRemoteConnection(container, docker, config, options.nodeDownloadTemplate, report, options.additionalArgs);
                 remote = result.remote;
 
                 if (options.devcontainerFile) {
@@ -378,7 +382,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
      */
     protected async setupRemoteConnection(
         container: Docker.Container, docker: Docker, config: DevContainerConfiguration,
-        nodeDownloadTemplate: string | undefined, report: RemoteStatusReport
+        nodeDownloadTemplate: string | undefined, report: RemoteStatusReport, additionalArgs?: string[]
     ): Promise<{ localPort: number; remote: RemoteDockerContainerConnection }> {
         const remote = new RemoteDockerContainerConnection({
             id: generateUuid(),
@@ -395,7 +399,8 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
-                nodeDownloadTemplate
+                nodeDownloadTemplate,
+                additionalArgs
             });
         } catch (e) {
             remote.dispose();
