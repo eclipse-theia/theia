@@ -19,13 +19,14 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { blockExternalResources, BLOCKED_RESOURCE_CLASS, restoreBlockedResource } from './block-external-resources';
+import { blockExternalResources, BLOCKED_RESOURCE_CLASS, restoreBlockedResource, setAllowedResourceUrls } from './block-external-resources';
 
 disableJSDOM();
 
 describe('blockExternalResources', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
+    afterEach(() => setAllowedResourceUrls([]));
 
     const createRoot = (html: string): HTMLElement => {
         const root = document.createElement('div');
@@ -351,6 +352,77 @@ describe('blockExternalResources', () => {
 
         expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
         expect(root.querySelector('div')?.style.backgroundImage).to.contain('data:image/png;base64,AA');
+    });
+
+    it('blocks style sheets importing a data URL stylesheet that references external resources', () => {
+        const nestedCss = encodeURIComponent('.probe{background-image:url(https://evil.com/logo.svg)}');
+        const root = createRoot(`<style>@import url("data:text/css,${nestedCss}");</style><div class="probe">content</div>`);
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('preserves data URL stylesheets without external references', () => {
+        const nestedCss = encodeURIComponent('.probe{color:red;background-image:url(data:image/png;base64,AA)}');
+        const root = createRoot(`<style>@import url("data:text/css,${nestedCss}");</style>`);
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+        expect(root.querySelector('style')).to.exist;
+    });
+
+    it('blocks a data URL stylesheet whose payload cannot be decoded', () => {
+        const root = createRoot('<style>@import url("data:text/css,%ZZurl%28https://evil.com/x.png%29");</style>');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('still inspects nested CSS when a data: prefix is allowlisted', () => {
+        setAllowedResourceUrls(['data:']);
+        const nestedCss = encodeURIComponent('.probe{background-image:url(https://evil.com/logo.svg)}');
+        const root = createRoot(`<style>@import url("data:text/css,${nestedCss}");</style>`);
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('style')).to.be.null;
+    });
+
+    it('renders external URL resources but still blocks active embedded content in trusted mode', () => {
+        const root = document.createElement('div');
+        root.innerHTML = '<img src="https://evil.com/x.gif"><iframe srcdoc="&lt;p&gt;hi&lt;/p&gt;"></iframe>';
+        blockExternalResources(root, false);
+
+        expect(root.querySelector('img')?.getAttribute('src')).to.equal('https://evil.com/x.gif');
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        expect(placeholder).to.exist;
+        expect(placeholder.textContent).to.contain('(inline external content)');
+        expect(root.querySelector('iframe')).to.be.null;
+    });
+
+    it('sandboxes embedded content restored from trusted mode', () => {
+        const root = document.createElement('div');
+        root.innerHTML = '<iframe srcdoc="&lt;img src=x onerror=alert(1)&gt;"></iframe>';
+        blockExternalResources(root, false);
+
+        const placeholder = root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`) as HTMLElement;
+        const restored = restoreBlockedResource(placeholder);
+        expect(restored?.tagName).to.equal('IFRAME');
+        expect(restored?.getAttribute('sandbox')).to.equal('');
+    });
+
+    it('renders resources whose URL matches the configured allowlist', () => {
+        setAllowedResourceUrls(['https://trusted.example.com/']);
+        const root = createRoot('<img src="https://trusted.example.com/logo.png">');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+        expect(root.querySelector('img')?.getAttribute('src')).to.equal('https://trusted.example.com/logo.png');
+    });
+
+    it('still blocks resources that do not match the configured allowlist', () => {
+        setAllowedResourceUrls(['https://trusted.example.com/']);
+        const root = createRoot('<img src="https://evil.com/x.gif">');
+
+        expect(root.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+        expect(root.querySelector('img')).to.be.null;
     });
 
     it('uses text content for displayed URLs', () => {

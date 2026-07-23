@@ -34,8 +34,24 @@ const CSS_IMPORT_PATTERN = /@import\s+(?:"([^"]*)"|'([^']*)')/gi;
 const CSS_COMMENT_PATTERN = /\/\*[\s\S]*?\*\//g;
 const CSS_HEX_ESCAPE_PATTERN = /\\([0-9a-fA-F]{1,6})[\t\n\f\r ]?/g;
 const CSS_CHARACTER_ESCAPE_PATTERN = /\\([\s\S])/g;
+const CSS_DATA_URL_PATTERN = /^data:text\/css([^,]*),([\s\S]*)$/i;
 const MAX_CODE_POINT = 0x10FFFF;
 const blockedResources = new WeakMap<HTMLElement, Element>();
+
+let allowedResourceUrls: readonly string[] = [];
+
+/**
+ * Configures URL prefixes whose external resources may be rendered without being blocked.
+ * A resource is allowed when its URL starts with one of the configured prefixes, so entries
+ * should include the full origin (e.g. `https://example.com/`) to avoid unintended matches.
+ */
+export function setAllowedResourceUrls(urls: readonly string[]): void {
+    allowedResourceUrls = urls.map(url => url.trim()).filter(url => !!url);
+}
+
+function isAllowlistedUrl(url: string): boolean {
+    return allowedResourceUrls.some(prefix => url.startsWith(prefix));
+}
 
 function isSafeUrl(rawUrl: string): boolean {
     const url = stripQuotes(rawUrl.trim());
@@ -48,15 +64,57 @@ function isSafeUrl(rawUrl: string): boolean {
     const lowerCaseUrl = url.toLowerCase();
     for (const scheme of SAFE_SCHEMES) {
         if (lowerCaseUrl.startsWith(scheme)) {
-            return true;
+            // A `data:` URL is inert on its own, but a `data:text/css` payload can itself reference
+            // external resources, so decode and inspect such stylesheets instead of trusting them.
+            // This inspection runs before the allowlist so that allowlisting a `data:` prefix cannot
+            // disable it.
+            return scheme === 'data:' ? isSafeDataUrl(url) : true;
         }
+    }
+    if (isAllowlistedUrl(url)) {
+        return true;
     }
     return false;
 }
 
-export function blockExternalResources(root: ParentNode & { ownerDocument: Document }): void {
+function isSafeDataUrl(url: string): boolean {
+    const match = CSS_DATA_URL_PATTERN.exec(url);
+    if (!match) {
+        // Any non-CSS `data:` URL is inert on its own.
+        return true;
+    }
+    const css = decodeCssPayload(match[1], match[2]);
+    if (css === undefined) {
+        // Fail closed: if the payload cannot be decoded, the browser may still resolve the valid
+        // escape sequences and load external resources, so treat the stylesheet as unsafe.
+        return false;
+    }
+    return !extractCssUrls(css).some(nested => !isSafeUrl(nested));
+}
+
+function decodeCssPayload(parameters: string, payload: string): string | undefined {
+    try {
+        return /;\s*base64/i.test(parameters) ? atob(payload) : decodeURIComponent(payload);
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Neutralizes resources that would otherwise load or execute automatically.
+ *
+ * Active embedded content (`iframe`, `frame`, `object`, `embed`) is always blocked because it can
+ * run active content with the IDE's origin, which is unsafe even for trusted, user-authored Markdown.
+ * External URL resources (images, stylesheets, SVG references, ...) are only blocked when
+ * {@link blockExternalUrls} is `true`; trusted content passes `false` to render them directly.
+ */
+export function blockExternalResources(root: ParentNode & { ownerDocument: Document }, blockExternalUrls: boolean = true): void {
     for (const element of Array.from(root.querySelectorAll(EMBEDDED_CONTENT_SELECTORS))) {
         element.replaceWith(buildPlaceholder(root.ownerDocument, element));
+    }
+
+    if (!blockExternalUrls) {
+        return;
     }
 
     for (const element of Array.from(root.querySelectorAll(RESOURCE_SELECTORS))) {
@@ -230,10 +288,14 @@ function extractUnsafeStyleSheetUrls(element: Element): string[] {
     if (element.tagName.toUpperCase() !== 'STYLE' || !element.textContent) {
         return [];
     }
-    const styleSheet = normalizeCssText(element.textContent);
+    return extractCssUrls(element.textContent).filter(url => !isSafeUrl(url));
+}
+
+function extractCssUrls(cssText: string): string[] {
+    const styleSheet = normalizeCssText(cssText);
     const urls = extractUrlsFromNormalizedCss(styleSheet);
     urls.push(...Array.from(styleSheet.matchAll(CSS_IMPORT_PATTERN), match => (match[1] || match[2] || '').trim()).filter(url => !!url));
-    return urls.filter(url => !isSafeUrl(url));
+    return urls;
 }
 
 function extractUnsafeUrlFunctionAttributeUrls(element: Element): string[] {

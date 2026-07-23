@@ -96,13 +96,17 @@ export interface DeclaredEventsEventListenerObject extends EventListenerObject {
  * @param eventHandler `handleEvent` will be called by default for `click` events and additionally
  * for all events enumerated in {@link DeclaredEventsEventListenerObject.handledEvents}. If `handleEvent` returns `true`,
  * no additional handlers will be run for the event.
+ * @param blockExternalResourceLoading whether external URL resources should be blocked until explicitly allowed (default: true).
+ * Trusted content authored by the user (e.g. their own chat requests) can pass `false` to render such resources directly.
+ * Active embedded content (iframes, frames, objects, embeds) is always blocked regardless of this flag.
  * @returns the ref to use in an element to render the markdown
  */
 export const useMarkdownRendering = (
     markdown: string | MarkdownString,
     openerService: OpenerService,
     skipSurroundingParagraph: boolean = false,
-    eventHandler?: DeclaredEventsEventListenerObject
+    eventHandler?: DeclaredEventsEventListenerObject,
+    blockExternalResourceLoading: boolean = true
 ) => {
     // null is valid in React
     // eslint-disable-next-line no-null/no-null
@@ -123,7 +127,9 @@ export const useMarkdownRendering = (
             ADD_TAGS: ['iframe', 'frame'],
             ADD_ATTR: ['src', 'srcset', 'srcdoc', 'poster', 'href', 'xlink:href', 'data']
         });
-        blockExternalResources(template.content);
+        // Active embedded content is always blocked; trusted content (blockExternalResourceLoading=false)
+        // still renders its external URL resources directly.
+        blockExternalResources(template.content, blockExternalResourceLoading);
         host.appendChild(template.content);
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
@@ -171,7 +177,7 @@ export const useMarkdownRendering = (
             ref.current?.removeEventListener('click', handleClick);
             eventHandler?.handledEvents?.forEach(eventType => eventType !== 'click' && ref?.current?.removeEventListener(eventType, eventHandler));
         };
-    }, [markdownString, skipSurroundingParagraph, openerService]);
+    }, [markdownString, skipSurroundingParagraph, openerService, blockExternalResourceLoading]);
 
     return ref;
 };

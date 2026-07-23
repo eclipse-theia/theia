@@ -41,6 +41,11 @@ describe('useMarkdownRendering', () => {
         return <div ref={ref}></div>;
     };
 
+    const TrustedMarkdown = ({ markdown }: { markdown: string }) => {
+        const ref = useMarkdownRendering(markdown, openerService, false, undefined, false);
+        return <div ref={ref}></div>;
+    };
+
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
 
@@ -118,6 +123,16 @@ describe('useMarkdownRendering', () => {
 
             expect(container.querySelector('img')).to.be.null;
             expect(container.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.exist;
+            done();
+        }, 50);
+    });
+
+    it('renders external resources directly when blocking is disabled', done => {
+        root.render(<TrustedMarkdown markdown="![](https://evil.com/x.gif)" />);
+
+        setTimeout(() => {
+            expect(container.querySelector(`.${BLOCKED_RESOURCE_CLASS}`)).to.be.null;
+            expect(container.querySelector('img')?.getAttribute('src')).to.equal('https://evil.com/x.gif');
             done();
         }, 50);
     });
