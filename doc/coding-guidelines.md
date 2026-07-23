@@ -101,33 +101,43 @@ const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocu
 
 * [1.](#interfaces-no-i-prefix) Do not use `I` prefix for interfaces. Use `Impl` suffix for implementation of interfaces with the same name. See [624](https://github.com/theia-ide/theia/issues/624) for the discussion on this.
 <a name="classes-over-interfaces"></a>
-* [2.](#classes-over-interfaces) Use classes instead of interfaces + symbols when possible to avoid boilerplate.
+<a name="interfaces-over-classes"></a>
+* [2.](#interfaces-over-classes) For services that are meant to be replaceable — which is most public services in Theia — declare an interface + symbol and export a default implementation. This lets adopters choose between *subclassing* the default and providing a *completely independent* implementation. Using a class as both the injection token and the type forces adopters to subclass, because they can only rebind to a type assignable to that class.
+
+> Why? A class with any `private` or `protected` member is typed nominally, so a structurally-identical independent class is *not* assignable to it — only a subclass is. An interface + symbol removes that constraint: the adopter can subclass the default impl *or* implement the interface from scratch. Testing is also easier: a test double can satisfy the interface directly, whereas a class token forces tests to subclass the real implementation (and drag in its dependencies) just to provide a mock.
 
 ```ts
-// bad
+// good - interface + symbol + default implementation
 export const TaskDefinitionRegistry = Symbol('TaskDefinitionRegistry');
 export interface TaskDefinitionRegistry {
     register(definition: TaskDefinition): void;
 }
+
+@injectable()
 export class TaskDefinitionRegistryImpl implements TaskDefinitionRegistry {
-    register(definition: TaskDefinition): void {
+    register(definition: TaskDefinition): void {
     }
 }
 bind(TaskDefinitionRegistryImpl).toSelf().inSingletonScope();
 bind(TaskDefinitionRegistry).toService(TaskDefinitionRegistryImpl);
 
-// good
-export class TaskDefinitionRegistry {
-    register(definition: TaskDefinition): void {
-    }
-}
-bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
+// adopters can now do either of the following:
+rebind(TaskDefinitionRegistry).to(MyRegistryFromScratch);      // independent implementation
+rebind(TaskDefinitionRegistry).to(MyRegistryExtendingDefault); // subclass of TaskDefinitionRegistryImpl
 ```
 
 **Exceptions**
-<a name="remote-interfaces"></a>
+<a name="class-token-internal"></a>
 
-* [2.1](#remote-interfaces) Remote services should be declared as an interface + a symbol in order to be used in the frontend and backend.
+* [2.1](#class-token-internal) For services that are genuinely internal and not intended as extension points, a plain class used as both token and type is fine to avoid the interface + symbol ceremony. Keep injected fields `protected` so that subclassing remains possible even in this case.
+
+```ts
+@injectable()
+export class InternalCache {
+    protected readonly entries = new Map<string, unknown>();
+}
+bind(InternalCache).toSelf().inSingletonScope();
+```
 
 ## Comments
 
