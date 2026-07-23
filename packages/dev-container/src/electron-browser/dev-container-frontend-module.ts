@@ -13,12 +13,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import '../../src/electron-browser/style/dev-container-attach-screen.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
+import { DevContainerAttachScreen } from './dev-container-attach-screen';
 import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerOutputProvider } from './container-output-provider';
+import { RemoteCliArgsCollector } from './remote-cli-args-collector';
 import { ContainerInfoContribution } from './container-info-contribution';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
@@ -33,6 +36,7 @@ export default new ContainerModule(bind => {
     bind(WorkspaceOpenHandlerContribution).toService(ContainerConnectionContribution);
 
     bind(ContainerOutputProvider).toSelf().inSingletonScope();
+    bind(RemoteCliArgsCollector).toSelf().inSingletonScope();
     bindDevContainerPreferences(bind);
 
     bind(RemoteContainerConnectionProvider).toDynamicValue(ctx => {
@@ -48,6 +52,7 @@ export default new ContainerModule(bind => {
     bind(DevContainerSuggestionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DevContainerSuggestionContribution);
 
+    bind(DevContainerAttachScreen).toSelf().inSingletonScope();
     bind(DevContainerStartupContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DevContainerStartupContribution);
 });
