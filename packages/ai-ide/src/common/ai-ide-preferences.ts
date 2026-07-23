@@ -21,6 +21,7 @@ import { nls, PreferenceSchema, PreferenceScope } from '@theia/core';
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST = 'ai-features.orchestrator.excludedAgents';
 export const PREFERENCE_NAME_AGENT_MODE_ENABLED = 'ai-features.agentMode.enabled';
+export const PREFERENCE_NAME_AUTO_ADD_OPEN_EDITORS = 'ai-features.chat.autoAddOpenEditors';
 export const aiIdePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_AI]: {
@@ -57,6 +58,15 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             scope: PreferenceScope.User
+        },
+        [PREFERENCE_NAME_AUTO_ADD_OPEN_EDITORS]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            description: nls.localize('theia/ai/ide/autoAddOpenEditors/description',
+                'Automatically add open editor files to the chat context. '
+                + 'When enabled, all open editors are added to new chat sessions, '
+                + 'and newly opened files are added to the active session.'),
+            type: 'boolean',
+            default: true,
         }
     }
 };
