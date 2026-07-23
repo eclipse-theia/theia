@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService } from '@theia/core/lib/common';
+import { CommandService, MessageService } from '@theia/core/lib/common';
 import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
 import { DirNode, FileStatNodeData } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -39,6 +39,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -131,31 +132,66 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
 
     protected handlePaste(event: ClipboardEvent): void {
         if (event.clipboardData) {
-            const raw = event.clipboardData.getData('text/plain');
-            if (!raw) {
-                return;
+            if (this.pasteFiles(event.clipboardData.getData('text/plain'))) {
+                event.preventDefault();
             }
-            const target = this.model.selectedFileStatNodes[0];
-            if (!target) {
-                return;
+        }
+    }
+
+    /**
+     * Pastes the files given as newline-separated URIs or absolute paths into the selected directory.
+     *
+     * @param raw the clipboard text, expected to hold one file URI or absolute file system path per line
+     * @returns `true` if the paste was handled, i.e. clipboard text and a paste target were available
+     */
+    pasteFiles(raw: string): boolean {
+        if (!raw) {
+            return false;
+        }
+        const target = this.model.selectedFileStatNodes[0];
+        if (!target) {
+            return false;
+        }
+        const sources = this.parsePastedUris(raw);
+        if (sources.length === 0) {
+            this.messageService.info(nls.localize(
+                'theia/navigator/nothingToPaste',
+                'The clipboard does not contain workspace files that can be pasted here.'
+            ));
+            return true;
+        }
+        for (const source of sources) {
+            this.model.copy(source, target);
+        }
+        return true;
+    }
+
+    protected parsePastedUris(raw: string): URI[] {
+        const uris: URI[] = [];
+        for (const file of raw.split('\n')) {
+            const trimmed = file.trim();
+            if (!trimmed) {
+                continue;
             }
-            event.preventDefault();
-            for (const file of raw.split('\n')) {
-                const trimmed = file.trim();
-                if (!trimmed) {
-                    continue;
-                }
-                try {
-                    new URL(trimmed);
-                } catch {
-                    continue;
-                }
-                const source = new URI(trimmed);
-                if (!this.workspaceService.getWorkspaceRootUri(source)) {
-                    continue;
-                }
-                this.model.copy(source, target);
+            const source = this.asPastedFileUri(trimmed);
+            if (source && this.workspaceService.getWorkspaceRootUri(source)) {
+                uris.push(source);
             }
+        }
+        return uris;
+    }
+
+    /** Interprets the given clipboard line as a URI or an absolute file system path, e.g. from the Copy Path command. */
+    protected asPastedFileUri(candidate: string): URI | undefined {
+        // check for absolute paths first: Windows paths like C:\foo also parse as URLs (scheme 'c:')
+        if (candidate.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(candidate)) {
+            return URI.fromFilePath(candidate);
+        }
+        try {
+            new URL(candidate);
+            return new URI(candidate);
+        } catch {
+            return undefined;
         }
     }
 

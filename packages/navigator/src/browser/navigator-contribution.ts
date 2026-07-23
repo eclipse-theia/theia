@@ -345,6 +345,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
         });
+        registry.registerHandler(CommonCommands.PASTE.id, {
+            isEnabled: () => this.canPasteIntoNavigator(),
+            execute: () => this.pasteIntoNavigator()
+        });
     }
 
     protected get editorWidgets(): NavigatableWidget[] {
@@ -368,6 +372,26 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             return cb(widget);
         }
         return false;
+    }
+
+    protected canPasteIntoNavigator(): boolean {
+        const widget = this.tryGetWidget();
+        return !!widget && this.shell.currentWidget === widget && widget.model.selectedFileStatNodes.length > 0;
+    }
+
+    /**
+     * Pastes files into the navigator using the async clipboard API. The default
+     * `CommonCommands.PASTE` handler relies on `document.execCommand('paste')`, which browsers
+     * block for programmatic invocations, e.g. from the menu.
+     */
+    protected async pasteIntoNavigator(): Promise<void> {
+        const widget = this.tryGetWidget();
+        if (widget) {
+            const text = await this.clipboardService.readText();
+            if (text) {
+                widget.pasteFiles(text);
+            }
+        }
     }
 
     override registerMenus(registry: MenuModelRegistry): void {
