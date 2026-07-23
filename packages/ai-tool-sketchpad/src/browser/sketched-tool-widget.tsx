@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -87,13 +87,16 @@ function ToolListItem({ tool, isSelected, onSelect, onDelete }: ToolListItemProp
 
 interface ToolDetailFormProps {
     tool: SketchedToolDefinition;
+    existingTools: SketchedToolDefinition[];
     onSave: (tool: SketchedToolDefinition) => void;
     onDelete: (id: string) => void;
 }
 
-function ToolDetailForm({ tool: initialTool, onSave, onDelete }: ToolDetailFormProps): React.ReactElement {
+function ToolDetailForm({ tool: initialTool, existingTools, onSave, onDelete }: ToolDetailFormProps): React.ReactElement {
     const [tool, setTool] = React.useState<SketchedToolDefinition>(deepCopy(initialTool));
     const [isDirty, setIsDirty] = React.useState(false);
+
+    const nameError = SketchedToolDefinition.validateName(tool.name, existingTools, tool.id);
 
     React.useEffect(() => {
         setTool(deepCopy(initialTool));
@@ -240,8 +243,8 @@ function ToolDetailForm({ tool: initialTool, onSave, onDelete }: ToolDetailFormP
     };
 
     const handleSave = (): void => {
-        if (tool.name.trim()) {
-            onSave(tool);
+        if (!nameError) {
+            onSave({ ...tool, name: tool.name.trim() });
             setIsDirty(false);
         }
     };
@@ -425,11 +428,14 @@ function ToolDetailForm({ tool: initialTool, onSave, onDelete }: ToolDetailFormP
                 <div className='ai-sketchpad-form-field'>
                     <label>{nls.localize('theia/ai-tool-sketchpad/toolName', 'Tool Name')}</label>
                     <input
-                        className='theia-input'
+                        className={`theia-input${isDirty && nameError ? ' ai-sketchpad-input-error' : ''}`}
                         value={tool.name}
                         placeholder={nls.localize('theia/ai-tool-sketchpad/toolNamePlaceholder', 'e.g. getWeather')}
                         onChange={e => updateField('name', e.target.value)}
                     />
+                    {isDirty && nameError && (
+                        <span className='ai-sketchpad-error'>{nameError}</span>
+                    )}
                 </div>
 
                 <div className='ai-sketchpad-form-field'>
@@ -502,7 +508,7 @@ function ToolDetailForm({ tool: initialTool, onSave, onDelete }: ToolDetailFormP
                     <button
                         className='theia-button main'
                         onClick={handleSave}
-                        disabled={!isDirty || !tool.name.trim()}
+                        disabled={!isDirty || !!nameError}
                     >
                         {nls.localizeByDefault('Save')}
                     </button>
@@ -623,6 +629,7 @@ export class SketchedToolWidget extends ReactWidget {
             <ToolDetailForm
                 key={this.editingTool.id}
                 tool={this.editingTool}
+                existingTools={this.tools}
                 onSave={this.handleSave}
                 onDelete={this.handleDeleteTool}
             />
@@ -684,7 +691,7 @@ export class SketchedToolWidget extends ReactWidget {
     }
 
     protected handleSave = async (tool: SketchedToolDefinition): Promise<void> => {
-        if (!tool.name.trim()) {
+        if (SketchedToolDefinition.validateName(tool.name, this.tools, tool.id)) {
             return;
         }
         this.editingTool = tool;

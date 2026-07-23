@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '@theia/core';
+import { Event, nls } from '@theia/core';
 
 export type SketchedToolParameterType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array';
 
@@ -74,6 +74,35 @@ export namespace SketchedToolDefinition {
             returnMode: obj.returnMode ?? 'static',
             staticReturn: obj.staticReturn ?? ''
         };
+    }
+
+    /**
+     * Pattern accepted as a tool name by most LLM providers (e.g. OpenAI, Anthropic).
+     * The name is also used as the id under which the tool is registered, so it must be unique.
+     */
+    export const NAME_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
+
+    /**
+     * Validates a tool name for use as a registered tool id.
+     *
+     * @param name the name to validate
+     * @param existingTools the currently defined tools, used to check for name collisions
+     * @param selfId the id of the tool being edited, so it is not compared against itself
+     * @returns a localized error message if the name is invalid, otherwise `undefined`
+     */
+    export function validateName(name: string, existingTools: SketchedToolDefinition[], selfId?: string): string | undefined {
+        const trimmed = name.trim();
+        if (!trimmed) {
+            return nls.localize('theia/ai-tool-sketchpad/nameEmpty', 'Tool name must not be empty.');
+        }
+        if (!NAME_PATTERN.test(trimmed)) {
+            return nls.localize('theia/ai-tool-sketchpad/nameInvalid',
+                'Tool name may only contain letters, digits, underscores and hyphens (1-128 characters).');
+        }
+        if (existingTools.some(tool => tool.id !== selfId && tool.name.trim() === trimmed)) {
+            return nls.localize('theia/ai-tool-sketchpad/nameDuplicate', 'A tool with this name already exists.');
+        }
+        return undefined;
     }
 }
 

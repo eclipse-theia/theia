@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -56,6 +56,8 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
     protected fileUri: URI | undefined;
     protected readonly toDispose = new DisposableCollection();
     protected loading = false;
+    /** The content we last wrote to disk, used to ignore file-watch events triggered by our own writes. */
+    protected lastPersistedContent: string | undefined;
 
     protected readonly onDidChangeSketchedToolsEmitter = new Emitter<void>();
     readonly onDidChangeSketchedTools: Event<void> = this.onDidChangeSketchedToolsEmitter.event;
@@ -119,11 +121,21 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
                 return;
             }
             const fileContent = await this.fileService.read(this.fileUri, { encoding: 'utf-8' });
+            if (fileContent.value === this.lastPersistedContent) {
+                // This change was triggered by our own write; the in-memory state is already up to date.
+                return;
+            }
             const doc = load(fileContent.value);
-            if (Array.isArray(doc) && doc.every(entry => SketchedToolDefinition.is(entry))) {
-                this.tools = (doc as SketchedToolDefinition[]).map(SketchedToolDefinition.normalize);
+            if (Array.isArray(doc)) {
+                // Skip invalid entries rather than discarding all tools if one entry is malformed.
+                const valid = doc.filter(entry => SketchedToolDefinition.is(entry)) as SketchedToolDefinition[];
+                const skipped = doc.length - valid.length;
+                if (skipped > 0) {
+                    console.debug(`Skipped ${skipped} invalid entr${skipped === 1 ? 'y' : 'ies'} in ${SKETCHED_TOOLS_FILENAME}.`);
+                }
+                this.tools = valid.map(SketchedToolDefinition.normalize);
             } else {
-                console.debug('Invalid sketchedTools.yml content, ignoring.');
+                console.debug(`Invalid ${SKETCHED_TOOLS_FILENAME} content, ignoring.`);
                 this.tools = [];
             }
             this.registerAllTools();
@@ -151,6 +163,7 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
             } else {
                 await this.fileService.createFile(this.fileUri, buffer);
             }
+            this.lastPersistedContent = yamlContent;
         } catch (e) {
             console.error(`Error persisting ${SKETCHED_TOOLS_FILENAME}: ${e.message}`, e);
         }
@@ -172,23 +185,37 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
 
     protected registerAllTools(): void {
         this.toolInvocationRegistry.unregisterAllTools(SKETCHED_TOOLS_PROVIDER_NAME);
+        // Guard against invalid or duplicate names in hand-edited YAML: the name is the registered id,
+        // so an invalid name is uncallable and a duplicate would collide. Register the first valid one.
+        const registeredNames = new Set<string>();
         for (const def of this.tools) {
-            const toolRequest = this.toToolRequest(def);
-            this.toolInvocationRegistry.registerTool(toolRequest);
+            const name = def.name.trim();
+            if (!SketchedToolDefinition.NAME_PATTERN.test(name)) {
+                console.warn(`Skipping sketched tool "${def.name}": name is empty or contains invalid characters.`);
+                continue;
+            }
+            if (registeredNames.has(name)) {
+                console.warn(`Skipping sketched tool "${name}": another tool with the same name is already registered.`);
+                continue;
+            }
+            registeredNames.add(name);
+            this.toolInvocationRegistry.registerTool(this.toToolRequest(def, name));
         }
     }
 
-    protected toToolRequest(def: SketchedToolDefinition): ToolRequest {
+    protected toToolRequest(def: SketchedToolDefinition, name: string): ToolRequest {
         const parameters = this.convertParameters(def.parameters);
         return {
-            id: def.id,
-            name: def.name,
+            // The readable name doubles as the id so chat completions insert a meaningful reference;
+            // the internal UUID (def.id) remains the persistence key, keeping renames lossless.
+            id: name,
+            name,
             description: def.description,
             providerName: SKETCHED_TOOLS_PROVIDER_NAME,
             parameters,
             handler: async (argString: string) => {
                 if (def.returnMode === 'askAtRuntime') {
-                    return this.askUserForReturnValue(def.name, argString);
+                    return this.askUserForReturnValue(name, argString);
                 }
                 return def.staticReturn;
             }
