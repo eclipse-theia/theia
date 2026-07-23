@@ -33,6 +33,26 @@ export interface BrowserConnectionToken {
     value: string;
 }
 
+export const HttpConnectionValidator = Symbol('HttpConnectionValidator');
+
+/**
+ * Express middleware provider that rejects HTTP requests lacking a valid connection token.
+ *
+ * The connection-token cookie is only *bootstrapped* globally (see
+ * {@link BrowserConnectionTokenBackendContribution}); enforcement is opt-in per route.
+ * Security-sensitive HTTP endpoints (e.g. the filesystem upload/download routes) should
+ * inject this and apply {@link validateRequest} as route middleware. Non-sensitive routes
+ * (the initial HTML page, static assets) must not use it, as they legitimately have no
+ * cookie yet on the very first page load.
+ */
+export interface HttpConnectionValidator {
+    /**
+     * Express middleware that calls `next()` when the request carries a valid connection-token
+     * cookie (or when running in Electron) and responds with `403` otherwise.
+     */
+    validateRequest(req: express.Request, res: express.Response, next: express.NextFunction): void;
+}
+
 /**
  * Validates WebSocket and HTTP requests using a cookie-based connection token.
  *
@@ -40,13 +60,18 @@ export interface BrowserConnectionToken {
  * as a `SameSite=Strict; HttpOnly` cookie on the first page load. Cross-origin pages
  * cannot obtain or send this cookie, so their requests are rejected.
  *
+ * The cookie is *bootstrapped* for every HTTP request (via {@link expressMiddleware}) so that
+ * browsers always receive it, but HTTP requests are only *rejected* on routes that opt in to
+ * enforcement via {@link validateRequest} (see {@link HttpConnectionValidator}). WebSocket
+ * upgrades are always validated (see {@link allowWsUpgrade}).
+ *
  * This complements the origin validator: non-browser callers that omit the Origin
  * header (e.g. Node.js scripts) still cannot reach the backend without the cookie.
  *
  * Skipped in Electron deployments (which use their own `ElectronSecurityToken`).
  */
 @injectable()
-export class BrowserConnectionTokenBackendContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
+export class BrowserConnectionTokenBackendContribution implements BackendApplicationContribution, WsRequestValidatorContribution, HttpConnectionValidator {
 
     @inject(BrowserConnectionToken)
     protected readonly browserConnectionToken: BrowserConnectionToken;
@@ -82,6 +107,25 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
         // No cookie: reject. Legitimate browsers always have the cookie
         // because it is set on the initial page load.
         return false;
+    }
+
+    /**
+     * Reject the request with `403` unless it carries a valid connection-token cookie.
+     * Always allows the request in Electron deployments, consistent with {@link allowWsUpgrade}.
+     */
+    validateRequest(req: express.Request, res: express.Response, next: express.NextFunction): void {
+        if (environment.electron.is()) {
+            next();
+            return;
+        }
+        const token = this.getTokenFromCookie(req);
+        if (token && this.isTokenValid(token)) {
+            next();
+            return;
+        }
+        // No cookie or stale/invalid token: reject. Legitimate browsers always have the cookie
+        // because it is set on the initial page load, and same-origin requests send it automatically.
+        res.sendStatus(403);
     }
 
     protected expressMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {

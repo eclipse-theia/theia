@@ -18,8 +18,9 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { json } from 'body-parser';
-import { Application, Router } from '@theia/core/shared/express';
+import { Application, Router, RequestHandler } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { HttpConnectionValidator } from '@theia/core/lib/node';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { FileDownloadHandler } from './file-download-handler';
 
@@ -40,15 +41,20 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
     @named(FileDownloadHandler.DOWNLOAD_LINK)
     protected readonly downloadLinkHandler: FileDownloadHandler;
 
+    @inject(HttpConnectionValidator)
+    protected readonly connectionValidator: HttpConnectionValidator;
+
     configure(app: Application): void {
+        // Reject unauthenticated/cross-origin requests to the file read endpoints.
+        const guard: RequestHandler = (request, response, next) => this.connectionValidator.validateRequest(request, response, next);
         const router = Router();
         router.get('/download', (request, response) => this.downloadLinkHandler.handle(request, response));
         router.get('/', (request, response) => this.singleFileDownloadHandler.handle(request, response));
         router.put('/', (request, response) => this.multiFileDownloadHandler.handle(request, response));
         // Content-Type: application/json
         app.use(json());
-        app.use(FileDownloadEndpoint.PATH, router);
-        app.get('/file', (request, response) => {
+        app.use(FileDownloadEndpoint.PATH, guard, router);
+        app.get('/file', guard, (request, response) => {
             const uri = new URL(request.url, 'http://localhost').search.slice(1);
             if (!uri) {
                 response.status(400).send('invalid uri');

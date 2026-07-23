@@ -22,6 +22,7 @@ import taskBackendModule from '../task-backend-module';
 import filesystemBackendModule from '@theia/filesystem/lib/node/filesystem-backend-module';
 import workspaceServer from '@theia/workspace/lib/node/workspace-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
+import { HttpConnectionValidator } from '@theia/core/lib/node';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { TerminalProcess } from '@theia/process/lib/node';
 import { ProcessUtils } from '@theia/core/lib/node/process-utils';
@@ -39,6 +40,13 @@ export function createTaskTestContainer(): Container {
     testContainer.load(filesystemBackendModule);
     testContainer.load(workspaceServer);
     testContainer.load(terminalBackendModule);
+
+    // The filesystem backend contributions require an `HttpConnectionValidator` (bound by the browser/electron
+    // hosting modules, which are not loaded here). Bind a no-op so those contributions can be constructed.
+    const noopConnectionValidator: HttpConnectionValidator = {
+        validateRequest: (_req, _res, next) => next()
+    };
+    testContainer.bind(HttpConnectionValidator).toConstantValue(noopConnectionValidator);
 
     // Make it easier to debug processes.
     testContainer.rebind(TerminalProcess).to(TestTerminalProcess);
