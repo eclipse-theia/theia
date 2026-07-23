@@ -26,7 +26,8 @@ import {
     LanguageModelStatus,
     ReasoningSupport,
     resolveCompactionTokenThreshold,
-    resolveServerSideCompaction
+    resolveServerSideCompaction,
+    ServerToolDescriptor
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -71,6 +72,8 @@ export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeW
 
 export class OpenAiModel implements LanguageModel {
 
+    readonly vendor = 'openai';
+
     /**
      * The options for the OpenAI runner.
      */
@@ -112,6 +115,7 @@ export class OpenAiModel implements LanguageModel {
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
         public maxInputTokens?: number,
+        public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
         public serverSideCompactionTokenThresholdByDefault?: number
@@ -291,8 +295,8 @@ export class OpenAiModel implements LanguageModel {
                 cancellationToken
             );
         } catch (error) {
-            // If Response API fails, fall back to Chat Completions API
-            if (error instanceof Error) {
+            // Chat Completions cannot execute Response API server tools.
+            if (error instanceof Error && !request.serverTools?.length) {
                 console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
                 return this.handleChatCompletionsRequest(openai, request, cancellationToken);
             }

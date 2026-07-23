@@ -19,7 +19,8 @@ import {
     CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelStreamResponsePart, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-language-model';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
@@ -59,6 +60,27 @@ describe('OpenAiResponseApiUtils', () => {
             throw new Error('Expected a function tool');
         }
         expect(convertedTool.parameters).to.equal(parameters);
+    });
+
+    it('adds native web search without requiring client tools', () => {
+        const utils = new OpenAiResponseApiUtils();
+
+        expect(utils.convertToolsForResponseApi(undefined, undefined, [OPENAI_WEB_SEARCH])).to.deep.equal([
+            { type: 'web_search' }
+        ]);
+        expect(utils.convertToolsForResponseApi()).to.equal(undefined);
+    });
+
+    it('combines native web search with function and deferred-tool search tools', () => {
+        const utils = new OpenAiResponseApiUtils();
+        const tools = utils.convertToolsForResponseApi([{
+            id: 'lookup',
+            name: 'lookup',
+            parameters: { type: 'object', properties: {} },
+            handler: async () => 'result'
+        }], ['lookup'], [OPENAI_WEB_SEARCH]);
+
+        expect(tools?.map(tool => tool.type)).to.deep.equal(['function', 'tool_search', 'web_search']);
     });
 
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
@@ -101,15 +123,20 @@ describe('OpenAiResponseApiUtils', () => {
                 }
             ]
         ];
+        const streamRequests: Record<string, unknown>[] = [];
         const openai = {
             responses: {
-                stream: () => toStream(streams.shift() ?? [])
+                stream: (responseRequest: Record<string, unknown>) => {
+                    streamRequests.push(responseRequest);
+                    return toStream(streams.shift() ?? []);
+                }
             }
         };
         const request: UserRequest = {
             sessionId: 'session-1',
             requestId: 'request-1',
             messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            serverTools: [OPENAI_WEB_SEARCH],
             tools: [{
                 id: 'lookup',
                 name: 'lookup',
@@ -140,6 +167,71 @@ describe('OpenAiResponseApiUtils', () => {
             { input_tokens: 100, output_tokens: 10 },
             { input_tokens: 200, output_tokens: 20 }
         ]);
+        expect(streamRequests).to.have.length(2);
+        expect(streamRequests.every(streamRequest =>
+            JSON.stringify(streamRequest.include) === JSON.stringify(['web_search_call.action.sources', 'reasoning.encrypted_content'])
+        )).to.equal(true);
+    });
+
+    it('preserves reasoning and web search items for the next function-tool iteration', async () => {
+        const utils = new OpenAiResponseApiUtils();
+        const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
+        const searchCall = {
+            id: 'ws-1',
+            type: 'web_search_call',
+            status: 'completed',
+            action: { type: 'search', query: 'news' }
+        };
+        const streams = [
+            [
+                { type: 'response.output_item.done', item: reasoningItem },
+                { type: 'response.output_item.done', item: searchCall },
+                {
+                    type: 'response.output_item.added',
+                    item: { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}' }
+                }
+            ],
+            [{ type: 'response.output_text.delta', delta: 'done' }]
+        ];
+        const streamRequests: Record<string, unknown>[] = [];
+        const openai = {
+            responses: {
+                stream: (responseRequest: Record<string, unknown>) => {
+                    streamRequests.push(responseRequest);
+                    return toStream(streams.shift() ?? []);
+                }
+            }
+        };
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            serverTools: [OPENAI_WEB_SEARCH],
+            tools: [{
+                id: 'lookup',
+                name: 'lookup',
+                parameters: { type: 'object', properties: { query: { type: 'string' } } },
+                handler: async () => 'result'
+            }]
+        };
+
+        const response = await utils.handleRequest(
+            openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
+            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+        );
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        expect(parts).to.not.be.empty;
+
+        expect(streamRequests).to.have.length(2);
+        expect(streamRequests[1].input).to.deep.include.members([reasoningItem, searchCall]);
+        const input = streamRequests[1].input as unknown[];
+        expect(input.indexOf(reasoningItem)).to.be.lessThan(input.indexOf(searchCall));
     });
 
     it('yields a compaction part when the stream contains a response.output_item.done compaction event', async () => {
@@ -263,6 +355,203 @@ describe('OpenAiResponseApiUtils', () => {
         expect(finished!.id).to.equal('ts-1');
         expect(finished!.name).to.equal('tool_search');
         expect(finished!.result).to.deep.equal({ content: [{ type: 'text', text: 'Found 2 tools.' }] });
+    });
+
+    it('surfaces web search as a running then finished server tool call', async () => {
+        const utils = new OpenAiResponseApiUtils();
+        const reasoningItem = {
+            id: 'rs-1',
+            type: 'reasoning',
+            summary: [],
+            encrypted_content: 'encrypted-reasoning'
+        };
+        const searchCall = {
+            id: 'ws-1',
+            type: 'web_search_call',
+            status: 'failed',
+            action: { type: 'search', query: 'latest AI news' }
+        };
+        const openai = {
+            responses: {
+                stream: () => toStream([
+                    { type: 'response.output_item.done', item: reasoningItem },
+                    { type: 'response.output_item.added', item: { ...searchCall, status: 'in_progress' } },
+                    { type: 'response.output_item.done', item: searchCall },
+                    { type: 'response.output_text.delta', delta: 'Latest news.' },
+                    { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } }
+                ])
+            }
+        };
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'What is new?' }],
+            serverTools: [OPENAI_WEB_SEARCH]
+        };
+
+        const response = await utils.handleRequest(
+            openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
+            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+        );
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        const calls = parts.filter(isServerToolCallResponsePart).flatMap(part => part.server_tool_calls);
+        expect(calls).to.have.length(2);
+        expect(calls[0]).to.deep.include({ id: 'ws-1', name: OPENAI_WEB_SEARCH, finished: false });
+        expect(calls[1]).to.deep.include({ id: 'ws-1', name: OPENAI_WEB_SEARCH, finished: true });
+        expect(calls[1].result).to.deep.equal({ content: [{ type: 'text', text: 'Web search failed.' }] });
+        expect(calls[1].data).to.deep.equal({
+            [OPENAI_WEB_SEARCH_REPLAY_DATA_KEY]: JSON.stringify([reasoningItem, searchCall])
+        });
+    });
+
+    it('surfaces web search from a non-streaming response and requests sources', async () => {
+        const utils = new OpenAiResponseApiUtils();
+        let createRequest: Record<string, unknown> | undefined;
+        const openai = {
+            responses: {
+                create: async (responseRequest: Record<string, unknown>) => {
+                    createRequest = responseRequest;
+                    return {
+                        output_text: 'Answer',
+                        output: [{ id: 'ws-1', type: 'web_search_call', status: 'completed', action: { type: 'search', query: 'news' } }]
+                    };
+                }
+            }
+        };
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'Search' }],
+            serverTools: [OPENAI_WEB_SEARCH]
+        };
+
+        const response = await utils.handleRequest(
+            openai as never, request, { include: ['file_search_call.results', 'web_search_call.action.sources'] },
+            'gpt-5', new OpenAiModelUtils(), 'developer', { maxChatCompletions: 3 }, 'openai/gpt-5', false
+        );
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        const calls = parts.filter(isServerToolCallResponsePart).flatMap(part => part.server_tool_calls);
+        expect(calls).to.have.length(1);
+        expect(calls[0]).to.deep.include({ id: 'ws-1', name: OPENAI_WEB_SEARCH, finished: true });
+        expect(createRequest?.include).to.deep.equal(['file_search_call.results', 'web_search_call.action.sources', 'reasoning.encrypted_content']);
+    });
+
+    it('replays persisted OpenAI reasoning before its web search call', () => {
+        const utils = new OpenAiResponseApiUtils();
+        const reasoningItem = {
+            id: 'rs-1',
+            type: 'reasoning',
+            summary: [],
+            encrypted_content: 'encrypted-reasoning'
+        };
+        const searchCall = {
+            id: 'ws-1',
+            type: 'web_search_call',
+            status: 'completed',
+            action: {
+                type: 'search',
+                query: 'news',
+                sources: [{ type: 'url', url: 'https://example.com', title: 'Example' }]
+            }
+        };
+        const messages: LanguageModelMessage[] = [{
+            actor: 'ai',
+            type: 'server_tool_use',
+            id: 'ws-1',
+            name: OPENAI_WEB_SEARCH,
+            input: searchCall.action,
+            result: { content: [{ type: 'text', text: 'Web search completed.' }] },
+            data: {
+                [OPENAI_WEB_SEARCH_REPLAY_DATA_KEY]: JSON.stringify([reasoningItem, searchCall])
+            }
+        }];
+
+        const { input } = utils.processMessages(messages, 'developer', 'gpt-5');
+
+        expect(input).to.deep.equal([reasoningItem, searchCall]);
+    });
+
+    it('persists and replays reasoning before a function call', async () => {
+        const utils = new OpenAiResponseApiUtils();
+        const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
+        const functionCall = {
+            id: 'fc-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}'
+        };
+        const requests: Record<string, unknown>[] = [];
+        const streams = [
+            [
+                { type: 'response.output_item.done', item: reasoningItem },
+                { type: 'response.output_item.added', item: functionCall }
+            ],
+            [{ type: 'response.output_text.delta', delta: 'done' }]
+        ];
+        const openai = {
+            responses: {
+                stream: (responseRequest: Record<string, unknown>) => {
+                    requests.push(responseRequest);
+                    return toStream(streams.shift() ?? []);
+                }
+            }
+        };
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            tools: [{
+                id: 'lookup',
+                name: 'lookup',
+                parameters: { type: 'object', properties: { query: { type: 'string' } } },
+                handler: async () => 'result'
+            }]
+        };
+
+        const response = await utils.handleRequest(
+            openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
+            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+        );
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        expect(requests[0].include).to.deep.equal(['reasoning.encrypted_content']);
+        const completedCall = parts.flatMap(part => 'tool_calls' in part ? part.tool_calls : []).find(call => call.finished);
+        expect(completedCall?.data).to.deep.equal({
+            [OPENAI_FUNCTION_CALL_REASONING_DATA_KEY]: JSON.stringify([reasoningItem])
+        });
+        expect(requests[1].input).to.deep.include.members([reasoningItem]);
+        const nextInput = requests[1].input as unknown[];
+        const replayedCall = nextInput.find(item => (item as { type?: string }).type === 'function_call');
+        expect(nextInput.indexOf(reasoningItem)).to.be.lessThan(nextInput.indexOf(replayedCall));
+
+        const { input } = utils.processMessages([{
+            actor: 'ai',
+            type: 'tool_use',
+            id: 'call-1',
+            name: 'lookup',
+            input: { query: 'test' },
+            data: completedCall?.data
+        }], 'developer', 'gpt-5');
+        expect(input).to.deep.equal([reasoningItem, {
+            type: 'function_call',
+            call_id: 'call-1',
+            name: 'lookup',
+            arguments: '{"query":"test"}'
+        }]);
     });
 
     describe('processMessages server-side compaction replay', () => {

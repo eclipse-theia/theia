@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
+import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { OpenAI } from 'openai';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -30,11 +32,20 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
 };
 
 class TestableOpenAiModel extends OpenAiModel {
+    chatCompletionsRequests = 0;
+
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
     }
     public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
         return this.applyResponseApiCompaction(settings, request);
+    }
+    public callHandleResponseApiRequest(request: UserRequest): Promise<LanguageModelResponse> {
+        return this.handleResponseApiRequest({} as OpenAI, request);
+    }
+    protected override async handleChatCompletionsRequest(): Promise<LanguageModelResponse> {
+        this.chatCompletionsRequests++;
+        return { text: 'fallback' };
     }
 }
 
@@ -58,7 +69,7 @@ function createCompactionModel(
         () => 'test-key', () => undefined,
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+        'developer', 3, useResponseApi, undefined, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
         serverSideCompactionTokenThresholdByDefault
     );
 }
@@ -118,6 +129,53 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning).to.equal(undefined);
             expect(result.reasoning_effort).to.equal(undefined);
         });
+    });
+});
+
+describe('OpenAiModel Response API fallback', () => {
+    function createFailingModel(): TestableOpenAiModel {
+        const responseApiUtils = {
+            handleRequest: async () => { throw new Error('Response API unavailable'); }
+        } as unknown as OpenAiResponseApiUtils;
+        return new TestableOpenAiModel(
+            'test-id', 'gpt-5', { status: 'ready' }, true,
+            () => 'test-key', () => undefined,
+            false, undefined, undefined,
+            new OpenAiModelUtils(), responseApiUtils,
+            'developer', 3, true
+        );
+    }
+
+    it('does not fall back to Chat Completions when a server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [],
+            serverTools: [OPENAI_WEB_SEARCH]
+        };
+
+        let error: unknown;
+        try {
+            await model.callHandleResponseApiRequest(request);
+        } catch (caught) {
+            error = caught;
+        }
+
+        expect(error).to.be.instanceOf(Error).with.property('message', 'Response API unavailable');
+        expect(model.chatCompletionsRequests).to.equal(0);
+    });
+
+    it('retains Chat Completions fallback when no server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: []
+        };
+
+        expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
+        expect(model.chatCompletionsRequests).to.equal(1);
     });
 });
 

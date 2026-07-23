@@ -21,6 +21,7 @@ import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './opena
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+import { OPENAI_SERVER_TOOLS } from './openai-server-tools';
 
 interface ResolvedModelMetadata {
     maxInputTokens?: number;
@@ -92,6 +93,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
             const metadata = this.resolveMetadata(modelDescription);
+            const serverTools = this.resolveServerTools(modelDescription);
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
@@ -113,6 +115,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
                     maxInputTokens: metadata.maxInputTokens,
+                    serverTools,
                     serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                     serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
                     serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
@@ -137,6 +140,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         proxyUrl,
                         metadata.reasoningSupport,
                         metadata.maxInputTokens,
+                        serverTools,
                         metadata.serverSideCompactionSupport,
                         modelDescription.serverSideCompactionEnabledByDefault ?? false,
                         modelDescription.serverSideCompactionTokenThresholdByDefault
@@ -144,6 +148,10 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 ]);
             }
         }
+    }
+
+    protected resolveServerTools(description: OpenAiModelDescription): typeof OPENAI_SERVER_TOOLS | undefined {
+        return description.useResponseApi && !description.url ? OPENAI_SERVER_TOOLS : undefined;
     }
 
     /**
