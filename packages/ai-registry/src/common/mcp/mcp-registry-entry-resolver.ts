@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
 import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types';
+import { ILogger } from '@theia/core';
 
 export const MCPRegistryEntryResolver = Symbol('MCPRegistryEntryResolver');
 export interface MCPRegistryEntryResolver {
@@ -29,6 +30,9 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
 
     @inject(AIRegistryConfiguration)
     protected readonly configuration: AIRegistryConfiguration;
+
+    @inject(ILogger) @named('ai-registry:MCPRegistryEntryResolverImpl')
+    protected readonly logger: ILogger;
 
     resolve(raw: RegistryMCPServer): ResolvedRegistryEntry | undefined {
         const approval = [...raw.approvals].sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -51,7 +55,7 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
             // Multi-server install configs aren't a Theia concept - we install one server
             // per registry entry. Warn so the registry maintainer is aware their payload
             // exposed more than we use, and pick the first slug deterministically.
-            console.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${serverKeys[0]}.`);
+            this.logger.warn(`AI registry entry ${raw.serverId} has multiple servers in its install config; using ${serverKeys[0]}.`);
         }
         const localName = serverKeys[0];
         return {

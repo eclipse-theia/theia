@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -41,7 +41,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposePerCurrentEditor = new DisposableCollection();
 
-    @inject(ILogger)
+    @inject(ILogger) @named('editor:EditorNavigationContribution')
     protected readonly logger: ILogger;
 
     @inject(EditorManager)

@@ -16,9 +16,10 @@
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsManager {
@@ -28,6 +29,9 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(ILogger) @named('ai-ollama:OllamaLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get host(): string | undefined {
         return this._host ?? process.env.OLLAMA_HOST;
@@ -50,7 +54,7 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
             if (existingModel) {
                 if (!(existingModel instanceof OllamaModel)) {
-                    console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
+                    this.logger.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
                 const status = this.calculateStatus(host);

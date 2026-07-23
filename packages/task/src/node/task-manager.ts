@@ -39,7 +39,8 @@ export class TaskManager implements BackendApplicationContribution, ManagedTaskM
     protected readonly deleteEmitter = new Emitter<number>();
 
     constructor(
-        @inject(ILogger) @named('task') protected readonly logger: ILogger
+        @inject(ILogger) @named('task:TaskManager')
+        protected readonly logger: ILogger
     ) { }
 
     /**

@@ -19,13 +19,13 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { codicon, LabelProvider } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface GrepToolInput {
     pattern: string;
@@ -57,6 +57,9 @@ export class GrepToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(ILogger) @named('ai-claude-code:GrepToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'Grep') {
             return 15; // Higher than default ToolCallPartRenderer (10)
@@ -73,7 +76,7 @@ export class GrepToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
                 labelProvider={this.labelProvider}
             />;
         } catch (error) {
-            console.warn('Failed to parse Grep tool input:', error);
+            this.logger.warn('Failed to parse Grep tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseGrepToolData', 'Failed to parse Grep tool data')}</div>;
         }
     }

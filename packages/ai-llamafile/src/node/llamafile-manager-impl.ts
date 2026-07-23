@@ -14,18 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { LlamafileLanguageModel } from '../common/llamafile-language-model';
 import { LlamafileManager, LlamafileModelDescription, LlamafileServerManagerClient } from '../common/llamafile-manager';
+import { ILogger } from '@theia/core/lib/common';
 
 @injectable()
 export class LlamafileManagerImpl implements LlamafileManager {
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
+
+    @inject(ILogger) @named('ai-llamafile:LlamafileManagerImpl')
+    protected readonly logger: ILogger;
 
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
@@ -35,11 +39,11 @@ export class LlamafileManagerImpl implements LlamafileManager {
             const model = await this.languageModelRegistry.getLanguageModel(llamafile.name);
             if (model) {
                 if (!(model instanceof LlamafileLanguageModel)) {
-                    console.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
+                    this.logger.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
                     continue;
                 } else {
                     // This can happen during the initializing of more than one frontends, changes are handled in the frontend
-                    console.info(`Llamafile: skip creating or updating model ${llamafile.name} because it already exists.`);
+                    this.logger.info(`Llamafile: skip creating or updating model ${llamafile.name} because it already exists.`);
                 }
             } else {
                 this.languageModelRegistry.addLanguageModels([

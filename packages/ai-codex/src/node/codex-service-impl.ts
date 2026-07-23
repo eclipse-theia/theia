@@ -26,8 +26,8 @@ import {
 @injectable()
 export class CodexServiceImpl implements CodexService {
 
-    @inject(ILogger) @named('Codex')
-    private logger: ILogger;
+    @inject(ILogger) @named('ai-codex:CodexServiceImpl')
+    protected readonly logger: ILogger;
 
     private client: CodexClient;
     private sessionThreads = new Map<string, Thread>();

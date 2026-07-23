@@ -29,7 +29,7 @@ import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 @injectable()
 export class FrontendChatToolRequestService extends ChatToolRequestService {
 
-    @inject(ILogger) @named('ChatToolRequestService')
+    @inject(ILogger) @named('ai-chat:FrontendChatToolRequestService')
     protected readonly logger: ILogger;
 
     @inject(ToolConfirmationManager)

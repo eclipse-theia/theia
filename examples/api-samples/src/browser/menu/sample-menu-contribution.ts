@@ -88,7 +88,7 @@ export class SampleCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:SampleCommandContribution')
     protected readonly logger: ILogger;
 
     registerCommands(commands: CommandRegistry): void {

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ConfirmDialog } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import {
@@ -55,6 +55,9 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     @inject(ShellCommandPermissionService)
     protected readonly shellCommandPermissionService: ShellCommandPermissionService;
+
+    @inject(ILogger) @named('ai-ide:AIToolsConfigurationWidget')
+    protected readonly logger: ILogger;
 
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
@@ -376,7 +379,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     protected handleRemoveAllowlistPattern(pattern: string): void {
         this.shellCommandPermissionService.removeAllowlistPattern(pattern)
-            .catch(error => console.error('Failed to remove allowlist pattern:', error));
+            .catch(error => this.logger.error('Failed to remove allowlist pattern:', error));
     }
 
     protected handleAddDenylistPattern(): void {
@@ -391,7 +394,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     protected handleRemoveDenylistPattern(pattern: string): void {
         this.shellCommandPermissionService.removeDenylistPattern(pattern)
-            .catch(error => console.error('Failed to remove denylist pattern:', error));
+            .catch(error => this.logger.error('Failed to remove denylist pattern:', error));
     }
 
     protected handleAddPatternToList(

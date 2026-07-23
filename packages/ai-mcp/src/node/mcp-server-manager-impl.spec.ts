@@ -18,11 +18,13 @@ import { expect } from 'chai';
 import { MCPServerManagerImpl } from './mcp-server-manager-impl';
 import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
 import { MCPServer } from './mcp-server';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('stops a running server before clearing OAuth credentials', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -46,6 +48,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // authProvider.cancel()); the manager only orchestrates stop + notify.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             stop: async () => { calls.push('stop'); }
         };
@@ -64,6 +67,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('still notifies clients when stopping a server fails', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
         };
@@ -88,6 +92,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // Server.stop() now cancels its own in-flight OAuth flow; the manager just iterates and stops.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const client = { onDidUpdateMCPServers: () => ({ dispose: () => { } }), didUpdateMCPServers: () => { } };
         const server = {
             stop: async () => { calls.push('stop'); }
@@ -107,6 +112,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('clears OAuth credentials when removing a server after stopping it', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             stop: async () => { calls.push('stop'); }
         };
@@ -128,6 +134,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         console.error = () => { };
         try {
             const manager = new MCPServerManagerImpl();
+            (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
             const server = {
                 stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
             };
@@ -151,6 +158,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('does not stop a running server for non-connection preference changes', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -176,6 +184,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('restarts a running server for connection preference changes', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -202,6 +211,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('clears credentials when OAuth client scope changes for a stopped server', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => false,
             isStopped: () => true,
@@ -231,6 +241,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('clears credentials when OAuth client scope changes', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -260,6 +271,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('stops a running server and clears credentials before disabling OAuth', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -285,6 +297,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('clears OAuth credentials when a resolve() rewrites the credential scope on startServer', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const initialDescription = {
             name: 'asana',
             serverUrl: 'https://mcp.example.com/mcp',
@@ -320,6 +333,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('does not re-update or clear when resolve() returns the same configuration during startServer', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const sameConfiguration = {
             name: 'asana',
             serverUrl: 'https://mcp.example.com/mcp',
@@ -358,6 +372,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // reset this.status and clear this.error.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => false,
             stop: async () => { calls.push('stop'); },
@@ -394,6 +409,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // compare equal so a no-op preference write does not bounce the connection.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -426,6 +442,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('restarts a running server when an oauth block is added (presence enables OAuth)', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => true,
             isStopped: () => false,
@@ -453,6 +470,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // doStart continues on the OLD URL while reads see the NEW one. Only `!isStopped()` catches this state.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => false,
             isStopped: () => false,
@@ -482,6 +500,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // Companion case: leave the in-flight doStart alone; new description's non-connection fields apply next start.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => false,
             isStopped: () => false,
@@ -512,6 +531,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         console.error = () => { /* suppress expected diagnostic */ };
         try {
             const manager = new MCPServerManagerImpl();
+            (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
             const server = {
                 isRunning: () => true,
                 isStopped: () => false,
@@ -540,6 +560,7 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         // in-flight handshake along with the stored tokens, not just the tokens.
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
         const server = {
             isRunning: () => false,
             isStopped: () => false,

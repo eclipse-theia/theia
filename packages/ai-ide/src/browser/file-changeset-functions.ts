@@ -20,11 +20,11 @@ import { ToolInvocationContext, ToolProvider, ToolRequest, ToolRequestParameters
 import { ContentReplacerV1Impl, Replacement, ContentReplacer } from '@theia/core/lib/common/content-replacer';
 import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import {
     CLEAR_FILE_CHANGES_ID,
@@ -223,6 +223,9 @@ export class ReplaceContentInFileFunctionHelper {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
+    @inject(ILogger) @named('ai-ide:ReplaceContentInFileFunctionHelper')
+    protected readonly logger: ILogger;
+
     private replacer: ContentReplacer;
 
     constructor() {
@@ -324,7 +327,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
         } catch (error) {
-            console.debug('Error processing replacements:', error.message);
+            this.logger.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -350,7 +353,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
         } catch (error) {
-            console.debug('Error processing replacements:', error.message);
+            this.logger.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -430,7 +433,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `No pending changes found for file ${path}.`;
             }
         } catch (error) {
-            console.debug('Error clearing file changes:', error.message);
+            this.logger.debug('Error clearing file changes:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -456,7 +459,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `File ${path} has no pending changes. Original content:\n\n${originalContent}`;
             }
         } catch (error) {
-            console.debug('Error getting proposed file state:', error.message);
+            this.logger.debug('Error getting proposed file state:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }

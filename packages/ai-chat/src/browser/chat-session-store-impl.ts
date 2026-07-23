@@ -51,7 +51,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(StorageService)
     protected readonly storageService: StorageService;
 
-    @inject(ILogger) @named('ChatSessionStore')
+    @inject(ILogger) @named('ai-chat:ChatSessionStoreImpl')
     protected readonly logger: ILogger;
 
     @inject(PreferenceService)

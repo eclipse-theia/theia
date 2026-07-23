@@ -18,12 +18,12 @@ import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-res
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { codicon } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface WebFetchToolInput {
     url: string;
@@ -32,6 +32,9 @@ interface WebFetchToolInput {
 
 @injectable()
 export class WebFetchToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
+
+    @inject(ILogger) @named('ai-claude-code:WebFetchToolRenderer')
+    protected readonly logger: ILogger;
 
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'WebFetch') {
@@ -45,7 +48,7 @@ export class WebFetchToolRenderer implements ChatResponsePartRenderer<ToolCallCh
             const input = JSON.parse(response.arguments || '{}') as WebFetchToolInput;
             return <WebFetchToolComponent input={input} />;
         } catch (error) {
-            console.warn('Failed to parse WebFetch tool input:', error);
+            this.logger.warn('Failed to parse WebFetch tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseWebFetchToolData', 'Failed to parse WebFetch tool data')}</div>;
         }
     }

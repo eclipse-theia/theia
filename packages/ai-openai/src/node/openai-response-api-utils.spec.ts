@@ -20,6 +20,7 @@ import {
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
@@ -28,8 +29,14 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
 }
 
 describe('OpenAiResponseApiUtils', () => {
+    let utils: OpenAiResponseApiUtils;
+
+    beforeEach(() => {
+        utils = new OpenAiResponseApiUtils();
+        (utils as unknown as { logger: MockLogger }).logger = new MockLogger();
+    });
+
     it('passes tool parameters through unchanged in non-strict mode', () => {
-        const utils = new OpenAiResponseApiUtils();
         const parameters = {
             type: 'object' as const,
             properties: {
@@ -62,7 +69,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streams = [
             [
                 {
@@ -143,7 +149,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('yields a compaction part when the stream contains a response.output_item.done compaction event', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streamEvents = [
             {
                 type: 'response.output_item.done',
@@ -194,7 +199,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces the deferred-tool search as a running then finished server tool call', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streams = [
             [
                 {
@@ -289,7 +293,6 @@ describe('OpenAiResponseApiUtils', () => {
         }
 
         it('replays the openai-responses compaction marker and drops the prefix before it', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 aiMessage('ai B'),
@@ -311,7 +314,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('only replays the LAST openai-responses marker and drops everything before it', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 compactionMessage('openai-responses', 'enc1'),
@@ -334,7 +336,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('skips a foreign-provider compaction marker without dropping the prefix', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 compactionMessage('anthropic', 'enc1'),
@@ -351,7 +352,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('converts all messages unchanged when there is no compaction marker', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [userMessage('user A'), aiMessage('ai B'), userMessage('user C')];
 
             const { input } = utils.processMessages(messages, 'developer', 'gpt-5');

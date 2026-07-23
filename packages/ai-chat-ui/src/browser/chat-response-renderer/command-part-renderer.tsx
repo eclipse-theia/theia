@@ -15,16 +15,20 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatResponseContent, CommandChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { CommandRegistry, CommandService, nls } from '@theia/core';
+import { CommandRegistry, CommandService, nls, ILogger } from '@theia/core';
 
 @injectable()
 export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChatResponseContent> {
     @inject(CommandService) private commandService: CommandService;
     @inject(CommandRegistry) private commandRegistry: CommandRegistry;
+
+    @inject(ILogger) @named('ai-chat-ui:CommandPartRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (CommandChatResponseContent.is(response)) {
             return 10;
@@ -51,11 +55,11 @@ export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChat
     }
     private onCommand(arg: CommandChatResponseContent): void {
         if (arg.customCallback) {
-            arg.customCallback.callback().catch(e => { console.error(e); });
+            arg.customCallback.callback().catch(e => { this.logger.error(e); });
         } else if (arg.command) {
-            this.commandService.executeCommand(arg.command.id, ...(arg.arguments ?? [])).catch(e => { console.error(e); });
+            this.commandService.executeCommand(arg.command.id, ...(arg.arguments ?? [])).catch(e => { this.logger.error(e); });
         } else {
-            console.warn('No command or custom callback provided in command chat response content');
+            this.logger.warn('No command or custom callback provided in command chat response content');
         }
     }
 }

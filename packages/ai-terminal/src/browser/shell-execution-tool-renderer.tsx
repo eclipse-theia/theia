@@ -26,7 +26,7 @@ import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ShellExecutionTool } from './shell-execution-tool';
@@ -38,6 +38,7 @@ import {
 } from '../common/shell-execution-server';
 import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser';
 import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from '../common/shell-command-patterns';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -63,6 +64,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
 
+    @inject(ILogger) @named('ai-terminal:ShellExecutionToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === SHELL_EXECUTION_FUNCTION_ID) {
             return 20;
@@ -79,9 +83,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             if (patterns && patterns.length > 0) {
                 try {
                     this.shellCommandPermissionService.addAllowlistPatterns(...patterns)
-                        .catch(err => console.warn('Failed to add allowlist patterns:', err));
+                        .catch(err => this.logger.warn('Failed to add allowlist patterns:', err));
                 } catch (err) {
-                    console.warn('Failed to add allowlist patterns:', err);
+                    this.logger.warn('Failed to add allowlist patterns:', err);
                 }
             }
             response.confirm();
@@ -90,9 +94,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             if (options?.patterns && options.patterns.length > 0) {
                 try {
                     this.shellCommandPermissionService.addDenylistPatterns(...options.patterns)
-                        .catch(err => console.warn('Failed to add denylist patterns:', err));
+                        .catch(err => this.logger.warn('Failed to add denylist patterns:', err));
                 } catch (err) {
-                    console.warn('Failed to add denylist patterns:', err);
+                    this.logger.warn('Failed to add denylist patterns:', err);
                 }
             }
             response.deny(options?.reason);

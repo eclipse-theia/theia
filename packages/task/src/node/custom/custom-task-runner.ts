@@ -32,7 +32,7 @@ import {
 @injectable()
 export class CustomTaskRunner implements TaskRunner {
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:CustomTaskRunner')
     protected readonly logger: ILogger;
 
     @inject(TerminalProcessFactory)

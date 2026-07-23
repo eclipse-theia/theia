@@ -24,6 +24,7 @@ import { Emitter, MessageService, ProgressMessage } from '@theia/core';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
 import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -45,6 +46,8 @@ describe('MCPOAuthFrontendDelegateClientImpl', () => {
         serverUpdateEmitter?: Emitter<void>
     } = {}): MCPOAuthFrontendDelegateClientImpl {
         const client = new MCPOAuthFrontendDelegateClientImpl();
+        (client as unknown as { logger: MockLogger }).logger = new MockLogger();
+
         const windowService = {
             openNewWindow(url: string, options2?: { external?: boolean }): undefined {
                 openCalls.push({ url, external: options2?.external });

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat/lib/common';
-import { CommandContribution, CommandRegistry, CommandService } from '@theia/core';
+import { CommandContribution, CommandRegistry, CommandService, ILogger } from '@theia/core';
 import { TaskContextStorageService, TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
@@ -54,6 +54,9 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
     @inject(AICommandHandlerFactory)
     protected readonly commandHandlerFactory: AICommandHandlerFactory;
 
+    @inject(ILogger) @named('ai-ide:SummarizeSessionCommandContribution')
+    protected readonly logger: ILogger;
+
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
             execute: async (taskContextId?: string) => {
@@ -73,7 +76,7 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                 }
 
                 if (!existingTaskContext) {
-                    console.warn('No task context found. Use createTaskContext to create a plan first.');
+                    this.logger.warn('No task context found. Use createTaskContext to create a plan first.');
                     return;
                 }
 

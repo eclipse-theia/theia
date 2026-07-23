@@ -19,6 +19,7 @@ import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { ReasoningApi } from '@theia/ai-core';
 import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
 import { AnthropicModelDescription } from '../common';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class TestableAnthropicManager extends AnthropicLanguageModelsManagerImpl {
     public retrieveCalls: string[] = [];
@@ -86,6 +87,7 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
 
     beforeEach(() => {
         manager = new TestableAnthropicManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     describe('deriveReasoningApi', () => {
@@ -210,6 +212,7 @@ describe('AnthropicLanguageModelsManagerImpl - fetchModelInfo cache', () => {
 
     beforeEach(() => {
         manager = new TestableAnthropicManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     it('returns undefined and skips the network when no API key is provided', async () => {

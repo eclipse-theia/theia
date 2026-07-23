@@ -16,7 +16,7 @@
 
 import { ILogger, nls, URI } from '@theia/core';
 import { ApplicationShell, DiffUris, LabelProvider, NavigatableWidget, OpenerService, open } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
@@ -25,7 +25,7 @@ import { ChangeSetFileElement } from './change-set-file-element';
 
 @injectable()
 export class ChangeSetFileService {
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-chat:ChangeSetFileService')
     protected readonly logger: ILogger;
 
     @inject(WorkspaceService)

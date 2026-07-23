@@ -25,6 +25,7 @@ import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXRegistryService } from '../common/vsx-registry-service';
 import { VSXRegistryServiceImpl } from './vsx-registry-service-impl';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('VSXRegistryServiceImpl', () => {
     let service: VSXRegistryService;
@@ -38,7 +39,7 @@ describe('VSXRegistryServiceImpl', () => {
         getVscodeApiVersion: sinon.SinonStub;
         getOvsxRouterConfig: sinon.SinonStub;
     };
-    let mockLogger: Record<string, unknown> & { warn: sinon.SinonStub };
+    let mockLogger: MockLogger;
 
     beforeEach(() => {
         mockClient = {
@@ -67,31 +68,7 @@ describe('VSXRegistryServiceImpl', () => {
             getOvsxRouterConfig: sinon.stub().resolves(undefined)
         };
 
-        mockLogger = {
-            warn: sinon.stub(),
-            error: sinon.stub(),
-            info: sinon.stub(),
-            debug: sinon.stub(),
-            trace: sinon.stub(),
-            log: sinon.stub(),
-            fatal: sinon.stub(),
-            isEnabled: sinon.stub().returns(true),
-            ifEnabled: sinon.stub(),
-            isTrace: sinon.stub().returns(false),
-            ifTrace: sinon.stub(),
-            isDebug: sinon.stub().returns(false),
-            ifDebug: sinon.stub(),
-            isInfo: sinon.stub().returns(false),
-            ifInfo: sinon.stub(),
-            isWarn: sinon.stub().returns(true),
-            ifWarn: sinon.stub(),
-            isError: sinon.stub().returns(true),
-            ifError: sinon.stub(),
-            isFatal: sinon.stub().returns(true),
-            ifFatal: sinon.stub(),
-            child: sinon.stub(),
-            setLogLevel: sinon.stub()
-        };
+        mockLogger = new MockLogger();
 
         const container = new Container();
         container.bind(VSXRegistryServiceImpl).toSelf().inSingletonScope();
@@ -100,7 +77,7 @@ describe('VSXRegistryServiceImpl', () => {
         container.bind(OVSXApiFilterProvider).toConstantValue(async () => mockFilter);
         container.bind(RequestService).toConstantValue(mockRequestService as unknown as RequestService);
         container.bind(VSXEnvironment).toConstantValue(mockVsxEnvironment as unknown as VSXEnvironment);
-        container.bind(ILogger).toConstantValue(mockLogger as unknown as ILogger);
+        container.bind(ILogger).toConstantValue(mockLogger);
 
         service = container.get(VSXRegistryService);
     });

@@ -19,6 +19,7 @@ import type { Model } from '@google/genai';
 import { ReasoningApi } from '@theia/ai-core';
 import { GoogleLanguageModelsManagerImpl, reasoningApiFromModelId } from './google-language-models-manager-impl';
 import { GoogleModelDescription } from '../common';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class TestableGoogleManager extends GoogleLanguageModelsManagerImpl {
     public retrieveCalls: string[] = [];
@@ -87,6 +88,7 @@ describe('GoogleLanguageModelsManagerImpl - deriveReasoningApi', () => {
 
     beforeEach(() => {
         manager = new TestableGoogleManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     it('falls back to the model-id heuristic when info is missing', () => {
@@ -116,6 +118,7 @@ describe('GoogleLanguageModelsManagerImpl - fetchModelInfo cache', () => {
 
     beforeEach(() => {
         manager = new TestableGoogleManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     it('returns undefined and skips the network when no API key is provided', async () => {

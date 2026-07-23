@@ -228,7 +228,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
                 const credentials: StoredCredentials = JSON.parse(stored);
                 // Tokens from the current OAuth App start with 'gho_'; other prefixes (e.g. 'ghu_') indicate a token from the previous GitHub App (Iv-prefixed client ID).
                 if (!credentials.accessToken.startsWith('gho_')) {
-                    console.info('Copilot: clearing outdated GitHub App token. Please sign in again.');
+                    this.logger.info('Copilot: clearing outdated GitHub App token. Please sign in again.');
                     await this.keyStoreService.deletePassword(this.oauthConfig.keystoreService, this.oauthConfig.keystoreAccount);
                     this.cachedState = { isAuthenticated: false, migrationRequired: true };
                     return this.cachedState;
