@@ -51,7 +51,7 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
             this.logger.warn(`Ignoring malformed analytics event for topic '${this.describeTopic(event?.topic)}'.`);
             return;
         }
-        void this.preferences.ready.then(() => this.doDispatch(event));
+        this.preferences.ready.then(() => this.doDispatch(event));
     }
 
     protected doDispatch(event: AnalyticsEvent): void {

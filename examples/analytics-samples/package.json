@@ -1,0 +1,43 @@
+{
+  "private": true,
+  "name": "@theia/analytics-samples",
+  "version": "1.73.0",
+  "description": "Theia - Optional analytics API samples",
+  "dependencies": {
+    "@theia/analytics": "1.73.0",
+    "@theia/core": "1.73.0",
+    "tslib": "^2.8.1"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/analytics-samples-frontend-module",
+      "backend": "lib/node/analytics-samples-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.73.0"
+  }
+}

@@ -44,7 +44,11 @@ describe('analytics topic contract', () => {
         for (const pattern of ['company/metric', 'company/product/metric', 'company/*', 'company/product/*', '*']) {
             expect(isValidAnalyticsTopicPattern(pattern), pattern).to.be.true;
         }
-        for (const pattern of ['', 'company', '/company/*', 'company/*/', 'company//metric', '*/metric', 'company/*/metric', 'company/**', '**', '!company/metric', 'company/(metric)']) {
+        const invalidPatterns = [
+            '', 'company', '/company/*', 'company/*/', 'company//metric', '*/metric',
+            'company/*/metric', 'company/**', '**', '!company/metric', 'company/(metric)'
+        ];
+        for (const pattern of invalidPatterns) {
             expect(isValidAnalyticsTopicPattern(pattern), pattern).to.be.false;
         }
     });

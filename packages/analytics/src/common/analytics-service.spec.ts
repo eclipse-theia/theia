@@ -37,7 +37,7 @@ const typedPayload = {
 } satisfies AnalyticsData<ConsumerPayload>;
 
 const compileTimeUsage = (service: AnalyticsService): void => service.report<ConsumerPayload>('consumer/action', typedPayload);
-void compileTimeUsage;
+expect(compileTimeUsage).to.be.a('function');
 
 describe('analytics service contract', () => {
     it('accepts plain flat payloads with primitive analytics values', () => {

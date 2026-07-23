@@ -33,7 +33,7 @@ export class BrowserAnalyticsService implements AnalyticsService {
             this.logger.warn(`Ignoring malformed analytics event for topic '${this.describeTopic(topic)}'.`);
             return;
         }
-        void this.rpc.reportEvent({ topic, data, timestamp: Date.now() }).catch(() => {
+        this.rpc.reportEvent({ topic, data, timestamp: Date.now() }).catch(() => {
             this.logger.error(`Failed to report analytics event for topic '${topic}'.`);
         });
     }
