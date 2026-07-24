@@ -23,7 +23,7 @@ import { inject, injectable, optional, multiInject } from '@theia/core/shared/in
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
-import { loadManifest } from './plugin-manifest-loader';
+import { loadManifest } from '@theia/plugin-utils/lib/node/plugin-manifest';
 
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {
@@ -141,7 +141,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
             return undefined;
         }
         const resolvedPluginPath = await realpath(pluginPath);
-        const manifest = await loadManifest(resolvedPluginPath);
+        const manifest = await loadManifest<PluginPackage>(resolvedPluginPath);
         if (!manifest) {
             return undefined;
         }

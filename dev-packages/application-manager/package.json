@@ -37,6 +37,7 @@
     "@theia/application-package": "1.73.0",
     "@theia/bundle-plugin": "1.73.0",
     "@theia/ffmpeg": "1.73.0",
+    "@theia/plugin-utils": "1.73.0",
     "@types/fs-extra": "^4.0.15",
     "@types/semver": "^7.7.1",
     "babel-loader": "^8.4.1",

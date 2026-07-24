@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Arduino SA and others.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,24 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { rejects } from 'assert';
-import { strictEqual } from 'assert/strict';
-import { promises as fs } from 'fs';
-import { generateUuid } from '@theia/core/lib/common/uuid';
-import { isENOENT } from '../../common/errors';
+import { expect } from 'chai';
+import { PLUGIN_COPY_IGNORE } from '../constants';
 
-describe('errors', () => {
-    describe('errno-exception', () => {
-        it('should be ENOENT error', async () => {
-            await rejects(fs.readFile(generateUuid()), reason => isENOENT(reason));
+describe('constants', () => {
+
+    describe('PLUGIN_COPY_IGNORE', () => {
+        it('skips git metadata and node_modules anywhere in the path', () => {
+            expect(PLUGIN_COPY_IGNORE.test('/plugin/.git/config')).to.equal(true);
+            expect(PLUGIN_COPY_IGNORE.test('/plugin/node_modules/pkg/index.js')).to.equal(true);
+            expect(PLUGIN_COPY_IGNORE.test('/plugin\\node_modules\\pkg')).to.equal(true);
         });
 
-        it('should not be ENOENT error (no code)', () => {
-            strictEqual(isENOENT(new Error('I am not ENOENT')), false);
-        });
-
-        it('should not be ENOENT error (other code)', async () => {
-            await rejects(fs.readdir(__filename), reason => !isENOENT(reason));
+        it('allows regular plugin files', () => {
+            expect(PLUGIN_COPY_IGNORE.test('/plugin/dist/extension.js')).to.equal(false);
+            expect(PLUGIN_COPY_IGNORE.test('/plugin/media/icon.png')).to.equal(false);
         });
     });
 });

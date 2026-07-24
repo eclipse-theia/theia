@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { isENOENT } from '@theia/plugin-utils/lib/utils';
+import { readdirSync } from 'fs';
+import { toPluginUrl, type PluginIdentifierSource } from '../plugin-model';
 
-export function illegalArgument(message?: string): Error {
-    if (message) {
-        return new Error(`Illegal argument: ${message}`);
-    } else {
-        return new Error('Illegal argument');
+export function getPluginRootFileUrl(manifest: PluginIdentifierSource & { packagePath: string }, names: string[]): string | undefined {
+    const nameSet = new Set(names.map(n => n.toLowerCase()));
+    try {
+        const dir = readdirSync(manifest.packagePath, { withFileTypes: true });
+        for (const dirent of dir) {
+            if (dirent.isFile() && nameSet.has(dirent.name.toLowerCase())) {
+                return toPluginUrl(manifest, dirent.name);
+            }
+        }
+    } catch {
+        return undefined;
     }
-}
-
-export function readonly(name?: string): Error {
-    if (name) {
-        return new Error(`readonly property '${name} cannot be changed'`);
-    } else {
-        return new Error('readonly property cannot be changed');
-    }
-}
-
-export function disposed(what: string): Error {
-    const result = new Error(`${what} has been disposed`);
-    result.name = 'DISPOSED';
-    return result;
+    return undefined;
 }
