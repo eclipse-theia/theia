@@ -508,7 +508,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                         const tokenInfo = hasTokenInfo
                             ? `${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}: ${nls.localizeByDefault(
                                 'Input: {0}', formatTokenCount(tokenUsage.inputTokens))} | ${nls.localizeByDefault(
-                                'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
+                                    'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
                             : undefined;
                         if (agentDescription || tokenInfo) {
                             const md = new MarkdownStringImpl();
@@ -745,7 +745,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     return <div ref={containerRef} />;
 };
 
-const ChatRequestRender = (
+export const ChatRequestRender = (
     {
         node, hoverService, chatAgentService, variableService, openerService,
         provideChatInputWidget
@@ -877,7 +877,10 @@ const ChatRequestRender = (
                                 .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
                                 .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
                             openerService,
-                            true
+                            true,
+                            undefined,
+                            // User requests are authored by the user, so their resources are trusted and rendered directly.
+                            false
                         );
                         return (
                             <span key={index} ref={ref}></span>
