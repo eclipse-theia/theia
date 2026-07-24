@@ -13,19 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, } from '@theia/core/shared/inversify';
-import { MetricsContribution } from './metrics-contribution';
-import { LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
-import { MeasurementNotificationService } from '../common';
+import { LogLevel, MeasurementResult } from '@theia/core';
 import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { TelemetryEvent } from '@theia/telemetry/lib/common';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
+import { MeasurementNotificationService } from '../common';
+import { MetricsContribution } from './metrics-contribution';
 
 const backendId = 'backend';
 const metricsName = 'theia_measurements';
 
 @injectable()
-export class MeasurementMetricsBackendContribution implements MetricsContribution, MeasurementNotificationService {
-    @inject(Stopwatch)
-    protected backendStopwatch: Stopwatch;
+export class MeasurementMetricsBackendContribution implements MetricsContribution, TelemetrySink, MeasurementNotificationService {
+    readonly id = 'theia/measurements';
+    readonly interests = ['theia/measurement/*'];
+    readonly scope = 'local';
 
     @inject(LogLevelCliContribution)
     protected logLevelCli: LogLevelCliContribution;
@@ -39,12 +42,31 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
         }
         this.metrics += `# HELP ${metricsName} Theia stopwatch measurement results.\n`;
         this.metrics += `# TYPE ${metricsName} gauge\n`;
-        this.backendStopwatch.storedMeasurements.forEach(result => this.onBackendMeasurement(result));
-        this.backendStopwatch.onDidAddMeasurementResult(result => this.onBackendMeasurement(result));
     }
 
     getMetrics(): string {
         return this.metrics;
+    }
+
+    handle(event: TelemetryEvent): void {
+        const result = this.toMeasurementResult(event);
+        if (result) {
+            this.appendMetricsValue(event.session === backendId ? backendId : this.toCounterId(event.session), result);
+        }
+    }
+
+    protected toMeasurementResult(event: TelemetryEvent): MeasurementResult | undefined {
+        const data = event.data;
+        if (!data || typeof data.name !== 'string' || typeof data.startTime !== 'number' || typeof data.elapsed !== 'number'
+            || data.owner !== undefined && typeof data.owner !== 'string') {
+            return undefined;
+        }
+        return {
+            name: data.name,
+            startTime: data.startTime,
+            elapsed: data.elapsed,
+            ...(data.owner === undefined ? {} : { owner: data.owner })
+        };
     }
 
     protected appendMetricsValue(id: string, result: MeasurementResult): void {
@@ -52,10 +74,6 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
         const labels: string = `id="${id}", name="${name}", startTime="${startTime}", owner="${owner}"`;
         const metricsValue = `${metricsName}{${labels}} ${elapsed}`;
         this.metrics += (metricsValue + '\n');
-    }
-
-    protected onBackendMeasurement(result: MeasurementResult): void {
-        this.appendMetricsValue(backendId, result);
     }
 
     protected createFrontendCounterId(frontendId: string): string {
@@ -71,5 +89,4 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     onFrontendMeasurement(frontendId: string, result: MeasurementResult): void {
         this.appendMetricsValue(this.toCounterId(frontendId), result);
     }
-
 }

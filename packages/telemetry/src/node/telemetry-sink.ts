@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MeasurementResult } from '@theia/core';
+import { MaybePromise } from '@theia/core/lib/common';
+import { TelemetryEvent } from '../common/telemetry-protocol';
 
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export const measurementNotificationServicePath = '/services/measurement-notification';
+export const TelemetrySink = Symbol('TelemetrySink');
 
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
-
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export interface MeasurementNotificationService {
-    onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
+export interface TelemetrySink {
+    readonly id: string;
+    readonly interests: readonly string[];
+    /** Defaults to `remote`. */
+    readonly scope?: 'local' | 'remote';
+    handle(event: TelemetryEvent): MaybePromise<void>;
+    flush?(): MaybePromise<void>;
 }

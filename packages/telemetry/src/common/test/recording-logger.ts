@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MeasurementResult } from '@theia/core';
+import { Loggable } from '@theia/core/lib/common';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export const measurementNotificationServicePath = '/services/measurement-notification';
+export class RecordingLogger extends MockLogger {
+    readonly warnings: string[] = [];
+    readonly errors: string[] = [];
 
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
+    override warn(arg: string | Loggable, ...params: unknown[]): Promise<void> {
+        this.warnings.push(String(arg), ...params.map(String));
+        return Promise.resolve();
+    }
 
-/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
-export interface MeasurementNotificationService {
-    onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
+    override error(arg: string | Loggable | Error, ...params: unknown[]): Promise<void> {
+        this.errors.push(String(arg), ...params.map(String));
+        return Promise.resolve();
+    }
 }
