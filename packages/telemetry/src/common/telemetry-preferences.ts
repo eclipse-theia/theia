@@ -49,7 +49,8 @@ export const TelemetryPreferenceSchema: PreferenceSchema = {
                 }
             },
             default: {},
-            description: nls.localize('theia/telemetry/filters', 'Restrict the topic patterns delivered to each telemetry sink. Missing entries allow all sink interests; empty arrays disable a sink.')
+            description: nls.localize('theia/telemetry/filters',
+                'Restrict the topic patterns delivered to each telemetry sink. Missing entries allow all sink interests; empty arrays disable a sink.')
         }
     }
 };

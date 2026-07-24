@@ -16,8 +16,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { MetricsFrontendApplicationContribution } from './metrics-frontend-application-contribution';
-import { MeasurementNotificationService, measurementNotificationServicePath } from '../common';
 import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { MeasurementNotificationService, measurementNotificationServicePath } from '../common';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(MetricsFrontendApplicationContribution).inSingletonScope();

@@ -16,14 +16,13 @@
 
 import { MeasurementResult } from '@theia/core';
 
+/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
 export const measurementNotificationServicePath = '/services/measurement-notification';
 
+/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
 export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
+
+/** @deprecated Use `TelemetryService.report('theia/measurement/result', ...)` instead. */
 export interface MeasurementNotificationService {
-    /**
-     * Notify the backend when a fronted stopwatch provides a new measurement.
-     * @param frontendId The unique id associated with the frontend that sends the notification
-     * @param result The new measurement result
-     */
     onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
 }
