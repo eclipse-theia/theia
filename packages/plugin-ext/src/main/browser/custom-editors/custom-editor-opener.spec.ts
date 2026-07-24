@@ -19,6 +19,8 @@ let disableJSDOM = enableJSDOM();
 
 import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
+import { PreferenceService } from '@theia/core';
+import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { CustomEditorOpener } from './custom-editor-opener';
 import { CustomEditor, CustomEditorPriority } from '../../../common';
 
@@ -100,5 +102,41 @@ describe('CustomEditorOpener#selectorMatches', () => {
         expect(matchesUri('*.json', 'webview-panel:/panel/config.json')).false;
         expect(matchesUri('*', 'extension:/some/resource')).false;
         expect(matchesUri('*', 'vscode-workspace-trust:/trust')).false;
+    });
+});
+
+describe('CustomEditorOpener#isPreviewEnabled', () => {
+
+    class TestableCustomEditorOpener extends CustomEditorOpener {
+        override isPreviewEnabled(options?: EditorOpenerOptions): boolean {
+            return super.isPreviewEnabled(options);
+        }
+    }
+
+    function createOpener(enablePreview: boolean): TestableCustomEditorOpener {
+        const editor: CustomEditor = {
+            viewType: 'test.editor',
+            displayName: 'Test Editor',
+            selector: [{ filenamePattern: '*.custom' }],
+            priority: CustomEditorPriority.default
+        };
+        const preferenceService = { get: () => enablePreview } as unknown as PreferenceService;
+        // Only `preferenceService` is exercised by `isPreviewEnabled`; the other collaborators are unused here.
+        return new TestableCustomEditorOpener(editor, undefined!, undefined!, undefined!, preferenceService);
+    }
+
+    it('enables preview when requested and the `editor.enablePreview` preference is on', () => {
+        expect(createOpener(true).isPreviewEnabled({ preview: true })).true;
+    });
+
+    it('disables preview when the `editor.enablePreview` preference is off', () => {
+        expect(createOpener(false).isPreviewEnabled({ preview: true })).false;
+    });
+
+    it('disables preview when it is not requested', () => {
+        const opener = createOpener(true);
+        expect(opener.isPreviewEnabled({ preview: false })).false;
+        expect(opener.isPreviewEnabled({})).false;
+        expect(opener.isPreviewEnabled(undefined)).false;
     });
 });
