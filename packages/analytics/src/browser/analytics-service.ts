@@ -16,6 +16,7 @@
 
 import { ILogger } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ANALYTICS_ENABLED, AnalyticsPreferences } from '../common/analytics-preferences';
 import { AnalyticsRpc, describeAnalyticsTopic } from '../common/analytics-protocol';
 import { AnalyticsData, AnalyticsService, isAnalyticsData, snapshotAnalyticsData } from '../common/analytics-service';
 import { isValidAnalyticsTopic } from '../common/analytics-topic';
@@ -23,12 +24,23 @@ import { isValidAnalyticsTopic } from '../common/analytics-topic';
 @injectable()
 export class BrowserAnalyticsService implements AnalyticsService {
 
+    protected preferencesReady = false;
+
     constructor(
         @inject(AnalyticsRpc) protected readonly rpc: AnalyticsRpc,
+        @inject(AnalyticsPreferences) protected readonly preferences: AnalyticsPreferences,
         @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    ) {
+        this.preferences.ready.then(
+            () => this.preferencesReady = true,
+            () => undefined
+        );
+    }
 
     report<T extends object>(topic: string, data?: AnalyticsData<T>): void {
+        if (this.preferencesReady && !this.preferences[ANALYTICS_ENABLED]) {
+            return;
+        }
         if (!isValidAnalyticsTopic(topic) || (data !== undefined && !isAnalyticsData(data))) {
             this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsTopic(topic)}'.`);
             return;

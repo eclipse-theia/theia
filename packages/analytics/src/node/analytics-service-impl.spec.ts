@@ -234,7 +234,7 @@ describe('AnalyticsServiceImpl', () => {
         expect(observed[0].timestamp).to.equal(987);
     });
 
-    it('drops malformed reports without logging payload values', async () => {
+    it('drops malformed reports and RPC values without logging payload values', async () => {
         const sink = createSink('company/sink');
         const logger = new RecordingLogger();
         const service = createService(true, { 'company/sink': ['*'] }, [sink], logger);
@@ -243,10 +243,14 @@ describe('AnalyticsServiceImpl', () => {
         service.report('company/action', { mixed: [1, 'payload-secret'] } as never);
         await service.reportEvent({ topic: 'company/action', data: { nested: { secret: 'payload-secret' } } as never, timestamp: 42 });
         await service.reportEvent({ topic: 'company/action', timestamp: Number.POSITIVE_INFINITY });
+        await service.reportEvent(undefined);
+        await service.reportEvent('payload-secret');
+        await service.reportEvent({ topic: 42, data: 'payload-secret', timestamp: 42 });
+        await service.reportEvent({ data: { secret: 'payload-secret' }, timestamp: 42 });
         await flushDispatch();
 
         expect(sink.events).to.be.empty;
-        expect(logger.warnings).to.have.length(4);
+        expect(logger.warnings).to.have.length(8);
         expect(logger.warnings.join(' ')).not.to.contain('payload-secret');
     });
 

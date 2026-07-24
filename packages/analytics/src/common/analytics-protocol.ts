@@ -39,6 +39,14 @@ export function describeAnalyticsTopic(topic: unknown): string {
     return typeof topic === 'string' ? topic : '<invalid>';
 }
 
+export function describeAnalyticsEventTopic(event: unknown): string {
+    // eslint-disable-next-line no-null/no-null
+    if (typeof event !== 'object' || event === null) {
+        return '<invalid>';
+    }
+    return describeAnalyticsTopic((event as { topic?: unknown }).topic);
+}
+
 export const analyticsServicePath = '/services/analytics';
 
 export const AnalyticsRpc = Symbol('AnalyticsRpc');

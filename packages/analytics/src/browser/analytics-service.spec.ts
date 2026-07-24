@@ -15,10 +15,49 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
+import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
 import { AnalyticsEvent, AnalyticsRpc } from '../common/analytics-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { BrowserAnalyticsService } from './analytics-service';
+
+interface TestPreferences extends AnalyticsPreferences {
+    setEnabled(enabled: boolean): void;
+}
+
+interface Deferred<T> {
+    readonly promise: Promise<T>;
+    readonly resolve: (value: T | PromiseLike<T>) => void;
+    readonly reject: (reason?: unknown) => void;
+}
+
+function deferred<T>(): Deferred<T> {
+    let resolve: (value: T | PromiseLike<T>) => void;
+    let reject: (reason?: unknown) => void;
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve: resolve!, reject: reject! };
+}
+
+function createPreferences(enabled: boolean, ready: Promise<void>): TestPreferences {
+    const emitter = new Emitter<never>();
+    let currentEnabled = enabled;
+    return {
+        get [ANALYTICS_ENABLED](): boolean {
+            return currentEnabled;
+        },
+        [ANALYTICS_ROUTES]: {},
+        ready,
+        onPreferenceChanged: emitter.event,
+        setEnabled: (newEnabled: boolean) => {
+            currentEnabled = newEnabled;
+            emitter.fire({ preferenceName: ANALYTICS_ENABLED, affects: () => true } as never);
+        }
+    } as unknown as TestPreferences;
+}
 
 function createRpc(events: AnalyticsEvent[], failure?: Error): AnalyticsRpc {
     return {
@@ -38,9 +77,46 @@ describe('BrowserAnalyticsService', () => {
 
     afterEach(() => clock.restore());
 
-    it('assigns report-time timestamps and forwards valid events without policy evaluation', () => {
+    it('forwards before frontend preferences are ready', () => {
         const events: AnalyticsEvent[] = [];
-        const service = new BrowserAnalyticsService(createRpc(events), new RecordingLogger());
+        const readiness = deferred<void>();
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(false, readiness.promise), new RecordingLogger());
+
+        service.report('company/action', { enabled: true });
+
+        expect(events).to.deep.equal([
+            { topic: 'company/action', data: { enabled: true }, timestamp: 1234 }
+        ]);
+    });
+
+    it('skips validation, snapshotting, timestamps, and RPC once preferences are ready and disabled', async () => {
+        const events: AnalyticsEvent[] = [];
+        const readiness = deferred<void>();
+        const logger = new RecordingLogger();
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(false, readiness.promise), logger);
+        const dateNow = sinon.spy(Date, 'now');
+        const invalidData = Object.defineProperty({}, 'value', {
+            enumerable: true,
+            get: () => { throw new Error('data accessed'); }
+        });
+
+        readiness.resolve();
+        await readiness.promise;
+        await Promise.resolve();
+
+        expect(() => service.report('invalid', invalidData as never)).not.to.throw();
+        expect(dateNow.callCount).to.equal(0);
+        expect(events).to.be.empty;
+        expect(logger.warnings).to.be.empty;
+    });
+
+    it('assigns report-time timestamps and forwards valid events when preferences are ready and enabled', async () => {
+        const events: AnalyticsEvent[] = [];
+        const readiness = deferred<void>();
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(true, readiness.promise), new RecordingLogger());
+        readiness.resolve();
+        await readiness.promise;
+        await Promise.resolve();
 
         service.report('company/action', { enabled: true });
         clock.tick(10);
@@ -52,9 +128,40 @@ describe('BrowserAnalyticsService', () => {
         ]);
     });
 
+    it('continues forwarding if frontend preference readiness rejects', async () => {
+        const events: AnalyticsEvent[] = [];
+        const readiness = deferred<void>();
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(false, readiness.promise), new RecordingLogger());
+        readiness.reject(new Error('preferences unavailable'));
+        await readiness.promise.catch(() => undefined);
+        await Promise.resolve();
+
+        service.report('company/action', { enabled: true });
+
+        expect(events).to.have.length(1);
+    });
+
+    it('immediately follows enabled preference changes after readiness', async () => {
+        const events: AnalyticsEvent[] = [];
+        const readiness = deferred<void>();
+        const preferences = createPreferences(false, readiness.promise);
+        const service = new BrowserAnalyticsService(createRpc(events), preferences, new RecordingLogger());
+        readiness.resolve();
+        await readiness.promise;
+        await Promise.resolve();
+
+        service.report('company/disabled');
+        preferences.setEnabled(true);
+        service.report('company/enabled');
+        preferences.setEnabled(false);
+        service.report('company/disabled-again');
+
+        expect(events.map(event => event.topic)).to.deep.equal(['company/enabled']);
+    });
+
     it('forwards immutable snapshots of scalar and homogeneous array values', () => {
         const events: AnalyticsEvent[] = [];
-        const service = new BrowserAnalyticsService(createRpc(events), new RecordingLogger());
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(true, Promise.resolve()), new RecordingLogger());
         const data = {
             text: 'value',
             count: 3,
@@ -86,7 +193,7 @@ describe('BrowserAnalyticsService', () => {
     it('does not forward invalid topics or payloads', () => {
         const events: AnalyticsEvent[] = [];
         const logger = new RecordingLogger();
-        const service = new BrowserAnalyticsService(createRpc(events), logger);
+        const service = new BrowserAnalyticsService(createRpc(events), createPreferences(true, Promise.resolve()), logger);
         const sparse = new Array<string>(2);
         sparse[1] = 'value';
         const invalidCases: Array<[unknown, unknown]> = [
@@ -108,7 +215,7 @@ describe('BrowserAnalyticsService', () => {
     it('contains RPC rejection and does not log payload values', async () => {
         const events: AnalyticsEvent[] = [];
         const logger = new RecordingLogger();
-        const service = new BrowserAnalyticsService(createRpc(events, new Error('connection failed')), logger);
+        const service = new BrowserAnalyticsService(createRpc(events, new Error('connection failed')), createPreferences(true, Promise.resolve()), logger);
         const secret = 'sensitive-payload-value';
 
         expect(() => service.report('company/action', { secret })).not.to.throw();

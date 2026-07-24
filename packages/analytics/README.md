@@ -80,28 +80,41 @@ For example:
 
 Routes are user-scoped. Missing and empty routes deny delivery. Invalid routes are ignored and never broaden access. Supported patterns are exact topics, terminal prefix patterns such as `example/build/*`, and the global `*` pattern.
 
-## Application defaults
+## Configure preferences
 
-Analytics is configured through `analytics.enabled` and `analytics.routes`. Applications may provide default preference values in their `package.json`:
+Analytics supports two preference configuration paths.
 
-```json
-{
-  "theia": {
-    "frontend": {
-      "config": {
-        "preferences": {
-          "analytics.enabled": true,
-          "analytics.routes": {
-            "example/backend": ["example/build/*"]
-          }
-        }
-      }
+### Persisted user settings
+
+Users can configure `analytics.enabled` and `analytics.routes` in their settings. Frontend and backend preference services observe the same user configuration files, and persisted user values override application defaults.
+
+### Application defaults
+
+Applications can register defaults for the existing analytics preferences with a shared `PreferenceContribution`:
+
+```typescript
+import { PreferenceContribution, PreferenceSchemaService } from '@theia/core/lib/common';
+import { injectable } from '@theia/core/shared/inversify';
+
+@injectable()
+export class AnalyticsDefaultsContribution implements PreferenceContribution {
+    initSchema(service: PreferenceSchemaService): Promise<void> {
+        service.registerOverride('analytics.enabled', undefined, true);
+        service.registerOverride('analytics.routes', undefined, {
+            'example/backend': ['example/build/*']
+        });
+        return Promise.resolve();
     }
-  }
 }
 ```
 
-`theia.frontend.config.preferences` contributes frontend defaults only. Because analytics delivery is backend-authoritative, applications that rely on application defaults rather than persisted user settings must provide equivalent backend-visible defaults through a backend `PreferenceContribution`. Persisted user preferences are visible to backend policy and override application defaults.
+Bind the same contribution in both the application's frontend and backend modules so their defaults remain aligned:
+
+```typescript
+bind(PreferenceContribution).to(AnalyticsDefaultsContribution).inSingletonScope();
+```
+
+Do not re-declare `analytics.enabled` or `analytics.routes` in a second preference schema: duplicate schema properties are ignored and do not replace the original defaults. `theia.frontend.config.preferences` may still provide frontend-only defaults, but it is insufficient by itself for backend-authoritative analytics delivery. Applications that enable analytics by default must use equivalent frontend and backend overrides so the browser optimization and backend policy agree.
 
 ## Compatibility adapters
 

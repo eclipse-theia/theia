@@ -17,7 +17,7 @@
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
-import { AnalyticsEvent, AnalyticsRpc, describeAnalyticsTopic, isValidAnalyticsEvent } from '../common/analytics-protocol';
+import { AnalyticsEvent, AnalyticsRpc, describeAnalyticsEventTopic, isValidAnalyticsEvent } from '../common/analytics-protocol';
 import { AnalyticsData, AnalyticsService, snapshotAnalyticsData } from '../common/analytics-service';
 import { isValidAnalyticsSinkId, isValidAnalyticsTopicPattern, matchesAnalyticsTopic } from '../common/analytics-topic';
 import { AnalyticsSink } from './analytics-sink';
@@ -51,13 +51,13 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
         this.dispatch({ topic, data, timestamp: Date.now() });
     }
 
-    async reportEvent(event: AnalyticsEvent): Promise<void> {
+    async reportEvent(event: unknown): Promise<void> {
         this.dispatch(event);
     }
 
-    protected dispatch(event: AnalyticsEvent): void {
+    protected dispatch(event: unknown): void {
         if (!isValidAnalyticsEvent(event)) {
-            this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsTopic((event as Partial<AnalyticsEvent> | undefined)?.topic)}'.`);
+            this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsEventTopic(event)}'.`);
             return;
         }
         const snapshot = Object.freeze({

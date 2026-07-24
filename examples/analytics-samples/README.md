@@ -23,7 +23,7 @@ For example, place it with the other `@theia` dependencies:
 Then run the following commands from the repository root:
 
 ```bash
-npm install
+npm ci
 npm run build
 npm run start:browser
 ```
@@ -34,7 +34,11 @@ Remove the dependency and run `npm install` again when the browser application s
 
 ## Configure delivery
 
-Analytics is disabled and unrouted by default. In the running application's user `settings.json`, add:
+Analytics is disabled and unrouted by default. Test either of the two supported preference configuration paths.
+
+### Persisted user settings
+
+In the running application's user `settings.json`, add:
 
 ```json
 {
@@ -46,6 +50,12 @@ Analytics is disabled and unrouted by default. In the running application's user
 ```
 
 The sink declares the interest `sample/analytics/*`. An event is delivered only when both this interest and the configured route match.
+
+### Aligned application defaults
+
+Alternatively, create a temporary `PreferenceContribution` that calls `PreferenceSchemaService.registerOverride` for the existing `analytics.enabled` and `analytics.routes` keys, as documented in `packages/analytics/README.md`. Bind that same contribution in both the test application's frontend and backend modules. Do not declare a second preference schema for these keys, and remove the temporary modules after testing.
+
+Persisted user settings override these application defaults. Keep frontend and backend overrides aligned: the browser uses the effective global enabled value to avoid unnecessary work after preferences are ready, while the backend remains authoritative for enablement, routes, and sink interests.
 
 The browser example already starts with `examples/browser/log-config.json`, whose default level is `info`, so sample sink messages are visible without another change. To make the sample setting explicit, add this entry under `levels` in that file:
 
@@ -69,4 +79,4 @@ Keep the existing entries in `levels` when making this edit.
    - **Report Other Event** reports `sample/other` and is not logged because it does not match the route or sink interest.
 3. Inspect the backend terminal for the matching topics, framework timestamps, and payloads emitted by `sample/console`.
 
-The first two commands demonstrate scalar and homogeneous-array payloads. Disable `analytics.enabled`, remove or empty the `sample/console` route, or replace its pattern with a nonmatching one to verify that they also produce no sink output.
+The first two commands demonstrate scalar and homogeneous-array payloads. With either configuration path, verify that enabled reports reach the backend sink. Then disable `analytics.enabled`, remove or empty the `sample/console` route, or replace its pattern with a nonmatching one and verify that the same commands produce no sink output. After frontend preferences are ready, the disabled case stops in the browser; backend global-off and route checks still protect every event that reaches RPC.
