@@ -20,6 +20,12 @@ The purpose of the extension is to:
 
 The extension is for reference and test purposes only and is not published on `npm` (`private: true`).
 
+### Telemetry sample
+
+The **Telemetry Samples** command category demonstrates reporting events from the frontend to the `sample/console` backend sink. Set `telemetry.level` to `all`, run the started and completed commands, and inspect the backend log for the topic, kind, session, timestamp, and payload. The completed command reports an `error` event with attributes. The `sample/other` event is intentionally outside the sink's interests.
+
+Set `telemetry.level` to `off` to suppress the remote sink, or set `"telemetry.filters": { "sample/console": [] }` to disable it explicitly.
+
 ### Sample mock OpenVSX server
 
 These samples contain a mock implementation of an OpenVSX server. This is done

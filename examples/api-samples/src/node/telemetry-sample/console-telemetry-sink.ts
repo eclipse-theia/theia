@@ -14,11 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ILogger } from '@theia/core/lib/common/logger';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { TelemetryEvent } from '@theia/telemetry/lib/common';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConsoleAnalyticsSink } from './console-analytics-sink';
 
-export default new ContainerModule(bind => {
-    bind(ConsoleAnalyticsSink).toSelf().inSingletonScope();
-    bind(TelemetrySink).toService(ConsoleAnalyticsSink);
-});
+@injectable()
+export class ConsoleTelemetrySink implements TelemetrySink {
+
+    readonly id = 'sample/console';
+    readonly interests = ['sample/telemetry/*'] as const;
+    readonly scope = 'remote';
+
+    @inject(ILogger) @named('api-samples')
+    protected readonly logger: ILogger;
+
+    handle(event: TelemetryEvent): void {
+        this.logger.info(
+            `Telemetry sample event '${event.topic}' (${event.kind}, session: ${event.session}) at ${event.timestamp}: ${JSON.stringify(event.data)}`
+        );
+    }
+}

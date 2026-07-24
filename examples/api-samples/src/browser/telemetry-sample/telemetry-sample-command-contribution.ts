@@ -14,28 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TelemetryService } from '@theia/telemetry/lib/common';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { TelemetryService } from '@theia/telemetry/lib/common';
 
-const ANALYTICS_SAMPLE_CATEGORY = 'Analytics Samples';
+const TELEMETRY_SAMPLE_CATEGORY = 'Telemetry Samples';
 
-export const ReportAnalyticsStartedCommand: Command = {
-    id: 'analytics-samples.report-started',
+export const ReportTelemetryStartedCommand: Command = {
+    id: 'telemetry-samples.report-started',
     label: 'Report Started Event',
-    category: ANALYTICS_SAMPLE_CATEGORY
+    category: TELEMETRY_SAMPLE_CATEGORY
 };
 
-export const ReportAnalyticsCompletedCommand: Command = {
-    id: 'analytics-samples.report-completed',
+export const ReportTelemetryCompletedCommand: Command = {
+    id: 'telemetry-samples.report-completed',
     label: 'Report Completed Event',
-    category: ANALYTICS_SAMPLE_CATEGORY
+    category: TELEMETRY_SAMPLE_CATEGORY
 };
 
-export const ReportAnalyticsOtherCommand: Command = {
-    id: 'analytics-samples.report-other',
+export const ReportTelemetryOtherCommand: Command = {
+    id: 'telemetry-samples.report-other',
     label: 'Report Other Event',
-    category: ANALYTICS_SAMPLE_CATEGORY
+    category: TELEMETRY_SAMPLE_CATEGORY
 };
 
 interface StartedData {
@@ -56,28 +56,33 @@ interface OtherData {
 }
 
 @injectable()
-export class AnalyticsSampleCommandContribution implements CommandContribution {
+export class TelemetrySampleCommandContribution implements CommandContribution {
 
     @inject(TelemetryService)
-    protected readonly analyticsService: TelemetryService;
+    protected readonly telemetryService: TelemetryService;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(ReportAnalyticsStartedCommand, {
-            execute: () => this.analyticsService.report<StartedData>('sample/analytics/started', {
+        commands.registerCommand(ReportTelemetryStartedCommand, {
+            execute: () => this.telemetryService.report<StartedData>('sample/telemetry/started', {
                 source: 'command',
                 attempt: 1,
                 interactive: true
             })
         });
-        commands.registerCommand(ReportAnalyticsCompletedCommand, {
-            execute: () => this.analyticsService.report<CompletedData>('sample/analytics/completed', {
+        commands.registerCommand(ReportTelemetryCompletedCommand, {
+            execute: () => this.telemetryService.report<CompletedData>('sample/telemetry/completed', {
                 source: 'command',
                 duration: 125,
                 stages: ['prepare', 'run', 'finish']
+            }, {
+                kind: 'error',
+                attributes: {
+                    origin: 'api-samples'
+                }
             })
         });
-        commands.registerCommand(ReportAnalyticsOtherCommand, {
-            execute: () => this.analyticsService.report<OtherData>('sample/other', {
+        commands.registerCommand(ReportTelemetryOtherCommand, {
+            execute: () => this.telemetryService.report<OtherData>('sample/other', {
                 source: 'command',
                 kind: 'other'
             })
