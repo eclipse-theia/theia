@@ -14,7 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './analytics-preferences';
-export * from './analytics-protocol';
-export * from './analytics-service';
-export * from './analytics-topic';
+export * from './telemetry-service-impl';
+export * from './telemetry-sink';

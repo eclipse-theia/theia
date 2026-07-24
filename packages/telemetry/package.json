@@ -1,7 +1,7 @@
 {
-  "name": "@theia/analytics",
+  "name": "@theia/telemetry",
   "version": "1.73.0",
-  "description": "Theia - Analytics Extension",
+  "description": "Theia - Telemetry Extension",
   "dependencies": {
     "@theia/core": "1.73.0",
     "tslib": "^2.8.1"
@@ -11,8 +11,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/analytics-frontend-module",
-      "backend": "lib/node/analytics-backend-module"
+      "frontend": "lib/browser/telemetry-frontend-module",
+      "backend": "lib/node/telemetry-backend-module"
     }
   ],
   "keywords": [

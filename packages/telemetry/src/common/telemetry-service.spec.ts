@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { AnalyticsData, AnalyticsService, isAnalyticsData, snapshotAnalyticsData } from './analytics-service';
+import { TelemetryData, TelemetryService, isTelemetryData, snapshotTelemetryData } from './telemetry-service';
 
 interface ConsumerPayload {
     action: string;
@@ -34,17 +34,17 @@ const typedPayload = {
     tags: ['editor', 'open'],
     measurements: [4, 8] as const,
     states: [true, false]
-} satisfies AnalyticsData<ConsumerPayload>;
+} satisfies TelemetryData<ConsumerPayload>;
 
-const compileTimeUsage = (service: AnalyticsService): void => service.report<ConsumerPayload>('consumer/action', typedPayload);
+const compileTimeUsage = (service: TelemetryService): void => service.report<ConsumerPayload>('consumer/action', typedPayload);
 
-describe('analytics service contract', () => {
+describe('telemetry service contract', () => {
     it('supports consumer-defined payload interfaces without an index signature', () => {
         expect(compileTimeUsage).to.be.a('function');
     });
-    it('accepts plain flat payloads with primitive analytics values', () => {
-        expect(isAnalyticsData(typedPayload)).to.be.true;
-        expect(isAnalyticsData({})).to.be.true;
+    it('accepts plain flat payloads with primitive telemetry values', () => {
+        expect(isTelemetryData(typedPayload)).to.be.true;
+        expect(isTelemetryData({})).to.be.true;
     });
 
     it('accepts homogeneous primitive and empty arrays unchanged', () => {
@@ -54,7 +54,7 @@ describe('analytics service contract', () => {
         const empty: string[] = [];
         const data = { strings, numbers, booleans, empty };
 
-        expect(isAnalyticsData(data)).to.be.true;
+        expect(isTelemetryData(data)).to.be.true;
         expect(data.strings).to.equal(strings);
         expect(data.numbers).to.equal(numbers);
         expect(data.booleans).to.equal(booleans);
@@ -65,63 +65,63 @@ describe('analytics service contract', () => {
         const strings = ['editor', 'open'];
         const data = { action: 'open', duration: 12, successful: true, strings };
 
-        const snapshot = snapshotAnalyticsData(data);
+        const snapshot = snapshotTelemetryData(data);
 
         expect(snapshot).to.deep.equal(data);
         expect(snapshot).not.to.equal(data);
         expect(snapshot?.strings).not.to.equal(strings);
         expect(Object.isFrozen(snapshot)).to.be.true;
         expect(Object.isFrozen(snapshot?.strings)).to.be.true;
-        expect(snapshotAnalyticsData(undefined)).to.be.undefined;
+        expect(snapshotTelemetryData(undefined)).to.be.undefined;
     });
 
     it('rejects non-object payloads', () => {
         for (const value of [undefined, 'value', 1, true]) {
-            expect(isAnalyticsData(value)).to.be.false;
+            expect(isTelemetryData(value)).to.be.false;
         }
         // eslint-disable-next-line no-null/no-null
-        expect(isAnalyticsData(null)).to.be.false;
+        expect(isTelemetryData(null)).to.be.false;
     });
 
     it('rejects top-level arrays and nested objects', () => {
-        expect(isAnalyticsData([])).to.be.false;
-        expect(isAnalyticsData({ value: { nested: true } })).to.be.false;
+        expect(isTelemetryData([])).to.be.false;
+        expect(isTelemetryData({ value: { nested: true } })).to.be.false;
     });
 
     it('rejects mixed, nested, and sparse arrays', () => {
         const sparse = new Array<string>(2);
         sparse[1] = 'value';
 
-        expect(isAnalyticsData({ value: ['value', 1] })).to.be.false;
-        expect(isAnalyticsData({ value: [['nested']] })).to.be.false;
-        expect(isAnalyticsData({ value: sparse })).to.be.false;
+        expect(isTelemetryData({ value: ['value', 1] })).to.be.false;
+        expect(isTelemetryData({ value: [['nested']] })).to.be.false;
+        expect(isTelemetryData({ value: sparse })).to.be.false;
     });
 
     it('rejects unsupported array elements', () => {
-        expect(isAnalyticsData({ value: [{ nested: true }] })).to.be.false;
-        expect(isAnalyticsData({ value: ['value', undefined] })).to.be.false;
-        expect(isAnalyticsData({ value: ['value', () => 'value'] })).to.be.false;
-        expect(isAnalyticsData({ value: ['value', Symbol('value')] })).to.be.false;
-        expect(isAnalyticsData({ value: new Uint8Array([1, 2]) })).to.be.false;
+        expect(isTelemetryData({ value: [{ nested: true }] })).to.be.false;
+        expect(isTelemetryData({ value: ['value', undefined] })).to.be.false;
+        expect(isTelemetryData({ value: ['value', () => 'value'] })).to.be.false;
+        expect(isTelemetryData({ value: ['value', Symbol('value')] })).to.be.false;
+        expect(isTelemetryData({ value: new Uint8Array([1, 2]) })).to.be.false;
     });
 
     it('rejects special and binary objects', () => {
-        expect(isAnalyticsData(new Error('failure'))).to.be.false;
-        expect(isAnalyticsData(new Date())).to.be.false;
-        expect(isAnalyticsData(new URI('file:///workspace'))).to.be.false;
-        expect(isAnalyticsData(new Uint8Array([1, 2]))).to.be.false;
+        expect(isTelemetryData(new Error('failure'))).to.be.false;
+        expect(isTelemetryData(new Date())).to.be.false;
+        expect(isTelemetryData(new URI('file:///workspace'))).to.be.false;
+        expect(isTelemetryData(new Uint8Array([1, 2]))).to.be.false;
     });
 
     it('rejects class instances even when their properties are flat', () => {
         class Payload {
             value = 'value';
         }
-        expect(isAnalyticsData(new Payload())).to.be.false;
+        expect(isTelemetryData(new Payload())).to.be.false;
     });
 
     it('rejects unsupported values in otherwise plain payloads', () => {
-        expect(isAnalyticsData({ value: undefined })).to.be.false;
-        expect(isAnalyticsData({ value: () => 'value' })).to.be.false;
-        expect(isAnalyticsData({ value: Symbol('value') })).to.be.false;
+        expect(isTelemetryData({ value: undefined })).to.be.false;
+        expect(isTelemetryData({ value: () => 'value' })).to.be.false;
+        expect(isTelemetryData({ value: Symbol('value') })).to.be.false;
     });
 });

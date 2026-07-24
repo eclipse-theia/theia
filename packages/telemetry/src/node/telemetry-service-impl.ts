@@ -16,38 +16,38 @@
 
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
-import { AnalyticsEvent, AnalyticsRpc, describeAnalyticsEventTopic, isValidAnalyticsEvent } from '../common/analytics-protocol';
-import { AnalyticsData, AnalyticsService, snapshotAnalyticsData } from '../common/analytics-service';
-import { isValidAnalyticsSinkId, isValidAnalyticsTopicPattern, matchesAnalyticsTopic } from '../common/analytics-topic';
-import { AnalyticsSink } from './analytics-sink';
+import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryEvent, TelemetryRpc, describeTelemetryEventTopic, isValidTelemetryEvent } from '../common/telemetry-protocol';
+import { TelemetryData, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
+import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
+import { TelemetrySink } from './telemetry-sink';
 
-interface ValidatedAnalyticsSink {
-    readonly sink: AnalyticsSink;
+interface ValidatedTelemetrySink {
+    readonly sink: TelemetrySink;
     readonly id: string;
     readonly interests: readonly string[];
 }
 
 @injectable()
-export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
+export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
 
-    protected sinks: readonly ValidatedAnalyticsSink[] | undefined;
-    protected routes: ReadonlyMap<string, readonly string[]> | undefined;
+    protected sinks: readonly ValidatedTelemetrySink[] | undefined;
+    protected filters: ReadonlyMap<string, readonly string[]> | undefined;
     protected readinessFailureLogged = false;
 
     constructor(
-        @inject(AnalyticsPreferences) protected readonly preferences: AnalyticsPreferences,
-        @inject(ContributionProvider) @named(AnalyticsSink) protected readonly sinkProvider: ContributionProvider<AnalyticsSink>,
+        @inject(TelemetryPreferences) protected readonly preferences: TelemetryPreferences,
+        @inject(ContributionProvider) @named(TelemetrySink) protected readonly sinkProvider: ContributionProvider<TelemetrySink>,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         this.preferences.onPreferenceChanged(change => {
-            if (change.preferenceName === ANALYTICS_ROUTES) {
-                this.routes = undefined;
+            if (change.preferenceName === TELEMETRY_FILTERS) {
+                this.filters = undefined;
             }
         });
     }
 
-    report<T extends object>(topic: string, data?: AnalyticsData<T>): void {
+    report<T extends object>(topic: string, data?: TelemetryData<T>): void {
         this.dispatch({ topic, data, timestamp: Date.now() });
     }
 
@@ -56,13 +56,13 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
     }
 
     protected dispatch(event: unknown): void {
-        if (!isValidAnalyticsEvent(event)) {
-            this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsEventTopic(event)}'.`);
+        if (!isValidTelemetryEvent(event)) {
+            this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryEventTopic(event)}'.`);
             return;
         }
         const snapshot = Object.freeze({
             topic: event.topic,
-            data: snapshotAnalyticsData(event.data),
+            data: snapshotTelemetryData(event.data),
             timestamp: event.timestamp
         });
         this.preferences.ready.then(
@@ -70,22 +70,22 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
             () => {
                 if (!this.readinessFailureLogged) {
                     this.readinessFailureLogged = true;
-                    this.logger.error('Analytics preferences failed to become ready; dropping analytics events.');
+                    this.logger.error('Telemetry preferences failed to become ready; dropping telemetry events.');
                 }
             }
         );
     }
 
-    protected doDispatch(event: AnalyticsEvent): void {
-        if (!this.preferences[ANALYTICS_ENABLED]) {
+    protected doDispatch(event: TelemetryEvent): void {
+        if (!this.preferences[TELEMETRY_ENABLED]) {
             return;
         }
 
-        const routes = this.getRoutes();
+        const filters = this.getFilters();
         for (const validatedSink of this.getSinks()) {
-            const routePatterns = routes.get(validatedSink.id);
-            if (!routePatterns?.some(pattern => matchesAnalyticsTopic(pattern, event.topic))
-                || !validatedSink.interests.some(pattern => matchesAnalyticsTopic(pattern, event.topic))) {
+            const filterPatterns = filters.get(validatedSink.id);
+            if (!filterPatterns?.some(pattern => matchesTelemetryTopic(pattern, event.topic))
+                || !validatedSink.interests.some(pattern => matchesTelemetryTopic(pattern, event.topic))) {
                 continue;
             }
             try {
@@ -96,31 +96,31 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
         }
     }
 
-    protected getSinks(): readonly ValidatedAnalyticsSink[] {
+    protected getSinks(): readonly ValidatedTelemetrySink[] {
         if (this.sinks) {
             return this.sinks;
         }
         const contributions = this.sinkProvider.getContributions();
         const idCounts = new Map<string, number>();
         for (const sink of contributions) {
-            if (isValidAnalyticsSinkId(sink.id)) {
+            if (isValidTelemetrySinkId(sink.id)) {
                 idCounts.set(sink.id, (idCounts.get(sink.id) ?? 0) + 1);
             }
         }
         this.sinks = contributions.flatMap(sink => {
             const id = sink.id;
             const interests = sink.interests;
-            if (!isValidAnalyticsSinkId(id)) {
-                this.logger.error(`Ignoring analytics sink with invalid ID '${String(id)}'.`);
+            if (!isValidTelemetrySinkId(id)) {
+                this.logger.error(`Ignoring telemetry sink with invalid ID '${String(id)}'.`);
                 return [];
             }
             if (idCounts.get(id) !== 1) {
-                this.logger.error(`Ignoring duplicate analytics sink ID '${id}'.`);
+                this.logger.error(`Ignoring duplicate telemetry sink ID '${id}'.`);
                 return [];
             }
             if (!Array.isArray(interests) || interests.length === 0
-                || !interests.every(interest => isValidAnalyticsTopicPattern(interest))) {
-                this.logger.error(`Ignoring analytics sink '${id}' with invalid interests.`);
+                || !interests.every(interest => isValidTelemetryTopicPattern(interest))) {
+                this.logger.error(`Ignoring telemetry sink '${id}' with invalid interests.`);
                 return [];
             }
             return [{ sink, id, interests: Object.freeze([...interests]) }];
@@ -128,30 +128,30 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
         return this.sinks;
     }
 
-    protected getRoutes(): ReadonlyMap<string, readonly string[]> {
-        if (this.routes) {
-            return this.routes;
+    protected getFilters(): ReadonlyMap<string, readonly string[]> {
+        if (this.filters) {
+            return this.filters;
         }
-        const routes = new Map<string, readonly string[]>();
-        for (const [sinkId, patterns] of Object.entries(this.preferences[ANALYTICS_ROUTES])) {
+        const filters = new Map<string, readonly string[]>();
+        for (const [sinkId, patterns] of Object.entries(this.preferences[TELEMETRY_FILTERS])) {
             if (!Array.isArray(patterns)) {
-                this.logger.warn(`Ignoring invalid analytics routes for sink '${sinkId}'.`);
+                this.logger.warn(`Ignoring invalid telemetry filters for sink '${sinkId}'.`);
                 continue;
             }
             const validPatterns = patterns.filter(pattern => {
-                if (isValidAnalyticsTopicPattern(pattern)) {
+                if (isValidTelemetryTopicPattern(pattern)) {
                     return true;
                 }
-                this.logger.warn(`Ignoring invalid analytics route pattern for sink '${sinkId}'.`);
+                this.logger.warn(`Ignoring invalid telemetry filter pattern for sink '${sinkId}'.`);
                 return false;
             });
-            routes.set(sinkId, Object.freeze(validPatterns));
+            filters.set(sinkId, Object.freeze(validPatterns));
         }
-        this.routes = routes;
-        return routes;
+        this.filters = filters;
+        return filters;
     }
 
     protected logSinkFailure(sinkId: string, topic: string): void {
-        this.logger.error(`Analytics sink '${sinkId}' failed while handling topic '${topic}'.`);
+        this.logger.error(`Telemetry sink '${sinkId}' failed while handling topic '${topic}'.`);
     }
 }

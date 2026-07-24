@@ -14,49 +14,49 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export type AnalyticsPrimitive = string | number | boolean;
-export type AnalyticsValue = AnalyticsPrimitive | readonly string[] | readonly number[] | readonly boolean[];
+export type TelemetryPrimitive = string | number | boolean;
+export type TelemetryValue = TelemetryPrimitive | readonly string[] | readonly number[] | readonly boolean[];
 
-export type AnalyticsData<T extends object> = {
-    [K in keyof T]: T[K] extends AnalyticsValue ? T[K] : never;
+export type TelemetryData<T extends object> = {
+    [K in keyof T]: T[K] extends TelemetryValue ? T[K] : never;
 };
 
-function isAnalyticsPrimitive(value: unknown): value is AnalyticsPrimitive {
+function isTelemetryPrimitive(value: unknown): value is TelemetryPrimitive {
     return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 }
 
-function isAnalyticsArray(value: unknown): value is readonly AnalyticsPrimitive[] {
+function isTelemetryArray(value: unknown): value is readonly TelemetryPrimitive[] {
     if (!Array.isArray(value)) {
         return false;
     }
     if (value.length === 0) {
         return true;
     }
-    if (!Object.prototype.hasOwnProperty.call(value, 0) || !isAnalyticsPrimitive(value[0])) {
+    if (!Object.prototype.hasOwnProperty.call(value, 0) || !isTelemetryPrimitive(value[0])) {
         return false;
     }
     const elementType = typeof value[0];
     for (let index = 1; index < value.length; index++) {
-        if (!Object.prototype.hasOwnProperty.call(value, index) || !isAnalyticsPrimitive(value[index]) || typeof value[index] !== elementType) {
+        if (!Object.prototype.hasOwnProperty.call(value, index) || !isTelemetryPrimitive(value[index]) || typeof value[index] !== elementType) {
             return false;
         }
     }
     return true;
 }
 
-function isAnalyticsValue(value: unknown): value is AnalyticsValue {
-    return isAnalyticsPrimitive(value) || isAnalyticsArray(value);
+function isTelemetryValue(value: unknown): value is TelemetryValue {
+    return isTelemetryPrimitive(value) || isTelemetryArray(value);
 }
 
-export function isAnalyticsData(data: unknown): data is Record<string, AnalyticsValue> {
+export function isTelemetryData(data: unknown): data is Record<string, TelemetryValue> {
     // eslint-disable-next-line no-null/no-null
     if (typeof data !== 'object' || data === null || Array.isArray(data) || Object.getPrototypeOf(data) !== Object.prototype) {
         return false;
     }
-    return Object.values(data).every(isAnalyticsValue);
+    return Object.values(data).every(isTelemetryValue);
 }
 
-export function snapshotAnalyticsData<T extends object>(data: AnalyticsData<T> | undefined): AnalyticsData<T> | undefined {
+export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
     if (data === undefined) {
         return undefined;
     }
@@ -64,11 +64,11 @@ export function snapshotAnalyticsData<T extends object>(data: AnalyticsData<T> |
         key,
         Array.isArray(value) ? Object.freeze([...value]) : value
     ]));
-    return Object.freeze(snapshot) as AnalyticsData<T>;
+    return Object.freeze(snapshot) as TelemetryData<T>;
 }
 
-export const AnalyticsService = Symbol('AnalyticsService');
+export const TelemetryService = Symbol('TelemetryService');
 
-export interface AnalyticsService {
-    report<T extends object>(topic: string, data?: AnalyticsData<T>): void;
+export interface TelemetryService {
+    report<T extends object>(topic: string, data?: TelemetryData<T>): void;
 }

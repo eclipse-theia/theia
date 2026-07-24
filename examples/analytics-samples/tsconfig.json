@@ -10,10 +10,10 @@
   ],
   "references": [
     {
-      "path": "../../packages/analytics"
+      "path": "../../packages/core"
     },
     {
-      "path": "../../packages/core"
+      "path": "../../packages/telemetry"
     }
   ]
 }

@@ -21,25 +21,25 @@ import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const ANALYTICS_ENABLED = 'analytics.enabled';
-export const ANALYTICS_ROUTES = 'analytics.routes';
+export const TELEMETRY_ENABLED = 'telemetry.enabled';
+export const TELEMETRY_FILTERS = 'telemetry.filters';
 
-export type AnalyticsRoutes = Record<string, string[]>;
+export type TelemetryFilters = Record<string, string[]>;
 
-export interface AnalyticsConfiguration {
-    [ANALYTICS_ENABLED]: boolean;
-    [ANALYTICS_ROUTES]: AnalyticsRoutes;
+export interface TelemetryConfiguration {
+    [TELEMETRY_ENABLED]: boolean;
+    [TELEMETRY_FILTERS]: TelemetryFilters;
 }
 
-export const AnalyticsPreferenceSchema: PreferenceSchema = {
+export const TelemetryPreferenceSchema: PreferenceSchema = {
     scope: PreferenceScope.User,
     properties: {
-        [ANALYTICS_ENABLED]: {
+        [TELEMETRY_ENABLED]: {
             type: 'boolean',
             default: false,
-            description: nls.localize('theia/analytics/enabled', 'Enable analytics event delivery.')
+            description: nls.localize('theia/telemetry/enabled', 'Enable telemetry event delivery.')
         },
-        [ANALYTICS_ROUTES]: {
+        [TELEMETRY_FILTERS]: {
             type: 'object',
             additionalProperties: {
                 type: 'array',
@@ -48,25 +48,25 @@ export const AnalyticsPreferenceSchema: PreferenceSchema = {
                 }
             },
             default: {},
-            description: nls.localize('theia/analytics/routes', 'Configure the topic patterns delivered to each analytics sink.')
+            description: nls.localize('theia/telemetry/filters', 'Configure the topic patterns delivered to each telemetry sink.')
         }
     }
 };
 
-export const AnalyticsPreferenceContribution = Symbol('AnalyticsPreferenceContribution');
-export const AnalyticsPreferences = Symbol('AnalyticsPreferences');
-export type AnalyticsPreferences = PreferenceProxy<AnalyticsConfiguration>;
+export const TelemetryPreferenceContribution = Symbol('TelemetryPreferenceContribution');
+export const TelemetryPreferences = Symbol('TelemetryPreferences');
+export type TelemetryPreferences = PreferenceProxy<TelemetryConfiguration>;
 
-export function createAnalyticsPreferences(preferences: PreferenceService, schema: PreferenceSchema = AnalyticsPreferenceSchema): AnalyticsPreferences {
+export function createTelemetryPreferences(preferences: PreferenceService, schema: PreferenceSchema = TelemetryPreferenceSchema): TelemetryPreferences {
     return createPreferenceProxy(preferences, schema);
 }
 
-export function bindAnalyticsPreferences(bind: interfaces.Bind): void {
-    bind(AnalyticsPreferences).toDynamicValue(ctx => {
+export function bindTelemetryPreferences(bind: interfaces.Bind): void {
+    bind(TelemetryPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(AnalyticsPreferenceContribution);
-        return createAnalyticsPreferences(preferences, contribution.schema);
+        const contribution = ctx.container.get<PreferenceContribution>(TelemetryPreferenceContribution);
+        return createTelemetryPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-    bind(AnalyticsPreferenceContribution).toConstantValue({ schema: AnalyticsPreferenceSchema });
-    bind(PreferenceContribution).toService(AnalyticsPreferenceContribution);
+    bind(TelemetryPreferenceContribution).toConstantValue({ schema: TelemetryPreferenceSchema });
+    bind(PreferenceContribution).toService(TelemetryPreferenceContribution);
 }

@@ -1,6 +1,6 @@
 # Theia Analytics Samples
 
-This private, optional extension demonstrates the `@theia/analytics` producer API, browser-to-backend transport, backend policy, and a contributed sink. It is for development and testing only and is not loaded by standard Theia example applications.
+This private, optional extension demonstrates the `@theia/telemetry` producer API, browser-to-backend transport, backend policy, and a contributed sink. It is for development and testing only and is not loaded by standard Theia example applications.
 
 ## Test with the browser example
 
@@ -28,7 +28,7 @@ npm run build
 npm run start:browser
 ```
 
-The root `package.json` includes `examples/*` as npm workspaces, so the root build compiles the sample along with the other workspaces. The `npm install` step is still required after editing the browser dependencies: it links the workspace package, updates package metadata, and runs the repository's reference-generation step so `examples/browser/tsconfig.json` references `../analytics-samples`. The browser build then bundles the sample because it is a direct application dependency. Theia discovers and loads `@theia/analytics` through the sample's dependency and both packages' `theiaExtensions` metadata.
+The root `package.json` includes `examples/*` as npm workspaces, so the root build compiles the sample along with the other workspaces. The `npm install` step is still required after editing the browser dependencies: it links the workspace package, updates package metadata, and runs the repository's reference-generation step so `examples/browser/tsconfig.json` references `../analytics-samples`. The browser build then bundles the sample because it is a direct application dependency. Theia discovers and loads `@theia/telemetry` through the sample's dependency and both packages' `theiaExtensions` metadata.
 
 Remove the dependency and run `npm install` again when the browser application should no longer include the sample.
 
@@ -42,8 +42,8 @@ In the running application's user `settings.json`, add:
 
 ```json
 {
-  "analytics.enabled": true,
-  "analytics.routes": {
+  "telemetry.enabled": true,
+  "telemetry.filters": {
     "sample/console": ["sample/analytics/*"]
   }
 }
@@ -53,7 +53,7 @@ The sink declares the interest `sample/analytics/*`. An event is delivered only 
 
 ### Aligned application defaults
 
-Alternatively, create a temporary `PreferenceContribution` that calls `PreferenceSchemaService.registerOverride` for the existing `analytics.enabled` and `analytics.routes` keys, as documented in `packages/analytics/README.md`. Bind that same contribution in both the test application's frontend and backend modules. Do not declare a second preference schema for these keys, and remove the temporary modules after testing.
+Alternatively, create a temporary `PreferenceContribution` that calls `PreferenceSchemaService.registerOverride` for the existing `telemetry.enabled` and `telemetry.filters` keys, as documented in `packages/telemetry/README.md`. Bind that same contribution in both the test application's frontend and backend modules. Do not declare a second preference schema for these keys, and remove the temporary modules after testing.
 
 Persisted user settings override these application defaults. Keep frontend and backend overrides aligned: the browser uses the effective global enabled value to avoid unnecessary work after preferences are ready, while the backend remains authoritative for enablement, routes, and sink interests.
 
@@ -79,4 +79,4 @@ Keep the existing entries in `levels` when making this edit.
    - **Report Other Event** reports `sample/other` and is not logged because it does not match the route or sink interest.
 3. Inspect the backend terminal for the matching topics, framework timestamps, and payloads emitted by `sample/console`.
 
-The first two commands demonstrate scalar and homogeneous-array payloads. With either configuration path, verify that enabled reports reach the backend sink. Then disable `analytics.enabled`, remove or empty the `sample/console` route, or replace its pattern with a nonmatching one and verify that the same commands produce no sink output. After frontend preferences are ready, the disabled case stops in the browser; backend global-off and route checks still protect every event that reaches RPC.
+The first two commands demonstrate scalar and homogeneous-array payloads. With either configuration path, verify that enabled reports reach the backend sink. Then disable `telemetry.enabled`, remove or empty the `sample/console` route, or replace its pattern with a nonmatching one and verify that the same commands produce no sink output. After frontend preferences are ready, the disabled case stops in the browser; backend global-off and route checks still protect every event that reaches RPC.

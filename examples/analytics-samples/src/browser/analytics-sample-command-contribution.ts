@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnalyticsService } from '@theia/analytics/lib/common';
+import { TelemetryService } from '@theia/telemetry/lib/common';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
@@ -58,8 +58,8 @@ interface OtherData {
 @injectable()
 export class AnalyticsSampleCommandContribution implements CommandContribution {
 
-    @inject(AnalyticsService)
-    protected readonly analyticsService: AnalyticsService;
+    @inject(TelemetryService)
+    protected readonly analyticsService: TelemetryService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ReportAnalyticsStartedCommand, {

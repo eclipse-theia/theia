@@ -16,21 +16,21 @@
 
 import { bindRootContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindAnalyticsPreferences } from '../common/analytics-preferences';
-import { analyticsServicePath, AnalyticsRpc } from '../common/analytics-protocol';
-import { AnalyticsService } from '../common/analytics-service';
-import { AnalyticsServiceImpl } from './analytics-service-impl';
-import { AnalyticsSink } from './analytics-sink';
+import { bindTelemetryPreferences } from '../common/telemetry-preferences';
+import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol';
+import { TelemetryService } from '../common/telemetry-service';
+import { TelemetryServiceImpl } from './telemetry-service-impl';
+import { TelemetrySink } from './telemetry-sink';
 
 export default new ContainerModule(bind => {
-    bindAnalyticsPreferences(bind);
-    bindRootContributionProvider(bind, AnalyticsSink);
+    bindTelemetryPreferences(bind);
+    bindRootContributionProvider(bind, TelemetrySink);
 
-    bind(AnalyticsServiceImpl).toSelf().inSingletonScope();
-    bind(AnalyticsService).toService(AnalyticsServiceImpl);
-    bind(AnalyticsRpc).toService(AnalyticsServiceImpl);
+    bind(TelemetryServiceImpl).toSelf().inSingletonScope();
+    bind(TelemetryService).toService(TelemetryServiceImpl);
+    bind(TelemetryRpc).toService(TelemetryServiceImpl);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(analyticsServicePath, () => ctx.container.get<AnalyticsRpc>(AnalyticsRpc))
+        new RpcConnectionHandler(telemetryServicePath, () => ctx.container.get<TelemetryRpc>(TelemetryRpc))
     ).inSingletonScope();
 });

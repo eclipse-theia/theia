@@ -16,63 +16,63 @@
 
 import { expect } from 'chai';
 import {
-    isValidAnalyticsSinkId,
-    isValidAnalyticsTopic,
-    isValidAnalyticsTopicPattern,
-    matchesAnalyticsTopic
-} from './analytics-topic';
+    isValidTelemetrySinkId,
+    isValidTelemetryTopic,
+    isValidTelemetryTopicPattern,
+    matchesTelemetryTopic
+} from './telemetry-topic';
 
-describe('analytics topic contract', () => {
+describe('telemetry topic contract', () => {
     const validNames = ['company/metric', 'Company/Metric', 'company/product/metric', 'company-1/metric_2', 'company.name/metric'];
     const invalidNames = ['', 'company', '/company/metric', 'company/metric/', 'company//metric', 'company/*', '*/metric', 'company/**', 'company/metric!', ' company/metric'];
 
     for (const name of validNames) {
         it(`accepts topic and sink ID '${name}'`, () => {
-            expect(isValidAnalyticsTopic(name)).to.be.true;
-            expect(isValidAnalyticsSinkId(name)).to.be.true;
+            expect(isValidTelemetryTopic(name)).to.be.true;
+            expect(isValidTelemetrySinkId(name)).to.be.true;
         });
     }
 
     for (const name of invalidNames) {
         it(`rejects topic and sink ID '${name}'`, () => {
-            expect(isValidAnalyticsTopic(name)).to.be.false;
-            expect(isValidAnalyticsSinkId(name)).to.be.false;
+            expect(isValidTelemetryTopic(name)).to.be.false;
+            expect(isValidTelemetrySinkId(name)).to.be.false;
         });
     }
 
     it('accepts only exact, terminal prefix, and global patterns', () => {
         for (const pattern of ['company/metric', 'company/product/metric', 'company/*', 'company/product/*', '*']) {
-            expect(isValidAnalyticsTopicPattern(pattern), pattern).to.be.true;
+            expect(isValidTelemetryTopicPattern(pattern), pattern).to.be.true;
         }
         const invalidPatterns = [
             '', 'company', '/company/*', 'company/*/', 'company//metric', '*/metric',
             'company/*/metric', 'company/**', '**', '!company/metric', 'company/(metric)'
         ];
         for (const pattern of invalidPatterns) {
-            expect(isValidAnalyticsTopicPattern(pattern), pattern).to.be.false;
+            expect(isValidTelemetryTopicPattern(pattern), pattern).to.be.false;
         }
     });
 
     it('matches exact topics case-sensitively', () => {
-        expect(matchesAnalyticsTopic('company/metric', 'company/metric')).to.be.true;
-        expect(matchesAnalyticsTopic('company/metric', 'company/other')).to.be.false;
-        expect(matchesAnalyticsTopic('company/metric', 'Company/metric')).to.be.false;
+        expect(matchesTelemetryTopic('company/metric', 'company/metric')).to.be.true;
+        expect(matchesTelemetryTopic('company/metric', 'company/other')).to.be.false;
+        expect(matchesTelemetryTopic('company/metric', 'Company/metric')).to.be.false;
     });
 
     it('matches descendants of a terminal prefix only', () => {
-        expect(matchesAnalyticsTopic('company/*', 'company/metric')).to.be.true;
-        expect(matchesAnalyticsTopic('company/*', 'company/product/metric')).to.be.true;
-        expect(matchesAnalyticsTopic('company/*', 'company')).to.be.false;
-        expect(matchesAnalyticsTopic('company/*', 'companyElse/metric')).to.be.false;
+        expect(matchesTelemetryTopic('company/*', 'company/metric')).to.be.true;
+        expect(matchesTelemetryTopic('company/*', 'company/product/metric')).to.be.true;
+        expect(matchesTelemetryTopic('company/*', 'company')).to.be.false;
+        expect(matchesTelemetryTopic('company/*', 'companyElse/metric')).to.be.false;
     });
 
     it('matches every valid topic with the global pattern', () => {
-        expect(matchesAnalyticsTopic('*', 'company/metric')).to.be.true;
-        expect(matchesAnalyticsTopic('*', 'company/product/metric')).to.be.true;
+        expect(matchesTelemetryTopic('*', 'company/metric')).to.be.true;
+        expect(matchesTelemetryTopic('*', 'company/product/metric')).to.be.true;
     });
 
     it('does not match invalid patterns or topics', () => {
-        expect(matchesAnalyticsTopic('company/**', 'company/metric')).to.be.false;
-        expect(matchesAnalyticsTopic('*', 'company')).to.be.false;
+        expect(matchesTelemetryTopic('company/**', 'company/metric')).to.be.false;
+        expect(matchesTelemetryTopic('*', 'company')).to.be.false;
     });
 });

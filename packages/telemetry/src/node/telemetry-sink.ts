@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { MaybePromise } from '@theia/core/lib/common';
-import { AnalyticsEvent } from '../common/analytics-protocol';
+import { TelemetryEvent } from '../common/telemetry-protocol';
 
-export const AnalyticsSink = Symbol('AnalyticsSink');
+export const TelemetrySink = Symbol('TelemetrySink');
 
-export interface AnalyticsSink {
+export interface TelemetrySink {
     readonly id: string;
     readonly interests: readonly string[];
-    handle(event: AnalyticsEvent): MaybePromise<void>;
+    handle(event: TelemetryEvent): MaybePromise<void>;
 }

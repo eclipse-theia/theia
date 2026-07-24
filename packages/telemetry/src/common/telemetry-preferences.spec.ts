@@ -17,28 +17,28 @@
 import { expect } from 'chai';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import {
-    ANALYTICS_ENABLED,
-    ANALYTICS_ROUTES,
-    AnalyticsPreferenceSchema
-} from './analytics-preferences';
+    TELEMETRY_ENABLED,
+    TELEMETRY_FILTERS,
+    TelemetryPreferenceSchema
+} from './telemetry-preferences';
 
-describe('analytics preferences', () => {
-    it('defines only the enabled and routes preference keys', () => {
-        expect(Object.keys(AnalyticsPreferenceSchema.properties)).to.deep.equal([ANALYTICS_ENABLED, ANALYTICS_ROUTES]);
+describe('telemetry preferences', () => {
+    it('defines only the enabled and filters preference keys', () => {
+        expect(Object.keys(TelemetryPreferenceSchema.properties)).to.deep.equal([TELEMETRY_ENABLED, TELEMETRY_FILTERS]);
     });
 
-    it('limits analytics preferences to user scope', () => {
-        expect(AnalyticsPreferenceSchema.scope).to.equal(PreferenceScope.User);
+    it('limits telemetry preferences to user scope', () => {
+        expect(TelemetryPreferenceSchema.scope).to.equal(PreferenceScope.User);
     });
 
     it('uses safe defaults', () => {
-        expect(AnalyticsPreferenceSchema.properties[ANALYTICS_ENABLED].default).to.be.false;
-        expect(AnalyticsPreferenceSchema.properties[ANALYTICS_ROUTES].default).to.deep.equal({});
+        expect(TelemetryPreferenceSchema.properties[TELEMETRY_ENABLED].default).to.be.false;
+        expect(TelemetryPreferenceSchema.properties[TELEMETRY_FILTERS].default).to.deep.equal({});
     });
 
-    it('defines routes as sink IDs mapped to arrays of topic patterns', () => {
-        expect(AnalyticsPreferenceSchema.properties[ANALYTICS_ROUTES]).to.include({ type: 'object' });
-        expect(AnalyticsPreferenceSchema.properties[ANALYTICS_ROUTES].additionalProperties).to.deep.equal({
+    it('defines filters as sink IDs mapped to arrays of topic patterns', () => {
+        expect(TelemetryPreferenceSchema.properties[TELEMETRY_FILTERS]).to.include({ type: 'object' });
+        expect(TelemetryPreferenceSchema.properties[TELEMETRY_FILTERS].additionalProperties).to.deep.equal({
             type: 'array',
             items: { type: 'string' }
         });

@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnalyticsEvent } from '@theia/analytics/lib/common';
-import { AnalyticsSink } from '@theia/analytics/lib/node';
+import { TelemetryEvent } from '@theia/telemetry/lib/common';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 
 @injectable()
-export class ConsoleAnalyticsSink implements AnalyticsSink {
+export class ConsoleAnalyticsSink implements TelemetrySink {
 
     readonly id = 'sample/console';
     readonly interests = ['sample/analytics/*'] as const;
@@ -28,7 +28,7 @@ export class ConsoleAnalyticsSink implements AnalyticsSink {
     @inject(ILogger) @named('analytics-samples')
     protected readonly logger: ILogger;
 
-    handle(event: AnalyticsEvent): void {
+    handle(event: TelemetryEvent): void {
         this.logger.info(`Analytics sample event '${event.topic}' at ${event.timestamp}: ${JSON.stringify(event.data)}`);
     }
 }

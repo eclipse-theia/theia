@@ -17,35 +17,35 @@
 import { expect } from 'chai';
 import { ContributionProvider, Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
-import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
-import { AnalyticsEvent } from '../common/analytics-protocol';
+import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryEvent } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
-import { AnalyticsServiceImpl } from './analytics-service-impl';
-import { AnalyticsSink } from './analytics-sink';
+import { TelemetryServiceImpl } from './telemetry-service-impl';
+import { TelemetrySink } from './telemetry-sink';
 
-interface TestPreferences extends AnalyticsPreferences {
-    setRoutes(routes: Record<string, string[]>): void;
+interface TestPreferences extends TelemetryPreferences {
+    setFilters(filters: Record<string, string[]>): void;
 }
 
-function createPreferences(enabled: boolean, initialRoutes: Record<string, string[]>, ready = Promise.resolve()): TestPreferences {
+function createPreferences(enabled: boolean, initialFilters: Record<string, string[]>, ready = Promise.resolve()): TestPreferences {
     const emitter = new Emitter<never>();
-    let routes = initialRoutes;
+    let filters = initialFilters;
     return {
-        [ANALYTICS_ENABLED]: enabled,
-        get [ANALYTICS_ROUTES](): Record<string, string[]> {
-            return routes;
+        [TELEMETRY_ENABLED]: enabled,
+        get [TELEMETRY_FILTERS](): Record<string, string[]> {
+            return filters;
         },
         ready,
         onPreferenceChanged: emitter.event,
-        setRoutes: (newRoutes: Record<string, string[]>) => {
-            routes = newRoutes;
-            emitter.fire({ preferenceName: ANALYTICS_ROUTES, affects: () => true } as never);
+        setFilters: (newFilters: Record<string, string[]>) => {
+            filters = newFilters;
+            emitter.fire({ preferenceName: TELEMETRY_FILTERS, affects: () => true } as never);
         }
     } as unknown as TestPreferences;
 }
 
-function createSink(id: string, interests: readonly string[] = ['*']): AnalyticsSink & { events: AnalyticsEvent[] } {
-    const events: AnalyticsEvent[] = [];
+function createSink(id: string, interests: readonly string[] = ['*']): TelemetrySink & { events: TelemetryEvent[] } {
+    const events: TelemetryEvent[] = [];
     return {
         id,
         interests,
@@ -56,13 +56,13 @@ function createSink(id: string, interests: readonly string[] = ['*']): Analytics
     };
 }
 
-function createServiceWithPreferences(preferences: AnalyticsPreferences, sinks: AnalyticsSink[], logger = new RecordingLogger()): AnalyticsServiceImpl {
-    const provider: ContributionProvider<AnalyticsSink> = { getContributions: () => sinks };
-    return new AnalyticsServiceImpl(preferences, provider, logger);
+function createServiceWithPreferences(preferences: TelemetryPreferences, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
+    const provider: ContributionProvider<TelemetrySink> = { getContributions: () => sinks };
+    return new TelemetryServiceImpl(preferences, provider, logger);
 }
 
-function createService(enabled: boolean, routes: Record<string, string[]>, sinks: AnalyticsSink[], logger = new RecordingLogger()): AnalyticsServiceImpl {
-    return createServiceWithPreferences(createPreferences(enabled, routes), sinks, logger);
+function createService(enabled: boolean, filters: Record<string, string[]>, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
+    return createServiceWithPreferences(createPreferences(enabled, filters), sinks, logger);
 }
 
 async function flushDispatch(): Promise<void> {
@@ -70,12 +70,12 @@ async function flushDispatch(): Promise<void> {
     await Promise.resolve();
 }
 
-async function reportEvent(service: AnalyticsServiceImpl, event: AnalyticsEvent = { topic: 'company/action', timestamp: 42 }): Promise<void> {
+async function reportEvent(service: TelemetryServiceImpl, event: TelemetryEvent = { topic: 'company/action', timestamp: 42 }): Promise<void> {
     await service.reportEvent(event);
     await flushDispatch();
 }
 
-describe('AnalyticsServiceImpl', () => {
+describe('TelemetryServiceImpl', () => {
     let clock: sinon.SinonFakeTimers;
 
     beforeEach(() => {
@@ -84,7 +84,7 @@ describe('AnalyticsServiceImpl', () => {
 
     afterEach(() => clock.restore());
 
-    it('denies delivery without sinks, routes, or global enablement', async () => {
+    it('denies delivery without sinks, filters, or global enablement', async () => {
         const sink = createSink('company/sink');
         await reportEvent(createService(true, {}, [sink]));
         await reportEvent(createService(true, { 'company/sink': [] }, [sink]));
@@ -92,7 +92,7 @@ describe('AnalyticsServiceImpl', () => {
         expect(sink.events).to.be.empty;
     });
 
-    it('requires both the sink-specific route and declared interest to match', async () => {
+    it('requires both the sink-specific filter and declared interest to match', async () => {
         const first = createSink('company/first', ['company/*']);
         const second = createSink('company/second', ['other/*']);
         const third = createSink('company/third', ['company/*']);
@@ -109,7 +109,7 @@ describe('AnalyticsServiceImpl', () => {
         expect(third.events).to.be.empty;
     });
 
-    it('supports exact, terminal wildcard, and global route/interest intersections', async () => {
+    it('supports exact, terminal wildcard, and global filter/interest intersections', async () => {
         const exact = createSink('company/exact', ['company/action']);
         const prefix = createSink('company/prefix', ['company/*']);
         const global = createSink('company/global', ['*']);
@@ -128,7 +128,7 @@ describe('AnalyticsServiceImpl', () => {
         expect(global.events).to.have.length(3);
     });
 
-    it('warns once per invalid route until routes change', async () => {
+    it('warns once per invalid filter until filters change', async () => {
         const sink = createSink('company/sink');
         const logger = new RecordingLogger();
         const preferences = createPreferences(true, { 'company/sink': ['company/**', '*/action', 'company/action'] });
@@ -139,7 +139,7 @@ describe('AnalyticsServiceImpl', () => {
         expect(sink.events).to.have.length(1);
         expect(logger.warnings).to.have.length(2);
 
-        preferences.setRoutes({ 'company/sink': ['invalid/**', '*'] });
+        preferences.setFilters({ 'company/sink': ['invalid/**', '*'] });
         await reportEvent(service, { topic: 'other/action', timestamp: 43 });
         expect(sink.events).to.have.length(2);
         expect(logger.warnings).to.have.length(3);
@@ -208,8 +208,8 @@ describe('AnalyticsServiceImpl', () => {
     it('preserves RPC timestamps and isolates immutable payloads between sinks', async () => {
         const data = { action: 'open', durations: [1, 2] };
         const event = { topic: 'company/action', data, timestamp: 987 };
-        const observed: AnalyticsEvent[] = [];
-        const mutating: AnalyticsSink = {
+        const observed: TelemetryEvent[] = [];
+        const mutating: TelemetrySink = {
             id: 'company/mutating',
             interests: ['*'],
             handle: received => {
@@ -217,7 +217,7 @@ describe('AnalyticsServiceImpl', () => {
                 expect(() => (received.data!.durations as number[]).push(3)).to.throw();
             }
         };
-        const recording: AnalyticsSink = {
+        const recording: TelemetrySink = {
             id: 'company/recording',
             interests: ['*'],
             handle: received => {
@@ -283,18 +283,18 @@ describe('AnalyticsServiceImpl', () => {
     it('isolates void handlers, synchronous throws, asynchronous rejections, and slow sinks', async () => {
         const logger = new RecordingLogger();
         const successful = createSink('company/successful');
-        const throwing: AnalyticsSink = {
+        const throwing: TelemetrySink = {
             id: 'company/throwing', interests: ['*'], handle: () => { throw new Error('payload-secret'); }
         };
-        const rejecting: AnalyticsSink = {
+        const rejecting: TelemetrySink = {
             id: 'company/rejecting', interests: ['*'], handle: () => Promise.reject(new Error('payload-secret'))
         };
-        const slow: AnalyticsSink = {
+        const slow: TelemetrySink = {
             id: 'company/slow', interests: ['*'], handle: () => new Promise<void>(() => undefined)
         };
-        const routes = Object.fromEntries([successful, throwing, rejecting, slow].map(sink => [sink.id, ['*']]));
+        const filters = Object.fromEntries([successful, throwing, rejecting, slow].map(sink => [sink.id, ['*']]));
 
-        await reportEvent(createService(true, routes, [throwing, slow, successful, rejecting], logger));
+        await reportEvent(createService(true, filters, [throwing, slow, successful, rejecting], logger));
         await Promise.resolve();
 
         expect(successful.events).to.have.length(1);

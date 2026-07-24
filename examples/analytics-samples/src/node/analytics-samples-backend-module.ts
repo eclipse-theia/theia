@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnalyticsSink } from '@theia/analytics/lib/node';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConsoleAnalyticsSink } from './console-analytics-sink';
 
 export default new ContainerModule(bind => {
     bind(ConsoleAnalyticsSink).toSelf().inSingletonScope();
-    bind(AnalyticsSink).toService(ConsoleAnalyticsSink);
+    bind(TelemetrySink).toService(ConsoleAnalyticsSink);
 });
