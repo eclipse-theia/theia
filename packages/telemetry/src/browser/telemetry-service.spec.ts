@@ -41,12 +41,13 @@ function createConsentProvider(initialLevel: TelemetryLevel): TestConsentProvide
     };
 }
 
-function createRpc(events: TelemetryEvent[], failure?: Error): TelemetryRpc {
+function createRpc(events: TelemetryEvent[], failure?: Error, localSinkInterests: Promise<string[]> = Promise.resolve([])): TelemetryRpc {
     return {
         reportEvent: event => {
             events.push(event);
             return failure ? Promise.reject(failure) : Promise.resolve();
-        }
+        },
+        getLocalSinkInterests: () => localSinkInterests
     };
 }
 
@@ -58,22 +59,6 @@ describe('BrowserTelemetryService', () => {
     });
 
     afterEach(() => clock.restore());
-
-    it('skips validation, snapshotting, timestamps, and RPC when the kind is not allowed', () => {
-        const events: TelemetryEvent[] = [];
-        const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('off'), logger);
-        const dateNow = sinon.spy(Date, 'now');
-        const invalidData = Object.defineProperty({}, 'value', {
-            enumerable: true,
-            get: () => { throw new Error('data accessed'); }
-        });
-
-        expect(() => service.report('invalid', invalidData as never)).not.to.throw();
-        expect(dateNow.callCount).to.equal(0);
-        expect(events).to.be.empty;
-        expect(logger.warnings).to.be.empty;
-    });
 
     it('assigns report-time timestamps and forwards valid events when allowed', () => {
         const events: TelemetryEvent[] = [];
@@ -89,18 +74,38 @@ describe('BrowserTelemetryService', () => {
         expect(events[0].session).to.equal(events[1].session).and.not.empty;
     });
 
-    it('gates each event kind using the current consent level', () => {
+    it('forwards optimistically until local interests are ready, then applies consent and local interests', async () => {
         const events: TelemetryEvent[] = [];
-        const consentProvider = createConsentProvider('crash');
-        const service = new BrowserTelemetryService(createRpc(events), consentProvider, new RecordingLogger());
+        let resolveInterests: (interests: string[]) => void;
+        const interests = new Promise<string[]>(resolve => resolveInterests = resolve);
+        const consentProvider = createConsentProvider('off');
+        const service = new BrowserTelemetryService(createRpc(events, undefined, interests), consentProvider, new RecordingLogger());
 
-        service.report('company/usage');
-        service.report('company/error', undefined, { kind: 'error' });
-        service.report('company/crash', undefined, { kind: 'crash' });
-        consentProvider.setLevel('error');
-        service.report('company/error-enabled', undefined, { kind: 'error' });
+        service.report('company/optimistic');
+        resolveInterests!(['company/local/*']);
+        await interests;
+        await Promise.resolve();
+        service.report('company/remote');
+        service.report('company/local/action');
+        consentProvider.setLevel('all');
+        service.report('company/enabled');
 
-        expect(events.map(event => event.topic)).to.deep.equal(['company/crash', 'company/error-enabled']);
+        expect(events.map(event => event.topic)).to.deep.equal(['company/optimistic', 'company/local/action', 'company/enabled']);
+    });
+
+    it('fetches local interests once and treats RPC failure as no local interests', async () => {
+        const events: TelemetryEvent[] = [];
+        const rpc = createRpc(events, undefined, Promise.reject(new Error('connection failed')));
+        const getLocalSinkInterests = sinon.spy(rpc, 'getLocalSinkInterests');
+        const service = new BrowserTelemetryService(rpc, createConsentProvider('off'), new RecordingLogger());
+
+        service.report('company/optimistic');
+        await Promise.resolve();
+        await Promise.resolve();
+        service.report('company/dropped');
+
+        expect(getLocalSinkInterests.calledOnce).to.be.true;
+        expect(events.map(event => event.topic)).to.deep.equal(['company/optimistic']);
     });
 
     it('forwards immutable snapshots of data and attributes with report options', () => {

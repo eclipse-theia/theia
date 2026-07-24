@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
+import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
@@ -31,7 +32,7 @@ interface ValidatedTelemetrySink {
 }
 
 @injectable()
-export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
+export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, BackendApplicationContribution {
 
     protected sinks: readonly ValidatedTelemetrySink[] | undefined;
     protected filters: ReadonlyMap<string, readonly string[]> | undefined;
@@ -63,6 +64,22 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
 
     async reportEvent(event: unknown): Promise<void> {
         this.dispatch(event);
+    }
+
+    async getLocalSinkInterests(): Promise<string[]> {
+        return [...new Set(this.getSinks()
+            .filter(sink => sink.scope === 'local')
+            .flatMap(sink => sink.interests))];
+    }
+
+    async onStop(): Promise<void> {
+        await Promise.all(this.getSinks().map(async validatedSink => {
+            try {
+                await validatedSink.sink.flush?.();
+            } catch {
+                this.logger.error(`Telemetry sink '${validatedSink.id}' failed while flushing.`);
+            }
+        }));
     }
 
     protected dispatch(event: unknown): void {

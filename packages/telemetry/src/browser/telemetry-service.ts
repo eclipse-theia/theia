@@ -22,12 +22,14 @@ import { TelemetryRpc, describeTelemetryTopic } from '../common/telemetry-protoc
 import {
     TelemetryData, TelemetryReportOptions, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
 } from '../common/telemetry-service';
-import { isValidTelemetryTopic } from '../common/telemetry-topic';
+import { isValidTelemetryTopic, matchesTelemetryTopic } from '../common/telemetry-topic';
 
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
 
     protected readonly session = generateUuid();
+    protected localSinkInterests: readonly string[] | undefined;
+    protected localSinkInterestsPromise: Promise<void> | undefined;
 
     constructor(
         @inject(TelemetryRpc) protected readonly rpc: TelemetryRpc,
@@ -37,15 +39,19 @@ export class BrowserTelemetryService implements TelemetryService {
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
         const kind = options?.kind ?? 'usage';
-        if (isTelemetryEventKind(kind) && !isKindAllowedByLevel(this.consentProvider.level, kind)) {
-            return;
-        }
         const attributes = options?.attributes;
         if (!isValidTelemetryTopic(topic)
             || !isTelemetryEventKind(kind)
             || (data !== undefined && !isTelemetryData(data))
             || (attributes !== undefined && !isTelemetryData(attributes))) {
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryTopic(topic)}'.`);
+            return;
+        }
+        // Lazily fetch and cache local sink interests once.
+        this.fetchLocalSinkInterests();
+        if (!isKindAllowedByLevel(this.consentProvider.level, kind)
+            && this.localSinkInterests !== undefined
+            && !this.localSinkInterests.some(pattern => matchesTelemetryTopic(pattern, topic))) {
             return;
         }
         const snapshot = snapshotTelemetryData(data);
@@ -60,6 +66,15 @@ export class BrowserTelemetryService implements TelemetryService {
         }).catch(() => {
             this.logger.error(`Failed to report telemetry event for topic '${topic}'.`);
         });
+    }
+
+    protected fetchLocalSinkInterests(): void {
+        if (!this.localSinkInterestsPromise) {
+            this.localSinkInterestsPromise = this.rpc.getLocalSinkInterests().then(
+                interests => { this.localSinkInterests = interests; },
+                () => { this.localSinkInterests = []; }
+            );
+        }
     }
 
 }

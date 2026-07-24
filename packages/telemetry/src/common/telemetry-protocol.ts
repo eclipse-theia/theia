@@ -67,4 +67,5 @@ export const TelemetryRpc = Symbol('TelemetryRpc');
 /** @experimental */
 export interface TelemetryRpc {
     reportEvent(event: TelemetryEvent): Promise<void>;
+    getLocalSinkInterests(): Promise<string[]>;
 }

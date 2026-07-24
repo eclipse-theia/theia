@@ -202,6 +202,39 @@ describe('TelemetryServiceImpl', () => {
         expect(logger.errors).to.have.length(5);
     });
 
+    it('returns the deduplicated interests of valid local sinks', async () => {
+        const local = createSink('company/local', ['company/*', 'shared/*'], 'local');
+        const secondLocal = createSink('company/second-local', ['shared/*', 'other/action'], 'local');
+        const remote = createSink('company/remote', ['remote/*']);
+        const invalid = createSink('invalid', ['invalid/*'], 'local');
+        const logger = new RecordingLogger();
+        const service = createService('off', {}, [local, secondLocal, remote, invalid], logger);
+
+        expect(await service.getLocalSinkInterests()).to.deep.equal(['company/*', 'shared/*', 'other/action']);
+        expect(logger.errors).to.have.length(1);
+    });
+
+    it('flushes valid sinks on stop and contains flush failures', async () => {
+        const logger = new RecordingLogger();
+        const flushed: string[] = [];
+        const successful = createSink('company/successful');
+        successful.flush = async () => { flushed.push(successful.id); };
+        const throwing = createSink('company/throwing');
+        throwing.flush = () => { throw new Error('payload-secret'); };
+        const rejecting = createSink('company/rejecting');
+        rejecting.flush = () => Promise.reject(new Error('payload-secret'));
+        const withoutFlush = createSink('company/without-flush');
+        const invalid = createSink('invalid');
+        invalid.flush = async () => { flushed.push(invalid.id); };
+        const service = createService('all', {}, [successful, throwing, rejecting, withoutFlush, invalid], logger);
+
+        await service.onStop();
+
+        expect(flushed).to.deep.equal(['company/successful']);
+        expect(logger.errors).to.have.length(3);
+        expect(logger.errors.join(' ')).not.to.contain('payload-secret');
+    });
+
     it('uses a snapshot of validated sink metadata', async () => {
         const sink = createSink('company/sink', ['company/action']);
         const service = createService('all', { 'company/sink': ['*'] }, [sink]);

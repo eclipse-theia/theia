@@ -25,4 +25,5 @@ export interface TelemetrySink {
     /** Defaults to `remote`. */
     readonly scope?: 'local' | 'remote';
     handle(event: TelemetryEvent): MaybePromise<void>;
+    flush?(): MaybePromise<void>;
 }
