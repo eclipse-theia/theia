@@ -16,7 +16,8 @@
 
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
+import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryEvent, TelemetryRpc, describeTelemetryEventTopic, isValidTelemetryEvent } from '../common/telemetry-protocol';
 import { TelemetryData, TelemetryReportOptions, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
@@ -26,6 +27,7 @@ interface ValidatedTelemetrySink {
     readonly sink: TelemetrySink;
     readonly id: string;
     readonly interests: readonly string[];
+    readonly scope: 'local' | 'remote';
 }
 
 @injectable()
@@ -36,6 +38,7 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
     protected readinessFailureLogged = false;
 
     constructor(
+        @inject(TelemetryConsentProvider) protected readonly consentProvider: TelemetryConsentProvider,
         @inject(TelemetryPreferences) protected readonly preferences: TelemetryPreferences,
         @inject(ContributionProvider) @named(TelemetrySink) protected readonly sinkProvider: ContributionProvider<TelemetrySink>,
         @inject(ILogger) protected readonly logger: ILogger
@@ -87,15 +90,12 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
     }
 
     protected doDispatch(event: TelemetryEvent): void {
-        if (!this.preferences[TELEMETRY_ENABLED]) {
-            return;
-        }
-
         const filters = this.getFilters();
         for (const validatedSink of this.getSinks()) {
             const filterPatterns = filters.get(validatedSink.id);
-            if (!filterPatterns?.some(pattern => matchesTelemetryTopic(pattern, event.topic))
-                || !validatedSink.interests.some(pattern => matchesTelemetryTopic(pattern, event.topic))) {
+            if (filterPatterns && !filterPatterns.some(pattern => matchesTelemetryTopic(pattern, event.topic))
+                || !validatedSink.interests.some(pattern => matchesTelemetryTopic(pattern, event.topic))
+                || validatedSink.scope === 'remote' && !isKindAllowedByLevel(this.consentProvider.level, event.kind)) {
                 continue;
             }
             try {
@@ -133,7 +133,12 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
                 this.logger.error(`Ignoring telemetry sink '${id}' with invalid interests.`);
                 return [];
             }
-            return [{ sink, id, interests: Object.freeze([...interests]) }];
+            const scope = sink.scope ?? 'remote';
+            if (scope !== 'local' && scope !== 'remote') {
+                this.logger.error(`Ignoring telemetry sink '${id}' with invalid scope.`);
+                return [];
+            }
+            return [{ sink, id, interests: Object.freeze([...interests]), scope }];
         });
         return this.sinks;
     }
@@ -146,6 +151,7 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
         for (const [sinkId, patterns] of Object.entries(this.preferences[TELEMETRY_FILTERS])) {
             if (!Array.isArray(patterns)) {
                 this.logger.warn(`Ignoring invalid telemetry filters for sink '${sinkId}'.`);
+                filters.set(sinkId, Object.freeze([]));
                 continue;
             }
             const validPatterns = patterns.filter(pattern => {

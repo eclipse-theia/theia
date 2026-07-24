@@ -16,6 +16,7 @@
 
 import { bindRootContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { bindTelemetryPreferences } from '../common/telemetry-preferences';
 import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol';
 import { TelemetryService } from '../common/telemetry-service';
@@ -24,6 +25,7 @@ import { TelemetrySink } from './telemetry-sink';
 
 export default new ContainerModule(bind => {
     bindTelemetryPreferences(bind);
+    bind(TelemetryConsentProvider).to(PreferenceTelemetryConsentProvider).inSingletonScope();
     bindRootContributionProvider(bind, TelemetrySink);
 
     bind(TelemetryServiceImpl).toSelf().inSingletonScope();

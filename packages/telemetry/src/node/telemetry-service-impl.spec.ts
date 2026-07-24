@@ -17,7 +17,8 @@
 import { expect } from 'chai';
 import { ContributionProvider, Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
-import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryConsentProvider, TelemetryLevel } from '../common/telemetry-consent-provider';
+import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryEvent } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { TelemetryServiceImpl } from './telemetry-service-impl';
@@ -27,11 +28,11 @@ interface TestPreferences extends TelemetryPreferences {
     setFilters(filters: Record<string, string[]>): void;
 }
 
-function createPreferences(enabled: boolean, initialFilters: Record<string, string[]>, ready = Promise.resolve()): TestPreferences {
+function createPreferences(initialFilters: Record<string, string[]>, ready = Promise.resolve()): TestPreferences {
     const emitter = new Emitter<never>();
     let filters = initialFilters;
     return {
-        [TELEMETRY_ENABLED]: enabled,
+        [TELEMETRY_LEVEL]: 'off',
         get [TELEMETRY_FILTERS](): Record<string, string[]> {
             return filters;
         },
@@ -44,11 +45,16 @@ function createPreferences(enabled: boolean, initialFilters: Record<string, stri
     } as unknown as TestPreferences;
 }
 
-function createSink(id: string, interests: readonly string[] = ['*']): TelemetrySink & { events: TelemetryEvent[] } {
+function createSink(
+    id: string,
+    interests: readonly string[] = ['*'],
+    scope?: 'local' | 'remote'
+): TelemetrySink & { events: TelemetryEvent[] } {
     const events: TelemetryEvent[] = [];
     return {
         id,
         interests,
+        scope,
         events,
         handle: event => {
             events.push(event);
@@ -56,13 +62,22 @@ function createSink(id: string, interests: readonly string[] = ['*']): Telemetry
     };
 }
 
-function createServiceWithPreferences(preferences: TelemetryPreferences, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
-    const provider: ContributionProvider<TelemetrySink> = { getContributions: () => sinks };
-    return new TelemetryServiceImpl(preferences, provider, logger);
+function createConsentProvider(level: TelemetryLevel): TelemetryConsentProvider {
+    return { level, onDidChangeTelemetryLevel: new Emitter<TelemetryLevel>().event };
 }
 
-function createService(enabled: boolean, filters: Record<string, string[]>, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
-    return createServiceWithPreferences(createPreferences(enabled, filters), sinks, logger);
+function createServiceWithPreferences(
+    preferences: TelemetryPreferences,
+    sinks: TelemetrySink[],
+    logger = new RecordingLogger(),
+    level: TelemetryLevel = 'all'
+): TelemetryServiceImpl {
+    const provider: ContributionProvider<TelemetrySink> = { getContributions: () => sinks };
+    return new TelemetryServiceImpl(createConsentProvider(level), preferences, provider, logger);
+}
+
+function createService(level: TelemetryLevel, filters: Record<string, string[]>, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
+    return createServiceWithPreferences(createPreferences(filters), sinks, logger, level);
 }
 
 async function flushDispatch(): Promise<void> {
@@ -87,19 +102,32 @@ describe('TelemetryServiceImpl', () => {
 
     afterEach(() => clock.restore());
 
-    it('denies delivery without sinks, filters, or global enablement', async () => {
-        const sink = createSink('company/sink');
-        await reportEvent(createService(true, {}, [sink]));
-        await reportEvent(createService(true, { 'company/sink': [] }, [sink]));
-        await reportEvent(createService(false, { 'company/sink': ['*'] }, [sink]));
-        expect(sink.events).to.be.empty;
+    it('allows missing filters and treats an empty filter as disabling the sink', async () => {
+        const allowed = createSink('company/allowed');
+        const disabled = createSink('company/disabled');
+        await reportEvent(createService('all', { 'company/disabled': [] }, [allowed, disabled]));
+        expect(allowed.events).to.have.length(1);
+        expect(disabled.events).to.be.empty;
+    });
+
+    it('gates remote sinks by level while local sinks bypass consent', async () => {
+        const remote = createSink('company/remote');
+        const local = createSink('company/local', ['*'], 'local');
+        const service = createService('error', {}, [remote, local]);
+
+        await reportEvent(service);
+        await reportEvent(service, { topic: 'company/error', kind: 'error', timestamp: 43 });
+        await reportEvent(service, { topic: 'company/crash', kind: 'crash', timestamp: 44 });
+
+        expect(remote.events.map(event => event.kind)).to.deep.equal(['error', 'crash']);
+        expect(local.events.map(event => event.kind)).to.deep.equal(['usage', 'error', 'crash']);
     });
 
     it('requires both the sink-specific filter and declared interest to match', async () => {
         const first = createSink('company/first', ['company/*']);
         const second = createSink('company/second', ['other/*']);
         const third = createSink('company/third', ['company/*']);
-        const service = createService(true, {
+        const service = createService('all', {
             'company/first': ['company/action'],
             'company/second': ['*'],
             'company/third': ['other/*']
@@ -116,7 +144,7 @@ describe('TelemetryServiceImpl', () => {
         const exact = createSink('company/exact', ['company/action']);
         const prefix = createSink('company/prefix', ['company/*']);
         const global = createSink('company/global', ['*']);
-        const service = createService(true, {
+        const service = createService('all', {
             'company/exact': ['company/action'],
             'company/prefix': ['company/*'],
             'company/global': ['*']
@@ -134,7 +162,7 @@ describe('TelemetryServiceImpl', () => {
     it('warns once per invalid filter until filters change', async () => {
         const sink = createSink('company/sink');
         const logger = new RecordingLogger();
-        const preferences = createPreferences(true, { 'company/sink': ['company/**', '*/action', 'company/action'] });
+        const preferences = createPreferences({ 'company/sink': ['company/**', '*/action', 'company/action'] });
         const service = createServiceWithPreferences(preferences, [sink], logger);
 
         await reportEvent(service, { topic: 'other/action', timestamp: 42 });
@@ -156,7 +184,7 @@ describe('TelemetryServiceImpl', () => {
         const duplicateTwo = createSink('company/duplicate');
         const valid = createSink('company/valid');
         const logger = new RecordingLogger();
-        const service = createService(true, {
+        const service = createService('all', {
             'company/empty': ['*'],
             'company/interests': ['*'],
             'company/duplicate': ['*'],
@@ -176,7 +204,7 @@ describe('TelemetryServiceImpl', () => {
 
     it('uses a snapshot of validated sink metadata', async () => {
         const sink = createSink('company/sink', ['company/action']);
-        const service = createService(true, { 'company/sink': ['*'] }, [sink]);
+        const service = createService('all', { 'company/sink': ['*'] }, [sink]);
 
         await reportEvent(service);
         (sink as { interests: readonly string[] }).interests = ['other/*'];
@@ -192,7 +220,7 @@ describe('TelemetryServiceImpl', () => {
         const data = { action: 'open', durations: [1, 2], states: [true, false] };
         const attributes = { source: 'backend', labels: ['stable'] };
         const sink = createSink('company/sink');
-        const service = createServiceWithPreferences(createPreferences(true, { 'company/sink': ['*'] }, ready), [sink]);
+        const service = createServiceWithPreferences(createPreferences({ 'company/sink': ['*'] }, ready), [sink]);
 
         service.report('company/action', data, { kind: 'error', attributes });
         data.action = 'changed';
@@ -237,7 +265,7 @@ describe('TelemetryServiceImpl', () => {
                 observed.push(received);
             }
         };
-        const service = createService(true, { 'company/mutating': ['*'], 'company/recording': ['*'] }, [mutating, recording]);
+        const service = createService('all', { 'company/mutating': ['*'], 'company/recording': ['*'] }, [mutating, recording]);
 
         await reportEvent(service, event);
         data.action = 'changed';
@@ -255,7 +283,7 @@ describe('TelemetryServiceImpl', () => {
     it('drops malformed reports and RPC values without logging payload values', async () => {
         const sink = createSink('company/sink');
         const logger = new RecordingLogger();
-        const service = createService(true, { 'company/sink': ['*'] }, [sink], logger);
+        const service = createService('all', { 'company/sink': ['*'] }, [sink], logger);
 
         service.report('invalid', { secret: 'payload-secret' });
         service.report('company/action', { mixed: [1, 'payload-secret'] } as never);
@@ -281,7 +309,7 @@ describe('TelemetryServiceImpl', () => {
     it('handles preference readiness rejection once without payload logging', async () => {
         const logger = new RecordingLogger();
         const sink = createSink('company/sink');
-        const preferences = createPreferences(true, { 'company/sink': ['*'] }, Promise.reject(new Error('payload-secret')));
+        const preferences = createPreferences({ 'company/sink': ['*'] }, Promise.reject(new Error('payload-secret')));
         const service = createServiceWithPreferences(preferences, [sink], logger);
 
         await reportEvent(service);
@@ -294,7 +322,7 @@ describe('TelemetryServiceImpl', () => {
 
     it('uses the same policy path for direct and RPC reports', async () => {
         const sink = createSink('company/sink', ['company/*']);
-        const service = createService(true, { 'company/sink': ['company/*'] }, [sink]);
+        const service = createService('all', { 'company/sink': ['company/*'] }, [sink]);
 
         service.report('company/direct');
         await service.reportEvent({ topic: 'company/rpc', kind: 'crash', session: 'rpc-session', timestamp: 99 });
@@ -320,7 +348,7 @@ describe('TelemetryServiceImpl', () => {
         };
         const filters = Object.fromEntries([successful, throwing, rejecting, slow].map(sink => [sink.id, ['*']]));
 
-        await reportEvent(createService(true, filters, [throwing, slow, successful, rejecting], logger));
+        await reportEvent(createService('all', filters, [throwing, slow, successful, rejecting], logger));
         await Promise.resolve();
 
         expect(successful.events).to.have.length(1);

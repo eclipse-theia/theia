@@ -16,6 +16,7 @@
 
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { bindTelemetryPreferences } from '../common/telemetry-preferences';
 import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol';
 import { TelemetryService } from '../common/telemetry-service';
@@ -23,6 +24,7 @@ import { BrowserTelemetryService } from './telemetry-service';
 
 export default new ContainerModule(bind => {
     bindTelemetryPreferences(bind);
+    bind(TelemetryConsentProvider).to(PreferenceTelemetryConsentProvider).inSingletonScope();
     bind(TelemetryRpc).toDynamicValue(ctx => {
         const connectionProvider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return connectionProvider.createProxy<TelemetryRpc>(telemetryServicePath);

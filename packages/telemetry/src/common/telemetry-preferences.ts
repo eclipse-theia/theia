@@ -21,23 +21,24 @@ import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const TELEMETRY_ENABLED = 'telemetry.enabled';
+export const TELEMETRY_LEVEL = 'telemetry.level';
 export const TELEMETRY_FILTERS = 'telemetry.filters';
 
 export type TelemetryFilters = Record<string, string[]>;
 
 export interface TelemetryConfiguration {
-    [TELEMETRY_ENABLED]: boolean;
+    [TELEMETRY_LEVEL]: 'off' | 'crash' | 'error' | 'all';
     [TELEMETRY_FILTERS]: TelemetryFilters;
 }
 
 export const TelemetryPreferenceSchema: PreferenceSchema = {
     scope: PreferenceScope.User,
     properties: {
-        [TELEMETRY_ENABLED]: {
-            type: 'boolean',
-            default: false,
-            description: nls.localize('theia/telemetry/enabled', 'Enable telemetry event delivery.')
+        [TELEMETRY_LEVEL]: {
+            type: 'string',
+            enum: ['off', 'crash', 'error', 'all'],
+            default: 'off',
+            description: nls.localize('theia/telemetry/level', 'Controls the level of telemetry sent to remote destinations.')
         },
         [TELEMETRY_FILTERS]: {
             type: 'object',
@@ -48,7 +49,7 @@ export const TelemetryPreferenceSchema: PreferenceSchema = {
                 }
             },
             default: {},
-            description: nls.localize('theia/telemetry/filters', 'Configure the topic patterns delivered to each telemetry sink.')
+            description: nls.localize('theia/telemetry/filters', 'Restrict the topic patterns delivered to each telemetry sink. Missing entries allow all sink interests; empty arrays disable a sink.')
         }
     }
 };

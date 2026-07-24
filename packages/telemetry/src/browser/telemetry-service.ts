@@ -17,7 +17,7 @@
 import { ILogger } from '@theia/core/lib/common';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TELEMETRY_ENABLED, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
 import { TelemetryRpc, describeTelemetryTopic } from '../common/telemetry-protocol';
 import {
     TelemetryData, TelemetryReportOptions, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
@@ -27,25 +27,19 @@ import { isValidTelemetryTopic } from '../common/telemetry-topic';
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
 
-    protected preferencesReady = false;
     protected readonly session = generateUuid();
 
     constructor(
         @inject(TelemetryRpc) protected readonly rpc: TelemetryRpc,
-        @inject(TelemetryPreferences) protected readonly preferences: TelemetryPreferences,
+        @inject(TelemetryConsentProvider) protected readonly consentProvider: TelemetryConsentProvider,
         @inject(ILogger) protected readonly logger: ILogger
-    ) {
-        this.preferences.ready.then(
-            () => this.preferencesReady = true,
-            () => undefined
-        );
-    }
+    ) { }
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
-        if (this.preferencesReady && !this.preferences[TELEMETRY_ENABLED]) {
+        const kind = options?.kind ?? 'usage';
+        if (isTelemetryEventKind(kind) && !isKindAllowedByLevel(this.consentProvider.level, kind)) {
             return;
         }
-        const kind = options?.kind ?? 'usage';
         const attributes = options?.attributes;
         if (!isValidTelemetryTopic(topic)
             || !isTelemetryEventKind(kind)

@@ -22,5 +22,7 @@ export const TelemetrySink = Symbol('TelemetrySink');
 export interface TelemetrySink {
     readonly id: string;
     readonly interests: readonly string[];
+    /** Defaults to `remote`. */
+    readonly scope?: 'local' | 'remote';
     handle(event: TelemetryEvent): MaybePromise<void>;
 }

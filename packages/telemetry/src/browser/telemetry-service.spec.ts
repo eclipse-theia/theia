@@ -17,46 +17,28 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
-import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryConsentProvider, TelemetryLevel } from '../common/telemetry-consent-provider';
 import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { BrowserTelemetryService } from './telemetry-service';
 
-interface TestPreferences extends TelemetryPreferences {
-    setEnabled(enabled: boolean): void;
+interface TestConsentProvider extends TelemetryConsentProvider {
+    setLevel(level: TelemetryLevel): void;
 }
 
-interface Deferred<T> {
-    readonly promise: Promise<T>;
-    readonly resolve: (value: T | PromiseLike<T>) => void;
-    readonly reject: (reason?: unknown) => void;
-}
-
-function deferred<T>(): Deferred<T> {
-    let resolve: (value: T | PromiseLike<T>) => void;
-    let reject: (reason?: unknown) => void;
-    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
-        resolve = resolvePromise;
-        reject = rejectPromise;
-    });
-    return { promise, resolve: resolve!, reject: reject! };
-}
-
-function createPreferences(enabled: boolean, ready: Promise<void>): TestPreferences {
-    const emitter = new Emitter<never>();
-    let currentEnabled = enabled;
+function createConsentProvider(initialLevel: TelemetryLevel): TestConsentProvider {
+    const emitter = new Emitter<TelemetryLevel>();
+    let level = initialLevel;
     return {
-        get [TELEMETRY_ENABLED](): boolean {
-            return currentEnabled;
+        get level(): TelemetryLevel {
+            return level;
         },
-        [TELEMETRY_FILTERS]: {},
-        ready,
-        onPreferenceChanged: emitter.event,
-        setEnabled: (newEnabled: boolean) => {
-            currentEnabled = newEnabled;
-            emitter.fire({ preferenceName: TELEMETRY_ENABLED, affects: () => true } as never);
+        onDidChangeTelemetryLevel: emitter.event,
+        setLevel: newLevel => {
+            level = newLevel;
+            emitter.fire(level);
         }
-    } as unknown as TestPreferences;
+    };
 }
 
 function createRpc(events: TelemetryEvent[], failure?: Error): TelemetryRpc {
@@ -77,32 +59,15 @@ describe('BrowserTelemetryService', () => {
 
     afterEach(() => clock.restore());
 
-    it('forwards before frontend preferences are ready', () => {
+    it('skips validation, snapshotting, timestamps, and RPC when the kind is not allowed', () => {
         const events: TelemetryEvent[] = [];
-        const readiness = deferred<void>();
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(false, readiness.promise), new RecordingLogger());
-
-        service.report('company/action', { enabled: true });
-
-        expect(events).to.have.length(1);
-        expect(events[0]).to.deep.include({ topic: 'company/action', kind: 'usage', data: { enabled: true }, timestamp: 1234 });
-        expect(events[0].session).to.be.a('string').and.not.empty;
-    });
-
-    it('skips validation, snapshotting, timestamps, and RPC once preferences are ready and disabled', async () => {
-        const events: TelemetryEvent[] = [];
-        const readiness = deferred<void>();
         const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(false, readiness.promise), logger);
+        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('off'), logger);
         const dateNow = sinon.spy(Date, 'now');
         const invalidData = Object.defineProperty({}, 'value', {
             enumerable: true,
             get: () => { throw new Error('data accessed'); }
         });
-
-        readiness.resolve();
-        await readiness.promise;
-        await Promise.resolve();
 
         expect(() => service.report('invalid', invalidData as never)).not.to.throw();
         expect(dateNow.callCount).to.equal(0);
@@ -110,13 +75,9 @@ describe('BrowserTelemetryService', () => {
         expect(logger.warnings).to.be.empty;
     });
 
-    it('assigns report-time timestamps and forwards valid events when preferences are ready and enabled', async () => {
+    it('assigns report-time timestamps and forwards valid events when allowed', () => {
         const events: TelemetryEvent[] = [];
-        const readiness = deferred<void>();
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(true, readiness.promise), new RecordingLogger());
-        readiness.resolve();
-        await readiness.promise;
-        await Promise.resolve();
+        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), new RecordingLogger());
 
         service.report('company/action', { enabled: true });
         clock.tick(10);
@@ -128,40 +89,23 @@ describe('BrowserTelemetryService', () => {
         expect(events[0].session).to.equal(events[1].session).and.not.empty;
     });
 
-    it('continues forwarding if frontend preference readiness rejects', async () => {
+    it('gates each event kind using the current consent level', () => {
         const events: TelemetryEvent[] = [];
-        const readiness = deferred<void>();
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(false, readiness.promise), new RecordingLogger());
-        readiness.reject(new Error('preferences unavailable'));
-        await readiness.promise.catch(() => undefined);
-        await Promise.resolve();
+        const consentProvider = createConsentProvider('crash');
+        const service = new BrowserTelemetryService(createRpc(events), consentProvider, new RecordingLogger());
 
-        service.report('company/action', { enabled: true });
+        service.report('company/usage');
+        service.report('company/error', undefined, { kind: 'error' });
+        service.report('company/crash', undefined, { kind: 'crash' });
+        consentProvider.setLevel('error');
+        service.report('company/error-enabled', undefined, { kind: 'error' });
 
-        expect(events).to.have.length(1);
-    });
-
-    it('immediately follows enabled preference changes after readiness', async () => {
-        const events: TelemetryEvent[] = [];
-        const readiness = deferred<void>();
-        const preferences = createPreferences(false, readiness.promise);
-        const service = new BrowserTelemetryService(createRpc(events), preferences, new RecordingLogger());
-        readiness.resolve();
-        await readiness.promise;
-        await Promise.resolve();
-
-        service.report('company/disabled');
-        preferences.setEnabled(true);
-        service.report('company/enabled');
-        preferences.setEnabled(false);
-        service.report('company/disabled-again');
-
-        expect(events.map(event => event.topic)).to.deep.equal(['company/enabled']);
+        expect(events.map(event => event.topic)).to.deep.equal(['company/crash', 'company/error-enabled']);
     });
 
     it('forwards immutable snapshots of data and attributes with report options', () => {
         const events: TelemetryEvent[] = [];
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(true, Promise.resolve()), new RecordingLogger());
+        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), new RecordingLogger());
         const data = {
             text: 'value',
             count: 3,
@@ -204,7 +148,7 @@ describe('BrowserTelemetryService', () => {
     it('does not forward invalid topics or payloads', () => {
         const events: TelemetryEvent[] = [];
         const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events), createPreferences(true, Promise.resolve()), logger);
+        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), logger);
         const sparse = new Array<string>(2);
         sparse[1] = 'value';
         const invalidCases: Array<[unknown, unknown]> = [
@@ -228,7 +172,7 @@ describe('BrowserTelemetryService', () => {
     it('contains RPC rejection and does not log payload values', async () => {
         const events: TelemetryEvent[] = [];
         const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events, new Error('connection failed')), createPreferences(true, Promise.resolve()), logger);
+        const service = new BrowserTelemetryService(createRpc(events, new Error('connection failed')), createConsentProvider('all'), logger);
         const secret = 'sensitive-payload-value';
 
         expect(() => service.report('company/action', { secret })).not.to.throw();

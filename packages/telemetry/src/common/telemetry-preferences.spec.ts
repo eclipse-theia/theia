@@ -17,14 +17,14 @@
 import { expect } from 'chai';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import {
-    TELEMETRY_ENABLED,
     TELEMETRY_FILTERS,
+    TELEMETRY_LEVEL,
     TelemetryPreferenceSchema
 } from './telemetry-preferences';
 
 describe('telemetry preferences', () => {
-    it('defines only the enabled and filters preference keys', () => {
-        expect(Object.keys(TelemetryPreferenceSchema.properties)).to.deep.equal([TELEMETRY_ENABLED, TELEMETRY_FILTERS]);
+    it('defines only the level and filters preference keys', () => {
+        expect(Object.keys(TelemetryPreferenceSchema.properties)).to.deep.equal([TELEMETRY_LEVEL, TELEMETRY_FILTERS]);
     });
 
     it('limits telemetry preferences to user scope', () => {
@@ -32,7 +32,11 @@ describe('telemetry preferences', () => {
     });
 
     it('uses safe defaults', () => {
-        expect(TelemetryPreferenceSchema.properties[TELEMETRY_ENABLED].default).to.be.false;
+        expect(TelemetryPreferenceSchema.properties[TELEMETRY_LEVEL]).to.deep.include({
+            type: 'string',
+            enum: ['off', 'crash', 'error', 'all'],
+            default: 'off'
+        });
         expect(TelemetryPreferenceSchema.properties[TELEMETRY_FILTERS].default).to.deep.equal({});
     });
 
