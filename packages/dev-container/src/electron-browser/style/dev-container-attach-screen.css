@@ -1,0 +1,75 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-dev-container-attach-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--theia-editor-background);
+    color: var(--theia-foreground);
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-dev-container-attach-screen-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 480px;
+    padding: calc(var(--theia-ui-padding) * 4);
+}
+
+.theia-dev-container-attach-screen-logo {
+    max-width: 240px;
+    max-height: 96px;
+    margin-bottom: calc(var(--theia-ui-padding) * 4);
+}
+
+.theia-dev-container-attach-screen-spinner {
+    font-size: calc(var(--theia-ui-font-size1) * 2.5);
+    color: var(--theia-icon-foreground);
+    margin-bottom: calc(var(--theia-ui-padding) * 3);
+}
+
+.theia-dev-container-attach-screen-title {
+    font-size: var(--theia-ui-font-size3);
+    font-weight: 600;
+    margin: 0 0 var(--theia-ui-padding) 0;
+}
+
+.theia-dev-container-attach-screen-stage {
+    margin-bottom: calc(var(--theia-ui-padding) * 2);
+}
+
+.theia-dev-container-attach-screen-note {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size0);
+}
+
+.theia-dev-container-attach-screen-alert {
+    margin-bottom: calc(var(--theia-ui-padding) * 3);
+    text-align: left;
+}
+
+.theia-dev-container-attach-screen-actions {
+    display: flex;
+    justify-content: center;
+    gap: calc(var(--theia-ui-padding) * 2);
+}

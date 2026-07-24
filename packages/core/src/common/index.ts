@@ -44,6 +44,7 @@ export * from './progress-service';
 export * from './progress-service-protocol';
 export * from './quick-pick-service';
 export * from './reference';
+export * from './remote-cli-args-contribution';
 export * from './resource';
 export * from './selection';
 export * from './selection-service';
