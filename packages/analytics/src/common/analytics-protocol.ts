@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnalyticsData, AnalyticsValue } from './analytics-service';
+import { AnalyticsData, AnalyticsValue, isAnalyticsData } from './analytics-service';
+import { isValidAnalyticsTopic } from './analytics-topic';
 
 export interface AnalyticsEvent<T extends object = Record<string, AnalyticsValue>> {
     readonly topic: string;
@@ -22,7 +23,23 @@ export interface AnalyticsEvent<T extends object = Record<string, AnalyticsValue
     readonly timestamp: number;
 }
 
-export const analyticsRpcPath = '/services/analytics';
+export function isValidAnalyticsEvent(event: unknown): event is AnalyticsEvent {
+    // eslint-disable-next-line no-null/no-null
+    if (typeof event !== 'object' || event === null) {
+        return false;
+    }
+    const candidate = event as Partial<AnalyticsEvent>;
+    return isValidAnalyticsTopic(candidate.topic)
+        && typeof candidate.timestamp === 'number'
+        && Number.isFinite(candidate.timestamp)
+        && (candidate.data === undefined || isAnalyticsData(candidate.data));
+}
+
+export function describeAnalyticsTopic(topic: unknown): string {
+    return typeof topic === 'string' ? topic : '<invalid>';
+}
+
+export const analyticsServicePath = '/services/analytics';
 
 export const AnalyticsRpc = Symbol('AnalyticsRpc');
 

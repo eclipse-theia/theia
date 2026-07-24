@@ -33,7 +33,7 @@ export class BuildReporter {
 }
 ```
 
-The framework assigns the report timestamp and preserves producer data unchanged. It does not enrich, redact, truncate, filter, or impose size limits. Producers remain responsible for selecting safe topics and payload values.
+The framework assigns the report timestamp and creates an immutable snapshot of accepted producer data without semantically transforming its values. It does not enrich, redact, truncate, filter, or impose size limits. Producers remain responsible for selecting safe topics and payload values.
 
 ## Contribute a backend sink
 
@@ -82,33 +82,26 @@ Routes are user-scoped. Missing and empty routes deny delivery. Invalid routes a
 
 ## Application defaults
 
-Applications may override the safe defaults through ordinary `PreferenceContribution`s. Contribute the same default schema to both frontend and backend containers because backend policy cannot see `FrontendApplicationConfig.preferences` alone.
+Analytics is configured through `analytics.enabled` and `analytics.routes`. Applications may provide default preference values in their `package.json`:
 
-```typescript
-import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common';
-import { ContainerModule } from '@theia/core/shared/inversify';
-
-const analyticsDefaults: PreferenceSchema = {
-    properties: {
-        'analytics.enabled': {
-            type: 'boolean',
-            default: true
-        },
-        'analytics.routes': {
-            type: 'object',
-            default: {
-                'example/backend': ['example/build/*']
-            }
+```json
+{
+  "theia": {
+    "frontend": {
+      "config": {
+        "preferences": {
+          "analytics.enabled": true,
+          "analytics.routes": {
+            "example/backend": ["example/build/*"]
+          }
         }
+      }
     }
-};
-
-export default new ContainerModule(bind => {
-    bind(PreferenceContribution).toConstantValue({ schema: analyticsDefaults });
-});
+  }
+}
 ```
 
-Load an equivalent contribution in each container. Persisted user preferences are more specific and continue to override application defaults.
+`theia.frontend.config.preferences` contributes frontend defaults only. Because analytics delivery is backend-authoritative, applications that rely on application defaults rather than persisted user settings must provide equivalent backend-visible defaults through a backend `PreferenceContribution`. Persisted user preferences are visible to backend policy and override application defaults.
 
 ## Compatibility adapters
 

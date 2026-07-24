@@ -16,8 +16,8 @@
 
 import { ILogger } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AnalyticsRpc } from '../common/analytics-protocol';
-import { AnalyticsData, AnalyticsService, isAnalyticsData } from '../common/analytics-service';
+import { AnalyticsRpc, describeAnalyticsTopic } from '../common/analytics-protocol';
+import { AnalyticsData, AnalyticsService, isAnalyticsData, snapshotAnalyticsData } from '../common/analytics-service';
 import { isValidAnalyticsTopic } from '../common/analytics-topic';
 
 @injectable()
@@ -30,15 +30,13 @@ export class BrowserAnalyticsService implements AnalyticsService {
 
     report<T extends object>(topic: string, data?: AnalyticsData<T>): void {
         if (!isValidAnalyticsTopic(topic) || (data !== undefined && !isAnalyticsData(data))) {
-            this.logger.warn(`Ignoring malformed analytics event for topic '${this.describeTopic(topic)}'.`);
+            this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsTopic(topic)}'.`);
             return;
         }
-        this.rpc.reportEvent({ topic, data, timestamp: Date.now() }).catch(() => {
+        const snapshot = snapshotAnalyticsData(data);
+        this.rpc.reportEvent({ topic, data: snapshot, timestamp: Date.now() }).catch(() => {
             this.logger.error(`Failed to report analytics event for topic '${topic}'.`);
         });
     }
 
-    protected describeTopic(topic: unknown): string {
-        return typeof topic === 'string' ? topic : '<invalid>';
-    }
 }

@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { AnalyticsData, AnalyticsService, isAnalyticsData } from './analytics-service';
+import { AnalyticsData, AnalyticsService, isAnalyticsData, snapshotAnalyticsData } from './analytics-service';
 
 interface ConsumerPayload {
     action: string;
@@ -37,9 +37,11 @@ const typedPayload = {
 } satisfies AnalyticsData<ConsumerPayload>;
 
 const compileTimeUsage = (service: AnalyticsService): void => service.report<ConsumerPayload>('consumer/action', typedPayload);
-expect(compileTimeUsage).to.be.a('function');
 
 describe('analytics service contract', () => {
+    it('supports consumer-defined payload interfaces without an index signature', () => {
+        expect(compileTimeUsage).to.be.a('function');
+    });
     it('accepts plain flat payloads with primitive analytics values', () => {
         expect(isAnalyticsData(typedPayload)).to.be.true;
         expect(isAnalyticsData({})).to.be.true;
@@ -57,6 +59,20 @@ describe('analytics service contract', () => {
         expect(data.numbers).to.equal(numbers);
         expect(data.booleans).to.equal(booleans);
         expect(data.empty).to.equal(empty);
+    });
+
+    it('creates immutable snapshots without transforming accepted values', () => {
+        const strings = ['editor', 'open'];
+        const data = { action: 'open', duration: 12, successful: true, strings };
+
+        const snapshot = snapshotAnalyticsData(data);
+
+        expect(snapshot).to.deep.equal(data);
+        expect(snapshot).not.to.equal(data);
+        expect(snapshot?.strings).not.to.equal(strings);
+        expect(Object.isFrozen(snapshot)).to.be.true;
+        expect(Object.isFrozen(snapshot?.strings)).to.be.true;
+        expect(snapshotAnalyticsData(undefined)).to.be.undefined;
     });
 
     it('rejects non-object payloads', () => {

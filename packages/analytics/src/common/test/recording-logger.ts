@@ -14,11 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnalyticsSink } from '@theia/analytics/lib/node';
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConsoleAnalyticsSink } from './console-analytics-sink';
+import { Loggable } from '@theia/core/lib/common';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
-export default new ContainerModule(bind => {
-    bind(ConsoleAnalyticsSink).toSelf().inSingletonScope();
-    bind(AnalyticsSink).toService(ConsoleAnalyticsSink);
-});
+export class RecordingLogger extends MockLogger {
+    readonly warnings: string[] = [];
+    readonly errors: string[] = [];
+
+    override warn(arg: string | Loggable, ...params: unknown[]): Promise<void> {
+        this.warnings.push(String(arg), ...params.map(String));
+        return Promise.resolve();
+    }
+
+    override error(arg: string | Loggable | Error, ...params: unknown[]): Promise<void> {
+        this.errors.push(String(arg), ...params.map(String));
+        return Promise.resolve();
+    }
+}

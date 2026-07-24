@@ -9,47 +9,39 @@
 // Licenses when the conditions for such availability set forth in the Eclipse
 // Public License v. 2.0 are satisfied: GNU General Public License, version 2
 // with the GNU Classpath Exception which is available at
-// http://www.gnu.org/software/classpath/license.html.
+// https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ContributionProvider, ILogger } from '@theia/core/lib/common';
+import { ContributionProvider, Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
 import { AnalyticsEvent } from '../common/analytics-protocol';
+import { RecordingLogger } from '../common/test/recording-logger';
 import { AnalyticsServiceImpl } from './analytics-service-impl';
 import { AnalyticsSink } from './analytics-sink';
 
-interface TestLogger extends ILogger {
-    warnings: string[];
-    errors: string[];
+interface TestPreferences extends AnalyticsPreferences {
+    setRoutes(routes: Record<string, string[]>): void;
 }
 
-function createLogger(): TestLogger {
-    const warnings: string[] = [];
-    const errors: string[] = [];
-    return {
-        warnings,
-        errors,
-        warn: message => {
-            warnings.push(String(message));
-            return Promise.resolve();
-        },
-        error: message => {
-            errors.push(String(message));
-            return Promise.resolve();
-        }
-    } as TestLogger;
-}
-
-function createPreferences(enabled: boolean, routes: Record<string, string[]>): AnalyticsPreferences {
+function createPreferences(enabled: boolean, initialRoutes: Record<string, string[]>, ready = Promise.resolve()): TestPreferences {
+    const emitter = new Emitter<never>();
+    let routes = initialRoutes;
     return {
         [ANALYTICS_ENABLED]: enabled,
-        [ANALYTICS_ROUTES]: routes,
-        ready: Promise.resolve()
-    } as AnalyticsPreferences;
+        get [ANALYTICS_ROUTES](): Record<string, string[]> {
+            return routes;
+        },
+        ready,
+        onPreferenceChanged: emitter.event,
+        setRoutes: (newRoutes: Record<string, string[]>) => {
+            routes = newRoutes;
+            emitter.fire({ preferenceName: ANALYTICS_ROUTES, affects: () => true } as never);
+        }
+    } as unknown as TestPreferences;
 }
 
 function createSink(id: string, interests: readonly string[] = ['*']): AnalyticsSink & { events: AnalyticsEvent[] } {
@@ -64,9 +56,13 @@ function createSink(id: string, interests: readonly string[] = ['*']): Analytics
     };
 }
 
-function createService(enabled: boolean, routes: Record<string, string[]>, sinks: AnalyticsSink[], logger = createLogger()): AnalyticsServiceImpl {
+function createServiceWithPreferences(preferences: AnalyticsPreferences, sinks: AnalyticsSink[], logger = new RecordingLogger()): AnalyticsServiceImpl {
     const provider: ContributionProvider<AnalyticsSink> = { getContributions: () => sinks };
-    return new AnalyticsServiceImpl(createPreferences(enabled, routes), provider, logger);
+    return new AnalyticsServiceImpl(preferences, provider, logger);
+}
+
+function createService(enabled: boolean, routes: Record<string, string[]>, sinks: AnalyticsSink[], logger = new RecordingLogger()): AnalyticsServiceImpl {
+    return createServiceWithPreferences(createPreferences(enabled, routes), sinks, logger);
 }
 
 async function flushDispatch(): Promise<void> {
@@ -132,16 +128,21 @@ describe('AnalyticsServiceImpl', () => {
         expect(global.events).to.have.length(3);
     });
 
-    it('ignores invalid route patterns without broadening access', async () => {
+    it('warns once per invalid route until routes change', async () => {
         const sink = createSink('company/sink');
-        const logger = createLogger();
-        const service = createService(true, { 'company/sink': ['company/**', '*/action', 'company/action'] }, [sink], logger);
+        const logger = new RecordingLogger();
+        const preferences = createPreferences(true, { 'company/sink': ['company/**', '*/action', 'company/action'] });
+        const service = createServiceWithPreferences(preferences, [sink], logger);
 
         await reportEvent(service, { topic: 'other/action', timestamp: 42 });
         await reportEvent(service);
-
         expect(sink.events).to.have.length(1);
-        expect(logger.warnings).to.have.length(4);
+        expect(logger.warnings).to.have.length(2);
+
+        preferences.setRoutes({ 'company/sink': ['invalid/**', '*'] });
+        await reportEvent(service, { topic: 'other/action', timestamp: 43 });
+        expect(sink.events).to.have.length(2);
+        expect(logger.warnings).to.have.length(3);
     });
 
     it('rejects invalid and duplicate sink metadata', async () => {
@@ -151,7 +152,7 @@ describe('AnalyticsServiceImpl', () => {
         const duplicateOne = createSink('company/duplicate');
         const duplicateTwo = createSink('company/duplicate');
         const valid = createSink('company/valid');
-        const logger = createLogger();
+        const logger = new RecordingLogger();
         const service = createService(true, {
             'company/empty': ['*'],
             'company/interests': ['*'],
@@ -170,35 +171,72 @@ describe('AnalyticsServiceImpl', () => {
         expect(logger.errors).to.have.length(5);
     });
 
-    it('timestamps direct backend reports at report time and preserves payload values', async () => {
-        const data = { action: 'open', durations: [1, 2], states: [true, false] };
-        const sink = createSink('company/sink');
+    it('uses a snapshot of validated sink metadata', async () => {
+        const sink = createSink('company/sink', ['company/action']);
         const service = createService(true, { 'company/sink': ['*'] }, [sink]);
 
+        await reportEvent(service);
+        (sink as { interests: readonly string[] }).interests = ['other/*'];
+        await reportEvent(service);
+        await reportEvent(service, { topic: 'other/action', timestamp: 43 });
+
+        expect(sink.events.map(event => event.topic)).to.deep.equal(['company/action', 'company/action']);
+    });
+
+    it('timestamps direct reports and snapshots payloads before deferred dispatch', async () => {
+        let resolveReady: () => void;
+        const ready = new Promise<void>(resolve => resolveReady = resolve);
+        const data = { action: 'open', durations: [1, 2], states: [true, false] };
+        const sink = createSink('company/sink');
+        const service = createServiceWithPreferences(createPreferences(true, { 'company/sink': ['*'] }, ready), [sink]);
+
         service.report('company/action', data);
+        data.action = 'changed';
+        data.durations.push(3);
+        resolveReady!();
         await flushDispatch();
 
         expect(sink.events).to.have.length(1);
-        expect(sink.events[0].data).to.equal(data);
+        expect(sink.events[0].data).to.deep.equal({ action: 'open', durations: [1, 2], states: [true, false] });
+        expect(sink.events[0].data).not.to.equal(data);
+        expect(Object.isFrozen(sink.events[0])).to.be.true;
+        expect(Object.isFrozen(sink.events[0].data)).to.be.true;
+        expect(Object.isFrozen(sink.events[0].data?.durations)).to.be.true;
         expect(sink.events[0].timestamp).to.equal(1234);
     });
 
-    it('preserves RPC timestamps and delivers an immutable copied envelope', async () => {
+    it('preserves RPC timestamps and isolates immutable payloads between sinks', async () => {
         const data = { action: 'open', durations: [1, 2] };
         const event = { topic: 'company/action', data, timestamp: 987 };
-        const sink = createSink('company/sink');
+        const observed: AnalyticsEvent[] = [];
+        const mutating: AnalyticsSink = {
+            id: 'company/mutating',
+            interests: ['*'],
+            handle: received => {
+                expect(() => Object.assign(received.data!, { action: 'changed' })).to.throw();
+                expect(() => (received.data!.durations as number[]).push(3)).to.throw();
+            }
+        };
+        const recording: AnalyticsSink = {
+            id: 'company/recording',
+            interests: ['*'],
+            handle: received => {
+                observed.push(received);
+            }
+        };
+        const service = createService(true, { 'company/mutating': ['*'], 'company/recording': ['*'] }, [mutating, recording]);
 
-        await reportEvent(createService(true, { 'company/sink': ['*'] }, [sink]), event);
+        await reportEvent(service, event);
+        data.action = 'changed';
+        data.durations.push(3);
 
-        expect(sink.events[0]).not.to.equal(event);
-        expect(Object.isFrozen(sink.events[0])).to.be.true;
-        expect(sink.events[0].data).to.equal(data);
-        expect(sink.events[0].timestamp).to.equal(987);
+        expect(observed[0].data).to.deep.equal({ action: 'open', durations: [1, 2] });
+        expect(observed[0].timestamp).to.equal(987);
     });
 
-    it('drops malformed direct and RPC reports without logging payload values', async () => {
+    it('drops malformed reports without logging payload values', async () => {
         const sink = createSink('company/sink');
-        const logger = createLogger();
+        const logger = new RecordingLogger();
         const service = createService(true, { 'company/sink': ['*'] }, [sink], logger);
 
         service.report('invalid', { secret: 'payload-secret' });
@@ -210,6 +248,20 @@ describe('AnalyticsServiceImpl', () => {
         expect(sink.events).to.be.empty;
         expect(logger.warnings).to.have.length(4);
         expect(logger.warnings.join(' ')).not.to.contain('payload-secret');
+    });
+
+    it('handles preference readiness rejection once without payload logging', async () => {
+        const logger = new RecordingLogger();
+        const sink = createSink('company/sink');
+        const preferences = createPreferences(true, { 'company/sink': ['*'] }, Promise.reject(new Error('payload-secret')));
+        const service = createServiceWithPreferences(preferences, [sink], logger);
+
+        await reportEvent(service);
+        await reportEvent(service, { topic: 'company/other', timestamp: 43 });
+
+        expect(sink.events).to.be.empty;
+        expect(logger.errors).to.have.length(1);
+        expect(logger.errors.join(' ')).not.to.contain('payload-secret');
     });
 
     it('uses the same policy path for direct and RPC reports', async () => {
@@ -225,7 +277,7 @@ describe('AnalyticsServiceImpl', () => {
     });
 
     it('isolates void handlers, synchronous throws, asynchronous rejections, and slow sinks', async () => {
-        const logger = createLogger();
+        const logger = new RecordingLogger();
         const successful = createSink('company/successful');
         const throwing: AnalyticsSink = {
             id: 'company/throwing', interests: ['*'], handle: () => { throw new Error('payload-secret'); }

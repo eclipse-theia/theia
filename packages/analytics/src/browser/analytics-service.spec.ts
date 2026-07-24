@@ -15,32 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import { AnalyticsEvent, AnalyticsRpc } from '../common/analytics-protocol';
+import { RecordingLogger } from '../common/test/recording-logger';
 import { BrowserAnalyticsService } from './analytics-service';
-
-interface TestLogger extends ILogger {
-    warnings: string[];
-    errors: string[];
-}
-
-function createLogger(): TestLogger {
-    const warnings: string[] = [];
-    const errors: string[] = [];
-    return {
-        warnings,
-        errors,
-        warn: message => {
-            warnings.push(String(message));
-            return Promise.resolve();
-        },
-        error: message => {
-            errors.push(String(message));
-            return Promise.resolve();
-        }
-    } as TestLogger;
-}
 
 function createRpc(events: AnalyticsEvent[], failure?: Error): AnalyticsRpc {
     return {
@@ -62,7 +40,7 @@ describe('BrowserAnalyticsService', () => {
 
     it('assigns report-time timestamps and forwards valid events without policy evaluation', () => {
         const events: AnalyticsEvent[] = [];
-        const service = new BrowserAnalyticsService(createRpc(events), createLogger());
+        const service = new BrowserAnalyticsService(createRpc(events), new RecordingLogger());
 
         service.report('company/action', { enabled: true });
         clock.tick(10);
@@ -74,9 +52,9 @@ describe('BrowserAnalyticsService', () => {
         ]);
     });
 
-    it('forwards scalar and homogeneous array values unchanged', () => {
+    it('forwards immutable snapshots of scalar and homogeneous array values', () => {
         const events: AnalyticsEvent[] = [];
-        const service = new BrowserAnalyticsService(createRpc(events), createLogger());
+        const service = new BrowserAnalyticsService(createRpc(events), new RecordingLogger());
         const data = {
             text: 'value',
             count: 3,
@@ -90,16 +68,24 @@ describe('BrowserAnalyticsService', () => {
         service.report('company/action', data);
 
         expect(events).to.have.length(1);
-        expect(events[0].data).to.equal(data);
-        expect(events[0].data?.strings).to.equal(data.strings);
-        expect(events[0].data?.numbers).to.equal(data.numbers);
-        expect(events[0].data?.booleans).to.equal(data.booleans);
-        expect(events[0].data?.empty).to.equal(data.empty);
+        expect(events[0].data).to.deep.equal(data);
+        expect(events[0].data).not.to.equal(data);
+        expect(events[0].data?.strings).not.to.equal(data.strings);
+        expect(events[0].data?.numbers).not.to.equal(data.numbers);
+        expect(events[0].data?.booleans).not.to.equal(data.booleans);
+        expect(events[0].data?.empty).not.to.equal(data.empty);
+        expect(Object.isFrozen(events[0].data)).to.be.true;
+        expect(Object.isFrozen(events[0].data?.strings)).to.be.true;
+
+        data.text = 'changed';
+        data.strings.push('changed');
+        expect(events[0].data?.text).to.equal('value');
+        expect(events[0].data?.strings).to.deep.equal(['first', 'second']);
     });
 
     it('does not forward invalid topics or payloads', () => {
         const events: AnalyticsEvent[] = [];
-        const logger = createLogger();
+        const logger = new RecordingLogger();
         const service = new BrowserAnalyticsService(createRpc(events), logger);
         const sparse = new Array<string>(2);
         sparse[1] = 'value';
@@ -121,7 +107,7 @@ describe('BrowserAnalyticsService', () => {
 
     it('contains RPC rejection and does not log payload values', async () => {
         const events: AnalyticsEvent[] = [];
-        const logger = createLogger();
+        const logger = new RecordingLogger();
         const service = new BrowserAnalyticsService(createRpc(events, new Error('connection failed')), logger);
         const secret = 'sensitive-payload-value';
 

@@ -56,6 +56,17 @@ export function isAnalyticsData(data: unknown): data is Record<string, Analytics
     return Object.values(data).every(isAnalyticsValue);
 }
 
+export function snapshotAnalyticsData<T extends object>(data: AnalyticsData<T> | undefined): AnalyticsData<T> | undefined {
+    if (data === undefined) {
+        return undefined;
+    }
+    const snapshot = Object.fromEntries(Object.entries(data).map(([key, value]) => [
+        key,
+        Array.isArray(value) ? Object.freeze([...value]) : value
+    ]));
+    return Object.freeze(snapshot) as AnalyticsData<T>;
+}
+
 export const AnalyticsService = Symbol('AnalyticsService');
 
 export interface AnalyticsService {

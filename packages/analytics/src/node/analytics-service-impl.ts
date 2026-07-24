@@ -9,7 +9,7 @@
 // Licenses when the conditions for such availability set forth in the Eclipse
 // Public License v. 2.0 are satisfied: GNU General Public License, version 2
 // with the GNU Classpath Exception which is available at
-// http://www.gnu.org/software/classpath/license.html.
+// https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
@@ -17,26 +17,35 @@
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ANALYTICS_ENABLED, ANALYTICS_ROUTES, AnalyticsPreferences } from '../common/analytics-preferences';
-import { AnalyticsEvent, AnalyticsRpc } from '../common/analytics-protocol';
-import { AnalyticsData, AnalyticsService, isAnalyticsData } from '../common/analytics-service';
-import {
-    isValidAnalyticsSinkId,
-    isValidAnalyticsTopic,
-    isValidAnalyticsTopicPattern,
-    matchesAnalyticsTopic
-} from '../common/analytics-topic';
+import { AnalyticsEvent, AnalyticsRpc, describeAnalyticsTopic, isValidAnalyticsEvent } from '../common/analytics-protocol';
+import { AnalyticsData, AnalyticsService, snapshotAnalyticsData } from '../common/analytics-service';
+import { isValidAnalyticsSinkId, isValidAnalyticsTopicPattern, matchesAnalyticsTopic } from '../common/analytics-topic';
 import { AnalyticsSink } from './analytics-sink';
+
+interface ValidatedAnalyticsSink {
+    readonly sink: AnalyticsSink;
+    readonly id: string;
+    readonly interests: readonly string[];
+}
 
 @injectable()
 export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
 
-    protected sinks: readonly AnalyticsSink[] | undefined;
+    protected sinks: readonly ValidatedAnalyticsSink[] | undefined;
+    protected routes: ReadonlyMap<string, readonly string[]> | undefined;
+    protected readinessFailureLogged = false;
 
     constructor(
         @inject(AnalyticsPreferences) protected readonly preferences: AnalyticsPreferences,
         @inject(ContributionProvider) @named(AnalyticsSink) protected readonly sinkProvider: ContributionProvider<AnalyticsSink>,
         @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    ) {
+        this.preferences.onPreferenceChanged(change => {
+            if (change.preferenceName === ANALYTICS_ROUTES) {
+                this.routes = undefined;
+            }
+        });
+    }
 
     report<T extends object>(topic: string, data?: AnalyticsData<T>): void {
         this.dispatch({ topic, data, timestamp: Date.now() });
@@ -47,11 +56,24 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
     }
 
     protected dispatch(event: AnalyticsEvent): void {
-        if (!this.isValidEvent(event)) {
-            this.logger.warn(`Ignoring malformed analytics event for topic '${this.describeTopic(event?.topic)}'.`);
+        if (!isValidAnalyticsEvent(event)) {
+            this.logger.warn(`Ignoring malformed analytics event for topic '${describeAnalyticsTopic((event as Partial<AnalyticsEvent> | undefined)?.topic)}'.`);
             return;
         }
-        this.preferences.ready.then(() => this.doDispatch(event));
+        const snapshot = Object.freeze({
+            topic: event.topic,
+            data: snapshotAnalyticsData(event.data),
+            timestamp: event.timestamp
+        });
+        this.preferences.ready.then(
+            () => this.doDispatch(snapshot),
+            () => {
+                if (!this.readinessFailureLogged) {
+                    this.readinessFailureLogged = true;
+                    this.logger.error('Analytics preferences failed to become ready; dropping analytics events.');
+                }
+            }
+        );
     }
 
     protected doDispatch(event: AnalyticsEvent): void {
@@ -59,31 +81,22 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
             return;
         }
 
-        const routes = this.preferences[ANALYTICS_ROUTES];
-        for (const sink of this.getSinks()) {
-            const routePatterns = routes[sink.id];
-            if (!Array.isArray(routePatterns) || routePatterns.length === 0) {
+        const routes = this.getRoutes();
+        for (const validatedSink of this.getSinks()) {
+            const routePatterns = routes.get(validatedSink.id);
+            if (!routePatterns?.some(pattern => matchesAnalyticsTopic(pattern, event.topic))
+                || !validatedSink.interests.some(pattern => matchesAnalyticsTopic(pattern, event.topic))) {
                 continue;
             }
-            const validRoutes = routePatterns.filter(pattern => this.validateRoutePattern(sink.id, pattern));
-            if (!validRoutes.some(pattern => matchesAnalyticsTopic(pattern, event.topic))
-                || !sink.interests.some(pattern => matchesAnalyticsTopic(pattern, event.topic))) {
-                continue;
-            }
-            const envelope = Object.freeze({
-                topic: event.topic,
-                data: event.data,
-                timestamp: event.timestamp
-            });
             try {
-                Promise.resolve(sink.handle(envelope)).catch(() => this.logSinkFailure(sink.id, event.topic));
+                Promise.resolve(validatedSink.sink.handle(event)).catch(() => this.logSinkFailure(validatedSink.id, event.topic));
             } catch {
-                this.logSinkFailure(sink.id, event.topic);
+                this.logSinkFailure(validatedSink.id, event.topic);
             }
         }
     }
 
-    protected getSinks(): readonly AnalyticsSink[] {
+    protected getSinks(): readonly ValidatedAnalyticsSink[] {
         if (this.sinks) {
             return this.sinks;
         }
@@ -94,45 +107,48 @@ export class AnalyticsServiceImpl implements AnalyticsService, AnalyticsRpc {
                 idCounts.set(sink.id, (idCounts.get(sink.id) ?? 0) + 1);
             }
         }
-        this.sinks = contributions.filter(sink => {
-            if (!isValidAnalyticsSinkId(sink.id)) {
-                this.logger.error(`Ignoring analytics sink with invalid ID '${String(sink.id)}'.`);
-                return false;
+        this.sinks = contributions.flatMap(sink => {
+            const id = sink.id;
+            const interests = sink.interests;
+            if (!isValidAnalyticsSinkId(id)) {
+                this.logger.error(`Ignoring analytics sink with invalid ID '${String(id)}'.`);
+                return [];
             }
-            if (idCounts.get(sink.id) !== 1) {
-                this.logger.error(`Ignoring duplicate analytics sink ID '${sink.id}'.`);
-                return false;
+            if (idCounts.get(id) !== 1) {
+                this.logger.error(`Ignoring duplicate analytics sink ID '${id}'.`);
+                return [];
             }
-            if (!Array.isArray(sink.interests) || sink.interests.length === 0
-                || !sink.interests.every(interest => isValidAnalyticsTopicPattern(interest))) {
-                this.logger.error(`Ignoring analytics sink '${sink.id}' with invalid interests.`);
-                return false;
+            if (!Array.isArray(interests) || interests.length === 0
+                || !interests.every(interest => isValidAnalyticsTopicPattern(interest))) {
+                this.logger.error(`Ignoring analytics sink '${id}' with invalid interests.`);
+                return [];
             }
-            return true;
+            return [{ sink, id, interests: Object.freeze([...interests]) }];
         });
         return this.sinks;
     }
 
-    protected isValidEvent(event: AnalyticsEvent): boolean {
-        return typeof event === 'object'
-            // eslint-disable-next-line no-null/no-null
-            && event !== null
-            && isValidAnalyticsTopic(event.topic)
-            && typeof event.timestamp === 'number'
-            && Number.isFinite(event.timestamp)
-            && (event.data === undefined || isAnalyticsData(event.data));
-    }
-
-    protected validateRoutePattern(sinkId: string, pattern: unknown): pattern is string {
-        if (isValidAnalyticsTopicPattern(pattern)) {
-            return true;
+    protected getRoutes(): ReadonlyMap<string, readonly string[]> {
+        if (this.routes) {
+            return this.routes;
         }
-        this.logger.warn(`Ignoring invalid analytics route pattern for sink '${sinkId}'.`);
-        return false;
-    }
-
-    protected describeTopic(topic: unknown): string {
-        return typeof topic === 'string' ? topic : '<invalid>';
+        const routes = new Map<string, readonly string[]>();
+        for (const [sinkId, patterns] of Object.entries(this.preferences[ANALYTICS_ROUTES])) {
+            if (!Array.isArray(patterns)) {
+                this.logger.warn(`Ignoring invalid analytics routes for sink '${sinkId}'.`);
+                continue;
+            }
+            const validPatterns = patterns.filter(pattern => {
+                if (isValidAnalyticsTopicPattern(pattern)) {
+                    return true;
+                }
+                this.logger.warn(`Ignoring invalid analytics route pattern for sink '${sinkId}'.`);
+                return false;
+            });
+            routes.set(sinkId, Object.freeze(validPatterns));
+        }
+        this.routes = routes;
+        return routes;
     }
 
     protected logSinkFailure(sinkId: string, topic: string): void {
