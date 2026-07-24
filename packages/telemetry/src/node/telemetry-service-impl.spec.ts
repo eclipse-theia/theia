@@ -70,8 +70,11 @@ async function flushDispatch(): Promise<void> {
     await Promise.resolve();
 }
 
-async function reportEvent(service: TelemetryServiceImpl, event: TelemetryEvent = { topic: 'company/action', timestamp: 42 }): Promise<void> {
-    await service.reportEvent(event);
+async function reportEvent(
+    service: TelemetryServiceImpl,
+    event: Pick<TelemetryEvent, 'topic' | 'timestamp'> & Partial<TelemetryEvent> = { topic: 'company/action', timestamp: 42 }
+): Promise<void> {
+    await service.reportEvent({ kind: 'usage', session: 'frontend-session', ...event } as TelemetryEvent);
     await flushDispatch();
 }
 
@@ -187,11 +190,14 @@ describe('TelemetryServiceImpl', () => {
         let resolveReady: () => void;
         const ready = new Promise<void>(resolve => resolveReady = resolve);
         const data = { action: 'open', durations: [1, 2], states: [true, false] };
+        const attributes = { source: 'backend', labels: ['stable'] };
         const sink = createSink('company/sink');
         const service = createServiceWithPreferences(createPreferences(true, { 'company/sink': ['*'] }, ready), [sink]);
 
-        service.report('company/action', data);
+        service.report('company/action', data, { kind: 'error', attributes });
         data.action = 'changed';
+        attributes.source = 'changed';
+        attributes.labels.push('changed');
         data.durations.push(3);
         resolveReady!();
         await flushDispatch();
@@ -199,15 +205,20 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events).to.have.length(1);
         expect(sink.events[0].data).to.deep.equal({ action: 'open', durations: [1, 2], states: [true, false] });
         expect(sink.events[0].data).not.to.equal(data);
+        expect(sink.events[0].kind).to.equal('error');
+        expect(sink.events[0].attributes).to.deep.equal({ source: 'backend', labels: ['stable'] });
+        expect(sink.events[0].session).to.equal('backend');
         expect(Object.isFrozen(sink.events[0])).to.be.true;
         expect(Object.isFrozen(sink.events[0].data)).to.be.true;
         expect(Object.isFrozen(sink.events[0].data?.durations)).to.be.true;
+        expect(Object.isFrozen(sink.events[0].attributes)).to.be.true;
+        expect(Object.isFrozen(sink.events[0].attributes?.labels)).to.be.true;
         expect(sink.events[0].timestamp).to.equal(1234);
     });
 
     it('preserves RPC timestamps and isolates immutable payloads between sinks', async () => {
         const data = { action: 'open', durations: [1, 2] };
-        const event = { topic: 'company/action', data, timestamp: 987 };
+        const event = { topic: 'company/action', kind: 'error' as const, data, attributes: { source: 'rpc', labels: ['stable'] }, session: 'rpc-session', timestamp: 987 };
         const observed: TelemetryEvent[] = [];
         const mutating: TelemetrySink = {
             id: 'company/mutating',
@@ -215,6 +226,8 @@ describe('TelemetryServiceImpl', () => {
             handle: received => {
                 expect(() => Object.assign(received.data!, { action: 'changed' })).to.throw();
                 expect(() => (received.data!.durations as number[]).push(3)).to.throw();
+                expect(() => Object.assign(received.attributes!, { source: 'changed' })).to.throw();
+                expect(() => (received.attributes!.labels as string[]).push('changed')).to.throw();
             }
         };
         const recording: TelemetrySink = {
@@ -229,8 +242,13 @@ describe('TelemetryServiceImpl', () => {
         await reportEvent(service, event);
         data.action = 'changed';
         data.durations.push(3);
+        event.attributes.source = 'changed';
+        event.attributes.labels.push('changed');
 
         expect(observed[0].data).to.deep.equal({ action: 'open', durations: [1, 2] });
+        expect(observed[0].kind).to.equal('error');
+        expect(observed[0].attributes).to.deep.equal({ source: 'rpc', labels: ['stable'] });
+        expect(observed[0].session).to.equal('rpc-session');
         expect(observed[0].timestamp).to.equal(987);
     });
 
@@ -241,16 +259,22 @@ describe('TelemetryServiceImpl', () => {
 
         service.report('invalid', { secret: 'payload-secret' });
         service.report('company/action', { mixed: [1, 'payload-secret'] } as never);
-        await service.reportEvent({ topic: 'company/action', data: { nested: { secret: 'payload-secret' } } as never, timestamp: 42 });
-        await service.reportEvent({ topic: 'company/action', timestamp: Number.POSITIVE_INFINITY });
+        service.report('company/action', undefined, { kind: 'invalid' as never });
+        service.report('company/action', undefined, { attributes: { nested: { secret: 'payload-secret' } } as never });
+        const validEnvelope = { topic: 'company/action', kind: 'usage', session: 'frontend-session', timestamp: 42 };
+        await service.reportEvent({ ...validEnvelope, data: { nested: { secret: 'payload-secret' } } as never });
+        await service.reportEvent({ ...validEnvelope, attributes: { nested: { secret: 'payload-secret' } } as never });
+        await service.reportEvent({ ...validEnvelope, kind: 'invalid' });
+        await service.reportEvent({ ...validEnvelope, session: '' });
+        await service.reportEvent({ ...validEnvelope, timestamp: Number.POSITIVE_INFINITY });
         await service.reportEvent(undefined);
         await service.reportEvent('payload-secret');
-        await service.reportEvent({ topic: 42, data: 'payload-secret', timestamp: 42 });
-        await service.reportEvent({ data: { secret: 'payload-secret' }, timestamp: 42 });
+        await service.reportEvent({ ...validEnvelope, topic: 42, data: 'payload-secret' });
+        await service.reportEvent({ kind: 'usage', session: 'frontend-session', data: { secret: 'payload-secret' }, timestamp: 42 });
         await flushDispatch();
 
         expect(sink.events).to.be.empty;
-        expect(logger.warnings).to.have.length(8);
+        expect(logger.warnings).to.have.length(13);
         expect(logger.warnings.join(' ')).not.to.contain('payload-secret');
     });
 
@@ -273,11 +297,13 @@ describe('TelemetryServiceImpl', () => {
         const service = createService(true, { 'company/sink': ['company/*'] }, [sink]);
 
         service.report('company/direct');
-        await service.reportEvent({ topic: 'company/rpc', timestamp: 99 });
+        await service.reportEvent({ topic: 'company/rpc', kind: 'crash', session: 'rpc-session', timestamp: 99 });
         await flushDispatch();
 
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/direct', 'company/rpc']);
         expect(sink.events.map(event => event.timestamp)).to.deep.equal([1234, 99]);
+        expect(sink.events.map(event => event.kind)).to.deep.equal(['usage', 'crash']);
+        expect(sink.events.map(event => event.session)).to.deep.equal(['backend', 'rpc-session']);
     });
 
     it('isolates void handlers, synchronous throws, asynchronous rejections, and slow sinks', async () => {

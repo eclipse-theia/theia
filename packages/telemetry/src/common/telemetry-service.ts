@@ -14,9 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+/** @experimental */
 export type TelemetryPrimitive = string | number | boolean;
+/** @experimental */
 export type TelemetryValue = TelemetryPrimitive | readonly string[] | readonly number[] | readonly boolean[];
 
+/** @experimental */
 export type TelemetryData<T extends object> = {
     [K in keyof T]: T[K] extends TelemetryValue ? T[K] : never;
 };
@@ -48,6 +51,7 @@ function isTelemetryValue(value: unknown): value is TelemetryValue {
     return isTelemetryPrimitive(value) || isTelemetryArray(value);
 }
 
+/** @experimental */
 export function isTelemetryData(data: unknown): data is Record<string, TelemetryValue> {
     // eslint-disable-next-line no-null/no-null
     if (typeof data !== 'object' || data === null || Array.isArray(data) || Object.getPrototypeOf(data) !== Object.prototype) {
@@ -56,6 +60,7 @@ export function isTelemetryData(data: unknown): data is Record<string, Telemetry
     return Object.values(data).every(isTelemetryValue);
 }
 
+/** @experimental */
 export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
     if (data === undefined) {
         return undefined;
@@ -67,8 +72,24 @@ export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> |
     return Object.freeze(snapshot) as TelemetryData<T>;
 }
 
+/** @experimental */
+export type TelemetryEventKind = 'usage' | 'error' | 'crash';
+
+/** @experimental */
+export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
+    return value === 'usage' || value === 'error' || value === 'crash';
+}
+
+/** @experimental */
+export interface TelemetryReportOptions {
+    readonly kind?: TelemetryEventKind;
+    readonly attributes?: TelemetryData<Record<string, TelemetryValue>>;
+}
+
+/** @experimental */
 export const TelemetryService = Symbol('TelemetryService');
 
+/** @experimental */
 export interface TelemetryService {
-    report<T extends object>(topic: string, data?: TelemetryData<T>): void;
+    report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void;
 }

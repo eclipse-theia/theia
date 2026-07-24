@@ -15,16 +15,20 @@
 // *****************************************************************************
 
 import { ILogger } from '@theia/core/lib/common';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TELEMETRY_ENABLED, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryRpc, describeTelemetryTopic } from '../common/telemetry-protocol';
-import { TelemetryData, TelemetryService, isTelemetryData, snapshotTelemetryData } from '../common/telemetry-service';
+import {
+    TelemetryData, TelemetryReportOptions, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
+} from '../common/telemetry-service';
 import { isValidTelemetryTopic } from '../common/telemetry-topic';
 
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
 
     protected preferencesReady = false;
+    protected readonly session = generateUuid();
 
     constructor(
         @inject(TelemetryRpc) protected readonly rpc: TelemetryRpc,
@@ -37,16 +41,29 @@ export class BrowserTelemetryService implements TelemetryService {
         );
     }
 
-    report<T extends object>(topic: string, data?: TelemetryData<T>): void {
+    report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
         if (this.preferencesReady && !this.preferences[TELEMETRY_ENABLED]) {
             return;
         }
-        if (!isValidTelemetryTopic(topic) || (data !== undefined && !isTelemetryData(data))) {
+        const kind = options?.kind ?? 'usage';
+        const attributes = options?.attributes;
+        if (!isValidTelemetryTopic(topic)
+            || !isTelemetryEventKind(kind)
+            || (data !== undefined && !isTelemetryData(data))
+            || (attributes !== undefined && !isTelemetryData(attributes))) {
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryTopic(topic)}'.`);
             return;
         }
         const snapshot = snapshotTelemetryData(data);
-        this.rpc.reportEvent({ topic, data: snapshot, timestamp: Date.now() }).catch(() => {
+        const attributesSnapshot = snapshotTelemetryData(attributes);
+        this.rpc.reportEvent({
+            topic,
+            kind,
+            data: snapshot,
+            attributes: attributesSnapshot,
+            session: this.session,
+            timestamp: Date.now()
+        }).catch(() => {
             this.logger.error(`Failed to report telemetry event for topic '${topic}'.`);
         });
     }

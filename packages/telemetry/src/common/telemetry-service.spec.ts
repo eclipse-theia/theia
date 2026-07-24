@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { TelemetryData, TelemetryService, isTelemetryData, snapshotTelemetryData } from './telemetry-service';
+import { isValidTelemetryEvent } from './telemetry-protocol';
+import { TelemetryData, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-service';
 
 interface ConsumerPayload {
     action: string;
@@ -36,12 +37,36 @@ const typedPayload = {
     states: [true, false]
 } satisfies TelemetryData<ConsumerPayload>;
 
-const compileTimeUsage = (service: TelemetryService): void => service.report<ConsumerPayload>('consumer/action', typedPayload);
+const compileTimeUsage = (service: TelemetryService): void => service.report<ConsumerPayload>('consumer/action', typedPayload, {
+    kind: 'error',
+    attributes: { source: 'consumer' }
+});
 
 describe('telemetry service contract', () => {
     it('supports consumer-defined payload interfaces without an index signature', () => {
         expect(compileTimeUsage).to.be.a('function');
     });
+    it('validates telemetry event kinds', () => {
+        expect(['usage', 'error', 'crash'].every(isTelemetryEventKind)).to.be.true;
+        expect(isTelemetryEventKind('invalid')).to.be.false;
+    });
+
+    it('validates event kind, attributes, and session', () => {
+        const event = {
+            topic: 'consumer/action',
+            kind: 'error' as const,
+            data: typedPayload,
+            attributes: { source: 'consumer' },
+            session: 'frontend-session',
+            timestamp: 42
+        };
+
+        expect(isValidTelemetryEvent(event)).to.be.true;
+        expect(isValidTelemetryEvent({ ...event, kind: 'invalid' })).to.be.false;
+        expect(isValidTelemetryEvent({ ...event, session: '' })).to.be.false;
+        expect(isValidTelemetryEvent({ ...event, attributes: { nested: {} } })).to.be.false;
+    });
+
     it('accepts plain flat payloads with primitive telemetry values', () => {
         expect(isTelemetryData(typedPayload)).to.be.true;
         expect(isTelemetryData({})).to.be.true;

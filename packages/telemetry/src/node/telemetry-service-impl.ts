@@ -18,7 +18,7 @@ import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TELEMETRY_ENABLED, TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryEvent, TelemetryRpc, describeTelemetryEventTopic, isValidTelemetryEvent } from '../common/telemetry-protocol';
-import { TelemetryData, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
+import { TelemetryData, TelemetryReportOptions, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
 import { TelemetrySink } from './telemetry-sink';
 
@@ -47,8 +47,15 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
         });
     }
 
-    report<T extends object>(topic: string, data?: TelemetryData<T>): void {
-        this.dispatch({ topic, data, timestamp: Date.now() });
+    report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
+        this.dispatch({
+            topic,
+            kind: options?.kind ?? 'usage',
+            data,
+            attributes: options?.attributes,
+            session: 'backend',
+            timestamp: Date.now()
+        });
     }
 
     async reportEvent(event: unknown): Promise<void> {
@@ -62,7 +69,10 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc {
         }
         const snapshot = Object.freeze({
             topic: event.topic,
+            kind: event.kind,
             data: snapshotTelemetryData(event.data),
+            attributes: snapshotTelemetryData(event.attributes),
+            session: event.session,
             timestamp: event.timestamp
         });
         this.preferences.ready.then(

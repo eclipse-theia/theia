@@ -84,9 +84,9 @@ describe('BrowserTelemetryService', () => {
 
         service.report('company/action', { enabled: true });
 
-        expect(events).to.deep.equal([
-            { topic: 'company/action', data: { enabled: true }, timestamp: 1234 }
-        ]);
+        expect(events).to.have.length(1);
+        expect(events[0]).to.deep.include({ topic: 'company/action', kind: 'usage', data: { enabled: true }, timestamp: 1234 });
+        expect(events[0].session).to.be.a('string').and.not.empty;
     });
 
     it('skips validation, snapshotting, timestamps, and RPC once preferences are ready and disabled', async () => {
@@ -122,10 +122,10 @@ describe('BrowserTelemetryService', () => {
         clock.tick(10);
         service.report('company/other', { count: 3 });
 
-        expect(events).to.deep.equal([
-            { topic: 'company/action', data: { enabled: true }, timestamp: 1234 },
-            { topic: 'company/other', data: { count: 3 }, timestamp: 1244 }
-        ]);
+        expect(events).to.have.length(2);
+        expect(events[0]).to.deep.include({ topic: 'company/action', kind: 'usage', data: { enabled: true }, timestamp: 1234 });
+        expect(events[1]).to.deep.include({ topic: 'company/other', kind: 'usage', data: { count: 3 }, timestamp: 1244 });
+        expect(events[0].session).to.equal(events[1].session).and.not.empty;
     });
 
     it('continues forwarding if frontend preference readiness rejects', async () => {
@@ -159,7 +159,7 @@ describe('BrowserTelemetryService', () => {
         expect(events.map(event => event.topic)).to.deep.equal(['company/enabled']);
     });
 
-    it('forwards immutable snapshots of scalar and homogeneous array values', () => {
+    it('forwards immutable snapshots of data and attributes with report options', () => {
         const events: TelemetryEvent[] = [];
         const service = new BrowserTelemetryService(createRpc(events), createPreferences(true, Promise.resolve()), new RecordingLogger());
         const data = {
@@ -172,10 +172,16 @@ describe('BrowserTelemetryService', () => {
             empty: [] as string[]
         };
 
-        service.report('company/action', data);
+        const attributes = { source: 'browser', labels: ['stable'] };
+        service.report('company/action', data, { kind: 'error', attributes });
 
         expect(events).to.have.length(1);
+        expect(events[0].kind).to.equal('error');
+        expect(events[0].session).to.be.a('string').and.not.empty;
         expect(events[0].data).to.deep.equal(data);
+        expect(events[0].attributes).to.deep.equal(attributes);
+        expect(events[0].attributes).not.to.equal(attributes);
+        expect(events[0].attributes?.labels).not.to.equal(attributes.labels);
         expect(events[0].data).not.to.equal(data);
         expect(events[0].data?.strings).not.to.equal(data.strings);
         expect(events[0].data?.numbers).not.to.equal(data.numbers);
@@ -183,11 +189,16 @@ describe('BrowserTelemetryService', () => {
         expect(events[0].data?.empty).not.to.equal(data.empty);
         expect(Object.isFrozen(events[0].data)).to.be.true;
         expect(Object.isFrozen(events[0].data?.strings)).to.be.true;
+        expect(Object.isFrozen(events[0].attributes)).to.be.true;
+        expect(Object.isFrozen(events[0].attributes?.labels)).to.be.true;
 
         data.text = 'changed';
+        attributes.source = 'changed';
+        attributes.labels.push('changed');
         data.strings.push('changed');
         expect(events[0].data?.text).to.equal('value');
         expect(events[0].data?.strings).to.deep.equal(['first', 'second']);
+        expect(events[0].attributes).to.deep.equal({ source: 'browser', labels: ['stable'] });
     });
 
     it('does not forward invalid topics or payloads', () => {
@@ -207,9 +218,11 @@ describe('BrowserTelemetryService', () => {
         for (const [topic, data] of invalidCases) {
             service.report(topic as string, data as never);
         }
+        service.report('company/action', undefined, { kind: 'invalid' as never });
+        service.report('company/action', undefined, { attributes: { nested: {} } as never });
 
         expect(events).to.be.empty;
-        expect(logger.warnings).to.have.length(invalidCases.length);
+        expect(logger.warnings).to.have.length(invalidCases.length + 2);
     });
 
     it('contains RPC rejection and does not log payload values', async () => {
