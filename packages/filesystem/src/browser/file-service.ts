@@ -313,6 +313,11 @@ export class FileService {
         for (const contribution of this.contributions.getContributions()) {
             contribution.registerFileSystemProviders(this);
         }
+        this.onDidChangeWatcherExcludeDisposable = this.preferences.onPreferenceChanged((e: { preferenceName: string }) => {
+            if (e.preferenceName === 'files.watcherExclude') {
+                this.refreshWatcherExcludes();
+            }
+        });
     }
 
     // #region Events
@@ -1428,6 +1433,7 @@ export class FileService {
 
     // #region File Watching
 
+    private onDidChangeWatcherExcludeDisposable = new Disposable();
     private onDidFilesChangeEmitter = new Emitter<FileChangesEvent>();
     /**
      * An event that is emitted when files are changed on the disk.
@@ -1485,6 +1491,77 @@ export class FileService {
             }
         }
         return Array.from(resolved);
+    }
+
+    /**
+     * Refresh the exclude patterns on all active watchers when
+     * `files.watcherExclude` preference changes.
+     *
+     * Walks every entry in `activeWatchers`, rebuilds its excludes
+     * from the current preference value, recompiles Minimatch for
+     * recursive entries, and re-keys the entry in the map and
+     * recursive index as needed.
+     */
+    protected refreshWatcherExcludes(): void {
+        for (const [key, entry] of this.activeWatchers) {
+            // Rebuild excludes from current preference value
+            const resolved = this.resolveWatcherExcludes(entry.resource, []);
+
+            // Quick check: skip if excludes haven't changed
+            const oldExcludes = entry.options.excludes;
+            if (oldExcludes.length === resolved.length &&
+                oldExcludes.every((e, i) => e === resolved[i])) {
+                continue;
+            }
+
+            // Compute new key: keep provider+resource+recursive parts, replace excludes
+            const keyParts = key.split(',');
+            const excludesPart = resolved.join(',');
+            const newKey = keyParts.slice(0, keyParts.length - 1).join(',') + ',' + excludesPart;
+            if (newKey === key) {
+                continue;
+            }
+
+            // Update entry in place
+            (entry as any).key = newKey;
+            entry.options.excludes = resolved;
+
+            if (this.isRecursiveWatcherEntry(entry)) {
+                (entry as any).compiledExcludes = resolved.map(
+                    pattern => new Minimatch(pattern, { dot: true })
+                );
+            }
+
+            // Remove old key, set new key (entry object reference stays the same)
+            this.activeWatchers.delete(key);
+            this.activeWatchers.set(newKey, entry);
+
+            // Update subsumedChildren keys that reference this entry's old key
+            if (this.isRecursiveWatcherEntry(entry)) {
+                const subsumedChildren = (entry as RecursiveWatcherEntry).subsumedChildren;
+                for (const childKey of subsumedChildren) {
+                    const childParts = childKey.split(',');
+                    if (childParts[0] === key) {
+                        childParts[0] = newKey;
+                        const newChildKey = childParts.join(',');
+                        subsumedChildren.delete(childKey);
+                        subsumedChildren.add(newChildKey);
+                        const child = this.activeWatchers.get(childKey);
+                        if (child) {
+                            this.activeWatchers.delete(childKey);
+                            (child as any).key = newChildKey;
+                            this.activeWatchers.set(newChildKey, child);
+                        }
+                    }
+                }
+
+                // Re-index recursive watchers at the new key
+                if (entry.realWatcher) {
+                    const tree = this.getRecursiveWatcherIndex(entry.provider);
+                    tree.set(entry.resource, newKey);
+                }
+            }
+        }
     }
 
     async doWatch(resource: URI, options: WatchOptions): Promise<Disposable> {
