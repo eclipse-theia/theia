@@ -146,11 +146,16 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
      * Heuristic over the model id; override to read the capability from the `/v1/models` endpoint or for custom endpoints.
      */
     protected deriveServerSideCompactionSupport(description: AnthropicModelDescription): boolean {
-        const match = /(opus|sonnet)-(\d+)-(\d+)/.exec(description.model);
+        // The minor segment is optional: dateless major releases omit it (e.g. claude-opus-5, claude-sonnet-5).
+        const match = /(opus|sonnet)-(\d+)(?:-(\d+))?/.exec(description.model);
         if (!match) {
             return false;
         }
         const major = Number(match[2]);
+        // A 4+ digit "major" is a date-style id (e.g. claude-3-opus-20240229), not a versioned model.
+        if (major >= 1000) {
+            return false;
+        }
         // A 4+ digit "minor" is a date suffix on a `.0` model id (e.g. claude-sonnet-4-20250514), not a minor version.
         const minor = Number(match[3]) >= 1000 ? 0 : Number(match[3]);
         return major > 4 || (major === 4 && minor >= 6);
