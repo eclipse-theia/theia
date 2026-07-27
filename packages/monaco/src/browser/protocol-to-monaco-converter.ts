@@ -126,7 +126,7 @@ export class ProtocolToMonacoConverter {
         return {
             code: typeof diagnostic.code === 'number' ? diagnostic.code.toString() : diagnostic.code,
             severity: this.asSeverity(diagnostic.severity),
-            message: diagnostic.message,
+            message: Diagnostic.getMessageString(diagnostic),
             source: diagnostic.source,
             startLineNumber: diagnostic.range.start.line + 1,
             startColumn: diagnostic.range.start.character + 1,
