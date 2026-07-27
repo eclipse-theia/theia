@@ -47,6 +47,7 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
  * (e.g. `gpt-4o-2024-08-06` matches `gpt-4o`).
  */
 const OPENAI_MODEL_FAMILIES: ReadonlyArray<readonly [prefix: string, defaults: OpenAiModelDefaults]> = [
+    ['gpt-5.6', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.5', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.4-mini', { contextWindow: 400_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.4-nano', { contextWindow: 400_000, reasoningSupport: GPT5_REASONING_SUPPORT }],

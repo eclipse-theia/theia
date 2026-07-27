@@ -38,12 +38,14 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                'claude-opus-5',
+                'claude-sonnet-5',
+                'claude-fable-5',
                 'claude-opus-4-8',
                 'claude-opus-4-7',
+                'claude-opus-4-6',
                 'claude-sonnet-4-6',
                 'claude-haiku-4-5',
-                'claude-fable-5',
-                'claude-opus-4-6',
             ],
             items: {
                 type: 'string'
