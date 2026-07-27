@@ -194,7 +194,7 @@ export class NotificationManager extends MessageClient {
         const source = plainMessage.source;
         const expandable = this.isExpandable(message, source, actions);
         const collapsed = expandable;
-        const notification = { messageId, message, type, actions, expandable, collapsed };
+        const notification = { messageId, message, type, actions, expandable, collapsed, source };
         this.notifications.set(messageId, notification);
         const result = new Deferred<string | undefined>();
         this.deferredResults.set(messageId, result);
