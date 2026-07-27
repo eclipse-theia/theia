@@ -69,8 +69,6 @@ export class ProblemWidget extends TreeWidget {
         this.title.iconClass = codicon('warning');
         this.title.closable = true;
         this.addClass('theia-marker-container');
-
-        this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
     }
 
     @postConstruct()
@@ -133,14 +131,6 @@ export class ProblemWidget extends TreeWidget {
         super.tapNode(node);
         if (MarkerNode.is(node)) {
             this.model.revealNode(node);
-        }
-    }
-
-    protected handleCopy(event: ClipboardEvent): void {
-        const uris = this.model.selectedNodes.filter(MarkerNode.is).map(node => node.uri.toString());
-        if (uris.length > 0 && event.clipboardData) {
-            event.clipboardData.setData('text/plain', uris.join('\n'));
-            event.preventDefault();
         }
     }
 

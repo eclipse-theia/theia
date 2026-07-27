@@ -415,7 +415,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             title: nls.localize('theia/markers/exportProblems', 'Export Problems'),
             filters: { [nls.localize('theia/markers/jsonFiles', 'JSON Files')]: ['json'] },
             saveLabel: nls.localize('theia/markers/export', 'Export'),
-            inputValue: nls.localizeByDefault('Problem').toLowerCase()
+            inputValue: nls.localizeByDefault('Problems').toLowerCase() + '.json'
         });
 
         if (!filePath) {
