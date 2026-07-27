@@ -189,7 +189,7 @@ export function buildSessionTooltip(
     const exchangeLabel = count === 1
         ? nls.localize('theia/ai/ide/tooltip/oneExchange', '1 exchange')
         : nls.localize('theia/ai/ide/tooltip/multipleExchanges', '{0} exchanges', count);
-    addDefinitionEntry(definitionList, nls.localize('theia/ai/ide/tooltip/messages', 'Messages'), exchangeLabel);
+    addDefinitionEntry(definitionList, nls.localizeByDefault('Messages'), exchangeLabel);
 
     const date = session.lastInteraction ?? new Date(metadata.saveDate);
     addDefinitionEntry(definitionList, nls.localize('theia/ai/ide/tooltip/lastActivity', 'Last activity'), date.toLocaleString());
