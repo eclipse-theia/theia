@@ -40,7 +40,6 @@ import { ArchitectAgentId, ExploreAgentId } from './agent-ids';
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
 export const CODER_EDIT_TEMPLATE_ID = 'coder-system-edit';
-export const CODER_EDIT_NEXT_TEMPLATE_ID = 'coder-system-edit-next';
 export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-system-agent-mode';
 export const CODER_AGENT_MODE_NEXT_TEMPLATE_ID = 'coder-system-agent-mode-next';
 
@@ -649,13 +648,5 @@ export function getCoderPromptTemplateEdit(): BasePromptFragment {
     return {
         id: CODER_EDIT_TEMPLATE_ID,
         template: getCoderEditPromptTemplate()
-    };
-}
-// Currently, the next template is identical to the regular edit prompt
-export function getCoderPromptTemplateEditNext(): BasePromptFragment {
-    return {
-        id: CODER_EDIT_NEXT_TEMPLATE_ID,
-        template: getCoderEditPromptTemplate(),
-        ...({ variantOf: CODER_EDIT_TEMPLATE_ID })
     };
 }

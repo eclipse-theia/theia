@@ -18,7 +18,7 @@ import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-t
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { codicon, CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
+import { codicon, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
 import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceScope } from '@theia/core';
 import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { PreferenceService } from '@theia/core/lib/common';
@@ -388,15 +388,15 @@ Set up an API key for [OpenAI]({0}), [Anthropic]({1}), or [GoogleAI]({2}) or con
 Some agents (e.g. Claude Code) work without a provider. [Learn more](https://theia-ide.org/docs/user_ai/).
 `}
                 args={[
-                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.openAiOfficial.openAiApiKey`,
-                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.anthropic.AnthropicApiKey`,
-                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.google.apiKey`
+                    `command:${OPEN_AI_CONFIG_VIEW.id}?ai-features.openAiOfficial.openAiApiKey`,
+                    `command:${OPEN_AI_CONFIG_VIEW.id}?ai-features.anthropic.AnthropicApiKey`,
+                    `command:${OPEN_AI_CONFIG_VIEW.id}?ai-features.google.apiKey`
                 ]}
                 markdownRenderer={this.markdownRenderer}
                 className="theia-WelcomeMessage-Content"
                 markdownOptions={{
                     supportHtml: true,
-                    isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] }
+                    isTrusted: { enabledCommands: [OPEN_AI_CONFIG_VIEW.id] }
                 }}
             />
             {errorMessages.length > 0 && (
@@ -415,8 +415,8 @@ Some agents (e.g. Claude Code) work without a provider. [Learn more](https://the
             <div className="theia-WelcomeMessage-Actions">
                 <button
                     className="theia-button main"
-                    onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
-                    {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
+                    onClick={() => this.commandRegistry.executeCommand(OPEN_AI_CONFIG_VIEW.id)}>
+                    {nls.localize('theia/ai/ide/openAiConfiguration', 'Open AI Configuration')}
                 </button>
                 <button
                     className="theia-button secondary"
@@ -474,9 +474,9 @@ Choose the agent to use by default. You can always override this by mentioning *
                     <LocalizedMarkdown
                         localizationKey="theia/ai/ide/moreAgentsAvailable"
                         defaultMarkdown='Use @AgentName to try others or configure a different default in [preferences]({0}).'
-                        args={[`command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.chat.defaultChatAgent`]}
+                        args={[`command:${OPEN_AI_CONFIG_VIEW.id}?ai-features.chat.defaultChatAgent`]}
                         markdownRenderer={this.markdownRenderer}
-                        markdownOptions={{ isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] } }}
+                        markdownOptions={{ isTrusted: { enabledCommands: [OPEN_AI_CONFIG_VIEW.id] } }}
                     />
                 </div>
             </div>
@@ -546,8 +546,8 @@ Choose the agent to use by default. You can always override this by mentioning *
             <div className="theia-WelcomeMessage-Actions">
                 <button
                     className="theia-button main"
-                    onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
-                    {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
+                    onClick={() => this.commandRegistry.executeCommand(OPEN_AI_CONFIG_VIEW.id)}>
+                    {nls.localize('theia/ai/ide/openAiConfiguration', 'Open AI Configuration')}
                 </button>
             </div>
             <LocalizedMarkdown

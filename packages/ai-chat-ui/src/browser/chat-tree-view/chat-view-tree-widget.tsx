@@ -234,6 +234,13 @@ export class ChatViewTreeWidget extends TreeWidget {
             }
         }
 
+        // Re-render node toolbars when a contribution signals its actions changed (e.g. a gating setting toggled).
+        for (const contribution of this.chatNodeToolbarActionContributions.getContributions()) {
+            if (contribution.onDidChange) {
+                this.toDispose.push(contribution.onDidChange(() => this.update()));
+            }
+        }
+
     }
 
     public setEnabled(enabled: boolean): void {

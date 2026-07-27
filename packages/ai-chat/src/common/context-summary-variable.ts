@@ -22,7 +22,8 @@ import { ChatSessionContext } from './chat-agents';
 
 export const CONTEXT_SUMMARY_VARIABLE: AIVariable = {
     id: 'contextSummary',
-    description: nls.localize('theia/ai/core/contextSummaryVariable/description', 'Describes files in the context for a given session.'),
+    description: nls.localize('theia/ai/core/contextSummaryVariable/description',
+        'A JSON summary of every element in the current chat session context, listing each element\'s type and identifiers.'),
     name: 'contextSummary',
 };
 

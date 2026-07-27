@@ -27,6 +27,7 @@ export * from './ai-configuration-service-impl';
 export * from './ai-view-contribution';
 export * from './frontend-language-model-registry';
 export * from './frontend-language-model-alias-registry';
+export * from './hide-ai-preferences-contribution';
 export * from './frontend-variable-service';
 export * from './prompttemplate-contribution';
 export * from './theia-variable-contribution';

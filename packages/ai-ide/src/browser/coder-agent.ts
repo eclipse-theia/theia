@@ -25,8 +25,7 @@ import {
     CODER_AGENT_MODE_NEXT_TEMPLATE_ID,
     getCoderAgentModePromptTemplate,
     getCoderAgentModeNextPromptTemplate,
-    getCoderPromptTemplateEdit,
-    getCoderPromptTemplateEditNext
+    getCoderPromptTemplateEdit
 } from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
@@ -75,7 +74,7 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
     override prompts: PromptVariantSet[] = [{
         id: CODER_SYSTEM_PROMPT_ID,
         defaultVariant: getCoderAgentModePromptTemplate(),
-        variants: [getCoderPromptTemplateEdit(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
+        variants: [getCoderPromptTemplateEdit(), getCoderAgentModeNextPromptTemplate()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
 

@@ -31,7 +31,7 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
-import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -1221,8 +1221,10 @@ export class AIChatInputWidget extends ReactWidget {
                 console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
-            this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+            // The threshold preference lives in the AI Configuration view (AI preferences are hidden from
+            // the Settings UI). Referenced by command id because @theia/ai-chat-ui cannot depend on @theia/ai-ide.
+            this.commandService.executeCommand('aiConfiguration:open', CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                console.error('Failed to open the AI Configuration view from the token usage warning', error);
             });
         }
     }
