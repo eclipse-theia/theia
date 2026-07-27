@@ -18,9 +18,7 @@ import { Emitter, Event } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences';
 import { TelemetryEventKind } from './telemetry-service';
-
-/** @experimental */
-export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
+import { TelemetryLevel } from './telemetry-types';
 
 /** @experimental */
 export const TelemetryConsentProvider = Symbol('TelemetryConsentProvider');
@@ -42,7 +40,7 @@ export function isKindAllowedByLevel(level: TelemetryLevel, kind: TelemetryEvent
 @injectable()
 export class PreferenceTelemetryConsentProvider implements TelemetryConsentProvider {
 
-    protected currentLevel: TelemetryLevel = 'all';
+    protected currentLevel: TelemetryLevel = 'off';
     protected readonly onDidChangeTelemetryLevelEmitter = new Emitter<TelemetryLevel>();
     readonly onDidChangeTelemetryLevel = this.onDidChangeTelemetryLevelEmitter.event;
 

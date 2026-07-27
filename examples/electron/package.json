@@ -91,6 +91,7 @@
     "@theia/search-in-workspace": "1.73.0",
     "@theia/secondary-window": "1.73.0",
     "@theia/task": "1.73.0",
+    "@theia/telemetry": "1.73.0",
     "@theia/terminal": "1.73.0",
     "@theia/terminal-manager": "1.73.0",
     "@theia/timeline": "1.73.0",

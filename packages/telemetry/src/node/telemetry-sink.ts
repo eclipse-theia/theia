@@ -24,6 +24,10 @@ export interface TelemetrySink {
     readonly interests: readonly string[];
     /** Defaults to `remote`. */
     readonly scope?: 'local' | 'remote';
+    /**
+     * Must not synchronously call `TelemetryService.report`, which can cause recursive dispatch or a sink cycle.
+     * Defer any follow-up telemetry until after the current handler call.
+     */
     handle(event: TelemetryEvent): MaybePromise<void>;
     flush?(): MaybePromise<void>;
 }

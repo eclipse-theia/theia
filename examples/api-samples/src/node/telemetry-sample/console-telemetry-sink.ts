@@ -23,8 +23,8 @@ import { TelemetrySink } from '@theia/telemetry/lib/node';
 export class ConsoleTelemetrySink implements TelemetrySink {
 
     readonly id = 'sample/console';
-    readonly interests = ['sample/telemetry/*'] as const;
-    readonly scope = 'remote';
+    readonly interests: readonly string[] = ['sample/telemetry/*'];
+    readonly scope: 'local' | 'remote' = 'remote';
 
     @inject(ILogger) @named('api-samples')
     protected readonly logger: ILogger;

@@ -22,9 +22,9 @@ The extension is for reference and test purposes only and is not published on `n
 
 ### Telemetry sample
 
-The **Telemetry Samples** command category demonstrates reporting events from the frontend to the `sample/console` backend sink. Set `telemetry.level` to `all`, run the started and completed commands, and inspect the backend log for the topic, kind, session, timestamp, and payload. The completed command reports an `error` event with attributes. The `sample/other` event is intentionally outside the sink's interests.
+The **Telemetry Samples** command category demonstrates reporting events from the frontend to the `sample/console` backend sink. Set `telemetry.telemetryLevel` to `all`, run the started and completed commands, and inspect the backend log for the topic, kind, session, timestamp, and payload. The completed command reports an `error` event with attributes. The `sample/other` event is intentionally outside the sink's interests.
 
-Set `telemetry.level` to `off` to suppress the remote sink, or set `"telemetry.filters": { "sample/console": [] }` to disable it explicitly.
+Set `telemetry.telemetryLevel` to `off` to suppress the remote sink, or set `"telemetry.filters": { "sample/console": [] }` to disable it explicitly.
 
 ### Sample mock OpenVSX server
 

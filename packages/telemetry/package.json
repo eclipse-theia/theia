@@ -13,6 +13,9 @@
     {
       "frontend": "lib/browser/telemetry-frontend-module",
       "backend": "lib/node/telemetry-backend-module"
+    },
+    {
+      "frontendOnly": "lib/browser-only/telemetry-frontend-only-module"
     }
   ],
   "keywords": [

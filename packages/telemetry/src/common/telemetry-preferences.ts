@@ -20,14 +20,15 @@ import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/p
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { interfaces } from '@theia/core/shared/inversify';
+import { TelemetryLevel } from './telemetry-types';
 
-export const TELEMETRY_LEVEL = 'telemetry.level';
+export const TELEMETRY_LEVEL = 'telemetry.telemetryLevel';
 export const TELEMETRY_FILTERS = 'telemetry.filters';
 
 export type TelemetryFilters = Record<string, string[]>;
 
 export interface TelemetryConfiguration {
-    [TELEMETRY_LEVEL]: 'off' | 'crash' | 'error' | 'all';
+    [TELEMETRY_LEVEL]: TelemetryLevel;
     [TELEMETRY_FILTERS]: TelemetryFilters;
 }
 
@@ -38,7 +39,7 @@ export const TelemetryPreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['off', 'crash', 'error', 'all'],
             default: 'off',
-            description: nls.localize('theia/telemetry/level', 'Controls the level of telemetry sent to remote destinations.')
+            description: nls.localizeByDefault('Controls the level of telemetry.')
         },
         [TELEMETRY_FILTERS]: {
             type: 'object',

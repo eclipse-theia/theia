@@ -13,13 +13,27 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ILogger, LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
 import { TelemetryService } from '@theia/telemetry/lib/common';
+import { MeasurementNotificationService, reportMeasurement } from '../common';
 
 @injectable()
 export class MetricsFrontendApplicationContribution implements FrontendApplicationContribution {
+    /**
+     * @deprecated frontend measurements are reported through `TelemetryService`;
+     * the telemetry session identifies the frontend.
+     */
+    readonly id = UUID.uuid4();
+
+    /**
+     * @deprecated frontend measurements are reported through `TelemetryService`.
+     */
+    @inject(MeasurementNotificationService)
+    protected notificationService: MeasurementNotificationService;
+
     @inject(Stopwatch)
     protected stopwatch: Stopwatch;
 
@@ -43,11 +57,6 @@ export class MetricsFrontendApplicationContribution implements FrontendApplicati
     }
 
     protected notify(result: MeasurementResult): void {
-        const { name, startTime, elapsed, owner } = result;
-        if (owner === undefined) {
-            this.telemetryService.report('theia/measurement/result', { name, startTime, elapsed });
-        } else {
-            this.telemetryService.report('theia/measurement/result', { name, startTime, elapsed, owner });
-        }
+        reportMeasurement(this.telemetryService, result);
     }
 }

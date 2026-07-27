@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { bindRootContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
+import { measurementNotificationServicePath } from '../common';
+import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
+import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
+import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
+import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
 import { MetricsContribution } from './metrics-contribution';
 import { NodeMetricsContribution } from './node-metrics-contribution';
-import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
-import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
-import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
-import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
-import { measurementNotificationServicePath } from '../common';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, MetricsContribution);

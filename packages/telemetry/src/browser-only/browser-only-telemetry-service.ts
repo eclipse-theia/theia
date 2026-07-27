@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './measurement-notification-service';
-export * from './measurement-telemetry';
+import { injectable } from '@theia/core/shared/inversify';
+import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
+
+@injectable()
+export class BrowserOnlyTelemetryService implements TelemetryService {
+    report<T extends object>(_topic: string, _data?: TelemetryData<T>, _options?: TelemetryReportOptions): void { }
+}

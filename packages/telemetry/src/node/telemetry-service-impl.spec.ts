@@ -17,11 +17,12 @@
 import { expect } from 'chai';
 import { ContributionProvider, Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
-import { TelemetryConsentProvider, TelemetryLevel } from '../common/telemetry-consent-provider';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryEvent } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { TelemetryServiceImpl } from './telemetry-service-impl';
+import { BACKEND_TELEMETRY_SESSION, TelemetryLevel } from '../common/telemetry-types';
 import { TelemetrySink } from './telemetry-sink';
 
 interface TestPreferences extends TelemetryPreferences {
@@ -247,6 +248,23 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/action', 'company/action']);
     });
 
+    it('dispatches queued events in FIFO order after preference readiness', async () => {
+        let resolveReady: () => void;
+        const ready = new Promise<void>(resolve => resolveReady = resolve);
+        const sink = createSink('company/sink');
+        const service = createServiceWithPreferences(createPreferences({ 'company/sink': ['*'] }, ready), [sink]);
+
+        service.report('company/first');
+        service.report('company/second');
+        service.report('company/third');
+        expect(sink.events).to.be.empty;
+
+        resolveReady!();
+        await flushDispatch();
+
+        expect(sink.events.map(event => event.topic)).to.deep.equal(['company/first', 'company/second', 'company/third']);
+    });
+
     it('timestamps direct reports and snapshots payloads before deferred dispatch', async () => {
         let resolveReady: () => void;
         const ready = new Promise<void>(resolve => resolveReady = resolve);
@@ -268,7 +286,7 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events[0].data).not.to.equal(data);
         expect(sink.events[0].kind).to.equal('error');
         expect(sink.events[0].attributes).to.deep.equal({ source: 'backend', labels: ['stable'] });
-        expect(sink.events[0].session).to.equal('backend');
+        expect(sink.events[0].session).to.equal(BACKEND_TELEMETRY_SESSION);
         expect(Object.isFrozen(sink.events[0])).to.be.true;
         expect(Object.isFrozen(sink.events[0].data)).to.be.true;
         expect(Object.isFrozen(sink.events[0].data?.durations)).to.be.true;
@@ -339,18 +357,35 @@ describe('TelemetryServiceImpl', () => {
         expect(logger.warnings.join(' ')).not.to.contain('payload-secret');
     });
 
-    it('handles preference readiness rejection once without payload logging', async () => {
+    it('dispatches synchronously after preference readiness', async () => {
+        const sink = createSink('company/sink');
+        const preferences = createPreferences({ 'company/sink': ['*'] });
+        const service = createServiceWithPreferences(preferences, [sink]);
+        await preferences.ready;
+        await flushDispatch();
+
+        service.report('company/action');
+
+        expect(sink.events).to.have.length(1);
+    });
+
+    it('drops queued and subsequent events after preference readiness rejection and logs once', async () => {
+        let rejectReady: (reason: Error) => void;
+        const ready = new Promise<void>((_resolve, reject) => rejectReady = reject);
         const logger = new RecordingLogger();
         const sink = createSink('company/sink');
-        const preferences = createPreferences({ 'company/sink': ['*'] }, Promise.reject(new Error('payload-secret')));
+        const preferences = createPreferences({ 'company/sink': ['*'] }, ready);
         const service = createServiceWithPreferences(preferences, [sink], logger);
 
-        await reportEvent(service);
-        await reportEvent(service, { topic: 'company/other', timestamp: 43 });
+        service.report('company/first', { secret: 'first-secret' });
+        service.report('company/second', { secret: 'second-secret' });
+        rejectReady!(new Error('readiness-secret'));
+        await flushDispatch();
+        service.report('company/third', { secret: 'third-secret' });
 
         expect(sink.events).to.be.empty;
         expect(logger.errors).to.have.length(1);
-        expect(logger.errors.join(' ')).not.to.contain('payload-secret');
+        expect(logger.errors.join(' ')).not.to.contain('secret');
     });
 
     it('uses the same policy path for direct and RPC reports', async () => {
@@ -364,7 +399,7 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/direct', 'company/rpc']);
         expect(sink.events.map(event => event.timestamp)).to.deep.equal([1234, 99]);
         expect(sink.events.map(event => event.kind)).to.deep.equal(['usage', 'crash']);
-        expect(sink.events.map(event => event.session)).to.deep.equal(['backend', 'rpc-session']);
+        expect(sink.events.map(event => event.session)).to.deep.equal([BACKEND_TELEMETRY_SESSION, 'rpc-session']);
     });
 
     it('isolates void handlers, synchronous throws, asynchronous rejections, and slow sinks', async () => {

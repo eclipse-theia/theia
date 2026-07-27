@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './measurement-notification-service';
-export * from './measurement-telemetry';
+import { MeasurementResult } from '@theia/core';
+import { TelemetryService } from '@theia/telemetry/lib/common';
+
+export const MEASUREMENT_TELEMETRY_TOPIC = 'theia/measurement/result';
+
+export function reportMeasurement(telemetryService: TelemetryService, result: MeasurementResult): void {
+    const { name, startTime, elapsed, owner } = result;
+    if (owner === undefined) {
+        telemetryService.report(MEASUREMENT_TELEMETRY_TOPIC, { name, startTime, elapsed });
+    } else {
+        telemetryService.report(MEASUREMENT_TELEMETRY_TOPIC, { name, startTime, elapsed, owner });
+    }
+}

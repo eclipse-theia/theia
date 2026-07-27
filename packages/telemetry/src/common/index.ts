@@ -19,3 +19,4 @@ export * from './telemetry-preferences';
 export * from './telemetry-protocol';
 export * from './telemetry-service';
 export * from './telemetry-topic';
+export * from './telemetry-types';

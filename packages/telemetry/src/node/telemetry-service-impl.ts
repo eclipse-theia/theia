@@ -22,6 +22,7 @@ import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-pre
 import { TelemetryEvent, TelemetryRpc, describeTelemetryEventTopic, isValidTelemetryEvent } from '../common/telemetry-protocol';
 import { TelemetryData, TelemetryReportOptions, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
+import { BACKEND_TELEMETRY_SESSION } from '../common/telemetry-types';
 import { TelemetrySink } from './telemetry-sink';
 
 interface ValidatedTelemetrySink {
@@ -36,7 +37,8 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
 
     protected sinks: readonly ValidatedTelemetrySink[] | undefined;
     protected filters: ReadonlyMap<string, readonly string[]> | undefined;
-    protected readinessFailureLogged = false;
+    protected readinessState: 'pending' | 'ready' | 'failed' = 'pending';
+    protected pendingEvents: TelemetryEvent[] = [];
 
     constructor(
         @inject(TelemetryConsentProvider) protected readonly consentProvider: TelemetryConsentProvider,
@@ -49,6 +51,19 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
                 this.filters = undefined;
             }
         });
+        this.preferences.ready.then(
+            () => {
+                this.readinessState = 'ready';
+                const pendingEvents = this.pendingEvents;
+                this.pendingEvents = [];
+                pendingEvents.forEach(event => this.doDispatch(event));
+            },
+            () => {
+                this.readinessState = 'failed';
+                this.pendingEvents = [];
+                this.logger.error('Telemetry preferences failed to become ready; dropping telemetry events.');
+            }
+        );
     }
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
@@ -57,7 +72,7 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
             kind: options?.kind ?? 'usage',
             data,
             attributes: options?.attributes,
-            session: 'backend',
+            session: BACKEND_TELEMETRY_SESSION,
             timestamp: Date.now()
         });
     }
@@ -95,15 +110,11 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
             session: event.session,
             timestamp: event.timestamp
         });
-        this.preferences.ready.then(
-            () => this.doDispatch(snapshot),
-            () => {
-                if (!this.readinessFailureLogged) {
-                    this.readinessFailureLogged = true;
-                    this.logger.error('Telemetry preferences failed to become ready; dropping telemetry events.');
-                }
-            }
-        );
+        if (this.readinessState === 'ready') {
+            this.doDispatch(snapshot);
+        } else if (this.readinessState === 'pending') {
+            this.pendingEvents.push(snapshot);
+        }
     }
 
     protected doDispatch(event: TelemetryEvent): void {

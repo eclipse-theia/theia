@@ -19,6 +19,7 @@ import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TelemetryService } from '@theia/telemetry/lib/common';
+import { reportMeasurement } from '../common';
 
 @injectable()
 export class MeasurementTelemetryContribution implements BackendApplicationContribution {
@@ -40,11 +41,6 @@ export class MeasurementTelemetryContribution implements BackendApplicationContr
     }
 
     protected report(result: MeasurementResult): void {
-        const { name, startTime, elapsed, owner } = result;
-        if (owner === undefined) {
-            this.telemetryService.report('theia/measurement/result', { name, startTime, elapsed });
-        } else {
-            this.telemetryService.report('theia/measurement/result', { name, startTime, elapsed, owner });
-        }
+        reportMeasurement(this.telemetryService, result);
     }
 }

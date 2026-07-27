@@ -17,9 +17,10 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
-import { TelemetryConsentProvider, TelemetryLevel } from '../common/telemetry-consent-provider';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
+import { TelemetryLevel } from '../common/telemetry-types';
 import { BrowserTelemetryService } from './telemetry-service';
 
 interface TestConsentProvider extends TelemetryConsentProvider {

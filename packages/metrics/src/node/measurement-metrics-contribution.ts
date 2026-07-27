@@ -13,31 +13,37 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { LogLevel, MeasurementResult } from '@theia/core';
+import { LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
 import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TelemetryEvent } from '@theia/telemetry/lib/common';
+import { BACKEND_TELEMETRY_SESSION, TelemetryEvent } from '@theia/telemetry/lib/common';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
 import { MeasurementNotificationService } from '../common';
 import { MetricsContribution } from './metrics-contribution';
 
-const backendId = 'backend';
 const metricsName = 'theia_measurements';
 
 @injectable()
 export class MeasurementMetricsBackendContribution implements MetricsContribution, TelemetrySink, MeasurementNotificationService {
     readonly id = 'theia/measurements';
-    readonly interests = ['theia/measurement/*'];
-    readonly scope = 'local';
+    readonly interests: readonly string[] = ['theia/measurement/*'];
+    readonly scope: 'local' | 'remote' = 'local';
 
     @inject(LogLevelCliContribution)
     protected logLevelCli: LogLevelCliContribution;
+
+    /**
+     * @deprecated backend measurements are received as `theia/measurement/*` telemetry events;
+     * this field is no longer used by the default implementation.
+     */
+    @inject(Stopwatch)
+    protected backendStopwatch: Stopwatch;
 
     protected metrics = '';
     protected frontendCounters = new Map<string, string>();
 
     startCollecting(): void {
-        if (this.logLevelCli.defaultLogLevel !== LogLevel.DEBUG) {
+        if (!this.isEnabled()) {
             return;
         }
         this.metrics += `# HELP ${metricsName} Theia stopwatch measurement results.\n`;
@@ -49,10 +55,26 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     }
 
     handle(event: TelemetryEvent): void {
-        const result = this.toMeasurementResult(event);
-        if (result) {
-            this.appendMetricsValue(event.session === backendId ? backendId : this.toCounterId(event.session), result);
+        if (!this.isEnabled()) {
+            return;
         }
+        const result = this.toMeasurementResult(event);
+        if (!result) {
+            return;
+        }
+        if (event.session === BACKEND_TELEMETRY_SESSION) {
+            this.onBackendMeasurement(result);
+        } else {
+            this.onFrontendMeasurement(event.session, result);
+        }
+    }
+
+    protected onBackendMeasurement(result: MeasurementResult): void {
+        this.appendMetricsValue(BACKEND_TELEMETRY_SESSION, result);
+    }
+
+    protected isEnabled(): boolean {
+        return this.logLevelCli.defaultLogLevel === LogLevel.DEBUG;
     }
 
     protected toMeasurementResult(event: TelemetryEvent): MeasurementResult | undefined {

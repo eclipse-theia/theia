@@ -138,6 +138,9 @@
       "path": "../../packages/task"
     },
     {
+      "path": "../../packages/telemetry"
+    },
+    {
       "path": "../../packages/terminal"
     },
     {

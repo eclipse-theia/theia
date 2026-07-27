@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { Emitter, LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
-import { TelemetryEvent, TelemetryService } from '@theia/telemetry/lib/common';
+import { BACKEND_TELEMETRY_SESSION, TelemetryEvent, TelemetryService } from '@theia/telemetry/lib/common';
 import { expect } from 'chai';
+import { MEASUREMENT_TELEMETRY_TOPIC, reportMeasurement } from '../common';
 import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
 import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
 
@@ -40,6 +41,19 @@ class TestMeasurementMetricsBackendContribution extends MeasurementMetricsBacken
     }
 }
 
+class OverridingMeasurementMetricsBackendContribution extends TestMeasurementMetricsBackendContribution {
+    readonly backendMeasurements: MeasurementResult[] = [];
+    readonly frontendMeasurements: Array<[string, MeasurementResult]> = [];
+
+    protected override onBackendMeasurement(result: MeasurementResult): void {
+        this.backendMeasurements.push(result);
+    }
+
+    override onFrontendMeasurement(frontendId: string, result: MeasurementResult): void {
+        this.frontendMeasurements.push([frontendId, result]);
+    }
+}
+
 function createStopwatch(storedMeasurements: MeasurementResult[], emitter: Emitter<MeasurementResult>): Stopwatch {
     return {
         storedMeasurements,
@@ -49,7 +63,7 @@ function createStopwatch(storedMeasurements: MeasurementResult[], emitter: Emitt
 
 function createEvent(session: string, data: TelemetryEvent['data']): TelemetryEvent {
     return {
-        topic: 'theia/measurement/result',
+        topic: MEASUREMENT_TELEMETRY_TOPIC,
         kind: 'usage',
         data,
         session,
@@ -71,8 +85,8 @@ describe('measurement telemetry integration', () => {
         emitter.fire({ ...storedResult, owner: 'backend' });
 
         expect(reports).to.deep.equal([
-            ['theia/measurement/result', storedResult, undefined],
-            ['theia/measurement/result', { ...storedResult, owner: 'backend' }, undefined]
+            [MEASUREMENT_TELEMETRY_TOPIC, storedResult, undefined],
+            [MEASUREMENT_TELEMETRY_TOPIC, { ...storedResult, owner: 'backend' }, undefined]
         ]);
     });
 
@@ -96,7 +110,7 @@ describe('measurement telemetry integration', () => {
         contribution.configure(LogLevel.DEBUG);
         contribution.startCollecting();
 
-        contribution.handle(createEvent('backend', { name: 'startup', startTime: 12, elapsed: 34 }));
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { name: 'startup', startTime: 12, elapsed: 34 }));
         contribution.handle(createEvent('session-a', { name: 'startup', startTime: 12, elapsed: 34 }));
         contribution.handle(createEvent('session-a', { ...storedResult, name: 'second' }));
         contribution.handle(createEvent('session-b', { name: 'startup', startTime: 12, elapsed: 34 }));
@@ -119,6 +133,53 @@ describe('measurement telemetry integration', () => {
         const metrics = contribution.getMetrics();
         expect(metrics).to.contain('id="frontend-1", name="startup"');
         expect(metrics).to.contain('id="frontend-1", name="second"');
+    });
+
+    it('does not append telemetry events above DEBUG level', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.INFO);
+        contribution.startCollecting();
+
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
+
+        expect(contribution.getMetrics()).to.equal('');
+    });
+
+    it('keeps appending deprecated notification measurements above DEBUG level', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.INFO);
+        contribution.startCollecting();
+
+        contribution.onFrontendMeasurement('legacy-session', storedResult);
+
+        expect(contribution.getMetrics()).to.contain('id="frontend-1", name="startup"');
+    });
+
+    it('dispatches telemetry events through the backend and frontend extension points', () => {
+        const contribution = new OverridingMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.DEBUG);
+        const frontendResult = { ...storedResult, owner: 'frontend' };
+
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
+        contribution.handle(createEvent('session-a', frontendResult));
+
+        expect(contribution.backendMeasurements).to.deep.equal([storedResult]);
+        expect(contribution.frontendMeasurements).to.deep.equal([['session-a', frontendResult]]);
+    });
+
+    it('reports measurement data with optional owner', () => {
+        const reports: unknown[][] = [];
+        const telemetryService: TelemetryService = {
+            report: (topic, data, options) => reports.push([topic, data, options])
+        };
+
+        reportMeasurement(telemetryService, storedResult);
+        reportMeasurement(telemetryService, { ...storedResult, owner: 'frontend' });
+
+        expect(reports).to.deep.equal([
+            [MEASUREMENT_TELEMETRY_TOPIC, storedResult, undefined],
+            [MEASUREMENT_TELEMETRY_TOPIC, { ...storedResult, owner: 'frontend' }, undefined]
+        ]);
     });
 
     it('ignores malformed measurement payloads', () => {
