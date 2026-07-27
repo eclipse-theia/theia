@@ -1,0 +1,13 @@
+diff --git a/node_modules/vscode-languageserver-protocol/package.json b/node_modules/vscode-languageserver-protocol/package.json
+index 62530bd..8b84006 100644
+--- a/node_modules/vscode-languageserver-protocol/package.json
++++ b/node_modules/vscode-languageserver-protocol/package.json
+@@ -50,5 +50,7 @@
+ 		"all": "npm run clean && npm run compile && npm run lint && npm run test && npm run compile:metaModelTool && npm run generate:metaModel && npm run generate:metaModelSchema",
+ 		"compile:publish": "tsc -b ./tsconfig.publish.json",
+ 		"all:publish": "git clean -xfd . && npm install && npm run compile:publish && npm run lint && npm run test && npm run compile:metaModelTool && npm run generate:metaModel && npm run generate:metaModelSchema"
+-	}
++	},
++	"main": "./lib/common/api.js",
++	"typings": "./lib/common/api.d.ts"
+ }

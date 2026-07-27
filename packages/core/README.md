@@ -97,7 +97,7 @@ export class SomeClass {
   - `react-dom` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
   - `react-dom/client` (from [`react-dom@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react-dom))
   - `react-virtuoso` (from [`react-virtuoso@^2.19.1`](https://www.npmjs.com/package/react-virtuoso))
-  - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@3.17.5`](https://www.npmjs.com/package/vscode-languageserver-protocol/v/3.17.5))
+  - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@3.18.2`](https://www.npmjs.com/package/vscode-languageserver-protocol/v/3.18.2))
   - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.5.6`](https://www.npmjs.com/package/@parcel/watcher))
   - `dompurify` (from [`dompurify@^3.4.11`](https://www.npmjs.com/package/dompurify))

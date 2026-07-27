@@ -103,6 +103,60 @@ The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use
 
 ### v1.74.0
 
+#### LSP upgraded to `vscode-languageserver-protocol` 3.18.2
+
+Theia now depends on `vscode-languageserver-protocol` 3.18.2 (pulling `vscode-languageserver-types` 3.18.0 and `vscode-jsonrpc` 9.0.1). Both are re-exported as `@theia/core/shared/vscode-languageserver-protocol`, so two changes are adopter-visible.
+
+**1. `Diagnostic.message` is now `string | MarkupContent`.**
+
+Code that treats the message as a plain string no longer compiles. Use the accessor added in 3.18:
+
+```ts
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
+
+// before
+const text: string = diagnostic.message;
+
+// after
+const text: string = Diagnostic.getMessageString(diagnostic);
+```
+
+This also applies to diagnostics reached through other APIs, for example `ProblemMarker.data.message` in `@theia/markers`.
+
+Note that Monaco's `IMarkerData.message` is still `string`, so markdown diagnostic messages cannot currently be rendered. Flattening to a string with `getMessageString` is the correct handling for now.
+
+**2. Module resolution: the two packages are now `exports`-only.**
+
+3.18 dropped the top-level `main`/`typings` fields from `vscode-languageserver-protocol` and `vscode-jsonrpc`; they are resolvable only through their `exports` map, which TypeScript ignores under `moduleResolution: "Node"` (node10). Theia ships `patch-package` patches that restore `main`/`typings`, applied by the `theia-patch` CLI command.
+
+Running `theia-patch` was already recommended for Theia's other patches, but note that the consequence of skipping it has changed: previously it degraded individual features at runtime (for example the secondary window rendering empty), whereas now it can break compilation outright.
+
+You are affected if all of the following apply:
+
+- you compile with `moduleResolution: "Node"` (the setting used by `configs/base.tsconfig.json`), and
+- you import from `@theia/core/shared/vscode-languageserver-protocol` directly, or compile with `skipLibCheck: false`, and
+- you do not run `theia-patch`.
+
+The symptom is a misleading per-symbol error rather than a module error, because the re-export resolves to nothing:
+
+```
+error TS2305: Module '"@theia/core/shared/vscode-languageserver-protocol"' has no exported member 'Diagnostic'
+```
+
+Either of two fixes works. Run `theia-patch` in your root `postinstall` script:
+
+```json
+"scripts": {
+    "postinstall": "theia-patch"
+}
+```
+
+Or switch your `moduleResolution` to `"node16"`, `"nodenext"`, or `"bundler"`, which honours the `exports` map and needs no patching. Note that TypeScript couples these two options: `moduleResolution: "node16"` requires `module: "Node16"` (and `"bundler"` requires `module: "ESNext"` or `"Preserve"`), so this is a larger change than a single flag. Emitted output stays CommonJS for packages without `"type": "module"`, but the stricter import/interop rules of `module: "Node16"` may surface additional errors. Running `theia-patch` is the smaller change of the two.
+
+Note that this affects type resolution only. At runtime, `require()` has honoured `exports` since Node 12, so the CommonJS output itself is unaffected.
+
+Applications using `skipLibCheck: true` (the Theia default) that never import the module directly are unaffected.
+
 #### Deprecation of @theia/ai-vercel-ai package
 
 The `@theia/ai-vercel-ai` package has been marked as deprecated and is no longer published on npm. It will be removed from the Theia codebase after a deprecation period. The package only wrapped OpenAI and Anthropic models, both of which are already covered by the dedicated `@theia/ai-openai` and `@theia/ai-anthropic` providers with first-class support.

@@ -1,0 +1,13 @@
+diff --git a/node_modules/vscode-jsonrpc/package.json b/node_modules/vscode-jsonrpc/package.json
+index 08eaf7c..13cda42 100644
+--- a/node_modules/vscode-jsonrpc/package.json
++++ b/node_modules/vscode-jsonrpc/package.json
+@@ -50,5 +50,7 @@
+ 		"all": "npm run clean && npm run compile && npm run lint && npm run test",
+ 		"compile:publish": "tsc -b ./tsconfig.publish.json",
+ 		"all:publish": "git clean -xfd . && npm install && npm run compile:publish && npm run lint && npm run test"
+-	}
++	},
++	"main": "./lib/common/api.js",
++	"typings": "./lib/common/api.d.ts"
+ }

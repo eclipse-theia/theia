@@ -57,6 +57,8 @@
     "tslint": "^5.20.1",
     "typedoc": "0.28.13",
     "typescript": "~5.9.3",
+    "vscode-jsonrpc": "9.0.1",
+    "vscode-languageserver-protocol": "3.18.2",
     "yargs": "^17.7.3"
   },
   "scripts": {

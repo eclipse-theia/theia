@@ -23,7 +23,7 @@ import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel,
     ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS, codicon, Message
 } from '@theia/core/lib/browser';
-import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as React from '@theia/core/shared/react';
 import { ProblemPreferences } from '../../common/problem-preferences';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -183,13 +183,14 @@ export class ProblemWidget extends TreeWidget {
                 severityClass = this.getSeverityClass(problemMarker.data.severity);
             }
             const location = nls.localizeByDefault('Ln {0}, Col {1}', problemMarker.data.range.start.line + 1, problemMarker.data.range.start.character + 1);
+            const message = Diagnostic.getMessageString(problemMarker.data);
             return <div
                 className='markerNode'
-                title={`${problemMarker.data.message} (${problemMarker.data.range.start.line + 1}, ${problemMarker.data.range.start.character + 1})`}>
+                title={`${message} (${problemMarker.data.range.start.line + 1}, ${problemMarker.data.range.start.character + 1})`}>
                 <div>
                     <i className={`${severityClass} ${TREE_NODE_INFO_CLASS}`}></i>
                 </div>
-                <div className='message'>{problemMarker.data.message}
+                <div className='message'>{message}
                     {(!!problemMarker.data.source || !!problemMarker.data.code) &&
                         <span className={'owner ' + TREE_NODE_INFO_CLASS}>
                             {problemMarker.data.source || ''}
