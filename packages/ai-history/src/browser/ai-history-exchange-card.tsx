@@ -233,7 +233,7 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, index, totalRequests
 
                 <details>
                     <summary>
-                        {nls.localize('theia/ai/history/request-card/response', 'Response')}
+                        {nls.localizeByDefault('Response')}
                     </summary>
                     <div className='response-content'>
                         {getResponseContent()}

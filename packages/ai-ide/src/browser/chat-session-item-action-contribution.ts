@@ -58,13 +58,13 @@ export class DefaultChatSessionItemActionContribution implements ChatSessionItem
             {
                 commandId: ChatCommands.AI_CHAT_RENAME_SESSION.id,
                 iconClass: codicon('edit'),
-                tooltip: nls.localizeByDefault('Rename Chat'),
+                tooltip: nls.localizeByDefault('Rename chat'),
                 priority: 0,
             },
             {
                 commandId: ChatCommands.AI_CHAT_DELETE_SESSION.id,
                 iconClass: codicon('remove-close'),
-                tooltip: nls.localize('theia/ai/ide/deleteChat', 'Delete Chat'),
+                tooltip: nls.localizeByDefault('Delete Chat'),
                 priority: 10,
             },
         ];

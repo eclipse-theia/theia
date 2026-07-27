@@ -103,7 +103,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
-        tooltip: nls.localizeByDefault('Rename Chat'),
+        tooltip: nls.localizeByDefault('Rename chat'),
     };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
@@ -623,7 +623,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async deleteSession(sessionId: string, confirm = false): Promise<void> {
         if (confirm) {
             const confirmed = await new ConfirmDialog({
-                title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
+                title: nls.localizeByDefault('Delete Chat'),
                 msg: nls.localizeByDefault('Are you sure you want to delete this chat?')
             }).open();
             if (!confirmed) {
