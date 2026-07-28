@@ -116,6 +116,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                     title: session.title,
                     pinnedAgentId: session.pinnedAgentId,
                     saveDate: session.saveDate,
+                    rootSessionId: session.rootSessionId,
+                    parentSessionId: session.parentSessionId,
                     model: modelData
                 };
                 this.logger.debug('Writing session to file', {

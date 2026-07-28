@@ -22,7 +22,7 @@ import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request';
 import {
     GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability,
-    FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSettings, ReasoningSupport,
+    FrontendLanguageModelRegistry, LanguageModel, ReasoningLevel, ReasoningSettings, ReasoningSupport,
     PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, ServerToolDescriptor
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
@@ -260,6 +260,10 @@ export class AIChatInputWidget extends ReactWidget {
         }
     };
 
+    /** Monotonic token for the latest async {@link updateReasoningSupport} run; older, out-of-order runs discard their results when this changes. */
+    protected reasoningStateGeneration = 0;
+    /** Monotonic token for the latest async {@link updateResolvedDefaultModel} run; older, out-of-order runs discard their results when this changes. */
+    protected resolvedDefaultGeneration = 0;
     /** Reasoning capability of the model the receiving agent would currently use; undefined hides the selector. */
     protected currentReasoningSupport?: ReasoningSupport;
     /** Id (`provider/model`) of the model that backs {@link currentReasoningSupport}; used to resolve preference defaults. */
@@ -335,12 +339,25 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected async updateReasoningSupport(agentId: string | undefined): Promise<void> {
+        // Guard against out-of-order completion: if the model/session changes while the async lookups
+        // below are in flight, a stale run must not overwrite the fields with outdated values.
+        const generation = ++this.reasoningStateGeneration;
         let support: ReasoningSupport | undefined;
         let modelId: string | undefined;
         let maxInputTokens: number | undefined;
         let serverTools: ServerToolDescriptor[] | undefined;
         let vendor: string | undefined;
-        if (agentId) {
+        // A per-session model override drives all model-dependent state (reasoning support, context
+        // size, server tools, vendor) instead of the agent's configured default.
+        const overrideId = this.getSessionModelOverride();
+        const overrideModel = overrideId ? await this.languageModelRegistry.getReadyLanguageModel(overrideId) : undefined;
+        if (overrideModel) {
+            support = overrideModel.reasoningSupport;
+            modelId = overrideModel.id;
+            maxInputTokens = overrideModel.maxInputTokens;
+            serverTools = overrideModel.serverTools;
+            vendor = overrideModel.vendor;
+        } else if (agentId) {
             const agent = this.chatAgentService.getAgent(agentId);
             if (agent) {
                 for (const requirement of agent.languageModelRequirements ?? []) {
@@ -370,6 +387,10 @@ export class AIChatInputWidget extends ReactWidget {
                 }
             }
         }
+        if (generation !== this.reasoningStateGeneration) {
+            // A newer refresh started while we awaited; its results win.
+            return;
+        }
         if (support !== this.currentReasoningSupport
             || modelId !== this.currentLanguageModelId
             || maxInputTokens !== this.currentMaxInputTokens
@@ -382,6 +403,7 @@ export class AIChatInputWidget extends ReactWidget {
             this.currentModelVendor = vendor;
             this.update();
         }
+        this.updateResolvedDefaultModel();
     }
 
     protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
@@ -477,6 +499,87 @@ export class AIChatInputWidget extends ReactWidget {
             delete newCommon.reasoning;
         }
         (session.model as MutableChatModel).setSettings({ ...currentSettings, commonSettings: newCommon });
+    }
+
+    /** Language models available for the per-session model selector; refreshed on registry changes. */
+    protected availableModels: LanguageModel[] = [];
+    /** Concrete model id the agent default currently resolves to (e.g. what `default/code` points at); falls back to the identifier. */
+    protected resolvedDefaultLabel?: string;
+
+    protected async loadAvailableModels(): Promise<void> {
+        this.availableModels = await this.languageModelRegistry.getLanguageModels();
+    }
+
+    /**
+     * Resolves the model a new session would use for this agent, honoring the per-agent override
+     * configured in the AI configuration (via {@link AISettingsService}) and following aliases, so
+     * the selector's "Default" reflects the effective, resolved target.
+     */
+    protected async updateResolvedDefaultModel(): Promise<void> {
+        // Guard against out-of-order completion, mirroring updateReasoningSupport.
+        const generation = ++this.resolvedDefaultGeneration;
+        const agent = this.receivingAgent ? this.chatAgentService.getAgent(this.receivingAgent.agentId) : undefined;
+        const requirement = agent?.languageModelRequirements?.[0];
+        let label: string | undefined;
+        if (agent && requirement) {
+            const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
+            const effective = agentSettings?.languageModelRequirements?.find(r => r.purpose === requirement.purpose)?.identifier
+                ?? requirement.identifier;
+            const resolved = await this.languageModelRegistry.selectLanguageModel({ agent: agent.id, ...requirement });
+            const resolvedId = resolved?.id;
+            // Show "alias → resolved" when the effective default is an alias that resolves to a concrete model.
+            label = resolvedId && effective && resolvedId !== effective ? `${effective} → ${resolvedId}` : (resolvedId ?? effective);
+        }
+        if (generation !== this.resolvedDefaultGeneration) {
+            // A newer refresh started while we awaited; its results win.
+            return;
+        }
+        if (label !== this.resolvedDefaultLabel) {
+            this.resolvedDefaultLabel = label;
+            this.update();
+        }
+    }
+
+    /** The per-session model override id for the active session, if any. */
+    protected getSessionModelOverride(): string | undefined {
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        return session?.model.settings?.commonSettings?.modelId;
+    }
+
+    /** Sets (or clears, with `undefined`) the per-session model override for the active session. */
+    protected handleSessionModelChange = (modelId: string | undefined): void => {
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        if (!session) {
+            return;
+        }
+        const currentSettings = session.model.settings ?? {};
+        const currentCommon = currentSettings.commonSettings ?? {};
+        if ((currentCommon.modelId ?? undefined) === (modelId ?? undefined)) {
+            return;
+        }
+        const newCommon: typeof currentCommon = { ...currentCommon };
+        if (modelId) {
+            newCommon.modelId = modelId;
+        } else {
+            delete newCommon.modelId;
+        }
+        (session.model as MutableChatModel).setSettings({ ...currentSettings, commonSettings: newCommon });
+        // The override changes the effective model, so refresh all model-dependent state.
+        this.updateReasoningSupport(this.receivingAgent?.agentId);
+        this.update();
+    };
+
+    /** Builds the props for the per-session model selector. */
+    protected getModelSelectorProps(): ModelSelectorWidgetProps {
+        const currentModelId = this.getSessionModelOverride();
+        const defaultLabel = this.resolvedDefaultLabel
+            ?? nls.localize('theia/ai/chat-ui/agentDefaultModel', 'agent default');
+        return {
+            models: this.availableModels,
+            currentModelId,
+            defaultLabel,
+            onModelChange: this.handleSessionModelChange,
+        };
     }
 
     protected async updateAvailableGenericCapabilities(): Promise<void> {
@@ -962,12 +1065,22 @@ export class AIChatInputWidget extends ReactWidget {
             this.refreshCapabilities();
         }));
 
-        // Refresh reasoning capability if the language model registry changes (model added/removed/alias re-resolved).
+        // Refresh reasoning capability and the model selector list if the language model registry
+        // changes (model added/removed/alias re-resolved).
         this.toDispose.push(this.languageModelRegistry.onChange(() => {
+            this.loadAvailableModels().then(() => this.update());
             if (this.receivingAgent) {
                 this.updateReasoningSupport(this.receivingAgent.agentId);
             }
         }));
+        // When the agent's model is changed in the AI configuration, refresh the selector's resolved
+        // default and the model-dependent state (reasoning support, context size, server tools, vendor).
+        this.toDispose.push(this.aiSettingsService.onDidChange(() => {
+            this.updateResolvedDefaultModel();
+            this.updateReasoningSupport(this.receivingAgent?.agentId);
+        }));
+        this.loadAvailableModels().then(() => this.update());
+        this.updateResolvedDefaultModel();
 
         // When the default mode changes externally (e.g. via AI Configuration),
         // sync the mode selector. Deferred via queueMicrotask so the prompt service's
@@ -1382,6 +1495,7 @@ export class AIChatInputWidget extends ReactWidget {
                     currentLevel: this.getCurrentReasoningLevel(),
                     onReasoningChange: this.handleReasoningChange,
                 }}
+                modelSelectorProps={this.getModelSelectorProps()}
                 capabilitiesProps={{
                     capabilities: this.capabilityDefaults,
                     overrides: this.userCapabilityOverrides,
@@ -1669,6 +1783,18 @@ export class AIChatInputWidget extends ReactWidget {
     }
 }
 
+/** Props for the per-session language model selector. */
+interface ModelSelectorWidgetProps {
+    /** Models available to switch to. */
+    models: LanguageModel[];
+    /** The session's current model override id, if any (undefined = use the agent default). */
+    currentModelId?: string;
+    /** Human-readable label of the model/alias new sessions use by default. */
+    defaultLabel: string;
+    /** Set the session override (or clear it with `undefined`). */
+    onModelChange: (modelId: string | undefined) => void;
+}
+
 interface ChatInputProperties {
     branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
@@ -1723,6 +1849,7 @@ interface ChatInputProperties {
         currentLevel?: ReasoningLevel;
         onReasoningChange: (level: ReasoningLevel) => void;
     };
+    modelSelectorProps: ModelSelectorWidgetProps;
     capabilitiesProps: {
         capabilities: ParsedCapability[];
         overrides: Map<string, boolean>;
@@ -2236,6 +2363,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         currentLevel: props.reasoningSelectorProps.currentLevel,
                         onReasoningChange: props.reasoningSelectorProps.onReasoningChange,
                     }}
+                    modelSelectorProps={props.modelSelectorProps}
                     capabilitiesToggle={{
                         show: props.showCapabilities !== false,
                         isOpen: props.capabilitiesProps.isOpen,
@@ -2288,6 +2416,7 @@ interface ChatInputOptionsProps {
         currentLevel?: ReasoningLevel;
         onReasoningChange: (level: ReasoningLevel) => void;
     };
+    modelSelectorProps: ModelSelectorWidgetProps;
     capabilitiesToggle: {
         show: boolean;
         isOpen: boolean;
@@ -2306,6 +2435,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     tokenUsage,
     modeSelectorProps,
     reasoningSelectorProps,
+    modelSelectorProps,
     capabilitiesToggle
 }) => {
     const capabilitiesLabel = nls.localize('theia/ai/chat-ui/toggleCapabilitiesConfig', 'Toggle Capabilities Configuration');
@@ -2413,6 +2543,16 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         reasoningSupport={reasoningSelectorProps.reasoningSupport}
                         currentLevel={reasoningSelectorProps.currentLevel}
                         onReasoningChange={reasoningSelectorProps.onReasoningChange}
+                        disabled={!isEnabled}
+                        hoverService={hoverService}
+                    />
+                )}
+                {(modelSelectorProps.models.length > 0 || modelSelectorProps.currentModelId) && (
+                    <ChatModelSelector
+                        models={modelSelectorProps.models}
+                        currentModelId={modelSelectorProps.currentModelId}
+                        defaultLabel={modelSelectorProps.defaultLabel}
+                        onModelChange={modelSelectorProps.onModelChange}
                         disabled={!isEnabled}
                         hoverService={hoverService}
                     />
@@ -2570,6 +2710,82 @@ const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.m
                 className={`theia-ChatInput-ModeSelector${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={currentMode ?? modes[0]?.id ?? ''}
+                onChange={handleChange}
+            />
+        </span>
+    );
+});
+
+interface ChatModelSelectorProps {
+    models: LanguageModel[];
+    currentModelId?: string;
+    defaultLabel: string;
+    onModelChange: (modelId: string | undefined) => void;
+    disabled?: boolean;
+    hoverService: HoverService;
+}
+
+/**
+ * Per-session model selector. The first option ("Default") reverts to the agent's configured
+ * model that new sessions use; picking any other model overrides it for the current session only.
+ */
+const ChatModelSelector: React.FunctionComponent<ChatModelSelectorProps> = React.memo(({
+    models, currentModelId, defaultLabel, onModelChange, disabled, hoverService
+}) => {
+    // Sentinel value for the "use the agent default" option (SelectComponent needs a non-empty value).
+    const defaultValueId = '__default__';
+    const isOverridden = !!currentModelId;
+    // The override points at a model that is no longer ready/available. Guard on a loaded model list so
+    // the override is not flagged as unavailable during the initial (still empty) load.
+    const isUnavailable = isOverridden && models.length > 0
+        && !models.some(model => model.id === currentModelId && model.status.status === 'ready');
+    const options: SelectOption[] = React.useMemo(() => {
+        const readyModels = models.filter(model => model.status.status === 'ready')
+            // Stable, predictable order: the registry adds models as their async metadata resolves.
+            .sort((left, right) => left.id.localeCompare(right.id));
+        const opts: SelectOption[] = [
+            {
+                value: defaultValueId,
+                label: nls.localizeByDefault('Default'),
+                detail: defaultLabel
+            },
+            ...readyModels.map(model => ({
+                value: model.id,
+                label: model.id,
+                detail: model.name && model.name !== model.id ? model.name : undefined
+            }))
+        ];
+        // Keep the active override visible even if its model is no longer ready/available, so the
+        // selector reflects the stored modelId instead of silently falling back to "Default". Once we
+        // know it is unavailable, show it as a disabled (struck-through) entry that cannot be reselected.
+        if (currentModelId && !opts.some(option => option.value === currentModelId)) {
+            opts.push({
+                value: currentModelId,
+                label: currentModelId,
+                detail: nls.localize('theia/ai/chat-ui/modelUnavailable', 'unavailable'),
+                disabled: isUnavailable
+            });
+        }
+        return opts;
+    }, [models, defaultLabel, currentModelId, isUnavailable]);
+
+    const handleChange = React.useCallback(
+        (option: SelectOption) => onModelChange(!option.value || option.value === defaultValueId ? undefined : option.value),
+        [onModelChange]
+    );
+
+    const title = isUnavailable
+        ? nls.localize('theia/ai/chat-ui/sessionModelUnavailable', 'Model for this chat is unavailable ({0}); requests use the agent default', currentModelId!)
+        : isOverridden
+            ? nls.localize('theia/ai/chat-ui/sessionModel', 'Model for this chat')
+            : nls.localize('theia/ai/chat-ui/sessionModelDefault', 'Model for this chat ({0})', defaultLabel);
+
+    return (
+        <span className='theia-ChatInput-ModelSelector-container' onMouseEnter={hoverHandler(hoverService, title)}>
+            <SelectComponent
+                className={`theia-ChatInput-ModelSelector${isOverridden ? ' session-override' : ''}${disabled ? ' disabled' : ''}`}
+                options={options}
+                defaultValue={currentModelId ?? defaultValueId}
                 onChange={handleChange}
             />
         </span>

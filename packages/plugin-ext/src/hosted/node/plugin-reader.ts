@@ -49,8 +49,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
-                const absolutePath = path.resolve(localPath, filePath);
-                const resolvedFile = await this.resolveFile(absolutePath);
+                const resolvedFile = await this.resolveFile(localPath, filePath);
                 if (!resolvedFile) {
                     res.status(404).send(`No such file found in '${escape_html(pluginId)}' plugin.`);
                     return;
@@ -79,13 +78,23 @@ export class HostedPluginReader implements BackendApplicationContribution {
     }
 
     /**
-     * Resolves a plugin file path with fallback to .js and .cjs extensions.
+     * Resolves `filePath` under `localPath`, with fallback to `.js`, `.cjs` and `.mjs`
+     * extensions. Returns `undefined` if the resolved path is not under `localPath`
+     * or if no candidate exists on disk.
      *
-     * This handles cases where plugins reference modules without extensions,
-     * which is common in Node.js/CommonJS environments.
-     *
+     * The extension fallback handles cases where plugins reference modules without
+     * extensions, which is common in Node.js/CommonJS environments.
      */
-    protected async resolveFile(absolutePath: string): Promise<string | undefined> {
+    protected async resolveFile(localPath: string, filePath: string): Promise<string | undefined> {
+        const absolutePath = path.resolve(localPath, filePath);
+
+        // `path.relative` yields a path starting with '..' (or an absolute path on
+        // Windows when the drive differs) when `absolutePath` is not under `localPath`.
+        const relativePath = path.relative(localPath, absolutePath);
+        if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+            return undefined;
+        }
+
         const candidates = [absolutePath];
         const pathExtension = path.extname(absolutePath).toLowerCase();
 

@@ -65,6 +65,7 @@ import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-re
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 import { PromptVariantBadge } from './prompt-variant-badge';
+import { ModelBadge } from './model-badge';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -494,6 +495,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         const promptVariantId = isResponseNode(node) ? node.response.promptVariantId : undefined;
         const isPromptVariantEdited = isResponseNode(node) ? !!node.response.isPromptVariantEdited : false;
+        const languageModel = isResponseNode(node) ? node.response.languageModel : undefined;
 
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
@@ -506,7 +508,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                         const tokenInfo = hasTokenInfo
                             ? `${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}: ${nls.localizeByDefault(
                                 'Input: {0}', formatTokenCount(tokenUsage.inputTokens))} | ${nls.localizeByDefault(
-                                'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
+                                    'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
                             : undefined;
                         if (agentDescription || tokenInfo) {
                             const md = new MarkdownStringImpl();
@@ -535,38 +537,46 @@ export class ChatViewTreeWidget extends TreeWidget {
                         hoverService={this.hoverService}
                     />
                 )}
+                {languageModel && (
+                    <ModelBadge
+                        modelId={languageModel}
+                        hoverService={this.hoverService}
+                    />
+                )}
                 {inProgress && !waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
                     </span>}
                 {inProgress && waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
                     </span>}
-                <div className='theia-ChatNodeToolbar'>
-                    {!inProgress &&
-                        toolbarContributions.length > 0 &&
-                        toolbarContributions.map(action =>
-                            <span
-                                key={action.commandId}
-                                className={`theia-ChatNodeToolbarAction ${action.icon}`}
-                                title={action.tooltip}
-                                aria-label={action.tooltip}
-                                tabIndex={0}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    this.commandRegistry.executeCommand(action.commandId, node);
-                                }}
-                                onKeyDown={e => {
-                                    if (isEnterKey(e)) {
+                {!inProgress &&
+                    <div className='theia-ChatNodeToolbar'>
+                        {toolbarContributions.length > 0 &&
+                            toolbarContributions.map(action =>
+                                <span
+                                    key={action.commandId}
+                                    className={`theia-ChatNodeToolbarAction ${action.icon}`}
+                                    title={action.tooltip}
+                                    aria-label={action.tooltip}
+                                    tabIndex={0}
+                                    onClick={e => {
                                         e.stopPropagation();
                                         this.commandRegistry.executeCommand(action.commandId, node);
-                                    }
-                                }}
-                                role='button'
-                            ></span>
-                        )}
-                </div>
+                                    }}
+                                    onKeyDown={e => {
+                                        if (isEnterKey(e)) {
+                                            e.stopPropagation();
+                                            this.commandRegistry.executeCommand(action.commandId, node);
+                                        }
+                                    }}
+                                    role='button'
+                                ></span>
+                            )}
+                    </div>}
             </div>
         </React.Fragment>;
     }
@@ -735,7 +745,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     return <div ref={containerRef} />;
 };
 
-const ChatRequestRender = (
+export const ChatRequestRender = (
     {
         node, hoverService, chatAgentService, variableService, openerService,
         provideChatInputWidget
@@ -867,7 +877,10 @@ const ChatRequestRender = (
                                 .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
                                 .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
                             openerService,
-                            true
+                            true,
+                            undefined,
+                            // User requests are authored by the user, so their resources are trusted and rendered directly.
+                            false
                         );
                         return (
                             <span key={index} ref={ref}></span>

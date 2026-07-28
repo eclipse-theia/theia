@@ -19,7 +19,7 @@ import { BackendApplicationContribution } from '../backend-application';
 import { WsRequestValidatorContribution } from '../ws-request-validators';
 import { BackendApplicationHosts } from './backend-application-hosts';
 import {
-    BrowserConnectionToken, BrowserConnectionTokenBackendContribution, createBrowserConnectionToken
+    BrowserConnectionToken, BrowserConnectionTokenBackendContribution, HttpConnectionValidator, createBrowserConnectionToken
 } from './browser-connection-token';
 import { WsOriginValidator } from './ws-origin-validator';
 
@@ -28,9 +28,12 @@ export default new ContainerModule(bind => {
     bind(WsOriginValidator).toSelf().inSingletonScope();
     bind(WsRequestValidatorContribution).toService(WsOriginValidator);
 
-    // Cookie-based connection token protects both HTTP and WebSocket endpoints.
+    // Cookie-based connection token. It is validated on WebSocket upgrades and bootstrapped
+    // (set as a cookie) on every HTTP request; HTTP enforcement is opt-in per route via
+    // `HttpConnectionValidator`.
     bind(BrowserConnectionToken).toConstantValue(createBrowserConnectionToken());
     bind(BrowserConnectionTokenBackendContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(BrowserConnectionTokenBackendContribution);
     bind(WsRequestValidatorContribution).toService(BrowserConnectionTokenBackendContribution);
+    bind(HttpConnectionValidator).toService(BrowserConnectionTokenBackendContribution);
 });

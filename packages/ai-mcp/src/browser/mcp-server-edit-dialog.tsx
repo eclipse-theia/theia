@@ -161,7 +161,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 </div>
 
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/form/serverType', 'Server Type')}:</label>
+                    <label>{nls.localizeByDefault('Server Type')}:</label>
                     <SelectComponent
                         className="theia-select"
                         defaultValue={this.formData.serverType}
@@ -323,7 +323,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 )}
 
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</label>
+                    <label>{nls.localizeByDefault('Headers')}:</label>
                     <textarea
                         className="theia-input"
                         defaultValue={this.formData.headers}

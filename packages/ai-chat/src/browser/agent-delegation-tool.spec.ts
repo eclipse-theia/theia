@@ -248,4 +248,20 @@ describe('AgentDelegationTool', () => {
             expect(result).to.equal('');
         });
     });
+
+    describe('delegateToAgent() — session persistence', () => {
+        it('does not delete the delegated session after completion', async () => {
+            const newSession = makeNewSession();
+            const agentService = makeChatAgentService();
+            const chatService = makeChatService(newSession);
+            const tool = makeAgentDelegationTool(agentService, chatService);
+            const ctx = makeChatContext();
+
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
+            await tool.getTool().handler(argString, ctx);
+
+            // deleteSession should never have been called for the delegated session
+            expect((chatService.deleteSession as sinon.SinonStub).called).to.be.false;
+        });
+    });
 });
