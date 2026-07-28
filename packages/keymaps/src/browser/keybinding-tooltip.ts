@@ -17,5 +17,10 @@ export function keybindingTooltip(keybindingRegistry: KeybindingRegistry, keybin
     if (inactiveReason) {
         return `${nls.localize('theia/keymaps/physicalRealizationUnavailable', 'Physical realization unavailable')}\n${inactiveReason}`;
     }
-    return resolved.map(code => keybindingRegistry.physicalComponentsForKeyCode(code, true).join('+')).join(' ');
+    const physical = resolved.map(code => keybindingRegistry.physicalComponentsForKeyCode(code, true).join('+')).join(' ');
+    const shadowing = keybindingRegistry.getInterpretationShadowing(keybinding);
+    if (shadowing.length > 0) {
+        return `${physical}\n${nls.localize('theia/keymaps/interpretationShadowing', 'A command-modifier interpretation takes precedence over this keybinding.')}`;
+    }
+    return physical;
 }

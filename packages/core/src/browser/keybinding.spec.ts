@@ -594,11 +594,149 @@ describe('keybindings', () => {
                 key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: false
             }, new EventTarget());
 
-            expect(match.calledOnce).to.be.true;
+            expect(match.callCount).to.equal(2);
             expect(match.firstCall.returnValue?.binding.keybinding).to.equal('ctrl+alt+8');
         } finally {
             windows.restore();
         }
+    });
+
+    it('should prefer a command chord prefix over a production full match', () => {
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
+            new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' }),
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, interpretation: 'production' })
+        ]);
+        const commandChord = {
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+a b'
+        };
+        const productionFull = {
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+['
+        };
+        keybindingRegistry.resolveKeybinding(commandChord).splice(0, 2, ...KeySequence.parse('ctrl+a b'));
+        keybindingRegistry.resolveKeybinding(productionFull).splice(0, 1,
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } }));
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandChord, productionFull]);
+
+        const event = new KeyboardEvent('keydown', { key: '[', code: 'Digit8', cancelable: true });
+        keybindingRegistry.run(event);
+
+        expect(event.defaultPrevented).to.be.true;
+        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.have.length(1);
+        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates[0][0].interpretation).to.equal('command');
+        interpretations.restore();
+    });
+
+    it('should retain alternative interpretation prefixes across a chord', () => {
+        const commandPrefix = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' });
+        const productionPrefix = new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, interpretation: 'production' });
+        const productionSecond = new KeyCode({ key: Key.KEY_C, interpretation: 'production' });
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations');
+        interpretations.onFirstCall().returns([commandPrefix, productionPrefix]);
+        interpretations.onSecondCall().returns([
+            new KeyCode({ key: Key.KEY_X, interpretation: 'command' }),
+            productionSecond
+        ]);
+        const commandBinding = {
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+a b'
+        };
+        const productionBinding = {
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+[ c'
+        };
+        keybindingRegistry.resolveKeybinding(commandBinding).splice(0, 2, commandPrefix, new KeyCode({ key: Key.KEY_B }));
+        keybindingRegistry.resolveKeybinding(productionBinding).splice(0, 2, productionPrefix, productionSecond);
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandBinding, productionBinding]);
+
+        keybindingRegistry.run(new KeyboardEvent('keydown', { key: '[', code: 'Digit8', cancelable: true }));
+        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.have.length(2);
+        const second = new KeyboardEvent('keydown', { key: 'c', code: 'KeyC', cancelable: true });
+        keybindingRegistry.run(second);
+
+        expect(second.defaultPrevented).to.be.false;
+        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.deep.equal([[]]);
+        interpretations.restore();
+    });
+
+    it('should decline equal-priority full matches from different interpretations', () => {
+        const first = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' });
+        const second = new KeyCode({ key: Key.KEY_B, ctrl: true, interpretation: 'command' });
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([first, second]);
+        const troubleshooting = sinon.spy(keybindingRegistry as unknown as {
+            logKeyboardTroubleshooting: (input: unknown, keyCode: KeyCode, match: unknown, skipped?: string) => void
+        }, 'logKeyboardTroubleshooting');
+        const firstBinding = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+a' };
+        const secondBinding = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+b' };
+        keybindingRegistry.resolveKeybinding(firstBinding).splice(0, 1, first);
+        keybindingRegistry.resolveKeybinding(secondBinding).splice(0, 1, second);
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [firstBinding, secondBinding]);
+
+        keybindingRegistry.run(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA' }));
+
+        expect(troubleshooting.lastCall.args[3]).to.equal('ambiguous');
+        expect(troubleshooting.lastCall.args[2]).to.be.undefined;
+        interpretations.restore();
+    });
+
+    it('should canonicalize production input for recorder persistence', () => {
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true, interpretation: 'command' }),
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true }, interpretation: 'production' })
+        ]);
+
+        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '[', code: 'Digit8' })?.toString()).to.equal('ctrl+[');
+        interpretations.restore();
+    });
+
+    it('should retain command Shift when production Shift is not the logical binding', () => {
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
+            new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', production: { shift: true }, interpretation: 'production' })
+        ]);
+
+        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: 'P', code: 'KeyP' })?.toString()).to.equal('shift+ctrl+p');
+        interpretations.restore();
+    });
+
+    it('should persist a parseable logical character produced by Shift', () => {
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
+            new KeyCode({ key: Key.DIGIT7, character: '/', production: { shift: true }, interpretation: 'production' })
+        ]);
+        const resolve = sinon.stub(testContainer.get(KeyboardLayoutService), 'resolveKeyCode').callsFake(code => code.key === Key.SLASH
+            ? new KeyCode({ key: Key.DIGIT7, character: '/', production: { shift: true } })
+            : code);
+
+        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '/', code: 'Digit7' })?.toString()).to.equal('/');
+        resolve.restore();
+        interpretations.restore();
+    });
+
+    it('should retain physical Shift when the produced character is not authorable', () => {
+        const production = new KeyCode({ key: Key.SLASH, ctrl: true, character: '?', production: { shift: true }, interpretation: 'production' });
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([production]);
+
+        const recorded = keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '?', code: 'Slash' });
+        expect(recorded?.toString()).to.equal('shift+ctrl+/');
+        expect(keybindingRegistry.resolveKeybinding({ command: TEST_COMMAND.id, keybinding: recorded!.toString() })[0].dispatchString())
+            .to.equal(production.dispatchString());
+        interpretations.restore();
+    });
+
+    it('should classify interpretation shadowing separately from canonical collisions', () => {
+        const logical = {
+            command: TEST_COMMAND.id,
+            keybinding: 'ctrl+[',
+            resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } })]
+        };
+        const command = { command: TEST_COMMAND2.id, keybinding: 'ctrl+alt+8' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [logical, command]);
+
+        const diagnostics = keybindingRegistry.getKeybindingCollisionDiagnostics(logical);
+        expect(diagnostics.interpretationShadowing.map(binding => binding.command)).to.include(TEST_COMMAND2.id);
+        expect(diagnostics.canonical.full).to.be.empty;
+        expect(diagnostics.layoutDerived.full).to.be.empty;
+        expect(keybindingRegistry.containsKeybindingInScope(logical)).to.be.false;
     });
 
     it('should keep shifted printable bindings symmetric in keyCode dispatch mode', () => {

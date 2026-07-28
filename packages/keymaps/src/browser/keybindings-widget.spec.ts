@@ -21,6 +21,7 @@ import { Key, KeyCode } from '@theia/core/lib/browser/keyboard/keys';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import type { ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
 import { keybindingTooltip } from './keybinding-tooltip';
+import { recordedKeybindingStroke } from './keybindings-widget';
 
 after(() => disableJSDOM());
 
@@ -41,6 +42,7 @@ describe('keybindings widget tooltip', () => {
         });
         registry.resolveKeybinding = () => [code];
         registry.getKeybindingInactiveReason = () => undefined;
+        registry.getInterpretationShadowing = () => [];
 
         chai.expect(registry.componentsForKeyCode(code)).to.deep.equal(['Ctrl', '[']);
         chai.expect(keybindingTooltip(registry, binding)).to.equal('Ctrl+AltGr+8');
@@ -51,11 +53,23 @@ describe('keybindings widget tooltip', () => {
         const registry = {
             resolveKeybinding: () => [new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[', resolved: false })],
             getKeybindingInactiveReason: () => 'The key is not available on the current keyboard layout.',
-            physicalComponentsForKeyCode: () => ['Ctrl', '[']
+            physicalComponentsForKeyCode: () => ['Ctrl', '['],
+            getInterpretationShadowing: () => []
         } as unknown as KeybindingRegistry;
 
         chai.expect(keybindingTooltip(registry, binding)).to.equal(
             'Physical realization unavailable\nThe key is not available on the current keyboard layout.'
         );
+    });
+
+    it('captures a canonical logical stroke and ignores modifier-only input', () => {
+        const registry = {
+            canonicalKeyCodeForKeyboardInput: (event: KeyboardEvent) => event.code === 'ControlLeft'
+                ? new KeyCode({ ctrl: true })
+                : new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[' })
+        } as unknown as KeybindingRegistry;
+
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '[', code: 'Digit8', ctrlKey: true }))).to.equal('ctrl+[');
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Control', code: 'ControlLeft', ctrlKey: true }))).to.be.undefined;
     });
 });
