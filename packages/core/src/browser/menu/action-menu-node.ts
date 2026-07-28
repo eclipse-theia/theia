@@ -16,17 +16,37 @@
 
 import { KeybindingRegistry } from '../keybinding';
 import { ContextKeyService } from '../context-key-service';
-import { DisposableCollection, isObject, CommandRegistry, Emitter, environment } from '../../common';
+import { DisposableCollection, isObject, CommandRegistry, Emitter } from '../../common';
 import { CommandMenu, ContextExpressionMatcher, MenuAction, MenuPath } from '../../common/menu/menu-types';
 
+export type AcceleratorForm = 'logical' | 'physical';
+
 export interface AcceleratorSource {
-    getAccelerator(context: HTMLElement | undefined): string[];
+    getAccelerator(context: HTMLElement | undefined, form?: AcceleratorForm): string[];
 }
 
 export namespace AcceleratorSource {
     export function is(node: unknown): node is AcceleratorSource {
         return isObject<AcceleratorSource>(node) && typeof node.getAccelerator === 'function';
     }
+}
+
+export function acceleratorForCommand(keybindingRegistry: KeybindingRegistry, command: string,
+    context: HTMLElement | undefined, form: AcceleratorForm): string[] {
+    const bindings = keybindingRegistry.getKeybindingsForCommand(command);
+    // Only consider the first active keybinding.
+    if (bindings.length) {
+        const binding = bindings.find(candidate => keybindingRegistry.isEnabledInScope(candidate, context));
+        if (binding) {
+            if (form === 'physical') {
+                return keybindingRegistry.getKeybindingInactiveReason(binding)
+                    ? []
+                    : keybindingRegistry.physicalAcceleratorFor(binding, '+', true);
+            }
+            return keybindingRegistry.acceleratorFor(binding, '+');
+        }
+    }
+    return [];
 }
 
 /**
@@ -80,17 +100,8 @@ export class ActionMenuNode implements CommandMenu {
         return true;
     }
 
-    getAccelerator(context: HTMLElement | undefined): string[] {
-        const bindings = this.keybindingRegistry.getKeybindingsForCommand(this.action.commandId);
-        // Only consider the first active keybinding.
-        if (bindings.length) {
-            const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
-            if (binding) {
-                const asciiOnly = environment.electron.is();
-                return this.keybindingRegistry.acceleratorFor(binding, '+', asciiOnly);
-            }
-        }
-        return [];
+    getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] {
+        return acceleratorForCommand(this.keybindingRegistry, this.action.commandId, context, form);
     }
 
     isEnabled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {

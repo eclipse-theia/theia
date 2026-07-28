@@ -65,6 +65,8 @@ function convertMenu(menu: MenuDto[] | undefined, handlerMap: Map<number, () => 
             id: item.id,
             submenu: convertMenu(item.submenu, handlerMap),
             accelerator: item.accelerator,
+            acceleratorRepresentable: item.acceleratorRepresentable,
+            registerAccelerator: item.registerAccelerator,
             label: item.label,
             handlerId: handlerId,
             checked: item.checked,

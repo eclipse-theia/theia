@@ -22,7 +22,7 @@ import { CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 import { ContextMatcher } from '../../browser/context-key-service';
-import { MenuDto, MenuRole } from '../../electron-common/electron-api';
+import { electronMenuAcceleratorMetadata, MenuDto, MenuRole } from '../../electron-common/electron-api';
 
 /**
  * Representation of possible electron menu options.
@@ -211,7 +211,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 return parentItems;
             }
 
-            const accelerator = AcceleratorSource.is(menu) ? menu.getAccelerator(options.context).join(' ') : undefined;
+            const acceleratorSequence = AcceleratorSource.is(menu) ? menu.getAccelerator(options.context, 'physical') : [];
 
             const menuItem: MenuDto = {
                 id: menu.id,
@@ -220,7 +220,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 checked: menu.isToggled(effectivePath, ...args),
                 enabled: !honorDisabled || menu.isEnabled(effectivePath, ...args), // see https://github.com/eclipse-theia/theia/issues/446
                 visible: true,
-                accelerator,
+                ...electronMenuAcceleratorMetadata(acceleratorSequence),
                 execute: async () => {
                     const wasToggled = menuItem.checked;
                     await menu.run(effectivePath, ...args);

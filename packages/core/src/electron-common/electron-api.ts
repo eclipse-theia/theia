@@ -21,6 +21,43 @@ import { ThemeMode } from '../common/theme';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 
+export function isElectronAcceleratorRepresentable(accelerator: string | undefined): accelerator is string {
+    if (!accelerator || /altgr/i.test(accelerator) || /\s/.test(accelerator) || accelerator.split('+').some(token => !token)) {
+        return false;
+    }
+    for (let i = 0; i < accelerator.length; i++) {
+        if (accelerator.charCodeAt(i) > 127) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export interface ElectronMenuAccelerator {
+    accelerator?: string;
+    registerAccelerator?: boolean;
+}
+
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]):
+    Pick<MenuDto, 'accelerator' | 'acceleratorRepresentable'> {
+    const accelerator = acceleratorSequence.join(' ') || undefined;
+    return {
+        accelerator,
+        acceleratorRepresentable: acceleratorSequence.length === 1 && isElectronAcceleratorRepresentable(accelerator)
+    };
+}
+
+export function electronMenuAccelerator(dto: Pick<MenuDto, 'accelerator' | 'acceleratorRepresentable' | 'registerAccelerator' | 'role'>,
+    isMacOS: boolean): ElectronMenuAccelerator {
+    if (!dto.acceleratorRepresentable || !isElectronAcceleratorRepresentable(dto.accelerator)) {
+        return {};
+    }
+    return {
+        accelerator: dto.accelerator,
+        registerAccelerator: !dto.role && !isMacOS && dto.registerAccelerator === false ? false : undefined
+    };
+}
+
 export interface MenuDto {
     id?: string,
     label?: string,
@@ -31,6 +68,9 @@ export interface MenuDto {
     visible?: boolean;
     role?: MenuRole;
     accelerator?: string,
+    acceleratorRepresentable?: boolean;
+    // Native registration remains the default; this supports selective renderer-only accelerators where the platform permits it.
+    registerAccelerator?: boolean;
     execute?: () => void
 }
 

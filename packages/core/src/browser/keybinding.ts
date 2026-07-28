@@ -480,6 +480,19 @@ export class KeybindingRegistry {
         return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator, asciiOnly));
     }
 
+    physicalAcceleratorFor(keybinding: common.Keybinding, separator: string = ' ', asciiOnly = false): string[] {
+        return this.physicalAcceleratorForSequence(this.resolveKeybinding(keybinding), separator, asciiOnly);
+    }
+
+    physicalAcceleratorForSequence(keySequence: KeySequence, separator: string = ' ', asciiOnly = false): string[] {
+        return keySequence.map(keyCode => this.physicalAcceleratorForKeyCode(keyCode, separator, asciiOnly));
+    }
+
+    physicalAcceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false): string {
+        const useSymbols = isOSX && !asciiOnly;
+        return this.physicalComponentsForKeyCode(keyCode, asciiOnly).join(useSymbols ? '' : separator);
+    }
+
     /**
      * Get a user visible representation of a key code (a key with modifiers).
      * @returns a string representing the {@link KeyCode}

@@ -956,8 +956,10 @@ describe('acceleratorForKeyCode', () => {
 
         expect(keybindingRegistry.componentsForKeyCode(logicalBracket)).to.deep.equal(['Ctrl', '[']);
         expect(keybindingRegistry.physicalComponentsForKeyCode(logicalBracket)).to.deep.equal(['Ctrl', 'AltGr', '8']);
+        expect(keybindingRegistry.physicalAcceleratorForKeyCode(logicalBracket, '+', true)).to.equal('Ctrl+AltGr+8');
         expect(keybindingRegistry.componentsForKeyCode(logicalSlash)).to.deep.equal(['/']);
         expect(keybindingRegistry.physicalComponentsForKeyCode(logicalSlash)).to.deep.equal(['Shift', '7']);
+        expect(keybindingRegistry.physicalAcceleratorForKeyCode(logicalSlash, '+', true)).to.equal('Shift+7');
     });
 
     it('keeps command Shift in physical realizations', () => {
