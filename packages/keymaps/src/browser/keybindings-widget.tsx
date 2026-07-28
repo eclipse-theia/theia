@@ -31,6 +31,7 @@ import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { DisposableCollection, Disposable, isOSX, isObject } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
+import { keybindingTooltip } from './keybinding-tooltip';
 
 /**
  * Representation of a keybinding item for the view.
@@ -460,7 +461,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             <td className='kb-label' title={this.getCommandLabel(command)}>
                 {this.renderMatchedData(item.labels.command)}
             </td>
-            <td title={this.getKeybindingLabel(keybinding)} className='kb-keybinding monaco-keybinding'>
+            <td title={this.getKeybindingTooltip(keybinding)} className='kb-keybinding monaco-keybinding'>
                 {this.renderKeybinding(item)}
             </td>
             <td className='kb-context' title={this.getContextLabel(keybinding)}>
@@ -645,6 +646,13 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected getKeybindingLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
         return keybinding && keybinding.keybinding;
+    }
+
+    protected getKeybindingTooltip(keybinding: ScopedKeybinding | undefined): string | undefined {
+        if (!keybinding) {
+            return undefined;
+        }
+        return keybindingTooltip(this.keybindingRegistry, keybinding);
     }
 
     protected getContextLabel(keybinding: ScopedKeybinding | undefined): string | undefined {

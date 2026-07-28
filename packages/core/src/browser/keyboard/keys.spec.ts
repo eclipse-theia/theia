@@ -136,6 +136,48 @@ describe('keys api', () => {
         }
     });
 
+    it('should distinguish production modifiers in dispatch identity without changing serialization', () => {
+        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true });
+        const production = new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, character: '[' });
+        const shiftedProduction = new KeyCode({ key: Key.SLASH, production: { shift: true }, character: '/' });
+
+        expect(command.toString()).to.equal('alt+ctrl+8');
+        expect(production.toString()).to.equal('ctrl+8');
+        expect(production.dispatchString()).to.equal('ctrl+8+[production-altgraph]');
+        expect(shiftedProduction.toString()).to.equal('/');
+        expect(shiftedProduction.dispatchString()).to.equal('/+[production-shift]');
+        expect(command.equals(production)).to.be.false;
+    });
+
+    it('should keep equality and dispatch identity equivalent for production modifiers', () => {
+        const keyCodes = Array.from({ length: 64 }, (_, modifiers) => new KeyCode({
+            key: Key.KEY_A,
+            ctrl: !!(modifiers & 1),
+            shift: !!(modifiers & 2),
+            alt: !!(modifiers & 4),
+            meta: !!(modifiers & 8),
+            production: {
+                shift: !!(modifiers & 16),
+                altGraph: !!(modifiers & 32)
+            }
+        }));
+        for (const left of keyCodes) {
+            for (const right of keyCodes) {
+                expect(left.equals(right)).to.equal(left.dispatchString() === right.dispatchString());
+            }
+        }
+    });
+
+    it('should keep interpretation provenance outside dispatch identity', () => {
+        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'command' });
+        const production = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'production' });
+
+        expect(command.dispatchString()).to.equal(production.dispatchString());
+        expect(command.equals(production)).to.be.true;
+        expect(command.interpretation).to.equal('command');
+        expect(production.interpretation).to.equal('production');
+    });
+
     it('should normalize explicit and native AltGraph state', () => {
         expect(readAltGraph({ altGraph: false, getModifierState: () => true })).to.be.false;
         expect(readAltGraph({ getModifierState: modifier => modifier === 'AltGraph' })).to.be.true;

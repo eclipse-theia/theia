@@ -43,6 +43,7 @@ export interface KeyValidationInput {
     shiftKey?: boolean;
     ctrlKey?: boolean;
     altKey?: boolean;
+    altGraph?: boolean;
 }
 
 export const KeyValidator = Symbol('KeyValidator');

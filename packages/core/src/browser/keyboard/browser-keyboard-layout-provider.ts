@@ -289,11 +289,11 @@ export class KeyboardTester {
 
     updateScores(input: KeyValidationInput): boolean {
         let property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr';
-        if (input.shiftKey && input.altKey) {
+        if (input.shiftKey && input.altGraph) {
             property = 'withShiftAltGr';
         } else if (input.shiftKey) {
             property = 'withShift';
-        } else if (input.altKey) {
+        } else if (input.altGraph) {
             property = 'withAltGr';
         } else {
             property = 'value';

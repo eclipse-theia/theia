@@ -97,6 +97,21 @@ export interface Keystroke {
     readonly modifiers?: KeyModifier[];
 }
 
+/**
+ * Modifiers used to produce a logical character, separate from command modifiers.
+ */
+export interface KeyCodeProduction {
+    readonly shift?: boolean;
+    readonly altGraph?: boolean;
+}
+
+/**
+ * Identifies how a key code was derived for runtime matching.
+ * `canonical` is resolved from an authored binding, `command` preserves the event's command modifiers,
+ * and `production` interprets modifiers as producing the committed character.
+ */
+export type KeyCodeInterpretation = 'canonical' | 'command' | 'production';
+
 export interface KeyCodeSchema {
     key?: Partial<Key>;
     ctrl?: boolean;
@@ -104,6 +119,10 @@ export interface KeyCodeSchema {
     alt?: boolean;
     meta?: boolean;
     character?: string;
+    production?: KeyCodeProduction;
+    interpretation?: KeyCodeInterpretation;
+    legacyWindowsAltGraph?: boolean;
+    resolved?: boolean;
 }
 
 /**
@@ -175,6 +194,10 @@ export class KeyCode {
     public readonly alt: boolean;
     public readonly meta: boolean;
     public readonly character: string | undefined;
+    public readonly production: Readonly<Required<KeyCodeProduction>>;
+    public readonly interpretation: KeyCodeInterpretation;
+    public readonly legacyWindowsAltGraph: boolean;
+    public readonly resolved: boolean;
 
     public constructor(schema: KeyCodeSchema) {
         const key = schema.key;
@@ -192,6 +215,13 @@ export class KeyCode {
         this.alt = !!schema.alt;
         this.meta = !!schema.meta;
         this.character = schema.character;
+        this.production = Object.freeze({
+            shift: !!schema.production?.shift,
+            altGraph: !!schema.production?.altGraph
+        });
+        this.interpretation = schema.interpretation ?? 'canonical';
+        this.legacyWindowsAltGraph = !!schema.legacyWindowsAltGraph;
+        this.resolved = schema.resolved !== false;
     }
 
     /**
@@ -208,7 +238,7 @@ export class KeyCode {
         if (this.key && (!other.key || this.key.code !== other.key.code) || !this.key && other.key) {
             return false;
         }
-        return this.ctrl === other.ctrl && this.alt === other.alt && this.shift === other.shift && this.meta === other.meta;
+        return this.dispatchString() === other.dispatchString();
     }
 
     /**
@@ -236,9 +266,17 @@ export class KeyCode {
 
     /**
      * Return the runtime identity used for keybinding dispatch.
+     * Interpretation and legacy provenance are diagnostic metadata and do not affect this identity.
      */
     dispatchString(): string {
-        return this.toString();
+        const result = this.toString().split('+').filter(Boolean);
+        if (this.production.shift) {
+            result.push('[production-shift]');
+        }
+        if (this.production.altGraph) {
+            result.push('[production-altgraph]');
+        }
+        return result.join('+');
     }
 
     /**
