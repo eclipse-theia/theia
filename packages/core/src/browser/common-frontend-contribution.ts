@@ -86,6 +86,15 @@ export const CLASSNAME_OS_MAC = 'mac';
 export const CLASSNAME_OS_WINDOWS = 'windows';
 export const CLASSNAME_OS_LINUX = 'linux';
 
+/**
+ * Mirrors VS Code's `workbench.action.toggleKeybindingsLog` command. It logs how each key press was interpreted so keyboard-layout problems can be diagnosed on machines where they cannot be reproduced.
+ */
+export const TOGGLE_KEYBOARD_SHORTCUTS_TROUBLESHOOTING = Command.toDefaultLocalizedCommand({
+    id: 'workbench.action.toggleKeybindingsLog',
+    category: 'Developer',
+    label: 'Toggle Keyboard Shortcuts Troubleshooting'
+});
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
@@ -109,6 +118,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
 
     @inject(MenuModelRegistry)
     protected readonly menuRegistry: MenuModelRegistry;
@@ -482,6 +494,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
+        commandRegistry.registerCommand(TOGGLE_KEYBOARD_SHORTCUTS_TROUBLESHOOTING, {
+            execute: () => this.keybindingRegistry.toggleKeyboardShortcutsTroubleshooting(),
+            isToggled: () => this.keybindingRegistry.isKeyboardShortcutsTroubleshooting()
+        });
         commandRegistry.registerCommand(CommonCommands.OPEN, UriAwareCommandHandler.MultiSelect(this.selectionService, {
             execute: uris => uris.map(uri => open(this.openerService, uri)),
         }));

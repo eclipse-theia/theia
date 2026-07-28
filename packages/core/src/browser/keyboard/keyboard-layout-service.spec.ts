@@ -18,7 +18,7 @@ import { Container, injectable } from 'inversify';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode } from './keys';
 import { KeyboardLayoutService } from './keyboard-layout-service';
-import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import { KeyboardLayoutProvider, KeyboardLayoutSourceProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import * as os from '../../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -28,7 +28,7 @@ describe('keyboard layout service', function (): void {
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;
 
-    const setup = async (layout: NativeKeyboardLayout, system: 'mac' | 'win' | 'linux') => {
+    const setup = async (layout: NativeKeyboardLayout, system: 'mac' | 'win' | 'linux', layoutSource?: string) => {
         switch (system) {
             case 'mac':
                 stubOSX = sinon.stub(os, 'isOSX').value(true);
@@ -56,6 +56,9 @@ describe('keyboard layout service', function (): void {
         }
         container.bind(KeyboardLayoutProvider).to(MockLayoutProvider);
         container.bind(KeyboardLayoutChangeNotifier).to(MockLayoutProvider);
+        if (layoutSource) {
+            container.bind(KeyboardLayoutSourceProvider).toConstantValue({ layoutSource });
+        }
         const service = container.get(KeyboardLayoutService);
         await service.initialize();
         return service;
@@ -64,6 +67,16 @@ describe('keyboard layout service', function (): void {
     afterEach(() => {
         stubOSX.restore();
         stubWindows.restore();
+    });
+
+    it('reports an unknown layout source when no source provider is configured', async () => {
+        const layout: NativeKeyboardLayout = { info: { id: 'mock', lang: 'en' }, mapping: {} };
+        chai.expect((await setup(layout, 'linux')).layoutSource).to.equal('unknown');
+    });
+
+    it('reports the configured layout source', async () => {
+        const layout: NativeKeyboardLayout = { info: { id: 'mock', lang: 'en' }, mapping: {} };
+        chai.expect((await setup(layout, 'linux', 'native-keymap')).layoutSource).to.equal('native-keymap');
     });
 
     it('resolves correct key bindings with German Mac layout', async () => {

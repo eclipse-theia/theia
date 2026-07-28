@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import type { ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
+import type { IKeyboardLayoutInfo, ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
 import { isOSX, isWindows } from '../../common/os';
 import {
-    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
+    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutSourceProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from './keys';
@@ -45,14 +45,27 @@ export class KeyboardLayoutService {
     @inject(KeyboardLayoutChangeNotifier)
     protected readonly layoutChangeNotifier: KeyboardLayoutChangeNotifier;
 
+    @inject(KeyboardLayoutSourceProvider) @optional()
+    protected readonly layoutSourceProvider?: KeyboardLayoutSourceProvider;
+
     @inject(KeyValidator) @optional()
     protected readonly keyValidator?: KeyValidator;
 
     private currentLayout?: KeyboardLayout;
+    private currentLayoutInfo?: IKeyboardLayoutInfo;
+
+    get layoutInfo(): IKeyboardLayoutInfo | undefined {
+        return this.currentLayoutInfo;
+    }
+
+    get layoutSource(): string {
+        return this.layoutSourceProvider?.layoutSource ?? 'unknown';
+    }
 
     protected updateLayout(newLayout: NativeKeyboardLayout): KeyboardLayout {
         const transformed = this.transformNativeLayout(newLayout);
         this.currentLayout = transformed;
+        this.currentLayoutInfo = newLayout.info;
         this.keyboardLayoutChanged.fire(transformed);
         return transformed;
     }

@@ -17,7 +17,7 @@
 import { enableJSDOM } from '../../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
-import { KeyCode, Key, KeyModifier, KeySequence } from './keys';
+import { KeyCode, Key, KeyModifier, KeySequence, NormalizedKeyboardInput, normalizeKeyboardInput, readAltGraph } from './keys';
 import * as os from '../../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -115,6 +115,99 @@ describe('keys api', () => {
         expect(keyCodeString).to.be.equal('shift+alt+a');
         const parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(equalKeyCode(parsedKeyCode, keyCode)).to.be.true;
+    });
+
+    it('should keep dispatch strings equivalent to serialized strings', () => {
+        const keyCodes = [
+            ...Array.from({ length: 16 }, (_, modifiers) => new KeyCode({
+                key: Key.KEY_A,
+                ctrl: !!(modifiers & 1),
+                shift: !!(modifiers & 2),
+                alt: !!(modifiers & 4),
+                meta: !!(modifiers & 8)
+            })),
+            new KeyCode({}),
+            KeyCode.parse('ctrl+['),
+            KeyCode.parse('shift+/'),
+            ...KeySequence.parse('ctrlcmd+k ctrlcmd+c')
+        ];
+        for (const keyCode of keyCodes) {
+            expect(keyCode.dispatchString()).to.equal(keyCode.toString());
+        }
+    });
+
+    it('should normalize explicit and native AltGraph state', () => {
+        expect(readAltGraph({ altGraph: false, getModifierState: () => true })).to.be.false;
+        expect(readAltGraph({ getModifierState: modifier => modifier === 'AltGraph' })).to.be.true;
+        expect(readAltGraph({ code: 'Digit8' })).to.be.false;
+
+        expect(normalizeKeyboardInput({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true,
+            altGraph: true,
+            location: 0
+        })).to.deep.equal({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            charCode: undefined,
+            ctrlKey: true,
+            shiftKey: undefined,
+            altKey: undefined,
+            metaKey: undefined,
+            altGraph: true,
+            repeat: undefined,
+            isComposing: undefined,
+            location: 0,
+            timeStamp: undefined,
+            keyIdentifier: undefined,
+            getModifierState: undefined
+        });
+    });
+
+    it('should preserve every normalized keyboard input field', () => {
+        const getModifierState = (modifier: string) => modifier === 'AltGraph';
+        const input: Required<NormalizedKeyboardInput> = {
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            charCode: 91,
+            ctrlKey: true,
+            shiftKey: true,
+            altKey: false,
+            metaKey: true,
+            altGraph: true,
+            repeat: true,
+            isComposing: false,
+            location: 2,
+            timeStamp: 42,
+            keyIdentifier: 'U+005B',
+            getModifierState
+        };
+
+        const normalized = normalizeKeyboardInput(input);
+
+        expect({ ...normalized, getModifierState: undefined }).to.deep.equal({ ...input, getModifierState: undefined });
+        expect(normalized.getModifierState?.('AltGraph')).to.be.true;
+    });
+
+    it('should create key codes from normalized plain data', () => {
+        const keyCode = KeyCode.createKeyCode({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true
+        });
+        expect(keyCode.key).to.equal(Key.DIGIT8);
+        expect(keyCode.ctrl).to.be.true;
+        expect(keyCode.character).to.equal('[');
+    });
+
+    it('should preserve legacy key identifier fallback in normalized data', () => {
+        const input = normalizeKeyboardInput({ keyIdentifier: Key.F1.code });
+        expect(KeyCode.createKeyCode(input).key).to.equal(Key.F1);
     });
 
     it('the order of the modifiers should not matter when parsing the key code', () => {

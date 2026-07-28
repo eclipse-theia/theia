@@ -25,6 +25,12 @@ export interface KeyboardLayoutProvider {
     getNativeLayout(): Promise<NativeKeyboardLayout>;
 }
 
+export const KeyboardLayoutSourceProvider = Symbol('KeyboardLayoutSourceProvider');
+
+export interface KeyboardLayoutSourceProvider {
+    readonly layoutSource: string;
+}
+
 export const KeyboardLayoutChangeNotifier = Symbol('KeyboardLayoutChangeNotifier');
 
 export interface KeyboardLayoutChangeNotifier {

@@ -208,12 +208,12 @@ export class KeySequenceIterator implements IKeyIterator<KeySequence> {
     }
 
     cmp(a: string): number {
-        const current = this._value[this._index]?.toString() ?? '';
+        const current = this._value[this._index]?.dispatchString() ?? '';
         return compare(a, current);
     }
 
     value(): string {
-        return this._value[this._index]?.toString() ?? '';
+        return this._value[this._index]?.dispatchString() ?? '';
     }
 }
 

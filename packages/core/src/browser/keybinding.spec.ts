@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
+import { KeyboardLayoutProvider, KeyboardLayoutSourceProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
 import { Keybinding } from '../common/keybinding';
@@ -63,7 +63,13 @@ before(async () => {
 
         bind(KeyboardLayoutService).toSelf().inSingletonScope();
         bind(MockKeyboardLayoutProvider).toSelf().inSingletonScope();
-        bind(KeyboardLayoutProvider).toService(MockKeyboardLayoutProvider);
+        bind(KeyboardLayoutProvider).toDynamicValue(ctx => {
+            const provider = ctx.container.get(MockKeyboardLayoutProvider);
+            return new Proxy(provider, {
+                get: (target, property) => property === 'then' ? undefined : property in target ? Reflect.get(target, property) : () => undefined
+            });
+        });
+        bind(KeyboardLayoutSourceProvider).toConstantValue({ layoutSource: 'navigator.keyboard' });
         bind(MockKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
         bind(KeyboardLayoutChangeNotifier).toService(MockKeyboardLayoutChangeNotifier);
 
@@ -87,7 +93,10 @@ before(async () => {
             }
         });
 
-        bind(StatusBar).toConstantValue({} as StatusBar);
+        bind(StatusBar).toConstantValue({
+            setElement: () => Promise.resolve(),
+            removeElement: () => Promise.resolve()
+        } as unknown as StatusBar);
         bind(MarkdownRendererImpl).toSelf().inSingletonScope();
         bind(MarkdownRenderer).toService(MarkdownRendererImpl);
         bind(MarkdownRendererFactory).toFactory(({ container }) => () => container.get(MarkdownRenderer));
@@ -474,6 +483,56 @@ describe('keybindings', () => {
         match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
+    });
+
+    it('should dispatch normalized keyboard data directly', () => {
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+
+        keybindingRegistry.dispatchNormalizedKeyDown({
+            key: 'a',
+            code: 'KeyA',
+            keyCode: 65,
+            ctrlKey: true
+        }, document.body);
+
+        expect(match.calledOnce).to.be.true;
+        expect(match.firstCall.args[0][0].dispatchString()).to.equal('ctrl+a');
+    });
+
+    it('should log normalized keyboard troubleshooting data when enabled', () => {
+        const logger = (keybindingRegistry as unknown as { logger: ILogger }).logger;
+        const info = sinon.spy(logger, 'info');
+        keybindingRegistry.toggleKeyboardShortcutsTroubleshooting();
+
+        keybindingRegistry.dispatchNormalizedKeyDown({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            getModifierState: modifier => modifier === 'AltGraph',
+            timeStamp: 42
+        }, document.body);
+
+        expect(info.calledTwice).to.be.true;
+        expect(info.secondCall.args[1].input).to.include({
+            key: '[',
+            code: 'Digit8',
+            altGraph: true,
+            timeStamp: 42
+        });
+        expect(info.secondCall.args[1].layout.source).to.equal('navigator.keyboard');
+    });
+
+    it('should skip composing normalized keyboard data', () => {
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+
+        keybindingRegistry.dispatchNormalizedKeyDown({
+            key: 'a',
+            code: 'KeyA',
+            keyCode: 65,
+            isComposing: true
+        }, document.body);
+
+        expect(match.called).to.be.false;
     });
 
     it('should prioritize bindings that use local context keys', () => {

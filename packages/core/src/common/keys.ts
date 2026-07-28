@@ -107,6 +107,64 @@ export interface KeyCodeSchema {
 }
 
 /**
+ * Plain keyboard input data used by keybinding dispatch and diagnostics.
+ */
+export interface NormalizedKeyboardInput {
+    key?: string;
+    code?: string;
+    keyCode?: number;
+    charCode?: number;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    metaKey?: boolean;
+    altGraph?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    location?: number;
+    timeStamp?: number;
+    keyIdentifier?: string;
+    getModifierState?(keyArg: string): boolean;
+}
+
+/**
+ * Read AltGraph state, preferring explicitly transported state over native event state.
+ */
+export function readAltGraph(input: NormalizedKeyboardInput): boolean {
+    if (input.altGraph !== undefined) {
+        return input.altGraph;
+    }
+    return input.getModifierState?.('AltGraph') ?? false;
+}
+
+/**
+ * Copy keyboard input into a normalized, transport-independent representation.
+ */
+// The parameter and result share this type because a native KeyboardEvent structurally satisfies the permissive input shape.
+// This accepts native events or transported plain objects and returns copyable data with altGraph always resolved,
+// even though the field is optional in the input type. getModifierState is retained for local diagnostics only and
+// must not be relied on after transport.
+export function normalizeKeyboardInput(input: NormalizedKeyboardInput): NormalizedKeyboardInput {
+    return {
+        key: input.key,
+        code: input.code,
+        keyCode: input.keyCode,
+        charCode: input.charCode,
+        ctrlKey: input.ctrlKey,
+        shiftKey: input.shiftKey,
+        altKey: input.altKey,
+        metaKey: input.metaKey,
+        altGraph: readAltGraph(input),
+        repeat: input.repeat,
+        isComposing: input.isComposing,
+        location: input.location,
+        timeStamp: input.timeStamp,
+        keyIdentifier: input.keyIdentifier,
+        getModifierState: input.getModifierState?.bind(input)
+    };
+}
+
+/**
  * Representation of a pressed key combined with key modifiers.
  */
 export class KeyCode {
@@ -153,7 +211,7 @@ export class KeyCode {
         return this.ctrl === other.ctrl && this.alt === other.alt && this.shift === other.shift && this.meta === other.meta;
     }
 
-    /*
+    /**
      * Return a keybinding string compatible with the `Keybinding.keybinding` property.
      */
     toString(): string {
@@ -177,9 +235,16 @@ export class KeyCode {
     }
 
     /**
+     * Return the runtime identity used for keybinding dispatch.
+     */
+    dispatchString(): string {
+        return this.toString();
+    }
+
+    /**
      * Create a KeyCode from one of several input types.
      */
-    public static createKeyCode(input: KeyboardEvent | Keystroke | KeyCodeSchema | string, eventDispatch: 'code' | 'keyCode' = 'code'): KeyCode {
+    public static createKeyCode(input: KeyboardEvent | NormalizedKeyboardInput | Keystroke | KeyCodeSchema | string, eventDispatch: 'code' | 'keyCode' = 'code'): KeyCode {
         if (typeof input === 'string') {
             const parts = input.split('+');
             if (!KeyCode.isModifierString(parts[0])) {
@@ -189,7 +254,7 @@ export class KeyCode {
                 });
             }
             return KeyCode.createKeyCode({ modifiers: parts as KeyModifier[] });
-        } else if (KeyCode.isKeyboardEvent(input)) {
+        } else if (KeyCode.isKeyboardEvent(input) || KeyCode.isNormalizedKeyboardInput(input)) {
             const key = KeyCode.toKey(input, eventDispatch);
             return new KeyCode({
                 key: Key.isModifier(key.code) ? undefined : key,
@@ -340,13 +405,20 @@ export namespace KeyCode {
     }
 
     /**
+     * Return true if the given object carries normalized keyboard input fields.
+     */
+    export function isNormalizedKeyboardInput(input: object): input is NormalizedKeyboardInput {
+        return 'code' in input || 'keyCode' in input || 'charCode' in input || 'keyIdentifier' in input;
+    }
+
+    /**
      * Determine the pressed key of a keyboard event. This key should correspond to the physical key according
      * to a standard US keyboard layout. International keyboard layouts are handled by `KeyboardLayoutService`.
      *
      * `keyIdentifier` is used to access this deprecated field:
      * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyIdentifier
      */
-    export function toKey(event: KeyboardEvent, dispatch: 'code' | 'keyCode' = 'code'): Key {
+    export function toKey(event: NormalizedKeyboardInput, dispatch: 'code' | 'keyCode' = 'code'): Key {
         const code = event.code;
         if (code && dispatch === 'code') {
             if (isOSX) {
@@ -382,7 +454,7 @@ export namespace KeyCode {
             }
         }
 
-        const keyIdentifier = (event as KeyboardEvent & { keyIdentifier?: string }).keyIdentifier;
+        const keyIdentifier = event.keyIdentifier;
         if (keyIdentifier) {
             const key = Key.getKey(keyIdentifier);
             if (key) {
@@ -397,7 +469,7 @@ export namespace KeyCode {
      * If the key does not correspond to a printable character, `undefined` is returned.
      * The result may be altered by modifier keys.
      */
-    export function toCharacter(event: KeyboardEvent): string | undefined {
+    export function toCharacter(event: NormalizedKeyboardInput): string | undefined {
         const key = event.key;
         // Use the key property if it contains exactly one unicode character
         if (key && Array.from(key).length === 1) {

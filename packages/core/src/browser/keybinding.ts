@@ -19,7 +19,7 @@ import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
 import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
-import { KeyCode, KeySequence, Key } from './keyboard/keys';
+import { KeyCode, KeySequence, Key, NormalizedKeyboardInput, normalizeKeyboardInput } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
@@ -100,6 +100,8 @@ export class KeybindingRegistry {
 
     static readonly PASSTHROUGH_PSEUDO_COMMAND = 'passthrough';
     protected keySequence: KeySequence = [];
+    /** Whether keyboard shortcut troubleshooting logs are enabled. */
+    protected keyboardShortcutsTroubleshooting = false;
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
@@ -591,6 +593,31 @@ export class KeybindingRegistry {
         const emulatedKeyboardEvent = new KeyboardEvent('keydown', eventInit);
         target.dispatchEvent(emulatedKeyboardEvent);
     }
+
+    /**
+     * Runs normalized keyboard data directly through keybinding matching without dispatching a DOM event.
+     */
+    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target: EventTarget = document.activeElement || window): void {
+        const normalizedInput = normalizeKeyboardInput(input);
+        const event = new KeyboardEvent('keydown', this.asKeyboardEventInit(normalizedInput));
+        Object.defineProperty(event, 'target', { value: target });
+        this.runNormalizedKeyboardInput(normalizedInput, event);
+    }
+
+    isKeyboardShortcutsTroubleshooting(): boolean {
+        return this.keyboardShortcutsTroubleshooting;
+    }
+
+    /**
+     * Mirrors VS Code's `workbench.action.toggleKeybindingsLog` command.
+     * It logs how each key press was interpreted so keyboard-layout problems can be diagnosed on other machines.
+     */
+    toggleKeyboardShortcutsTroubleshooting(): boolean {
+        this.keyboardShortcutsTroubleshooting = !this.keyboardShortcutsTroubleshooting;
+        this.logger.info(`Keyboard shortcuts troubleshooting is now ${this.keyboardShortcutsTroubleshooting ? 'active' : 'inactive'}.`);
+        return this.keyboardShortcutsTroubleshooting;
+    }
+
     protected asKeyboardEventInit(input: KeyboardEventInit | KeyCode | string): KeyboardEventInit & Partial<{ keyCode: number }> {
         if (typeof input === 'string') {
             return this.asKeyboardEventInit(KeyCode.createKeyCode(input));
@@ -625,17 +652,7 @@ export class KeybindingRegistry {
         };
         win.document.addEventListener('compositionend', compositionEnd);
 
-        const keydown = (event: KeyboardEvent) => {
-            // Skip IME-related keydowns. `inComposition` covers the textarea input path;
-            // `isComposing` and `keyCode === 229` cover the native EditContext path where
-            // composition events don't reach the DOM. The keyCode check catches keys that
-            // finalize a composition (e.g. arrow keys) where isComposing is already false.
-            // eslint-disable-next-line deprecation/deprecation
-            if (inComposition || event.isComposing || event.keyCode === 229) {
-                return;
-            }
-            this.run(event);
-        };
+        const keydown = (event: KeyboardEvent) => this.run(event, inComposition);
         win.document.addEventListener('keydown', keydown, true);
 
         return Disposable.create(() => {
@@ -647,22 +664,42 @@ export class KeybindingRegistry {
     /**
      * Run the command matching to the given keyboard event.
      */
-    run(event: KeyboardEvent): void {
+    run(event: KeyboardEvent, inComposition = false): void {
+        const input = normalizeKeyboardInput(event);
+        // The textarea input path reports composition through separate DOM events.
+        if (inComposition) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, 'composition');
+            return;
+        }
+        this.runNormalizedKeyboardInput(input, event);
+    }
+
+    protected runNormalizedKeyboardInput(input: NormalizedKeyboardInput, event: KeyboardEvent): void {
+        // Skip IME-related keydowns. `isComposing` and `keyCode === 229` cover the native EditContext path where
+        // composition events do not reach the DOM. The keyCode check catches keys that finalize a composition,
+        // such as arrow keys, when isComposing is already false.
+        if (input.isComposing || input.keyCode === 229) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, 'composition');
+            return;
+        }
         if (event.defaultPrevented) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, 'defaultPrevented');
             return;
         }
 
         const eventDispatch = this.corePreferences['keyboard.dispatch'];
-        const keyCode = KeyCode.createKeyCode(event, eventDispatch);
+        const keyCode = KeyCode.createKeyCode(input, eventDispatch);
         /* Keycode is only a modifier, next keycode will be modifier + key.
            Ignore this one.  */
         if (keyCode.isModifierOnly()) {
+            this.logKeyboardTroubleshooting(input, keyCode, undefined, 'modifierOnly');
             return;
         }
 
         this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
         const match = this.matchKeybinding(this.keySequence, event);
+        this.logKeyboardTroubleshooting(input, keyCode, match);
 
         if (match && match.kind === 'partial') {
             /* Accumulate the keysequence */
@@ -681,6 +718,54 @@ export class KeybindingRegistry {
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
         }
+    }
+
+    protected logKeyboardTroubleshooting(
+        input: NormalizedKeyboardInput,
+        keyCode?: KeyCode,
+        match?: KeybindingRegistry.Match,
+        skipped?: string
+    ): void {
+        if (!this.keyboardShortcutsTroubleshooting) {
+            return;
+        }
+        this.logger.info('Keyboard shortcut troubleshooting', {
+            input: {
+                key: input.key,
+                code: input.code,
+                keyCode: input.keyCode,
+                ctrlKey: input.ctrlKey,
+                shiftKey: input.shiftKey,
+                altKey: input.altKey,
+                metaKey: input.metaKey,
+                altGraph: input.altGraph,
+                controlModifier: input.getModifierState?.('Control'),
+                altModifier: input.getModifierState?.('Alt'),
+                repeat: input.repeat,
+                isComposing: input.isComposing,
+                location: input.location,
+                timeStamp: input.timeStamp
+            },
+            normalized: keyCode && {
+                key: keyCode.key?.code,
+                character: keyCode.character,
+                ctrl: keyCode.ctrl,
+                shift: keyCode.shift,
+                alt: keyCode.alt,
+                meta: keyCode.meta,
+                dispatch: keyCode.dispatchString()
+            },
+            layout: {
+                info: this.keyboardLayoutService.layoutInfo,
+                source: this.keyboardLayoutService.layoutSource
+            },
+            match: match && {
+                kind: match.kind,
+                command: match.binding.command,
+                keybinding: match.binding.keybinding
+            },
+            skipped
+        });
     }
 
     /**
