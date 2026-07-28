@@ -693,14 +693,26 @@ export class KeybindingRegistry {
         const keybindings = this.getKeybindingsForCommand(id);
         if (keybindings.length && !this.isInactiveBinding(keybindings[0])) {
             for (const keyCode of this.resolveKeybinding(keybindings[0])) {
-                this.dispatchKeyDown(keyCode, target);
+                this.dispatchNormalizedKeyDown({
+                    key: keyCode.character ?? keyCode.key?.code,
+                    code: keyCode.key?.code,
+                    keyCode: keyCode.key?.keyCode,
+                    ctrlKey: keyCode.ctrl,
+                    shiftKey: keyCode.shift || keyCode.production.shift,
+                    altKey: keyCode.alt,
+                    metaKey: keyCode.meta,
+                    altGraph: keyCode.production.altGraph
+                }, target);
             }
         }
     }
 
-    dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window): void {
+    dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window, defaultPrevented = false): void {
         const eventInit = this.asKeyboardEventInit(input);
-        const emulatedKeyboardEvent = new KeyboardEvent('keydown', eventInit);
+        const emulatedKeyboardEvent = new KeyboardEvent('keydown', { ...eventInit, cancelable: true });
+        if (defaultPrevented) {
+            emulatedKeyboardEvent.preventDefault();
+        }
         target.dispatchEvent(emulatedKeyboardEvent);
     }
 

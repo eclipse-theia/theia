@@ -54,6 +54,7 @@ import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginViewWidget } from '../view/plugin-view-widget';
 import { WebviewPreferences } from '../../common/webview-preferences';
+import { NormalizedKeyboardInput } from '@theia/core/lib/browser/keyboard/keys';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -325,11 +326,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.toHide.push(this.on(WebviewMessageChannels.loadLocalhost, (entry: any) =>
             this.loadLocalhost(entry.origin)
         ));
-        this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: KeyboardEvent) => {
+        this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: NormalizedKeyboardInput) => {
             // Electron: workaround for https://github.com/electron/electron/issues/14258
             // We have to detect keyboard events in the <webview> and dispatch them to our
             // keybinding service because these events do not bubble to the parent window anymore.
-            this.keybindings.dispatchKeyDown(data, this.element);
+            this.keybindings.dispatchNormalizedKeyDown(data, this.element);
+            this.keybindings.dispatchKeyDown(data, this.element, true);
         }));
         this.toHide.push(this.on(WebviewMessageChannels.didMouseDown, (data: MouseEvent) => {
             // We have to dispatch mousedown events so menus will be closed when clicking inside webviews.

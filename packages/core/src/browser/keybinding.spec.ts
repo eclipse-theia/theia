@@ -495,6 +495,22 @@ describe('keybindings', () => {
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
     });
 
+    it('should dispatch pre-cancelled compatibility events to capture listeners', () => {
+        const target = document.createElement('iframe');
+        document.body.appendChild(target);
+        const captured = sinon.spy();
+        document.addEventListener('keydown', captured, true);
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+
+        keybindingRegistry.dispatchKeyDown({ key: 'a', code: 'KeyA' }, target, true);
+
+        expect(captured.calledOnce).to.be.true;
+        expect(captured.firstCall.args[0].defaultPrevented).to.be.true;
+        expect(match.called).to.be.false;
+        document.removeEventListener('keydown', captured, true);
+        target.remove();
+    });
+
     it('should dispatch normalized keyboard data directly', () => {
         const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
 
@@ -507,6 +523,50 @@ describe('keybindings', () => {
 
         expect(match.calledOnce).to.be.true;
         expect(match.firstCall.args[0][0].dispatchString()).to.equal('ctrl+a');
+    });
+
+    it('should dispatch commands through normalized production data', async () => {
+        testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+[' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+        const dispatch = sinon.spy(keybindingRegistry, 'dispatchNormalizedKeyDown');
+        const target = new EventTarget();
+
+        keybindingRegistry.dispatchCommand(TEST_COMMAND_SHADOW.id, target);
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(dispatch.calledOnce).to.be.true;
+        expect(dispatch.firstCall.args[0]).to.include({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true,
+            altGraph: true
+        });
+        expect(execute.calledOnce).to.be.true;
+        handler.dispose();
+    });
+
+    it('should interpret native and transported AltGraph input identically', () => {
+        testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+        const native = keybindingRegistry.getKeyCodeInterpretations({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true,
+            getModifierState: modifier => modifier === 'AltGraph'
+        });
+        const transported = keybindingRegistry.getKeyCodeInterpretations({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true,
+            altGraph: true
+        });
+
+        expect(transported.map(code => code.dispatchString())).to.deep.equal(native.map(code => code.dispatchString()));
     });
 
     it('should log normalized keyboard troubleshooting data when enabled', () => {

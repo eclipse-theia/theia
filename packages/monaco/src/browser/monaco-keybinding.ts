@@ -65,6 +65,9 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             this.toDisposeOnKeybindingChange.dispose();
             for (const binding of this.keybindings.getKeybindingsByScope(KeybindingScope.USER).concat(this.keybindings.getKeybindingsByScope(KeybindingScope.WORKSPACE))) {
                 const resolved = this.keybindings.resolveKeybinding(binding);
+                if (this.keybindings.getKeybindingInactiveReason(binding) || !this.isMonacoRepresentable(resolved)) {
+                    continue;
+                }
                 const command = binding.command;
                 const when = binding.when
                     ? this.contextKeyService.parse(binding.when)
@@ -81,11 +84,12 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
     }
 
+    protected isMonacoRepresentable(codes: KeyCode[]): boolean {
+        return codes.length <= 2 && codes.every(code => code.key && KEY_CODE_MAP[code.key.keyCode] !== undefined && !code.production.altGraph);
+    }
+
     protected toMonacoKeybindingNumber(codes: KeyCode[]): number {
         const [firstPart, secondPart] = codes;
-        if (codes.length > 2) {
-            console.warn('Key chords should not consist of more than two parts; got ', codes);
-        }
         const encodedFirstPart = this.toSingleMonacoKeybindingNumber(firstPart);
         const encodedSecondPart = secondPart ? this.toSingleMonacoKeybindingNumber(secondPart) << 16 : 0;
         return monaco.KeyMod.chord(encodedFirstPart, encodedSecondPart);
@@ -97,11 +101,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (code.alt) {
             encoded |= monaco.KeyMod.Alt;
         }
-        if (code.shift) {
+        if (code.shift || code.production.shift) {
             encoded |= monaco.KeyMod.Shift;
         }
         if (code.ctrl) {
-            encoded |= monaco.KeyMod.WinCtrl;
+            encoded |= isOSX ? monaco.KeyMod.WinCtrl : monaco.KeyMod.CtrlCmd;
         }
         if (code.meta && isOSX) {
             encoded |= monaco.KeyMod.CtrlCmd;
