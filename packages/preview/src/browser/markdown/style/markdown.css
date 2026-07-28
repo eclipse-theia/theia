@@ -92,8 +92,8 @@
 }
 
 .markdown-preview h1,
-h2,
-h3 {
+.markdown-preview h2,
+.markdown-preview h3 {
   font-weight: normal;
 }
 
