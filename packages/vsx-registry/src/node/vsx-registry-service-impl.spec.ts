@@ -25,7 +25,7 @@ import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXRegistryService } from '../common/vsx-registry-service';
 import { VSXRegistryServiceImpl } from './vsx-registry-service-impl';
-import { MockLogger } from '@theia/core/src/common/test/mock-logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('VSXRegistryServiceImpl', () => {
     let service: VSXRegistryService;

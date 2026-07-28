@@ -38,7 +38,6 @@ import {
 import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
-import { WorkspaceFunctionScope } from './workspace-functions';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';

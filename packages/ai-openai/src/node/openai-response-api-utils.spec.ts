@@ -70,7 +70,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('adds native web search without requiring client tools', () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
 
         expect(utils.convertToolsForResponseApi(undefined, undefined, [OPENAI_WEB_SEARCH])).to.deep.equal([
             { type: 'web_search' }
@@ -79,7 +79,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('combines native web search with function and deferred-tool search tools', () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         const tools = utils.convertToolsForResponseApi([{
             id: 'lookup',
             name: 'lookup',
@@ -180,7 +180,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('preserves reasoning and web search items for the next function-tool iteration', async () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
         const searchCall = {
             id: 'ws-1',
@@ -362,7 +362,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces web search as a running then finished server tool call', async () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         const reasoningItem = {
             id: 'rs-1',
             type: 'reasoning',
@@ -415,7 +415,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces web search from a non-streaming response and requests sources', async () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         let createRequest: Record<string, unknown> | undefined;
         const openai = {
             responses: {
@@ -453,7 +453,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('replays persisted OpenAI reasoning before its web search call', () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         const reasoningItem = {
             id: 'rs-1',
             type: 'reasoning',
@@ -488,7 +488,7 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('persists and replays reasoning before a function call', async () => {
-        const utils = new OpenAiResponseApiUtils();
+        utils = new OpenAiResponseApiUtils();
         const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
         const functionCall = {
             id: 'fc-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}'
