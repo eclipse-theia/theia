@@ -26,7 +26,16 @@ git diff --stat package-lock.json
 node scripts/verify-lockfile-platforms.js
 ```
 
-The verifier checks that known Linux entries still carry their `libc` field. It also runs in CI, so a lockfile that lost them cannot be merged.
+The verifier checks that known Linux entries still carry their `libc` field, and that `allowScripts` is in sync (see below). It also runs in CI, so a lockfile that lost them cannot be merged.
+
+## Keeping `allowScripts` in sync
+
+npm 12 does not run dependency lifecycle scripts unless the package is listed in the `allowScripts` allowlist in the root `package.json`. Adding, removing, or updating dependencies can therefore require an `allowScripts` change:
+
+- A new dependency with an install script must be added with `true` if the script is required (native bindings, downloaded binaries) or `false` if it is cosmetic or unused. Recording it as `false` also keeps `npm install` free of warnings.
+- A dependency that no longer has an install script must be removed from the list.
+
+Missing `true` entries are easy to overlook because `npm ci` still succeeds — the failure only shows up later, when a native module is loaded or a build step needs its binary. `node scripts/verify-lockfile-platforms.js` cross-checks the allowlist against every lockfile entry with `hasInstallScript` and fails on unlisted or stale entries, so run it after changing dependencies as well.
 
 ## Outlook
 
