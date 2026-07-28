@@ -41,7 +41,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { Minimatch } from 'minimatch';
-import { MockLogger } from '@theia/core/lib/common/test/logger';
+import { MockLogger } from '@theia/core/src/common/test/mock-logger';
 
 const makeFileSearchService = (
     impl?: (searchPattern: string, options: FileSearchService.Options) => Promise<string[]>

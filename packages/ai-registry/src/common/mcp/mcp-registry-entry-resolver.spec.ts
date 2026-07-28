@@ -19,7 +19,7 @@ import { AIRegistryConfiguration } from '../ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
 import { RegistryMCPServer } from './mcp-registry-types';
 import { ILogger } from '@theia/core';
-import { MockLogger } from '@theia/core/lib/common/test/logger';
+import { MockLogger } from '@theia/core/src/common/test/mock-logger';
 
 let logger: MockLogger;
 
@@ -240,13 +240,12 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         };
 
         const warnings: string[] = [];
-        const originalWarn = console.warn;
         console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')); };
         try {
             const resolved = resolver.resolve(raw);
             expect(resolved?.localName).to.equal('primary');
             expect(resolved?.config).to.deep.equal({ command: 'first-cmd' });
-            expect(logger.warns.some(w => w.includes('multiple servers'))).to.equal(true);
+            expect(logger.warns.some((w: any) => w.includes('multiple servers'))).to.equal(true);
         } finally {
 
         }

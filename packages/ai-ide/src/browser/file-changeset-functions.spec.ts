@@ -85,11 +85,6 @@ describe('File Changeset Functions Cancellation Tests', () => {
         // Create a new container for each test
         container = new Container();
 
-        // Mock dependencies
-        const mockWorkspaceScope = {
-            resolveRelativePath: () => new URI('file:///workspace/test.txt')
-        } as unknown as WorkspaceFunctionScope;
-
         const mockFileService = {
             exists: async () => true,
             read: async () => ({ value: { toString: () => 'test content' } })

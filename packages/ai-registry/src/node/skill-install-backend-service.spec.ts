@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import { ILogger, PreferenceService } from '@theia/core';
+import { PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
 import { computeSkillContentHash } from '../common/skill/skill-content-hash';

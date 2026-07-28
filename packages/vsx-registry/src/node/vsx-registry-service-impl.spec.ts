@@ -25,7 +25,7 @@ import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXRegistryService } from '../common/vsx-registry-service';
 import { VSXRegistryServiceImpl } from './vsx-registry-service-impl';
-import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { MockLogger } from '@theia/core/src/common/test/mock-logger';
 
 describe('VSXRegistryServiceImpl', () => {
     let service: VSXRegistryService;
@@ -40,6 +40,9 @@ describe('VSXRegistryServiceImpl', () => {
         getOvsxRouterConfig: sinon.SinonStub;
     };
     let mockLogger: MockLogger;
+
+    let warnSpy: sinon.SinonSpy;
+    let errorSpy: sinon.SinonSpy;
 
     beforeEach(() => {
         mockClient = {
@@ -69,6 +72,9 @@ describe('VSXRegistryServiceImpl', () => {
         };
 
         mockLogger = new MockLogger();
+
+        warnSpy = sinon.spy(mockLogger, 'warn');
+        errorSpy = sinon.spy(mockLogger, 'error');
 
         const container = new Container();
         container.bind(VSXRegistryServiceImpl).toSelf().inSingletonScope();
@@ -173,8 +179,8 @@ describe('VSXRegistryServiceImpl', () => {
             const result = await service.fetchReadme('https://open-vsx.org/api/test/readme');
 
             expect(result).to.be.undefined;
-            expect((mockLogger.error as sinon.SinonStub).calledOnce).to.be.true;
-            expect((mockLogger.error as sinon.SinonStub).firstCall.args[0]).to.contain('open-vsx.org');
+            expect(errorSpy.calledOnce).to.be.true;
+            expect(errorSpy.firstCall.args[0]).to.contain('open-vsx.org');
         });
 
         it('should return undefined and log on non-404 status code', async () => {
@@ -187,7 +193,7 @@ describe('VSXRegistryServiceImpl', () => {
             const result = await service.fetchReadme('https://open-vsx.org/api/test/readme');
 
             expect(result).to.be.undefined;
-            expect((mockLogger.error as sinon.SinonStub).calledOnce).to.be.true;
+            expect(errorSpy.calledOnce).to.be.true;
         });
 
         it('should return undefined without logging on 404 status code', async () => {
@@ -200,7 +206,7 @@ describe('VSXRegistryServiceImpl', () => {
             const result = await service.fetchReadme('https://open-vsx.org/api/test/readme');
 
             expect(result).to.be.undefined;
-            expect((mockLogger.error as sinon.SinonStub).called).to.be.false;
+            expect(errorSpy.called).to.be.false;
         });
     });
 
@@ -284,7 +290,7 @@ describe('VSXRegistryServiceImpl', () => {
 
             expect(result).to.be.undefined;
             expect(mockRequestService.request.called).to.be.false;
-            expect(mockLogger.warn.calledOnce).to.be.true;
+            expect(warnSpy.calledOnce).to.be.true;
         });
 
         it('should reject private IP URLs (SSRF prevention)', async () => {
@@ -292,7 +298,7 @@ describe('VSXRegistryServiceImpl', () => {
 
             expect(result).to.be.undefined;
             expect(mockRequestService.request.called).to.be.false;
-            expect(mockLogger.warn.calledOnce).to.be.true;
+            expect(warnSpy.calledOnce).to.be.true;
         });
 
         it('should reject file: scheme URLs', async () => {
@@ -365,9 +371,9 @@ describe('VSXRegistryServiceImpl', () => {
         it('should log a warning when rejecting a URL', async () => {
             await service.fetchReadme('https://evil.example.com/steal-data');
 
-            expect(mockLogger.warn.calledOnce).to.be.true;
-            expect(mockLogger.warn.firstCall.args[0]).to.contain('evil.example.com');
-            expect(mockLogger.warn.firstCall.args[0]).to.contain('origin does not match');
+            expect(warnSpy.calledOnce).to.be.true;
+            expect(warnSpy.firstCall.args[0]).to.contain('evil.example.com');
+            expect(warnSpy.firstCall.args[0]).to.contain('origin does not match');
         });
 
         it('should allow URLs with same origin but different paths', async () => {

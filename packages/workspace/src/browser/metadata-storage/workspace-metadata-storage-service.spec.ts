@@ -270,6 +270,7 @@ describe('WorkspaceMetadataStorageService', () => {
         });
 
         it('should handle corrupted index file', async () => {
+            const warnSpy = sinon.spy(logger, 'warn');
             generateUuidStub.returns('new-uuid');
             fileService.exists.resolves(true);
             fileService.readFile.resolves({
@@ -280,7 +281,7 @@ describe('WorkspaceMetadataStorageService', () => {
             const store = await service.getOrCreateStore('feature');
 
             expect(store).to.exist;
-            expect(logger.getLogs('warn').length).to.equal(1);
+            expect(warnSpy.calledOnce).to.be.true;
         });
 
         it('should create metadata root directory when saving index', async () => {
