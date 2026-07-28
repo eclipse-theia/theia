@@ -16,14 +16,21 @@
 
 import { Container, injectable } from 'inversify';
 import { Emitter, Event } from '../../common/event';
-import { Key, KeyCode } from './keys';
+import { Key, KeyCode, LayoutModifiers, NormalizedKeyboardInput } from './keys';
 import { KeyboardLayoutService } from './keyboard-layout-service';
 import {
-    KeyboardLayoutProvider, KeyboardLayoutSourceProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier, KeyValidationInput, KeyValidator
+    KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier, KeyValidationInput, KeyValidator, KeyboardLayoutSource
 } from '../../common/keyboard/keyboard-layout-provider';
 import * as os from '../../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+
+class TestKeyboardLayoutService extends KeyboardLayoutService {
+    public override getWindowsKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput,
+        layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
+        return super.getWindowsKeyCodeInterpretations(keyCode, input, layoutModifiers);
+    }
+}
 
 describe('keyboard layout service', function (): void {
 
@@ -33,7 +40,7 @@ describe('keyboard layout service', function (): void {
     const setup = async (
         layout: NativeKeyboardLayout,
         system: 'mac' | 'win' | 'linux',
-        layoutSource?: string,
+        layoutSource?: KeyboardLayoutSource,
         keyValidator?: KeyValidator
     ) => {
         switch (system) {
@@ -50,9 +57,10 @@ describe('keyboard layout service', function (): void {
                 stubWindows = sinon.stub(os, 'isWindows').value(false);
         }
         const container = new Container();
-        container.bind(KeyboardLayoutService).toSelf().inSingletonScope();
+        container.bind(KeyboardLayoutService).to(TestKeyboardLayoutService).inSingletonScope();
         @injectable()
         class MockLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
+            readonly layoutSource = layoutSource;
             emitter = new Emitter<NativeKeyboardLayout>();
             get onDidChangeNativeLayout(): Event<NativeKeyboardLayout> {
                 return this.emitter.event;
@@ -63,13 +71,10 @@ describe('keyboard layout service', function (): void {
         }
         container.bind(KeyboardLayoutProvider).to(MockLayoutProvider);
         container.bind(KeyboardLayoutChangeNotifier).to(MockLayoutProvider);
-        if (layoutSource) {
-            container.bind(KeyboardLayoutSourceProvider).toConstantValue({ layoutSource });
-        }
         if (keyValidator) {
             container.bind(KeyValidator).toConstantValue(keyValidator);
         }
-        const service = container.get(KeyboardLayoutService);
+        const service = container.get(KeyboardLayoutService) as TestKeyboardLayoutService;
         await service.initialize();
         return service;
     };
@@ -96,13 +101,13 @@ describe('keyboard layout service', function (): void {
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
         chai.expect(toggleComment.toString()).to.equal('meta+7');
         chai.expect(toggleComment.character).to.equal('/');
-        chai.expect(toggleComment.production).to.deep.equal({ shift: true, altGraph: false });
+        chai.expect(toggleComment.layoutModifiers).to.deep.equal('shift');
         chai.expect(service.getKeyboardCharacter(toggleComment.key!)).to.equal('7');
 
         const indentLine = service.resolveKeyCode(KeyCode.createKeyCode('BracketRight+M1'));
         chai.expect(indentLine.toString()).to.equal('meta+6');
         chai.expect(indentLine.character).to.equal(']');
-        chai.expect(indentLine.production).to.deep.equal({ shift: false, altGraph: true });
+        chai.expect(indentLine.layoutModifiers).to.deep.equal('altGraph');
         chai.expect(service.getKeyboardCharacter(indentLine.key!)).to.equal('6');
     });
 
@@ -113,17 +118,17 @@ describe('keyboard layout service', function (): void {
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
         chai.expect(toggleComment.toString()).to.equal('meta+.');
         chai.expect(toggleComment.character).to.equal('/');
-        chai.expect(toggleComment.production).to.deep.equal({ shift: true, altGraph: false });
+        chai.expect(toggleComment.layoutModifiers).to.deep.equal('shift');
         chai.expect(service.getKeyboardCharacter(toggleComment.key!)).to.equal(':');
 
         const indentLine = service.resolveKeyCode(KeyCode.createKeyCode('BracketRight+M1'));
         chai.expect(indentLine.toString()).to.equal('meta+-');
         chai.expect(indentLine.character).to.equal(']');
-        chai.expect(indentLine.production).to.deep.equal({ shift: true, altGraph: true });
+        chai.expect(indentLine.layoutModifiers).to.deep.equal('shiftAltGraph');
         chai.expect(service.getKeyboardCharacter(indentLine.key!)).to.equal(')');
     });
 
-    it('uses global production priority and a stable physical-key tie-break', async () => {
+    it('uses global layout modifier priority and a stable physical-key tie-break', async () => {
         const layout: NativeKeyboardLayout = {
             info: { id: 'priority', lang: 'fr' },
             mapping: {
@@ -140,16 +145,16 @@ describe('keyboard layout service', function (): void {
 
         const shifted = service.resolveKeyCode(KeyCode.parse('shift+x'));
         const event = service.getKeyCodeInterpretations({ key: 'X', code: 'KeyA', shiftKey: true }, 'code')
-            .find(candidate => candidate.interpretation === 'production')!;
+            .find(candidate => candidate.interpretation === 'layoutModifiers')!;
         chai.expect(event.dispatchString()).to.equal(shifted.dispatchString());
 
         const altShifted = service.resolveKeyCode(KeyCode.parse('alt+shift+x'));
         const altEvent = service.getKeyCodeInterpretations({ key: 'X', code: 'KeyA', altKey: true, shiftKey: true }, 'code')
-            .find(candidate => candidate.interpretation === 'production')!;
+            .find(candidate => candidate.interpretation === 'layoutModifiers')!;
         chai.expect(altEvent.dispatchString()).to.equal(altShifted.dispatchString());
 
         const capsLockEvent = service.getKeyCodeInterpretations({ key: 'x', code: 'KeyA', shiftKey: true }, 'code')
-            .find(candidate => candidate.interpretation === 'production')!;
+            .find(candidate => candidate.interpretation === 'layoutModifiers')!;
         chai.expect(capsLockEvent.dispatchString()).to.equal(shifted.dispatchString());
     });
 
@@ -164,7 +169,7 @@ describe('keyboard layout service', function (): void {
         const service = await setup(layout, 'linux');
         const resolved = service.resolveKeyCode(KeyCode.parse('[char:0xC4]'));
         chai.expect(resolved.key).to.equal(Key.KEY_B);
-        chai.expect(resolved.production).to.deep.equal({ shift: true, altGraph: false });
+        chai.expect(resolved.layoutModifiers).to.deep.equal('shift');
     });
 
     it('matches shifted physical scan-code bindings through the command interpretation', async () => {
@@ -188,18 +193,18 @@ describe('keyboard layout service', function (): void {
         const indent = service.resolveKeyCode(KeyCode.parse('ctrl+]'));
         chai.expect(undo.key).to.equal(Key.BRACKET_LEFT);
         chai.expect(outdent.key).to.equal(Key.DIGIT4);
-        chai.expect(outdent.production.altGraph).to.be.true;
+        chai.expect(outdent.layoutModifiers).to.equal('altGraph');
         chai.expect(close.key).to.equal(Key.BRACKET_RIGHT);
         chai.expect(indent.key).to.equal(Key.DIGIT5);
-        chai.expect(indent.production.altGraph).to.be.true;
+        chai.expect(indent.layoutModifiers).to.equal('altGraph');
     });
 
     it('marks printable bindings unresolved when the layout mapping is empty', async () => {
         const layout: NativeKeyboardLayout = { info: { id: 'empty', lang: 'en' }, mapping: {} };
         const service = await setup(layout, 'linux');
 
-        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+[')).resolved).to.be.false;
-        chai.expect(service.resolveKeyCode(KeyCode.parse('f1')).resolved).to.be.true;
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+[')).supportedByLayout).to.be.false;
+        chai.expect(service.resolveKeyCode(KeyCode.parse('f1')).supportedByLayout).to.be.true;
     });
 
     it('marks unavailable logical characters unresolved instead of using the US position', async () => {
@@ -212,7 +217,7 @@ describe('keyboard layout service', function (): void {
         const service = await setup(layout, 'linux');
 
         const outdent = service.resolveKeyCode(KeyCode.parse('ctrl+['));
-        chai.expect(outdent.resolved).to.be.false;
+        chai.expect(outdent.supportedByLayout).to.be.false;
         chai.expect(outdent.key).to.equal(Key.BRACKET_LEFT);
     });
 
@@ -244,24 +249,64 @@ describe('keyboard layout service', function (): void {
         chai.expect(service.getKeyboardCharacter(openSettings.key!)).to.equal(',');
     });
 
-    it('constructs Linux production interpretations only for participating AltGraph', async () => {
+    it('filters dead AltGraph mappings on Linux and Windows', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'dead-altgraph', lang: 'en' },
+            mapping: {
+                KeyP: {
+                    value: 'p', withShift: 'P', withAltGr: '§', withShiftAltGr: '', withAltGrIsDeadKey: true
+                } as never
+            }
+        };
+        for (const system of ['linux', 'win'] as const) {
+            const service = await setup(layout, system);
+            chai.expect(service.resolveKeyCode(KeyCode.parse('§')).supportedByLayout).to.be.false;
+            stubOSX.restore();
+            stubWindows.restore();
+        }
+        stubOSX = sinon.stub(os, 'isOSX').value(false);
+        stubWindows = sinon.stub(os, 'isWindows').value(false);
+    });
+
+    it('retains the Windows vkey fallback for value-less mappings', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'vkey-fallback', lang: 'en' },
+            mapping: { KeyA: { vkey: 'VK_A', value: '' } as never }
+        };
+        const service = await setup(layout, 'win');
+        const resolved = service.resolveKeyCode(KeyCode.parse('a'));
+        chai.expect(resolved.supportedByLayout).to.be.true;
+        chai.expect(resolved.key).to.equal(Key.KEY_A);
+    });
+
+    it('absorbs layout Shift identically for legacy and character-token spellings', async () => {
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'linux');
+        const legacy = service.resolveKeyCode(KeyCode.parse('ctrl+shift+['));
+        const character = service.resolveKeyCode(KeyCode.parse('ctrl+shift+[char:0x7B]'));
+        chai.expect(legacy.shift).to.be.false;
+        chai.expect(character.shift).to.be.false;
+        chai.expect(legacy.dispatchString()).to.equal(character.dispatchString());
+    });
+
+    it('constructs Linux layout modifier interpretations only for participating AltGraph', async () => {
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'linux');
 
         const participating = service.getKeyCodeInterpretations({ key: '[', code: 'Digit8', altGraph: true }, 'code');
         chai.expect(participating).to.have.length(1);
-        chai.expect(participating[0].production).to.deep.equal({ shift: false, altGraph: true });
-        chai.expect(participating[0].dispatchString()).to.equal('8+[production-altgraph]');
+        chai.expect(participating[0].layoutModifiers).to.deep.equal('altGraph');
+        chai.expect(participating[0].dispatchString()).to.equal('8@altgraph');
 
         const nonParticipating = service.getKeyCodeInterpretations({ key: 'o', code: 'KeyO', altGraph: true }, 'code');
-        chai.expect(nonParticipating[0].production.altGraph).to.be.false;
+        chai.expect(nonParticipating[0].layoutModifiers).to.equal('none');
 
         const withoutModifierEvidence = service.getKeyCodeInterpretations({ key: '[', code: 'Digit8' }, 'code');
-        chai.expect(withoutModifierEvidence[0].production.altGraph).to.be.false;
+        chai.expect(withoutModifierEvidence[0].layoutModifiers).to.equal('none');
 
         const withCommandAlt = service.getKeyCodeInterpretations({ key: '[', code: 'Digit8', altKey: true, altGraph: true }, 'code');
         chai.expect(withCommandAlt[0].alt).to.be.true;
-        chai.expect(withCommandAlt[0].production.altGraph).to.be.true;
+        chai.expect(withCommandAlt[0].layoutModifiers).to.equal('altGraph');
     });
 
     it('keeps shifted printable bindings symmetric in keyCode dispatch mode', async () => {
@@ -276,16 +321,16 @@ describe('keyboard layout service', function (): void {
             .dispatchString()).to.equal(shiftedPrintable.dispatchString());
     });
 
-    it('constructs command-first and production Windows interpretations', async () => {
+    it('constructs command-first and layout modifier Windows interpretations', async () => {
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'win');
 
         const interpretations = service.getKeyCodeInterpretations({
             key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: false
         }, 'code');
-        chai.expect(interpretations.map(code => code.interpretation)).to.deep.equal(['command', 'production']);
+        chai.expect(interpretations.map(code => code.interpretation)).to.deep.equal(['commandModifiers', 'layoutModifiers']);
         chai.expect(interpretations[0].dispatchString()).to.equal('alt+ctrl+8');
-        chai.expect(interpretations[1].dispatchString()).to.equal('ctrl+8+[production-altgraph]');
+        chai.expect(interpretations[1].dispatchString()).to.equal('ctrl+8@altgraph');
 
         const intentional = service.getKeyCodeInterpretations({
             key: 'f', code: 'KeyF', ctrlKey: true, altKey: true, altGraph: false
@@ -295,22 +340,23 @@ describe('keyboard layout service', function (): void {
 
         const shiftedBinding = service.resolveKeyCode(KeyCode.parse('ctrl+shift+p'));
         const shiftedEvent = service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true }, 'code')
-            .find(candidate => candidate.interpretation === 'production')!;
-        chai.expect(shiftedBinding.resolved).to.be.true;
+            .find(candidate => candidate.interpretation === 'layoutModifiers')!;
+        chai.expect(shiftedBinding.supportedByLayout).to.be.true;
         chai.expect(shiftedEvent.dispatchString()).to.equal(shiftedBinding.dispatchString());
     });
 
-    it('keeps legacy Windows AltGraph reporting typing-safe', async () => {
+    it('keeps legacy Windows AltGraph reporting typing-safe and preserves Meta', async () => {
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'win');
+        const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, metaKey: true, altGraph: true };
+        const keyCode = new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true, meta: true, character: '[' });
 
-        const interpretations = service.getKeyCodeInterpretations({
-            key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
-        }, 'code');
+        const interpretations = service.getWindowsKeyCodeInterpretations(keyCode, input, 'altGraph');
+
         chai.expect(interpretations).to.have.length(1);
-        chai.expect(interpretations[0].legacyWindowsAltGraph).to.be.true;
         chai.expect(interpretations[0].ctrl).to.be.false;
         chai.expect(interpretations[0].alt).to.be.false;
+        chai.expect(interpretations[0].meta).to.be.true;
     });
 
     it('uses confirmed withAltGr output as Shift+AltGraph fallback when the shifted layer is absent', async () => {
@@ -322,10 +368,10 @@ describe('keyboard layout service', function (): void {
         };
         const service = await setup(layout, 'linux');
 
-        chai.expect(service.verifyProductionLayer({ key: '[', code: 'Digit8', shiftKey: true, altGraph: true }))
-            .to.deep.equal({ shift: true, altGraph: true });
-        chai.expect(service.verifyProductionLayer({ key: '*', code: 'Digit8', shiftKey: true, altGraph: true }))
-            .to.deep.equal({ shift: true });
+        chai.expect(service.detectLayoutModifiers({ key: '[', code: 'Digit8', shiftKey: true, altGraph: true }))
+            .to.deep.equal('shiftAltGraph');
+        chai.expect(service.detectLayoutModifiers({ key: '*', code: 'Digit8', shiftKey: true, altGraph: true }))
+            .to.equal('shift');
     });
 
     it('passes raw normalized layer evidence to the key validator', async () => {
@@ -343,7 +389,7 @@ describe('keyboard layout service', function (): void {
         });
     });
 
-    it('does not treat excluded or non-printable keys as production', async () => {
+    it('does not treat excluded or non-printable keys as layout modifier', async () => {
         const layout: NativeKeyboardLayout = {
             info: { id: 'native-shaped', lang: 'en' },
             mapping: {
@@ -353,11 +399,11 @@ describe('keyboard layout service', function (): void {
         };
         const service = await setup(layout, 'linux');
 
-        chai.expect(service.verifyProductionLayer({ key: ' ', code: 'Space', shiftKey: true })).to.be.undefined;
-        chai.expect(service.verifyProductionLayer({ key: '¹', code: 'Numpad1', altGraph: true })).to.be.undefined;
+        chai.expect(service.detectLayoutModifiers({ key: ' ', code: 'Space', shiftKey: true })).to.be.undefined;
+        chai.expect(service.detectLayoutModifiers({ key: '¹', code: 'Numpad1', altGraph: true })).to.be.undefined;
     });
 
-    it('ingests all Windows production layers across representative PC layouts', async () => {
+    it('ingests all Windows layout modifier layers across representative PC layouts', async () => {
         const fixtures = [
             { layout: require('../../../src/common/keyboard/layouts/de-German-pc.json'), assertions: [['²', Key.DIGIT2, false, true], ['ẞ', Key.MINUS, true, true]] },
             { layout: require('../../../src/common/keyboard/layouts/fr-French-pc.json'), assertions: [['€', Key.KEY_E, false, true]] },
@@ -371,7 +417,8 @@ describe('keyboard layout service', function (): void {
                 const resolved = service.resolveKeyCode(KeyCode.parse(character));
                 chai.expect(resolved.key).to.equal(key);
                 chai.expect(resolved.character).to.equal(character);
-                chai.expect(resolved.production).to.deep.equal({ shift, altGraph });
+                const expected = shift ? 'shiftAltGraph' : altGraph ? 'altGraph' : 'none';
+                chai.expect(resolved.layoutModifiers).to.equal(expected);
             }
             stubOSX.restore();
             stubWindows.restore();
@@ -387,8 +434,8 @@ describe('keyboard layout service', function (): void {
         };
         const service = await setup(layout, 'win');
 
-        chai.expect(service.resolveKeyCode(KeyCode.parse('a')).resolved).to.be.true;
-        chai.expect(service.resolveKeyCode(KeyCode.parse('§')).resolved).to.be.false;
+        chai.expect(service.resolveKeyCode(KeyCode.parse('a')).supportedByLayout).to.be.true;
+        chai.expect(service.resolveKeyCode(KeyCode.parse('§')).supportedByLayout).to.be.false;
     });
 
     it('resolves logical plus on US, German, and macOS layouts', async () => {
@@ -401,7 +448,7 @@ describe('keyboard layout service', function (): void {
             const service = await setup(fixture.layout, fixture.system);
             const resolved = service.resolveKeyCode(KeyCode.parse('[char:0x2B]'));
             chai.expect(resolved.key).to.equal(fixture.key);
-            chai.expect(resolved.production.shift).to.equal(fixture.shift);
+            chai.expect(resolved.layoutModifiers === 'shift' || resolved.layoutModifiers === 'shiftAltGraph').to.equal(fixture.shift);
             stubOSX.restore();
             stubWindows.restore();
         }
@@ -416,13 +463,13 @@ describe('keyboard layout service', function (): void {
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
         chai.expect(toggleComment.toString()).to.equal('ctrl+7');
         chai.expect(toggleComment.character).to.equal('/');
-        chai.expect(toggleComment.production).to.deep.equal({ shift: true, altGraph: false });
+        chai.expect(toggleComment.layoutModifiers).to.deep.equal('shift');
         chai.expect(service.getKeyboardCharacter(toggleComment.key!)).to.equal('7');
 
         const indentLine = service.resolveKeyCode(KeyCode.createKeyCode('BracketRight+M1'));
         chai.expect(indentLine.toString()).to.equal('ctrl+9');
         chai.expect(indentLine.character).to.equal(']');
-        chai.expect(indentLine.production).to.deep.equal({ shift: false, altGraph: true });
+        chai.expect(indentLine.layoutModifiers).to.deep.equal('altGraph');
         chai.expect(service.getKeyboardCharacter(indentLine.key!)).to.equal('9');
     });
 
@@ -433,13 +480,13 @@ describe('keyboard layout service', function (): void {
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
         chai.expect(toggleComment.toString()).to.equal('ctrl+.');
         chai.expect(toggleComment.character).to.equal('/');
-        chai.expect(toggleComment.production).to.deep.equal({ shift: true, altGraph: false });
+        chai.expect(toggleComment.layoutModifiers).to.deep.equal('shift');
         chai.expect(service.getKeyboardCharacter(toggleComment.key!)).to.equal(':');
 
         const indentLine = service.resolveKeyCode(KeyCode.createKeyCode('BracketRight+M1'));
         chai.expect(indentLine.toString()).to.equal('ctrl+-');
         chai.expect(indentLine.character).to.equal(']');
-        chai.expect(indentLine.production).to.deep.equal({ shift: false, altGraph: true });
+        chai.expect(indentLine.layoutModifiers).to.deep.equal('altGraph');
         chai.expect(service.getKeyboardCharacter(indentLine.key!)).to.equal(')');
     });
 

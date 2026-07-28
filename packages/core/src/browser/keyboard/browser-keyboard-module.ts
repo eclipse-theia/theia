@@ -16,14 +16,13 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution } from '../../common/command';
-import { KeyboardLayoutProvider, KeyboardLayoutSourceProvider, KeyboardLayoutChangeNotifier, KeyValidator } from '../../common/keyboard/keyboard-layout-provider';
+import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator } from '../../common/keyboard/keyboard-layout-provider';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 import { BrowserKeyboardFrontendContribution } from './browser-keyboard-frontend-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(BrowserKeyboardLayoutProvider).toSelf().inSingletonScope();
     bind(KeyboardLayoutProvider).toService(BrowserKeyboardLayoutProvider);
-    bind(KeyboardLayoutSourceProvider).toService(BrowserKeyboardLayoutProvider);
     bind(KeyboardLayoutChangeNotifier).toService(BrowserKeyboardLayoutProvider);
     bind(KeyValidator).toService(BrowserKeyboardLayoutProvider);
     bind(BrowserKeyboardFrontendContribution).toSelf().inSingletonScope();

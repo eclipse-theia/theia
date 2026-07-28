@@ -35,27 +35,15 @@ export function isElectronAcceleratorRepresentable(accelerator: string | undefin
 
 export interface ElectronMenuAccelerator {
     accelerator?: string;
-    registerAccelerator?: boolean;
 }
 
-export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]):
-    Pick<MenuDto, 'accelerator' | 'acceleratorRepresentable'> {
-    const accelerator = acceleratorSequence.join(' ') || undefined;
-    return {
-        accelerator,
-        acceleratorRepresentable: acceleratorSequence.length === 1 && isElectronAcceleratorRepresentable(accelerator)
-    };
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): Pick<MenuDto, 'accelerator'> {
+    return { accelerator: acceleratorSequence.join(' ') || undefined };
 }
 
-export function electronMenuAccelerator(dto: Pick<MenuDto, 'accelerator' | 'acceleratorRepresentable' | 'registerAccelerator' | 'role'>,
-    isMacOS: boolean): ElectronMenuAccelerator {
-    if (!dto.acceleratorRepresentable || !isElectronAcceleratorRepresentable(dto.accelerator)) {
-        return {};
-    }
-    return {
-        accelerator: dto.accelerator,
-        registerAccelerator: !dto.role && !isMacOS && dto.registerAccelerator === false ? false : undefined
-    };
+/** Return an Electron accelerator only when the rendered single chord is representable. */
+export function electronMenuAccelerator(dto: Pick<MenuDto, 'accelerator'>): ElectronMenuAccelerator {
+    return isElectronAcceleratorRepresentable(dto.accelerator) ? { accelerator: dto.accelerator } : {};
 }
 
 export interface MenuDto {
@@ -68,9 +56,6 @@ export interface MenuDto {
     visible?: boolean;
     role?: MenuRole;
     accelerator?: string,
-    acceleratorRepresentable?: boolean;
-    // Native registration remains the default; this supports selective renderer-only accelerators where the platform permits it.
-    registerAccelerator?: boolean;
     execute?: () => void
 }
 

@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { KeybindingRegistry } from '../keybinding';
+import { AcceleratorForm, KeybindingRegistry } from '../keybinding';
 import { ContextKeyService } from '../context-key-service';
 import { DisposableCollection, isObject, CommandRegistry, Emitter } from '../../common';
 import { CommandMenu, ContextExpressionMatcher, MenuAction, MenuPath } from '../../common/menu/menu-types';
 
-export type AcceleratorForm = 'logical' | 'physical';
+export { AcceleratorForm } from '../keybinding';
 
 export interface AcceleratorSource {
-    getAccelerator(context: HTMLElement | undefined, form?: AcceleratorForm): string[];
+    /** Return the accelerator rendered in the explicitly requested logical or physical form. */
+    getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm): string[];
 }
 
 export namespace AcceleratorSource {
@@ -39,9 +40,9 @@ export function acceleratorForCommand(keybindingRegistry: KeybindingRegistry, co
         const binding = bindings.find(candidate => keybindingRegistry.isEnabledInScope(candidate, context));
         if (binding) {
             if (form === 'physical') {
-                return keybindingRegistry.getKeybindingInactiveReason(binding)
+                return keybindingRegistry.isKeybindingInactive(binding)
                     ? []
-                    : keybindingRegistry.physicalAcceleratorFor(binding, '+', true);
+                    : keybindingRegistry.acceleratorFor(binding, '+', true, 'physical');
             }
             return keybindingRegistry.acceleratorFor(binding, '+');
         }
@@ -100,7 +101,7 @@ export class ActionMenuNode implements CommandMenu {
         return true;
     }
 
-    getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] {
+    getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm): string[] {
         return acceleratorForCommand(this.keybindingRegistry, this.action.commandId, context, form);
     }
 

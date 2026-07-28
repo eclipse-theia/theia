@@ -34,14 +34,14 @@ describe('keybindings widget tooltip', () => {
             key: Key.DIGIT8,
             ctrl: true,
             character: '[',
-            production: { altGraph: true }
+            layoutModifiers: 'altGraph'
         });
         Object.defineProperty(registry, 'keyboardLayoutService', {
             value: { getKeyboardCharacter: (key: Key) => key.easyString }
         });
         registry.resolveKeybinding = () => [code];
         registry.getKeybindingInactiveReason = () => undefined;
-        registry.getInterpretationShadowing = () => [];
+        registry.getShadowingKeybindings = () => [];
 
         chai.expect(registry.componentsForKeyCode(code)).to.deep.equal(['Ctrl', '[']);
         chai.expect(keybindingTooltip(registry, binding)).to.equal('Ctrl+AltGr+8');
@@ -51,7 +51,7 @@ describe('keybindings widget tooltip', () => {
     it('keeps inactive character-only bindings visible in logical labels', () => {
         const platform = sinon.stub(os, 'isOSX').value(false);
         const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
-        const code = new KeyCode({ ctrl: true, character: '§', resolved: false });
+        const code = new KeyCode({ ctrl: true, character: '§', supportedByLayout: false });
         Object.defineProperty(registry, 'keyboardLayoutService', {
             value: { getKeyboardCharacter: (key: Key) => key.easyString }
         });
@@ -62,10 +62,10 @@ describe('keybindings widget tooltip', () => {
 
     it('does not advertise a physical realization for inactive bindings', () => {
         const registry = {
-            resolveKeybinding: () => [new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[', resolved: false })],
+            resolveKeybinding: () => [new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[', supportedByLayout: false })],
             getKeybindingInactiveReason: () => 'The key is not available on the current keyboard layout.',
-            physicalComponentsForKeyCode: () => ['Ctrl', '['],
-            getInterpretationShadowing: () => []
+            componentsForKeyCode: () => ['Ctrl', '['],
+            getShadowingKeybindings: () => []
         } as unknown as KeybindingRegistry;
 
         chai.expect(keybindingTooltip(registry, binding)).to.equal(
@@ -75,7 +75,7 @@ describe('keybindings widget tooltip', () => {
 
     it('captures logical characters, physical non-printables, and ignores modifier-only input', () => {
         const registry = {
-            canonicalKeyCodeForKeyboardInput: (event: KeyboardEvent) => {
+            authoredKeyCodeForKeyboardInput: (event: KeyboardEvent) => {
                 if (event.code === 'ControlLeft') {
                     return new KeyCode({ ctrl: true });
                 }

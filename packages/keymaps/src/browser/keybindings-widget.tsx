@@ -74,9 +74,10 @@ export interface RenderableStringSegment {
     key?: boolean;
 }
 
+/** Return the authored keybinding stroke that should be persisted for a recorded keyboard event. */
 export function recordedKeybindingStroke(keybindingRegistry: KeybindingRegistry, event: KeyboardEvent): string | undefined {
-    const keyCode = keybindingRegistry.canonicalKeyCodeForKeyboardInput(event);
-    return keyCode && !keyCode.isModifierOnly() ? keyCode.toKeybindingString() : undefined;
+    const keyCode = keybindingRegistry.authoredKeyCodeForKeyboardInput(event);
+    return keyCode && !keyCode.isModifierOnly() ? keyCode.toAuthoredKeybindingString() : undefined;
 }
 
 /**

@@ -21,14 +21,11 @@ export const keyboardPath = '/services/keyboard';
 
 export const KeyboardLayoutProvider = Symbol('KeyboardLayoutProvider');
 
+export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys' | 'native-keymap';
+
 export interface KeyboardLayoutProvider {
     getNativeLayout(): Promise<NativeKeyboardLayout>;
-}
-
-export const KeyboardLayoutSourceProvider = Symbol('KeyboardLayoutSourceProvider');
-
-export interface KeyboardLayoutSourceProvider {
-    readonly layoutSource: string;
+    readonly layoutSource?: KeyboardLayoutSource;
 }
 
 export const KeyboardLayoutChangeNotifier = Symbol('KeyboardLayoutChangeNotifier');

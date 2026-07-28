@@ -15,20 +15,15 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { pluginMenuAccelerator } from './plugin-menu-accelerator';
+import { NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
+import { createElectronKeyboardLayoutProvider } from './electron-keyboard-module';
 
-describe('Plugin menu accelerators', () => {
-    it('honors the physical accelerator form requested by Electron', () => {
-        const binding = { command: 'plugin.command', keybinding: 'ctrl+[' };
-        const keybindingRegistry = {
-            getKeybindingsForCommand: () => [binding],
-            isEnabledInScope: () => true,
-            getKeybindingInactiveReason: () => undefined,
-            acceleratorFor: () => ['Ctrl+['],
-            physicalAcceleratorFor: () => ['Ctrl+AltGr+8']
-        };
+describe('Electron keyboard layout provider', () => {
+    it('reports the native-keymap source and delegates layout retrieval', async () => {
+        const layout: NativeKeyboardLayout = { info: { id: 'test', lang: 'en' }, mapping: {} };
+        const provider = createElectronKeyboardLayoutProvider({ getNativeLayout: async () => layout });
 
-        expect(pluginMenuAccelerator(keybindingRegistry as never, 'plugin.command', undefined, 'logical')).to.deep.equal(['Ctrl+[']);
-        expect(pluginMenuAccelerator(keybindingRegistry as never, 'plugin.command', undefined, 'physical')).to.deep.equal(['Ctrl+AltGr+8']);
+        expect(provider.layoutSource).to.equal('native-keymap');
+        expect(await provider.getNativeLayout()).to.equal(layout);
     });
 });

@@ -36,7 +36,7 @@ Use a bracketed scan code such as `ctrl+[BracketLeft]` when a binding should fol
 
 Characters reserved by the keybinding grammar use a Unicode escape. For example, use `ctrl+[char:0x2B]` for logical `+`, `[char:0x20]` for Space as a logical character, and `[char:0x5D]` for `]`. Literal escapes such as `[char:§]` are supported when the character is not reserved. Each character token must contain exactly one Unicode code point; multi-code-point graphemes are not supported.
 
-A logical binding that the active layout cannot produce remains visible but inactive. It becomes active automatically after switching to a layout that can produce the character. Existing keybinding strings remain valid.
+A logical binding that the active layout cannot produce remains visible but inactive. It becomes active automatically after switching to a layout that can produce the character. Existing keybinding strings remain valid. To restore the former positional behavior for all shortcuts, set `"keyboard.dispatch": "keyCode"`.
 
 To use `ctrl` on Linux/Windows and `cmd` on OSX, use `ctrlcmd`.
 

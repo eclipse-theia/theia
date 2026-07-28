@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode } from '@theia/core/lib/browser';
+import {
+    KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode, layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
+} from '@theia/core/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { CommandRegistry, DisposableCollection, environment, isOSX } from '@theia/core';
@@ -65,7 +67,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             this.toDisposeOnKeybindingChange.dispose();
             for (const binding of this.keybindings.getKeybindingsByScope(KeybindingScope.USER).concat(this.keybindings.getKeybindingsByScope(KeybindingScope.WORKSPACE))) {
                 const resolved = this.keybindings.resolveKeybinding(binding);
-                if (this.keybindings.getKeybindingInactiveReason(binding) || !this.isMonacoRepresentable(resolved)) {
+                if (this.keybindings.isKeybindingInactive(binding) || !this.isMonacoRepresentable(resolved)) {
                     continue;
                 }
                 const command = binding.command;
@@ -85,7 +87,8 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     }
 
     protected isMonacoRepresentable(codes: KeyCode[]): boolean {
-        return codes.length <= 2 && codes.every(code => code.key && KEY_CODE_MAP[code.key.keyCode] !== undefined && !code.production.altGraph);
+        return codes.length <= 2 && codes.every(code => code.key && KEY_CODE_MAP[code.key.keyCode] !== undefined
+            && !layoutModifiersIncludeAltGraph(code.layoutModifiers));
     }
 
     protected toMonacoKeybindingNumber(codes: KeyCode[]): number {
@@ -101,7 +104,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (code.alt) {
             encoded |= monaco.KeyMod.Alt;
         }
-        if (code.shift || code.production.shift) {
+        if (code.shift || layoutModifiersIncludeShift(code.layoutModifiers)) {
             encoded |= monaco.KeyMod.Shift;
         }
         if (code.ctrl) {

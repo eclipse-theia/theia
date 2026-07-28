@@ -26,34 +26,17 @@ describe('Electron menu accelerators', () => {
         expect(isElectronAcceleratorRepresentable('Ctrl+K Ctrl+S')).to.be.false;
     });
 
-    it('marks only one representable stroke as a native accelerator', () => {
-        expect(electronMenuAcceleratorMetadata(['Ctrl+8'])).to.deep.equal({
-            accelerator: 'Ctrl+8',
-            acceleratorRepresentable: true
-        });
-        expect(electronMenuAcceleratorMetadata(['Ctrl+K', 'Ctrl+S'])).to.deep.equal({
-            accelerator: 'Ctrl+K Ctrl+S',
-            acceleratorRepresentable: false
-        });
+    it('forwards renderer accelerator text without precomputing representability', () => {
+        expect(electronMenuAcceleratorMetadata(['Ctrl+8'])).to.deep.equal({ accelerator: 'Ctrl+8' });
+        expect(electronMenuAcceleratorMetadata(['Ctrl+K', 'Ctrl+S'])).to.deep.equal({ accelerator: 'Ctrl+K Ctrl+S' });
     });
 
     it('omits unrepresentable accelerators', () => {
-        expect(electronMenuAccelerator({
-            accelerator: 'Ctrl+AltGr+8',
-            acceleratorRepresentable: false,
-            registerAccelerator: false
-        }, false)).to.deep.equal({});
+        expect(electronMenuAccelerator({ accelerator: 'Ctrl+AltGr+8' })).to.deep.equal({});
+        expect(electronMenuAccelerator({ accelerator: 'Ctrl+K Ctrl+S' })).to.deep.equal({});
     });
 
-    it('selectively disables registration only where Electron supports it', () => {
-        const dto = {
-            accelerator: 'Ctrl+8',
-            acceleratorRepresentable: true,
-            registerAccelerator: false
-        };
-        expect(electronMenuAccelerator(dto, false)).to.deep.equal({ accelerator: 'Ctrl+8', registerAccelerator: false });
-        expect(electronMenuAccelerator(dto, true)).to.deep.equal({ accelerator: 'Ctrl+8', registerAccelerator: undefined });
-        expect(electronMenuAccelerator({ ...dto, role: 'copy' }, false))
-            .to.deep.equal({ accelerator: 'Ctrl+8', registerAccelerator: undefined });
+    it('returns representable accelerators', () => {
+        expect(electronMenuAccelerator({ accelerator: 'Ctrl+8' })).to.deep.equal({ accelerator: 'Ctrl+8' });
     });
 });

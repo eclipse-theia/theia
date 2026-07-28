@@ -17,7 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, AcceleratorForm, ContextExpressionMatcher } from '@theia/core';
+import {
+    MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, AcceleratorForm,
+    ContextExpressionMatcher, acceleratorForCommand
+} from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -33,7 +36,6 @@ import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { pluginMenuAccelerator } from './plugin-menu-accelerator';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -135,8 +137,8 @@ export class MenusContributionPointHandler {
                                     run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
                                         this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     isToggled: (effectiveMenuPath: MenuPath) => false,
-                                    getAccelerator: (context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] =>
-                                        pluginMenuAccelerator(this.keybindingRegistry, command, context, form)
+                                    getAccelerator: (context: HTMLElement | undefined, form: AcceleratorForm): string[] =>
+                                        acceleratorForCommand(this.keybindingRegistry, command, context, form)
                                 };
                                 toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
                             });

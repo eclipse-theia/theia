@@ -359,7 +359,6 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             {
                 command: ElectronCommands.ZOOM_IN.id,
                 keybinding: 'ctrlcmd+='
-
             },
             {
                 command: ElectronCommands.ZOOM_IN.id,

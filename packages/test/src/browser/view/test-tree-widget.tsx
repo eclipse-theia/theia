@@ -321,7 +321,7 @@ export class TestTreeWidget extends TreeWidget {
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, actionMenuNode.icon, ACTION_ITEM, 'theia-test-tree-inline-action'].join(' ');
         const tabIndex = tabbable ? 0 : undefined;
-        const titleString = actionMenuNode.label + (AcceleratorSource.is(actionMenuNode) ? actionMenuNode.getAccelerator(undefined).join(' ') : '');
+        const titleString = actionMenuNode.label + (AcceleratorSource.is(actionMenuNode) ? actionMenuNode.getAccelerator(undefined, 'logical').join(' ') : '');
 
         return <div key={index} className={className} title={titleString} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();

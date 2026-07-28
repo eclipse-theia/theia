@@ -331,6 +331,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             // We have to detect keyboard events in the <webview> and dispatch them to our
             // keybinding service because these events do not bubble to the parent window anymore.
             this.keybindings.dispatchNormalizedKeyDown(data, this.element);
+            // DOM capture listeners must still observe the emulated event. Mark it as already handled so the registry's
+            // capture listener does not execute the keybinding a second time.
             this.keybindings.dispatchKeyDown(data, this.element, true);
         }));
         this.toHide.push(this.on(WebviewMessageChannels.didMouseDown, (data: MouseEvent) => {

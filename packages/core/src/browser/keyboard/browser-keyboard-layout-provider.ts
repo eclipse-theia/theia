@@ -20,14 +20,14 @@ import { Emitter, Event } from '../../common/event';
 import { ILogger } from '../../common/logger';
 import { Deferred } from '../../common/promise-util';
 import {
-    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutSourceProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput
+    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput, KeyboardLayoutSource
 } from '../../common/keyboard/keyboard-layout-provider';
 import { LocalStorageService } from '../storage-service';
 
-export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys';
+export type { KeyboardLayoutSource } from '../../common/keyboard/keyboard-layout-provider';
 
 @injectable()
-export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutSourceProvider, KeyboardLayoutChangeNotifier, KeyValidator {
+export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {
 
     @inject(ILogger)
     protected readonly logger: ILogger;

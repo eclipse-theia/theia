@@ -98,19 +98,25 @@ export interface Keystroke {
 }
 
 /**
- * Modifiers used to produce a logical character, separate from command modifiers.
+ * The keyboard-layout modifier layer used to produce a logical character, ordered by resolution cost.
  */
-export interface KeyCodeProduction {
-    readonly shift?: boolean;
-    readonly altGraph?: boolean;
+export type LayoutModifiers = 'none' | 'shift' | 'altGraph' | 'shiftAltGraph';
+
+export function layoutModifiersIncludeShift(layoutModifiers: LayoutModifiers): boolean {
+    return layoutModifiers === 'shift' || layoutModifiers === 'shiftAltGraph';
+}
+
+export function layoutModifiersIncludeAltGraph(layoutModifiers: LayoutModifiers): boolean {
+    return layoutModifiers === 'altGraph' || layoutModifiers === 'shiftAltGraph';
 }
 
 /**
  * Identifies how a key code was derived for runtime matching.
- * `canonical` is resolved from an authored binding, `command` preserves the event's command modifiers,
- * and `production` interprets modifiers as producing the committed character.
+ * `authored` is the constructor default and represents an authored binding, even for manually constructed instances.
+ * `commandModifiers` preserves the event's modifiers as command modifiers, while `layoutModifiers` attributes them to
+ * the keyboard layout's character-producing layer.
  */
-export type KeyCodeInterpretation = 'canonical' | 'command' | 'production';
+export type KeyCodeInterpretation = 'authored' | 'commandModifiers' | 'layoutModifiers';
 
 export interface KeyCodeSchema {
     key?: Partial<Key>;
@@ -119,11 +125,10 @@ export interface KeyCodeSchema {
     alt?: boolean;
     meta?: boolean;
     character?: string;
-    production?: KeyCodeProduction;
+    layoutModifiers?: LayoutModifiers;
     interpretation?: KeyCodeInterpretation;
-    legacyWindowsAltGraph?: boolean;
-    resolved?: boolean;
-    keybindingToken?: string;
+    supportedByLayout?: boolean;
+    authoredToken?: string;
     physical?: boolean;
 }
 
@@ -159,12 +164,11 @@ export function readAltGraph(input: NormalizedKeyboardInput): boolean {
 }
 
 /**
- * Copy keyboard input into a normalized, transport-independent representation.
+ * Copy native or transported keyboard input into a normalized, transport-independent representation.
+ * The parameter and result share this type because a native `KeyboardEvent` structurally satisfies the permissive input
+ * shape. The returned data always has AltGraph resolved even though the field is optional in the input type.
+ * `getModifierState` is retained for local diagnostics only and must not be relied on after transport.
  */
-// The parameter and result share this type because a native KeyboardEvent structurally satisfies the permissive input shape.
-// This accepts native events or transported plain objects and returns copyable data with altGraph always resolved,
-// even though the field is optional in the input type. getModifierState is retained for local diagnostics only and
-// must not be relied on after transport.
 export function normalizeKeyboardInput(input: NormalizedKeyboardInput): NormalizedKeyboardInput {
     return {
         key: input.key,
@@ -251,6 +255,7 @@ function parseScanCode(token: string): Key | undefined {
     return key;
 }
 
+/** Parse a logical-character token, rejecting bare grammar delimiters. */
 function parseCharacterToken(token: string): string | undefined {
     const match = /^\[char:(.*)\]$/i.exec(token);
     if (match) {
@@ -277,8 +282,14 @@ function isSingleCharacter(value: string): boolean {
     return Array.from(value).length === 1;
 }
 
+/** Characters reserved by the keybinding grammar and therefore unavailable as bare logical-character tokens. */
 const RESERVED_BARE_CHARACTERS = new Set([' ', '+', '-', '[', ']']);
 
+/**
+ * Serialize a logical character for the keybinding grammar.
+ * `+` and `-` are excluded from legacy bare spelling because they delimit key-code tokens. Uppercase ASCII letters are
+ * escaped so their case is not lost by case-insensitive legacy key lookup.
+ */
 export function characterToken(character: string): string {
     if (!isSingleCharacter(character)) {
         throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', character));
@@ -301,11 +312,12 @@ export class KeyCode {
     public readonly alt: boolean;
     public readonly meta: boolean;
     public readonly character: string | undefined;
-    public readonly production: Readonly<Required<KeyCodeProduction>>;
+    public readonly layoutModifiers: LayoutModifiers;
     public readonly interpretation: KeyCodeInterpretation;
-    public readonly legacyWindowsAltGraph: boolean;
-    public readonly resolved: boolean;
-    public readonly keybindingToken: string | undefined;
+    /** Whether the authored logical character is available on the active keyboard layout. */
+    public readonly supportedByLayout: boolean;
+    public readonly authoredToken: string | undefined;
+    /** Whether the authored token denotes a physical scan code rather than a logical character. */
     public readonly physical: boolean;
 
     public constructor(schema: KeyCodeSchema) {
@@ -324,14 +336,10 @@ export class KeyCode {
         this.alt = !!schema.alt;
         this.meta = !!schema.meta;
         this.character = schema.character;
-        this.production = Object.freeze({
-            shift: !!schema.production?.shift,
-            altGraph: !!schema.production?.altGraph
-        });
-        this.interpretation = schema.interpretation ?? 'canonical';
-        this.legacyWindowsAltGraph = !!schema.legacyWindowsAltGraph;
-        this.resolved = schema.resolved !== false;
-        this.keybindingToken = schema.keybindingToken;
+        this.layoutModifiers = schema.layoutModifiers ?? 'none';
+        this.interpretation = schema.interpretation ?? 'authored';
+        this.supportedByLayout = schema.supportedByLayout !== false;
+        this.authoredToken = schema.authoredToken;
         this.physical = !!schema.physical;
     }
 
@@ -353,7 +361,7 @@ export class KeyCode {
     }
 
     /**
-     * Return a keybinding string compatible with the `Keybinding.keybinding` property.
+     * Return a keybinding string that round-trips the authored spelling through {@link authoredToken}.
      */
     toString(): string {
         const result = [];
@@ -369,8 +377,8 @@ export class KeyCode {
         if (this.ctrl) {
             result.push(Key.CONTROL_LEFT.easyString);
         }
-        if (this.keybindingToken) {
-            result.push(this.keybindingToken);
+        if (this.authoredToken) {
+            result.push(this.authoredToken);
         } else if (this.key) {
             result.push(this.key.easyString);
         }
@@ -378,8 +386,8 @@ export class KeyCode {
     }
 
     /**
-     * Return the runtime identity used for keybinding dispatch.
-     * Interpretation and legacy provenance are diagnostic metadata and do not affect this identity.
+     * Return the runtime match identity used for keybinding dispatch.
+     * The interpretation is diagnostic metadata and does not affect this identity.
      */
     dispatchString(): string {
         const result: string[] = [];
@@ -400,17 +408,18 @@ export class KeyCode {
         } else if (this.character) {
             result.push(characterToken(this.character));
         }
-        if (this.production.shift) {
-            result.push('[production-shift]');
-        }
-        if (this.production.altGraph) {
-            result.push('[production-altgraph]');
-        }
-        return result.join('+');
+        const suffix = this.layoutModifiers === 'shift' ? '@shift'
+            : this.layoutModifiers === 'altGraph' ? '@altgraph'
+                : this.layoutModifiers === 'shiftAltGraph' ? '@shift@altgraph' : '';
+        return result.join('+') + suffix;
     }
 
-    /** Return a canonical authored stroke for recorder persistence. */
-    toKeybindingString(): string {
+    /**
+     * Derive an authored keybinding stroke from a key event for recorder persistence.
+     * This cannot use {@link toString}: event-derived key codes have no {@link authoredToken}, so `toString` would persist
+     * the physical US key name instead of the committed logical character.
+     */
+    toAuthoredKeybindingString(): string {
         const result: string[] = [];
         if (this.meta) {
             result.push(SpecialCases.META);
@@ -538,14 +547,14 @@ export class KeyCode {
                 const scanCode = parseScanCode(token);
                 if (scanCode) {
                     schema.key = scanCode;
-                    schema.keybindingToken = `[${scanCode.code}]`;
+                    schema.authoredToken = `[${scanCode.code}]`;
                     schema.physical = true;
                     continue;
                 }
                 const character = parseCharacterToken(token);
                 if (character) {
                     schema.character = character;
-                    schema.keybindingToken = characterToken(character);
+                    schema.authoredToken = characterToken(character);
                     continue;
                 }
                 throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', token, keybinding));

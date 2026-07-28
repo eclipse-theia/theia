@@ -136,30 +136,28 @@ describe('keys api', () => {
         }
     });
 
-    it('should distinguish production modifiers in dispatch identity without changing serialization', () => {
+    it('should distinguish layout modifiers in dispatch identity without changing serialization', () => {
         const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true });
-        const production = new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, character: '[' });
-        const shiftedProduction = new KeyCode({ key: Key.SLASH, production: { shift: true }, character: '/' });
+        const layout = new KeyCode({ key: Key.DIGIT8, ctrl: true, layoutModifiers: 'altGraph', character: '[' });
+        const shiftedLayout = new KeyCode({ key: Key.SLASH, layoutModifiers: 'shift', character: '/' });
 
         expect(command.toString()).to.equal('alt+ctrl+8');
-        expect(production.toString()).to.equal('ctrl+8');
-        expect(production.dispatchString()).to.equal('ctrl+8+[production-altgraph]');
-        expect(shiftedProduction.toString()).to.equal('/');
-        expect(shiftedProduction.dispatchString()).to.equal('/+[production-shift]');
-        expect(command.equals(production)).to.be.false;
+        expect(layout.toString()).to.equal('ctrl+8');
+        expect(layout.dispatchString()).to.equal('ctrl+8@altgraph');
+        expect(shiftedLayout.toString()).to.equal('/');
+        expect(shiftedLayout.dispatchString()).to.equal('/@shift');
+        expect(command.equals(layout)).to.be.false;
     });
 
-    it('should keep equality and dispatch identity equivalent for production modifiers', () => {
+    it('should keep equality and dispatch identity equivalent for layout modifiers', () => {
+        const layers = ['none', 'shift', 'altGraph', 'shiftAltGraph'] as const;
         const keyCodes = Array.from({ length: 64 }, (_, modifiers) => new KeyCode({
             key: Key.KEY_A,
             ctrl: !!(modifiers & 1),
             shift: !!(modifiers & 2),
             alt: !!(modifiers & 4),
             meta: !!(modifiers & 8),
-            production: {
-                shift: !!(modifiers & 16),
-                altGraph: !!(modifiers & 32)
-            }
+            layoutModifiers: layers[modifiers >> 4]
         }));
         for (const left of keyCodes) {
             for (const right of keyCodes) {
@@ -169,13 +167,13 @@ describe('keys api', () => {
     });
 
     it('should keep interpretation provenance outside dispatch identity', () => {
-        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'command' });
-        const production = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'production' });
+        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'commandModifiers' });
+        const layout = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'layoutModifiers' });
 
-        expect(command.dispatchString()).to.equal(production.dispatchString());
-        expect(command.equals(production)).to.be.true;
-        expect(command.interpretation).to.equal('command');
-        expect(production.interpretation).to.equal('production');
+        expect(command.dispatchString()).to.equal(layout.dispatchString());
+        expect(command.equals(layout)).to.be.true;
+        expect(command.interpretation).to.equal('commandModifiers');
+        expect(layout.interpretation).to.equal('layoutModifiers');
     });
 
     it('should normalize explicit and native AltGraph state', () => {
@@ -404,12 +402,12 @@ describe('keys api', () => {
     });
 
     it('should serialize recorder strokes as logical characters or physical scan codes', () => {
-        expect(new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[' }).toKeybindingString()).to.equal('ctrl+[');
-        expect(new KeyCode({ key: Key.EQUAL, ctrl: true, character: '+' }).toKeybindingString()).to.equal('ctrl+[char:0x2B]');
-        expect(new KeyCode({ key: Key.F1, ctrl: true }).toKeybindingString()).to.equal('ctrl+[F1]');
+        expect(new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[' }).toAuthoredKeybindingString()).to.equal('ctrl+[');
+        expect(new KeyCode({ key: Key.EQUAL, ctrl: true, character: '+' }).toAuthoredKeybindingString()).to.equal('ctrl+[char:0x2B]');
+        expect(new KeyCode({ key: Key.F1, ctrl: true }).toAuthoredKeybindingString()).to.equal('ctrl+[F1]');
         const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
-        expect(shiftedLetter.toKeybindingString()).to.equal('shift+ctrl+p');
-        expect(KeyCode.parse(shiftedLetter.toKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');
+        expect(shiftedLetter.toAuthoredKeybindingString()).to.equal('shift+ctrl+p');
+        expect(KeyCode.parse(shiftedLetter.toAuthoredKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');
     });
 
     it('should parse minus as key', () => {

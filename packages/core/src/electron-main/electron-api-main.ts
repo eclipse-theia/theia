@@ -278,7 +278,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                ...electronMenuAccelerator(dto, isOSX)
+                ...electronMenuAccelerator(dto)
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);

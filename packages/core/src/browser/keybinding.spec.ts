@@ -26,7 +26,7 @@ try {
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { KeyboardLayoutProvider, KeyboardLayoutSourceProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
+import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
 import { Keybinding } from '../common/keybinding';
@@ -77,14 +77,12 @@ let testContainer: Container;
 
 let stub: sinon.SinonStub;
 const preferenceChanged = new Emitter<{ preferenceName: string }>();
-const corePreferences = <CorePreferences><unknown>{
+const corePreferences = {
     'keyboard.dispatch': 'code',
     onPreferenceChanged: preferenceChanged.event
-};
+} as unknown as CorePreferences;
 
 before(async () => {
-    disableJSDOM = enableJSDOM();
-
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -96,10 +94,11 @@ before(async () => {
         bind(KeyboardLayoutProvider).toDynamicValue(ctx => {
             const provider = ctx.container.get(MockKeyboardLayoutProvider);
             return new Proxy(provider, {
-                get: (target, property) => property === 'then' ? undefined : property in target ? Reflect.get(target, property) : () => undefined
+                get: (target, property) => property === 'then' ? undefined
+                    : property === 'layoutSource' ? 'navigator.keyboard'
+                        : property in target ? Reflect.get(target, property) : () => undefined
             });
         });
-        bind(KeyboardLayoutSourceProvider).toConstantValue({ layoutSource: 'navigator.keyboard' });
         bind(MockKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
         bind(KeyboardLayoutChangeNotifier).toService(MockKeyboardLayoutChangeNotifier);
 
@@ -146,19 +145,22 @@ before(async () => {
 
 });
 
-after(() => {
-    disableJSDOM();
-});
-
-beforeEach(async () => {
+beforeEach(async function (): Promise<void> {
+    if (this.currentTest?.file?.endsWith('/keybinding.spec.js')) {
+        disableJSDOM();
+        disableJSDOM = enableJSDOM();
+    }
     stub = sinon.stub(os, 'isOSX').value(false);
     keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
     (corePreferences as unknown as Record<string, unknown>)['keyboard.dispatch'] = 'code';
     await keybindingRegistry.onStart();
 });
 
-afterEach(() => {
+afterEach(function (): void {
     stub.restore();
+    if (this.currentTest?.file?.endsWith('/keybinding.spec.js')) {
+        disableJSDOM();
+    }
 });
 
 describe('keybindings', () => {
@@ -393,7 +395,7 @@ describe('keybindings', () => {
         expect(match && match.kind).to.be.equal('full');
 
         match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]);
-        const keyCode = match && KeyCode.parse(match.binding.keybinding);
+        const keyCode = match && KeyCode.parse(match.runtime.binding.keybinding);
         expect(keyCode?.key).to.be.equal(validKeyCode.key);
     });
 
@@ -465,21 +467,21 @@ describe('keybindings', () => {
 
         let match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(workspaceBinding));
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal(workspaceBinding.command);
+        expect(match?.runtime.binding?.command).to.be.equal(workspaceBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.WORKSPACE);
         // now it should find USER bindings
 
         match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(userBinding));
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal(userBinding.command);
+        expect(match?.runtime.binding?.command).to.be.equal(userBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
         // and finally it should fallback to DEFAULT bindings.
 
         match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(defaultBinding));
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal(defaultBinding.command);
+        expect(match?.runtime.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.DEFAULT);
         // now the registry should be empty
@@ -504,7 +506,7 @@ describe('keybindings', () => {
         keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [defaultBinding]);
         let match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(defaultBinding));
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal(defaultBinding.command);
+        expect(match?.runtime.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, [disableDefaultBinding]);
         match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(defaultBinding));
@@ -513,28 +515,23 @@ describe('keybindings', () => {
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
         match = keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(defaultBinding));
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal(defaultBinding.command);
+        expect(match?.runtime.binding?.command).to.be.equal(defaultBinding.command);
     });
 
-    it('should dispatch pre-cancelled compatibility events to capture listeners', () => {
-        const disable = enableJSDOM();
-        try {
-            const target = document.createElement('iframe');
-            document.body.appendChild(target);
-            const captured = sinon.spy();
-            document.addEventListener('keydown', captured, true);
-            const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+    it('should dispatch already-handled compatibility events to capture listeners', () => {
+        const target = document.createElement('iframe');
+        document.body.appendChild(target);
+        const captured = sinon.spy();
+        document.addEventListener('keydown', captured, true);
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
 
-            keybindingRegistry.dispatchKeyDown({ key: 'a', code: 'KeyA' }, target, true);
+        keybindingRegistry.dispatchKeyDown({ key: 'a', code: 'KeyA' }, target, true);
 
-            expect(captured.calledOnce).to.be.true;
-            expect(captured.firstCall.args[0].defaultPrevented).to.be.true;
-            expect(match.called).to.be.false;
-            document.removeEventListener('keydown', captured, true);
-            target.remove();
-        } finally {
-            disable();
-        }
+        expect(captured.calledOnce).to.be.true;
+        expect(captured.firstCall.args[0].defaultPrevented).to.be.false;
+        expect(match.called).to.be.false;
+        document.removeEventListener('keydown', captured, true);
+        target.remove();
     });
 
     it('should dispatch normalized keyboard data directly', () => {
@@ -551,7 +548,7 @@ describe('keybindings', () => {
         expect(match.firstCall.args[0][0].dispatchString()).to.equal('ctrl+a');
     });
 
-    it('should dispatch commands through normalized production data', async () => {
+    it('should dispatch commands through normalized layout modifier data', async () => {
         testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
         const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+[' };
         keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
@@ -651,7 +648,7 @@ describe('keybindings', () => {
         expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(binding))?.kind).to.equal('full');
     });
 
-    it('should route Windows command and production candidates through the registry', () => {
+    it('should route Windows command and layout modifier candidates through the registry', () => {
         const windows = sinon.stub(os, 'isWindows').value(true);
         try {
             testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
@@ -659,7 +656,7 @@ describe('keybindings', () => {
             const logicalBinding = {
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: 'ctrl+[',
-                resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } })]
+                resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' })]
             };
             keybindingRegistry.setKeymap(KeybindingScope.USER, [logicalBinding]);
 
@@ -669,7 +666,7 @@ describe('keybindings', () => {
 
             expect(match.callCount).to.equal(2);
             expect(match.secondCall.returnValue?.kind).to.equal('full');
-            expect(match.secondCall.returnValue?.binding.keybinding).to.equal('ctrl+[');
+            expect(match.secondCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+[');
 
             match.resetHistory();
             keybindingRegistry.setKeymap(KeybindingScope.USER, [
@@ -681,60 +678,60 @@ describe('keybindings', () => {
             }, new EventTarget());
 
             expect(match.callCount).to.equal(2);
-            expect(match.firstCall.returnValue?.binding.keybinding).to.equal('ctrl+alt+8');
+            expect(match.firstCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+alt+8');
         } finally {
             windows.restore();
         }
     });
 
-    it('should prefer a command chord prefix over a production full match', () => {
+    it('should prefer a command chord prefix over a layout modifier full match', () => {
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
-            new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' }),
-            new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, interpretation: 'production' })
+            new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'commandModifiers' }),
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, layoutModifiers: 'altGraph', interpretation: 'layoutModifiers' })
         ]);
         const commandChord = {
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+a b'
         };
-        const productionFull = {
+        const layoutFull = {
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+['
         };
         keybindingRegistry.resolveKeybinding(commandChord).splice(0, 2, ...KeySequence.parse('ctrl+a b'));
-        keybindingRegistry.resolveKeybinding(productionFull).splice(0, 1,
-            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } }));
-        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandChord, productionFull]);
+        keybindingRegistry.resolveKeybinding(layoutFull).splice(0, 1,
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' }));
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandChord, layoutFull]);
 
         const event = testKeyboardEvent({ key: '[', code: 'Digit8' });
         keybindingRegistry.run(event);
 
         expect(event.defaultPrevented).to.be.true;
         expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.have.length(1);
-        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates[0][0].interpretation).to.equal('command');
+        expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates[0][0].interpretation).to.equal('commandModifiers');
         interpretations.restore();
     });
 
     it('should retain alternative interpretation prefixes across a chord', () => {
-        const commandPrefix = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' });
-        const productionPrefix = new KeyCode({ key: Key.DIGIT8, ctrl: true, production: { altGraph: true }, interpretation: 'production' });
-        const productionSecond = new KeyCode({ key: Key.KEY_C, interpretation: 'production' });
+        const commandPrefix = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'commandModifiers' });
+        const layoutPrefix = new KeyCode({ key: Key.DIGIT8, ctrl: true, layoutModifiers: 'altGraph', interpretation: 'layoutModifiers' });
+        const layoutSecond = new KeyCode({ key: Key.KEY_C, interpretation: 'layoutModifiers' });
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations');
-        interpretations.onFirstCall().returns([commandPrefix, productionPrefix]);
+        interpretations.onFirstCall().returns([commandPrefix, layoutPrefix]);
         interpretations.onSecondCall().returns([
-            new KeyCode({ key: Key.KEY_X, interpretation: 'command' }),
-            productionSecond
+            new KeyCode({ key: Key.KEY_X, interpretation: 'commandModifiers' }),
+            layoutSecond
         ]);
         const commandBinding = {
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+a b'
         };
-        const productionBinding = {
+        const layoutBinding = {
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+[ c'
         };
         keybindingRegistry.resolveKeybinding(commandBinding).splice(0, 2, commandPrefix, new KeyCode({ key: Key.KEY_B }));
-        keybindingRegistry.resolveKeybinding(productionBinding).splice(0, 2, productionPrefix, productionSecond);
-        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandBinding, productionBinding]);
+        keybindingRegistry.resolveKeybinding(layoutBinding).splice(0, 2, layoutPrefix, layoutSecond);
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [commandBinding, layoutBinding]);
 
         keybindingRegistry.run(testKeyboardEvent({ key: '[', code: 'Digit8' }));
         expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.have.length(2);
@@ -747,12 +744,14 @@ describe('keybindings', () => {
     });
 
     it('should decline equal-priority full matches from different interpretations', () => {
-        const first = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'command' });
-        const second = new KeyCode({ key: Key.KEY_B, ctrl: true, interpretation: 'command' });
+        const first = new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'commandModifiers' });
+        const second = new KeyCode({ key: Key.KEY_B, ctrl: true, interpretation: 'commandModifiers' });
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([first, second]);
         const troubleshooting = sinon.spy(keybindingRegistry as unknown as {
             logKeyboardTroubleshooting: (input: unknown, keyCode: KeyCode, match: unknown, skipped?: string) => void
         }, 'logKeyboardTroubleshooting');
+        const logger = (keybindingRegistry as unknown as { logger: ILogger }).logger;
+        const warning = sinon.spy(logger, 'warn');
         const firstBinding = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+a' };
         const secondBinding = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+b' };
         keybindingRegistry.resolveKeybinding(firstBinding).splice(0, 1, first);
@@ -763,49 +762,52 @@ describe('keybindings', () => {
 
         expect(troubleshooting.lastCall.args[3]).to.equal('ambiguous');
         expect(troubleshooting.lastCall.args[2]).to.be.undefined;
+        expect(warning.calledOnce).to.be.true;
+        keybindingRegistry.run(testKeyboardEvent({ key: 'a', code: 'KeyA' }));
+        expect(warning.calledOnce).to.be.true;
         interpretations.restore();
     });
 
-    it('should canonicalize production input for recorder persistence', () => {
+    it('should canonicalize layout modifier input for recorder persistence', () => {
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
-            new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true, interpretation: 'command' }),
-            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true }, interpretation: 'production' })
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true, interpretation: 'commandModifiers' }),
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph', interpretation: 'layoutModifiers' })
         ]);
 
-        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '[', code: 'Digit8' })?.toString()).to.equal('ctrl+[');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: '[', code: 'Digit8' })?.toString()).to.equal('ctrl+[');
         interpretations.restore();
     });
 
-    it('should retain command Shift when production Shift is not the logical binding', () => {
+    it('should retain command Shift when layout modifier Shift is not the logical binding', () => {
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
-            new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', production: { shift: true }, interpretation: 'production' })
+            new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', layoutModifiers: 'shift', interpretation: 'layoutModifiers' })
         ]);
 
-        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: 'P', code: 'KeyP' })?.toString()).to.equal('shift+ctrl+p');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: 'P', code: 'KeyP' })?.toString()).to.equal('shift+ctrl+p');
         interpretations.restore();
     });
 
     it('should persist a parseable logical character produced by Shift', () => {
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
-            new KeyCode({ key: Key.DIGIT7, character: '/', production: { shift: true }, interpretation: 'production' })
+            new KeyCode({ key: Key.DIGIT7, character: '/', layoutModifiers: 'shift', interpretation: 'layoutModifiers' })
         ]);
         const resolve = sinon.stub(testContainer.get(KeyboardLayoutService), 'resolveKeyCode').callsFake(code => code.key === Key.SLASH
-            ? new KeyCode({ key: Key.DIGIT7, character: '/', production: { shift: true } })
+            ? new KeyCode({ key: Key.DIGIT7, character: '/', layoutModifiers: 'shift' })
             : code);
 
-        expect(keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '/', code: 'Digit7' })?.toString()).to.equal('/');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: '/', code: 'Digit7' })?.toString()).to.equal('/');
         resolve.restore();
         interpretations.restore();
     });
 
     it('should record newly authorable printable characters logically', () => {
-        const production = new KeyCode({ key: Key.SLASH, ctrl: true, character: '?', production: { shift: true }, interpretation: 'production' });
-        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([production]);
+        const layoutCode = new KeyCode({ key: Key.SLASH, ctrl: true, character: '?', layoutModifiers: 'shift', interpretation: 'layoutModifiers' });
+        const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([layoutCode]);
 
-        const recorded = keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '?', code: 'Slash' });
+        const recorded = keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: '?', code: 'Slash' });
         expect(recorded?.toString()).to.equal('ctrl+?');
         expect(keybindingRegistry.resolveKeybinding({ command: TEST_COMMAND.id, keybinding: recorded!.toString() })[0].dispatchString())
-            .to.equal(production.dispatchString());
+            .to.equal(layoutCode.dispatchString());
         interpretations.restore();
     });
 
@@ -813,14 +815,14 @@ describe('keybindings', () => {
         const logical = {
             command: TEST_COMMAND.id,
             keybinding: 'ctrl+[',
-            resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } })]
+            resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' })]
         };
         const command = { command: TEST_COMMAND2.id, keybinding: 'ctrl+alt+8' };
         keybindingRegistry.setKeymap(KeybindingScope.USER, [logical, command]);
 
         const diagnostics = keybindingRegistry.getKeybindingCollisionDiagnostics(logical);
-        expect(diagnostics.interpretationShadowing.map(binding => binding.command)).to.include(TEST_COMMAND2.id);
-        expect(diagnostics.canonical.full).to.be.empty;
+        expect(diagnostics.shadowedBy.map(binding => binding.command)).to.include(TEST_COMMAND2.id);
+        expect(diagnostics.authored.full).to.be.empty;
         expect(diagnostics.layoutDerived.full).to.be.empty;
         expect(keybindingRegistry.containsKeybindingInScope(logical)).to.be.false;
     });
@@ -831,8 +833,8 @@ describe('keybindings', () => {
         const shiftedPrintable = { command: TEST_COMMAND2.id, keybinding: 'shift+/' };
         keybindingRegistry.setKeymap(KeybindingScope.USER, [commandPalette, shiftedPrintable]);
 
-        expect(keybindingRegistry.matchKeybinding(KeySequence.parse('ctrl+shift+p'))?.binding.command).to.equal(TEST_COMMAND.id);
-        expect(keybindingRegistry.matchKeybinding(KeySequence.parse('shift+/'))?.binding.command).to.equal(TEST_COMMAND2.id);
+        expect(keybindingRegistry.matchKeybinding(KeySequence.parse('ctrl+shift+p'))?.runtime.binding.command).to.equal(TEST_COMMAND.id);
+        expect(keybindingRegistry.matchKeybinding(KeySequence.parse('shift+/'))?.runtime.binding.command).to.equal(TEST_COMMAND2.id);
     });
 
     it('should invalidate resolved bindings when keyboard dispatch changes', () => {
@@ -897,7 +899,7 @@ describe('keybindings', () => {
 
         // The localBinding should be selected because it uses a local context key
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal('test.local-command');
+        expect(match?.runtime.binding?.command).to.be.equal('test.local-command');
 
         disable();
     });
@@ -944,7 +946,7 @@ describe('keybindings', () => {
 
         // Should fall back to first enabled binding in priority order (secondBinding was registered later, so it wins)
         expect(match?.kind).to.be.equal('full');
-        expect(match?.binding?.command).to.be.equal('test.second-command');
+        expect(match?.runtime.binding?.command).to.be.equal('test.second-command');
 
         disable();
     });
@@ -967,53 +969,53 @@ describe('acceleratorForKeyCode', () => {
         expect(accelerator).to.equal('⌘V');
     });
 
-    it('separates logical labels from physical production realizations', () => {
+    it('separates logical labels from physical layout modifier realizations', () => {
         const logicalBracket = new KeyCode({
             key: Key.DIGIT8,
             ctrl: true,
             character: '[',
-            production: { altGraph: true }
+            layoutModifiers: 'altGraph'
         });
         const logicalSlash = new KeyCode({
             key: Key.DIGIT7,
             character: '/',
-            production: { shift: true }
+            layoutModifiers: 'shift'
         });
 
         expect(keybindingRegistry.componentsForKeyCode(logicalBracket)).to.deep.equal(['Ctrl', '[']);
-        expect(keybindingRegistry.physicalComponentsForKeyCode(logicalBracket)).to.deep.equal(['Ctrl', 'AltGr', '8']);
-        expect(keybindingRegistry.physicalAcceleratorForKeyCode(logicalBracket, '+', true)).to.equal('Ctrl+AltGr+8');
+        expect(keybindingRegistry.componentsForKeyCode(logicalBracket, false, 'physical')).to.deep.equal(['Ctrl', 'AltGr', '8']);
+        expect(keybindingRegistry.acceleratorForKeyCode(logicalBracket, '+', true, 'physical')).to.equal('Ctrl+AltGr+8');
         expect(keybindingRegistry.componentsForKeyCode(logicalSlash)).to.deep.equal(['/']);
-        expect(keybindingRegistry.physicalComponentsForKeyCode(logicalSlash)).to.deep.equal(['Shift', '7']);
-        expect(keybindingRegistry.physicalAcceleratorForKeyCode(logicalSlash, '+', true)).to.equal('Shift+7');
+        expect(keybindingRegistry.componentsForKeyCode(logicalSlash, false, 'physical')).to.deep.equal(['Shift', '7']);
+        expect(keybindingRegistry.acceleratorForKeyCode(logicalSlash, '+', true, 'physical')).to.equal('Shift+7');
     });
 
     it('keeps command Shift in physical realizations', () => {
         const commandShift = new KeyCode({ key: Key.TAB, ctrl: true, shift: true });
-        expect(keybindingRegistry.physicalComponentsForKeyCode(commandShift)).to.deep.equal(['Ctrl', 'Shift', 'Tab']);
+        expect(keybindingRegistry.componentsForKeyCode(commandShift, false, 'physical')).to.deep.equal(['Ctrl', 'Shift', 'Tab']);
 
-        const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', production: { shift: true } });
+        const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', layoutModifiers: 'shift' });
         expect(keybindingRegistry.componentsForKeyCode(shiftedLetter)).to.deep.equal(['Ctrl', 'Shift', 'P']);
 
-        const unresolvedCharacter = new KeyCode({ ctrl: true, character: '§', resolved: false });
+        const unresolvedCharacter = new KeyCode({ ctrl: true, character: '§', supportedByLayout: false });
         expect(keybindingRegistry.componentsForKeyCode(unresolvedCharacter)).to.deep.equal(['Ctrl', '§']);
     });
 
-    it('deduplicates command Alt and production Option on macOS', () => {
+    it('deduplicates command Alt and layout modifier Option on macOS', () => {
         stub.value(true);
-        const commandAndProductionOption = new KeyCode({
+        const commandAndLayoutOption = new KeyCode({
             key: Key.DIGIT6,
             meta: true,
             ctrl: true,
             alt: true,
-            production: { altGraph: true }
+            layoutModifiers: 'altGraph'
         });
-        const productionOption = new KeyCode({ key: Key.DIGIT6, production: { altGraph: true } });
+        const layoutOption = new KeyCode({ key: Key.DIGIT6, layoutModifiers: 'altGraph' });
 
-        expect(keybindingRegistry.physicalComponentsForKeyCode(commandAndProductionOption)).to.deep.equal(['⌘', '⌃', '⌥', '6']);
-        expect(keybindingRegistry.physicalComponentsForKeyCode(commandAndProductionOption, true)).to.deep.equal(['Cmd', 'Ctrl', 'Alt', '6']);
-        expect(keybindingRegistry.physicalComponentsForKeyCode(productionOption)).to.deep.equal(['⌥', '6']);
-        expect(keybindingRegistry.physicalComponentsForKeyCode(productionOption, true)).to.deep.equal(['Option', '6']);
+        expect(keybindingRegistry.componentsForKeyCode(commandAndLayoutOption, false, 'physical')).to.deep.equal(['⌘', '⌃', '⌥', '6']);
+        expect(keybindingRegistry.componentsForKeyCode(commandAndLayoutOption, true, 'physical')).to.deep.equal(['Cmd', 'Ctrl', 'Alt', '6']);
+        expect(keybindingRegistry.componentsForKeyCode(layoutOption, false, 'physical')).to.deep.equal(['⌥', '6']);
+        expect(keybindingRegistry.componentsForKeyCode(layoutOption, true, 'physical')).to.deep.equal(['Option', '6']);
     });
 
     it('uses ASCII names with the separator on macOS Electron (asciiOnly)', () => {

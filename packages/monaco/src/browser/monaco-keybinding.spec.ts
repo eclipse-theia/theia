@@ -59,12 +59,12 @@ describe('Monaco keybinding adapter', () => {
         expect(encoded & monaco.KeyMod.CtrlCmd).to.equal(monaco.KeyMod.CtrlCmd);
     });
 
-    it('accepts production Shift but rejects production AltGraph and unmapped keys', () => {
+    it('accepts layout Shift but rejects layout AltGraph and unmapped keys', () => {
         expect(contribution.representable([
-            new KeyCode({ key: Key.DIGIT7, production: { shift: true } })
+            new KeyCode({ key: Key.DIGIT7, layoutModifiers: 'shift' })
         ])).to.be.true;
         expect(contribution.representable([
-            new KeyCode({ key: Key.DIGIT8, production: { altGraph: true } })
+            new KeyCode({ key: Key.DIGIT8, layoutModifiers: 'altGraph' })
         ])).to.be.false;
         expect(contribution.representable([new KeyCode({ key: Key.F20 })])).to.be.false;
     });
@@ -73,7 +73,7 @@ describe('Monaco keybinding adapter', () => {
         sinon.stub(os, 'isOSX').value(false);
         const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
         const bracket = new MonacoResolvedKeybinding([
-            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } })
+            new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' })
         ], registry);
         const letter = new MonacoResolvedKeybinding([
             new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'p' })
