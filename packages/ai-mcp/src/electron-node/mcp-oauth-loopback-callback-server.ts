@@ -126,7 +126,7 @@ export class MCPOAuthLoopbackCallbackServer implements MCPOAuthCallbackEndpoint,
             if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535) {
                 return parsed;
             }
-            this.logger.warn(`Ignoring invalid ${MCP_OAUTH_CALLBACK_PORT_ENV}="${configured}"; expected an integer in [0, 65535]. `
+            this.logger?.warn(`Ignoring invalid ${MCP_OAUTH_CALLBACK_PORT_ENV}="${configured}"; expected an integer in [0, 65535]. `
                 + `Falling back to ${MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT}.`);
         }
         return MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT;
