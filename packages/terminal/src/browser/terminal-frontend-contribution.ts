@@ -946,8 +946,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybinding: 'ctrlcmd+k',
             when: 'terminalFocus'
         });
+        // A passthrough binding claims ctrlcmd+v for the terminal (winning over the global
+        // CommonCommands.PASTE binding via the local terminalFocus context) but runs no command,
+        // letting the keystroke reach xterm's native paste event. That avoids the permission-gated
+        // Clipboard API (navigator.clipboard.readText) that the PASTE_TERMINAL command requires, while
+        // preserving bracketed paste. terminal.enablePaste is enforced in TerminalWidgetImpl.customKeyHandler.
         keybindings.registerKeybinding({
-            command: TerminalCommands.PASTE_TERMINAL.id,
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrlcmd+v',
             when: 'terminalFocus'
         });
