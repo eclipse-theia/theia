@@ -9,9 +9,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as path from 'path';
 
-const { toNormalizedKeyboardInput } = require(path.resolve(__dirname, '../../../../../src/main/browser/webview/pre/main.js'));
+const { toNormalizedKeyboardInput } = require('../../../../../src/main/browser/webview/pre/main.js');
 
 describe('webview keyboard transport', () => {
     it('serializes explicit AltGraph and normalized keyboard fields', () => {

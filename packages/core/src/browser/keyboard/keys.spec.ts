@@ -366,6 +366,52 @@ describe('keys api', () => {
         expect(second.key).is.equal(Key.KEY_B);
     });
 
+    it('should parse physical scan codes and preserve them when serializing', () => {
+        const keycode = KeyCode.parse('ctrl+[BracketLeft]');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).to.equal(Key.BRACKET_LEFT);
+        expect(keycode.physical).to.be.true;
+        expect(keycode.toString()).to.equal('ctrl+[BracketLeft]');
+        expect(() => KeyCode.parse('[UnknownPhysicalKey]')).to.throw(/Unknown scan code/);
+    });
+
+    it('should parse bare and escaped logical characters', () => {
+        for (const character of ['^', '§', '²', 'ä']) {
+            const keycode = KeyCode.parse(`ctrl+${character}`);
+            expect(keycode.character).to.equal(character);
+            expect(keycode.toString()).to.equal(`ctrl+${character}`);
+        }
+        expect(KeyCode.parse('ctrl+[char:0x2B]').character).to.equal('+');
+        expect(KeyCode.parse('ctrl+[char:0x20]').character).to.equal(' ');
+        expect(KeyCode.parse('ctrl+[char:0x5D]').character).to.equal(']');
+        expect(KeyCode.parse('ctrl+[char:§]').character).to.equal('§');
+        expect(KeyCode.parse('ctrl+[char:0x2B]').toString()).to.equal('ctrl+[char:0x2B]');
+    });
+
+    it('should keep bracketed separators and whitespace within one key token', () => {
+        expect(KeySequence.parse('ctrl+[char:0x20] ctrl+[BracketLeft]')).to.have.length(2);
+        expect(KeySequence.parse('ctrl+[ ctrl+]')).to.have.length(2);
+        expect(KeySequence.parse('ctrl+] ctrl+[')).to.have.length(2);
+        expect(KeyCode.parse('ctrl+[char:0x2B]').character).to.equal('+');
+        expect(KeyCode.parse('ctrl+[char:0x2D]').character).to.equal('-');
+    });
+
+    it('should reject invalid and multi-code-point logical characters', () => {
+        expect(() => KeyCode.parse('[char:0x110000]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('[char:0xD800]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('[char:ab]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('👨‍👩‍👧‍👦')).to.throw(/Unrecognized key/);
+    });
+
+    it('should serialize recorder strokes as logical characters or physical scan codes', () => {
+        expect(new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[' }).toKeybindingString()).to.equal('ctrl+[');
+        expect(new KeyCode({ key: Key.EQUAL, ctrl: true, character: '+' }).toKeybindingString()).to.equal('ctrl+[char:0x2B]');
+        expect(new KeyCode({ key: Key.F1, ctrl: true }).toKeybindingString()).to.equal('ctrl+[F1]');
+        const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
+        expect(shiftedLetter.toKeybindingString()).to.equal('shift+ctrl+p');
+        expect(KeyCode.parse(shiftedLetter.toKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');
+    });
+
     it('should parse minus as key', () => {
         const keycode = KeyCode.parse('ctrl+-');
         expect(keycode.ctrl).to.be.true;

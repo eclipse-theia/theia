@@ -30,13 +30,21 @@ Example of a valid `keymaps.json` file
 
 ## Supported Keys
 
-For most keys you can directly use the name of the key i.e `a`, `3`,  `/`, `-`.
+Printable keys use logical-character semantics. For example, `ctrl+[` means Ctrl plus the character `[`, regardless of which physical key produces it on the active keyboard layout. Bare one-code-point characters such as `a`, `3`, `/`, `^`, `§`, `²`, and `ä` can be used directly.
+
+Use a bracketed scan code such as `ctrl+[BracketLeft]` when a binding should follow a physical key rather than a character. Scan-code names are validated against supported `KeyboardEvent.code` values.
+
+Characters reserved by the keybinding grammar use a Unicode escape. For example, use `ctrl+[char:0x2B]` for logical `+`, `[char:0x20]` for Space as a logical character, and `[char:0x5D]` for `]`. Literal escapes such as `[char:§]` are supported when the character is not reserved. Each character token must contain exactly one Unicode code point; multi-code-point graphemes are not supported.
+
+A logical binding that the active layout cannot produce remains visible but inactive. It becomes active automatically after switching to a layout that can produce the character. Existing keybinding strings remain valid.
 
 To use `ctrl` on Linux/Windows and `cmd` on OSX, use `ctrlcmd`.
 
 You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`), `cmd` (`meta`) as modifiers. Note that if you defined a custom shortcut with `cmd`, `command` or `meta`, the same keymaps file won't work on a Windows/Linux machine as this key doesn't have an equivalent.
 
-You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins`, `del` and `plus`.
+You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins` and `del`.
+
+The keybinding recorder saves printable input as its logical character. On Windows, AltGr input is therefore recorded as the produced character rather than as Ctrl+Alt. Non-printable and dead-key captures use `[ScanCode]` syntax.
 
 If unsure you can always look at the framework's [supported keys](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_core.common_keys.Key.html)
 

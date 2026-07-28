@@ -18,8 +18,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import * as os from '@theia/core/lib/common/os';
 import { Key, KeyCode } from '@theia/core/lib/browser/keyboard/keys';
-import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import type { ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
+import { KeybindingRegistry, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
 import { keybindingTooltip } from './keybinding-tooltip';
 import { recordedKeybindingStroke } from './keybindings-widget';
 
@@ -49,6 +48,18 @@ describe('keybindings widget tooltip', () => {
         platform.restore();
     });
 
+    it('keeps inactive character-only bindings visible in logical labels', () => {
+        const platform = sinon.stub(os, 'isOSX').value(false);
+        const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
+        const code = new KeyCode({ ctrl: true, character: '§', resolved: false });
+        Object.defineProperty(registry, 'keyboardLayoutService', {
+            value: { getKeyboardCharacter: (key: Key) => key.easyString }
+        });
+
+        chai.expect(registry.componentsForKeyCode(code)).to.deep.equal(['Ctrl', '§']);
+        platform.restore();
+    });
+
     it('does not advertise a physical realization for inactive bindings', () => {
         const registry = {
             resolveKeybinding: () => [new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[', resolved: false })],
@@ -62,14 +73,28 @@ describe('keybindings widget tooltip', () => {
         );
     });
 
-    it('captures a canonical logical stroke and ignores modifier-only input', () => {
+    it('captures logical characters, physical non-printables, and ignores modifier-only input', () => {
         const registry = {
-            canonicalKeyCodeForKeyboardInput: (event: KeyboardEvent) => event.code === 'ControlLeft'
-                ? new KeyCode({ ctrl: true })
-                : new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[' })
+            canonicalKeyCodeForKeyboardInput: (event: KeyboardEvent) => {
+                if (event.code === 'ControlLeft') {
+                    return new KeyCode({ ctrl: true });
+                }
+                if (event.code === 'F1') {
+                    return new KeyCode({ key: Key.F1, ctrl: true });
+                }
+                if (event.code === 'KeyP') {
+                    return new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
+                }
+                return new KeyCode({ key: event.code === 'Equal' ? Key.EQUAL : Key.BRACKET_LEFT, ctrl: true, character: event.key });
+            }
         } as unknown as KeybindingRegistry;
 
         chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '[', code: 'Digit8', ctrlKey: true }))).to.equal('ctrl+[');
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '+', code: 'Equal', ctrlKey: true }))).to.equal('ctrl+[char:0x2B]');
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'F1', code: 'F1', ctrlKey: true }))).to.equal('ctrl+[F1]');
+        const shifted = recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true }));
+        chai.expect(shifted).to.equal('shift+ctrl+p');
+        chai.expect(KeyCode.parse(shifted!).dispatchString()).to.equal('shift+ctrl+p');
         chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Control', code: 'ControlLeft', ctrlKey: true }))).to.be.undefined;
     });
 });

@@ -75,7 +75,7 @@ export namespace KeySequence {
 
     export function parse(keybinding: string): KeySequence {
         const keyCodes = [];
-        const rawKeyCodes = keybinding.trim().split(/\s+/g);
+        const rawKeyCodes = splitKeySequence(keybinding.trim());
         for (const rawKeyCode of rawKeyCodes) {
             const keyCode = KeyCode.parse(rawKeyCode);
             if (keyCode !== undefined) {
@@ -123,6 +123,8 @@ export interface KeyCodeSchema {
     interpretation?: KeyCodeInterpretation;
     legacyWindowsAltGraph?: boolean;
     resolved?: boolean;
+    keybindingToken?: string;
+    physical?: boolean;
 }
 
 /**
@@ -183,6 +185,111 @@ export function normalizeKeyboardInput(input: NormalizedKeyboardInput): Normaliz
     };
 }
 
+function splitKeySequence(keybinding: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let bracketed = false;
+    for (let index = 0; index < keybinding.length; index++) {
+        const character = keybinding[index];
+        if (character === '[') {
+            const closingBracket = keybinding.indexOf(']', index + 1);
+            const nextWhitespace = keybinding.slice(index + 1).search(/\s/);
+            bracketed = closingBracket !== -1 && (nextWhitespace === -1 || closingBracket < index + 1 + nextWhitespace);
+        } else if (character === ']' && bracketed) {
+            bracketed = false;
+        }
+        if (/\s/.test(character) && !bracketed) {
+            if (current) {
+                result.push(current);
+                current = '';
+            }
+        } else {
+            current += character;
+        }
+    }
+    if (current) {
+        result.push(current);
+    }
+    return result;
+}
+
+function splitKeyCode(keybinding: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let bracketed = false;
+    for (let index = 0; index < keybinding.length; index++) {
+        const character = keybinding[index];
+        if (character === '[' && keybinding.indexOf(']', index + 1) !== -1) {
+            bracketed = true;
+        } else if (character === ']' && bracketed) {
+            bracketed = false;
+        }
+        if (!bracketed && current && (character === '+' || character === '-')) {
+            result.push(current);
+            current = '';
+        } else if (!bracketed && character === '+') {
+            continue;
+        } else {
+            current += character;
+        }
+    }
+    if (current) {
+        result.push(current);
+    }
+    return result;
+}
+
+function parseScanCode(token: string): Key | undefined {
+    const match = /^\[([^\]]+)\]$/.exec(token);
+    if (!match || match[1].toLocaleLowerCase().startsWith('char:')) {
+        return undefined;
+    }
+    const key = Key.getKey(match[1]) ?? Object.values(CODE_TO_KEY).find(candidate => candidate.code.toLocaleLowerCase() === match[1].toLocaleLowerCase());
+    if (!key) {
+        throw new Error(nls.localize('theia/core/keybinding/unknownScanCode', 'Unknown scan code {0}. Use a supported KeyboardEvent.code name.', match[1]));
+    }
+    return key;
+}
+
+function parseCharacterToken(token: string): string | undefined {
+    const match = /^\[char:(.*)\]$/i.exec(token);
+    if (match) {
+        const payload = match[1];
+        let character: string;
+        if (/^0x[0-9a-f]+$/i.test(payload)) {
+            const value = Number.parseInt(payload.slice(2), 16);
+            if (value > 0x10ffff || value >= 0xd800 && value <= 0xdfff) {
+                throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', payload));
+            }
+            character = String.fromCodePoint(value);
+        } else {
+            character = payload;
+        }
+        if (!isSingleCharacter(character) || !/^0x/i.test(payload) && RESERVED_BARE_CHARACTERS.has(character)) {
+            throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', payload));
+        }
+        return character;
+    }
+    return isSingleCharacter(token) && !RESERVED_BARE_CHARACTERS.has(token) ? token : undefined;
+}
+
+function isSingleCharacter(value: string): boolean {
+    return Array.from(value).length === 1;
+}
+
+const RESERVED_BARE_CHARACTERS = new Set([' ', '+', '-', '[', ']']);
+
+export function characterToken(character: string): string {
+    if (!isSingleCharacter(character)) {
+        throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', character));
+    }
+    const legacyCharacter = !!EASY_TO_KEY[character] && character !== '+' && character !== '-';
+    const requiresEscape = /^[A-Z]$/.test(character) || RESERVED_BARE_CHARACTERS.has(character) && !legacyCharacter;
+    return requiresEscape
+        ? `[char:0x${character.codePointAt(0)!.toString(16).toUpperCase()}]`
+        : character;
+}
+
 /**
  * Representation of a pressed key combined with key modifiers.
  */
@@ -198,6 +305,8 @@ export class KeyCode {
     public readonly interpretation: KeyCodeInterpretation;
     public readonly legacyWindowsAltGraph: boolean;
     public readonly resolved: boolean;
+    public readonly keybindingToken: string | undefined;
+    public readonly physical: boolean;
 
     public constructor(schema: KeyCodeSchema) {
         const key = schema.key;
@@ -222,13 +331,15 @@ export class KeyCode {
         this.interpretation = schema.interpretation ?? 'canonical';
         this.legacyWindowsAltGraph = !!schema.legacyWindowsAltGraph;
         this.resolved = schema.resolved !== false;
+        this.keybindingToken = schema.keybindingToken;
+        this.physical = !!schema.physical;
     }
 
     /**
      * Return true if this KeyCode only contains modifiers.
      */
     public isModifierOnly(): boolean {
-        return this.key === undefined;
+        return this.key === undefined && this.character === undefined;
     }
 
     /**
@@ -258,7 +369,9 @@ export class KeyCode {
         if (this.ctrl) {
             result.push(Key.CONTROL_LEFT.easyString);
         }
-        if (this.key) {
+        if (this.keybindingToken) {
+            result.push(this.keybindingToken);
+        } else if (this.key) {
             result.push(this.key.easyString);
         }
         return result.join('+');
@@ -269,12 +382,53 @@ export class KeyCode {
      * Interpretation and legacy provenance are diagnostic metadata and do not affect this identity.
      */
     dispatchString(): string {
-        const result = this.toString().split('+').filter(Boolean);
+        const result: string[] = [];
+        if (this.meta) {
+            result.push(SpecialCases.META);
+        }
+        if (this.shift) {
+            result.push(Key.SHIFT_LEFT.easyString);
+        }
+        if (this.alt) {
+            result.push(Key.ALT_LEFT.easyString);
+        }
+        if (this.ctrl) {
+            result.push(Key.CONTROL_LEFT.easyString);
+        }
+        if (this.key) {
+            result.push(this.key.easyString);
+        } else if (this.character) {
+            result.push(characterToken(this.character));
+        }
         if (this.production.shift) {
             result.push('[production-shift]');
         }
         if (this.production.altGraph) {
             result.push('[production-altgraph]');
+        }
+        return result.join('+');
+    }
+
+    /** Return a canonical authored stroke for recorder persistence. */
+    toKeybindingString(): string {
+        const result: string[] = [];
+        if (this.meta) {
+            result.push(SpecialCases.META);
+        }
+        const shiftedLetter = !!this.character && /^[A-Z]$/.test(this.character);
+        if (this.shift && (!this.character || shiftedLetter)) {
+            result.push(Key.SHIFT_LEFT.easyString);
+        }
+        if (this.alt) {
+            result.push(Key.ALT_LEFT.easyString);
+        }
+        if (this.ctrl) {
+            result.push(Key.CONTROL_LEFT.easyString);
+        }
+        if (this.character) {
+            result.push(characterToken(shiftedLetter ? this.character.toLocaleLowerCase() : this.character));
+        } else if (this.key) {
+            result.push(`[${this.key.code}]`);
         }
         return result.join('+');
     }
@@ -341,25 +495,14 @@ export class KeyCode {
         }
 
         const schema: KeyCodeSchema = {};
-        const keys = [];
-        let currentKey = '';
-        for (const character of keybinding.trim().toLowerCase()) {
-            if (currentKey && (character === '-' || character === '+')) {
-                keys.push(currentKey);
-                currentKey = '';
-            } else if (character !== '+') {
-                currentKey += character;
-            }
-        }
-        if (currentKey) {
-            keys.push(currentKey);
-        }
+        const keys = splitKeyCode(keybinding.trim());
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
-        if (keys.length !== new Set(keys).size) {
+        if (keys.length !== new Set(keys.map(key => key.toLocaleLowerCase())).size) {
             throw new Error(nls.localize('theia/core/keybinding/duplicateModifierError', "Can't parse keybinding {0} Duplicate modifiers", keybinding));
         }
 
-        for (let keyString of keys) {
+        for (const token of keys) {
+            let keyString = token.toLocaleLowerCase();
             if (SPECIAL_ALIASES[keyString] !== undefined) {
                 keyString = SPECIAL_ALIASES[keyString];
             }
@@ -392,7 +535,20 @@ export class KeyCode {
                     schema.key = key;
                 }
             } else {
-                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', keyString, keybinding));
+                const scanCode = parseScanCode(token);
+                if (scanCode) {
+                    schema.key = scanCode;
+                    schema.keybindingToken = `[${scanCode.code}]`;
+                    schema.physical = true;
+                    continue;
+                }
+                const character = parseCharacterToken(token);
+                if (character) {
+                    schema.character = character;
+                    schema.keybindingToken = characterToken(character);
+                    continue;
+                }
+                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', token, keybinding));
             }
         }
 

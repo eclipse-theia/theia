@@ -50,6 +50,27 @@ disableJSDOM();
 
 const expect = chai.expect;
 
+function testKeyboardEvent(input: Partial<KeyboardEvent> = {}): KeyboardEvent {
+    let defaultPrevented = false;
+    return {
+        key: input.key,
+        code: input.code,
+        keyCode: input.keyCode,
+        ctrlKey: input.ctrlKey,
+        shiftKey: input.shiftKey,
+        altKey: input.altKey,
+        metaKey: input.metaKey,
+        repeat: input.repeat,
+        isComposing: input.isComposing,
+        location: input.location,
+        timeStamp: input.timeStamp,
+        target: input.target,
+        get defaultPrevented(): boolean { return defaultPrevented; },
+        preventDefault(): void { defaultPrevented = true; },
+        stopPropagation(): void { }
+    } as KeyboardEvent;
+}
+
 let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;
 let testContainer: Container;
@@ -496,19 +517,24 @@ describe('keybindings', () => {
     });
 
     it('should dispatch pre-cancelled compatibility events to capture listeners', () => {
-        const target = document.createElement('iframe');
-        document.body.appendChild(target);
-        const captured = sinon.spy();
-        document.addEventListener('keydown', captured, true);
-        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+        const disable = enableJSDOM();
+        try {
+            const target = document.createElement('iframe');
+            document.body.appendChild(target);
+            const captured = sinon.spy();
+            document.addEventListener('keydown', captured, true);
+            const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
 
-        keybindingRegistry.dispatchKeyDown({ key: 'a', code: 'KeyA' }, target, true);
+            keybindingRegistry.dispatchKeyDown({ key: 'a', code: 'KeyA' }, target, true);
 
-        expect(captured.calledOnce).to.be.true;
-        expect(captured.firstCall.args[0].defaultPrevented).to.be.true;
-        expect(match.called).to.be.false;
-        document.removeEventListener('keydown', captured, true);
-        target.remove();
+            expect(captured.calledOnce).to.be.true;
+            expect(captured.firstCall.args[0].defaultPrevented).to.be.true;
+            expect(match.called).to.be.false;
+            document.removeEventListener('keydown', captured, true);
+            target.remove();
+        } finally {
+            disable();
+        }
     });
 
     it('should dispatch normalized keyboard data directly', () => {
@@ -679,7 +705,7 @@ describe('keybindings', () => {
             new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', production: { altGraph: true } }));
         keybindingRegistry.setKeymap(KeybindingScope.USER, [commandChord, productionFull]);
 
-        const event = new KeyboardEvent('keydown', { key: '[', code: 'Digit8', cancelable: true });
+        const event = testKeyboardEvent({ key: '[', code: 'Digit8' });
         keybindingRegistry.run(event);
 
         expect(event.defaultPrevented).to.be.true;
@@ -710,9 +736,9 @@ describe('keybindings', () => {
         keybindingRegistry.resolveKeybinding(productionBinding).splice(0, 2, productionPrefix, productionSecond);
         keybindingRegistry.setKeymap(KeybindingScope.USER, [commandBinding, productionBinding]);
 
-        keybindingRegistry.run(new KeyboardEvent('keydown', { key: '[', code: 'Digit8', cancelable: true }));
+        keybindingRegistry.run(testKeyboardEvent({ key: '[', code: 'Digit8' }));
         expect((keybindingRegistry as unknown as { keySequenceCandidates: KeySequence[] }).keySequenceCandidates).to.have.length(2);
-        const second = new KeyboardEvent('keydown', { key: 'c', code: 'KeyC', cancelable: true });
+        const second = testKeyboardEvent({ key: 'c', code: 'KeyC' });
         keybindingRegistry.run(second);
 
         expect(second.defaultPrevented).to.be.false;
@@ -733,7 +759,7 @@ describe('keybindings', () => {
         keybindingRegistry.resolveKeybinding(secondBinding).splice(0, 1, second);
         keybindingRegistry.setKeymap(KeybindingScope.USER, [firstBinding, secondBinding]);
 
-        keybindingRegistry.run(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA' }));
+        keybindingRegistry.run(testKeyboardEvent({ key: 'a', code: 'KeyA' }));
 
         expect(troubleshooting.lastCall.args[3]).to.equal('ambiguous');
         expect(troubleshooting.lastCall.args[2]).to.be.undefined;
@@ -772,12 +798,12 @@ describe('keybindings', () => {
         interpretations.restore();
     });
 
-    it('should retain physical Shift when the produced character is not authorable', () => {
+    it('should record newly authorable printable characters logically', () => {
         const production = new KeyCode({ key: Key.SLASH, ctrl: true, character: '?', production: { shift: true }, interpretation: 'production' });
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([production]);
 
         const recorded = keybindingRegistry.canonicalKeyCodeForKeyboardInput({ key: '?', code: 'Slash' });
-        expect(recorded?.toString()).to.equal('shift+ctrl+/');
+        expect(recorded?.toString()).to.equal('ctrl+?');
         expect(keybindingRegistry.resolveKeybinding({ command: TEST_COMMAND.id, keybinding: recorded!.toString() })[0].dispatchString())
             .to.equal(production.dispatchString());
         interpretations.restore();
@@ -965,6 +991,12 @@ describe('acceleratorForKeyCode', () => {
     it('keeps command Shift in physical realizations', () => {
         const commandShift = new KeyCode({ key: Key.TAB, ctrl: true, shift: true });
         expect(keybindingRegistry.physicalComponentsForKeyCode(commandShift)).to.deep.equal(['Ctrl', 'Shift', 'Tab']);
+
+        const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', production: { shift: true } });
+        expect(keybindingRegistry.componentsForKeyCode(shiftedLetter)).to.deep.equal(['Ctrl', 'Shift', 'P']);
+
+        const unresolvedCharacter = new KeyCode({ ctrl: true, character: '§', resolved: false });
+        expect(keybindingRegistry.componentsForKeyCode(unresolvedCharacter)).to.deep.equal(['Ctrl', '§']);
     });
 
     it('deduplicates command Alt and production Option on macOS', () => {

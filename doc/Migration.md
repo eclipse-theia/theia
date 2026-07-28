@@ -7,6 +7,14 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ## Guide
 
+### v1.74.0
+
+#### Physical printable-key bindings
+
+Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing persisted keybinding strings remain valid and no format migration is required. However, a binding that intentionally relied on the former accidental US physical-position fallback must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
+
+Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position. See `packages/keymaps/README.md` for the complete grammar and Windows AltGr recorder guidance.
+
 ### General
 
 _ESBuild_:

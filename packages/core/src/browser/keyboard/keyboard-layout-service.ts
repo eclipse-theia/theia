@@ -93,12 +93,16 @@ export class KeyboardLayoutService {
 
     /** Resolve a canonical keybinding stroke against the active layout. */
     resolveKeyCode(inCode: KeyCode): KeyCode {
-        if (!inCode.key || !this.currentLayout || !this.isPrintableKey(inCode.key)) {
+        if (inCode.physical || !this.currentLayout || inCode.key && !this.isPrintableKey(inCode.key) && !inCode.character) {
             return inCode;
         }
-        const canonical = US_CHARACTER_BY_KEY.get(this.usKey(inCode.key, inCode.shift));
-        const character = inCode.character ?? canonical ?? inCode.key.easyString;
-        const candidate = this.currentLayout.characterToKeyCodes.get(character)?.[0];
+        const canonical = inCode.key ? US_CHARACTER_BY_KEY.get(this.usKey(inCode.key, inCode.shift)) : undefined;
+        const character = inCode.character ?? canonical ?? inCode.key?.easyString;
+        if (!character) {
+            return inCode;
+        }
+        const exactCandidates = this.currentLayout.characterToKeyCodes.get(character);
+        const candidate = exactCandidates?.[0] ?? this.caseFoldedCandidate(character);
         if (!candidate) {
             return new KeyCode({
                 key: inCode.key,
@@ -107,6 +111,7 @@ export class KeyboardLayoutService {
                 shift: inCode.shift,
                 alt: inCode.alt,
                 character,
+                keybindingToken: inCode.keybindingToken,
                 resolved: false
             });
         }
@@ -118,8 +123,18 @@ export class KeyboardLayoutService {
             alt: inCode.alt,
             character,
             production: candidate.production,
-            interpretation: 'canonical'
+            interpretation: 'canonical',
+            keybindingToken: inCode.keybindingToken
         });
+    }
+
+    protected caseFoldedCandidate(character: string): KeyboardLayoutCandidate | undefined {
+        const foldedCharacter = character.toLocaleLowerCase();
+        return Array.from(this.currentLayout!.characterToKeyCodes.entries())
+            .filter(([candidateCharacter]) => candidateCharacter.toLocaleLowerCase() === foldedCharacter)
+            .flatMap(([, candidates]) => candidates)
+            .sort((left, right) => this.productionCost(left.production) - this.productionCost(right.production)
+                || left.key.code.localeCompare(right.key.code))[0];
     }
 
     protected isPrintableKey(key: Key): boolean {
@@ -177,7 +192,9 @@ export class KeyboardLayoutService {
         if (!production || production.altGraph && !input.altGraph) {
             return [keyCode];
         }
-        return [this.toProductionKeyCode(keyCode, production)];
+        return production.shift && !production.altGraph
+            ? [new KeyCode({ ...keyCode, interpretation: 'command' }), this.toProductionKeyCode(keyCode, production)]
+            : [this.toProductionKeyCode(keyCode, production)];
     }
 
     protected getWindowsKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, production: KeyCodeProduction | undefined): KeyCode[] {
@@ -185,7 +202,9 @@ export class KeyboardLayoutService {
             return [keyCode];
         }
         if (!production.altGraph) {
-            return [this.toProductionKeyCode(keyCode, production)];
+            return production.shift && !production.altGraph
+                ? [new KeyCode({ ...keyCode, interpretation: 'command' }), this.toProductionKeyCode(keyCode, production)]
+                : [this.toProductionKeyCode(keyCode, production)];
         }
         if (input.altGraph && input.ctrlKey && input.altKey) {
             return [new KeyCode({
@@ -229,7 +248,9 @@ export class KeyboardLayoutService {
             return [keyCode];
         }
         if (!production.altGraph) {
-            return [this.toProductionKeyCode(keyCode, production)];
+            return production.shift && !production.altGraph
+                ? [new KeyCode({ ...keyCode, interpretation: 'command' }), this.toProductionKeyCode(keyCode, production)]
+                : [this.toProductionKeyCode(keyCode, production)];
         }
         if (!input.altKey) {
             return [keyCode];
@@ -262,9 +283,9 @@ export class KeyboardLayoutService {
     }
 
     /**
-    * Return the character shown on the user's keyboard for the given key.
-* Use this to determine UI representations of keybindings.
-*/
+     * Return the character shown on the user's keyboard for the given key.
+     * Use this to determine UI representations of keybindings.
+     */
     getKeyboardCharacter(key: Key): string {
         const layout = this.currentLayout;
         if (layout) {
@@ -398,15 +419,23 @@ export class KeyboardLayoutService {
     }
 
     private addWindowsKeyMappings(characterToKeyCodes: Map<string, KeyboardLayoutCandidate[]>, mappedKey: Key, keyMapping: IWindowsKeyMapping): void {
-        const key = VKEY_TO_KEY[keyMapping.vkey];
-        if (key) {
-            this.addKeyMapping(characterToKeyCodes, mappedKey, key.easyString, false, false);
-            const shifted = US_CHARACTER_BY_KEY.get(this.usKey(key, true));
-            if (shifted) {
-                this.addKeyMapping(characterToKeyCodes, mappedKey, shifted, true, false);
+        const mapping = keyMapping as IWindowsKeyMapping & Partial<ILinuxKeyMapping>;
+        if (mapping.value) {
+            this.addKeyMapping(characterToKeyCodes, mappedKey, mapping.value, false, false);
+        } else {
+            const key = VKEY_TO_KEY[mapping.vkey];
+            if (key) {
+                this.addKeyMapping(characterToKeyCodes, mappedKey, key.easyString, false, false);
             }
-        } else if (keyMapping.value) {
-            this.addKeyMapping(characterToKeyCodes, mappedKey, keyMapping.value, false, false);
+        }
+        if (mapping.withShift) {
+            this.addKeyMapping(characterToKeyCodes, mappedKey, mapping.withShift, true, false);
+        }
+        if (mapping.withAltGr) {
+            this.addKeyMapping(characterToKeyCodes, mappedKey, mapping.withAltGr, false, true);
+        }
+        if (mapping.withShiftAltGr) {
+            this.addKeyMapping(characterToKeyCodes, mappedKey, mapping.withShiftAltGr, true, true);
         }
     }
 
@@ -525,8 +554,8 @@ for (const [character, value] of Object.entries(VALUE_TO_KEY)) {
 }
 
 /**
-* Mapping of Windows Virtual Keys to the corresponding keys on a standard US keyboard layout.
-*/
+ * Mapping of Windows Virtual Keys to the corresponding keys on a standard US keyboard layout.
+ */
 const VKEY_TO_KEY: { [value: string]: Key } = {
     VK_SHIFT: Key.SHIFT_LEFT,
     VK_LSHIFT: Key.SHIFT_LEFT,

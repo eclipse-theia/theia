@@ -76,7 +76,7 @@ export interface RenderableStringSegment {
 
 export function recordedKeybindingStroke(keybindingRegistry: KeybindingRegistry, event: KeyboardEvent): string | undefined {
     const keyCode = keybindingRegistry.canonicalKeyCodeForKeyboardInput(event);
-    return keyCode && !keyCode.isModifierOnly() ? keyCode.toString() : undefined;
+    return keyCode && !keyCode.isModifierOnly() ? keyCode.toKeybindingString() : undefined;
 }
 
 /**
@@ -970,7 +970,8 @@ class EditKeybindingDialog extends SingleTextInputDialog {
             const inputField = this.node.querySelector('input');
             if (inputField) {
                 inputField.placeholder = isWindows
-                    ? nls.localize('theia/keymaps/windowsRecorderGuidance', 'Press the desired key combination, then press ENTER. AltGr combinations are saved as their logical character.')
+                    ? nls.localize('theia/keymaps/windowsRecorderGuidance',
+                        'Press the desired key combination, then press ENTER. AltGr combinations are saved as their logical character.')
                     : nls.localizeByDefault('Press desired key combination and then press ENTER.');
             }
         }, 100);

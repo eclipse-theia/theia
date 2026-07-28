@@ -519,11 +519,14 @@ export class KeybindingRegistry {
         if (keyCode.alt) {
             keyCodeResult.push(useSymbols ? '⌥' : 'Alt');
         }
-        if (keyCode.shift) {
+        const logicalCaseShift = keyCode.production.shift && !!keyCode.character && /^[A-Z]$/.test(keyCode.character);
+        if (keyCode.shift || logicalCaseShift) {
             keyCodeResult.push(useSymbols ? '⇧' : 'Shift');
         }
-        if (keyCode.key) {
-            keyCodeResult.push(keyCode.character ? this.acceleratorForCharacter(keyCode.character) : this.acceleratorForKey(keyCode.key, asciiOnly));
+        if (keyCode.character) {
+            keyCodeResult.push(this.acceleratorForCharacter(keyCode.character));
+        } else if (keyCode.key) {
+            keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }
         return keyCodeResult;
     }
@@ -553,10 +556,10 @@ export class KeybindingRegistry {
     }
 
     /**
-    * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
- *
- * Return a user visible representation of a single key.
- */
+     * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
+     *
+     * Return a user visible representation of a single key.
+     */
     acceleratorForKey(key: Key, asciiOnly = false): string {
         if (isOSX && !asciiOnly) {
             if (key === Key.ARROW_LEFT) {
@@ -732,10 +735,21 @@ export class KeybindingRegistry {
     /**
      * Runs normalized keyboard data directly through keybinding matching without dispatching a DOM event.
      */
-    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target: EventTarget = document.activeElement || window): void {
+    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target?: EventTarget): void {
         const normalizedInput = normalizeKeyboardInput(input);
-        const event = new KeyboardEvent('keydown', this.asKeyboardEventInit(normalizedInput));
-        Object.defineProperty(event, 'target', { value: target });
+        const eventTarget = target ?? (typeof document === 'undefined' ? new EventTarget() : document.activeElement || window);
+        let defaultPrevented = false;
+        const event = typeof KeyboardEvent === 'undefined'
+            ? {
+                target: eventTarget,
+                get defaultPrevented(): boolean { return defaultPrevented; },
+                preventDefault(): void { defaultPrevented = true; },
+                stopPropagation(): void { }
+            } as KeyboardEvent
+            : new KeyboardEvent('keydown', this.asKeyboardEventInit(normalizedInput));
+        if (typeof KeyboardEvent !== 'undefined') {
+            Object.defineProperty(event, 'target', { value: eventTarget });
+        }
         this.runNormalizedKeyboardInput(normalizedInput, event);
     }
 
@@ -820,13 +834,15 @@ export class KeybindingRegistry {
             return keyCode;
         }
         try {
+            const parsedCharacter = KeyCode.parse(keyCode.character);
             const logical = new KeyCode({
-                key: KeyCode.parse(keyCode.character).key,
+                key: parsedCharacter.key,
                 ctrl: keyCode.ctrl,
                 shift: keyCode.shift,
                 alt: keyCode.alt,
                 meta: keyCode.meta,
-                character: keyCode.character
+                character: keyCode.character,
+                keybindingToken: parsedCharacter.keybindingToken
             });
             const persisted = KeyCode.parse(logical.toString());
             if (this.keyboardLayoutService.resolveKeyCode(persisted).dispatchString() === keyCode.dispatchString()) {
@@ -998,12 +1014,12 @@ export class KeybindingRegistry {
         // Check for exact (FULL) matches first
         const fullMatches = tree.get(keySequence);
         if (fullMatches) {
-            const enabledForms = fullMatches.filter(form => isEnabled(form.binding));
+            const enabledForms = fullMatches.filter(runtimeForm => isEnabled(runtimeForm.binding));
 
             if (enabledForms.length > 0) {
-                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(form => form.binding), event);
-                const form = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
-                return { kind: 'full', binding: selectedBinding, form };
+                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(candidate => candidate.binding), event);
+                const runtimeForm = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
+                return { kind: 'full', binding: selectedBinding, form: runtimeForm };
             }
         }
 
@@ -1018,12 +1034,12 @@ export class KeybindingRegistry {
             }
             partialForms.sort((a, b) => b.binding.scope - a.binding.scope);
 
-            const enabledForms = partialForms.filter(form => isEnabled(form.binding));
+            const enabledForms = partialForms.filter(runtimeForm => isEnabled(runtimeForm.binding));
 
             if (enabledForms.length > 0) {
-                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(form => form.binding), event);
-                const form = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
-                return { kind: 'partial', binding: selectedBinding, form };
+                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(candidate => candidate.binding), event);
+                const runtimeForm = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
+                return { kind: 'partial', binding: selectedBinding, form: runtimeForm };
             }
         }
 

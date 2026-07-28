@@ -20,11 +20,11 @@ import { ActionMenuNode } from './action-menu-node';
 describe('ActionMenuNode accelerators', () => {
     it('selects logical and physical accelerator forms explicitly', () => {
         const binding = { command: 'test.command', keybinding: 'ctrl+[' };
-        let inactiveReason: string | undefined;
+        const state: { inactiveReason?: string } = {};
         const keybindingRegistry = {
             getKeybindingsForCommand: () => [binding],
             isEnabledInScope: () => true,
-            getKeybindingInactiveReason: () => inactiveReason,
+            getKeybindingInactiveReason: () => state.inactiveReason,
             acceleratorFor: () => ['Ctrl+['],
             physicalAcceleratorFor: () => ['Ctrl+AltGr+8']
         };
@@ -45,7 +45,7 @@ describe('ActionMenuNode accelerators', () => {
         expect(node.getAccelerator(undefined, 'logical')).to.deep.equal(['Ctrl+[']);
         expect(node.getAccelerator(undefined, 'physical')).to.deep.equal(['Ctrl+AltGr+8']);
 
-        inactiveReason = 'Unavailable on this layout';
+        state.inactiveReason = 'Unavailable on this layout';
         expect(node.getAccelerator(undefined, 'logical')).to.deep.equal(['Ctrl+[']);
         expect(node.getAccelerator(undefined, 'physical')).to.deep.equal([]);
     });
