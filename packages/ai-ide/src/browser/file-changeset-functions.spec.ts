@@ -40,6 +40,7 @@ import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, Mut
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -90,6 +91,14 @@ describe('File Changeset Functions Cancellation Tests', () => {
             read: async () => ({ value: { toString: () => 'test content' } })
         } as unknown as FileService;
 
+        // 1. Add mock WorkspaceService
+        const mockWorkspaceService = {
+            workspace: undefined,
+            tryGetRoots: async () => [],
+            getRoots: () => [],
+            onWorkspaceChanged: () => { }
+        } as unknown as WorkspaceService;
+
         const mockFileChangeFactory: ChangeSetFileElementFactory = () => ({
             uri: new URI('file:///workspace/test.txt'),
             type: 'modify',
@@ -102,6 +111,10 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(FileService).toConstantValue(mockFileService);
+
+        // 2. Bind WorkspaceService here
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
         container.bind(ReplaceContentInFileFunctionHelper).toSelf();
