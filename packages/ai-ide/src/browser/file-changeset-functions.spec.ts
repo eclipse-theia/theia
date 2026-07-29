@@ -33,7 +33,8 @@ import {
     ReplaceContentInFileFunctionHelper,
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
-    ReplaceContentInFileFunctionHelperV2
+    ReplaceContentInFileFunctionHelperV2,
+    WorkspaceFunctionScope
 } from './file-changeset-functions';
 import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
@@ -98,6 +99,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         } as ChangeSetFileElement);
 
         // Register mocks in the container
+        container.bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
