@@ -394,7 +394,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         if (widget) {
             const text = this.fileClipboard.get() ?? await this.clipboardService.readText();
             if (text) {
-                widget.pasteFiles(text);
+                await widget.pasteFiles(text);
             }
         }
     }

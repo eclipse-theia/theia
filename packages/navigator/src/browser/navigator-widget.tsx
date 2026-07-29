@@ -136,8 +136,11 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
 
     protected handlePaste(event: ClipboardEvent): void {
         if (event.clipboardData) {
-            if (this.pasteFiles(event.clipboardData.getData('text/plain'))) {
+            const raw = event.clipboardData.getData('text/plain');
+            // the consume decision must be made synchronously, before pasteFiles completes
+            if (raw && this.model.selectedFileStatNodes.length > 0) {
                 event.preventDefault();
+                this.pasteFiles(raw);
             }
         }
     }
@@ -146,9 +149,10 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
      * Pastes the files given as newline-separated URIs or absolute paths into the selected directory.
      *
      * @param raw the clipboard text, expected to hold one file URI or absolute file system path per line
-     * @returns `true` if the paste was handled, i.e. clipboard text and a paste target were available
+     * @returns `true` if the paste was handled, i.e. clipboard text and a paste target were available;
+     *   the promise resolves once all file copies have completed
      */
-    pasteFiles(raw: string): boolean {
+    async pasteFiles(raw: string): Promise<boolean> {
         if (!raw) {
             return false;
         }
@@ -164,9 +168,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
             ));
             return true;
         }
-        for (const source of sources) {
-            this.model.copy(source, target);
-        }
+        await Promise.all(sources.map(source => this.model.copy(source, target)));
         return true;
     }
 
@@ -188,7 +190,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     /** Interprets the given clipboard line as a URI or an absolute file system path, e.g. from the Copy Path command. */
     protected asPastedFileUri(candidate: string): URI | undefined {
         // check for absolute paths first: Windows paths like C:\foo also parse as URLs (scheme 'c:')
-        if (candidate.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(candidate)) {
+        if (candidate.startsWith('/') || candidate.startsWith('\\\\') || /^[a-zA-Z]:[\\/]/.test(candidate)) {
             return URI.fromFilePath(candidate);
         }
         try {

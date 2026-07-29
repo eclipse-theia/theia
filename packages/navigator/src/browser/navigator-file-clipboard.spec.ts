@@ -22,6 +22,8 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
+import { Emitter } from '@theia/core/lib/common/event';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { NavigatorFileClipboard } from './navigator-file-clipboard';
 
 disableJSDOM();
@@ -30,6 +32,7 @@ describe('NavigatorFileClipboard', () => {
 
     let jsdomCleanup: () => void;
     let clipboard: NavigatorFileClipboard;
+    let onDidWriteTextEmitter: Emitter<string>;
 
     before(() => {
         jsdomCleanup = enableJSDOM();
@@ -38,10 +41,20 @@ describe('NavigatorFileClipboard', () => {
         jsdomCleanup();
     });
 
-    beforeEach(() => {
+    function createClipboard(clipboardService: ClipboardService): NavigatorFileClipboard {
         const container = new Container();
+        container.bind(ClipboardService).toConstantValue(clipboardService);
         container.bind(NavigatorFileClipboard).toSelf().inSingletonScope();
-        clipboard = container.get(NavigatorFileClipboard);
+        return container.get(NavigatorFileClipboard);
+    }
+
+    beforeEach(() => {
+        onDidWriteTextEmitter = new Emitter<string>();
+        clipboard = createClipboard({
+            readText: async () => '',
+            writeText: async () => undefined,
+            onDidWriteText: onDidWriteTextEmitter.event
+        });
     });
 
     it('should return undefined when nothing was copied', () => {
@@ -80,5 +93,21 @@ describe('NavigatorFileClipboard', () => {
         clipboard.set('file:///workspace/a.txt');
         document.body.dispatchEvent(new window.Event('cut', { bubbles: true }));
         expect(clipboard.get()).to.be.undefined;
+    });
+
+    it('should sync the content when text is written through the clipboard service', () => {
+        // e.g. Copy Path writes via ClipboardService.writeText, which dispatches no DOM copy event
+        clipboard.set('file:///workspace/a.txt');
+        onDidWriteTextEmitter.fire('/workspace/b.txt');
+        expect(clipboard.get()).to.equal('/workspace/b.txt');
+    });
+
+    it('should work with a clipboard service lacking the optional write event', () => {
+        clipboard = createClipboard({
+            readText: async () => '',
+            writeText: async () => undefined
+        });
+        clipboard.set('file:///workspace/a.txt');
+        expect(clipboard.get()).to.equal('file:///workspace/a.txt');
     });
 });

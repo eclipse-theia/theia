@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 /**
  * In-app store for file URIs copied in the navigator.
@@ -28,6 +29,9 @@ import { injectable, postConstruct } from '@theia/core/shared/inversify';
 @injectable()
 export class NavigatorFileClipboard {
 
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
+
     protected content: string | undefined;
 
     @postConstruct()
@@ -36,6 +40,9 @@ export class NavigatorFileClipboard {
         // own (bubbling) copy listener, which runs after this capturing listener
         document.addEventListener('copy', this.clear, true);
         document.addEventListener('cut', this.clear, true);
+        // writes through the ClipboardService (e.g. Copy Path) dispatch no DOM event;
+        // adopt their content so the store stays in sync with the system clipboard
+        this.clipboardService.onDidWriteText?.(value => this.set(value));
     }
 
     set(content: string): void {

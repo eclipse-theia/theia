@@ -14,10 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event } from '../common/event';
 import { MaybePromise } from '../common/types';
 
 export const ClipboardService = Symbol('ClipboardService');
 export interface ClipboardService {
     readText(): MaybePromise<string>;
     writeText(value: string): MaybePromise<void>;
+    readonly onDidWriteText?: Event<string>;
 }

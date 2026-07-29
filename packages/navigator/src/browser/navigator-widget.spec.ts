@@ -91,27 +91,39 @@ describe('FileNavigatorWidget', () => {
 
     describe('pasteFiles', () => {
 
-        it('should not paste anything for empty clipboard text', () => {
+        it('should not paste anything for empty clipboard text', async () => {
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('')).to.be.false;
+            expect(await widget.pasteFiles('')).to.be.false;
             expect(copiedSources).to.have.lengthOf(0);
         });
 
-        it('should not paste anything if no target node is selected', () => {
-            expect(widget.pasteFiles('file:///workspace/some-file.txt')).to.be.false;
+        it('should not paste anything if no target node is selected', async () => {
+            expect(await widget.pasteFiles('file:///workspace/some-file.txt')).to.be.false;
             expect(copiedSources).to.have.lengthOf(0);
         });
 
-        it('should copy valid workspace URIs to the selected target', () => {
+        it('should copy valid workspace URIs to the selected target', async () => {
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('file:///workspace/a.txt\nfile:///workspace/dir/b.txt')).to.be.true;
+            expect(await widget.pasteFiles('file:///workspace/a.txt\nfile:///workspace/dir/b.txt')).to.be.true;
             expect(copiedSources.map(uri => uri.toString())).to.deep.equal([
                 'file:///workspace/a.txt',
                 'file:///workspace/dir/b.txt'
             ]);
         });
 
-        it('should skip blank lines, invalid URIs and URIs outside the workspace', () => {
+        it('should resolve only after the copies completed', async () => {
+            selectedNodes = [targetNode];
+            let completedCopies = 0;
+            widget.model.copy = async (source: URI): Promise<URI> => {
+                await new Promise(resolve => setTimeout(resolve, 5));
+                completedCopies++;
+                return source;
+            };
+            expect(await widget.pasteFiles('file:///workspace/a.txt\nfile:///workspace/b.txt')).to.be.true;
+            expect(completedCopies).to.equal(2);
+        });
+
+        it('should skip blank lines, invalid URIs and URIs outside the workspace', async () => {
             selectedNodes = [targetNode];
             const raw = [
                 '',
@@ -120,44 +132,81 @@ describe('FileNavigatorWidget', () => {
                 'file:///outside/c.txt',
                 'file:///workspace/d.txt'
             ].join('\n');
-            expect(widget.pasteFiles(raw)).to.be.true;
+            expect(await widget.pasteFiles(raw)).to.be.true;
             expect(copiedSources.map(uri => uri.toString())).to.deep.equal(['file:///workspace/d.txt']);
             expect(infoMessages).to.have.lengthOf(0);
         });
 
-        it('should paste files given as absolute file system paths', () => {
+        it('should paste files given as absolute file system paths', async () => {
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('/workspace/e.txt')).to.be.true;
+            expect(await widget.pasteFiles('/workspace/e.txt')).to.be.true;
             expect(copiedSources.map(uri => uri.toString())).to.deep.equal(['file:///workspace/e.txt']);
             expect(infoMessages).to.have.lengthOf(0);
         });
 
-        it('should paste files given as Windows-style absolute paths', () => {
+        it('should paste files given as Windows-style absolute paths', async () => {
             widget = createWidget(URI.fromFilePath('C:\\workspace'));
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('C:\\workspace\\sub\\f.txt')).to.be.true;
+            expect(await widget.pasteFiles('C:\\workspace\\sub\\f.txt')).to.be.true;
             expect(copiedSources.map(uri => uri.toString())).to.deep.equal([URI.fromFilePath('C:\\workspace\\sub\\f.txt').toString()]);
             expect(infoMessages).to.have.lengthOf(0);
         });
 
-        it('should not paste relative paths', () => {
+        it('should not paste relative paths', async () => {
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('workspace/relative.txt')).to.be.true;
+            expect(await widget.pasteFiles('workspace/relative.txt')).to.be.true;
             expect(copiedSources).to.have.lengthOf(0);
         });
 
-        it('should inform the user when the clipboard contains no pastable files', () => {
+        it('should inform the user when the clipboard contains no pastable files', async () => {
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('not a uri')).to.be.true;
+            expect(await widget.pasteFiles('not a uri')).to.be.true;
             expect(copiedSources).to.have.lengthOf(0);
             expect(infoMessages).to.have.lengthOf(1);
         });
 
-        it('should stay silent for empty clipboard text or missing paste target', () => {
-            expect(widget.pasteFiles('file:///workspace/a.txt')).to.be.false;
+        it('should stay silent for empty clipboard text or missing paste target', async () => {
+            expect(await widget.pasteFiles('file:///workspace/a.txt')).to.be.false;
             selectedNodes = [targetNode];
-            expect(widget.pasteFiles('')).to.be.false;
+            expect(await widget.pasteFiles('')).to.be.false;
             expect(infoMessages).to.have.lengthOf(0);
+        });
+    });
+
+    describe('asPastedFileUri', () => {
+
+        it('should interpret UNC paths as file URIs', () => {
+            const uri = widget['asPastedFileUri']('\\\\server\\share\\f.txt');
+            expect(uri?.toString()).to.equal(URI.fromFilePath('\\\\server\\share\\f.txt').toString());
+        });
+    });
+
+    describe('handlePaste', () => {
+
+        function pasteEvent(text: string): ClipboardEvent & { prevented: number } {
+            const event = {
+                prevented: 0,
+                clipboardData: { getData: () => text },
+                preventDefault(): void {
+                    event.prevented++;
+                }
+            };
+            return event as unknown as ClipboardEvent & { prevented: number };
+        }
+
+        it('should consume the event only when clipboard text and a paste target are available', () => {
+            const noTarget = pasteEvent('file:///workspace/a.txt');
+            widget['handlePaste'](noTarget);
+            expect(noTarget.prevented).to.equal(0);
+
+            selectedNodes = [targetNode];
+            const noText = pasteEvent('');
+            widget['handlePaste'](noText);
+            expect(noText.prevented).to.equal(0);
+
+            const pastable = pasteEvent('file:///workspace/a.txt');
+            widget['handlePaste'](pastable);
+            expect(pastable.prevented).to.equal(1);
         });
     });
 
