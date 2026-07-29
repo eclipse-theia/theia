@@ -390,6 +390,7 @@ export class ChatServiceImpl implements ChatService {
         }
         const requestText = request.request.displayText ?? request.request.text;
         session.title = requestText;
+        this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
         if (this.chatSessionNamingService) {
             const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
             const namingService = this.chatSessionNamingService;
@@ -401,6 +402,7 @@ export class ChatServiceImpl implements ChatService {
                             session.title = name;
                             // Trigger persistence when title changes
                             this.saveSession(session.id);
+                            this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
                         }
                         didGenerateName = true;
                     }).catch(error => this.logger.error('Failed to generate chat session name', error));

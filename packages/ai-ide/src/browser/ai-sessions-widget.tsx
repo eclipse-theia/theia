@@ -14,40 +14,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { ChatAgentService, ChatService, ChatSessionMetadata } from '@theia/ai-chat';
+import { AI_CHAT_OPEN_SESSION } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import {
-    ChatAgentService, ChatService, ChatSessionMetadata
-} from '@theia/ai-chat';
-import { BYPASS_MODEL_REQUIREMENT_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
-import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
 import { ChatSessionListService } from './chat-session-list-service';
-import { SectionedSessions, SessionRow, SessionsList } from './chat-session-list-components';
+import { SessionRow, SessionsList } from './chat-session-list-components';
 import { ChatSessionItem } from './chat-session-item';
-import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { CommandRegistry, ContributionProvider, nls } from '@theia/core';
+import { codicon, HoverService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 
 @injectable()
-export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessageProvider {
+export class AISessionsWidget extends ReactWidget {
 
-    readonly priority = 50;
+    static readonly ID = 'ai-sessions-widget';
+    static readonly LABEL = nls.localize('theia/ai-ide/sessionsView', 'AI Sessions');
+
+    @inject(ChatSessionListService)
+    protected readonly sessionListService: ChatSessionListService;
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
@@ -58,14 +54,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(ContributionProvider) @named(ChatSessionItemActionContribution)
     protected readonly chatSessionItemActionContributions: ContributionProvider<ChatSessionItemActionContribution>;
 
-    @inject(FrontendLanguageModelRegistry)
-    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
-
-    @inject(ChatSessionListService)
-    protected readonly sessionListService: ChatSessionListService;
-
-    protected _inputEnabled = false;
-
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
         if (!this._markdownRenderer) {
@@ -74,65 +62,46 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this._markdownRenderer;
     }
 
-    protected readonly onStateChangedEmitter = new Emitter<void>();
-    readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
-
     @postConstruct()
     protected init(): void {
-        this.sessionListService.onStateChanged(() => {
-            this.onStateChangedEmitter.fire();
-        });
+        this.id = AISessionsWidget.ID;
+        this.title.label = AISessionsWidget.LABEL;
+        this.title.caption = AISessionsWidget.LABEL;
+        this.title.closable = true;
+        this.title.iconClass = codicon('history');
+        this.addClass('ai-sessions-view');
 
-        this.updateInputEnabled();
-        this.languageModelRegistry.onChange(() => {
-            this.updateInputEnabled();
-        });
-        this.preferenceService.onPreferenceChanged(e => {
-            if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
-                this.updateInputEnabled();
-            } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
-                this.onStateChangedEmitter.fire();
-            }
-        });
+        this.toDispose.pushAll([
+            this.sessionListService.onStateChanged(() => this.update()),
+            this.sessionListService.onUnreadChanged(() => this.update())
+        ]);
+
+        this.update();
     }
 
-    protected async updateInputEnabled(): Promise<void> {
-        const models = await this.languageModelRegistry.getLanguageModels();
-        const hasReadyModels = models.some(model => model.status.status === 'ready');
-        const bypassed = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
-        const enabled = hasReadyModels || bypassed;
-        if (this._inputEnabled !== enabled) {
-            this._inputEnabled = enabled;
-            this.onStateChangedEmitter.fire();
-        }
-    }
-
-    renderWelcomeMessage(): React.ReactNode {
-        if (!this._inputEnabled) {
-            return undefined;
-        }
+    protected render(): React.ReactNode {
         const sections = this.sessionListService.getSections();
-        const sessionCount = sections.active.length + sections.restored.length;
-        if (!this.sessionListService.isPersistenceEnabled() || sessionCount === 0) {
-            return undefined;
-        }
-        return this.renderSessionsSection(sections);
-    }
+        const total = sections.active.length + sections.restored.length;
 
-    protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
-        const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
+        if (total === 0) {
+            return (
+                <div className="ai-sessions-view-empty">
+                    <span className={codicon('comment-discussion')} />
+                    <p>{nls.localize('theia/ai-ide/noSessions', 'No chat sessions yet.')}</p>
+                </div>
+            );
+        }
+
         const rows = this.sessionListService.buildRows(sections);
 
         return (
-            <div className="theia-WelcomeMessage" key="sessions-section">
-                <div className="theia-WelcomeMessage-SessionsSection">
-                    <SessionsList
-                        rows={rows}
-                        maxSessions={maxSessions}
-                        renderRow={this.renderSessionRow}
-                        onBrowseAll={this.handleBrowseAllChats}
-                    />
-                </div>
+            <div className="ai-sessions-view-content">
+                <SessionsList
+                    rows={rows}
+                    maxSessions={Number.MAX_SAFE_INTEGER}
+                    renderRow={this.renderSessionRow}
+                    onBrowseAll={() => { }}
+                />
             </div>
         );
     }
@@ -162,9 +131,13 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                     hoverService={this.hoverService}
                     markdownRenderer={this.markdownRenderer}
                     unreadState={this.sessionListService}
-                    onClick={() => this.handleSessionItemClick(row.session.sessionId)}
+                    onClick={async () => {
+                        await this.commandRegistry.executeCommand(AI_CHAT_OPEN_SESSION.id, row.session.sessionId);
+                    }}
                     actions={this.getSessionActions(row.session)}
-                    onAction={this.handleSessionItemAction}
+                    onAction={(action: ChatSessionItemAction, s: ChatSessionMetadata) => {
+                        this.commandRegistry.executeCommand(action.commandId, s);
+                    }}
                     formatTimeAgo={date => formatTimeAgo(date)}
                     hasChildSessions={hasChildSessions}
                     isChildSession={depth > 0}
@@ -177,17 +150,4 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
             </React.Fragment>
         );
     }
-
-    protected handleSessionItemAction = (action: ChatSessionItemAction, session: ChatSessionMetadata): void => {
-        this.commandRegistry.executeCommand(action.commandId, session);
-    };
-
-    protected handleSessionItemClick = async (sessionId: string): Promise<void> => {
-        await this.chatService.getOrRestoreSession(sessionId);
-        this.chatService.setActiveSession(sessionId, { focus: true });
-    };
-
-    protected handleBrowseAllChats = (): void => {
-        this.commandRegistry.executeCommand(AI_CHAT_SHOW_CHATS_COMMAND.id);
-    };
 }

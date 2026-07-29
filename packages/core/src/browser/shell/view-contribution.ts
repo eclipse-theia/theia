@@ -87,6 +87,11 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         return this.options.defaultWidgetOptions;
     }
 
+    /** The widget ID used for shell operations — `viewContainerId` if set, otherwise `widgetId`. */
+    get effectiveWidgetId(): string {
+        return this.options.viewContainerId || this.options.widgetId;
+    }
+
     get widget(): Promise<T> {
         return this.widgetManager.getOrCreateWidget(this.viewId);
     }

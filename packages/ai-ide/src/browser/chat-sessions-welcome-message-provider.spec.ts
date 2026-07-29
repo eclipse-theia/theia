@@ -23,7 +23,8 @@ import { Emitter } from '@theia/core';
 import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
-import { ChatSessionsWelcomeMessageProvider, SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-sessions-welcome-message-provider';
+import { ChatSessionListService } from './chat-session-list-service';
+import { SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-session-list-components';
 disableJSDOM();
 
 /**
@@ -32,7 +33,7 @@ disableJSDOM();
  * unread bookkeeping; spinning up the full container would pull in unrelated
  * services and obscure the assertion.
  */
-class TestableProvider extends ChatSessionsWelcomeMessageProvider {
+class TestableService extends ChatSessionListService {
     constructor(chatService: ChatService, shell: ApplicationShell) {
         super();
         (this as unknown as { chatService: ChatService }).chatService = chatService;
@@ -59,6 +60,7 @@ function createFakeSession(id: string): {
         id,
         isActive: false,
         model: {
+            status: 'idle' as ChatSessionStatus,
             getRequests: () => requests,
             onDidChange: onDidChangeEmitter.event,
         }
@@ -70,7 +72,7 @@ function createFakeSession(id: string): {
     };
 }
 
-describe('ChatSessionsWelcomeMessageProvider', () => {
+describe('ChatSessionListService', () => {
 
     describe('unread state', () => {
         let activeSessionId: string | undefined;
@@ -112,33 +114,33 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         });
 
         it('marks the session unread when a new request arrives and the chat view is not focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             activeWidget = otherWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
         });
 
         it('does not mark unread when the session is active AND the chat view is focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             activeWidget = chatViewWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(false);
+            expect(service.isUnread('s1')).to.equal(false);
         });
 
         it('does not mark unread when focus is inside a child widget of the chat view', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             // Simulate focus inside a descendant (e.g. AIChatInputWidget): the shell's
@@ -147,42 +149,42 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             activeWidget = childWidget;
             widgetForActiveElement = childWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(false);
+            expect(service.isUnread('s1')).to.equal(false);
         });
 
         it('marks unread when the session is not the active one, even if the chat view is focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 'other';
             activeWidget = chatViewWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
         });
 
         it('fires onUnreadChanged once when a session transitions to unread', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = undefined;
             activeWidget = otherWidget;
 
             let fired = 0;
-            provider.onUnreadChanged(() => { fired++; });
+            service.onUnreadChanged(() => { fired++; });
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
             expect(fired).to.equal(1);
         });
     });
@@ -210,17 +212,14 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         });
 
         it('reserves up to 5 restored slots when both sections overflow the cap', () => {
-            // 5 slots reserved for restored, the remaining 15 go to active.
             expect(computeVisibleSessionSlots(20, 10, 20)).to.deep.equal({ activeCount: 15, restoredCount: 5 });
         });
 
         it('only reserves as many restored slots as there are restored sessions', () => {
-            // Just 3 restored exist, so active gets the other 17.
             expect(computeVisibleSessionSlots(20, 3, 20)).to.deep.equal({ activeCount: 17, restoredCount: 3 });
         });
 
         it('gives leftover slots to restored when active does not fill its share', () => {
-            // Total (12) fits under the cap, so everything is shown.
             expect(computeVisibleSessionSlots(2, 10, 20)).to.deep.equal({ activeCount: 2, restoredCount: 10 });
         });
 
@@ -239,11 +238,11 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
 
     describe('getSections', () => {
 
-        class SectionsTestProvider extends ChatSessionsWelcomeMessageProvider {
+        class SectionsTestService extends ChatSessionListService {
             constructor(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]) {
                 super();
                 (this as unknown as { chatService: ChatService }).chatService = { getSessions: () => sessions } as unknown as ChatService;
-                this._persistedSessions = persistedSessions;
+                (this as unknown as { _persistedSessions: ChatSessionMetadata[] })._persistedSessions = persistedSessions;
             }
             sections(): SectionedSessions {
                 return this.getSections();
@@ -275,7 +274,7 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         }
 
         function getSections(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]): SectionedSessions {
-            return new SectionsTestProvider(sessions, persistedSessions).sections();
+            return new SectionsTestService(sessions, persistedSessions).sections();
         }
 
         it('excludes active sessions without a title', () => {
@@ -327,11 +326,11 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
 
     describe('session hierarchy', () => {
 
-        class HierarchyTestProvider extends ChatSessionsWelcomeMessageProvider {
+        class HierarchyTestService extends ChatSessionListService {
             constructor(chatService: ChatService, persistedSessions: ChatSessionMetadata[] = []) {
                 super();
                 (this as unknown as { chatService: ChatService }).chatService = chatService;
-                this._persistedSessions = persistedSessions;
+                (this as unknown as { _persistedSessions: ChatSessionMetadata[] })._persistedSessions = persistedSessions;
             }
             rows(sections: SectionedSessions): SessionRow[] {
                 return this.buildRows(sections);
@@ -374,13 +373,13 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         }
 
         it('nests a restored A -> B hierarchy with an active C under the root', () => {
-            const provider = new HierarchyTestProvider({ getSession: () => undefined } as unknown as ChatService);
+            const service = new HierarchyTestService({ getSession: () => undefined } as unknown as ChatService);
             const sections: SectionedSessions = {
                 active: [meta('C', { rootSessionId: 'A', parentSessionId: 'B' })],
                 restored: [meta('A'), meta('B', { rootSessionId: 'A', parentSessionId: 'A' })]
             };
 
-            const rows = provider.rows(sections);
+            const rows = service.rows(sections);
             const rowA = findRow(rows, 'A');
             expect(rowA.isRestored).to.equal(true);
             expect(rowA.childSessions.map(c => c.session.sessionId)).to.deep.equal(['B']);
@@ -391,41 +390,37 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         });
 
         it('propagates a deep descendant needing action up the tree', () => {
-            // Only the leaf C awaits input; both B and the root A must report a descendant needing action.
             const chatService = {
                 getSession: (id: string) => id === 'C' ? loadedSession('C', 'awaitingInput') : loadedSession(id, 'idle')
             } as unknown as ChatService;
-            const provider = new HierarchyTestProvider(chatService);
+            const service = new HierarchyTestService(chatService);
             const sections: SectionedSessions = {
                 active: [meta('C', { rootSessionId: 'A', parentSessionId: 'B' })],
                 restored: [meta('A'), meta('B', { rootSessionId: 'A', parentSessionId: 'A' })]
             };
 
-            const rows = provider.rows(sections);
+            const rows = service.rows(sections);
             const rowA = findRow(rows, 'A');
             const rowB = rowA.childSessions[0];
             const rowC = rowB.childSessions[0];
-            expect(provider.subtreeRequiresAction(rowA)).to.equal(true);
-            expect(provider.subtreeRequiresAction(rowB)).to.equal(true);
-            expect(provider.subtreeRequiresAction(rowC)).to.equal(false);
+            expect(service.subtreeRequiresAction(rowA)).to.equal(true);
+            expect(service.subtreeRequiresAction(rowB)).to.equal(true);
+            expect(service.subtreeRequiresAction(rowC)).to.equal(false);
         });
 
         it('expands every ancestor of a session that needs action, falling back to persisted-only ancestors', () => {
-            // C is loaded and awaiting input; its ancestors B and A exist only in the persisted index
-            // (e.g. C was opened directly from "Browse all chats"). The walk must reach the root A, not
-            // stop at the first ancestor `getSession` cannot resolve.
             const c = loadedSession('C', 'awaitingInput', { rootSessionId: 'A', parentSessionId: 'B' });
             const chatService = {
                 getSession: (id: string) => id === 'C' ? c : undefined
             } as unknown as ChatService;
-            const provider = new HierarchyTestProvider(chatService, [
+            const service = new HierarchyTestService(chatService, [
                 meta('A'),
                 meta('B', { rootSessionId: 'A', parentSessionId: 'A' })
             ]);
 
-            provider.expand(c);
+            service.expand(c);
 
-            expect([...provider.expanded].sort()).to.deep.equal(['A', 'B']);
+            expect([...service.expanded].sort()).to.deep.equal(['A', 'B']);
         });
     });
 });

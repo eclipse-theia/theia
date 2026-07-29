@@ -35,6 +35,8 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected backgroundColor: string | undefined;
     protected color: string | undefined;
 
+    protected perspectiveHidesStatusBar = false;
+
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
         @inject(LabelParser) protected readonly entryService: LabelParser,
@@ -50,17 +52,26 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         // Hide the status bar until the `workbench.statusBar.visible` preference returns with a `true` value.
         this.hide();
         this.preferences.ready.then(() => {
-            const preferenceValue = this.preferences.get<boolean>('workbench.statusBar.visible', true);
-            this.setHidden(!preferenceValue);
+            this.updateVisibility();
         });
         this.toDispose.push(
             this.preferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'workbench.statusBar.visible') {
-                    this.setHidden(!this.preferences.get('workbench.statusBar.visible', true));
+                    this.updateVisibility();
                 }
             })
         );
         this.toDispose.push(this.viewModel.onDidChange(() => this.debouncedUpdate()));
+    }
+
+    setHiddenByPerspective(hidden: boolean): void {
+        this.perspectiveHidesStatusBar = hidden;
+        this.updateVisibility();
+    }
+
+    protected updateVisibility(): void {
+        const prefHides = !this.preferences.get<boolean>('workbench.statusBar.visible', true);
+        this.setHidden(this.perspectiveHidesStatusBar || prefHides);
     }
 
     protected debouncedUpdate = debounce(() => this.update(), 50);

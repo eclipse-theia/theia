@@ -155,8 +155,8 @@ export class HoverService {
         }
         // browsers might insert linebreaks when the hover appears at the edge of the window
         // resetting the position prevents that
-        host.style.left = '0px';
-        host.style.top = '0px';
+        host.style.left = '-9999px';
+        host.style.top = '-9999px';
         document.body.append(host);
         if (!host.matches(':popover-open')) {
             host.showPopover();

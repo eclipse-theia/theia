@@ -28,6 +28,7 @@ import { CommonCommands } from '../common-commands';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
 import { isFunction, isObject, MaybePromise } from '../../common';
+import { PerspectiveService } from '../perspective-service';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -124,6 +125,13 @@ export interface ShellLayoutTransformer {
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void;
 }
 
+export const PERSPECTIVE_LAYOUTS_STORAGE_KEY = 'layouts';
+
+export interface PersistedPerspectiveData {
+    activePerspectiveId: string;
+    layouts: Record<string, string>;
+}
+
 export const RESET_LAYOUT = Command.toLocalizedCommand({
     id: 'reset.layout',
     category: CommonCommands.VIEW_CATEGORY,
@@ -133,13 +141,16 @@ export const RESET_LAYOUT = Command.toLocalizedCommand({
 @injectable()
 export class ShellLayoutRestorer implements CommandContribution {
 
-    protected storageKey = 'layout';
+    protected readonly legacyStorageKey = 'layout';
     protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration) protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
     @inject(ContributionProvider) @named(ShellLayoutTransformer) protected readonly transformations: ContributionProvider<ShellLayoutTransformer>;
     @inject(WindowService) protected readonly windowService: WindowService;
     @inject(ThemeService) protected readonly themeService: ThemeService;
+
+    @inject(PerspectiveService)
+    protected readonly perspectiveService: PerspectiveService;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
@@ -156,7 +167,9 @@ export class ShellLayoutRestorer implements CommandContribution {
         if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
             this.logger.info('>>> Resetting layout...');
             this.shouldStoreLayout = false;
-            this.storageService.setData(this.storageKey, undefined);
+            this.storageService.setData(this.legacyStorageKey, undefined);
+            this.perspectiveService.clearSavedLayouts();
+            this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
             this.themeService.reset();
             this.logger.info('<<< The layout has been successfully reset.');
             this.windowService.reload();
@@ -167,29 +180,120 @@ export class ShellLayoutRestorer implements CommandContribution {
         if (this.shouldStoreLayout) {
             try {
                 this.logger.info('>>> Storing the layout...');
-                const layoutData = app.shell.getLayoutData();
-                const serializedLayoutData = this.deflate(layoutData);
-                this.storageService.setData(this.storageKey, serializedLayoutData);
+                this.storePerspectiveLayouts(app);
                 this.logger.info('<<< The layout has been successfully stored.');
             } catch (error) {
-                this.storageService.setData(this.storageKey, undefined);
                 this.logger.error('Error during serialization of layout data', error);
             }
         }
     }
 
+    protected storePerspectiveLayouts(app: FrontendApplication): void {
+        const provider = this.perspectiveService;
+        const activeId = provider.getActivePerspectiveId();
+        const layouts: Record<string, string> = {};
+
+        // Snapshot current shell as the active perspective's layout
+        try {
+            const currentLayout = app.shell.getLayoutData();
+            layouts[activeId] = this.deflate(currentLayout);
+        } catch (error) {
+            this.logger.warn(`Could not deflate layout for active perspective '${activeId}'`, error);
+        }
+
+        // Deflate all other saved (inactive) perspective layouts
+        for (const perspId of provider.getSavedPerspectiveIds()) {
+            if (perspId === activeId) {
+                continue; // already handled above from live shell
+            }
+            try {
+                const layout = provider.getSavedLayout(perspId);
+                if (layout) {
+                    layouts[perspId] = this.deflate(layout);
+                }
+            } catch (error) {
+                this.logger.warn(`Could not deflate layout for perspective '${perspId}'`, error);
+            }
+        }
+
+        const data: PersistedPerspectiveData = { activePerspectiveId: activeId, layouts };
+        this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, data).catch(error => {
+            this.logger.error('Error persisting perspective layouts, clearing stored data', error);
+            this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
+        });
+    }
+
     async restoreLayout(app: FrontendApplication): Promise<boolean> {
         this.logger.info('>>> Restoring the layout state...');
-        const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
-        if (serializedLayoutData === undefined) {
-            this.logger.info('<<< Nothing to restore.');
-            return false;
+        return this.restorePerspectiveLayouts(app);
+    }
+
+    protected async restorePerspectiveLayouts(app: FrontendApplication): Promise<boolean> {
+        const persisted = await this.storageService.getData<PersistedPerspectiveData>(PERSPECTIVE_LAYOUTS_STORAGE_KEY);
+
+        let activeId: string | undefined;
+
+        if (persisted) {
+            activeId = persisted.activePerspectiveId;
+            // Inflate all perspective layouts, apply transforms, and push to provider
+            for (const [perspId, deflated] of Object.entries(persisted.layouts)) {
+                try {
+                    const layout = await this.inflate(deflated);
+                    this.transformations.getContributions()
+                        .forEach(t => t.transformLayoutOnRestore(layout));
+                    this.perspectiveService.setSavedLayout(perspId, layout);
+                } catch (error) {
+                    this.logger.warn(`Could not inflate layout for perspective '${perspId}'`, error);
+                }
+            }
+        } else {
+            // Migration: try legacy single-layout key
+            const legacyData = await this.storageService.getData<string>(this.legacyStorageKey);
+            if (legacyData) {
+                try {
+                    const layout = await this.inflate(legacyData);
+                    this.transformations.getContributions()
+                        .forEach(t => t.transformLayoutOnRestore(layout));
+                    this.perspectiveService.setSavedLayout(this.perspectiveService.defaultPerspectiveId, layout);
+                    activeId = this.perspectiveService.defaultPerspectiveId;
+                    this.storageService.setData(this.legacyStorageKey, undefined);
+                } catch (error) {
+                    this.logger.warn('Could not inflate legacy layout for migration', error);
+                }
+            }
         }
-        const layoutData = await this.inflate(serializedLayoutData);
-        this.transformations.getContributions().forEach(transformation => transformation.transformLayoutOnRestore(layoutData));
-        await app.shell.setLayoutData(layoutData);
-        this.logger.info('<<< The layout has been successfully restored.');
-        return true;
+
+        if (activeId) {
+            const accepted = this.perspectiveService.setActivePerspectiveId(activeId);
+            if (!accepted) {
+                activeId = this.perspectiveService.getActivePerspectiveId();
+            }
+        }
+
+        // Apply the active perspective's layout to the shell
+        const effectiveId = activeId ?? this.perspectiveService.getActivePerspectiveId();
+        let activeLayout = this.perspectiveService.getSavedLayout(effectiveId);
+
+        // Fallback: if the active perspective has no saved layout, try the default
+        if (!activeLayout && effectiveId !== this.perspectiveService.defaultPerspectiveId) {
+            this.logger.warn(`No saved layout for perspective '${effectiveId}', falling back to default.`);
+            const defaultId = this.perspectiveService.defaultPerspectiveId;
+            this.perspectiveService.setActivePerspectiveId(defaultId);
+            activeLayout = this.perspectiveService.getSavedLayout(defaultId);
+        }
+
+        if (activeLayout) {
+            await app.shell.setLayoutData(activeLayout);
+            const restoredId = this.perspectiveService.getActivePerspectiveId();
+            this.perspectiveService.onLayoutRestored(restoredId);
+            this.logger.info('<<< The layout has been successfully restored.');
+            return true;
+        }
+
+        // Even with no layout to restore, ensure chrome is applied for whatever perspective is active
+        this.perspectiveService.onLayoutRestored(this.perspectiveService.getActivePerspectiveId());
+        this.logger.info('<<< Nothing to restore.');
+        return false;
     }
 
     protected isWidgetProperty(propertyName: string): boolean {
