@@ -22,22 +22,33 @@ import { PreferenceService } from '@theia/core/lib/common/preferences/preference
 import { interfaces } from '@theia/core/shared/inversify';
 import { TelemetryLevel } from './telemetry-types';
 
+/** @experimental */
 export const TELEMETRY_LEVEL = 'telemetry.telemetryLevel';
+/** @experimental */
 export const TELEMETRY_FILTERS = 'telemetry.filters';
 
+/** @experimental */
 export type TelemetryFilters = Record<string, string[]>;
 
+/** @experimental */
 export interface TelemetryConfiguration {
     [TELEMETRY_LEVEL]: TelemetryLevel;
     [TELEMETRY_FILTERS]: TelemetryFilters;
 }
 
+/** @experimental */
 export const TelemetryPreferenceSchema: PreferenceSchema = {
     scope: PreferenceScope.User,
     properties: {
         [TELEMETRY_LEVEL]: {
             type: 'string',
             enum: ['off', 'crash', 'error', 'all'],
+            enumDescriptions: [
+                nls.localizeByDefault('Disables all product telemetry.'),
+                nls.localizeByDefault('Sends OS level crash reports.'),
+                nls.localizeByDefault('Sends general error telemetry and crash reports.'),
+                nls.localizeByDefault('Sends usage data, errors, and crash reports.')
+            ],
             default: 'off',
             description: nls.localizeByDefault('Controls the level of telemetry.')
         },
@@ -56,14 +67,19 @@ export const TelemetryPreferenceSchema: PreferenceSchema = {
     }
 };
 
+/** @experimental */
 export const TelemetryPreferenceContribution = Symbol('TelemetryPreferenceContribution');
+/** @experimental */
 export const TelemetryPreferences = Symbol('TelemetryPreferences');
+/** @experimental */
 export type TelemetryPreferences = PreferenceProxy<TelemetryConfiguration>;
 
+/** @experimental */
 export function createTelemetryPreferences(preferences: PreferenceService, schema: PreferenceSchema = TelemetryPreferenceSchema): TelemetryPreferences {
     return createPreferenceProxy(preferences, schema);
 }
 
+/** @experimental */
 export function bindTelemetryPreferences(bind: interfaces.Bind): void {
     bind(TelemetryPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);

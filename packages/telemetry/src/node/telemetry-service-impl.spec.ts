@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ContributionProvider, Emitter } from '@theia/core/lib/common';
+import { ContributionProvider, Emitter, ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
+import { Container } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from '../common/telemetry-preferences';
 import { TelemetryEvent } from '../common/telemetry-protocol';
@@ -74,7 +75,13 @@ function createServiceWithPreferences(
     level: TelemetryLevel = 'all'
 ): TelemetryServiceImpl {
     const provider: ContributionProvider<TelemetrySink> = { getContributions: () => sinks };
-    return new TelemetryServiceImpl(createConsentProvider(level), preferences, provider, logger);
+    const container = new Container();
+    container.bind(TelemetryConsentProvider).toConstantValue(createConsentProvider(level));
+    container.bind(TelemetryPreferences).toConstantValue(preferences);
+    container.bind(ContributionProvider).toConstantValue(provider).whenTargetNamed(TelemetrySink);
+    container.bind(ILogger).toConstantValue(logger).whenTargetNamed('telemetry:TelemetryServiceImpl');
+    container.bind(TelemetryServiceImpl).toSelf();
+    return container.get(TelemetryServiceImpl);
 }
 
 function createService(level: TelemetryLevel, filters: Record<string, string[]>, sinks: TelemetrySink[], logger = new RecordingLogger()): TelemetryServiceImpl {
@@ -90,7 +97,7 @@ async function reportEvent(
     service: TelemetryServiceImpl,
     event: Pick<TelemetryEvent, 'topic' | 'timestamp'> & Partial<TelemetryEvent> = { topic: 'company/action', timestamp: 42 }
 ): Promise<void> {
-    await service.reportEvent({ kind: 'usage', session: 'frontend-session', ...event } as TelemetryEvent);
+    service.notifyEvent({ kind: 'usage', session: 'frontend-session', ...event } as TelemetryEvent);
     await flushDispatch();
 }
 
@@ -102,6 +109,15 @@ describe('TelemetryServiceImpl', () => {
     });
 
     afterEach(() => clock.restore());
+
+    it('treats undefined filters as no configured filters', async () => {
+        const sink = createSink('company/sink');
+        const preferences = createPreferences(undefined as unknown as Record<string, string[]>);
+
+        await reportEvent(createServiceWithPreferences(preferences, [sink]));
+
+        expect(sink.events).to.have.length(1);
+    });
 
     it('allows missing filters and treats an empty filter as disabling the sink', async () => {
         const allowed = createSink('company/allowed');
@@ -265,6 +281,28 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/first', 'company/second', 'company/third']);
     });
 
+    it('bounds queued events, discards the oldest, preserves FIFO order, and warns once', async () => {
+        let resolveReady: () => void;
+        const ready = new Promise<void>(resolve => resolveReady = resolve);
+        const logger = new RecordingLogger();
+        const sink = createSink('company/sink');
+        const service = createServiceWithPreferences(createPreferences({}, ready), [sink], logger);
+
+        for (let index = 0; index < 1_002; index++) {
+            service.report(`company/${index}`);
+        }
+        expect(logger.warnings).to.have.length(1);
+
+        resolveReady!();
+        await flushDispatch();
+
+        expect(sink.events).to.have.length(1_000);
+        expect(sink.events.map(event => event.topic)).to.deep.equal(
+            Array.from({ length: 1_000 }, (_, index) => `company/${index + 2}`)
+        );
+        expect(logger.warnings).to.have.length(1);
+    });
+
     it('timestamps direct reports and snapshots payloads before deferred dispatch', async () => {
         let resolveReady: () => void;
         const ready = new Promise<void>(resolve => resolveReady = resolve);
@@ -331,6 +369,23 @@ describe('TelemetryServiceImpl', () => {
         expect(observed[0].timestamp).to.equal(987);
     });
 
+    it('strips unknown top-level properties from RPC events', async () => {
+        const sink = createSink('company/sink');
+        const service = createService('all', {}, [sink]);
+
+        service.notifyEvent({
+            topic: 'company/action',
+            kind: 'usage',
+            session: 'frontend-session',
+            timestamp: 42,
+            unknown: 'value'
+        } as TelemetryEvent);
+        await flushDispatch();
+
+        expect(sink.events).to.have.length(1);
+        expect(Object.keys(sink.events[0])).to.deep.equal(['topic', 'kind', 'data', 'attributes', 'session', 'timestamp']);
+    });
+
     it('drops malformed reports and RPC values without logging payload values', async () => {
         const sink = createSink('company/sink');
         const logger = new RecordingLogger();
@@ -341,15 +396,15 @@ describe('TelemetryServiceImpl', () => {
         service.report('company/action', undefined, { kind: 'invalid' as never });
         service.report('company/action', undefined, { attributes: { nested: { secret: 'payload-secret' } } as never });
         const validEnvelope = { topic: 'company/action', kind: 'usage', session: 'frontend-session', timestamp: 42 };
-        await service.reportEvent({ ...validEnvelope, data: { nested: { secret: 'payload-secret' } } as never });
-        await service.reportEvent({ ...validEnvelope, attributes: { nested: { secret: 'payload-secret' } } as never });
-        await service.reportEvent({ ...validEnvelope, kind: 'invalid' });
-        await service.reportEvent({ ...validEnvelope, session: '' });
-        await service.reportEvent({ ...validEnvelope, timestamp: Number.POSITIVE_INFINITY });
-        await service.reportEvent(undefined);
-        await service.reportEvent('payload-secret');
-        await service.reportEvent({ ...validEnvelope, topic: 42, data: 'payload-secret' });
-        await service.reportEvent({ kind: 'usage', session: 'frontend-session', data: { secret: 'payload-secret' }, timestamp: 42 });
+        service.notifyEvent({ ...validEnvelope, data: { nested: { secret: 'payload-secret' } } as never });
+        service.notifyEvent({ ...validEnvelope, attributes: { nested: { secret: 'payload-secret' } } as never });
+        service.notifyEvent({ ...validEnvelope, kind: 'invalid' });
+        service.notifyEvent({ ...validEnvelope, session: '' });
+        service.notifyEvent({ ...validEnvelope, timestamp: Number.POSITIVE_INFINITY });
+        service.notifyEvent(undefined);
+        service.notifyEvent('payload-secret');
+        service.notifyEvent({ ...validEnvelope, topic: 42, data: 'payload-secret' });
+        service.notifyEvent({ kind: 'usage', session: 'frontend-session', data: { secret: 'payload-secret' }, timestamp: 42 });
         await flushDispatch();
 
         expect(sink.events).to.be.empty;
@@ -393,7 +448,7 @@ describe('TelemetryServiceImpl', () => {
         const service = createService('all', { 'company/sink': ['company/*'] }, [sink]);
 
         service.report('company/direct');
-        await service.reportEvent({ topic: 'company/rpc', kind: 'crash', session: 'rpc-session', timestamp: 99 });
+        service.notifyEvent({ topic: 'company/rpc', kind: 'crash', session: 'rpc-session', timestamp: 99 });
         await flushDispatch();
 
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/direct', 'company/rpc']);

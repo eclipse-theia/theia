@@ -122,19 +122,6 @@ describe('measurement telemetry integration', () => {
         expect(metrics).to.contain('id="frontend-2", name="startup"');
     });
 
-    it('keeps the deprecated frontend notification path mapped to frontend counters', () => {
-        const contribution = new TestMeasurementMetricsBackendContribution();
-        contribution.configure(LogLevel.DEBUG);
-        contribution.startCollecting();
-
-        contribution.onFrontendMeasurement('legacy-session', storedResult);
-        contribution.onFrontendMeasurement('legacy-session', { ...storedResult, name: 'second' });
-
-        const metrics = contribution.getMetrics();
-        expect(metrics).to.contain('id="frontend-1", name="startup"');
-        expect(metrics).to.contain('id="frontend-1", name="second"');
-    });
-
     it('does not append telemetry events above DEBUG level', () => {
         const contribution = new TestMeasurementMetricsBackendContribution();
         contribution.configure(LogLevel.INFO);
@@ -143,16 +130,6 @@ describe('measurement telemetry integration', () => {
         contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
 
         expect(contribution.getMetrics()).to.equal('');
-    });
-
-    it('keeps appending deprecated notification measurements above DEBUG level', () => {
-        const contribution = new TestMeasurementMetricsBackendContribution();
-        contribution.configure(LogLevel.INFO);
-        contribution.startCollecting();
-
-        contribution.onFrontendMeasurement('legacy-session', storedResult);
-
-        expect(contribution.getMetrics()).to.contain('id="frontend-1", name="startup"');
     });
 
     it('dispatches telemetry events through the backend and frontend extension points', () => {

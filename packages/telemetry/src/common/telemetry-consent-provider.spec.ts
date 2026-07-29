@@ -35,6 +35,32 @@ describe('telemetry consent provider', () => {
         ]);
     });
 
+    it('applies and reports preference changes before readiness', () => {
+        const changes = new Emitter<never>();
+        const ready = new Promise<void>(() => undefined);
+        let level: TelemetryLevel = 'off';
+        const preferences = {
+            get [TELEMETRY_LEVEL](): TelemetryLevel {
+                return level;
+            },
+            [TELEMETRY_FILTERS]: {},
+            ready,
+            onPreferenceChanged: changes.event
+        } as unknown as TelemetryPreferences;
+        const container = new Container();
+        container.bind(TelemetryPreferences).toConstantValue(preferences);
+        container.bind(TelemetryConsentProvider).to(PreferenceTelemetryConsentProvider).inSingletonScope();
+        const provider = container.get<TelemetryConsentProvider>(TelemetryConsentProvider);
+        const observed: TelemetryLevel[] = [];
+        provider.onDidChangeTelemetryLevel(value => observed.push(value));
+
+        level = 'error';
+        changes.fire({ preferenceName: TELEMETRY_LEVEL } as never);
+
+        expect(provider.level).to.equal('error');
+        expect(observed).to.deep.equal(['error']);
+    });
+
     it('starts off, then reads the preference after readiness and fires on changes', async () => {
         const changes = new Emitter<never>();
         let resolveReady: () => void;

@@ -14,7 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TelemetryData, TelemetryEventKind, TelemetryValue, isTelemetryData, isTelemetryEventKind } from './telemetry-service';
+import { isObject } from '@theia/core/lib/common/types';
+import {
+    TelemetryData, TelemetryEventKind, TelemetryReportOptions, TelemetryValue, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
+} from './telemetry-service';
 import { isValidTelemetryTopic } from './telemetry-topic';
 
 /** @experimental */
@@ -29,19 +32,17 @@ export interface TelemetryEvent<T extends object = Record<string, TelemetryValue
 
 /** @experimental */
 export function isValidTelemetryEvent(event: unknown): event is TelemetryEvent {
-    // eslint-disable-next-line no-null/no-null
-    if (typeof event !== 'object' || event === null) {
+    if (!isObject<TelemetryEvent>(event)) {
         return false;
     }
-    const candidate = event as Partial<TelemetryEvent>;
-    return isValidTelemetryTopic(candidate.topic)
-        && isTelemetryEventKind(candidate.kind)
-        && typeof candidate.session === 'string'
-        && candidate.session.length > 0
-        && typeof candidate.timestamp === 'number'
-        && Number.isFinite(candidate.timestamp)
-        && (candidate.data === undefined || isTelemetryData(candidate.data))
-        && (candidate.attributes === undefined || isTelemetryData(candidate.attributes));
+    return isValidTelemetryTopic(event.topic)
+        && isTelemetryEventKind(event.kind)
+        && typeof event.session === 'string'
+        && event.session.length > 0
+        && typeof event.timestamp === 'number'
+        && Number.isFinite(event.timestamp)
+        && (event.data === undefined || isTelemetryData(event.data))
+        && (event.attributes === undefined || isTelemetryData(event.attributes));
 }
 
 /** @experimental */
@@ -51,11 +52,39 @@ export function describeTelemetryTopic(topic: unknown): string {
 
 /** @experimental */
 export function describeTelemetryEventTopic(event: unknown): string {
-    // eslint-disable-next-line no-null/no-null
-    if (typeof event !== 'object' || event === null) {
+    if (!isObject(event)) {
         return '<invalid>';
     }
-    return describeTelemetryTopic((event as { topic?: unknown }).topic);
+    return describeTelemetryTopic(event.topic);
+}
+
+/** @experimental */
+export function createTelemetryEvent<T extends object>(
+    topic: string,
+    session: string,
+    data?: TelemetryData<T>,
+    options?: TelemetryReportOptions
+): TelemetryEvent<T> {
+    return {
+        topic,
+        kind: options?.kind ?? 'usage',
+        data,
+        attributes: options?.attributes,
+        session,
+        timestamp: Date.now()
+    };
+}
+
+/** @experimental */
+export function snapshotTelemetryEvent(event: TelemetryEvent): TelemetryEvent {
+    return Object.freeze({
+        topic: event.topic,
+        kind: event.kind,
+        data: snapshotTelemetryData(event.data),
+        attributes: snapshotTelemetryData(event.attributes),
+        session: event.session,
+        timestamp: event.timestamp
+    });
 }
 
 /** @experimental */
@@ -66,6 +95,6 @@ export const TelemetryRpc = Symbol('TelemetryRpc');
 
 /** @experimental */
 export interface TelemetryRpc {
-    reportEvent(event: TelemetryEvent): Promise<void>;
+    notifyEvent(event: TelemetryEvent): void;
     getLocalSinkInterests(): Promise<string[]>;
 }

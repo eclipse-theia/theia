@@ -31,7 +31,8 @@ export class ConsoleTelemetrySink implements TelemetrySink {
 
     handle(event: TelemetryEvent): void {
         this.logger.info(
-            `Telemetry sample event '${event.topic}' (${event.kind}, session: ${event.session}) at ${event.timestamp}: ${JSON.stringify(event.data)}`
+            `Telemetry sample event '${event.topic}' (${event.kind}, session: ${event.session}) at ${event.timestamp}: `
+            + `data=${JSON.stringify(event.data)}, attributes=${JSON.stringify(event.attributes)}`
         );
     }
 }

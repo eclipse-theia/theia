@@ -16,13 +16,13 @@
 
 import { ILogger } from '@theia/core/lib/common';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
-import { TelemetryRpc, describeTelemetryTopic } from '../common/telemetry-protocol';
 import {
-    TelemetryData, TelemetryReportOptions, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
-} from '../common/telemetry-service';
-import { isValidTelemetryTopic, matchesTelemetryTopic } from '../common/telemetry-topic';
+    TelemetryRpc, createTelemetryEvent, describeTelemetryTopic, isValidTelemetryEvent, snapshotTelemetryEvent
+} from '../common/telemetry-protocol';
+import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
+import { matchesTelemetryTopic } from '../common/telemetry-topic';
 
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
@@ -31,41 +31,28 @@ export class BrowserTelemetryService implements TelemetryService {
     protected localSinkInterests: readonly string[] | undefined;
     protected localSinkInterestsPromise: Promise<void> | undefined;
 
-    constructor(
-        @inject(TelemetryRpc) protected readonly rpc: TelemetryRpc,
-        @inject(TelemetryConsentProvider) protected readonly consentProvider: TelemetryConsentProvider,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    @inject(TelemetryRpc)
+    protected readonly rpc: TelemetryRpc;
+
+    @inject(TelemetryConsentProvider)
+    protected readonly consentProvider: TelemetryConsentProvider;
+
+    @inject(ILogger) @named('telemetry:BrowserTelemetryService')
+    protected readonly logger: ILogger;
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
-        const kind = options?.kind ?? 'usage';
-        const attributes = options?.attributes;
-        if (!isValidTelemetryTopic(topic)
-            || !isTelemetryEventKind(kind)
-            || (data !== undefined && !isTelemetryData(data))
-            || (attributes !== undefined && !isTelemetryData(attributes))) {
+        const event = createTelemetryEvent(topic, this.session, data, options);
+        if (!isValidTelemetryEvent(event)) {
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryTopic(topic)}'.`);
             return;
         }
-        // Lazily fetch and cache local sink interests once.
         this.fetchLocalSinkInterests();
-        if (!isKindAllowedByLevel(this.consentProvider.level, kind)
+        if (!isKindAllowedByLevel(this.consentProvider.level, event.kind)
             && this.localSinkInterests !== undefined
-            && !this.localSinkInterests.some(pattern => matchesTelemetryTopic(pattern, topic))) {
+            && !this.localSinkInterests.some(pattern => matchesTelemetryTopic(pattern, event.topic))) {
             return;
         }
-        const snapshot = snapshotTelemetryData(data);
-        const attributesSnapshot = snapshotTelemetryData(attributes);
-        this.rpc.reportEvent({
-            topic,
-            kind,
-            data: snapshot,
-            attributes: attributesSnapshot,
-            session: this.session,
-            timestamp: Date.now()
-        }).catch(() => {
-            this.logger.error(`Failed to report telemetry event for topic '${topic}'.`);
-        });
+        this.rpc.notifyEvent(snapshotTelemetryEvent(event));
     }
 
     protected fetchLocalSinkInterests(): void {

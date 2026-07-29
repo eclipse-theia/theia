@@ -20,7 +20,7 @@ import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from '..
 import { bindTelemetryPreferences } from '../common/telemetry-preferences';
 import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol';
 import { TelemetryService } from '../common/telemetry-service';
-import { BrowserTelemetryService } from './telemetry-service';
+import { BrowserTelemetryService } from './browser-telemetry-service';
 
 export default new ContainerModule(bind => {
     bindTelemetryPreferences(bind);

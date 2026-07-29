@@ -31,10 +31,16 @@ describe('telemetry preferences', () => {
         expect(TelemetryPreferenceSchema.scope).to.equal(PreferenceScope.User);
     });
 
-    it('uses safe defaults', () => {
+    it('uses safe defaults and describes each telemetry level', () => {
         expect(TelemetryPreferenceSchema.properties[TELEMETRY_LEVEL]).to.deep.include({
             type: 'string',
             enum: ['off', 'crash', 'error', 'all'],
+            enumDescriptions: [
+                'Disables all product telemetry.',
+                'Sends OS level crash reports.',
+                'Sends general error telemetry and crash reports.',
+                'Sends usage data, errors, and crash reports.'
+            ],
             default: 'off'
         });
         expect(TelemetryPreferenceSchema.properties[TELEMETRY_FILTERS].default).to.deep.equal({});

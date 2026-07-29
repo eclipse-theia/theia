@@ -44,19 +44,26 @@ export class PreferenceTelemetryConsentProvider implements TelemetryConsentProvi
     protected readonly onDidChangeTelemetryLevelEmitter = new Emitter<TelemetryLevel>();
     readonly onDidChangeTelemetryLevel = this.onDidChangeTelemetryLevelEmitter.event;
 
-    constructor(@inject(TelemetryPreferences) protected readonly preferences: TelemetryPreferences) { }
+    @inject(TelemetryPreferences)
+    protected readonly preferences: TelemetryPreferences;
 
     @postConstruct()
     protected init(): void {
+        this.preferences.onPreferenceChanged(change => {
+            if (change.preferenceName === TELEMETRY_LEVEL) {
+                this.setLevel(this.preferences[TELEMETRY_LEVEL]);
+            }
+        });
         this.preferences.ready.then(() => {
             this.currentLevel = this.preferences[TELEMETRY_LEVEL];
-            this.preferences.onPreferenceChanged(change => {
-                if (change.preferenceName === TELEMETRY_LEVEL) {
-                    this.currentLevel = this.preferences[TELEMETRY_LEVEL];
-                    this.onDidChangeTelemetryLevelEmitter.fire(this.currentLevel);
-                }
-            });
         }, () => undefined);
+    }
+
+    protected setLevel(level: TelemetryLevel): void {
+        if (level !== this.currentLevel) {
+            this.currentLevel = level;
+            this.onDidChangeTelemetryLevelEmitter.fire(level);
+        }
     }
 
     get level(): TelemetryLevel {

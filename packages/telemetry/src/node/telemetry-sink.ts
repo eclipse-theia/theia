@@ -17,17 +17,32 @@
 import { MaybePromise } from '@theia/core/lib/common';
 import { TelemetryEvent } from '../common/telemetry-protocol';
 
+/** @experimental */
 export const TelemetrySink = Symbol('TelemetrySink');
 
+/** @experimental */
 export interface TelemetrySink {
+    /**
+     * A unique sink ID containing at least two slash-separated segments.
+     * @experimental
+     */
     readonly id: string;
+    /**
+     * A non-empty list of valid telemetry topic patterns.
+     * @experimental
+     */
     readonly interests: readonly string[];
-    /** Defaults to `remote`. */
+    /**
+     * Defaults to `remote`.
+     * @experimental
+     */
     readonly scope?: 'local' | 'remote';
     /**
      * Must not synchronously call `TelemetryService.report`, which can cause recursive dispatch or a sink cycle.
      * Defer any follow-up telemetry until after the current handler call.
+     * @experimental
      */
     handle(event: TelemetryEvent): MaybePromise<void>;
+    /** @experimental */
     flush?(): MaybePromise<void>;
 }

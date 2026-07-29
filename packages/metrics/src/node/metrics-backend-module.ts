@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core/lib/common';
+import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { measurementNotificationServicePath } from '../common';
 import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
 import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
 import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
@@ -34,9 +33,6 @@ export default new ContainerModule(bind => {
     bind(MeasurementMetricsBackendContribution).toSelf().inSingletonScope();
     bind(MetricsContribution).toService(MeasurementMetricsBackendContribution);
     bind(TelemetrySink).toService(MeasurementMetricsBackendContribution);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(measurementNotificationServicePath,
-            () => ctx.container.get(MeasurementMetricsBackendContribution)));
 
     bind(BackendApplicationContribution).to(MetricsBackendApplicationContribution).inSingletonScope();
     bind(BackendApplicationContribution).to(MeasurementTelemetryContribution).inSingletonScope();

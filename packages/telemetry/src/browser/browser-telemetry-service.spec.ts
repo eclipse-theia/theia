@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Emitter } from '@theia/core/lib/common';
+import { Emitter, ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
+import { Container } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { TelemetryLevel } from '../common/telemetry-types';
-import { BrowserTelemetryService } from './telemetry-service';
+import { BrowserTelemetryService } from './browser-telemetry-service';
 
 interface TestConsentProvider extends TelemetryConsentProvider {
     setLevel(level: TelemetryLevel): void;
@@ -42,14 +43,24 @@ function createConsentProvider(initialLevel: TelemetryLevel): TestConsentProvide
     };
 }
 
-function createRpc(events: TelemetryEvent[], failure?: Error, localSinkInterests: Promise<string[]> = Promise.resolve([])): TelemetryRpc {
+function createRpc(events: TelemetryEvent[], localSinkInterests: Promise<string[]> = Promise.resolve([])): TelemetryRpc {
     return {
-        reportEvent: event => {
-            events.push(event);
-            return failure ? Promise.reject(failure) : Promise.resolve();
-        },
+        notifyEvent: event => { events.push(event); },
         getLocalSinkInterests: () => localSinkInterests
     };
+}
+
+function createService(
+    rpc: TelemetryRpc,
+    consentProvider: TelemetryConsentProvider,
+    logger = new RecordingLogger()
+): BrowserTelemetryService {
+    const container = new Container();
+    container.bind(TelemetryRpc).toConstantValue(rpc);
+    container.bind(TelemetryConsentProvider).toConstantValue(consentProvider);
+    container.bind(ILogger).toConstantValue(logger).whenTargetNamed('telemetry:BrowserTelemetryService');
+    container.bind(BrowserTelemetryService).toSelf();
+    return container.get(BrowserTelemetryService);
 }
 
 describe('BrowserTelemetryService', () => {
@@ -63,7 +74,7 @@ describe('BrowserTelemetryService', () => {
 
     it('assigns report-time timestamps and forwards valid events when allowed', () => {
         const events: TelemetryEvent[] = [];
-        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), new RecordingLogger());
+        const service = createService(createRpc(events), createConsentProvider('all'));
 
         service.report('company/action', { enabled: true });
         clock.tick(10);
@@ -80,7 +91,7 @@ describe('BrowserTelemetryService', () => {
         let resolveInterests: (interests: string[]) => void;
         const interests = new Promise<string[]>(resolve => resolveInterests = resolve);
         const consentProvider = createConsentProvider('off');
-        const service = new BrowserTelemetryService(createRpc(events, undefined, interests), consentProvider, new RecordingLogger());
+        const service = createService(createRpc(events, interests), consentProvider);
 
         service.report('company/optimistic');
         resolveInterests!(['company/local/*']);
@@ -96,9 +107,9 @@ describe('BrowserTelemetryService', () => {
 
     it('fetches local interests once and treats RPC failure as no local interests', async () => {
         const events: TelemetryEvent[] = [];
-        const rpc = createRpc(events, undefined, Promise.reject(new Error('connection failed')));
+        const rpc = createRpc(events, Promise.reject(new Error('connection failed')));
         const getLocalSinkInterests = sinon.spy(rpc, 'getLocalSinkInterests');
-        const service = new BrowserTelemetryService(rpc, createConsentProvider('off'), new RecordingLogger());
+        const service = createService(rpc, createConsentProvider('off'));
 
         service.report('company/optimistic');
         await Promise.resolve();
@@ -111,7 +122,7 @@ describe('BrowserTelemetryService', () => {
 
     it('forwards immutable snapshots of data and attributes with report options', () => {
         const events: TelemetryEvent[] = [];
-        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), new RecordingLogger());
+        const service = createService(createRpc(events), createConsentProvider('all'));
         const data = {
             text: 'value',
             count: 3,
@@ -137,6 +148,7 @@ describe('BrowserTelemetryService', () => {
         expect(events[0].data?.numbers).not.to.equal(data.numbers);
         expect(events[0].data?.booleans).not.to.equal(data.booleans);
         expect(events[0].data?.empty).not.to.equal(data.empty);
+        expect(Object.isFrozen(events[0])).to.be.true;
         expect(Object.isFrozen(events[0].data)).to.be.true;
         expect(Object.isFrozen(events[0].data?.strings)).to.be.true;
         expect(Object.isFrozen(events[0].attributes)).to.be.true;
@@ -154,7 +166,7 @@ describe('BrowserTelemetryService', () => {
     it('does not forward invalid topics or payloads', () => {
         const events: TelemetryEvent[] = [];
         const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events), createConsentProvider('all'), logger);
+        const service = createService(createRpc(events), createConsentProvider('all'), logger);
         const sparse = new Array<string>(2);
         sparse[1] = 'value';
         const invalidCases: Array<[unknown, unknown]> = [
@@ -173,19 +185,5 @@ describe('BrowserTelemetryService', () => {
 
         expect(events).to.be.empty;
         expect(logger.warnings).to.have.length(invalidCases.length + 2);
-    });
-
-    it('contains RPC rejection and does not log payload values', async () => {
-        const events: TelemetryEvent[] = [];
-        const logger = new RecordingLogger();
-        const service = new BrowserTelemetryService(createRpc(events, new Error('connection failed')), createConsentProvider('all'), logger);
-        const secret = 'sensitive-payload-value';
-
-        expect(() => service.report('company/action', { secret })).not.to.throw();
-        await Promise.resolve();
-
-        expect(events).to.have.length(1);
-        expect(logger.errors).to.deep.equal(["Failed to report telemetry event for topic 'company/action'."]);
-        expect(logger.errors.join(' ')).not.to.contain(secret);
     });
 });

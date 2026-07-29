@@ -21,14 +21,17 @@ function hasValidSegments(value: string, minimumSegments: number): boolean {
     return segments.length >= minimumSegments && segments.every(segment => SEGMENT_PATTERN.test(segment));
 }
 
+/** @experimental */
 export function isValidTelemetryTopic(topic: unknown): topic is string {
     return typeof topic === 'string' && hasValidSegments(topic, 2);
 }
 
+/** @experimental */
 export function isValidTelemetrySinkId(id: unknown): id is string {
     return typeof id === 'string' && hasValidSegments(id, 2);
 }
 
+/** @experimental */
 export function isValidTelemetryTopicPattern(pattern: unknown): pattern is string {
     if (typeof pattern !== 'string') {
         return false;
@@ -42,6 +45,7 @@ export function isValidTelemetryTopicPattern(pattern: unknown): pattern is strin
     return isValidTelemetryTopic(pattern);
 }
 
+/** @experimental */
 export function matchesTelemetryTopic(pattern: string, topic: string): boolean {
     if (!isValidTelemetryTopicPattern(pattern) || !isValidTelemetryTopic(topic)) {
         return false;

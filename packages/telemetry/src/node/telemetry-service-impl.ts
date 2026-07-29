@@ -16,14 +16,18 @@
 
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
-import { TelemetryEvent, TelemetryRpc, describeTelemetryEventTopic, isValidTelemetryEvent } from '../common/telemetry-protocol';
-import { TelemetryData, TelemetryReportOptions, TelemetryService, snapshotTelemetryData } from '../common/telemetry-service';
+import {
+    TelemetryEvent, TelemetryRpc, createTelemetryEvent, describeTelemetryEventTopic, isValidTelemetryEvent, snapshotTelemetryEvent
+} from '../common/telemetry-protocol';
+import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
 import { BACKEND_TELEMETRY_SESSION } from '../common/telemetry-types';
 import { TelemetrySink } from './telemetry-sink';
+
+const MAX_PENDING_EVENTS = 1_000;
 
 interface ValidatedTelemetrySink {
     readonly sink: TelemetrySink;
@@ -39,13 +43,22 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
     protected filters: ReadonlyMap<string, readonly string[]> | undefined;
     protected readinessState: 'pending' | 'ready' | 'failed' = 'pending';
     protected pendingEvents: TelemetryEvent[] = [];
+    protected pendingQueueOverflowWarned = false;
 
-    constructor(
-        @inject(TelemetryConsentProvider) protected readonly consentProvider: TelemetryConsentProvider,
-        @inject(TelemetryPreferences) protected readonly preferences: TelemetryPreferences,
-        @inject(ContributionProvider) @named(TelemetrySink) protected readonly sinkProvider: ContributionProvider<TelemetrySink>,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) {
+    @inject(TelemetryConsentProvider)
+    protected readonly consentProvider: TelemetryConsentProvider;
+
+    @inject(TelemetryPreferences)
+    protected readonly preferences: TelemetryPreferences;
+
+    @inject(ContributionProvider) @named(TelemetrySink)
+    protected readonly sinkProvider: ContributionProvider<TelemetrySink>;
+
+    @inject(ILogger) @named('telemetry:TelemetryServiceImpl')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
         this.preferences.onPreferenceChanged(change => {
             if (change.preferenceName === TELEMETRY_FILTERS) {
                 this.filters = undefined;
@@ -56,28 +69,23 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
                 this.readinessState = 'ready';
                 const pendingEvents = this.pendingEvents;
                 this.pendingEvents = [];
+                this.pendingQueueOverflowWarned = false;
                 pendingEvents.forEach(event => this.doDispatch(event));
             },
             () => {
                 this.readinessState = 'failed';
                 this.pendingEvents = [];
+                this.pendingQueueOverflowWarned = false;
                 this.logger.error('Telemetry preferences failed to become ready; dropping telemetry events.');
             }
         );
     }
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
-        this.dispatch({
-            topic,
-            kind: options?.kind ?? 'usage',
-            data,
-            attributes: options?.attributes,
-            session: BACKEND_TELEMETRY_SESSION,
-            timestamp: Date.now()
-        });
+        this.dispatch(createTelemetryEvent(topic, BACKEND_TELEMETRY_SESSION, data, options));
     }
 
-    async reportEvent(event: unknown): Promise<void> {
+    notifyEvent(event: unknown): void {
         this.dispatch(event);
     }
 
@@ -102,17 +110,17 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryEventTopic(event)}'.`);
             return;
         }
-        const snapshot = Object.freeze({
-            topic: event.topic,
-            kind: event.kind,
-            data: snapshotTelemetryData(event.data),
-            attributes: snapshotTelemetryData(event.attributes),
-            session: event.session,
-            timestamp: event.timestamp
-        });
+        const snapshot = snapshotTelemetryEvent(event);
         if (this.readinessState === 'ready') {
             this.doDispatch(snapshot);
         } else if (this.readinessState === 'pending') {
+            if (this.pendingEvents.length >= MAX_PENDING_EVENTS) {
+                this.pendingEvents.shift();
+                if (!this.pendingQueueOverflowWarned) {
+                    this.pendingQueueOverflowWarned = true;
+                    this.logger.warn('Telemetry pending event queue is full; dropping oldest event.');
+                }
+            }
             this.pendingEvents.push(snapshot);
         }
     }
@@ -121,9 +129,9 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
         const filters = this.getFilters();
         for (const validatedSink of this.getSinks()) {
             const filterPatterns = filters.get(validatedSink.id);
-            if (filterPatterns && !filterPatterns.some(pattern => matchesTelemetryTopic(pattern, event.topic))
+            if ((filterPatterns && !filterPatterns.some(pattern => matchesTelemetryTopic(pattern, event.topic)))
                 || !validatedSink.interests.some(pattern => matchesTelemetryTopic(pattern, event.topic))
-                || validatedSink.scope === 'remote' && !isKindAllowedByLevel(this.consentProvider.level, event.kind)) {
+                || (validatedSink.scope === 'remote' && !isKindAllowedByLevel(this.consentProvider.level, event.kind))) {
                 continue;
             }
             try {
@@ -176,7 +184,7 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
             return this.filters;
         }
         const filters = new Map<string, readonly string[]>();
-        for (const [sinkId, patterns] of Object.entries(this.preferences[TELEMETRY_FILTERS])) {
+        for (const [sinkId, patterns] of Object.entries(this.preferences[TELEMETRY_FILTERS] ?? {})) {
             if (!Array.isArray(patterns)) {
                 this.logger.warn(`Ignoring invalid telemetry filters for sink '${sinkId}'.`);
                 filters.set(sinkId, Object.freeze([]));

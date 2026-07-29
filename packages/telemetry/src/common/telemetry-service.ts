@@ -14,6 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { deepClone, deepFreeze } from '@theia/core/lib/common/objects';
+import { isObject } from '@theia/core/lib/common/types';
+
 /** @experimental */
 export type TelemetryPrimitive = string | number | boolean;
 /** @experimental */
@@ -53,8 +56,7 @@ function isTelemetryValue(value: unknown): value is TelemetryValue {
 
 /** @experimental */
 export function isTelemetryData(data: unknown): data is Record<string, TelemetryValue> {
-    // eslint-disable-next-line no-null/no-null
-    if (typeof data !== 'object' || data === null || Array.isArray(data) || Object.getPrototypeOf(data) !== Object.prototype) {
+    if (!isObject(data) || Array.isArray(data) || Object.getPrototypeOf(data) !== Object.prototype) {
         return false;
     }
     return Object.values(data).every(isTelemetryValue);
@@ -62,14 +64,7 @@ export function isTelemetryData(data: unknown): data is Record<string, Telemetry
 
 /** @experimental */
 export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
-    if (data === undefined) {
-        return undefined;
-    }
-    const snapshot = Object.fromEntries(Object.entries(data).map(([key, value]) => [
-        key,
-        Array.isArray(value) ? Object.freeze([...value]) : value
-    ]));
-    return Object.freeze(snapshot) as TelemetryData<T>;
+    return data === undefined ? undefined : deepFreeze(deepClone(data));
 }
 
 /** @experimental */

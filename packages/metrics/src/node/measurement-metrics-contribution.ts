@@ -13,31 +13,23 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
+import { LogLevel, MeasurementResult } from '@theia/core';
 import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BACKEND_TELEMETRY_SESSION, TelemetryEvent } from '@theia/telemetry/lib/common';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { MeasurementNotificationService } from '../common';
 import { MetricsContribution } from './metrics-contribution';
 
 const metricsName = 'theia_measurements';
 
 @injectable()
-export class MeasurementMetricsBackendContribution implements MetricsContribution, TelemetrySink, MeasurementNotificationService {
+export class MeasurementMetricsBackendContribution implements MetricsContribution, TelemetrySink {
     readonly id = 'theia/measurements';
     readonly interests: readonly string[] = ['theia/measurement/*'];
     readonly scope: 'local' | 'remote' = 'local';
 
     @inject(LogLevelCliContribution)
     protected logLevelCli: LogLevelCliContribution;
-
-    /**
-     * @deprecated backend measurements are received as `theia/measurement/*` telemetry events;
-     * this field is no longer used by the default implementation.
-     */
-    @inject(Stopwatch)
-    protected backendStopwatch: Stopwatch;
 
     protected metrics = '';
     protected frontendCounters = new Map<string, string>();
