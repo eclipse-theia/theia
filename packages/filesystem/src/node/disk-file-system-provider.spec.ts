@@ -23,6 +23,7 @@ import { IPCConnectionProvider } from '@theia/core/lib/node/messaging/ipc-connec
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { equal, fail } from 'assert';
 import { promises as fs } from 'fs';
+import * as os from 'os';
 import { join } from 'path';
 import * as temp from 'temp';
 import { generateUuid } from '@theia/core/lib/common/uuid';
@@ -115,7 +116,10 @@ describe('disk-file-system-provider', () => {
 
         it('delete is able to delete file', async function (): Promise<void> {
             this.timeout(10000);
-            const tempDirPath = tracked.mkdirSync();
+            // Place the temp dir under $HOME so the XDG trash dir (~/.local/share/Trash) is on the same
+            // filesystem. Otherwise the trash spec falls back to creating `.Trash-$UID` at the mount's
+            // topdir, which fails when /tmp is on a filesystem whose root is not user-writable.
+            const tempDirPath = tracked.mkdirSync({ dir: os.homedir(), prefix: 'theia-fs-test-' });
             const testFile = join(tempDirPath, 'test.file');
             const testFileUri = FileUri.create(testFile);
             for (const recursive of [true, false]) {

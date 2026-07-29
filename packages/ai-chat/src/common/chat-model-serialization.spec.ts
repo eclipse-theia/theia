@@ -700,4 +700,42 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(restoredPart.resolution?.variable.description).to.equal('File variable');
         });
     });
+
+    describe('Session settings and response model serialization', () => {
+        it('should serialize and restore the per-session model override', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('Hello'));
+            model.setSettings({ commonSettings: { modelId: 'anthropic/claude-opus-4-8' } });
+
+            const serialized = model.toSerializable();
+            expect(serialized.settings?.commonSettings?.modelId).to.equal('anthropic/claude-opus-4-8');
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.settings?.commonSettings?.modelId).to.equal('anthropic/claude-opus-4-8');
+        });
+
+        it('should leave settings undefined when none were set', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('Hello'));
+
+            const serialized = model.toSerializable();
+            expect(serialized.settings).to.be.undefined;
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.settings).to.be.undefined;
+        });
+
+        it('should serialize and restore the language model recorded on a response', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const request = model.addRequest(createParsedRequest('Hello'));
+            request.response.setLanguageModel('anthropic/claude-opus-4-8');
+            request.response.complete();
+
+            const serialized = model.toSerializable();
+            expect(serialized.responses[0].languageModel).to.equal('anthropic/claude-opus-4-8');
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.getAllRequests()[0].response.languageModel).to.equal('anthropic/claude-opus-4-8');
+        });
+    });
 });

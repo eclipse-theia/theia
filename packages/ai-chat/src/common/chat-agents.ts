@@ -52,6 +52,7 @@ import {
 } from '@theia/ai-core';
 import {
     Agent,
+    FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
@@ -227,10 +228,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     async invoke(request: MutableChatRequestModel): Promise<void> {
         try {
-            const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
+            const languageModel = await this.getLanguageModelForRequest(request, this.defaultLanguageModelPurpose);
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
+            // Record the model that actually handled this request so the chat thread can show it.
+            request.response.setLanguageModel(languageModel.id);
             const context: ChatSessionContext = {
                 model: request.session,
                 request,
@@ -313,6 +316,36 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected async getLanguageModel(languageModelPurpose: string): Promise<LanguageModel> {
         return this.selectLanguageModel(this.getLanguageModelSelector(languageModelPurpose));
+    }
+
+    /**
+     * Resolves the language model for a request, honoring a per-session model override
+     * ({@link CommonChatSessionSettings.modelId}) when set and resolvable, and otherwise falling
+     * back to the agent's configured model for the given purpose.
+     */
+    protected async getLanguageModelForRequest(request: MutableChatRequestModel, languageModelPurpose: string): Promise<LanguageModel> {
+        const overrideId = request.session.settings?.commonSettings?.modelId;
+        if (overrideId) {
+            // Resolve the override directly. We must not go through `selectLanguageModel` here, because
+            // that honors the per-agent model configured in the AI settings, which would take
+            // precedence over and thus ignore the session override.
+            const overridden = await this.resolveModelById(overrideId);
+            if (overridden) {
+                return overridden;
+            }
+        }
+        return this.getLanguageModel(languageModelPurpose);
+    }
+
+    /** Resolves a concrete language model (or alias) id to a ready model, or `undefined` if none is ready. */
+    protected async resolveModelById(modelId: string): Promise<LanguageModel | undefined> {
+        const registry = this.languageModelRegistry as LanguageModelRegistry & Partial<FrontendLanguageModelRegistry>;
+        if (typeof registry.getReadyLanguageModel === 'function') {
+            // Frontend registry: resolves aliases and only returns the model if it is ready.
+            return registry.getReadyLanguageModel(modelId);
+        }
+        const model = await registry.getLanguageModel(modelId);
+        return model?.status.status === 'ready' ? model : undefined;
     }
 
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {

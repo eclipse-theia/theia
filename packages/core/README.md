@@ -72,7 +72,7 @@ export class SomeClass {
 
 - `@theia/core/electron-shared/...`
   - `native-keymap` (from [`native-keymap@^2.5.0`](https://www.npmjs.com/package/native-keymap))
-  - `electron` (from [`electron@39.8.7`](https://www.npmjs.com/package/electron/v/39.8.7))
+  - `electron` (from [`electron@42.3.0`](https://www.npmjs.com/package/electron/v/42.3.0))
   - `electron-store` (from [`electron-store@^8.2.0`](https://www.npmjs.com/package/electron-store))
 - `@theia/core/shared/...`
   - `@lumino/algorithm` (from [`@lumino/algorithm@^2.0.4`](https://www.npmjs.com/package/@lumino/algorithm))
@@ -100,16 +100,16 @@ export class SomeClass {
   - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@3.17.5`](https://www.npmjs.com/package/vscode-languageserver-protocol/v/3.17.5))
   - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.5.6`](https://www.npmjs.com/package/@parcel/watcher))
-  - `dompurify` (from [`dompurify@^3.4.7`](https://www.npmjs.com/package/dompurify))
+  - `dompurify` (from [`dompurify@^3.4.11`](https://www.npmjs.com/package/dompurify))
   - `express` (from [`express@^4.22.2`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
-  - `markdown-it` (from [`markdown-it@^14.2.0`](https://www.npmjs.com/package/markdown-it))
+  - `markdown-it` (from [`markdown-it@^14.3.0`](https://www.npmjs.com/package/markdown-it))
   - `markdown-it-anchor` (from [`markdown-it-anchor@^9.2.0`](https://www.npmjs.com/package/markdown-it-anchor))
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.0.0`](https://www.npmjs.com/package/markdown-it-emoji))
   - `react` (from [`react@^18.3.1 || ^19.0.0`](https://www.npmjs.com/package/react))
   - `ws` (from [`ws@^8.21.0`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^17.7.2`](https://www.npmjs.com/package/yargs))
+  - `yargs` (from [`yargs@^17.7.3`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 

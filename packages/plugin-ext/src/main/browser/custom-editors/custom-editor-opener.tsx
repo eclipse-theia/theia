@@ -24,6 +24,20 @@ import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { DisposableCollection, Emitter, PreferenceService } from '@theia/core';
 import { match } from '@theia/core/lib/common/glob';
+import { Schemes } from '../../../common/uri-components';
+
+/**
+ * Schemes that never match a custom editor's `filenamePattern`, mirroring the
+ * excluded schemes in VS Code's `editorResolverService#globMatchesResource`.
+ * Theia has no scheme constants for `extension` and `vscode-workspace-trust`,
+ * so those are referenced by their literal values.
+ */
+const nonMatchingSchemes = new Set<string>([
+    'extension',
+    Schemes.webviewPanel,
+    'vscode-workspace-trust',
+    Schemes.vscodeSettings
+]);
 
 export class CustomEditorOpener implements OpenHandler {
 
@@ -200,8 +214,19 @@ export class CustomEditorOpener implements OpenHandler {
     }
 
     selectorMatches(selector: CustomEditorSelector, resource: URI): boolean {
+        if (nonMatchingSchemes.has(resource.scheme)) {
+            // These schemes match no glob pattern, mirroring VS Code's `globMatchesResource`.
+            return false;
+        }
         if (selector.filenamePattern) {
-            if (match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase())) {
+            const filenamePattern = selector.filenamePattern.toLowerCase();
+            // Mirror VS Code's editor-association matching (editorResolverService#globMatchesResource):
+            // a pattern containing a path separator is matched against the full `scheme:path`,
+            // a plain pattern is matched against the basename only.
+            const target = filenamePattern.includes('/')
+                ? `${resource.scheme}:${resource.path.toString()}`.toLowerCase()
+                : resource.path.base.toLowerCase();
+            if (match(filenamePattern, target)) {
                 return true;
             }
         }

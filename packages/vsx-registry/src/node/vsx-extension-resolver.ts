@@ -75,7 +75,11 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (extension.error) {
             throw new Error(extension.error);
         }
-        const resolvedId = id.id + '-' + extension.version;
+        const resolvedId = PluginIdentifiers.componentsToVersionedId({
+            publisher: extension.namespace,
+            name: extension.name,
+            version: extension.version
+        });
         const downloadUrl = extension.files.download;
         console.log(`[${id.id}]: resolved to '${resolvedId}'`);
 

@@ -8,17 +8,18 @@
     "url": "https://github.com/eclipse-theia/theia.git"
   },
   "engines": {
-    "vscode": "^1.84.0"
+    "vscode": "^1.125.0"
   },
   "main": "extension",
   "activationEvents": [
     "*"
   ],
   "devDependencies": {
-    "@theia/api-provider-sample": "1.73.0"
+    "@theia/api-provider-sample": "1.73.0",
+    "@types/vscode": "^1.125.0"
   },
   "scripts": {
-    "build": "npm pack"
+    "build": "vsce package --no-dependencies"
   },
   "theiaPlugin": {
     "headless": "headless"

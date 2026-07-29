@@ -610,11 +610,10 @@ export class KeybindingRegistry {
     }
 
     registerEventListeners(win: Window): Disposable {
-        /* vvv HOTFIX begin vvv
-        *
-        * This is a hotfix against issues eclipse/theia#6459 and gitpod-io/gitpod#875 .
-        * It should be reverted after Theia was updated to the newer Monaco.
-        */
+        // IME composition tracking for the textarea-based editor input path,
+        // where compositionstart/compositionend bubble through the DOM.
+        // (For the native EditContext path, these events never reach the DOM;
+        // the keydown handler below uses additional checks for that case.)
         let inComposition = false;
         const compositionStart = () => {
             inComposition = true;
@@ -627,9 +626,15 @@ export class KeybindingRegistry {
         win.document.addEventListener('compositionend', compositionEnd);
 
         const keydown = (event: KeyboardEvent) => {
-            if (inComposition !== true) {
-                this.run(event);
+            // Skip IME-related keydowns. `inComposition` covers the textarea input path;
+            // `isComposing` and `keyCode === 229` cover the native EditContext path where
+            // composition events don't reach the DOM. The keyCode check catches keys that
+            // finalize a composition (e.g. arrow keys) where isComposing is already false.
+            // eslint-disable-next-line deprecation/deprecation
+            if (inComposition || event.isComposing || event.keyCode === 229) {
+                return;
             }
+            this.run(event);
         };
         win.document.addEventListener('keydown', keydown, true);
 

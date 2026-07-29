@@ -1169,7 +1169,7 @@
   display: flex;
   align-items: center;
   gap: var(--theia-ui-padding);
-  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  padding: var(--theia-ui-padding);
   border-radius: 3px;
   cursor: pointer;
   outline: none;
@@ -1187,11 +1187,18 @@
 }
 
 .theia-chat-session-item-icon-col {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: calc(var(--theia-ui-padding) / 2);
   flex-shrink: 0;
+}
+
+/* Positioning context for the unread/attention badges so they anchor to the status icon itself
+   rather than to the whole column (which now also holds the expand toggle to the left). */
+.theia-chat-session-item-status-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 
 .theia-chat-session-item-unread-dot,
@@ -1244,9 +1251,55 @@
    foreground so they stay readable on the highlighted background. */
 .theia-chat-session-item:focus .theia-chat-session-item-agent-icon,
 .theia-chat-session-item:focus .theia-chat-session-item-archive-icon,
+.theia-chat-session-item:focus .theia-chat-session-item-expand-icon,
 .theia-chat-session-item:focus-within .theia-chat-session-item-agent-icon,
-.theia-chat-session-item:focus-within .theia-chat-session-item-archive-icon {
+.theia-chat-session-item:focus-within .theia-chat-session-item-archive-icon,
+.theia-chat-session-item:focus-within .theia-chat-session-item-expand-icon {
   color: inherit;
+}
+
+/* Expand/collapse toggle shown next to the agent icon on parent sessions.
+   Non-parent rows render a same-sized placeholder so agent icons stay aligned. */
+.theia-chat-session-item-expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  width: var(--theia-ui-font-size0);
+  padding: calc(var(--theia-ui-padding) / 2);
+  border-radius: 3px;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  outline: none;
+}
+
+.theia-chat-session-item-expand-icon:not(.theia-chat-session-item-expand-placeholder) {
+  cursor: pointer;
+}
+
+.theia-chat-session-item-expand-icon:not(.theia-chat-session-item-expand-placeholder):hover {
+  color: var(--theia-icon-foreground);
+  background-color: var(--theia-toolbar-hoverBackground, var(--theia-list-hoverBackground));
+}
+
+/* Only show a focus ring for keyboard focus, not on pointer clicks. */
+.theia-chat-session-item-expand-icon:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* The placeholder only reserves layout space and must not be interactive. */
+.theia-chat-session-item-expand-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Child session indentation */
+.theia-chat-session-item-child {
+  padding-left: calc(var(--tree-indent, 0px) + var(--theia-ui-padding) * 3);
+}
+
+.theia-chat-session-item-child .theia-chat-session-item-content {
+  font-size: calc(var(--theia-ui-font-size1) * 0.95);
 }
 
 .theia-chat-session-item-content {

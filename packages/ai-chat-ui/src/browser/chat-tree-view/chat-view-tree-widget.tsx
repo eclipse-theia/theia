@@ -65,6 +65,7 @@ import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-re
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 import { PromptVariantBadge } from './prompt-variant-badge';
+import { ModelBadge } from './model-badge';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -163,23 +164,11 @@ export class ChatViewTreeWidget extends TreeWidget {
     /** Tracks if we are at the bottom for showing the scroll-to-bottom button. */
     protected atBottom = true;
     /**
-     * Track the visibility of the scroll button with debounce logic. Used to prevent flickering when streaming tokens.
+     * Track the visibility of the scroll button.
      */
     protected _showScrollButton = false;
-    /**
-     * Timer for debouncing the scroll button activation (prevents flicker on auto-scroll).
-     * If user scrolls up, this delays showing the button in case auto-scroll-to-bottom kicks in.
-     */
-    protected _scrollButtonDebounceTimer?: number;
-    /**
-     * Debounce period in ms before showing scroll-to-bottom button after scrolling up.
-     * Avoids flickering of the button during LLM token streaming.
-     */
-    protected static readonly SCROLL_BUTTON_GRACE_PERIOD = 100;
 
     onScrollLockChange?: (temporaryLocked: boolean) => void;
-
-    protected lastScrollTop = 0;
 
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
@@ -230,8 +219,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                 });
                 this.update();
             }),
-            this.onScroll(scrollEvent => {
-                this.handleScrollEvent(scrollEvent);
+            this.onAtBottomStateChange(atBottom => {
+                this.handleAtBottomStateChange(atBottom);
             })
         ]);
 
@@ -245,8 +234,6 @@ export class ChatViewTreeWidget extends TreeWidget {
             }
         }
 
-        // Initialize lastScrollTop with current scroll position
-        this.lastScrollTop = this.getCurrentScrollTop(undefined);
     }
 
     public setEnabled(enabled: boolean): void {
@@ -254,54 +241,20 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.update();
     }
 
-    protected handleScrollEvent(scrollEvent: unknown): void {
-        const currentScrollTop = this.getCurrentScrollTop(scrollEvent);
-        const isScrollingUp = currentScrollTop < this.lastScrollTop;
-        const isScrollingDown = currentScrollTop > this.lastScrollTop;
-        const isAtBottom = this.isScrolledToBottom();
-        const isAtAbsoluteBottom = this.isAtAbsoluteBottom();
-
-        // Asymmetric threshold logic to prevent jitter:
-        if (this.shouldScrollToEnd && isScrollingUp) {
-            if (!isAtAbsoluteBottom) {
+    /** Toggles auto-scroll and the scroll-to-bottom button based on whether the viewport includes the bottom of the list. */
+    protected handleAtBottomStateChange(isAtBottom: boolean): void {
+        if (isAtBottom !== this.atBottom) {
+            this.atBottom = isAtBottom;
+            if (isAtBottom) {
+                // Arrived at bottom — re-enable auto-scroll and hide the button
+                this._showScrollButton = false;
+                this.setTemporaryScrollLock(false);
+            } else {
+                // Left the bottom — lock auto-scroll and show the button
+                this._showScrollButton = true;
                 this.setTemporaryScrollLock(true);
             }
-        } else if (!this.shouldScrollToEnd && isAtBottom && isScrollingDown) {
-            this.setTemporaryScrollLock(false);
-        }
-
-        this.updateScrollToBottomButtonState(isAtBottom);
-
-        this.lastScrollTop = currentScrollTop;
-    }
-
-    /** Updates the scroll-to-bottom button state and handles debounce. */
-    protected updateScrollToBottomButtonState(isAtBottom: boolean): void {
-        const atBottomNow = isAtBottom; // Use isScrolledToBottom for threshold
-        if (atBottomNow !== this.atBottom) {
-            this.atBottom = atBottomNow;
-            if (this.atBottom) {
-                // We're at the bottom, hide the button immediately and clear any debounce timer.
-                this._showScrollButton = false;
-                if (this._scrollButtonDebounceTimer !== undefined) {
-                    clearTimeout(this._scrollButtonDebounceTimer);
-                    this._scrollButtonDebounceTimer = undefined;
-                }
-                this.update();
-            } else {
-                // User scrolled up; delay showing the scroll-to-bottom button.
-                if (this._scrollButtonDebounceTimer !== undefined) {
-                    clearTimeout(this._scrollButtonDebounceTimer);
-                }
-                this._scrollButtonDebounceTimer = window.setTimeout(() => {
-                    // Re-check: only show if we're still not at bottom
-                    if (!this.atBottom) {
-                        this._showScrollButton = true;
-                        this.update();
-                    }
-                    this._scrollButtonDebounceTimer = undefined;
-                }, ChatViewTreeWidget.SCROLL_BUTTON_GRACE_PERIOD);
-            }
+            this.update();
         }
     }
 
@@ -310,58 +263,6 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.onScrollLockChange?.(enabled);
         // Update cached scrollToRow so that outdated values do not cause unwanted scrolling on update()
         this.updateScrollToRow();
-    }
-
-    protected getCurrentScrollTop(scrollEvent: unknown): number {
-        // For virtualized trees, use the virtualized view's scroll state (most reliable)
-        if (this.props.virtualized !== false && this.view) {
-            const scrollState = this.getVirtualizedScrollState();
-            if (scrollState !== undefined) {
-                return scrollState.scrollTop;
-            }
-        }
-
-        // Try to extract scroll position from the scroll event
-        if (scrollEvent && typeof scrollEvent === 'object' && 'scrollTop' in scrollEvent) {
-            const scrollEventWithScrollTop = scrollEvent as { scrollTop: unknown };
-            const scrollTop = scrollEventWithScrollTop.scrollTop;
-            if (typeof scrollTop === 'number' && !isNaN(scrollTop)) {
-                return scrollTop;
-            }
-        }
-
-        // Last resort: use DOM scroll position
-        if (this.node && typeof this.node.scrollTop === 'number') {
-            return this.node.scrollTop;
-        }
-
-        return 0;
-    }
-
-    /**
-     * Returns true if the scroll position is at the absolute (1px tolerance) bottom of the scroll container.
-     * Handles both virtualized and non-virtualized scroll containers.
-     * Allows for a tiny floating point epsilon (1px).
-     */
-    protected isAtAbsoluteBottom(): boolean {
-        let scrollTop: number = 0;
-        let scrollHeight: number = 0;
-        let clientHeight: number = 0;
-        const EPSILON = 1; // px
-        if (this.props.virtualized !== false && this.view) {
-            const state = this.getVirtualizedScrollState();
-            if (state) {
-                scrollTop = state.scrollTop;
-                scrollHeight = state.scrollHeight ?? 0;
-                clientHeight = state.clientHeight ?? 0;
-            }
-        } else if (this.node) {
-            scrollTop = this.node.scrollTop;
-            scrollHeight = this.node.scrollHeight;
-            clientHeight = this.node.clientHeight;
-        }
-        const diff = Math.abs(scrollTop + clientHeight - scrollHeight);
-        return diff <= EPSILON;
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {
@@ -397,10 +298,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.scrollToRow = this.rows.size;
         this.atBottom = true;
         this._showScrollButton = false;
-        if (this._scrollButtonDebounceTimer !== undefined) {
-            clearTimeout(this._scrollButtonDebounceTimer);
-            this._scrollButtonDebounceTimer = undefined;
-        }
+        this.setTemporaryScrollLock(false);
         this.update();
     }
 
@@ -597,6 +495,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         const promptVariantId = isResponseNode(node) ? node.response.promptVariantId : undefined;
         const isPromptVariantEdited = isResponseNode(node) ? !!node.response.isPromptVariantEdited : false;
+        const languageModel = isResponseNode(node) ? node.response.languageModel : undefined;
 
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
@@ -609,7 +508,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                         const tokenInfo = hasTokenInfo
                             ? `${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}: ${nls.localizeByDefault(
                                 'Input: {0}', formatTokenCount(tokenUsage.inputTokens))} | ${nls.localizeByDefault(
-                                'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
+                                    'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
                             : undefined;
                         if (agentDescription || tokenInfo) {
                             const md = new MarkdownStringImpl();
@@ -638,38 +537,46 @@ export class ChatViewTreeWidget extends TreeWidget {
                         hoverService={this.hoverService}
                     />
                 )}
+                {languageModel && (
+                    <ModelBadge
+                        modelId={languageModel}
+                        hoverService={this.hoverService}
+                    />
+                )}
                 {inProgress && !waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
                     </span>}
                 {inProgress && waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
                     </span>}
-                <div className='theia-ChatNodeToolbar'>
-                    {!inProgress &&
-                        toolbarContributions.length > 0 &&
-                        toolbarContributions.map(action =>
-                            <span
-                                key={action.commandId}
-                                className={`theia-ChatNodeToolbarAction ${action.icon}`}
-                                title={action.tooltip}
-                                aria-label={action.tooltip}
-                                tabIndex={0}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    this.commandRegistry.executeCommand(action.commandId, node);
-                                }}
-                                onKeyDown={e => {
-                                    if (isEnterKey(e)) {
+                {!inProgress &&
+                    <div className='theia-ChatNodeToolbar'>
+                        {toolbarContributions.length > 0 &&
+                            toolbarContributions.map(action =>
+                                <span
+                                    key={action.commandId}
+                                    className={`theia-ChatNodeToolbarAction ${action.icon}`}
+                                    title={action.tooltip}
+                                    aria-label={action.tooltip}
+                                    tabIndex={0}
+                                    onClick={e => {
                                         e.stopPropagation();
                                         this.commandRegistry.executeCommand(action.commandId, node);
-                                    }
-                                }}
-                                role='button'
-                            ></span>
-                        )}
-                </div>
+                                    }}
+                                    onKeyDown={e => {
+                                        if (isEnterKey(e)) {
+                                            e.stopPropagation();
+                                            this.commandRegistry.executeCommand(action.commandId, node);
+                                        }
+                                    }}
+                                    role='button'
+                                ></span>
+                            )}
+                    </div>}
             </div>
         </React.Fragment>;
     }
@@ -809,16 +716,6 @@ export class ChatViewTreeWidget extends TreeWidget {
         // Otherwise, the space key will never be handled by the monaco editor
         return false;
     }
-
-    /**
-     * Ensure atBottom state is correct when content grows (e.g., LLM streaming while scroll lock is enabled).
-     */
-    protected override updateScrollToRow(): void {
-        super.updateScrollToRow();
-        const isAtBottom = this.isScrolledToBottom();
-        this.updateScrollToBottomButtonState(isAtBottom);
-    }
-
 }
 
 interface WidgetContainerProps {
@@ -848,7 +745,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     return <div ref={containerRef} />;
 };
 
-const ChatRequestRender = (
+export const ChatRequestRender = (
     {
         node, hoverService, chatAgentService, variableService, openerService,
         provideChatInputWidget
@@ -980,7 +877,10 @@ const ChatRequestRender = (
                                 .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
                                 .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
                             openerService,
-                            true
+                            true,
+                            undefined,
+                            // User requests are authored by the user, so their resources are trusted and rendered directly.
+                            false
                         );
                         return (
                             <span key={index} ref={ref}></span>

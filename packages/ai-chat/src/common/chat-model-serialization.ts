@@ -16,7 +16,7 @@
 
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentLocation } from './chat-agents';
-import { ResponseTokenUsage } from './chat-model';
+import { ChatSessionSettings, ResponseTokenUsage } from './chat-model';
 
 export interface SerializableChangeSetElement {
     kind?: string;
@@ -138,6 +138,8 @@ export interface SerializableChatResponseData {
     errorMessage?: string;
     promptVariantId?: string;
     isPromptVariantEdited?: boolean;
+    /** Identifier of the language model that produced this response, if recorded. */
+    languageModel?: string;
     tokenUsage?: ResponseTokenUsage;
     content: SerializableChatResponseContentData[];
 }
@@ -189,6 +191,11 @@ export interface SerializedChatModel {
     requests: SerializableChatRequestData[];
     /** All responses for the requests */
     responses: SerializableChatResponseData[];
+    /**
+     * Per-session settings (e.g. the per-session model override) so they survive a reload and the
+     * chat input can restore the correct selection.
+     */
+    settings?: ChatSessionSettings;
 }
 
 /**
@@ -201,6 +208,10 @@ export interface SerializedChatData {
     title?: string;
     model: SerializedChatModel;
     saveDate: number;
+    /** ID of the root session in the delegation chain. */
+    rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. */
+    parentSessionId?: string;
 }
 
 export interface SerializableChatsData {

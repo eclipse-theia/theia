@@ -34,6 +34,16 @@ jobs:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Verify lockfile
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+              base="${{ github.event.pull_request.base.sha }}"
+              git fetch --depth=1 origin "$base" >/dev/null 2>&1 || true
+              git diff --name-only "$base" HEAD | grep -qx 'package-lock.json' || exit 0
+          fi
+          node scripts/verify-lockfile-platforms.js
+
       - name: Use Python 3.13
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:

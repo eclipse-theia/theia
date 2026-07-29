@@ -124,8 +124,6 @@ export class AgentDelegationTool implements ToolProvider {
             let newSession;
             let childModelDisposable: Disposable | undefined;
             try {
-                // FIXME: this creates a new conversation visible in the UI (Panel), which we don't want
-                // It is not possible to start a session without specifying a location (default=Panel)
                 const chatService = this.getChatService();
 
                 // Store the current active session to restore it after delegation
@@ -142,6 +140,12 @@ export class AgentDelegationTool implements ToolProvider {
                 const rootId = ctx.rootSessionId || ctx.request.session.id;
                 newSession.rootSessionId = rootId;
                 newSession.model.rootSessionId = rootId;
+
+                // Track the immediate parent (the delegating session) so the UI can render the full
+                // delegation hierarchy, not just a flat list under the root.
+                const parentId = ctx.request.session.id;
+                newSession.parentSessionId = parentId;
+                newSession.model.parentSessionId = parentId;
 
                 if (taskContextId) {
                     newSession.model.context.addVariables({
@@ -222,12 +226,8 @@ export class AgentDelegationTool implements ToolProvider {
                         .filter((text): text is string => text !== undefined && text !== '')
                         .join('\n\n');
 
-                    // Clean up the session and parent-child link after completion
+                    // Clean up the parent-child link after completion (event bubbling is no longer needed)
                     childModelDisposable?.dispose();
-                    const chatService = this.getChatService();
-                    chatService.deleteSession(newSession.id).catch(error => {
-                        this.logger.error('Failed to delete delegated session', error);
-                    });
 
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;

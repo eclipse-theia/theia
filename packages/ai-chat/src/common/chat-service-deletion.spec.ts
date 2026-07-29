@@ -267,6 +267,58 @@ describe('ChatService Session Deletion', () => {
             expect(sessionStore.deletedSessions).to.include(persistedSessionId);
         });
 
+        it('should cascade-delete descendants when deleting an intermediate session (A -> B -> C, in memory)', async () => {
+            // Delegation chain A -> B -> C, all loaded in memory. C's rootSessionId points at A (the
+            // root of the chain), but its immediate parent is B, so deleting B must still remove C.
+            const a = chatService.createSession(ChatAgentLocation.Panel);
+            const b = chatService.createSession(ChatAgentLocation.Panel);
+            const c = chatService.createSession(ChatAgentLocation.Panel);
+            const internal = b as unknown as { rootSessionId?: string; parentSessionId?: string };
+            internal.rootSessionId = a.id;
+            internal.parentSessionId = a.id;
+            const cInternal = c as unknown as { rootSessionId?: string; parentSessionId?: string };
+            cInternal.rootSessionId = a.id;
+            cInternal.parentSessionId = b.id;
+
+            await chatService.deleteSession(b.id);
+
+            const remaining = chatService.getSessions().map(s => s.id);
+            expect(remaining).to.include(a.id);
+            expect(remaining).to.not.include(b.id);
+            expect(remaining).to.not.include(c.id);
+            expect(sessionStore.deletedSessions).to.include(b.id);
+            expect(sessionStore.deletedSessions).to.include(c.id);
+        });
+
+        it('should cascade-delete persisted-only descendants of an intermediate session', async () => {
+            // The whole chain lives only in the persisted index (e.g. after a reload). Deleting the
+            // intermediate B must reach C via its parentSessionId even though C's rootSessionId is A.
+            sessionStore.getSessionIndex = async (): Promise<ChatSessionIndex> => ({
+                A: { sessionId: 'A', title: 'A', saveDate: 0, location: ChatAgentLocation.Panel },
+                B: { sessionId: 'B', title: 'B', saveDate: 0, location: ChatAgentLocation.Panel, rootSessionId: 'A', parentSessionId: 'A' },
+                C: { sessionId: 'C', title: 'C', saveDate: 0, location: ChatAgentLocation.Panel, rootSessionId: 'A', parentSessionId: 'B' }
+            });
+
+            await chatService.deleteSession('B');
+
+            expect(sessionStore.deletedSessions).to.include('B');
+            expect(sessionStore.deletedSessions).to.include('C');
+            expect(sessionStore.deletedSessions).to.not.include('A');
+        });
+
+        it('should not loop forever on a cyclic parent reference', async () => {
+            // Defensive: a corrupted index where two sessions reference each other must still terminate.
+            sessionStore.getSessionIndex = async (): Promise<ChatSessionIndex> => ({
+                X: { sessionId: 'X', title: 'X', saveDate: 0, location: ChatAgentLocation.Panel, parentSessionId: 'Y' },
+                Y: { sessionId: 'Y', title: 'Y', saveDate: 0, location: ChatAgentLocation.Panel, parentSessionId: 'X' }
+            });
+
+            await chatService.deleteSession('X');
+
+            expect(sessionStore.deletedSessions).to.include('X');
+            expect(sessionStore.deletedSessions).to.include('Y');
+        });
+
         it('should fire SessionDeletedEvent for persisted-only sessions', async () => {
             // When deleting a persisted-only session (not in memory),
             // we still fire the event so consumers (e.g. the Welcome view's chat cards)

@@ -17,7 +17,6 @@
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import * as http from 'http';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import * as url from 'url';
 import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
 
 /**
@@ -45,8 +44,13 @@ export class MiniBrowserWsRequestValidator implements WsRequestValidatorContribu
 
     async allowWsUpgrade(request: http.IncomingMessage): Promise<boolean> {
         if (request.headers.origin && !this.serveSameOrigin) {
-            const origin = url.parse(request.headers.origin);
-            if (origin.host && this.miniBrowserHostRe.test(origin.host)) {
+            let host: string | undefined;
+            try {
+                host = new URL(request.headers.origin).host;
+            } catch {
+                host = undefined;
+            }
+            if (host && this.miniBrowserHostRe.test(host)) {
                 // If the origin comes from the WebViews, refuse:
                 return false;
             }

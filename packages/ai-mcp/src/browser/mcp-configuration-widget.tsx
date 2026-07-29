@@ -251,7 +251,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
             ? nls.localizeByDefault('Connect')
             : nls.localizeByDefault('Start Server');
         const startingLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/connectingServer', 'Connecting...')
+            ? nls.localizeByDefault('Connecting...')
             : nls.localizeByDefault('Starting...');
         const stopLabel = isRemote
             ? nls.localizeByDefault('Disconnect')
@@ -399,7 +399,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-property-row">
-                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</span>
+                <span className="mcp-property-label">{nls.localizeByDefault('Headers')}:</span>
                 <div className="mcp-property-value">
                     {Object.entries(server.headers).map(([key, value]) => (
                         <div key={key} className="mcp-env-entry">
