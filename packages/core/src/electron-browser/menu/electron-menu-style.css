@@ -60,7 +60,9 @@
   position: absolute;
   top: 0;
   right: 0;
-  height: 100%;
+  height: var(--theia-private-menubar-height, 32px);
+  z-index: var(--theia-menu-z-index);
+  background: var(--theia-titleBar-activeBackground);
 }
 
 #window-controls .control-button {
