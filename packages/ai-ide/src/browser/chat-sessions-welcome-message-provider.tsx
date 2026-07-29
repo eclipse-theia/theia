@@ -27,7 +27,8 @@ import { SectionedSessions, SessionRow, SessionsList } from './chat-session-list
 import { ChatSessionItem } from './chat-session-item';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ApplicationShell, HoverService } from '@theia/core/lib/browser';
+import { AISessionsWidget } from './ai-sessions-widget';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -61,10 +62,15 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     @inject(ChatSessionListService)
     protected readonly sessionListService: ChatSessionListService;
 
     protected _inputEnabled = false;
+
+    protected _sessionsWidgetAttached = false;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -94,6 +100,27 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                 this.onStateChangedEmitter.fire();
             }
         });
+
+        this._sessionsWidgetAttached = this.isSessionsWidgetAttached();
+        this.shell.onDidAddWidget(widget => {
+            if (widget.id === AISessionsWidget.ID) {
+                this._sessionsWidgetAttached = true;
+                this.onStateChangedEmitter.fire();
+            }
+        });
+        this.shell.onDidRemoveWidget(widget => {
+            if (widget.id === AISessionsWidget.ID) {
+                this._sessionsWidgetAttached = false;
+                this.onStateChangedEmitter.fire();
+            }
+        });
+    }
+
+    protected isSessionsWidgetAttached(): boolean {
+        const areas: ApplicationShell.Area[] = ['left', 'right', 'main', 'bottom'];
+        return areas.some(area =>
+            this.shell.getWidgets(area).some(w => w.id === AISessionsWidget.ID && !w.isDisposed)
+        );
     }
 
     protected async updateInputEnabled(): Promise<void> {
@@ -108,6 +135,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     }
 
     renderWelcomeMessage(): React.ReactNode {
+        if (this._sessionsWidgetAttached) {
+            return undefined;
+        }
         if (!this._inputEnabled) {
             return undefined;
         }
