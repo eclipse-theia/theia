@@ -34,7 +34,6 @@ import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
 import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
-import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKey, ContextKeyService } from './context-key-service';
 import { OS, isOSX, isWindows, EOL } from '../common/os';
@@ -75,10 +74,12 @@ import { timeout } from '../common/promise-util';
 
 export const supportCut = environment.electron.is() || document.queryCommandSupported('cut');
 export const supportCopy = environment.electron.is() || document.queryCommandSupported('copy');
-// Chrome incorrectly returns true for document.queryCommandSupported('paste')
-// when the paste feature is available but the calling script has insufficient
-// privileges to actually perform the action
-export const supportPaste = environment.electron.is() || (!browser.isChrome && document.queryCommandSupported('paste'));
+// Browsers block programmatic paste (document.execCommand('paste') is a no-op and
+// document.queryCommandSupported('paste') returns false), so supportPaste is effectively
+// electron-only. Keeping it false in browsers is intentional: the ctrlcmd+v keybinding stays
+// unregistered, so native paste events reach widget-level listeners (e.g. the navigator), and
+// menu paste is handled by dedicated handlers using the async clipboard API.
+export const supportPaste = environment.electron.is() || document.queryCommandSupported('paste');
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
