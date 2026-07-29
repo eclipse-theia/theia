@@ -1,0 +1,65 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-ai-commit-message-input-wrapper {
+    position: relative;
+}
+
+/* Reserve space on the right of the SCM input so user text does not run under the icons.
+   Selecting by descendant `textarea` instead of `#theia-scm-input-message` decouples this
+   rule from the SCM widget's element id (`ScmCommitWidget.Styles.INPUT_MESSAGE`), which
+   would otherwise silently break this layout if it ever gets renamed upstream. */
+.theia-ai-commit-message-input-wrapper textarea {
+    padding-right: 56px;
+}
+
+.theia-ai-commit-message-overlay {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    display: inline-flex;
+    gap: 2px;
+    pointer-events: auto;
+    /* Stay above the textarea so the buttons remain clickable. */
+    z-index: 1;
+}
+
+.theia-ai-commit-message-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--theia-icon-foreground);
+    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+.theia-ai-commit-message-icon:hover:not(:disabled) {
+    opacity: 1;
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ai-commit-message-icon:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.theia-ai-commit-message-icon .codicon {
+    font-size: var(--theia-ui-font-size1);
+}
