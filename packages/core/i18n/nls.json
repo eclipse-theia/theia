@@ -2317,7 +2317,6 @@
       "autoReveal": "Auto Reveal",
       "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
-      "nothingToPaste": "The clipboard does not contain workspace files that can be pasted here.",
       "openWithSystemEditor": "Open With System Editor",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
