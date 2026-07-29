@@ -21,8 +21,9 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { SCM_VIEW_CONTAINER_ID } from '@theia/scm/lib/browser/scm-contribution';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { AI_FIRST_PERSPECTIVE_ID } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AISessionsWidget } from './ai-sessions-widget';
+
+export const AI_FIRST_PERSPECTIVE_ID = 'ai-first';
 
 @injectable()
 export class AIFirstPerspectiveContribution implements PerspectiveContribution {
@@ -40,6 +41,7 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
                 [SCM_VIEW_CONTAINER_ID, 'right'],
                 [AISessionsWidget.ID, 'left']
             ]),
+            primaryViews: { right: EXPLORER_VIEW_CONTAINER_ID },
             chromeOptions
         });
     }

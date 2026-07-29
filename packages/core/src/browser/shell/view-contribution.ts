@@ -102,7 +102,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
 
     async openView(args: Partial<OpenViewArguments> = {}): Promise<T> {
         const shell = this.shell;
-        const widget = await this.widgetManager.getOrCreateWidget(this.options.viewContainerId || this.viewId);
+        const widget = await this.widgetManager.getOrCreateWidget(this.effectiveWidgetId);
         const tabBar = shell.getTabBarFor(widget);
         const area = shell.getAreaFor(widget);
         if (!tabBar) {

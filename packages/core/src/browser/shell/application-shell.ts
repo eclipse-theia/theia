@@ -181,6 +181,12 @@ interface WidgetDragState {
 }
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
+export const WidgetAreaResolver = Symbol('WidgetAreaResolver');
+export interface WidgetAreaResolver {
+    resolveArea(widgetId: string, requestedArea: ApplicationShell.Area): ApplicationShell.Area | undefined;
+    setActivePlacementMap(map: Map<string, ApplicationShell.Area>): void;
+}
+
 /**
  * The application shell manages the top-level widgets of the application. Use this class to
  * add, remove, or activate a widget.
@@ -969,6 +975,20 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    @inject(WidgetAreaResolver) @optional()
+    protected readonly widgetAreaResolver: WidgetAreaResolver | undefined;
+
+    protected resolveWidgetArea(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Readonly<ApplicationShell.WidgetOptions> | undefined {
+        if (this.widgetAreaResolver && !options?.ref) {
+            const requestedArea = options?.area || 'main';
+            const resolvedArea = this.widgetAreaResolver.resolveArea(widget.id, requestedArea);
+            if (resolvedArea && resolvedArea !== requestedArea) {
+                return { ...options, area: resolvedArea };
+            }
+        }
+        return options;
+    }
+
     /**
      * Add a widget to the application shell. The given widget must have a unique `id` property,
      * which will be used as the DOM id.
@@ -977,23 +997,6 @@ export class ApplicationShell extends Widget {
      *
      * Widgets added to the top area are not tracked regarding the _current_ and _active_ states.
      */
-    protected widgetAreaResolver?: WidgetAreaResolver;
-
-    setWidgetAreaResolver(resolver: WidgetAreaResolver | undefined): void {
-        this.widgetAreaResolver = resolver;
-    }
-
-    protected resolveWidgetArea(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Readonly<ApplicationShell.WidgetOptions> | undefined {
-        if (this.widgetAreaResolver && !options?.ref) {
-            const requestedArea = options?.area || 'main';
-            const resolvedArea = this.widgetAreaResolver(widget.id, requestedArea);
-            if (resolvedArea && resolvedArea !== requestedArea) {
-                return { ...options, area: resolvedArea };
-            }
-        }
-        return options;
-    }
-
     async addWidget(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Promise<void> {
         if (!widget.id) {
             this.logger.error('Widgets added to the application shell must have a unique id property.');
@@ -2238,12 +2241,6 @@ export class ApplicationShell extends Widget {
         this.onDidToggleMaximizedEmitter.fire(area);
     }
 }
-
-/**
- * A function that can override the shell area for a widget.
- * Returns a new area to use, or `undefined` to keep the original.
- */
-export type WidgetAreaResolver = (widgetId: string, requestedArea: ApplicationShell.Area) => ApplicationShell.Area | undefined;
 
 /**
  * The namespace for `ApplicationShell` class statics.

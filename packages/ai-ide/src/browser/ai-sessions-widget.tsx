@@ -98,9 +98,7 @@ export class AISessionsWidget extends ReactWidget {
             <div className="ai-sessions-view-content">
                 <SessionsList
                     rows={rows}
-                    maxSessions={Number.MAX_SAFE_INTEGER}
                     renderRow={this.renderSessionRow}
-                    onBrowseAll={() => { }}
                 />
             </div>
         );

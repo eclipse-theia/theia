@@ -28,7 +28,7 @@ import { CommonCommands } from '../common-commands';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
 import { isFunction, isObject, MaybePromise } from '../../common';
-import { PerspectiveService } from '../perspective-service';
+import { PerspectiveServiceInternal } from '../perspective-service';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -125,7 +125,7 @@ export interface ShellLayoutTransformer {
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void;
 }
 
-export const PERSPECTIVE_LAYOUTS_STORAGE_KEY = 'layouts';
+export const PERSPECTIVE_LAYOUTS_STORAGE_KEY = 'perspective-layouts';
 
 export interface PersistedPerspectiveData {
     activePerspectiveId: string;
@@ -149,8 +149,8 @@ export class ShellLayoutRestorer implements CommandContribution {
     @inject(WindowService) protected readonly windowService: WindowService;
     @inject(ThemeService) protected readonly themeService: ThemeService;
 
-    @inject(PerspectiveService)
-    protected readonly perspectiveService: PerspectiveService;
+    @inject(PerspectiveServiceInternal)
+    protected readonly perspectiveService: PerspectiveServiceInternal;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
@@ -216,11 +216,27 @@ export class ShellLayoutRestorer implements CommandContribution {
             }
         }
 
-        const data: PersistedPerspectiveData = { activePerspectiveId: activeId, layouts };
-        this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, data).catch(error => {
-            this.logger.error('Error persisting perspective layouts, clearing stored data', error);
+        const perspectiveIds = Object.keys(layouts);
+        const onlyDefault = perspectiveIds.length <= 1 && (perspectiveIds.length === 0 || perspectiveIds[0] === provider.defaultPerspectiveId);
+        if (onlyDefault) {
+            // If only the default perspective has ever been used, continue writing
+            // to the legacy key for backward compatibility.
+            const defaultLayout = layouts[provider.defaultPerspectiveId];
+            if (defaultLayout) {
+                this.storageService.setData(this.legacyStorageKey, defaultLayout).catch(error => {
+                    this.logger.error('Error persisting default layout', error);
+                });
+            }
             this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
-        });
+        } else {
+            const data: PersistedPerspectiveData = { activePerspectiveId: activeId, layouts };
+            this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, data).catch(error => {
+                this.logger.error('Error persisting perspective layouts, clearing stored data', error);
+                this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
+            });
+            // Clear the legacy key when perspectives are in use
+            this.storageService.setData(this.legacyStorageKey, undefined);
+        }
     }
 
     async restoreLayout(app: FrontendApplication): Promise<boolean> {

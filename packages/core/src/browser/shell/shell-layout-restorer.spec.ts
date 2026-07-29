@@ -125,9 +125,11 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
 
             restorer.storeLayout(mockApp as never);
 
-            expect(mockStorageService.setData.calledOnce).to.be.true;
-            const [key, data] = mockStorageService.setData.firstCall.args as [string, PersistedPerspectiveData];
-            expect(key).to.equal(PERSPECTIVE_LAYOUTS_STORAGE_KEY);
+            const perspCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] !== undefined
+            );
+            expect(perspCall).to.not.be.undefined;
+            const data = perspCall!.args[1] as PersistedPerspectiveData;
             expect(data.activePerspectiveId).to.equal('persp-a');
             expect(data.layouts['persp-a']).to.be.a('string');
             // Verify it contains the current shell layout content
@@ -173,15 +175,42 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
             expect(parsed.mainPanel.items).to.deep.equal(['current']);
         });
 
-        it('should not write to legacy key', () => {
+        it('should write to legacy key when only default perspective is used', () => {
             mockProvider.getActivePerspectiveId.returns('default');
             mockProvider.getSavedPerspectiveIds.returns([]);
 
             restorer.storeLayout(mockApp as never);
 
-            // Should only write to perspective key, not legacy key
-            expect(mockStorageService.setData.calledOnce).to.be.true;
-            expect(mockStorageService.setData.firstCall.args[0]).to.equal(PERSPECTIVE_LAYOUTS_STORAGE_KEY);
+            // Should write to legacy key for backward compatibility
+            const legacyCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === 'layout'
+            );
+            expect(legacyCall).to.not.be.undefined;
+            // Should clear the perspective key
+            const perspClear = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] === undefined
+            );
+            expect(perspClear).to.not.be.undefined;
+        });
+
+        it('should write to perspective key when multiple perspectives are used', () => {
+            mockProvider.getActivePerspectiveId.returns('persp-a');
+            mockProvider.getSavedPerspectiveIds.returns(['persp-a', 'persp-b']);
+            const inactiveLayout = { version: 999, mainPanel: { items: ['b'] }, bottomPanel: {} } as unknown as ApplicationShell.LayoutData;
+            mockProvider.getSavedLayout.withArgs('persp-b').returns(inactiveLayout);
+            mockProvider.getSavedLayout.withArgs('persp-a').returns(undefined);
+
+            restorer.storeLayout(mockApp as never);
+
+            const perspCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] !== undefined
+            );
+            expect(perspCall).to.not.be.undefined;
+            // Should clear the legacy key
+            const legacyClear = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === 'layout' && c.args[1] === undefined
+            );
+            expect(legacyClear).to.not.be.undefined;
         });
     });
 
@@ -477,10 +506,12 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
 
             restorer.storeLayout(mockApp as never);
 
-            // Should still persist — 'active' and 'good' should be in layouts
-            expect(mockStorageService.setData.calledOnce).to.be.true;
-            const [key, data] = mockStorageService.setData.firstCall.args as [string, PersistedPerspectiveData];
-            expect(key).to.equal(PERSPECTIVE_LAYOUTS_STORAGE_KEY);
+            // Multiple perspectives => writes to PERSPECTIVE_LAYOUTS_STORAGE_KEY and clears legacy
+            const perspCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] !== undefined
+            );
+            expect(perspCall).to.not.be.undefined;
+            const data = perspCall!.args[1] as PersistedPerspectiveData;
             expect(data.layouts).to.have.property('active');
             expect(data.layouts).to.have.property('good');
             expect(data.layouts).to.not.have.property('bad');
@@ -507,30 +538,45 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
 
             restorer.storeLayout(mockApp as never);
 
-            expect(mockStorageService.setData.calledOnce).to.be.true;
-            const [, data] = mockStorageService.setData.firstCall.args as [string, PersistedPerspectiveData];
+            // Multiple perspectives (active + inactive) => writes to PERSPECTIVE_LAYOUTS_STORAGE_KEY
+            const perspCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] !== undefined
+            );
+            expect(perspCall).to.not.be.undefined;
+            const data = perspCall!.args[1] as PersistedPerspectiveData;
             expect(data.layouts).to.not.have.property('active');
             expect(data.layouts).to.have.property('inactive');
 
             expect(mockLogger.warn.called).to.be.true;
         });
 
-        it('should clear storage key when setData rejects', async () => {
-            mockProvider.getActivePerspectiveId.returns('default');
-            mockProvider.getSavedPerspectiveIds.returns([]);
+        it('should clear storage key when setData rejects (multi-perspective)', async () => {
+            mockProvider.getActivePerspectiveId.returns('persp-a');
+            mockProvider.getSavedPerspectiveIds.returns(['persp-a', 'persp-b']);
+            const layout = { version: 999, mainPanel: {}, bottomPanel: {} } as unknown as ApplicationShell.LayoutData;
+            mockProvider.getSavedLayout.withArgs('persp-b').returns(layout);
 
-            mockStorageService.setData.onFirstCall().rejects(new Error('storage error'));
-            mockStorageService.setData.onSecondCall().resolves();
+            // The perspective-layouts setData call rejects only the first time (when data is present)
+            let perspCallCount = 0;
+            mockStorageService.setData.callsFake((key: string, data: unknown) => {
+                if (key === PERSPECTIVE_LAYOUTS_STORAGE_KEY && data !== undefined) {
+                    perspCallCount++;
+                    return Promise.reject(new Error('storage error'));
+                }
+                return Promise.resolve();
+            });
 
             restorer.storeLayout(mockApp as never);
 
             // Allow the .catch() handler to execute
             await new Promise(resolve => setTimeout(resolve, 0));
 
-            // First call rejects, second call clears the key
-            expect(mockStorageService.setData.calledTwice).to.be.true;
-            expect(mockStorageService.setData.secondCall.args[0]).to.equal(PERSPECTIVE_LAYOUTS_STORAGE_KEY);
-            expect(mockStorageService.setData.secondCall.args[1]).to.be.undefined;
+            expect(perspCallCount).to.equal(1);
+            // Should have attempted to clear the perspective key
+            const clearCall = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === PERSPECTIVE_LAYOUTS_STORAGE_KEY && c.args[1] === undefined
+            );
+            expect(clearCall).to.not.be.undefined;
 
             expect(mockLogger.error.called).to.be.true;
         });

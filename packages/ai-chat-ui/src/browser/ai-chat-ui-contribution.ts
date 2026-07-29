@@ -21,13 +21,12 @@ import {
 } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ConfirmDialog, FrontendApplicationContribution, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
-import { PerspectiveService } from '@theia/core/lib/browser/perspective-service';
+import { ACTIVE_PERSPECTIVE_CONTEXT_KEY } from '@theia/core/lib/browser/perspective-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import {
     AI_CHAT_HOME,
     AI_CHAT_OPEN_SESSION,
     AI_CHAT_SHOW_CHATS_COMMAND,
-    AI_FIRST_PERSPECTIVE_ID,
     ChatCommands
 } from './chat-view-commands';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
@@ -80,9 +79,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly logger: ILogger;
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
-
-    @inject(PerspectiveService)
-    protected readonly perspectiveService: PerspectiveService;
 
     /**
      * Store whether there are persisted sessions to make this information available in
@@ -153,10 +149,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
         this.checkPersistedSessions();
         this.attachToActiveSession();
-
-        this.perspectiveService.onDidChangePerspective(() => {
-            this.onActiveSessionEmptyChangedEmitter.fire();
-        });
 
         this.chatViewActiveKey = this.contextKeyService.createKey<boolean>('chatViewActive', false);
         this.updateChatViewActiveKey();
@@ -416,9 +408,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             // is an actual chat to return from.
             isVisible: widget => this.activationService.isActive
                 && this.withWidget(widget)
-                && !this.activeSessionEmpty
-                && this.perspectiveService.getActivePerspectiveId() !== AI_FIRST_PERSPECTIVE_ID,
-            when: ENABLE_AI_CONTEXT_KEY
+                && !this.activeSessionEmpty,
+            when: `${ENABLE_AI_CONTEXT_KEY} && ${ACTIVE_PERSPECTIVE_CONTEXT_KEY} != 'ai-first'`
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,

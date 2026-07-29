@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, optional } from 'inversify';
 import { DockLayout } from '@lumino/widgets';
-import { ApplicationShell } from './shell/application-shell';
+import { ApplicationShell, WidgetAreaResolver } from './shell/application-shell';
 import { SidePanel } from './shell/side-panel-handler';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { AbstractViewContribution } from './shell/view-contribution';
@@ -27,8 +27,10 @@ import { Emitter, Event } from '../common/event';
 import { ILogger } from '../common/logger';
 import { QuickInputService, QuickPickItem } from '../common/quick-pick-service';
 import { nls } from '../common/nls';
-import { DisposableCollection } from '../common/disposable';
 import { CommonCommands } from './common-commands';
+import { ContextKeyService } from './context-key-service';
+
+export const ACTIVE_PERSPECTIVE_CONTEXT_KEY = 'activePerspectiveId';
 
 export interface PerspectiveChromeOptions {
     /** Hide the status bar. Default: false. */
@@ -44,6 +46,8 @@ export interface PerspectiveDescriptor {
     viewPlacements: Map<string, ApplicationShell.Area>;
     /** Chrome control options for this perspective */
     chromeOptions?: PerspectiveChromeOptions;
+    /** Per-area primary view: the widget to activate last in each shell area, so it gets focus. */
+    primaryViews?: Partial<Record<ApplicationShell.Area, string>>;
     /** Called when perspective is activated */
     onActivate?(shell: ApplicationShell): void;
     /** Called when switching away */
@@ -82,7 +86,24 @@ export interface PerspectiveService {
     /** Returns the ID of the currently active perspective. A convenient alternative to `getActivePerspective()?.id` that always returns a string. */
     getActivePerspectiveId(): string;
 
-    // --- Plumbing API (for layout persistence infrastructure, not general consumers) ---
+    /**
+     * Resets the active perspective to its programmatic state (viewPlacements from its descriptor),
+     * discarding the saved layout. Does not affect other perspectives.
+     */
+    resetCurrentPerspective(): Promise<void>;
+}
+
+export const PerspectiveServiceInternal = Symbol('PerspectiveServiceInternal');
+/**
+ * Internal plumbing API for layout persistence infrastructure.
+ * General consumers should use {@link PerspectiveService} instead.
+ */
+export interface PerspectiveServiceInternal {
+    /**
+     * Returns the ID of the currently active perspective.
+     * @internal Plumbing API, used by `ShellLayoutRestorer` for layout persistence.
+     */
+    getActivePerspectiveId(): string;
 
     /**
      * Returns the IDs of all perspectives that have a saved (in-memory) layout snapshot.
@@ -127,12 +148,6 @@ export interface PerspectiveService {
      * @internal Plumbing API, used by `ShellLayoutRestorer` after layout restore.
      */
     onLayoutRestored(activePerspectiveId: string): void;
-
-    /**
-     * Resets the active perspective to its programmatic state (viewPlacements from its descriptor),
-     * discarding the saved layout. Does not affect other perspectives.
-     */
-    resetCurrentPerspective(): Promise<void>;
 }
 
 export const PerspectiveContribution = Symbol('PerspectiveContribution');
@@ -141,18 +156,31 @@ export interface PerspectiveContribution {
 }
 
 @injectable()
-export class PerspectiveServiceImpl implements FrontendApplicationContribution, CommandContribution, PerspectiveService {
+export class WidgetAreaResolverImpl implements WidgetAreaResolver {
+    protected activePlacementMap = new Map<string, ApplicationShell.Area>();
+
+    setActivePlacementMap(map: Map<string, ApplicationShell.Area>): void {
+        this.activePlacementMap = map;
+    }
+
+    resolveArea(widgetId: string, requestedArea: ApplicationShell.Area): ApplicationShell.Area | undefined {
+        return this.activePlacementMap.get(widgetId);
+    }
+}
+
+@injectable()
+export class PerspectiveServiceImpl implements FrontendApplicationContribution, CommandContribution, PerspectiveService, PerspectiveServiceInternal {
 
     static readonly SWITCH_PERSPECTIVE_COMMAND = Command.toLocalizedCommand({
         id: 'perspective.switch',
-        category: 'View',
-        label: 'Switch Perspective'
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Switch Perspective (Experimental)'
     }, 'theia/core/perspective/switchPerspective', CommonCommands.VIEW_CATEGORY_KEY);
 
     static readonly RESET_PERSPECTIVE_COMMAND = Command.toLocalizedCommand({
         id: 'perspective.reset',
-        category: 'View',
-        label: 'Reset Perspective'
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Reset Perspective (Experimental)'
     }, 'theia/core/perspective/resetPerspective', CommonCommands.VIEW_CATEGORY_KEY);
 
     @inject(ApplicationShell)
@@ -173,6 +201,12 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     @inject(ILogger) @named('core:PerspectiveService')
     protected readonly logger: ILogger;
 
+    @inject(WidgetAreaResolver)
+    protected readonly widgetAreaResolver: WidgetAreaResolver;
+
+    @inject(ContextKeyService) @optional()
+    protected readonly contextKeyService: ContextKeyService | undefined;
+
     static readonly DEFAULT_PERSPECTIVE_ID = 'default';
 
     readonly defaultPerspectiveId = PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID;
@@ -184,7 +218,6 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     protected readonly onDidChangePerspectiveEmitter = new Emitter<string>();
     readonly onDidChangePerspective: Event<string> = this.onDidChangePerspectiveEmitter.event;
 
-    protected readonly toDispose = new DisposableCollection();
     protected switchInProgress: Promise<void> | undefined;
 
     onLayoutRestored(activePerspectiveId: string): void {
@@ -192,6 +225,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
         if (descriptor) {
             this.applyChrome(descriptor);
         }
+        this.updateActivePerspectiveContextKey(activePerspectiveId);
     }
 
     initialize(): void {
@@ -201,18 +235,21 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             viewPlacements: new Map()
         });
         this.activePerspectiveId = PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID;
-
-        this.shell.setWidgetAreaResolver((widgetId, _requestedArea) =>
-            this.getAreaForView(widgetId)
-        );
+        this.updateActivePerspectiveContextKey(PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID);
 
         if (this.contributions) {
             for (const contribution of this.contributions.getContributions()) {
                 contribution.registerPerspectives(this);
             }
         }
+    }
 
-        this.toDispose.push(this.onDidChangePerspectiveEmitter);
+    onStop(): void {
+        this.onDidChangePerspectiveEmitter.dispose();
+    }
+
+    protected updateActivePerspectiveContextKey(id: string): void {
+        this.contextKeyService?.createKey<string>(ACTIVE_PERSPECTIVE_CONTEXT_KEY, id).set(id);
     }
 
     registerPerspective(descriptor: PerspectiveDescriptor): void {
@@ -221,6 +258,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
     async switchPerspective(id: string): Promise<void> {
         const pending = (this.switchInProgress ?? Promise.resolve())
+            .catch(() => { /* swallow previous rejection so next switch can proceed */ })
             .then(() => this.doSwitchPerspective(id));
         this.switchInProgress = pending;
         try {
@@ -252,6 +290,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
         }
 
         this.activePerspectiveId = id;
+        this.widgetAreaResolver.setActivePlacementMap(descriptor.viewPlacements);
 
         try {
             const savedLayout = this.savedLayouts.get(id);
@@ -272,6 +311,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
         }
 
         this.applyChrome(descriptor);
+        this.updateActivePerspectiveContextKey(id);
 
         this.onDidChangePerspectiveEmitter.fire(id);
     }
@@ -301,6 +341,18 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             }
         }
 
+        if (descriptor.primaryViews) {
+            for (const viewId of Object.values(descriptor.primaryViews)) {
+                if (viewId) {
+                    try {
+                        await this.shell.activateWidget(viewId);
+                    } catch (error) {
+                        this.logger.warn('Failed to activate primary view for perspective', error);
+                    }
+                }
+            }
+        }
+
         if (descriptor.chromeOptions?.collapseAreas) {
             for (const area of descriptor.chromeOptions.collapseAreas) {
                 await this.shell.collapsePanel(area);
@@ -310,6 +362,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
     async resetCurrentPerspective(): Promise<void> {
         const pending = (this.switchInProgress ?? Promise.resolve())
+            .catch(() => { /* swallow previous rejection so next reset can proceed */ })
             .then(() => this.doResetCurrentPerspective());
         this.switchInProgress = pending;
         try {
@@ -371,15 +424,15 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             }
         }
 
-        // Phase 2: Re-run initializeLayout on AbstractViewContribution instances
-        // to restore closed views. Non-view contributions (e.g., Terminal) are
-        // skipped to avoid side effects like creating new terminal instances.
+        // Phase 2: Re-open closed views via openView({ activate: false }).
+        // Non-view contributions (e.g., Terminal) are skipped to avoid side effects
+        // like creating new terminal instances.
         for (const contribution of this.appContributions.getContributions()) {
-            if (contribution instanceof AbstractViewContribution && contribution.initializeLayout) {
+            if (contribution instanceof AbstractViewContribution) {
                 try {
-                    await contribution.initializeLayout(undefined!);
+                    await contribution.openView({ activate: false });
                 } catch (error) {
-                    this.logger.warn('Failed to run initializeLayout during default perspective reset', error);
+                    this.logger.warn('Failed to open view during default perspective reset', error);
                 }
             }
         }
@@ -496,6 +549,8 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
         for (const area of sidePanelAreas) {
             for (const widget of this.shell.getWidgets(area)) {
                 if (!layoutWidgetIds.has(widget.id)) {
+                    // Detach via parent = null rather than widget.close() to avoid
+                    // disposing the widget — it may be needed by another perspective.
                     // eslint-disable-next-line no-null/no-null
                     widget.parent = null;
                 }
@@ -553,7 +608,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(PerspectiveServiceImpl.SWITCH_PERSPECTIVE_COMMAND, {
             execute: () => this.showPerspectivePicker(),
-            isEnabled: () => this.perspectives.size > 0
+            isVisible: () => this.perspectives.size > 1
         });
         commands.registerCommand(PerspectiveServiceImpl.RESET_PERSPECTIVE_COMMAND, {
             execute: () => this.resetCurrentPerspective(),

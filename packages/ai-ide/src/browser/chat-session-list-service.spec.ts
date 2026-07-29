@@ -212,14 +212,17 @@ describe('ChatSessionListService', () => {
         });
 
         it('reserves up to 5 restored slots when both sections overflow the cap', () => {
+            // 5 slots reserved for restored, the remaining 15 go to active.
             expect(computeVisibleSessionSlots(20, 10, 20)).to.deep.equal({ activeCount: 15, restoredCount: 5 });
         });
 
         it('only reserves as many restored slots as there are restored sessions', () => {
+            // Just 3 restored exist, so active gets the other 17.
             expect(computeVisibleSessionSlots(20, 3, 20)).to.deep.equal({ activeCount: 17, restoredCount: 3 });
         });
 
         it('gives leftover slots to restored when active does not fill its share', () => {
+            // Total (12) fits under the cap, so everything is shown.
             expect(computeVisibleSessionSlots(2, 10, 20)).to.deep.equal({ activeCount: 2, restoredCount: 10 });
         });
 
@@ -390,6 +393,7 @@ describe('ChatSessionListService', () => {
         });
 
         it('propagates a deep descendant needing action up the tree', () => {
+            // Only the leaf C awaits input; both B and the root A must report a descendant needing action.
             const chatService = {
                 getSession: (id: string) => id === 'C' ? loadedSession('C', 'awaitingInput') : loadedSession(id, 'idle')
             } as unknown as ChatService;
@@ -409,6 +413,9 @@ describe('ChatSessionListService', () => {
         });
 
         it('expands every ancestor of a session that needs action, falling back to persisted-only ancestors', () => {
+            // C is loaded and awaiting input; its ancestors B and A exist only in the persisted index
+            // (e.g. C was opened directly from "Browse all chats"). The walk must reach the root A, not
+            // stop at the first ancestor `getSession` cannot resolve.
             const c = loadedSession('C', 'awaitingInput', { rootSessionId: 'A', parentSessionId: 'B' });
             const chatService = {
                 getSession: (id: string) => id === 'C' ? c : undefined

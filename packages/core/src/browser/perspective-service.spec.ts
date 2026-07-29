@@ -19,7 +19,7 @@ const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { PerspectiveServiceImpl, PerspectiveDescriptor } from './perspective-service';
+import { PerspectiveServiceImpl, PerspectiveDescriptor, WidgetAreaResolverImpl } from './perspective-service';
 import { ApplicationShell } from './shell/application-shell';
 import { AbstractViewContribution, ViewContributionOptions } from './shell/view-contribution';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
@@ -38,7 +38,7 @@ describe('PerspectiveService', () => {
     let setLayoutDataStub: sinon.SinonStub;
     let collapsePanelStub: sinon.SinonStub;
     let setStatusBarHiddenByPerspectiveStub: sinon.SinonStub;
-    let setWidgetAreaResolverStub: sinon.SinonStub;
+    let widgetAreaResolver: WidgetAreaResolverImpl;
     let tryGetWidgetStub: sinon.SinonStub;
     let getWidgetsStub: sinon.SinonStub;
     let mockLogger: { debug: sinon.SinonStub; warn: sinon.SinonStub };
@@ -60,7 +60,7 @@ describe('PerspectiveService', () => {
         setLayoutDataStub = sinon.stub().resolves();
         collapsePanelStub = sinon.stub().resolves();
         setStatusBarHiddenByPerspectiveStub = sinon.stub();
-        setWidgetAreaResolverStub = sinon.stub();
+        widgetAreaResolver = new WidgetAreaResolverImpl();
         getWidgetsStub = sinon.stub().returns([]);
         mockLogger = { debug: sinon.stub(), warn: sinon.stub() };
 
@@ -73,7 +73,6 @@ describe('PerspectiveService', () => {
             setLayoutData: setLayoutDataStub,
             collapsePanel: collapsePanelStub,
             setStatusBarHiddenByPerspective: setStatusBarHiddenByPerspectiveStub,
-            setWidgetAreaResolver: setWidgetAreaResolverStub,
             getWidgets: getWidgetsStub
         };
 
@@ -88,6 +87,7 @@ describe('PerspectiveService', () => {
         (service as unknown as Record<string, unknown>)['shell'] = mockShell;
         (service as unknown as Record<string, unknown>)['widgetManager'] = mockWidgetManager;
         (service as unknown as Record<string, unknown>)['logger'] = mockLogger;
+        (service as unknown as Record<string, unknown>)['widgetAreaResolver'] = widgetAreaResolver;
         (service as unknown as Record<string, unknown>)['appContributions'] = {
             getContributions: () => [] as FrontendApplicationContribution[]
         };
@@ -612,16 +612,9 @@ describe('PerspectiveService', () => {
         expect(collapsePanelStub.called).to.be.false;
     });
 
-    // --- WidgetAreaResolver registration tests ---
+    // --- WidgetAreaResolver tests ---
 
-    it('should register a widget area resolver on the shell during initialize', () => {
-        service.initialize();
-
-        expect(setWidgetAreaResolverStub.calledOnce).to.be.true;
-        expect(typeof setWidgetAreaResolverStub.firstCall.args[0]).to.equal('function');
-    });
-
-    it('should resolve widget area from active perspective via the registered resolver', async () => {
+    it('should resolve widget area from active perspective via the WidgetAreaResolver', async () => {
         service.initialize();
 
         service.registerPerspective({
@@ -632,8 +625,7 @@ describe('PerspectiveService', () => {
 
         await service.switchPerspective('resolver-test');
 
-        const resolver = setWidgetAreaResolverStub.firstCall.args[0] as (widgetId: string, requestedArea: ApplicationShell.Area) => ApplicationShell.Area | undefined;
-        expect(resolver('my-widget', 'left')).to.equal('right');
+        expect(widgetAreaResolver.resolveArea('my-widget', 'left')).to.equal('right');
     });
 
     it('should return undefined from the resolver for unmapped widgets', async () => {
@@ -647,16 +639,14 @@ describe('PerspectiveService', () => {
 
         await service.switchPerspective('resolver-test');
 
-        const resolver = setWidgetAreaResolverStub.firstCall.args[0] as (widgetId: string, requestedArea: ApplicationShell.Area) => ApplicationShell.Area | undefined;
-        expect(resolver('unknown-widget', 'main')).to.be.undefined;
+        expect(widgetAreaResolver.resolveArea('unknown-widget', 'main')).to.be.undefined;
     });
 
     it('should return undefined from the resolver when default perspective is active', () => {
         service.initialize();
 
-        const resolver = setWidgetAreaResolverStub.firstCall.args[0] as (widgetId: string, requestedArea: ApplicationShell.Area) => ApplicationShell.Area | undefined;
         // Default perspective has empty viewPlacements
-        expect(resolver('any-widget', 'main')).to.be.undefined;
+        expect(widgetAreaResolver.resolveArea('any-widget', 'main')).to.be.undefined;
     });
 
     // --- Logger tests ---
@@ -1083,8 +1073,7 @@ describe('PerspectiveService', () => {
     describe('resetDefaultPerspective', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         function createMockViewContribution(
-            options: ViewContributionOptions,
-            hasInitializeLayout: boolean = true
+            options: ViewContributionOptions
         ): AbstractViewContribution<Widget> & FrontendApplicationContribution {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const contribution = Object.create(AbstractViewContribution.prototype) as any;
@@ -1094,17 +1083,12 @@ describe('PerspectiveService', () => {
                 tryGetWidget: tryGetWidgetStub
             };
             contribution.shell = (service as unknown as Record<string, unknown>)['shell'];
-            if (hasInitializeLayout) {
-                contribution.initializeLayout = sinon.stub().resolves();
-            }
+            contribution.openView = sinon.stub().resolves(testWidget);
             return contribution;
         }
 
-        function createMockNonViewContribution(hasInitializeLayout: boolean = true): FrontendApplicationContribution {
+        function createMockNonViewContribution(): FrontendApplicationContribution {
             const contrib: FrontendApplicationContribution = {};
-            if (hasInitializeLayout) {
-                contrib.initializeLayout = sinon.stub().resolves();
-            }
             return contrib;
         }
 
@@ -1196,7 +1180,7 @@ describe('PerspectiveService', () => {
             expect(addWidgetStub.called).to.be.false;
         });
 
-        it('should call initializeLayout on AbstractViewContribution instances', async () => {
+        it('should call openView on AbstractViewContribution instances', async () => {
             service.initialize();
 
             const contribution = createMockViewContribution({
@@ -1211,21 +1195,21 @@ describe('PerspectiveService', () => {
 
             await service.resetCurrentPerspective();
 
-            expect((contribution.initializeLayout as sinon.SinonStub).calledOnce).to.be.true;
+            expect((contribution.openView as sinon.SinonStub).calledOnce).to.be.true;
+            expect((contribution.openView as sinon.SinonStub).calledWith({ activate: false })).to.be.true;
         });
 
-        it('should NOT call initializeLayout on non-AbstractViewContribution contributions', async () => {
+        it('should NOT call openView on non-AbstractViewContribution contributions', async () => {
             service.initialize();
 
-            const nonViewContrib = createMockNonViewContribution(true);
+            const nonViewContrib = createMockNonViewContribution();
 
             (service as unknown as Record<string, unknown>)['appContributions'] = {
                 getContributions: () => [nonViewContrib]
             };
 
+            // Should not throw
             await service.resetCurrentPerspective();
-
-            expect((nonViewContrib.initializeLayout as sinon.SinonStub).called).to.be.false;
         });
 
         it('should handle combined scenario: open view in wrong area + closed view', async () => {
@@ -1266,9 +1250,9 @@ describe('PerspectiveService', () => {
 
             // Phase 1: Explorer should be relocated
             expect(addWidgetStub.calledWith(explorerWidget, sinon.match({ area: 'left' }))).to.be.true;
-            // Phase 2: Both should have initializeLayout called
-            expect((explorerContrib.initializeLayout as sinon.SinonStub).calledOnce).to.be.true;
-            expect((scmContrib.initializeLayout as sinon.SinonStub).calledOnce).to.be.true;
+            // Phase 2: Both should have openView called
+            expect((explorerContrib.openView as sinon.SinonStub).calledOnce).to.be.true;
+            expect((scmContrib.openView as sinon.SinonStub).calledOnce).to.be.true;
 
             panel.dispose();
         });
@@ -1306,7 +1290,7 @@ describe('PerspectiveService', () => {
             panel.dispose();
         });
 
-        it('should handle initializeLayout errors gracefully', async () => {
+        it('should handle openView errors gracefully', async () => {
             service.initialize();
 
             const contribution = createMockViewContribution({
@@ -1314,7 +1298,7 @@ describe('PerspectiveService', () => {
                 widgetName: 'Broken',
                 defaultWidgetOptions: { area: 'left' }
             });
-            (contribution.initializeLayout as sinon.SinonStub).rejects(new Error('init failed'));
+            (contribution.openView as sinon.SinonStub).rejects(new Error('openView failed'));
 
             (service as unknown as Record<string, unknown>)['appContributions'] = {
                 getContributions: () => [contribution]
@@ -1373,7 +1357,7 @@ describe('PerspectiveService', () => {
             expect(spy.calledWith(PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID)).to.be.true;
         });
 
-        it('should skip contributions without defaultViewOptions.area', async () => {
+        it('should skip contributions without defaultViewOptions.area in Phase 1', async () => {
             service.initialize();
 
             const contribution = createMockViewContribution({
@@ -1391,28 +1375,8 @@ describe('PerspectiveService', () => {
             await service.resetCurrentPerspective();
 
             // Phase 1 should skip (no target area)
-            // Phase 2 should still call initializeLayout
-            expect((contribution.initializeLayout as sinon.SinonStub).calledOnce).to.be.true;
-        });
-
-        it('should skip AbstractViewContribution without initializeLayout in Phase 2', async () => {
-            service.initialize();
-
-            const contribution = createMockViewContribution({
-                widgetId: 'no-init',
-                widgetName: 'No Init',
-                defaultWidgetOptions: { area: 'left' }
-            }, false);
-
-            (service as unknown as Record<string, unknown>)['appContributions'] = {
-                getContributions: () => [contribution]
-            };
-
-            // Should not throw
-            await service.resetCurrentPerspective();
-
-            // No initializeLayout to call
-            expect(contribution.initializeLayout).to.be.undefined;
+            // Phase 2 should still call openView
+            expect((contribution.openView as sinon.SinonStub).calledOnce).to.be.true;
         });
     });
 

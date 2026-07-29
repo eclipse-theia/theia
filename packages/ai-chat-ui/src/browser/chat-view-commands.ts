@@ -93,8 +93,6 @@ export const AI_CHAT_HOME = Command.toLocalizedCommand({
     label: 'Home'
 }, 'theia/ai-chat-ui/home', ChatCommands.CHAT_CATEGORY_KEY);
 
-export const AI_FIRST_PERSPECTIVE_ID = 'ai-first';
-
 export const AI_CHAT_SHOW_CHATS_COMMAND = Command.toLocalizedCommand({
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history'),

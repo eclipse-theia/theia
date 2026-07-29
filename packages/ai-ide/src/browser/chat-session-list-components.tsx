@@ -73,13 +73,13 @@ export function computeVisibleSessionSlots(activeTotal: number, restoredTotal: n
 
 export interface SessionsListProps {
     rows: SessionRow[];
-    /** Total cap on items shown; overflow surfaces via the Browse all link. */
-    maxSessions: number;
+    /** Total cap on items shown; overflow surfaces via the Browse all link. Defaults to no cap. */
+    maxSessions?: number;
     renderRow: (row: SessionRow) => React.ReactNode;
-    onBrowseAll: () => void;
+    onBrowseAll?: () => void;
 }
 
-export function SessionsList({ rows, maxSessions, renderRow, onBrowseAll }: SessionsListProps): React.ReactElement {
+export function SessionsList({ rows, maxSessions = Number.MAX_SAFE_INTEGER, renderRow, onBrowseAll }: SessionsListProps): React.ReactElement {
     // Children are rendered inline by their parent row, so only top-level rows appear in the
     // sections. A child whose parent session is not in the list falls back to top-level (orphan).
     const topLevelRows = rows.filter(row => {
@@ -116,7 +116,7 @@ export function SessionsList({ rows, maxSessions, renderRow, onBrowseAll }: Sess
                     {restoredVisible.map(row => renderRow(row))}
                 </div>
             )}
-            {hiddenCount > 0 && (
+            {hiddenCount > 0 && onBrowseAll && (
                 <div className="theia-WelcomeMessage-SessionsFooter">
                     <a className="theia-WelcomeMessage-FooterLink"
                         {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
