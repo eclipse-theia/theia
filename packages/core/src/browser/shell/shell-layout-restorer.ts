@@ -141,7 +141,7 @@ export const RESET_LAYOUT = Command.toLocalizedCommand({
 @injectable()
 export class ShellLayoutRestorer implements CommandContribution {
 
-    protected readonly legacyStorageKey = 'layout';
+    protected storageKey = 'layout';
     protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration) protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
@@ -167,7 +167,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
             this.logger.info('>>> Resetting layout...');
             this.shouldStoreLayout = false;
-            this.storageService.setData(this.legacyStorageKey, undefined);
+            this.storageService.setData(this.storageKey, undefined);
             this.perspectiveService.clearSavedLayouts();
             this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
             this.themeService.reset();
@@ -223,7 +223,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             // to the legacy key for backward compatibility.
             const defaultLayout = layouts[provider.defaultPerspectiveId];
             if (defaultLayout) {
-                this.storageService.setData(this.legacyStorageKey, defaultLayout).catch(error => {
+                this.storageService.setData(this.storageKey, defaultLayout).catch(error => {
                     this.logger.error('Error persisting default layout', error);
                 });
             }
@@ -235,7 +235,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
             });
             // Clear the legacy key when perspectives are in use
-            this.storageService.setData(this.legacyStorageKey, undefined);
+            this.storageService.setData(this.storageKey, undefined);
         }
     }
 
@@ -264,7 +264,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             }
         } else {
             // Migration: try legacy single-layout key
-            const legacyData = await this.storageService.getData<string>(this.legacyStorageKey);
+            const legacyData = await this.storageService.getData<string>(this.storageKey);
             if (legacyData) {
                 try {
                     const layout = await this.inflate(legacyData);
@@ -272,7 +272,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                         .forEach(t => t.transformLayoutOnRestore(layout));
                     this.perspectiveService.setSavedLayout(this.perspectiveService.defaultPerspectiveId, layout);
                     activeId = this.perspectiveService.defaultPerspectiveId;
-                    this.storageService.setData(this.legacyStorageKey, undefined);
+                    this.storageService.setData(this.storageKey, undefined);
                 } catch (error) {
                     this.logger.warn('Could not inflate legacy layout for migration', error);
                 }
