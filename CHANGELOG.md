@@ -12,6 +12,7 @@
 - [ai-chat-ui] replaced scroll-direction heuristics in `ChatViewTreeWidget` with Virtuoso's `atBottomStateChange` for reliable auto-scroll during streaming [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [ai-vercel-ai] deprecated `@theia/ai-vercel-ai` package [#TBD](https://github.com/eclipse-theia/theia/pull/TBD)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0 (Node 24, Chromium 148) [#17586](https://github.com/eclipse-theia/theia/pull/17586)
+- [core, plugin-ext] fixed browser-only application startup hanging forever when startup code awaits unavailable backend services: frontend-only RPC proxies now reject requests instead of queuing them indefinitely, layout contributions are guarded during startup, and the plugin startup deferreds resolve when plugin loading fails [#17794](https://github.com/eclipse-theia/theia/pull/17794)
 
 <a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
 
