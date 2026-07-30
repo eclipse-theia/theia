@@ -35,7 +35,7 @@ export namespace ElectronFrontendApplicationConfig {
         windowOptions: {},
         showWindowEarly: true,
         splashScreenOptions: {},
-        appUserModelId: 'EclipseTheia.TheiaCore',
+        appUserModelId: '',
         uriScheme: 'theia'
     };
     export interface SplashScreenOptions {
@@ -92,7 +92,7 @@ export namespace ElectronFrontendApplicationConfig {
          * Id for the Jump List in the Windows Menu. It **MUST** be the same as the "appId" field
          * in the electron-builder config.
          *
-         * Defaults to `EclipseTheia.TheiaCore`
+         * Defaults to an empty string.
          */
         readonly appUserModelId?: string;
 

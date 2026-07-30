@@ -19,8 +19,6 @@ import {
     app, JumpListCategory, JumpListItem
 } from '@theia/electron/shared/electron';
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
@@ -64,9 +62,10 @@ import {
     CHANNEL_UPDATE_RECENT_WORKSPACES
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, nls, URI } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
 import { FileUri } from '../node';
 import { createDisposableListener } from './event-utils';
+import * as path from 'node:path';
 
 @injectable()
 export class TheiaMainApi implements ElectronMainApplicationContribution {
@@ -271,17 +270,15 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
         });
 
-        ipcMain.on(CHANNEL_UPDATE_RECENT_WORKSPACES, (_event, workspaces: string[]) => {
+        ipcMain.on(CHANNEL_UPDATE_RECENT_WORKSPACES, (_event, workspaces: string[], categoryName: string) => {
             if (!isWindows) {
                 return;
             }
 
+            const jumpListSettings = app.getJumpListSettings();
             const isDev = !app.isPackaged;
-            let main: string = '';
-            if (isDev) {
-                const pkgData = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-                main = pkgData.main;
-            }
+            const appPath = app.getAppPath();
+
             const items: JumpListItem[] = workspaces
                 .filter(w => new URI(w).scheme === 'file')
                 .map(workspace => {
@@ -290,19 +287,28 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                     const wspath = FileUri.fsPath(uri);
                     const item: JumpListItem = {
                         type: 'task',
-                        title: wspathPretty.substring(0, 255),
+                        // Windows is picky about the length of some attributes. See: https://github.com/microsoft/vscode/issues/111177#issuecomment-739942612
+                        title: uri.path.base.substring(0, 255),
                         description: wspathPretty.substring(0, 255),
                         program: process.execPath,
-                        args: isDev ? `"${path.resolve(process.cwd(), main)}" "${wspath}"` : `"${wspath}"`,
+                        args: isDev ? `"${path.resolve(appPath, 'theia-electron-main.js')}" "${wspath}"` : `"${wspath}"`,
                         iconPath: process.execPath,
                         iconIndex: 0
                     };
+
+                    // We need to remove items that the user has explicitly removed from the jump list. Otherwise
+                    // Windows will not show our custom category at all.
+                    if (jumpListSettings.removedItems.some(removedItem => removedItem.args === item.args)) {
+                        return undefined;
+                    }
+
                     return item;
-                });
+                })
+                .filter(item => !!item);
 
             const jumpList: JumpListCategory[] = [{
                 type: 'custom',
-                name: nls.localize('theia/core/jumpListName', 'Recent Workspaces'),
+                name: categoryName || 'Recent Workspaces',
                 items
             }];
 

@@ -105,7 +105,7 @@ export interface TheiaCoreAPI {
     onData(handler: (data: Uint8Array) => void): Disposable;
     useNativeElements: boolean;
 
-    updateRecentWorkspaces(folders: string[]): void;
+    updateRecentWorkspaces(workspaceUris: string[], categoryName: string): void;
 }
 
 declare global {

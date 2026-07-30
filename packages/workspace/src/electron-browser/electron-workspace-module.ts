@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WorkspaceServiceImpl } from '../browser/workspace-service';
-import { ElectronWorkspaceServiceImpl } from './electron-workspace-service';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { ElectronWorkspaceContribution } from './electron-workspace-contribution';
 
-export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    bind(ElectronWorkspaceServiceImpl).toSelf().inSingletonScope();
-    rebind(WorkspaceServiceImpl).toService(ElectronWorkspaceServiceImpl);
+export default new ContainerModule(bind => {
+    bind(ElectronWorkspaceContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ElectronWorkspaceContribution);
 });

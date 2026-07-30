@@ -249,7 +249,7 @@ const api: TheiaCoreAPI = {
     },
     useNativeElements: !('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1'),
 
-    updateRecentWorkspaces: (folders: string[]): void => { ipcRenderer.send(CHANNEL_UPDATE_RECENT_WORKSPACES, folders); }
+    updateRecentWorkspaces: (workspaceUris: string[], categoryName: string): void => { ipcRenderer.send(CHANNEL_UPDATE_RECENT_WORKSPACES, workspaceUris, categoryName); }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
