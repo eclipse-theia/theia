@@ -34,8 +34,10 @@ import {
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2,
-    WorkspaceFunctionScope
 } from './file-changeset-functions';
+import {
+    WorkspaceFunctionScope
+} from './workspace-functions';
 import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
