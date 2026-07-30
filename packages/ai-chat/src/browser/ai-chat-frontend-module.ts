@@ -132,14 +132,19 @@ export default new ContainerModule(bind => {
     bind(PendingToolConfirmationTracker).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
-    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined, CustomAgentPromptVariant[] | undefined]>(
-        ctx => (id, name, description, prompt, defaultLLM, showInChat, promptVariants) => {
+    bind(CustomAgentFactory).toFactory<
+        CustomChatAgent,
+        [string, string, string, string, string, boolean | undefined, CustomAgentPromptVariant[] | undefined, string[] | undefined, string[] | undefined]
+    >(
+        ctx => (id, name, description, prompt, defaultLLM, showInChat, promptVariants, allowedTools, disallowedTools) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
             agent.description = description;
             agent.prompt = prompt;
             agent.promptVariants = promptVariants;
+            agent.allowedTools = allowedTools;
+            agent.disallowedTools = disallowedTools;
             agent.languageModelRequirements = [{
                 purpose: 'chat',
                 identifier: defaultLLM,

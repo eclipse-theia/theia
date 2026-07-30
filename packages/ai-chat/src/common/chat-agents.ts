@@ -177,6 +177,15 @@ export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
     modes?: ChatMode[];
+    /**
+     * Optional glob patterns capping this agent's toolset. A tool parsed from the prompt or
+     * request survives only if it matches one of these patterns. Omitted = no cap. Entries are
+     * case-sensitive; `*` matches any character sequence, all other characters are literal.
+     * These lists filter parsed tools — they never grant tools that nothing referenced.
+     */
+    allowedTools?: string[];
+    /** Optional glob patterns denying tools. Omitted = deny nothing. Deny wins over allow. */
+    disallowedTools?: string[];
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
@@ -211,6 +220,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     prompts: PromptVariantSet[] = [];
     agentSpecificVariables: AgentSpecificVariables[] = [];
     functions: string[] = [];
+    allowedTools?: string[];
+    disallowedTools?: string[];
     protected readonly abstract defaultLanguageModelPurpose: string;
     protected systemPromptId: string | undefined = undefined;
     protected additionalToolRequests: ToolRequest[] = [];
@@ -268,9 +279,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
             const systemMessageToolRequests = systemMessageDescription?.functionDescriptions?.values();
             const tools = [
-                ...this.chatToolRequestService.getChatToolRequests(request),
-                ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
-                ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
+                ...this.chatToolRequestService.getChatToolRequests(request, this),
+                ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request, this),
+                ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request, this)
             ];
             const deferredSet = new Set<string>();
             request.message.deferredToolIds?.forEach(id => deferredSet.add(id));

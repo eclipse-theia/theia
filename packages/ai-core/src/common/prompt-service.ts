@@ -186,6 +186,16 @@ export interface CustomAgentDescription {
     showInChat?: boolean;
 
     /**
+     * Optional glob patterns capping this agent's toolset. A tool parsed from the prompt or
+     * request survives only if it matches one of these patterns. Omitted = no cap. Entries are
+     * case-sensitive; `*` matches any character sequence, all other characters are literal.
+     * These lists filter parsed tools — they never grant tools that nothing referenced.
+     */
+    allowedTools?: string[];
+    /** Optional glob patterns denying tools. Omitted = deny nothing. Deny wins over allow. */
+    disallowedTools?: string[];
+
+    /**
      * Optional additional prompt variants for this agent. Loaded from sibling
      * `.prompttemplate` files in the same `<scope>/agents/<id>/` folder.
      */
@@ -193,6 +203,15 @@ export interface CustomAgentDescription {
 }
 
 export namespace CustomAgentDescription {
+    /**
+     * Compares two optional string arrays for equality (order-sensitive).
+     */
+    function stringArrayEquals(a?: readonly string[], b?: readonly string[]): boolean {
+        if (a === b) { return true; }
+        if (!a || !b || a.length !== b.length) { return false; }
+        return a.every((value, index) => value === b[index]);
+    }
+
     /**
      * Type guard to check if an object is a CustomAgentDescription
      */
@@ -219,6 +238,12 @@ export namespace CustomAgentDescription {
         if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
             return false;
         }
+        if ('allowedTools' in entry && !(Array.isArray(entry.allowedTools) && entry.allowedTools.every(value => typeof value === 'string'))) {
+            return false;
+        }
+        if ('disallowedTools' in entry && !(Array.isArray(entry.disallowedTools) && entry.disallowedTools.every(value => typeof value === 'string'))) {
+            return false;
+        }
         return true;
     }
 
@@ -232,6 +257,8 @@ export namespace CustomAgentDescription {
             && a.prompt === b.prompt
             && a.defaultLLM === b.defaultLLM
             && a.showInChat === b.showInChat
+            && stringArrayEquals(a.allowedTools, b.allowedTools)
+            && stringArrayEquals(a.disallowedTools, b.disallowedTools)
             && CustomAgentPromptVariant.arrayEquals(a.promptVariants, b.promptVariants);
     }
 }

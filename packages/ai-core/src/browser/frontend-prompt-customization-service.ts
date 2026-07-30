@@ -66,8 +66,14 @@ interface CustomAgentFrontmatter {
     description: string;
     defaultLLM: string;
     showInChat?: boolean;
+    allowedTools?: string[];
+    disallowedTools?: string[];
     /** Allowed but ignored when present; if set, must match the folder name. */
     id?: string;
+}
+
+function isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(entry => typeof entry === 'string');
 }
 
 namespace CustomAgentFrontmatter {
@@ -83,6 +89,12 @@ namespace CustomAgentFrontmatter {
             return false;
         }
         if ('id' in entry && typeof entry.id !== 'string') {
+            return false;
+        }
+        if ('allowedTools' in entry && !isStringArray(entry.allowedTools)) {
+            return false;
+        }
+        if ('disallowedTools' in entry && !isStringArray(entry.disallowedTools)) {
             return false;
         }
         return true;
@@ -1538,6 +1550,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             prompt: body,
             defaultLLM: metadata.defaultLLM,
             showInChat: metadata.showInChat,
+            ...(metadata.allowedTools !== undefined ? { allowedTools: metadata.allowedTools } : {}),
+            ...(metadata.disallowedTools !== undefined ? { disallowedTools: metadata.disallowedTools } : {}),
             ...(promptVariants.length > 0 ? { promptVariants } : {})
         };
     }
@@ -2069,6 +2083,12 @@ function serializeCustomAgentFile(agent: CustomAgentDescription): string {
     };
     if (agent.showInChat !== undefined) {
         metadata.showInChat = agent.showInChat;
+    }
+    if (agent.allowedTools !== undefined) {
+        metadata.allowedTools = agent.allowedTools;
+    }
+    if (agent.disallowedTools !== undefined) {
+        metadata.disallowedTools = agent.disallowedTools;
     }
     return serializeFrontmatter(metadata, agent.prompt);
 }
