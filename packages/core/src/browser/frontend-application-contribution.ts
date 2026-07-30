@@ -26,6 +26,16 @@ export const FrontendApplicationContribution = Symbol('FrontendApplicationContri
 export interface FrontendApplicationContribution {
 
     /**
+     * An optional, stable identifier for this contribution.
+     *
+     * Used to label performance measurements for this contribution's lifecycle hooks.
+     * If omitted, the class name is used instead. Note that class names are not reliable
+     * in minified production builds, where a bundler may mangle them; contributions for
+     * which accurate startup performance labels matter should set an explicit `id`.
+     */
+    readonly perfId?: string;
+
+    /**
      * Called on application startup before configure is called.
      */
     initialize?(): MaybePromise<void>;

@@ -98,7 +98,15 @@ describe('MeasurementContext', () => {
 
     describe('ensureEntry', () => {
 
-        it('starts a per-contribution measurement', () => {
+        it('uses a provided name instead of the item\'s constructor name', () => {
+            const context = new MeasurementContext<TestContribution>(stopwatch, 'Frontend', 250);
+
+            context.ensureEntry(new TestContribution(), 'custom-perf-id');
+
+            sinon.assert.calledWith(stopwatch.start, 'custom-perf-id.settled', sinon.match({ thresholdMillis: 250 }));
+        });
+
+        it('falls back to the constructor name when no name is provided', () => {
             const context = new MeasurementContext<TestContribution>(stopwatch, 'Frontend', 250);
 
             context.ensureEntry(new TestContribution());
