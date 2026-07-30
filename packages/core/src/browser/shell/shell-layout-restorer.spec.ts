@@ -424,14 +424,9 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
             expect(mockProvider.setSavedLayout.firstCall.args[0]).to.equal('default');
             // Should set active to 'default'
             expect(mockProvider.setActivePerspectiveId.calledWith('default')).to.be.true;
-            // Should delete legacy key after migration
-            const legacyClear = mockStorageService.setData.getCalls().find(
-                (c: sinon.SinonSpyCall) => c.args[0] === 'layout' && c.args[1] === undefined
-            );
-            expect(legacyClear).to.not.be.undefined;
         });
 
-        it('should delete legacy key after successful migration', async () => {
+        it('should keep the legacy key after a successful migration', async () => {
 
             const legacyLayout = JSON.stringify({ version: 999, mainPanel: { items: ['legacy'] }, bottomPanel: {} });
             mockStorageService.getData.withArgs(PERSPECTIVE_LAYOUTS_STORAGE_KEY).resolves(undefined);
@@ -446,10 +441,12 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
 
             await restorer.restoreLayout(mockApp as never);
 
-            const legacyClear = mockStorageService.setData.getCalls().find(
-                (c: sinon.SinonSpyCall) => c.args[0] === 'layout' && c.args[1] === undefined
+            // Restoring must not touch the key: it is rewritten or cleared by the next `storeLayout`,
+            // so a crash before then still finds the layout where it was.
+            const legacyWrite = mockStorageService.setData.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === 'layout'
             );
-            expect(legacyClear).to.not.be.undefined;
+            expect(legacyWrite).to.be.undefined;
         });
 
         it('should preserve legacy key when inflate fails', async () => {

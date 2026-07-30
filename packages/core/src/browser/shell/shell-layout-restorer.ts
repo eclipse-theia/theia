@@ -263,7 +263,9 @@ export class ShellLayoutRestorer implements CommandContribution {
                 }
             }
         } else {
-            // Migration: try legacy single-layout key
+            // Migration: try legacy single-layout key. The key is deliberately left in place here:
+            // `storePerspectiveLayouts` rewrites it (default perspective only) or clears it (perspectives
+            // in use) on shutdown, so an unclean exit right after startup doesn't lose the layout.
             const legacyData = await this.storageService.getData<string>(this.storageKey);
             if (legacyData) {
                 try {
@@ -272,7 +274,6 @@ export class ShellLayoutRestorer implements CommandContribution {
                         .forEach(t => t.transformLayoutOnRestore(layout));
                     this.perspectiveService.setSavedLayout(this.perspectiveService.defaultPerspectiveId, layout);
                     activeId = this.perspectiveService.defaultPerspectiveId;
-                    this.storageService.setData(this.storageKey, undefined);
                 } catch (error) {
                     this.logger.warn('Could not inflate legacy layout for migration', error);
                 }
