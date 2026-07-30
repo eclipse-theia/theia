@@ -117,6 +117,15 @@ If your application depends on `@theia/ai-vercel-ai`, migrate as follows:
 
 The dedicated provider preferences offer the same fields plus additional ones (e.g. Azure `apiVersion`/`deployment`, `useResponseApi`, `reasoningSupport` for OpenAI; `useCaching`, `maxRetries` for Anthropic).
 
+#### `AiConfigurationService` for reading/writing AI preferences
+
+A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `PreferenceService` for `ai-features.*` preferences and is the intended extension point for reading/writing AI configuration.
+
+**Adopter-facing:**
+
+- Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
+- **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
+
 ### v1.73.0
 
 #### Custom agents reorganized into per-agent folders [#17523](https://github.com/eclipse-theia/theia/pull/17523)
@@ -145,15 +154,6 @@ Custom agents are now scanned from both the `.agents/` and `.prompts/` folders o
 **Adopter-facing:**
 
 - `PromptFragmentCustomizationProperties` gained an optional `agentDirectoryPaths` field carrying the absolute parent directories scanned for custom agents. The `.agents`/`.prompts` parents are exported as `CUSTOM_AGENT_WORKSPACE_DIRECTORIES`.
-
-#### `AiConfigurationService` for reading/writing AI preferences
-
-A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `PreferenceService` for `ai-features.*` preferences and is the intended extension point for reading/writing AI configuration.
-
-**Adopter-facing:**
-
-- Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
-- **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
 
 ### v1.70.0
 
