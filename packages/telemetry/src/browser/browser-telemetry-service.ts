@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { FrontendIdProvider } from '@theia/core/lib/browser/messaging/frontend-id-provider';
 import { ILogger } from '@theia/core/lib/common';
-import { generateUuid } from '@theia/core/lib/common/uuid';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
 import {
@@ -27,12 +27,14 @@ import { matchesTelemetryTopic } from '../common/telemetry-topic';
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
 
-    protected readonly session = generateUuid();
     protected localSinkInterests: readonly string[] | undefined;
     protected localSinkInterestsPromise: Promise<void> | undefined;
 
     @inject(TelemetryRpc)
     protected readonly rpc: TelemetryRpc;
+
+    @inject(FrontendIdProvider)
+    protected readonly frontendIdProvider: FrontendIdProvider;
 
     @inject(TelemetryConsentProvider)
     protected readonly consentProvider: TelemetryConsentProvider;
@@ -41,7 +43,7 @@ export class BrowserTelemetryService implements TelemetryService {
     protected readonly logger: ILogger;
 
     report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void {
-        const event = createTelemetryEvent(topic, this.session, data, options);
+        const event = createTelemetryEvent(topic, this.frontendIdProvider.getId(), data, options);
         if (!isValidTelemetryEvent(event)) {
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryTopic(topic)}'.`);
             return;

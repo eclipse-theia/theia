@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -74,9 +74,11 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
             },
             () => {
                 this.readinessState = 'failed';
+                const pendingEvents = this.pendingEvents;
                 this.pendingEvents = [];
                 this.pendingQueueOverflowWarned = false;
-                this.logger.error('Telemetry preferences failed to become ready; dropping telemetry events.');
+                this.logger.error('Telemetry preferences failed to become ready; remote telemetry is disabled.');
+                pendingEvents.forEach(event => this.doDispatch(event));
             }
         );
     }
@@ -86,7 +88,7 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
     }
 
     notifyEvent(event: unknown): void {
-        this.dispatch(event);
+        this.dispatch(event, true);
     }
 
     async getLocalSinkInterests(): Promise<string[]> {
@@ -105,13 +107,13 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
         }));
     }
 
-    protected dispatch(event: unknown): void {
+    protected dispatch(event: unknown, rpcOrigin = false): void {
         if (!isValidTelemetryEvent(event)) {
             this.logger.warn(`Ignoring malformed telemetry event for topic '${describeTelemetryEventTopic(event)}'.`);
             return;
         }
-        const snapshot = snapshotTelemetryEvent(event);
-        if (this.readinessState === 'ready') {
+        const snapshot = snapshotTelemetryEvent(rpcOrigin ? { ...event, session: `frontend/${event.session}` } : event);
+        if (this.readinessState === 'ready' || this.readinessState === 'failed') {
             this.doDispatch(snapshot);
         } else if (this.readinessState === 'pending') {
             if (this.pendingEvents.length >= MAX_PENDING_EVENTS) {
@@ -128,6 +130,9 @@ export class TelemetryServiceImpl implements TelemetryService, TelemetryRpc, Bac
     protected doDispatch(event: TelemetryEvent): void {
         const filters = this.getFilters();
         for (const validatedSink of this.getSinks()) {
+            if (this.readinessState === 'failed' && validatedSink.scope === 'remote') {
+                continue;
+            }
             const filterPatterns = filters.get(validatedSink.id);
             if ((filterPatterns && !filterPatterns.some(pattern => matchesTelemetryTopic(pattern, event.topic)))
                 || !validatedSink.interests.some(pattern => matchesTelemetryTopic(pattern, event.topic))

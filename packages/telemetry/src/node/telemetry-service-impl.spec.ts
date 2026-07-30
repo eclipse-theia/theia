@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -365,7 +365,7 @@ describe('TelemetryServiceImpl', () => {
         expect(observed[0].data).to.deep.equal({ action: 'open', durations: [1, 2] });
         expect(observed[0].kind).to.equal('error');
         expect(observed[0].attributes).to.deep.equal({ source: 'rpc', labels: ['stable'] });
-        expect(observed[0].session).to.equal('rpc-session');
+        expect(observed[0].session).to.equal('frontend/rpc-session');
         expect(observed[0].timestamp).to.equal(987);
     });
 
@@ -424,13 +424,14 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events).to.have.length(1);
     });
 
-    it('drops queued and subsequent events after preference readiness rejection and logs once', async () => {
+    it('delivers queued and subsequent events only to local sinks after preference readiness rejection and logs once', async () => {
         let rejectReady: (reason: Error) => void;
         const ready = new Promise<void>((_resolve, reject) => rejectReady = reject);
         const logger = new RecordingLogger();
-        const sink = createSink('company/sink');
-        const preferences = createPreferences({ 'company/sink': ['*'] }, ready);
-        const service = createServiceWithPreferences(preferences, [sink], logger);
+        const local = createSink('company/local', ['*'], 'local');
+        const remote = createSink('company/remote');
+        const preferences = createPreferences({ 'company/local': ['*'], 'company/remote': ['*'] }, ready);
+        const service = createServiceWithPreferences(preferences, [local, remote], logger);
 
         service.report('company/first', { secret: 'first-secret' });
         service.report('company/second', { secret: 'second-secret' });
@@ -438,7 +439,8 @@ describe('TelemetryServiceImpl', () => {
         await flushDispatch();
         service.report('company/third', { secret: 'third-secret' });
 
-        expect(sink.events).to.be.empty;
+        expect(local.events.map(event => event.topic)).to.deep.equal(['company/first', 'company/second', 'company/third']);
+        expect(remote.events).to.be.empty;
         expect(logger.errors).to.have.length(1);
         expect(logger.errors.join(' ')).not.to.contain('secret');
     });
@@ -454,7 +456,24 @@ describe('TelemetryServiceImpl', () => {
         expect(sink.events.map(event => event.topic)).to.deep.equal(['company/direct', 'company/rpc']);
         expect(sink.events.map(event => event.timestamp)).to.deep.equal([1234, 99]);
         expect(sink.events.map(event => event.kind)).to.deep.equal(['usage', 'crash']);
-        expect(sink.events.map(event => event.session)).to.deep.equal([BACKEND_TELEMETRY_SESSION, 'rpc-session']);
+        expect(sink.events.map(event => event.session)).to.deep.equal([BACKEND_TELEMETRY_SESSION, 'frontend/rpc-session']);
+    });
+
+    it('prevents RPC events from impersonating the backend session', async () => {
+        const sink = createSink('company/sink');
+        const service = createService('all', {}, [sink]);
+
+        service.notifyEvent({
+            topic: 'company/rpc',
+            kind: 'usage',
+            session: BACKEND_TELEMETRY_SESSION,
+            timestamp: 99
+        });
+        await flushDispatch();
+
+        expect(sink.events).to.have.length(1);
+        expect(sink.events[0].session).to.equal(`frontend/${BACKEND_TELEMETRY_SESSION}`);
+        expect(sink.events[0].session).not.to.equal(BACKEND_TELEMETRY_SESSION);
     });
 
     it('isolates void handlers, synchronous throws, asynchronous rejections, and slow sinks', async () => {

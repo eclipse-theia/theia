@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -55,7 +55,7 @@ export class PreferenceTelemetryConsentProvider implements TelemetryConsentProvi
             }
         });
         this.preferences.ready.then(() => {
-            this.currentLevel = this.preferences[TELEMETRY_LEVEL];
+            this.setLevel(this.preferences[TELEMETRY_LEVEL]);
         }, () => undefined);
     }
 

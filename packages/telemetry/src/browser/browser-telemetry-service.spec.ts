@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { FrontendIdProvider } from '@theia/core/lib/browser/messaging/frontend-id-provider';
 import { Emitter, ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
@@ -23,6 +24,8 @@ import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol';
 import { RecordingLogger } from '../common/test/recording-logger';
 import { TelemetryLevel } from '../common/telemetry-types';
 import { BrowserTelemetryService } from './browser-telemetry-service';
+
+const FRONTEND_ID = 'test-frontend-id';
 
 interface TestConsentProvider extends TelemetryConsentProvider {
     setLevel(level: TelemetryLevel): void;
@@ -57,6 +60,7 @@ function createService(
 ): BrowserTelemetryService {
     const container = new Container();
     container.bind(TelemetryRpc).toConstantValue(rpc);
+    container.bind(FrontendIdProvider).toConstantValue({ getId: () => FRONTEND_ID });
     container.bind(TelemetryConsentProvider).toConstantValue(consentProvider);
     container.bind(ILogger).toConstantValue(logger).whenTargetNamed('telemetry:BrowserTelemetryService');
     container.bind(BrowserTelemetryService).toSelf();
@@ -83,7 +87,7 @@ describe('BrowserTelemetryService', () => {
         expect(events).to.have.length(2);
         expect(events[0]).to.deep.include({ topic: 'company/action', kind: 'usage', data: { enabled: true }, timestamp: 1234 });
         expect(events[1]).to.deep.include({ topic: 'company/other', kind: 'usage', data: { count: 3 }, timestamp: 1244 });
-        expect(events[0].session).to.equal(events[1].session).and.not.empty;
+        expect(events.map(event => event.session)).to.deep.equal([FRONTEND_ID, FRONTEND_ID]);
     });
 
     it('forwards optimistically until local interests are ready, then applies consent and local interests', async () => {
@@ -138,7 +142,7 @@ describe('BrowserTelemetryService', () => {
 
         expect(events).to.have.length(1);
         expect(events[0].kind).to.equal('error');
-        expect(events[0].session).to.be.a('string').and.not.empty;
+        expect(events[0].session).to.equal(FRONTEND_ID);
         expect(events[0].data).to.deep.equal(data);
         expect(events[0].attributes).to.deep.equal(attributes);
         expect(events[0].attributes).not.to.equal(attributes);

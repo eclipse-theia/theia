@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -111,9 +111,9 @@ describe('measurement telemetry integration', () => {
         contribution.startCollecting();
 
         contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { name: 'startup', startTime: 12, elapsed: 34 }));
-        contribution.handle(createEvent('session-a', { name: 'startup', startTime: 12, elapsed: 34 }));
-        contribution.handle(createEvent('session-a', { ...storedResult, name: 'second' }));
-        contribution.handle(createEvent('session-b', { name: 'startup', startTime: 12, elapsed: 34 }));
+        contribution.handle(createEvent('frontend/session-a', { name: 'startup', startTime: 12, elapsed: 34 }));
+        contribution.handle(createEvent('frontend/session-a', { ...storedResult, name: 'second' }));
+        contribution.handle(createEvent('frontend/session-b', { name: 'startup', startTime: 12, elapsed: 34 }));
 
         const metrics = contribution.getMetrics();
         expect(metrics).to.contain('id="backend", name="startup"');
@@ -138,10 +138,10 @@ describe('measurement telemetry integration', () => {
         const frontendResult = { ...storedResult, owner: 'frontend' };
 
         contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
-        contribution.handle(createEvent('session-a', frontendResult));
+        contribution.handle(createEvent('frontend/session-a', frontendResult));
 
         expect(contribution.backendMeasurements).to.deep.equal([storedResult]);
-        expect(contribution.frontendMeasurements).to.deep.equal([['session-a', frontendResult]]);
+        expect(contribution.frontendMeasurements).to.deep.equal([['frontend/session-a', frontendResult]]);
     });
 
     it('reports measurement data with optional owner', () => {
