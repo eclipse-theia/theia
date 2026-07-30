@@ -321,15 +321,10 @@ export class FrontendApplication {
         this.logger.info('<<< All frontend contributions have been stopped.');
     }
 
-    protected getContributionName(contribution: FrontendApplicationContribution): string {
-        return contribution.perfId ?? contribution.constructor.name;
-    }
-
     protected async measureContribution<T>(contribution: FrontendApplicationContribution, hook: string, fn: () => MaybePromise<T>): Promise<T> {
         let innerResult: MaybePromise<T>;
-        const name = this.getContributionName(contribution);
-        this.settlementContext?.ensureEntry(contribution, name);
-        const result = await this.measure(name + '.' + hook,
+        this.settlementContext?.ensureEntry(contribution);
+        const result = await this.measure(contribution.constructor.name + '.' + hook,
             () => (innerResult = fn())
         );
         this.settlementContext?.trackSettlement(contribution, innerResult!);

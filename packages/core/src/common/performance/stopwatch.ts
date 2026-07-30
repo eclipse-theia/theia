@@ -222,8 +222,9 @@ export class MeasurementContext<T extends object = object> {
      * Ensure that settlement tracking has been started for the given contribution.
      * Starts the per-contribution measurement clock on the first call for each contribution.
      */
-    ensureEntry(item: T, name: string = item.constructor.name): void {
+    ensureEntry(item: T): void {
         if (!this.entries.has(item)) {
+            const name = item.constructor.name;
             this.entries.set(item, {
                 name,
                 measurement: this.stopwatch.start(`${name}.settled`, { thresholdMillis: this.thresholdMillis }),
