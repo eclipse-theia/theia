@@ -37,7 +37,6 @@ describe('PerspectiveService', () => {
     let getLayoutDataStub: sinon.SinonStub;
     let setLayoutDataStub: sinon.SinonStub;
     let collapsePanelStub: sinon.SinonStub;
-    let setStatusBarHiddenByPerspectiveStub: sinon.SinonStub;
     let widgetAreaResolver: WidgetAreaResolverImpl;
     let tryGetWidgetStub: sinon.SinonStub;
     let getWidgetsStub: sinon.SinonStub;
@@ -59,7 +58,6 @@ describe('PerspectiveService', () => {
         getLayoutDataStub = sinon.stub().returns({ mainPanel: {}, bottomPanel: {} });
         setLayoutDataStub = sinon.stub().resolves();
         collapsePanelStub = sinon.stub().resolves();
-        setStatusBarHiddenByPerspectiveStub = sinon.stub();
         widgetAreaResolver = new WidgetAreaResolverImpl();
         getWidgetsStub = sinon.stub().returns([]);
         mockLogger = { debug: sinon.stub(), warn: sinon.stub() };
@@ -72,7 +70,6 @@ describe('PerspectiveService', () => {
             getLayoutData: getLayoutDataStub,
             setLayoutData: setLayoutDataStub,
             collapsePanel: collapsePanelStub,
-            setStatusBarHiddenByPerspective: setStatusBarHiddenByPerspectiveStub,
             getWidgets: getWidgetsStub
         };
 
@@ -501,31 +498,6 @@ describe('PerspectiveService', () => {
 
     // --- Chrome control options tests ---
 
-    it('should hide status bar when perspective has hideStatusBar', async () => {
-        service.registerPerspective({
-            id: 'chrome-test',
-            label: 'Chrome Test',
-            viewPlacements: new Map(),
-            chromeOptions: { hideStatusBar: true }
-        });
-
-        await service.switchPerspective('chrome-test');
-
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(true)).to.be.true;
-    });
-
-    it('should not hide status bar when perspective does not hide it', async () => {
-        service.registerPerspective({
-            id: 'no-chrome',
-            label: 'No Chrome',
-            viewPlacements: new Map()
-        });
-
-        await service.switchPerspective('no-chrome');
-
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(false)).to.be.true;
-    });
-
     it('should collapse areas on first activation only', async () => {
         service.registerPerspective({
             id: 'collapse-test',
@@ -554,35 +526,6 @@ describe('PerspectiveService', () => {
         // Switch back — should restore saved layout, NOT collapse again
         await service.switchPerspective('collapse-test');
         expect(collapsePanelStub.called).to.be.false;
-    });
-
-    it('should apply chrome options even when restoring saved layout', async () => {
-        service.registerPerspective({
-            id: 'chrome-test',
-            label: 'Chrome Test',
-            viewPlacements: new Map(),
-            chromeOptions: { hideStatusBar: true }
-        });
-        service.registerPerspective({
-            id: 'other',
-            label: 'Other',
-            viewPlacements: new Map()
-        });
-
-        // First activation
-        await service.switchPerspective('chrome-test');
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(true)).to.be.true;
-
-        setStatusBarHiddenByPerspectiveStub.resetHistory();
-
-        // Switch away (saves layout)
-        await service.switchPerspective('other');
-
-        setStatusBarHiddenByPerspectiveStub.resetHistory();
-
-        // Switch back (restores saved layout) — chrome should still be applied
-        await service.switchPerspective('chrome-test');
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(true)).to.be.true;
     });
 
     it('should collapse multiple areas on first activation', async () => {
@@ -769,39 +712,10 @@ describe('PerspectiveService', () => {
 
     // --- onLayoutRestored() tests ---
 
-    it('should apply chrome options when onLayoutRestored is called with a registered perspective', () => {
-        service.registerPerspective({
-            id: 'chrome-persp',
-            label: 'Chrome Persp',
-            viewPlacements: new Map(),
-            chromeOptions: { hideStatusBar: true }
-        });
+    it('should not throw when onLayoutRestored is called with an unregistered perspective', () => {
         service.initialize();
 
-        service.onLayoutRestored('chrome-persp');
-
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(true)).to.be.true;
-    });
-
-    it('should not hide status bar when restored perspective has no chrome options', () => {
-        service.registerPerspective({
-            id: 'no-chrome-persp',
-            label: 'No Chrome',
-            viewPlacements: new Map()
-        });
-        service.initialize();
-
-        service.onLayoutRestored('no-chrome-persp');
-
-        expect(setStatusBarHiddenByPerspectiveStub.calledWith(false)).to.be.true;
-    });
-
-    it('should not apply chrome when onLayoutRestored is called with an unregistered perspective', () => {
-        service.initialize();
-
-        service.onLayoutRestored('non-existent');
-
-        expect(setStatusBarHiddenByPerspectiveStub.called).to.be.false;
+        expect(() => service.onLayoutRestored('non-existent')).to.not.throw();
     });
 
     // --- Rejection resilience tests ---
@@ -855,7 +769,6 @@ describe('PerspectiveService', () => {
         await service.switchPerspective('collapse-fail');
 
         expect(service.getActivePerspective()?.id).to.equal('collapse-fail');
-        expect(setStatusBarHiddenByPerspectiveStub.called).to.be.true;
         expect(eventSpy.calledOnce).to.be.true;
         expect(mockLogger.warn.calledOnce).to.be.true;
         expect(mockLogger.warn.firstCall.args[0]).to.equal('Failed to apply layout for perspective');
@@ -939,24 +852,6 @@ describe('PerspectiveService', () => {
             // Should re-apply viewPlacements
             expect(getOrCreateWidgetStub.calledWith('test-widget')).to.be.true;
             expect(addWidgetStub.called).to.be.true;
-        });
-
-        it('should re-apply chrome options (hideStatusBar) on reset', async () => {
-            service.registerPerspective({
-                id: 'chrome-reset',
-                label: 'Chrome Reset',
-                viewPlacements: new Map(),
-                chromeOptions: { hideStatusBar: true, collapseAreas: ['left', 'bottom'] }
-            });
-
-            await service.switchPerspective('chrome-reset');
-
-            setStatusBarHiddenByPerspectiveStub.resetHistory();
-
-            await service.resetCurrentPerspective();
-
-            // Chrome options (hideStatusBar) should always be re-applied
-            expect(setStatusBarHiddenByPerspectiveStub.calledWith(true)).to.be.true;
         });
 
         it('should call onActivate callback', async () => {

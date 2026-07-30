@@ -421,10 +421,6 @@ export class ApplicationShell extends Widget {
         this.onDidChangeActiveWidget(updateFocusContextKeys);
     }
 
-    setStatusBarHiddenByPerspective(hidden: boolean): void {
-        this.statusBar.setHiddenByPerspective(hidden);
-    }
-
     protected setTopPanelVisibility(preference: string): void {
         const hiddenPreferences = ['compact', 'hidden'];
         this.topPanel.setHidden(hiddenPreferences.includes(preference));

@@ -33,8 +33,6 @@ import { ContextKeyService } from './context-key-service';
 export const ACTIVE_PERSPECTIVE_CONTEXT_KEY = 'activePerspectiveId';
 
 export interface PerspectiveChromeOptions {
-    /** Hide the status bar. Default: false. */
-    hideStatusBar?: boolean;
     /** Areas to collapse on first activation. User can re-expand freely. */
     collapseAreas?: ('left' | 'right' | 'bottom')[];
 }
@@ -221,10 +219,6 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     protected switchInProgress: Promise<void> | undefined;
 
     onLayoutRestored(activePerspectiveId: string): void {
-        const descriptor = this.perspectives.get(activePerspectiveId);
-        if (descriptor) {
-            this.applyChrome(descriptor);
-        }
         this.updateActivePerspectiveContextKey(activePerspectiveId);
     }
 
@@ -310,7 +304,6 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             descriptor.onActivate(this.shell);
         }
 
-        this.applyChrome(descriptor);
         this.updateActivePerspectiveContextKey(id);
 
         this.onDidChangePerspectiveEmitter.fire(id);
@@ -396,8 +389,6 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             descriptor.onActivate(this.shell);
         }
 
-        this.applyChrome(descriptor);
-
         this.onDidChangePerspectiveEmitter.fire(descriptor.id);
     }
 
@@ -436,10 +427,6 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
                 }
             }
         }
-    }
-
-    protected applyChrome(descriptor: PerspectiveDescriptor): void {
-        this.shell.setStatusBarHiddenByPerspective(descriptor.chromeOptions?.hideStatusBar ?? false);
     }
 
     /**
