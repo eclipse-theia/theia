@@ -34,6 +34,11 @@ export interface AnthropicModelDescription {
     maxRetries: number;
     /** Resolved default enablement of server-side compaction (global preference folded with the per-provider override). Defaults to disabled when omitted. */
     serverSideCompactionEnabledByDefault?: boolean;
+    /**
+     * Absolute path to the folder below which the files of Anthropic's built-in memory tool are stored (in a `memories` subdirectory).
+     * If set, the memory tool is offered to the model. If `undefined`, the memory tool is disabled.
+     */
+    memoryToolFolder?: string;
     /** Resolved default input-token threshold for server-side compaction. `undefined` preserves the provider default. */
     serverSideCompactionTokenThresholdByDefault?: number;
 }

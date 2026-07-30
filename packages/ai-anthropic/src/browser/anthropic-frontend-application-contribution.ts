@@ -16,14 +16,16 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import {
-    API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
+    API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MEMORY_TOOL_FOLDER_PREF, MEMORY_TOOL_PREF, MODELS_PREF,
+    SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
 } from '../common/anthropic-preferences';
 import {
     AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
 } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { PreferenceService } from '@theia/core';
+import { Path, PreferenceService } from '@theia/core';
 import { resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
@@ -39,6 +41,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
     @inject(AICorePreferences)
     protected aiCorePreferences: AICorePreferences;
+
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
 
     protected prevModels: string[] = [];
     protected prevCustomModels: Partial<AnthropicModelDescription>[] = [];
@@ -75,7 +80,13 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                } else if (event.preferenceName === MEMORY_TOOL_PREF || event.preferenceName === MEMORY_TOOL_FOLDER_PREF) {
+                    this.updateAllModels();
                 }
+            });
+
+            this.workspaceService.onWorkspaceChanged(() => {
+                this.updateAllModels();
             });
 
             this.aiCorePreferences.onPreferenceChanged(event => {
@@ -113,6 +124,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 model.useCaching === newModel.useCaching &&
                 model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
                 model.serverSideCompactionTokenThresholdByDefault === newModel.serverSideCompactionTokenThresholdByDefault &&
+                model.memoryToolFolder === newModel.memoryToolFolder &&
                 model.enableStreaming === newModel.enableStreaming));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -147,8 +159,28 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             useCaching: true,
             maxRetries: maxRetries,
             serverSideCompactionEnabledByDefault,
+            memoryToolFolder: this.getMemoryToolFolder(),
             serverSideCompactionTokenThresholdByDefault
         };
+    }
+
+    /**
+     * Resolves the configured memory tool folder to an absolute path, or `undefined` if the memory tool is not activated
+     * or a relative folder is configured while no workspace is open.
+     */
+    protected getMemoryToolFolder(): string | undefined {
+        if (!this.preferenceService.get<boolean>(MEMORY_TOOL_PREF, false)) {
+            return undefined;
+        }
+        const folder = this.preferenceService.get<string>(MEMORY_TOOL_FOLDER_PREF, 'memory');
+        if (!folder) {
+            return undefined;
+        }
+        if (new Path(folder).isAbsolute) {
+            return folder;
+        }
+        const root = this.workspaceService.tryGetRoots()[0];
+        return root ? root.resource.resolve(folder).path.fsPath() : undefined;
     }
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
@@ -156,6 +188,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
+        const memoryToolFolder = this.getMemoryToolFolder();
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
         const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
         const serverSideCompactionTokenThresholdByDefault = resolveCompactionTokenThresholdDefault(globalThreshold, providerThreshold);
@@ -174,6 +207,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     useCaching: pref.useCaching ?? true,
                     maxRetries: pref.maxRetries ?? maxRetries,
                     serverSideCompactionEnabledByDefault,
+                    memoryToolFolder,
                     serverSideCompactionTokenThresholdByDefault
                 }
             ];

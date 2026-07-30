@@ -95,6 +95,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 maxInputTokens: metadata.maxInputTokens,
                 serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                 serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                memoryToolFolder: modelDescription.memoryToolFolder,
                 serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
             });
         } else {
@@ -117,6 +118,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     ANTHROPIC_SERVER_TOOLS,
                     metadata.serverSideCompactionSupport,
                     modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                    modelDescription.memoryToolFolder,
                     modelDescription.serverSideCompactionTokenThresholdByDefault
                 )
             ]);
